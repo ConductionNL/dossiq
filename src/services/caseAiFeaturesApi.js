@@ -37,9 +37,19 @@ export const CASE_SURFACE = 'case'
  */
 export function referenceId(value) {
 	if (value !== null && typeof value === 'object') {
-		return String(value.id ?? value.uuid ?? '').trim()
+		return trimmedText(value.id ?? value.uuid)
 	}
 
+	return trimmedText(value)
+}
+
+/**
+ * A value as trimmed text, the empty string for null and undefined.
+ *
+ * @param {string|number|null|undefined} value The value.
+ * @return {string} The text.
+ */
+function trimmedText(value) {
 	return String(value ?? '').trim()
 }
 
@@ -88,30 +98,50 @@ async function readObject(schema, id) {
  */
 export async function fetchCaseFeatures(caseId) {
 	try {
-		const caseRecord = await readObject('case', caseId)
-		const caseTypeId = referenceId(caseRecord.caseType)
-		if (caseTypeId === '') {
-			return []
-		}
-
-		const caseType = await readObject('caseType', caseTypeId)
-		const slugs = caseSurfaceSlugs(caseType)
+		const slugs = await caseFeatureSlugs(caseId)
 		if (slugs.length === 0) {
 			return []
 		}
-
-		const query = new URLSearchParams({ surface: CASE_SURFACE })
-		for (const slug of slugs) {
-			query.append(`caseType[aiFeatures][${slug}]`, CASE_SURFACE)
-		}
-
-		const { data } = await axios.get(
-			`${generateUrl('/apps/dossiq/api/assistant/ai-features')}?${query.toString()}`,
-		)
-		return Array.isArray(data?.features) ? data.features : []
+		return await fetchSurfaceFeatures(slugs)
 	} catch {
 		return null
 	}
+}
+
+/**
+ * The slugs the case's type places on the case surface; none when the case
+ * has no type, without reading further.
+ *
+ * @param {string} caseId The case uuid.
+ * @return {Promise<Array<string>>} The slugs, in declaration order.
+ */
+async function caseFeatureSlugs(caseId) {
+	const caseRecord = await readObject('case', caseId)
+	const caseTypeId = referenceId(caseRecord.caseType)
+	if (caseTypeId === '') {
+		return []
+	}
+
+	const caseType = await readObject('caseType', caseTypeId)
+	return caseSurfaceSlugs(caseType)
+}
+
+/**
+ * Ask dossiq's feature endpoint for the declared case-surface features.
+ *
+ * @param {Array<string>} slugs The declared slugs.
+ * @return {Promise<Array<object>>} The features, or none when the answer carries no list.
+ */
+async function fetchSurfaceFeatures(slugs) {
+	const query = new URLSearchParams({ surface: CASE_SURFACE })
+	for (const slug of slugs) {
+		query.append(`caseType[aiFeatures][${slug}]`, CASE_SURFACE)
+	}
+
+	const { data } = await axios.get(
+		`${generateUrl('/apps/dossiq/api/assistant/ai-features')}?${query.toString()}`,
+	)
+	return Array.isArray(data?.features) ? data.features : []
 }
 
 /**
@@ -179,8 +209,8 @@ export function whereItRuns(feature) {
 		return t('dossiq', 'Unavailable: hermiq does not offer this feature here.')
 	}
 
-	const provider = String(feature.provider ?? '').trim()
-	const residency = String(feature.residency ?? '').trim()
+	const provider = trimmedText(feature.provider)
+	const residency = trimmedText(feature.residency)
 	if (provider === '' || residency === '') {
 		return t('dossiq', 'hermiq did not say which provider runs this, or where.')
 	}

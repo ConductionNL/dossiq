@@ -25,7 +25,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+ * @spec openspec/specs/add-work-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use RuntimeException;
 /**
  * A queue source that reads OpenRegister objects.
  *
- * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+ * @spec openspec/specs/add-work-queue/spec.md
  */
 abstract class RegisterBackedSource implements QueueSource {
 	use SearchesObjects;
@@ -62,7 +62,7 @@ abstract class RegisterBackedSource implements QueueSource {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function __construct(
 		protected readonly SettingsService $settings,
@@ -76,7 +76,7 @@ abstract class RegisterBackedSource implements QueueSource {
 	 *
 	 * @throws RuntimeException When the app is not configured.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	protected function register(): string {
 		$register = trim((string)$this->settings->getConfigValue('register'));
@@ -94,7 +94,7 @@ abstract class RegisterBackedSource implements QueueSource {
 	 *
 	 * @throws RuntimeException When OpenRegister is absent or unreachable.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	protected function objects(): object {
 		$service = $this->settings->getObjectService();
@@ -115,7 +115,7 @@ abstract class RegisterBackedSource implements QueueSource {
 	 *
 	 * @throws RuntimeException When the read fails.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	protected function rows(string $schema, array $filters): array {
 		$filters['_limit'] = self::LIMIT;
@@ -141,7 +141,7 @@ abstract class RegisterBackedSource implements QueueSource {
 	 *
 	 * @return string The id, or an empty string when the row carries none.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	protected function idOf(array $row): string {
 		$self = ($row['@self'] ?? []);
@@ -164,7 +164,7 @@ abstract class RegisterBackedSource implements QueueSource {
 	 *
 	 * @return string|null The date, or null.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	protected function dateOf(array $row, string $key): ?string {
 		$value = $row[$key] ?? null;

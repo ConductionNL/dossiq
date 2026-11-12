@@ -49,9 +49,9 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
- * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d1
- * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d2
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d1
+ * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d2
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -73,7 +73,7 @@ use Throwable;
 /**
  * Writes OpenCatalogi's publication model through OpenRegister in process.
  *
- * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
 class OpenCatalogiApiClient {
 
@@ -135,7 +135,7 @@ class OpenCatalogiApiClient {
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' on any write failure.
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function createPublication(string $register, string $schema, array $payload): array {
 		return $this->storeObject(register: $register, schema: $schema, object: $payload, uuid: null);
@@ -165,7 +165,7 @@ class OpenCatalogiApiClient {
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' on any read/write failure.
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function updatePublication(string $register, string $schema, string $id, array $payload): array {
 		$stored = $this->readObjectData(register: $register, schema: $schema, id: $id);
@@ -189,7 +189,7 @@ class OpenCatalogiApiClient {
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' on any write failure.
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function attachDocument(string $register, string $schema, array $payload): array {
 		return $this->storeObject(register: $register, schema: $schema, object: $payload, uuid: null);
@@ -226,7 +226,7 @@ class OpenCatalogiApiClient {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) register/schema/mimeType are call-shape compatibility — see the docblock.
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function attachFile(
 		string $register,
@@ -286,7 +286,7 @@ class OpenCatalogiApiClient {
 	 *
 	 * @return array<string, mixed>|null The first `hasWooSitemap: true` catalog, or null.
 	 *
-	 * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#fallback
+	 * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#fallback
 	 */
 	public function resolveCatalog(): ?array {
 		try {
@@ -329,7 +329,7 @@ class OpenCatalogiApiClient {
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' when OpenRegister is unavailable.
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	private function requireObjectService(): object {
 		$objectService = $this->settingsService->getObjectService();
@@ -361,7 +361,7 @@ class OpenCatalogiApiClient {
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' when the object cannot be read.
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	private function readObjectData(string $register, string $schema, string $id): array {
 		$objectService = $this->requireObjectService();
@@ -395,7 +395,7 @@ class OpenCatalogiApiClient {
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' on any write failure.
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	private function storeObject(string $register, string $schema, array $object, ?string $uuid): array {
 		$objectService = $this->requireObjectService();

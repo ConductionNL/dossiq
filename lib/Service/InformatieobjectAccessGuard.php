@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -43,7 +43,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Enforces vertrouwelijkheidaanduiding-based access control on informatieobjecten.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
  */
 class InformatieobjectAccessGuard {
 	/**
@@ -96,7 +96,7 @@ class InformatieobjectAccessGuard {
 	 *
 	 * @return int Ordinal index (0 = openbaar … 7 = zeer_geheim).
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
 	 */
 	public function ordinalOf(string $level): int {
 		$index = array_search($level, self::HIERARCHY, true);
@@ -118,7 +118,7 @@ class InformatieobjectAccessGuard {
 	 *
 	 * @return int Clearance ordinal.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
 	 */
 	public function getUserClearanceOrdinal(IUser $user): int {
 		$uid = $user->getUID();
@@ -163,7 +163,7 @@ class InformatieobjectAccessGuard {
 	 * @return bool True when the user's clearance meets or exceeds the document's classification
 	 *              and the document's access exception, if any, admits the user.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
 	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-with-an-exception-is-readable-only-by-its-listed-people-the-cases-handler-and-administrators
 	 */
 	public function canRead(IUser $user, array $informatieobject): bool {
@@ -184,7 +184,7 @@ class InformatieobjectAccessGuard {
 	 *
 	 * @throws NotPermittedException When the user lacks sufficient clearance.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
 	 */
 	public function assertCanRead(IUser $user, array $informatieobject): void {
 		if ($this->canRead(user: $user, informatieobject: $informatieobject) === false) {
@@ -206,7 +206,7 @@ class InformatieobjectAccessGuard {
 	 *
 	 * @return bool True when public publication is allowed.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
 	 */
 	public function canPublish(array $informatieobject): bool {
 		$docOrdinal = $this->ordinalOf(level: (string)($informatieobject['vertrouwelijkheidaanduiding'] ?? ''));
@@ -223,7 +223,7 @@ class InformatieobjectAccessGuard {
 	 *
 	 * @return array<int, array<string, mixed>> Records the user may read (re-indexed).
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
 	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-with-an-exception-is-readable-only-by-its-listed-people-the-cases-handler-and-administrators
 	 */
 	public function filterDossierForUser(IUser $user, array $informatieobjecten): array {
@@ -252,7 +252,7 @@ class InformatieobjectAccessGuard {
 	 *
 	 * @return bool True when the requested level is allowed (equal or more restrictive).
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
 	 */
 	public function isClassificationAllowed(string $defaultLevel, string $requestedLevel): bool {
 		if ($requestedLevel === '') {

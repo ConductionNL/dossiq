@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use OCP\IUserSession;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
  */
 class KccRoutingController extends Controller {
 	/**
@@ -72,7 +72,7 @@ class KccRoutingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	public function index(): JSONResponse {
 		$unauthorized = $this->requireAuthenticated();
@@ -101,7 +101,7 @@ class KccRoutingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function create(): JSONResponse {
@@ -129,7 +129,7 @@ class KccRoutingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function update(string $id): JSONResponse {
@@ -157,7 +157,7 @@ class KccRoutingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function destroy(string $id): JSONResponse {
@@ -182,7 +182,7 @@ class KccRoutingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	public function evaluate(): JSONResponse {
 		$unauthorized = $this->requireAuthenticated();

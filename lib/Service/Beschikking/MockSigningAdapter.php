@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T23
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T23
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use DateTimeImmutable;
 /**
  * Mock implementation of the signing adapter.
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T23
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T23
  */
 class MockSigningAdapter implements SigningAdapterInterface {
 	/**
@@ -46,7 +46,7 @@ class MockSigningAdapter implements SigningAdapterInterface {
 	 *
 	 * @return array<string, string> Keys: signedBestandId, validatieRapportId, certificaatSerienummer, tspProviderEidasId, ondertekeningTijdstip.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T23
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T23
 	 */
 	public function sign(string $fileId, string $signatory, string $tspProvider): array {
 		$seed = $fileId . '|' . $signatory . '|' . $tspProvider;
@@ -67,7 +67,7 @@ class MockSigningAdapter implements SigningAdapterInterface {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T23
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T23
 	 */
 	public function fetchValidationReport(string $validationRapportId): array {
 		return [

@@ -60,7 +60,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -74,7 +74,7 @@ use Throwable;
 /**
  * What raises a marker on a case, and what makes it go away.
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseAttentionMarkerService {
 
@@ -185,7 +185,7 @@ class CaseAttentionMarkerService {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> The context.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function contextFor(string $caseId): array {
 		return ($this->conditions?->contextFor(caseId: $caseId) ?? []);
@@ -202,7 +202,7 @@ class CaseAttentionMarkerService {
 	 *
 	 * @return array<int, string> The reasons, empty when every declaration is whole.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function validateDeclarations(array $declarations): array {
 		$problems = [];
@@ -301,7 +301,7 @@ class CaseAttentionMarkerService {
 	 *
 	 * @return array<int, array<string, mixed>> The declarations, each one whole.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function declarationsFor(string $caseTypeId): array {
 		$declared = [];
@@ -362,7 +362,7 @@ class CaseAttentionMarkerService {
 	 *
 	 * @return array<int, array<string, mixed>> The raised markers.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function evaluate(array $case, ?DateTimeImmutable $now = null, array $context = []): array {
 		$now = ($now ?? new DateTimeImmutable());
@@ -446,7 +446,7 @@ class CaseAttentionMarkerService {
 	 * @return array{attentionMarkers: array<int, array<string, mixed>>,
 	 *               hasAttentionMarkers: bool} The fields to write back.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function resolve(array $case, ?DateTimeImmutable $now = null, array $context = []): array {
 		$markers = $this->evaluate(case: $case, now: $now, context: $context);

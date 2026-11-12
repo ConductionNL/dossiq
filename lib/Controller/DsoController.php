@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Controller exposing DSO Omgevingsloket endpoints.
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
  */
 class DsoController extends Controller {
 
@@ -99,7 +99,7 @@ class DsoController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
 	#[NoAdminRequired]
 	public function dashboard(): JSONResponse {
@@ -185,7 +185,7 @@ class DsoController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
 	#[NoAdminRequired]
 	public function transitionStatus(string $caseId): JSONResponse {
@@ -237,7 +237,7 @@ class DsoController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
 	#[NoAdminRequired]
 	public function generateBeschikking(string $caseId): JSONResponse {
@@ -280,7 +280,7 @@ class DsoController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
 	#[NoAdminRequired]
 	public function initiateSamenwerking(string $caseId): JSONResponse {
@@ -322,7 +322,7 @@ class DsoController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
 	#[NoAdminRequired]
 	public function respondSamenwerking(string $samenwerkId): JSONResponse {
@@ -369,7 +369,7 @@ class DsoController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
 	#[NoAdminRequired]
 	public function doorsturen(string $caseId): JSONResponse {
@@ -418,7 +418,7 @@ class DsoController extends Controller {
 	 *
 	 * @return JSONResponse The mapped error response.
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
 	private function failure(\Exception $exception, string $action, string $message): JSONResponse {
 		if ($exception->getMessage() === 'Not authorized') {
@@ -567,7 +567,7 @@ class DsoController extends Controller {
 	 *
 	 * @return string|null The value, or null when absent.
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
 	private function optionalString(array $body, string $key): ?string {
 		if (isset($body[$key]) === false) {

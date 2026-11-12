@@ -111,7 +111,7 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
 				{ id: 'reguliere', label: t('dossiq', 'Regular assignment') },
@@ -120,12 +120,12 @@ export default {
 			]
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		selectedRole() {
 			return this.roleOptions.find((o) => o.id === this.form.roleId) || null
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
 			return (
 				this.typeOptions.find((o) => o.id === this.form.allocationType)
@@ -136,7 +136,7 @@ export default {
 
 	methods: {
 		t,
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		validate() {
 			const errs = {}
 			if (!this.form.persoonId)
@@ -146,7 +146,7 @@ export default {
 			return Object.keys(errs).length === 0
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		save() {
 			if (!this.validate()) return
 			this.$emit('save', { ...this.form })

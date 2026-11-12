@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
 /**
  * Executes configured KCC quick-actions against the case register.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
  */
 class QuickActionService {
 	/**
@@ -87,7 +87,7 @@ class QuickActionService {
 	 *
 	 * @throws RuntimeException When the case cannot be loaded.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
 	 */
 	public function executeStatusTerugkoppelen(string $caseId): array {
 		$case = $this->loadCase(caseId: $caseId);
@@ -114,7 +114,7 @@ class QuickActionService {
 	 *
 	 * @throws RuntimeException When input is invalid or the write fails.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
 	 */
 	public function executeNieuweZaak(string $caseType, string $burgerId, array $details): array {
 		$caseType = trim($caseType);
@@ -156,7 +156,7 @@ class QuickActionService {
 	 *
 	 * @throws RuntimeException When the klacht text is empty or the write fails.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
 	 */
 	public function executeKlachtRegistreren(string $caseId, string $summary, string $burgerId): array {
 		$summary = trim($summary);
@@ -216,7 +216,7 @@ class QuickActionService {
 	 *
 	 * @return array{burgerId: string, window: string, scheduledAt: string}
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
 	 */
 	public function executeBelTerug(string $burgerId, string $window): array {
 		$this->logger->info(

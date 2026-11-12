@@ -40,7 +40,7 @@ use OCA\Dossiq\Service\Routing\Strategy\SingleRoleStrategy;
  * MAY be appended via register() (used by tests). The registry never silently
  * substitutes a default — unknown strategies always throw.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T03
  */
 class StrategyRegistry {
 

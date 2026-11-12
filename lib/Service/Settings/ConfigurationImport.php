@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Psr\Log\LoggerInterface;
  * Importing the shipped register into OpenRegister, and reconciling what the
  * import does not carry.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ConfigurationImport {
 	/**
@@ -134,7 +134,7 @@ class ConfigurationImport {
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $force is a simple re-import toggle
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function loadConfiguration(bool $force = false): array {
 		if ($this->openRegister->isAvailable() === false) {
@@ -269,7 +269,7 @@ class ConfigurationImport {
 	 *
 	 * @return array{data?: array, error?: array}
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function readEffectiveConfiguration(): array {
 		$configPath = __DIR__ . '/../../Settings/dossiq_register.json';

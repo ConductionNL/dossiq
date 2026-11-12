@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/deelzaak-support/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -129,7 +129,7 @@ class DeelzaakController extends Controller {
 	 *
 	 * @return JSONResponse Map keyed by parent UUID.
 	 *
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T03
 	 */
 	public function counts(): JSONResponse {
 		if ($this->userSession->getUser() === null) {

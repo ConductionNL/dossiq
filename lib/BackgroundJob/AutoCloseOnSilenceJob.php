@@ -53,7 +53,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+ * @spec openspec/specs/case-status-machinery/spec.md
  */
 class AutoCloseOnSilenceJob extends TimedJob {
 
@@ -100,7 +100,7 @@ class AutoCloseOnSilenceJob extends TimedJob {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	protected function run($argument): void {
 		// Without a usable account this runs nothing: that is already logged as an

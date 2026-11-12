@@ -36,7 +36,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+ * @spec openspec/specs/financial-integration/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ namespace OCA\Dossiq\Service\Money;
 /**
  * The case-level payment state, derived from shillinq's own report.
  *
- * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+ * @spec openspec/specs/financial-integration/spec.md
  */
 class CasePaymentState {
 	/**
@@ -147,7 +147,7 @@ class CasePaymentState {
 	 *                request shillinq cannot price, or an item this app cannot
 	 *                parse. Everything else is an answer and reads as one.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
 	 */
 	public function fromRequests(array $requests): string {
 		if ($requests === []) {
@@ -257,7 +257,7 @@ class CasePaymentState {
 	 *
 	 * @return bool True when the state is known.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
 	 */
 	public function isKnown(string $state): bool {
 		return ($state !== self::STALE && in_array($state, self::ALL, true) === true);
@@ -279,7 +279,7 @@ class CasePaymentState {
 	 *
 	 * @return string|null The ZGW value, or null when this state must not be mapped.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
 	 */
 	public function zgwIndication(string $state): ?string {
 		return match ($state) {
@@ -303,7 +303,7 @@ class CasePaymentState {
 	 *
 	 * @return array{paymentState: string, paymentStateCheckedAt: string} The projection.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
 	 */
 	public function projection(string $state, string $checkedAt): array {
 		$known = self::STALE;

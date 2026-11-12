@@ -40,7 +40,7 @@ use OCP\IGroupManager;
 /**
  * Refuses a workflow whose task declarations name something that is not there.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+ * @spec openspec/specs/process-step-configuration/spec.md
  */
 class TaskDeclarationValidator {
 
@@ -92,7 +92,7 @@ class TaskDeclarationValidator {
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals; empty when it may be published.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function refusalsFor(array $definition): array {
 		return $this->refusals(steps: $this->steps->stepsOf(definition: $definition));
@@ -105,7 +105,7 @@ class TaskDeclarationValidator {
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals; empty when it may be published.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function refusals(array $steps): array {
 		$refusals = [];

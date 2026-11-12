@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T09
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -47,7 +47,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Repair step that back-fills informatieobject metadata for existing files.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T09
  */
 class BackfillInformatieobjectMetadata implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -77,7 +77,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T09
 	 */
 	public function getName(): string {
 		return 'Back-fill ZGW informatieobject metadata for existing Dossiq dossier files';
@@ -90,7 +90,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T09
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -118,7 +118,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T09
 	 */
 	private function runInner(object $objectService, IOutput $output): void {
 

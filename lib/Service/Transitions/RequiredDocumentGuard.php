@@ -32,7 +32,7 @@ use OCP\IL10N;
 /**
  * Guard: verifies the case has at least one document of the required type.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T05
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T05
  */
 class RequiredDocumentGuard implements GuardEvaluatorInterface {
 	/**

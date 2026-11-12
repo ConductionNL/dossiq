@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/adopt-apphost/tasks.md#task-2.3
+ * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.3
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use OCP\IRequest;
 /**
  * Admin-only declarative Prometheus metrics endpoint backed by the AppHost engine.
  *
- * @spec openspec/changes/adopt-apphost/tasks.md#task-2.3
+ * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.3
  */
 class MetricsController extends GenericMetricsController {
 
@@ -84,7 +84,7 @@ class MetricsController extends GenericMetricsController {
 	 *
 	 * @return TextPlainResponse Prometheus text exposition 0.0.4.
 	 *
-	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.3
+	 * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.3
 	 */
 	#[NoCSRFRequired]
 	public function index(): TextPlainResponse {

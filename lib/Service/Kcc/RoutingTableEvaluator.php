@@ -47,7 +47,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -62,7 +62,7 @@ use RuntimeException;
 /**
  * Compiles KCC routing rules into a shared-evaluator decision table and runs it.
  *
- * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 class RoutingTableEvaluator {
 
@@ -113,7 +113,7 @@ class RoutingTableEvaluator {
 	 *                                     must surface loudly rather than
 	 *                                     read as "route to nobody".
 	 *
-	 * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function route(array $rules, array $contactMoment, ?DateTimeImmutable $now = null): ?array {
 		$now = ($now ?? new DateTimeImmutable());

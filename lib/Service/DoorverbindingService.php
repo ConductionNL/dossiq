@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Orchestrates warm doorverbindingen with immutable context-overdracht.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
  */
 class DoorverbindingService {
 
@@ -75,7 +75,7 @@ class DoorverbindingService {
 	 *
 	 * @throws RuntimeException When the schema is unconfigured or the write fails.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
 	 */
 	public function initiateWarmTransfer(array $data): array {
 		$interactionId = trim((string)($data['interactionId'] ?? ''));
@@ -121,7 +121,7 @@ class DoorverbindingService {
 	 *
 	 * @throws RuntimeException When already answered, caller is not the assigned recipient, or the update fails.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
 	 */
 	public function acceptTransfer(string $doorverbindingId, string $callerUid = ''): array {
 		$current = $this->load(doorverbindingId: $doorverbindingId);
@@ -154,7 +154,7 @@ class DoorverbindingService {
 	 *
 	 * @throws RuntimeException When already answered, caller is not the assigned recipient, reason missing, or update fails.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
 	 */
 	public function rejectTransfer(string $doorverbindingId, string $reason, string $callerUid = ''): array {
 		$reason = trim($reason);
@@ -192,7 +192,7 @@ class DoorverbindingService {
 	 *
 	 * @throws RuntimeException When the update fails.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
 	 */
 	public function appendContextNotes(string $doorverbindingId, string $notes, string $specialistUid): array {
 		$current = $this->load(doorverbindingId: $doorverbindingId);

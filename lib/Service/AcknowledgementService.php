@@ -36,7 +36,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -65,7 +65,7 @@ use Throwable;
  * to lower the count would spread one statutory duty over several files, which
  * is the thing this change exists to stop.
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 class AcknowledgementService {
 
@@ -156,9 +156,9 @@ class AcknowledgementService {
 	 *
 	 * @throws RefusedException When the case carries no address, or no transport took the acknowledgement.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
-	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
 	public function acknowledge(string $caseId, int $attempt = 1): array {
 		$case = $this->readCase(caseId: $caseId) ?? throw new RefusedException(
@@ -299,7 +299,7 @@ class AcknowledgementService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
 	private function sendEmailCopy(array $ack): void {
 		try {
@@ -419,7 +419,7 @@ class AcknowledgementService {
 	 *
 	 * @return boolean TRUE when another attempt is due.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function recordFailedAttempt(string $caseId, string $sentence, int $attempt): bool {
 		$more = ($attempt < self::MAX_ATTEMPTS);
@@ -471,7 +471,7 @@ class AcknowledgementService {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function recordMetAnotherWay(string $caseId, string $how, string $recordedBy): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -529,7 +529,7 @@ class AcknowledgementService {
 	 *
 	 * @return array<string, mixed> The duty, empty when the case cannot be read.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function dutyFor(string $caseId): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -580,7 +580,7 @@ class AcknowledgementService {
 	 *
 	 * @return array<string, mixed> Only the fields the citizen may see.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function quotableFieldsOf(array $case): array {
 		$allowed = $this->delivery->portal->citizenCaseFields();

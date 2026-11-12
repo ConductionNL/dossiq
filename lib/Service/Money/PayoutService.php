@@ -26,8 +26,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
+ * @spec openspec/specs/payout/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use RuntimeException;
 /**
  * Payout preparation, finance handoff and callback processing.
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 class PayoutService {
 	use SearchesObjects;
@@ -119,7 +119,7 @@ class PayoutService {
 	 *
 	 * @throws RuntimeException When the calculation is missing, the IBAN is invalid, or finance refuses.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function preparePayout(
 		string $calculationId,
@@ -252,7 +252,7 @@ class PayoutService {
 	 * @throws RuntimeException When the calculation is missing, the IBAN is invalid, or finance refuses.
 	 * @throws \InvalidArgumentException When the receipt date is malformed.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function preparePayoutFrom(string $calculationId, array $input): array {
 		$receipt = null;
@@ -282,7 +282,7 @@ class PayoutService {
 	 *
 	 * @throws RuntimeException When finance refuses, because it already approved, paid or rejected the payout.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function withdrawFromFinance(array $row, string $reason): array {
 		if ((string)($row['payableId'] ?? '') === '' || $this->payouts === null) {
@@ -306,7 +306,7 @@ class PayoutService {
 	 *
 	 * @throws RuntimeException When finance refuses the payout.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function raiseAgain(array $row): array {
 		if ((string)($row['payableId'] ?? '') !== '' || (int)($row['amount'] ?? 0) <= 0) {
@@ -490,7 +490,7 @@ class PayoutService {
 	 *
 	 * @throws RuntimeException When the referentie is unknown.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
 	 */
 	public function handleCallback(
 		string $reference,
@@ -586,7 +586,7 @@ class PayoutService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
 	 */
 	public function isValidIban(string $iban): bool {
 		$iban = strtoupper(preg_replace('/\s+/', '', $iban));

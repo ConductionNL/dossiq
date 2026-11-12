@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T03
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use RuntimeException;
  * and computes statutory deadlines in working days (excluding weekends and
  * Dutch national holidays).
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T03
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) ADR-083 replaced a lazy
  * container lookup with a typed ObjectServiceInterface dependency, which is
@@ -346,7 +346,7 @@ class DsoCaseService {
 	 *
 	 * @return string ISO 8601 date string of the computed deadline
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T03
 	 */
 	public function computeDeadline(string $submissionDate, string $procedureType): string {
 		$workingDaysTarget = 40;
@@ -381,7 +381,7 @@ class DsoCaseService {
 	 *
 	 * @throws \Exception When the user is not authorised to mutate the zaak
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T03
 	 */
 	public function authorizeZaakMutation(array $case, IUser $user): void {
 		$uid = $user->getUID();

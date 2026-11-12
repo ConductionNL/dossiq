@@ -44,7 +44,7 @@ use RuntimeException;
  * than what a caller assumes — the assumption that a save returned an array is
  * exactly what once left every created task orphaned.
  *
- * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 class AskPersonTaskStore {
 
@@ -57,7 +57,7 @@ class AskPersonTaskStore {
      *
      * @return void
      *
-     * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function __construct(
         private readonly EngineTaskGateway $engineTasks,
@@ -151,7 +151,7 @@ class AskPersonTaskStore {
      * @throws RuntimeException When storage is unavailable, unconfigured, or
      *                          answers with something that is not an object.
      *
-     * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function find(string $taskId): ?array {
         try {

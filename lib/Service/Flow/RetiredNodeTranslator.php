@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * One translation per retired step type.
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 class RetiredNodeTranslator {
 
@@ -139,8 +139,8 @@ class RetiredNodeTranslator {
 	 *
 	 * @throws UnmappableStep When the configuration has no faithful equivalent.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
-	 * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/webhook-steps-through-integriq/spec.md
 	 */
 	public function translate(string $translation, array $config): array {
 		return match ($translation) {
@@ -172,7 +172,7 @@ class RetiredNodeTranslator {
 	 *
 	 * @throws UnmappableStep When nothing replaces the step, or its configuration cannot be carried.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function stepsFor(array $row, array $config): array {
 		if (isset($row['translation']) === true) {

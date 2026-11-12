@@ -35,7 +35,7 @@ use OCP\IAppConfig;
 /**
  * Round-robin strategy.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T03
  */
 class RoundRobinStrategy implements RoutingStrategyInterface {
 	/**

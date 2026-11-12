@@ -42,7 +42,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-39
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-39
  */
 class SubsidieRegisterController extends Controller {
 	/**
@@ -71,7 +71,7 @@ class SubsidieRegisterController extends Controller {
 	 * @PublicPage
 	 * @NoCSRFRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-39
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-39
 	 */
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function export(): JSONResponse {

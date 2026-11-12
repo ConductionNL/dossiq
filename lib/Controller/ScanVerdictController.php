@@ -33,7 +33,7 @@ use OCP\IUserSession;
  * file gets the same 404 as a file that is not there, and learns nothing from
  * the difference.
  *
- * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 class ScanVerdictController extends Controller {
 
@@ -62,7 +62,7 @@ class ScanVerdictController extends Controller {
 	 * @return JSONResponse The state, the moment of the check, and whether a
 	 *                      scanner is installed at all.
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	#[NoAdminRequired]
 	public function show(int $fileId): JSONResponse {
@@ -86,7 +86,7 @@ class ScanVerdictController extends Controller {
 	 *
 	 * @return bool True when the file is in the caller's own folder.
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	private function mayAccessFile(string $uid, int $fileId): bool {
 		if ($fileId <= 0) {

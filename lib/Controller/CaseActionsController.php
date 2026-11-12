@@ -148,7 +148,7 @@ class CaseActionsController extends Controller {
 	 *
 	 * @return JSONResponse The planned follow-up.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	#[NoAdminRequired]
 	public function plan(string $caseId): JSONResponse {
@@ -186,7 +186,7 @@ class CaseActionsController extends Controller {
 	 *
 	 * @return JSONResponse The stopped series.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	#[NoAdminRequired]
 	public function stopSeries(string $caseId, string $flowId): JSONResponse {
@@ -208,7 +208,7 @@ class CaseActionsController extends Controller {
 	 *
 	 * @return JSONResponse `{results, total}`.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	#[NoAdminRequired]
 	public function planned(string $caseId): JSONResponse {

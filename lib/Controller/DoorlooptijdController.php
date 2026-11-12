@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T02
+ * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T02
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use OCP\IUserSession;
 /**
  * REST controller for the throughput-time dashboard.
  *
- * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T02
+ * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T02
  */
 class DoorlooptijdController extends Controller {
 	/**
@@ -75,7 +75,7 @@ class DoorlooptijdController extends Controller {
 	 *
 	 * @return JSONResponse|DataDownloadResponse Metrics body, the CSV, or 400 on invalid parameters.
 	 *
-	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T02
 	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
 	 */
 	public function metrics(): JSONResponse|DataDownloadResponse {
@@ -228,7 +228,7 @@ class DoorlooptijdController extends Controller {
 	 *
 	 * @return JSONResponse|null The refusal, or null.
 	 *
-	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T02
 	 */
 	private function badRequest(mixed $caseType, mixed $period, mixed $atRiskRaw): ?JSONResponse {
 		if ($caseType !== null && is_string($caseType) === false) {

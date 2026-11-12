@@ -32,7 +32,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+ * @spec openspec/specs/semantic-case-intake/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use OCA\Dossiq\Exception\RefusedException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+ * @spec openspec/specs/semantic-case-intake/spec.md
  */
 class CaseClassification {
 
@@ -99,7 +99,7 @@ class CaseClassification {
 	 *
 	 * @return array{scheme: string, classificationIsAccessRule: bool, facets: array<int, string>}
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function declarationFor(array $caseType): array {
 		$declared = ($caseType[self::PROPERTY] ?? null);
@@ -132,7 +132,7 @@ class CaseClassification {
 	 *
 	 * @return array<int, string> The declared facets.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function facetsFor(array $caseType): array {
 		return $this->declarationFor(caseType: $caseType)['facets'];
@@ -150,7 +150,7 @@ class CaseClassification {
 	 *
 	 * @return array<string, string> Facet name to value, declared facets only.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function facetValues(array $case, array $caseType): array {
 		$values = [];
@@ -168,7 +168,7 @@ class CaseClassification {
 	 *
 	 * @return boolean True when the classification gates creation.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function classificationGatesCreation(array $caseType): bool {
 		return $this->declarationFor(caseType: $caseType)['classificationIsAccessRule'];
@@ -190,7 +190,7 @@ class CaseClassification {
 	 *
 	 * @throws RefusedException When the scheme, or the classification, refuses.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function assertCreatable(array $case, array $caseType): void {
 		$declaration = $this->declarationFor(caseType: $caseType);

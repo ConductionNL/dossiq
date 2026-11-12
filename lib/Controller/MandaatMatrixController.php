@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandaat-matrix-09-tests-and-docs/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-09-tests-and-docs/tasks.md
  */
 
 declare(strict_types=1);
@@ -123,7 +123,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
 	 */
 	public function probe(): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -261,7 +261,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function importPreview(): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -301,7 +301,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function importApprove(string $importId): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -337,7 +337,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function escalateCreate(): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -374,7 +374,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function escalateApprove(string $id): JSONResponse {
 		$userId = $this->currentUserId();
@@ -395,7 +395,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function escalateReject(string $id): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -426,7 +426,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
 	 */
 	public function auditTrail(string $caseId): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -446,7 +446,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-08-user-ui/tasks.md
 	 */
 	public function applicable(string $caseId): JSONResponse {
 		$denied = $this->ensureAuthenticated();

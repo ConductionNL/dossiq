@@ -73,7 +73,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwDrcRulesService extends ZgwRulesBase {
 	/**
@@ -129,7 +129,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	 *
 	 * @see DrcObjectLinkRules::rulesObjectinformatieobjectenCreate()
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesObjectinformatieobjectenCreate(array $body): array {
 		// Drc-002: the informatieobject URL is checked first, before the object is looked at.
@@ -155,7 +155,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	 *
 	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesEnkelvoudiginformatieobjectenCreate(array $body): array {
 		// Drc-001: Validate informatieobjecttype is published (not concept).
@@ -287,7 +287,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	 *
 	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesEnkelvoudiginformatieobjectenUpdate(
 		array $body,
@@ -314,7 +314,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	 *
 	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesEnkelvoudiginformatieobjectenPatch(
 		array $body,
@@ -341,7 +341,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	 *
 	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesEnkelvoudiginformatieobjectenDestroy(
 		array $body,

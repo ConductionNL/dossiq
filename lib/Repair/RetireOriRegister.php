@@ -45,7 +45,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ori-removal/specs/ori-removal/spec.md
+ * @spec openspec/specs/ori-removal/spec.md
  */
 
 declare(strict_types=1);
@@ -61,7 +61,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Removes the ORI register once its objects are gone, and not before.
  *
- * @spec openspec/changes/ori-removal/specs/ori-removal/spec.md
+ * @spec openspec/specs/ori-removal/spec.md
  */
 class RetireOriRegister implements IRepairStep {
 
@@ -78,7 +78,7 @@ class RetireOriRegister implements IRepairStep {
 	 * @param IDBConnection $db Database connection.
 	 * @param LoggerInterface $logger Logger.
 	 *
-	 * @spec openspec/changes/ori-removal/specs/ori-removal/spec.md
+	 * @spec openspec/specs/ori-removal/spec.md
 	 */
 	public function __construct(
 		private readonly IDBConnection $db,
@@ -91,7 +91,7 @@ class RetireOriRegister implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/ori-removal/specs/ori-removal/spec.md
+	 * @spec openspec/specs/ori-removal/spec.md
 	 */
 	public function getName(): string {
 		return 'Retire the ORI register once its objects have moved to decidiq';
@@ -104,7 +104,7 @@ class RetireOriRegister implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/ori-removal/specs/ori-removal/spec.md
+	 * @spec openspec/specs/ori-removal/spec.md
 	 */
 	public function run(IOutput $output): void {
 		$registerId = $this->findRegisterId();

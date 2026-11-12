@@ -94,7 +94,7 @@ class CaseDocumentGenerationService {
 	 *                      named failure having created nothing.
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function generate(string $caseId, string $templateId): ActionResult {
 		$template = $this->templating->templates->loadTemplate($templateId);

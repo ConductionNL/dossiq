@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Dossiq\Service\ProcessMining;
 /**
  * Shapes the per case type dwell statistics into the page's matrix and list.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 class PhaseSummary {
 
@@ -57,7 +57,7 @@ class PhaseSummary {
 	 *
 	 * @return array{phaseDays: array{mean: array<string, mixed>, median: array<string, mixed>}, stuck: array<int, array<string, mixed>>}
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function forPage(array $caseTypes): array {
 		return [
@@ -82,7 +82,7 @@ class PhaseSummary {
 	 *
 	 * @return array{columns: array<int, string>, rows: array<int, array{label: string, values: array<int, int|string>}>}
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function matrix(array $caseTypes, string $measure='meanHours'): array {
 		$phases = array_map(fn (array $report): array => $this->phaseDays(report: $report, measure: $measure), $caseTypes);
@@ -280,7 +280,7 @@ class PhaseSummary {
 	 *
 	 * @return array<int, array{id: string, caseType: string, phase: string, days: int, visits: int, level: string}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function stuck(array $caseTypes, int $limit=5): array {
 		$candidates = [];

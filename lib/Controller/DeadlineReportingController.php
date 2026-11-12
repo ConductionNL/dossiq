@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
  */
 
 declare(strict_types=1);
@@ -97,7 +97,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @return JSONResponse The report.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
 	 */
 	public function firstResponseReport(string $caseType = '', string $organisation = ''): JSONResponse {
 		$denied = $this->ensureMayReadReports();
@@ -158,7 +158,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function dashboard(): JSONResponse {
 		$denied = $this->ensureMayReadReports();
@@ -206,7 +206,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function quarterlyReport(string $period = '', ?string $department = null): JSONResponse {
 		$denied = $this->ensureMayReadReports();
@@ -239,7 +239,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function annualStatement(int $year = 0): JSONResponse {
 		$denied = $this->ensureMayReadReports();
@@ -306,7 +306,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for dashboard(); behaviour covered by the dashboard() tests.
 	 */
@@ -326,7 +326,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for quarterlyReport(); behaviour covered by the quarterlyReport() tests.
 	 */
@@ -345,7 +345,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for annualStatement(); behaviour covered by the annualStatement() tests.
 	 */
@@ -365,7 +365,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
 	 *
 	 * @contract exclude Deprecated path alias for firstResponseReport(); behaviour covered by the firstResponseReport() tests.
 	 */

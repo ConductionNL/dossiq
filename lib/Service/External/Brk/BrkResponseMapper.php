@@ -29,7 +29,7 @@
  * @link https://conduction.nl
  * @link https://kadaster.github.io/BRK-bevragen/
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -45,7 +45,7 @@ use OCA\Dossiq\Service\External\RegisterValues;
  * Normalizes Kadaster BRK Bevragen v2 kadastraalOnroerendeZaak fragments
  * into the Dossiq-internal DTO shape.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 final class BrkResponseMapper {
 	/**
@@ -71,7 +71,7 @@ final class BrkResponseMapper {
 	 *     geo: array{lat: float, lng: float}|null,
 	 * }
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function map(array $raw): array {
 		$values = new RegisterValues();
@@ -109,7 +109,7 @@ final class BrkResponseMapper {
 	 *
 	 * @return array<int,array<string,mixed>> Normalized DTOs, same order.
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function mapMany(array $rawList): array {
 		return (new RegisterValues())->mapFragments(rawList: $rawList, map: fn (array $item): array => $this->map(raw: $item));

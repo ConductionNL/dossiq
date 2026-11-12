@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-9
+ * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#Task-9
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Throwable;
 /**
  * Transcription orchestrator for voice-memo FieldEvidence records.
  *
- * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-9
+ * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#Task-9
  */
 class TranscriptionService {
 	/**
@@ -92,7 +92,7 @@ class TranscriptionService {
 	 *
 	 * @throws \InvalidArgumentException When the record is not a voice memo.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-9
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#Task-9
 	 */
 	public function queue(array $evidence): array {
 		if (($evidence['type'] ?? null) !== 'voice_memo') {
@@ -132,7 +132,7 @@ class TranscriptionService {
 	 *
 	 * @return array<string, mixed> The updated record.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-9
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#Task-9
 	 */
 	public function process(array $evidence): array {
 		if (($evidence['transcriptionStatus'] ?? '') !== self::STATUS_QUEUED) {
@@ -189,7 +189,7 @@ class TranscriptionService {
 	 *
 	 * @return array<string, mixed> The updated record.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-9
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#Task-9
 	 */
 	public function manualTranscribe(array $evidence, string $text): array {
 		$evidence['transcription'] = $text;

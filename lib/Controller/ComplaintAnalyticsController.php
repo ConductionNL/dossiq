@@ -25,7 +25,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 class ComplaintAnalyticsController extends Controller {
 	/**
@@ -90,7 +90,7 @@ class ComplaintAnalyticsController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 * @spec openspec/specs/complaint-management/spec.md#scenario-employee-complaint-threshold-alert
 	 */
 	public function analytics(): JSONResponse {
@@ -120,7 +120,7 @@ class ComplaintAnalyticsController extends Controller {
 	 *
 	 * @return array<string, mixed> Frequency per dimension, the monthly trend and the average resolution.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	private function frequencyFigures(string $dateFrom, string $dateTo): array {
 		$figures = [];
@@ -144,7 +144,7 @@ class ComplaintAnalyticsController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function kpi(): JSONResponse {
 		if ($this->accessGuard->currentUid() === '') {

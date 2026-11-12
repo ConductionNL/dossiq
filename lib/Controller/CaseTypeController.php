@@ -193,7 +193,7 @@ class CaseTypeController extends Controller {
 	 *
 	 * @return JSONResponse `{findings: string[], warnings: string[]}`.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function validatePublish(string $id): JSONResponse {

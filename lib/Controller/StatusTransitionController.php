@@ -54,7 +54,7 @@ use RuntimeException;
 /**
  * Controller for status-transition engine endpoints.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T11
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T11
  */
 class StatusTransitionController extends Controller {
 	use TranslatesRefusals;
@@ -280,7 +280,7 @@ class StatusTransitionController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function freeform(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -311,7 +311,7 @@ class StatusTransitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	private function executeFreeForm(string $caseId, array $body): JSONResponse {
 		$toStatusId = (string)($body['toStatusId'] ?? '');
@@ -343,7 +343,7 @@ class StatusTransitionController extends Controller {
 	 *
 	 * @return JSONResponse 403 for a caller who is not an admin, 404 for an unknown case or case type, else 400.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	private function freeformRejected(RuntimeException $e): JSONResponse {
 		$code = $e->getMessage();

@@ -38,7 +38,7 @@ trait WritesReassignments {
 	 *
 	 * @throws RuntimeException When OpenRegister is unavailable.
 	 *
-	 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md
+	 * @spec openspec/specs/reassignment-bulk-action/spec.md
 	 */
 	private function context(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -62,7 +62,7 @@ trait WritesReassignments {
 	 *
 	 * @return boolean Whether the write succeeded.
 	 *
-	 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md
+	 * @spec openspec/specs/reassignment-bulk-action/spec.md
 	 */
 	private function reassignItem(
 		object $objectService,
@@ -118,7 +118,7 @@ trait WritesReassignments {
 	 *
 	 * @return array<int, array<string, mixed>> The entries.
 	 *
-	 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md
+	 * @spec openspec/specs/reassignment-bulk-action/spec.md
 	 */
 	private function extractActivityLog(array $item): array {
 		$raw = ($item['activity'] ?? null);
@@ -144,7 +144,7 @@ trait WritesReassignments {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md
+	 * @spec openspec/specs/reassignment-bulk-action/spec.md
 	 */
 	private function generateBatchId(): string {
 		try {

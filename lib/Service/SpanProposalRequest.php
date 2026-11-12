@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-2
+ * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Service;
 /**
  * The state of one proposal request; it never leaves the service that built it.
  *
- * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-2
+ * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
  */
 final class SpanProposalRequest {
 

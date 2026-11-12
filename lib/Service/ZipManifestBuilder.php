@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T04
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -39,7 +39,7 @@ use ZipArchive;
 /**
  * Builds a manifest-bearing, type-foldered ZIP export of a dossier.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T04
  */
 class ZipManifestBuilder {
 	/**
@@ -86,7 +86,7 @@ class ZipManifestBuilder {
 	 *
 	 * @return string The manifest.csv content.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T04
 	 */
 	public function buildManifest(array $documents): string {
 		$handle = fopen('php://temp', 'r+');
@@ -119,7 +119,7 @@ class ZipManifestBuilder {
 	 *
 	 * @return array<int, array<string, mixed>> The clearance-filtered list.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T04
 	 */
 	public function filterByClearance(?IUser $user, array $documents): array {
 		if ($user === null) {
@@ -146,7 +146,7 @@ class ZipManifestBuilder {
 	 *
 	 * @throws \RuntimeException When the ZIP archive cannot be created.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T04
 	 */
 	public function buildZip(string $targetPath, ?IUser $user, array $documents, string $layout = self::LAYOUT_PER_TYPE): array {
 		$candidateCount = count($documents);

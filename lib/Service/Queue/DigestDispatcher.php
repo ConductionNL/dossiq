@@ -24,7 +24,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use RuntimeException;
 /**
  * Writes the digest record the register turns into a message.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class DigestDispatcher {
 	use SearchesObjects;
@@ -57,7 +57,7 @@ class DigestDispatcher {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settings,
@@ -73,7 +73,7 @@ class DigestDispatcher {
 	 *
 	 * @throws RuntimeException When the digest cannot be written.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function send(array $digest): string {
 		$objects = $this->settings->getObjectService();
@@ -118,7 +118,7 @@ class DigestDispatcher {
 	 *
 	 * @return string The summary line.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function summaryOf(array $digest): string {
 		$titles = [];

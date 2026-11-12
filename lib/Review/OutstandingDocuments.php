@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-5
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCA\Dossiq\Woo\WooCaseDocuments;
 /**
  * Reads the documents of a case that still need a verdict.
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-5
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
  */
 class OutstandingDocuments {
 
@@ -66,7 +66,7 @@ class OutstandingDocuments {
 	 *
 	 * @return array<string, mixed> Array with 'count' and 'documents' list of unassessed doc IDs
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 */
 	public function forCase(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();

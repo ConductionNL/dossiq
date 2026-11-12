@@ -36,7 +36,7 @@ use OCP\IUserSession;
 /**
  * Controller exposing Berichtenbox send/list/poll endpoints.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class BerichtenboxController extends Controller {
 
@@ -81,7 +81,7 @@ class BerichtenboxController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function send(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -107,7 +107,7 @@ class BerichtenboxController extends Controller {
 	 *
 	 * @return JSONResponse The 200 with the message record, or the 400 the service's refusal answers with.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function dispatch(mixed $caseId, string $category): JSONResponse {
 		$result = $this->berichtenboxService->sendMessage(
@@ -135,7 +135,7 @@ class BerichtenboxController extends Controller {
 	 *
 	 * @return JSONResponse|null The 400 or 403, or null when the send may go ahead.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function sendRefusal(mixed $caseId, \OCP\IUser $user): ?JSONResponse {
 		if (empty($caseId) === true) {
@@ -165,7 +165,7 @@ class BerichtenboxController extends Controller {
 	 *
 	 * @return JSONResponse|null The 400, or null for a known category.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function categoryRefusal(string $category): ?JSONResponse {
 		if (in_array($category, self::CATEGORIES, true) === false) {
@@ -188,7 +188,7 @@ class BerichtenboxController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function notSent(array $result): JSONResponse {
 		$answer = ['success' => false, 'error' => $result['error']];
@@ -211,7 +211,7 @@ class BerichtenboxController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function messages(): JSONResponse {
 		$user = $this->userSession->getUser();

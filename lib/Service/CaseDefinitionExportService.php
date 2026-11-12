@@ -99,7 +99,7 @@ class CaseDefinitionExportService {
 	 *
 	 * @throws \RuntimeException If export fails.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function exportCaseDefinition(
 		string $caseTypeId,

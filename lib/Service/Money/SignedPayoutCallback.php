@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCP\IRequest;
 /**
  * Signature check, body parsing and status mapping for payout callbacks.
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 class SignedPayoutCallback {
 
@@ -102,7 +102,7 @@ class SignedPayoutCallback {
 	 *
 	 * @return bool True when one of the headers matches.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function isSigned(string $rawBody, IRequest $request): bool {
 		$secret = $this->secret();
@@ -126,7 +126,7 @@ class SignedPayoutCallback {
 	 *
 	 * @return bool True when set.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function hasSecret(): bool {
 		return $this->secret() !== '';
@@ -142,7 +142,7 @@ class SignedPayoutCallback {
 	 *
 	 * @throws InvalidArgumentException When the body is not JSON, misses the reference or status, or names an unknown status.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function read(string $rawBody): array {
 		$body = json_decode($rawBody, true);

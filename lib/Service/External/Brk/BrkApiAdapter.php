@@ -33,7 +33,7 @@
  * @link https://conduction.nl
  * @link https://kadaster.github.io/BRK-bevragen/
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -52,7 +52,7 @@ use Throwable;
 /**
  * Live Kadaster Haal Centraal BRK Bevragen API v2 adapter (test / live tiers).
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 class BrkApiAdapter implements BrkAdapterInterface {
 	/**
@@ -121,7 +121,7 @@ class BrkApiAdapter implements BrkAdapterInterface {
 	 *
 	 * @return BrkLookupResult
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByKadastraleAanduiding(
 		string $municipalityCode,
@@ -278,7 +278,7 @@ class BrkApiAdapter implements BrkAdapterInterface {
 	 *
 	 * @return BrkLookupResult
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupObject(string $id, array $context = []): BrkLookupResult {
 		if ($id === '') {
@@ -332,7 +332,7 @@ class BrkApiAdapter implements BrkAdapterInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function isDormant(): bool {
 		return false;

@@ -42,7 +42,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 
 declare(strict_types=1);
@@ -58,7 +58,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 class CrossDomainExistence {
 
@@ -132,7 +132,7 @@ class CrossDomainExistence {
 	 *
 	 * @throws RefusedException When no ground is chosen, or the store cannot be read.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
 	 */
 	public function lookUp(string $bsn, string $ownDomain, string $ground, string $requester): array {
 		$this->assertGround(ground: $ground);
@@ -209,7 +209,7 @@ class CrossDomainExistence {
 	 *
 	 * @throws RefusedException When the log cannot be read.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
 	public function lookupsAbout(string $bsn): array {
 		$bsn = trim($bsn);
@@ -249,7 +249,7 @@ class CrossDomainExistence {
 	 *
 	 * @throws RefusedException When the ground is absent or unknown.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
 	public function assertGround(string $ground): void {
 		$ground = trim($ground);
@@ -283,7 +283,7 @@ class CrossDomainExistence {
 	 *
 	 * @throws RefusedException When the log cannot be written.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
 	private function log(string $bsn, string $ground, string $requester, string $returned): void {
 		$this->store->write(

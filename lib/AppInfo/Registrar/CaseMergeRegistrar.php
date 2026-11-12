@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-merge/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-merge/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseMergeRegistrar {
 	/**
@@ -48,7 +48,7 @@ class CaseMergeRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
 		$context->registerEventListener(

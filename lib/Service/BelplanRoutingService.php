@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
 /**
  * Routes inbound calls onto available specialists per belplan.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
 class BelplanRoutingService {
 	use SearchesObjects;
@@ -63,7 +63,7 @@ class BelplanRoutingService {
 	 *
 	 * @return array<string, mixed>|null The belplan record, or null when none matches.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function getActiveBelplan(string $phoneNumber): ?array {
 		$phoneNumber = trim($phoneNumber);
@@ -95,7 +95,7 @@ class BelplanRoutingService {
 	 *
 	 * @throws RuntimeException When no belplan matches the dialed number.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function routeCall(string $phoneNumber, string $menuSelection): array {
 		$belplan = $this->getActiveBelplan(phoneNumber: $phoneNumber);
@@ -153,7 +153,7 @@ class BelplanRoutingService {
 	 *
 	 * @return array<int, array<string, mixed>> The availability records.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function getSpecialistBeschikbaarheid(string $vaardigheid = ''): array {
 		$objectService = $this->settingsService->getObjectService();

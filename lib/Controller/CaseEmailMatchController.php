@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 
 declare(strict_types=1);
@@ -57,7 +57,7 @@ use OCP\IUserSession;
 /**
  * Read and write matching settings.
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 class CaseEmailMatchController extends Controller {
 
@@ -91,7 +91,7 @@ class CaseEmailMatchController extends Controller {
 	 *
 	 * @no-admin-idor-exempt Reads only the caller's own preferences and Mail accounts, keyed by the session user; it takes no object id.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	#[NoAdminRequired]
 	public function getSettings(): JSONResponse {
@@ -108,7 +108,7 @@ class CaseEmailMatchController extends Controller {
 	 *
 	 * @return JSONResponse The settings now stored, or 403 for an account that is not the caller's.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	#[NoAdminRequired]
 	public function saveSettings(): JSONResponse {
@@ -139,7 +139,7 @@ class CaseEmailMatchController extends Controller {
 	 *
 	 * @return JSONResponse The instance settings.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function getInstanceSettings(): JSONResponse {
@@ -159,7 +159,7 @@ class CaseEmailMatchController extends Controller {
 	 *
 	 * @return JSONResponse The instance settings now stored, or 400.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function saveInstanceSettings(): JSONResponse {

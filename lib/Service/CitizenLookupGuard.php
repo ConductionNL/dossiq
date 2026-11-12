@@ -202,7 +202,7 @@ class CitizenLookupGuard {
 	 *
 	 * @return bool True when the caller holds the sensitive group.
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-answers-only-the-fields-the-caller-may-read-req-sec-cl-1
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-a-citizen-lookup-answers-only-the-fields-the-caller-may-read-req-sec-cl-1
 	 */
 	public function maySeeSensitiveFields(IUser $user): bool {
 		$uid = $user->getUID();
@@ -231,7 +231,7 @@ class CitizenLookupGuard {
 	 *
 	 * @return array<string, mixed> The payload, redacted when it has to be.
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-answers-only-the-fields-the-caller-may-read-req-sec-cl-1
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-a-citizen-lookup-answers-only-the-fields-the-caller-may-read-req-sec-cl-1
 	 */
 	public function redactForCaller(IUser $user, array $payload): array {
 		if ($this->maySeeSensitiveFields(user: $user) === true) {
@@ -266,7 +266,7 @@ class CitizenLookupGuard {
 	 *
 	 * @return array<int, string> The fields, [] when none were.
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	public function revealedFieldsFor(IUser $user): array {
 		if ($this->maySeeSensitiveFields(user: $user) === false) {

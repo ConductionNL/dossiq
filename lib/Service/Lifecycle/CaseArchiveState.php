@@ -38,7 +38,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -55,7 +55,7 @@ use Throwable;
 /**
  * Put a case in the archive, take it back out, and say whether it is in one.
  *
- * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseArchiveState {
 
@@ -99,7 +99,7 @@ class CaseArchiveState {
 	 *
 	 * @return bool True when the case is archived.
 	 *
-	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isArchived(array $case): bool {
 		return ($this->markerOn(case: $case) !== []);
@@ -112,7 +112,7 @@ class CaseArchiveState {
 	 *
 	 * @return array<string, mixed> The marker, empty when the case is not archived.
 	 *
-	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function markerOn(array $case): array {
 		$self = ($case['@self'] ?? []);
@@ -138,7 +138,7 @@ class CaseArchiveState {
 	 *
 	 * @throws RefusedException When the platform refuses or cannot be reached.
 	 *
-	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function mark(string $caseId, string $reason): array {
 		return $this->call(verb: 'archive', caseId: $caseId, reason: $reason);
@@ -154,7 +154,7 @@ class CaseArchiveState {
 	 *
 	 * @throws RefusedException When the platform refuses or cannot be reached.
 	 *
-	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function clear(string $caseId, string $reason): array {
 		return $this->call(verb: 'unarchive', caseId: $caseId, reason: $reason);

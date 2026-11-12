@@ -66,7 +66,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -92,7 +92,7 @@ export const CASE_SCHEMA = 'case'
  * @param {object} params Query parameters.
  *
  * @return {Promise<{status: number, data: object|null}>} The status and the body.
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 async function readResult(path, params = {}) {
 	try {
@@ -137,7 +137,7 @@ function isObjectBody(data) {
  * @param {object} params Query parameters.
  *
  * @return {Promise<object|null>} The body, or null when the read failed.
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 async function read(path, params = {}) {
 	const { data } = await readResult(path, params)
@@ -148,7 +148,7 @@ async function read(path, params = {}) {
  * The grantable verbs and the deny enforcement mode.
  *
  * @return {Promise<object|null>} `{permissions, denyEnforcement, rejectedDeclarations}`, or null.
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function fetchPermissionCatalogue() {
 	return read('apps/openregister/api/permissions')
@@ -160,7 +160,7 @@ export function fetchPermissionCatalogue() {
  * @param {string} caseId The case uuid.
  *
  * @return {Promise<Array|null>} The grants, or null when they could not be read.
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export async function fetchObjectGrants(caseId) {
 	const body = await read(
@@ -176,7 +176,7 @@ export async function fetchObjectGrants(caseId) {
  * Each role in the case register and the verbs it holds.
  *
  * @return {Promise<object|null>} `{register, roles, exclusive, shared}`, or null.
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function fetchRoleGrants() {
 	return read('apps/openregister/api/permissions/compare-roles', {
@@ -188,7 +188,7 @@ export function fetchRoleGrants() {
  * The caller's own effective verbs on the case schema, with their provenance.
  *
  * @return {Promise<object|null>} The scope entry for the case schema, or null.
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export async function fetchCallerScope() {
 	const body = await read('apps/openregister/api/scopes', {
@@ -212,7 +212,7 @@ export async function fetchCallerScope() {
  * The deny rules as written, for the case register and schema.
  *
  * @return {Promise<object|null>} `{denyEnforcement, enforcing, ruleCount, rules}`, or null.
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function fetchDenyRules() {
 	return read('apps/openregister/api/permissions/deny-preview', {
@@ -233,7 +233,7 @@ export function fetchDenyRules() {
  * @param {string} caseId The case uuid.
  *
  * @return {Promise<{status: number, set: object|null}>} The status and the set.
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export async function fetchObjectPermissions(caseId) {
 	const { status, data } = await readResult(
@@ -254,7 +254,7 @@ export async function fetchObjectPermissions(caseId) {
  * @param {string} at     An ISO-8601 moment to report the set as of.
  *
  * @return {Promise<{status: number, history: object|null}>} The status and the history.
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export async function fetchAccessHistory(caseId, at) {
 	const { status, data } = await readResult(
@@ -286,7 +286,7 @@ export async function fetchAccessHistory(caseId, at) {
  * @param {string}                   principal The holder this row is about.
  *
  * @return {{until: string, scopedTo: object|null}} The end and the area.
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function constraintsOf(rule, principal) {
 	const none = { until: '', scopedTo: null }
@@ -367,7 +367,7 @@ function namesPrincipal(candidate, principal) {
  *                              instance, else `staged-deny`; null for a grant.
  *
  * @return {object} The row.
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function ruleRow(rule, refusal) {
 	const principal = rule?.principal || ''
@@ -441,7 +441,7 @@ function heldRuleRows(holders) {
  * @param {object|null} set The set, as `fetchObjectPermissions` returned it.
  *
  * @return {Array<object>} The rows.
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function objectPermissionRows(set) {
 	if (set === null || typeof set !== 'object') {
@@ -469,7 +469,7 @@ export function objectPermissionRows(set) {
  *
  * @return {{answered: boolean, at: string, rows: Array<object>, setBy: string, changedAfterwardsBy: object|null}}
  *         The set at that moment.
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function asOfRows(history) {
 	const asOf = history?.asOf || null
@@ -541,7 +541,7 @@ function unansweredAsOf(history) {
  * @param {object|null} answers.denyRules         The deny rules as written.
  *
  * @return {Array<object>} Rows of `{holder, right, source, detail}`.
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function grantRows(answers) {
 	const objectPermissions = answers.objectPermissions ?? null
@@ -714,7 +714,7 @@ function verdictDetail(verdict) {
 /**
  * The schema a case type is an object of.
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 export const CASE_TYPE_SCHEMA = 'caseType'
 
@@ -740,7 +740,7 @@ export const CASE_TYPE_SCHEMA = 'caseType'
  * @param {string} caseId The case uuid.
  *
  * @return {Promise<{decided: object|null, declared: Array<object>|null}>} The answer.
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 export async function fetchFieldRoleRules(caseId) {
 	if (!caseId) {
@@ -790,7 +790,7 @@ async function fetchDeclaredFieldRoleRules(caseTypeId) {
  * @param {unknown} value The reference.
  *
  * @return {string} The id, or the empty string.
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 function referenceId(value) {
 	if (value && typeof value === 'object') {

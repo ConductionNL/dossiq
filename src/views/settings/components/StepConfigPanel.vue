@@ -468,7 +468,7 @@ export default {
 		step: {
 			/**
 			 * @param {object} newStep The new step.
-			 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+			 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 			 */
 			handler(newStep) {
 				this.localStep = { ...newStep }
@@ -489,18 +489,18 @@ export default {
 	methods: {
 		/**
 		 * @param {object} config The config.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseConfig(config) {
 			return parseStepConfig(config)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md */
 		buildConfigPayload() {
 			return stepConfigPayload(this.localConfig, this.escalationEnabled)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md */
 		addRequiredField() {
 			this.localConfig.requiredFields.push('')
 			this.emitUpdate()
@@ -508,21 +508,21 @@ export default {
 
 		/**
 		 * @param {number} index Index of the row in the list.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		removeRequiredField(index) {
 			this.localConfig.requiredFields.splice(index, 1)
 			this.emitUpdate()
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md */
 		onEscalationToggle() {
 			this.emitUpdate()
 		},
 
 		/**
 		 * @param {object} checklist The checklist.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseChecklist(checklist) {
 			return parseJsonList(checklist)
@@ -530,13 +530,13 @@ export default {
 
 		/**
 		 * @param {Array} actions The actions.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseActions(actions) {
 			return parseJsonList(actions)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md */
 		emitUpdate() {
 			const payload = {
 				...this.localStep,
@@ -552,7 +552,7 @@ export default {
 			this.$emit('update', payload)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md */
 		addChecklistItem() {
 			this.localChecklist.push({
 				id: `check-${nextCheckId++}`,
@@ -564,7 +564,7 @@ export default {
 
 		/**
 		 * @param {number} index Index of the row in the list.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		removeChecklistItem(index) {
 			this.localChecklist.splice(index, 1)
@@ -574,7 +574,7 @@ export default {
 		/**
 		 * @param {number} index Index of the row in the list.
 		 * @param {Event} event The originating DOM event.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		onCheckDragStart(index, event) {
 			this.dragCheckIndex = index
@@ -584,7 +584,7 @@ export default {
 		/**
 		 * @param {number} targetIndex The target index.
 		 * @param {Event} event The originating DOM event.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		onCheckDrop(targetIndex, event) {
 			if (
@@ -598,7 +598,7 @@ export default {
 			this.dragCheckIndex = null
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md */
 		addAction() {
 			this.localActions.push({ type: 'createTask', title: '' })
 			this.emitUpdate()
@@ -606,7 +606,7 @@ export default {
 
 		/**
 		 * @param {number} index Index of the row in the list.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		removeAction(index) {
 			this.localActions.splice(index, 1)

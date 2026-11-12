@@ -29,7 +29,7 @@ use OCA\Dossiq\Service\Reporting\ReportPeriod;
  * The query holds `from`, `to`, `caseType`, `period`, `view`, `format` and
  * `statistic`, each as the request gave it.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
  */
 final class ReportRequest {
 
@@ -52,7 +52,7 @@ final class ReportRequest {
 	 *
 	 * @return string|null The message of the first offending parameter.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
 	 * @spec openspec/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
 	 */
 	public function refusal(array $query): ?string {
@@ -69,7 +69,7 @@ final class ReportRequest {
 	 *
 	 * @return array<string, string> The filters.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
 	 */
 	public function filters(array $query): array {
 		$query['from'] = ($query['from'] ?? $this->periodStart(period: ($query['period'] ?? null)));

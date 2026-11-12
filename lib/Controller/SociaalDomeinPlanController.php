@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 
 declare(strict_types=1);
@@ -57,7 +57,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 class SociaalDomeinPlanController extends Controller {
 
@@ -78,7 +78,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 	 */
 	public function __construct(
 		string $appName,
@@ -101,7 +101,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The plan.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	#[NoAdminRequired]
 	public function plan(string $planId): JSONResponse {
@@ -176,7 +176,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return array<string, mixed> The payload `plan()` and `planOfCase()` answer.
 	 *
-	 * @spec openspec/changes/case-completeness-checklist/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-the-family-plan-answer-names-its-plan
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-the-family-plan-answer-names-its-plan
 	 */
 	private function planPayload(array $plan, string $planId): array {
 		return [
@@ -195,7 +195,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The stored goal, or the refusal.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	#[NoAdminRequired]
 	public function saveGoal(string $planId): JSONResponse {
@@ -234,7 +234,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The closed goal, or the refusal.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	#[NoAdminRequired]
 	public function closeGoal(string $goalId): JSONResponse {
@@ -265,7 +265,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The stored intervention, or the refusal.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	#[NoAdminRequired]
 	public function saveIntervention(string $planId): JSONResponse {
@@ -333,7 +333,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The plan with its review, or the refusal.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
 	 */
 	#[NoAdminRequired]
 	public function recordReview(string $planId): JSONResponse {
@@ -372,7 +372,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The grounds.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
 	#[NoAdminRequired]
 	public function grounds(): JSONResponse {
@@ -389,7 +389,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The existence answer, or the refusal.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
 	 */
 	#[NoAdminRequired]
 	public function lookUp(): JSONResponse {
@@ -426,7 +426,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The lookups.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
 	#[NoAdminRequired]
 	public function lookupsAbout(string $bsn): JSONResponse {
@@ -466,7 +466,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The answer.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 	 */
 	private function broke(string $op, Throwable $e): JSONResponse {
 		$this->logger->error(

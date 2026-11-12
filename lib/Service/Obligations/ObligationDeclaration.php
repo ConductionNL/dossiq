@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ namespace OCA\Dossiq\Service\Obligations;
 /**
  * Reads the obligation kinds a case type declares.
  *
- * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  */
 class ObligationDeclaration {
 
@@ -95,7 +95,7 @@ class ObligationDeclaration {
 	 *
 	 * @return array<string, array<string, mixed>> The declarations.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function kindsFor(array $caseType): array {
 		$declared = ($caseType['obligationKinds'] ?? null);
@@ -134,7 +134,7 @@ class ObligationDeclaration {
 	 *
 	 * @return array<int, string> Status ids, or the closing token.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	private function blocksOf(array $row): array {
 		$blocks = ($row['blocks'] ?? null);
@@ -168,7 +168,7 @@ class ObligationDeclaration {
 	 *
 	 * @return int|null The term, or null when the kind declares none.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	private function termOf(array $row): ?int {
 		$term = ($row['term'] ?? null);
@@ -195,7 +195,7 @@ class ObligationDeclaration {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function isBlocking(array $obligation): bool {
 		$state = trim((string)($obligation['state'] ?? self::STATE_OPEN));
@@ -212,7 +212,7 @@ class ObligationDeclaration {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function blocksStatus(array $obligation, string $statusId, bool $isClosing): bool {
 		if ($this->isBlocking(obligation: $obligation) === false) {

@@ -150,7 +150,7 @@ class WooPublicationService {
 	 *
 	 * @return array{available: bool, reason?: string} Availability status.
 	 *
-	 * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d5
+	 * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d5
 	 */
 	public function checkAvailability(): array {
 		if ($this->isOpenCatalogiInstalled() === false) {
@@ -169,7 +169,7 @@ class WooPublicationService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d5
+	 * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d5
 	 */
 	public function isOpenCatalogiInstalled(): bool {
 		return $this->appManager->isInstalled(self::OPENCATALOGI_APP_ID)

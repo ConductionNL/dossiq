@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Throwable;
 /**
  * Controller for beschikking lifecycle endpoints.
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
  */
 class BeschikkingController extends Controller {
 	use TranslatesRefusals;
@@ -89,7 +89,7 @@ class BeschikkingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
 	 */
 	public function create(): JSONResponse {
 		$uid = $this->requireUser();
@@ -143,7 +143,7 @@ class BeschikkingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T06
 	 */
 	public function show(string $id): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -171,7 +171,7 @@ class BeschikkingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T11
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T11
 	 */
 	public function update(string $id): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -202,7 +202,7 @@ class BeschikkingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T07
 	 */
 	public function akkoord(string $id): JSONResponse {
 		$uid = $this->requireUser();
@@ -233,7 +233,7 @@ class BeschikkingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T08
 	 */
 	public function onderteken(string $id): JSONResponse {
 		$uid = $this->requireUser();
@@ -272,7 +272,7 @@ class BeschikkingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T09
 	 */
 	public function verzend(string $id): JSONResponse {
 		$uid = $this->requireUser();
@@ -304,7 +304,7 @@ class BeschikkingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T10
 	 */
 	public function auditPakket(string $id): DataDownloadResponse|JSONResponse {
 		$uid = $this->requireUser();

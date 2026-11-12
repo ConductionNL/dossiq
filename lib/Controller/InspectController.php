@@ -31,7 +31,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use OCP\IUserSession;
 /**
  * Whether the reader may be offered the raw inspection surfaces.
  *
- * @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class InspectController extends Controller {
 
@@ -81,7 +81,7 @@ class InspectController extends Controller {
 	 *
 	 * @return JSONResponse `{isAdmin: bool}`.
 	 *
-	 * @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md#requirement-an-admin-inspects-a-case-from-its-page-req-cm-36
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-admin-inspects-a-case-from-its-page-req-cm-36
 	 */
 	#[NoAdminRequired]
 	public function availability(): JSONResponse {

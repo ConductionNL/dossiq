@@ -15,7 +15,7 @@
 // internal `description` is not a stand-in: it says what the phase means to a
 // handler, and it routinely names an internal check or a colleague by role.
 //
-// @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+// @spec openspec/specs/case-types/spec.md
 
 /** The case field carrying the label the applicant reads. */
 export const CASE_LABEL_FIELD = 'statusPublicLabel'
@@ -29,7 +29,7 @@ export const CASE_DESCRIPTION_FIELD = 'statusPublicDescription'
  * @param {unknown} value The candidate.
  * @return {string} The trimmed string, or ''.
  *
- * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 function text(value) {
 	return typeof value === 'string' ? value.trim() : ''
@@ -41,7 +41,7 @@ function text(value) {
  * @param {object} statusType The stored statusType row.
  * @return {string} The public label, the name when there is none, or ''.
  *
- * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 export function publicLabelOf(statusType) {
 	const row = statusType || {}
@@ -55,7 +55,7 @@ export function publicLabelOf(statusType) {
  * @param {object} statusType The stored statusType row.
  * @return {string} The public description, or ''.
  *
- * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 export function publicDescriptionOf(statusType) {
 	return text((statusType || {}).publicDescription)
@@ -74,7 +74,7 @@ export function publicDescriptionOf(statusType) {
  * @param {object} caseRow The case, possibly field-projected.
  * @return {string} The label, or ''.
  *
- * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 export function labelOnCase(caseRow) {
 	return text((caseRow || {})[CASE_LABEL_FIELD])
@@ -86,7 +86,7 @@ export function labelOnCase(caseRow) {
  * @param {object} caseRow The case, possibly field-projected.
  * @return {string} The description, or ''.
  *
- * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 export function descriptionOnCase(caseRow) {
 	return text((caseRow || {})[CASE_DESCRIPTION_FIELD])

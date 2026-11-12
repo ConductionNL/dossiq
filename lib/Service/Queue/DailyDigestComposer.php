@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use DateTimeImmutable;
 /**
  * Composes one person's digest, or decides there is none.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class DailyDigestComposer {
 	/**
@@ -57,7 +57,7 @@ class DailyDigestComposer {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly PersonalQueueService $queue,
@@ -72,7 +72,7 @@ class DailyDigestComposer {
 	 *
 	 * @return array<string, mixed>|null The digest, or null when the queue is empty.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function compose(string $userId, DateTimeImmutable $now): ?array {
 		$queue = $this->queue->forPerson(userId: $userId, now: $now);

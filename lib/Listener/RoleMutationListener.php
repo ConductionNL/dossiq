@@ -47,7 +47,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T04
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T04
  */
 class RoleMutationListener implements IEventListener {
 	/**

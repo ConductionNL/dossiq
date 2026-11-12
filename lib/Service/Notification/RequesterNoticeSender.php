@@ -156,7 +156,7 @@ class RequesterNoticeSender {
 	 * @return array<string, mixed> The delivery result, with the `record` it appended.
 	 *
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-channel-follows-the-requester-in-a-declared-order-req-wrn-002
-	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
 	public function send(array $case, string $template, array $rendered, string $moment, array $options = []): array {
 		$delivery = new NoticeDelivery();

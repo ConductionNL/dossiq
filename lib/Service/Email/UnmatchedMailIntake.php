@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 class UnmatchedMailIntake {
 
@@ -85,7 +85,7 @@ class UnmatchedMailIntake {
 	 *
 	 * @return boolean True when a fallback case type is configured.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function isConfigured(): bool {
 		return ($this->fallbackCaseTypeId() !== '');
@@ -96,7 +96,7 @@ class UnmatchedMailIntake {
 	 *
 	 * @return string The case type id, or '' when the instance names none.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function fallbackCaseTypeId(): string {
 		return trim(
@@ -111,7 +111,7 @@ class UnmatchedMailIntake {
 	 *
 	 * @return string|null The new case's id, or `null` when nothing was created.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function caseFor(array $message): ?string {
 		$caseTypeId = $this->fallbackCaseTypeId();
@@ -238,7 +238,7 @@ class UnmatchedMailIntake {
 	 *
 	 * @return string The lowercased address, or '' when the row names none.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	private function senderAddress(array $message): string {
 		$from = trim((string)($message['from'] ?? ''));

@@ -31,7 +31,7 @@ use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 /**
  * Single-role strategy.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T03
  */
 class SingleRoleStrategy implements RoutingStrategyInterface {
 	/**

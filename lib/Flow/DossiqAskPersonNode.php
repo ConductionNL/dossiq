@@ -73,7 +73,7 @@ use UnexpectedValueException;
  * this node used to lose: `context.signal` is ONE slot per run, so a flow with
  * two asks had the second read the answer given to the first.
  *
- * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  * @spec openspec/specs/case-flow-human-steps/spec.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) One over the threshold, and
@@ -415,7 +415,7 @@ class DossiqAskPersonNode implements IFlowNode {
      * @throws RuntimeException When the node has no resume slot, its task is
      *                          gone, or the ask was withdrawn.
      *
-     * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function execute(FlowNodeCall $call): array {
@@ -498,7 +498,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @return void
      *
-     * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     private function createTask(array $items, array $config, array $context, FlowNodeResumeState $resume): void {
         $caseId   = $this->caseIdFrom(items: $items);
@@ -537,7 +537,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @return FlowSuspension The suspension to throw.
      *
-     * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     private function suspension(array $config): FlowSuspension {
         $question = trim((string) ($config['question'] ?? ''));
@@ -570,7 +570,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @return array The answer bag.
      *
-     * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     private function answerFor(array $task, string $taskId, array $context, FlowNodeResumeState $resume): array {
         $signal = ($context[FlowRunService::SIGNAL_CONTEXT_KEY] ?? null);
@@ -614,7 +614,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @return array The items, each carrying the answer.
      *
-     * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     private function placeAnswer(array $items, array $config, array $answer): array {
         $key = trim((string) ($config['signalKey'] ?? ''));

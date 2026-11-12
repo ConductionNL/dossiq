@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
  */
 
@@ -40,7 +40,7 @@ namespace OCA\Dossiq\Service\Ai;
 /**
  * Records and reads the AI oversight audit trail.
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
  */
 class AiAuditService {
 	/**
@@ -74,7 +74,7 @@ class AiAuditService {
 	 *
 	 * @return array
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function recordUserAction(
 		string $caseId,
@@ -159,7 +159,7 @@ class AiAuditService {
 	 *
 	 * @return array{entries: array<int, array<string, mixed>>, total: int|null, limit: int, offset: int}
 	 *
-	 * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
 	 */
 	public function listAuditEntries(array $filters = [], int $limit = 50, int $offset = 0): array {
 		return $this->audit->list(filters: $filters, limit: $limit, offset: $offset);

@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 
 /**
@@ -35,7 +35,7 @@
  *
  * @param {object} party The party link, as the parties listing answers it.
  * @return {string} The identifier, '' when the link names neither.
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export function partyIdentifier(party) {
 	if (!party || typeof party !== 'object') {
@@ -68,7 +68,7 @@ function trimmedText(value) {
  *
  * @param {object|null} listing The parties listing, or null when it failed.
  * @return {Array<object>} `{id, label, email}` per party, in listing order.
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export function partyOptions(listing) {
 	const rows = Array.isArray(listing?.results) ? listing.results : []
@@ -111,7 +111,7 @@ function partyOption(row, id) {
  * @param {Array<string>|string} stored The stored identifier or identifiers.
  * @param {Array<object>} options The picker options.
  * @return {Array<object>} The matching options, in the order stored.
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export function selectedOptions(stored, options) {
 	const wanted = Array.isArray(stored) ? stored : [stored]
@@ -163,7 +163,7 @@ function storedOption(options, id) {
  *
  * @param {Array<object>|object|string|null} value The picker's value.
  * @return {Array<string>} The identifiers, deduplicated, blanks dropped.
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export function identifiersOf(value) {
 	const entries = Array.isArray(value) ? value : [value]
@@ -208,7 +208,7 @@ function objectIdentifier(entry) {
  *
  * @param {string} direction The document's direction.
  * @return {object} `{sender, recipients}`, each a boolean.
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export function allowedFor(direction) {
 	const value = String(direction || '').trim()

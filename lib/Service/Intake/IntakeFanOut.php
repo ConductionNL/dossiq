@@ -41,7 +41,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -67,7 +67,7 @@ use Throwable;
  *  a named constructor, not a service call. It holds no state and exists so a
  *  caller cannot build a refusal with the wrong status on it.
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 class IntakeFanOut {
 
@@ -128,7 +128,7 @@ class IntakeFanOut {
 	 *
 	 * @return array<int, array{title: string, caseType: string, department: string}>
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function destinationsFor(array $caseType): array {
 		$declared = ($caseType[self::PROPERTY] ?? null);
@@ -168,7 +168,7 @@ class IntakeFanOut {
 	 *
 	 * @throws RefusedException When nothing is declared or the register is absent.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function submit(string $formCaseTypeId, array $submission, string $submissionId): array {
 		$caseType = $this->caseTypeResolver->effectiveCaseType(caseTypeId: $formCaseTypeId);
@@ -228,7 +228,7 @@ class IntakeFanOut {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	private function tieTogether(array $created): void {
 		$ids = [];
@@ -341,7 +341,7 @@ class IntakeFanOut {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-routing-note/specs/kcc-routing/spec.md#requirement-a-case-keeps-a-note-of-its-last-routing-event
+	 * @spec openspec/specs/kcc-routing/spec.md#requirement-a-case-keeps-a-note-of-its-last-routing-event
 	 */
 	private function noteRouting(array $created, array $failed, string $submissionId): void {
 		if (count($created) < 2 && $failed === []) {
