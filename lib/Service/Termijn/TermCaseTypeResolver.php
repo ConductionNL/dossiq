@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Termijn;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\ReferenceId;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -310,15 +311,7 @@ class TermCaseTypeResolver {
 	 * @return string The id, or the empty string.
 	 */
 	private function ref(mixed $value): string {
-		if (is_array($value) === true) {
-			$value = ($value['id'] ?? ($value['uuid'] ?? ''));
-		}
-
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
+		return ReferenceId::of(value: $value);
 	}//end ref()
 
 }//end class
