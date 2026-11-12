@@ -191,6 +191,38 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	 * @return void
 	 */
 	private function migrate(IOutput $output): void {
+		$schemes = $this->schemesToMigrate(output: $output);
+		if ($schemes === []) {
+			return;
+		}
+
+		$migrated = 0;
+		$skipped = 0;
+		foreach ($schemes as $scheme) {
+			if ($this->migrateScheme(scheme: $scheme, output: $output) === true) {
+				$migrated++;
+				continue;
+			}
+
+			$skipped++;
+		}
+
+		$output->info(sprintf(
+			'Subsidieregeling migration: %d migrated, %d already present or unusable, %d seen.',
+			$migrated,
+			$skipped,
+			count($schemes)
+		));
+	}
+
+	/**
+	 * The stored subsidieRegelingen to convert, reported on the output; empty when there are none or the scope is unknown.
+	 *
+	 * @param IOutput $output Upgrade output.
+	 *
+	 * @return array<int, mixed> The rows as the store answers them.
+	 */
+	private function schemesToMigrate(IOutput $output): array {
 		$objectService = $this->settingsService->getObjectService();
 
 		// Register and schema are resolved from app config as NUMERIC IDS and
@@ -205,7 +237,7 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 				'Register or subsidieregeling schema id is not configured — '
 				. 'cannot scope the migration, so it is skipped rather than run unscoped.'
 			);
-			return;
+			return [];
 		}
 
 		$schemes = $objectService->findAll(
@@ -218,46 +250,57 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 		$total = count($schemes);
 		if ($total === 0) {
 			$output->info('No subsidieregelingen found — nothing to migrate.');
-			return;
+			return [];
 		}
 
 		$output->info(sprintf('Found %d subsidieregeling(en) to migrate.', $total));
 
-		$migrated = 0;
-		$skipped = 0;
-		foreach ($schemes as $scheme) {
-			// The rows are ObjectEntity instances, not arrays. Indexing one
-			// directly fatals with "Cannot use object of type ... as array" —
-			// measured on a live instance, where the whole step then reported a
-			// warning and the upgrade still said Update successful. The rest of
-			// this app's repair steps normalise the same way.
-			if (is_object($scheme) === true && method_exists($scheme, 'jsonSerialize') === true) {
-				$scheme = $scheme->jsonSerialize();
-			}
+		return $schemes;
+	}
 
-			$scheme = (array) $scheme;
-			$name = (string) ($scheme['schemeName'] ?? '');
-			if ($name === '') {
-				$output->warning('Skipping a subsidieregeling with no schemeName — it cannot become a case type title.');
-				$skipped++;
-				continue;
-			}
-
-			if ($this->caseTypeExists(name: $name) === true) {
-				$skipped++;
-				continue;
-			}
-
-			$this->createCaseTypeFor(scheme: $scheme, name: $name, output: $output);
-			$migrated++;
+	/**
+	 * Convert one subsidieRegeling, unless it has no name or is already migrated.
+	 *
+	 * @param mixed   $scheme The row as the store answers it.
+	 * @param IOutput $output Upgrade output.
+	 *
+	 * @return bool True when a case type was created for it.
+	 */
+	private function migrateScheme(mixed $scheme, IOutput $output): bool {
+		$scheme = $this->schemeRow(scheme: $scheme);
+		$name = (string) ($scheme['schemeName'] ?? '');
+		if ($name === '') {
+			$output->warning('Skipping a subsidieregeling with no schemeName — it cannot become a case type title.');
+			return false;
 		}
 
-		$output->info(sprintf(
-			'Subsidieregeling migration: %d migrated, %d already present or unusable, %d seen.',
-			$migrated,
-			$skipped,
-			$total
-		));
+		if ($this->caseTypeExists(name: $name) === true) {
+			return false;
+		}
+
+		$this->createCaseTypeFor(scheme: $scheme, name: $name, output: $output);
+		return true;
+	}
+
+	/**
+	 * One stored row as a plain array.
+	 *
+	 * The rows are ObjectEntity instances, not arrays. Indexing one
+	 * directly fatals with "Cannot use object of type ... as array" —
+	 * measured on a live instance, where the whole step then reported a
+	 * warning and the upgrade still said Update successful. The rest of
+	 * this app's repair steps normalise the same way.
+	 *
+	 * @param mixed $scheme The row as the store answers it.
+	 *
+	 * @return array<string, mixed> The row.
+	 */
+	private function schemeRow(mixed $scheme): array {
+		if (is_object($scheme) === true && method_exists($scheme, 'jsonSerialize') === true) {
+			$scheme = $scheme->jsonSerialize();
+		}
+
+		return (array) $scheme;
 	}
 
 	/**
@@ -327,28 +370,11 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	 * @return array<string, mixed> The caseType payload.
 	 */
 	private function buildCaseTypePayload(array $scheme, string $name): array {
-		$caseType = ['title' => $name];
-
-		// SLUG, NOT JUST TITLE. The seed data ships these same two schemes as
-		// case types under `zaaktype-<name>`, so an instance that upgrades runs
-		// this migration and then imports the seed. Without a matching slug the
-		// import writes a SECOND copy beside the migrated one: two case types,
-		// same title, both plausible, and nothing failing. Measured on a live
-		// instance, which is the only place it shows up.
-		$slug = $this->caseTypeSlugFor(scheme: $scheme, name: $name);
-		if ($slug !== '') {
-			$caseType['@self'] = ['slug' => $slug];
-			if (array_key_exists($slug, self::CANONICAL_CASE_TYPE_IDS) === true) {
-				$caseType['id'] = self::CANONICAL_CASE_TYPE_IDS[$slug];
-				$caseType['uuid'] = self::CANONICAL_CASE_TYPE_IDS[$slug];
-			}
-		}
-
-		foreach (self::DIRECT_MAP as $from => $to) {
-			if (isset($scheme[$from]) === true && $scheme[$from] !== '') {
-				$caseType[$to] = $scheme[$from];
-			}
-		}
+		$caseType = array_merge(
+			['title' => $name],
+			$this->slugFields(scheme: $scheme, name: $name),
+			$this->directlyMappedFields(scheme: $scheme)
+		);
 
 		// Weeks -> ISO-8601 duration. processingDeadline is read as a duration
 		// by the renderer and by the AWB 4:13 deadline maths; an integer here
@@ -359,6 +385,55 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 		}
 
 		return $caseType;
+	}
+
+	/**
+	 * The slug of the migrated case type, and its canonical id when the seed data pins one.
+	 *
+	 * @param array<string, mixed> $scheme The source subsidieRegeling.
+	 * @param string               $name   Its schemeName.
+	 *
+	 * @return array<string, mixed> `{@self: {slug}, id?, uuid?}`, or empty without a slug.
+	 */
+	private function slugFields(array $scheme, string $name): array {
+		$fields = [];
+
+		// SLUG, NOT JUST TITLE. The seed data ships these same two schemes as
+		// case types under `zaaktype-<name>`, so an instance that upgrades runs
+		// this migration and then imports the seed. Without a matching slug the
+		// import writes a SECOND copy beside the migrated one: two case types,
+		// same title, both plausible, and nothing failing. Measured on a live
+		// instance, which is the only place it shows up.
+		$slug = $this->caseTypeSlugFor(scheme: $scheme, name: $name);
+		if ($slug === '') {
+			return $fields;
+		}
+
+		$fields['@self'] = ['slug' => $slug];
+		if (array_key_exists($slug, self::CANONICAL_CASE_TYPE_IDS) === true) {
+			$fields['id'] = self::CANONICAL_CASE_TYPE_IDS[$slug];
+			$fields['uuid'] = self::CANONICAL_CASE_TYPE_IDS[$slug];
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * The scheme fields that carry over under a new name, empty values left out.
+	 *
+	 * @param array<string, mixed> $scheme The source subsidieRegeling.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function directlyMappedFields(array $scheme): array {
+		$fields = [];
+		foreach (self::DIRECT_MAP as $from => $to) {
+			if (isset($scheme[$from]) === true && $scheme[$from] !== '') {
+				$fields[$to] = $scheme[$from];
+			}
+		}
+
+		return $fields;
 	}
 
 	/**

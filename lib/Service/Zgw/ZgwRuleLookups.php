@@ -131,22 +131,43 @@ class ZgwRuleLookups {
 			);
 			$result = $this->objectService->searchObjectsPaginated(query: $query);
 
-			$results = $result['results'] ?? [];
-			if (empty($results) === true) {
-				return null;
-			}
-
-			$obj = $results[0];
-			$data = $obj;
-			if (is_array($obj) === false) {
-				$data = $obj->jsonSerialize();
-			}
-
-			return $data['id'] ?? ($data['@self']['id'] ?? null);
+			return $this->firstHitId(results: ($result['results'] ?? []));
 		} catch (\Throwable $e) {
 			throw new LookupNotCompleted(lookup: "reference {$field} \"{$value}\"", cause: $e);
 		}//end try
 	}//end findObjectByField()
+
+	/**
+	 * The UUID of the first hit of a search, or null when there is none.
+	 *
+	 * @param mixed $results The hits, arrays or entities.
+	 *
+	 * @return string|null
+	 */
+	private function firstHitId(mixed $results): ?string {
+		if (empty($results) === true) {
+			return null;
+		}
+
+		$data = $this->rowData(row: $results[0]);
+
+		return $data['id'] ?? ($data['@self']['id'] ?? null);
+	}//end firstHitId()
+
+	/**
+	 * One hit as an array: the array itself, or what the entity serialises to.
+	 *
+	 * @param mixed $row The hit.
+	 *
+	 * @return mixed The row, an array for every hit OpenRegister answers.
+	 */
+	private function rowData(mixed $row): mixed {
+		if (is_array($row) === true) {
+			return $row;
+		}
+
+		return $row->jsonSerialize();
+	}//end rowData()
 
 	/**
 	 * Find all objects matching a field value.
@@ -326,9 +347,8 @@ class ZgwRuleLookups {
 			return false;
 		}
 
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->mappingConfig['sourceSchema'] ?? '';
-		if (empty($register) === true || empty($schema) === true) {
+		$scope = $this->mappedScope();
+		if ($scope === []) {
 			return false;
 		}
 
@@ -340,8 +360,8 @@ class ZgwRuleLookups {
 			// exact-match search for field2 (sourceOrganisation).
 			$query = [
 				'@self' => [
-					'register' => (int)$register,
-					'schema' => (int)$schema,
+					'register' => (int)$scope['register'],
+					'schema' => (int)$scope['schema'],
 				],
 				$field1Search => $field1Value,
 			];
@@ -358,14 +378,12 @@ class ZgwRuleLookups {
 			// as integer 0, which the magic mapper may serialize to empty string.
 			// When the stored value is empty but field2 was provided, we still
 			// count it as a match (conservative: assume coercion happened).
-			$matchCount = 0;
-			foreach (($result['results'] ?? []) as $obj) {
-				if ($this->storedValueMatches(row: $obj, field: $field2Search, value: $field2Value) === true) {
-					$matchCount++;
-				}
-			}
+			$matches = array_filter(
+				($result['results'] ?? []),
+				fn (mixed $obj): bool => $this->storedValueMatches(row: $obj, field: $field2Search, value: $field2Value)
+			);
 
-			return ($matchCount > 0);
+			return (count($matches) > 0);
 		} catch (\Throwable $e) {
 			throw new LookupNotCompleted(lookup: "uniqueness of {$field1Search} \"{$field1Value}\"", cause: $e);
 		}//end try
@@ -386,16 +404,38 @@ class ZgwRuleLookups {
 	 * @return bool
 	 */
 	private function storedValueMatches(mixed $row, string $field, string $value): bool {
-		$data = $row;
-		if (is_array($row) === false) {
-			$data = $row->jsonSerialize();
-		}
-
-		$storedStr = (string)($data[$field] ?? null);
+		$storedStr = (string)($this->rowData(row: $row)[$field] ?? null);
 
 		return ($value === '')
 			|| ($storedStr === $value)
-			|| ($storedStr === '')
-			|| ($storedStr === '0' && preg_match('/^0+$/', $value) === 1);
+			|| $this->looksCoerced(stored: $storedStr, value: $value);
 	}//end storedValueMatches()
+
+	/**
+	 * Whether a stored value looks like OpenRegister's coercion of the given one: empty, or "0" for a run of zeros.
+	 *
+	 * @param string $stored The stored value as text.
+	 * @param string $value  The value looked for.
+	 *
+	 * @return bool
+	 */
+	private function looksCoerced(string $stored, string $value): bool {
+		return ($stored === '')
+			|| ($stored === '0' && preg_match('/^0+$/', $value) === 1);
+	}//end looksCoerced()
+
+	/**
+	 * The register and schema of the mapping, empty when either is missing.
+	 *
+	 * @return array{register: mixed, schema: mixed}|array{}
+	 */
+	private function mappedScope(): array {
+		$register = $this->mappingConfig['sourceRegister'] ?? '';
+		$schema = $this->mappingConfig['sourceSchema'] ?? '';
+		if (empty($register) === true || empty($schema) === true) {
+			return [];
+		}
+
+		return ['register' => $register, 'schema' => $schema];
+	}//end mappedScope()
 }//end class

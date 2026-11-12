@@ -54,7 +54,7 @@ export function personDisplayName(naam) {
  * @spec openspec/specs/initiator-selection/spec.md
  */
 export function personResult(person) {
-	const bsn = person.citizenServiceNumber || person.citizen_service_number || ''
+	const bsn = citizenServiceNumberOf(person)
 	return {
 		type: 'person',
 		sourceId: bsn,
@@ -62,9 +62,29 @@ export function personResult(person) {
 		detail: [person.birth?.date, bsn && `BSN ${bsn}`]
 			.filter(Boolean)
 			.join(' · '),
-		objectId: person.id || person['@self']?.id || null,
+		objectId: registerObjectId(person),
 		protected: person.indicatieGeheim === true,
 	}
+}
+
+/**
+ * A brpPerson row's BSN, in either key casing.
+ *
+ * @param {object} person The brpPerson object.
+ * @return {string} The BSN, '' when it has none.
+ */
+function citizenServiceNumberOf(person) {
+	return person.citizenServiceNumber || person.citizen_service_number || ''
+}
+
+/**
+ * A register row's own uuid, from the row or its `@self` block.
+ *
+ * @param {object} row The register object.
+ * @return {string|null} The uuid, null when it has none.
+ */
+function registerObjectId(row) {
+	return row.id || row['@self']?.id || null
 }
 
 /**
@@ -75,16 +95,46 @@ export function personResult(person) {
  * @spec openspec/specs/initiator-selection/spec.md
  */
 export function companyResult(company) {
-	const number = company.kvkNumber || company.kvk_number || ''
+	const number = kvkNumberOf(company)
 	return {
 		type: 'company',
 		sourceId: number,
-		displayName: company.tradeName || company.trade_name || '',
-		detail: [company.legalForm || company.legal_form, number && `KVK ${number}`]
+		displayName: tradeNameOf(company),
+		detail: [legalFormOf(company), number && `KVK ${number}`]
 			.filter(Boolean)
 			.join(' · '),
-		objectId: company.id || company['@self']?.id || null,
+		objectId: registerObjectId(company),
 	}
+}
+
+/**
+ * A kvkCompany row's KVK number, in either key casing.
+ *
+ * @param {object} company The kvkCompany object.
+ * @return {string} The number, '' when it has none.
+ */
+function kvkNumberOf(company) {
+	return company.kvkNumber || company.kvk_number || ''
+}
+
+/**
+ * A kvkCompany row's trade name, in either key casing.
+ *
+ * @param {object} company The kvkCompany object.
+ * @return {string} The name, '' when it has none.
+ */
+function tradeNameOf(company) {
+	return company.tradeName || company.trade_name || ''
+}
+
+/**
+ * A kvkCompany row's legal form, in either key casing.
+ *
+ * @param {object} company The kvkCompany object.
+ * @return {string|undefined} The legal form as stored.
+ */
+function legalFormOf(company) {
+	return company.legalForm || company.legal_form
 }
 
 /**
@@ -97,16 +147,37 @@ export function companyResult(company) {
 export function contactResult(contact) {
 	return {
 		type: 'contact',
-		sourceId:
-			contact.id
-			|| contact.uid
-			|| contact.emailAddresses?.[0]
-			|| contact.fullName
-			|| '',
+		sourceId: contactSourceId(contact),
 		displayName: contact.fullName || contact.id || '',
-		detail: contact.emailAddresses?.[0] || contact.topAction?.title || '',
+		detail: contactDetail(contact),
 		objectId: null,
 	}
+}
+
+/**
+ * The identifier a contact is recorded under: its id, uid, first address or name.
+ *
+ * @param {object} contact The contactsmenu contact entry.
+ * @return {string} The identifier, '' when it has none.
+ */
+function contactSourceId(contact) {
+	return (
+		contact.id
+		|| contact.uid
+		|| contact.emailAddresses?.[0]
+		|| contact.fullName
+		|| ''
+	)
+}
+
+/**
+ * The line under a contact: its first address, else its top action.
+ *
+ * @param {object} contact The contactsmenu contact entry.
+ * @return {string} The detail, '' when it has neither.
+ */
+function contactDetail(contact) {
+	return contact.emailAddresses?.[0] || contact.topAction?.title || ''
 }
 
 /**
@@ -179,12 +250,51 @@ export async function initiatorChoice(kind, row) {
 		return {}
 	}
 	const result = shape(row)
-	const address = String(result.detail || '').trim()
-	if (!result.objectId && address.includes('@')) {
-		const party = await resolvePartyByAddress(address)
-		if (party) {
-			result.objectId = party.id || party['@self']?.id || party.uuid || null
-		}
+	if (needsAddressLookup(result)) {
+		await adoptPartyHoldingAddress(result)
 	}
 	return requesterPayload(result)
+}
+
+/**
+ * The address a result's detail line holds, trimmed.
+ *
+ * @param {object} result A unified initiator result.
+ * @return {string} The detail as an address candidate.
+ */
+function addressOf(result) {
+	return String(result.detail || '').trim()
+}
+
+/**
+ * Whether a result has no register row but names an address a party may hold.
+ *
+ * @param {object} result A unified initiator result.
+ * @return {boolean} True when the address should be looked up.
+ */
+function needsAddressLookup(result) {
+	return !result.objectId && addressOf(result).includes('@')
+}
+
+/**
+ * Point a result at the party that already holds its address, when one does.
+ *
+ * @param {object} result A unified initiator result; its `objectId` is set.
+ * @return {Promise<void>}
+ */
+async function adoptPartyHoldingAddress(result) {
+	const party = await resolvePartyByAddress(addressOf(result))
+	if (party) {
+		result.objectId = partyObjectId(party)
+	}
+}
+
+/**
+ * A party record's uuid, whichever shape OpenRegister answered it in.
+ *
+ * @param {object} party The party record.
+ * @return {string|null} The uuid, null when it has none.
+ */
+function partyObjectId(party) {
+	return party.id || party['@self']?.id || party.uuid || null
 }

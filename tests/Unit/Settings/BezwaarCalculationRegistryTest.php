@@ -259,86 +259,154 @@ final class BezwaarCalculationRegistryTest extends TestCase {
 		$op = (string)array_key_first($expr);
 		$args = $expr[$op];
 
-		switch ($op) {
-			case 'prop':
-				return ($object[(string)$args] ?? null);
-			case 'now':
-				return $now;
-			case '+':
-				$sum = 0;
-				foreach ($args as $a) {
-					$sum += (float)$this->eval($a, $object, $now);
-				}
-
-				return $sum;
-			case '-':
-				return ((float)$this->eval($args[0], $object, $now) - (float)$this->eval($args[1], $object, $now));
-			case '*':
-				$prod = 1;
-				foreach ($args as $a) {
-					$prod *= (float)$this->eval($a, $object, $now);
-				}
-
-				return $prod;
-			case 'min':
-			case 'max':
-				$result = null;
-				foreach ($args as $a) {
-					$v = $this->eval($a, $object, $now);
-					if ($v === null) {
-						continue;
-					}
-
-					$num = ($v + 0);
-					if ($result === null
-						|| ($op === 'max' && $num > $result)
-						|| ($op === 'min' && $num < $result)
-					) {
-						$result = $num;
-					}
-				}
-
-				return $result;
-			case 'coalesce':
-				foreach ($args as $a) {
-					$v = $this->eval($a, $object, $now);
-					if ($v !== null) {
-						return $v;
-					}
-				}
-
-				return null;
-			case 'dateAdd':
-				$date = $this->toDate($this->eval($args['date'], $object, $now));
-				if ($date === null) {
-					return null;
-				}
-
-				// Mirror OpenRegister's intervalFromAmountUnit() EXACTLY: a
-				// non-numeric amount yields no interval, so dateAdd returns
-				// null. Casting null to 0 here (as this mirror originally did)
-				// is strictly more lenient than the engine and would hide a
-				// nulled-out statutory deadline behind a green test.
-				$amount = $this->eval($args['amount'], $object, $now);
-				if (is_numeric($amount) === false) {
-					return null;
-				}
-
-				$amount = (int)$amount;
-				$days = ($args['unit'] === 'weeks') ? ($amount * 7) : $amount;
-				return $date->modify(($days >= 0 ? '+' : '') . $days . ' days')->format('Y-m-d');
-			case 'dateDiff':
-				$from = $this->toDate($this->eval($args['from'], $object, $now));
-				$to = $this->toDate($this->eval($args['to'], $object, $now));
-				if ($from === null || $to === null) {
-					return null;
-				}
-
-				return intdiv(($to->getTimestamp() - $from->getTimestamp()), 86400);
-			default:
-				$this->fail("evaluator does not model operator '$op'");
-		}//end switch
+		return match ($op) {
+			'prop' => ($object[(string)$args] ?? null),
+			'now' => $now,
+			'+' => $this->evalSum($args, $object, $now),
+			'-' => ((float)$this->eval($args[0], $object, $now) - (float)$this->eval($args[1], $object, $now)),
+			'*' => $this->evalProduct($args, $object, $now),
+			'min', 'max' => $this->evalExtreme($op, $args, $object, $now),
+			'coalesce' => $this->evalCoalesce($args, $object, $now),
+			'dateAdd' => $this->evalDateAdd($args, $object, $now),
+			'dateDiff' => $this->evalDateDiff($args, $object, $now),
+			default => $this->fail("evaluator does not model operator '$op'"),
+		};
 	}//end eval()
+
+	/**
+	 * The `+` operator: the sum of every argument as a float.
+	 *
+	 * @param array<mixed> $args Operand expressions.
+	 * @param array<string, mixed> $object Object payload.
+	 * @param DateTimeImmutable $now Injected "now".
+	 *
+	 * @return float|int
+	 */
+	private function evalSum(array $args, array $object, DateTimeImmutable $now): float|int {
+		$sum = 0;
+		foreach ($args as $a) {
+			$sum += (float)$this->eval($a, $object, $now);
+		}
+
+		return $sum;
+	}//end evalSum()
+
+	/**
+	 * The `*` operator: the product of every argument as a float.
+	 *
+	 * @param array<mixed> $args Operand expressions.
+	 * @param array<string, mixed> $object Object payload.
+	 * @param DateTimeImmutable $now Injected "now".
+	 *
+	 * @return float|int
+	 */
+	private function evalProduct(array $args, array $object, DateTimeImmutable $now): float|int {
+		$prod = 1;
+		foreach ($args as $a) {
+			$prod *= (float)$this->eval($a, $object, $now);
+		}
+
+		return $prod;
+	}//end evalProduct()
+
+	/**
+	 * The `min` and `max` operators: the extreme of the non-null arguments.
+	 *
+	 * @param string $op `min` or `max`.
+	 * @param array<mixed> $args Operand expressions.
+	 * @param array<string, mixed> $object Object payload.
+	 * @param DateTimeImmutable $now Injected "now".
+	 *
+	 * @return mixed The extreme, or null when every argument is null.
+	 */
+	private function evalExtreme(string $op, array $args, array $object, DateTimeImmutable $now): mixed {
+		$result = null;
+		foreach ($args as $a) {
+			$v = $this->eval($a, $object, $now);
+			if ($v === null) {
+				continue;
+			}
+
+			$num = ($v + 0);
+			if ($result === null
+				|| ($op === 'max' && $num > $result)
+				|| ($op === 'min' && $num < $result)
+			) {
+				$result = $num;
+			}
+		}
+
+		return $result;
+	}//end evalExtreme()
+
+	/**
+	 * The `coalesce` operator: the first argument that is not null.
+	 *
+	 * @param array<mixed> $args Operand expressions.
+	 * @param array<string, mixed> $object Object payload.
+	 * @param DateTimeImmutable $now Injected "now".
+	 *
+	 * @return mixed
+	 */
+	private function evalCoalesce(array $args, array $object, DateTimeImmutable $now): mixed {
+		foreach ($args as $a) {
+			$v = $this->eval($a, $object, $now);
+			if ($v !== null) {
+				return $v;
+			}
+		}
+
+		return null;
+	}//end evalCoalesce()
+
+	/**
+	 * The `dateAdd` operator: a date moved by an amount of days or weeks.
+	 *
+	 * @param array<string, mixed> $args `date`, `amount` and `unit`.
+	 * @param array<string, mixed> $object Object payload.
+	 * @param DateTimeImmutable $now Injected "now".
+	 *
+	 * @return string|null The date as Y-m-d, or null.
+	 */
+	private function evalDateAdd(array $args, array $object, DateTimeImmutable $now): ?string {
+		$date = $this->toDate($this->eval($args['date'], $object, $now));
+		if ($date === null) {
+			return null;
+		}
+
+		// Mirror OpenRegister's intervalFromAmountUnit() EXACTLY: a
+		// non-numeric amount yields no interval, so dateAdd returns
+		// null. Casting null to 0 here (as this mirror originally did)
+		// is strictly more lenient than the engine and would hide a
+		// nulled-out statutory deadline behind a green test.
+		$amount = $this->eval($args['amount'], $object, $now);
+		if (is_numeric($amount) === false) {
+			return null;
+		}
+
+		$amount = (int)$amount;
+		$days = ($args['unit'] === 'weeks') ? ($amount * 7) : $amount;
+		return $date->modify(($days >= 0 ? '+' : '') . $days . ' days')->format('Y-m-d');
+	}//end evalDateAdd()
+
+	/**
+	 * The `dateDiff` operator: whole days from `from` to `to`.
+	 *
+	 * @param array<string, mixed> $args `from` and `to`.
+	 * @param array<string, mixed> $object Object payload.
+	 * @param DateTimeImmutable $now Injected "now".
+	 *
+	 * @return int|null
+	 */
+	private function evalDateDiff(array $args, array $object, DateTimeImmutable $now): ?int {
+		$from = $this->toDate($this->eval($args['from'], $object, $now));
+		$to = $this->toDate($this->eval($args['to'], $object, $now));
+		if ($from === null || $to === null) {
+			return null;
+		}
+
+		return intdiv(($to->getTimestamp() - $from->getTimestamp()), 86400);
+	}//end evalDateDiff()
 
 	/**
 	 * Coerce a value to a DateTimeImmutable, or null.

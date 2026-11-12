@@ -190,6 +190,29 @@ npm run build
 php occ app:enable dossiq
 ```
 
+### Try it with Docker
+
+The repository builds an evaluation image: the official Nextcloud image with dossiq and OpenRegister installed and enabled. It is meant for trying the app out and for test environments. For production, install the app from the Nextcloud App Store.
+
+```bash
+docker compose -f docker-compose.yml up -d --build
+```
+
+Open http://localhost:8080/apps/dossiq/ and sign in as `admin` with password `admin`. The first start takes a minute or two. Set `NEXTCLOUD_ADMIN_PASSWORD` and `APP_PORT` to change the password and the port; `docker-compose.yml` lists every setting. `docker compose -f docker-compose.yml down -v` removes the stack and its data.
+
+Released versions are published as `ghcr.io/conductionnl/dossiq`, so leaving out `--build` uses the published image.
+
+### Run it on Kubernetes
+
+`charts/dossiq` wraps the official [Nextcloud Helm chart](https://github.com/nextcloud/helm) and runs the same image with PostgreSQL:
+
+```bash
+helm dependency build charts/dossiq
+helm install dossiq charts/dossiq --set nextcloud.nextcloud.host=dossiq.example.org
+```
+
+Change the passwords in `charts/dossiq/values.yaml` before you install it anywhere that matters.
+
 ## Development
 
 ### Start the environment
@@ -235,6 +258,12 @@ PHPStan suppressions are the documented `ignoreErrors` patterns in `phpstan.neon
 covering stub gaps in `nextcloud/ocp` (server-internal `\OC` classes, other apps'
 `OCA\` namespaces, Guzzle, Doctrine DBAL), each with a written justification.
 Do not reintroduce `phpstan-baseline.neon`.
+
+### Test coverage
+
+<!-- coverage:start -->
+Measured test coverage: 70.0% of statements (PHP 70.7% of 99,620 statements, JavaScript 63.6% of 11,969 statements), at commit `4aab4b01a` on 2026-11-11. The figures come from [`coverage-summary.json`](coverage-summary.json); refresh them with `composer coverage:publish`.
+<!-- coverage:end -->
 
 ## Tech Stack
 

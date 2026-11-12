@@ -338,4 +338,65 @@ class DocumentCorrespondentsTest extends TestCase {
 		$this->assertTrue(condition: $this->rules->mentions(document: $letter, identifier: ''));
 		$this->assertTrue(condition: $this->rules->mentions(document: $reply, identifier: '  '));
 	}//end testAFilterMatchesASenderAnAddresseeAndNobodyElse()
+	/**
+	 * Edge shapes: non-array and identifier-less links are skipped, numbers and option objects match, odd recipients read as none.
+	 *
+	 * @return void
+	 */
+	public function testOddShapesResolveTheWayTheyAlwaysDid(): void {
+		$parties = [
+			'not a link',
+			['displayName' => 'Nobody', 'email' => 'nobody@example.org'],
+			['partyUuid' => ' 42 ', 'contactUid' => 'UID-42', 'email' => ' Mixed@Example.org '],
+			['partyUuid' => 'party-2', 'contactUid' => 'uid-42', 'email' => 'mixed@example.org'],
+		];
+
+		$this->assertSame(
+			['sender' => '42', 'recipients' => ['42']],
+			$this->rules->resolve(sender: 42, recipients: ['email' => 'MIXED@example.org'], parties: $parties, direction: 'internal')
+		);
+		$this->assertSame(
+			['sender' => '', 'recipients' => []],
+			$this->rules->resolve(sender: ['id' => 'none', 'partyUuid' => ''], recipients: null, parties: $parties, direction: 'internal')
+		);
+		$this->assertSame(
+			['sender' => '', 'recipients' => []],
+			$this->rules->resolve(sender: 'nobody@example.org', recipients: '', parties: $parties, direction: 'internal')
+		);
+		$this->assertSame(
+			['sender' => '', 'recipients' => ['42']],
+			$this->rules->resolve(sender: 1.5, recipients: 'uid-42', parties: $parties, direction: 'internal')
+		);
+		$this->assertSame(
+			['sender' => '', 'recipients' => ['42', 'party-2']],
+			$this->rules->resolve(sender: null, recipients: [['contactUid' => 'uid-42'], 'party-2', ' ', true, ['partyUuid' => '42']], parties: $parties, direction: 'internal')
+		);
+		$this->assertSame('', $this->rules->partyHolding(address: 'nobody@example.org', parties: $parties));
+	}//end testOddShapesResolveTheWayTheyAlwaysDid()
+
+	/**
+	 * Names fall back to the contact uid, then to the identifier; stored recipients ignore non-text entries and repeats.
+	 *
+	 * @return void
+	 */
+	public function testNamesAndStoredRecipientsFallBackTheWayTheyAlwaysDid(): void {
+		$parties = [
+			'not a link',
+			['partyUuid' => 'p1', 'displayName' => ' ', 'contactUid' => ' uid-1 '],
+			['partyUuid' => 'p2', 'displayName' => ''],
+		];
+
+		$this->assertSame('', $this->rules->nameOf(identifier: '  ', parties: $parties));
+		$this->assertSame('uid-1', $this->rules->nameOf(identifier: ' p1 ', parties: $parties));
+		$this->assertSame('p2', $this->rules->nameOf(identifier: 'p2', parties: $parties));
+		$this->assertSame('p3', $this->rules->nameOf(identifier: 'p3', parties: $parties));
+
+		$this->assertSame(
+			['senderName' => '', 'recipientNames' => ['uid-1', '7', 'p2']],
+			$this->rules->describe(document: ['recipients' => ['p1', 7, null, ['x'], ' p1 ', '', 'p2']], parties: $parties)
+		);
+		$this->assertSame(['senderName' => '', 'recipientNames' => []], $this->rules->describe(document: ['recipients' => null], parties: $parties));
+		$this->assertTrue($this->rules->mentions(document: ['recipients' => [7]], identifier: '7'));
+		$this->assertFalse($this->rules->mentions(document: ['recipients' => 'p1'], identifier: 'p1'));
+	}//end testNamesAndStoredRecipientsFallBackTheWayTheyAlwaysDid()
 }//end class

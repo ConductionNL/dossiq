@@ -37,14 +37,24 @@ export const DEFAULT_CASE_CONFIDENTIALITY = 'zaakvertrouwelijk'
 export function parseJsonArray(value) {
 	if (Array.isArray(value)) return value
 	if (typeof value === 'string' && value.length > 0) {
-		try {
-			const parsed = JSON.parse(value)
-			return Array.isArray(parsed) ? parsed : []
-		} catch {
-			return []
-		}
+		return parseJsonArrayString(value)
 	}
 	return []
+}
+
+/**
+ * Parse a JSON string that should hold an array.
+ *
+ * @param {string} json The JSON-encoded value
+ * @return {Array} The parsed array, or [] when it is not an array or not JSON
+ */
+function parseJsonArrayString(json) {
+	try {
+		const parsed = JSON.parse(json)
+		return Array.isArray(parsed) ? parsed : []
+	} catch {
+		return []
+	}
 }
 
 /**
@@ -63,12 +73,22 @@ export function calculateDeadline(startDate, durationString) {
 	const date = new Date(startDate)
 	if (isNaN(date.getTime())) return null
 
+	addDuration(date, parsed)
+	return date
+}
+
+/**
+ * Add each non-zero part of a parsed duration to a date, in place.
+ *
+ * @param {Date} date The date to move forward
+ * @param {{years: number, months: number, weeks: number, days: number}} parsed The parsed duration
+ * @return {void}
+ */
+function addDuration(date, parsed) {
 	if (parsed.years) date.setFullYear(date.getFullYear() + parsed.years)
 	if (parsed.months) date.setMonth(date.getMonth() + parsed.months)
 	if (parsed.weeks) date.setDate(date.getDate() + parsed.weeks * 7)
 	if (parsed.days) date.setDate(date.getDate() + parsed.days)
-
-	return date
 }
 
 /**
@@ -151,11 +171,11 @@ export function getCaseOverdueText(caseObj, isFinal = false) {
  * Format deadline countdown text with style classification.
  *
  * @param {object} caseObj Case object with deadline property
- * @param {boolean} isFinal Whether the case is at a final status
+ * @param {boolean} [isFinal] Whether the case is at a final status
  * @return {{ text: string, style: string }} Countdown text and style class
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
-export function formatDeadlineCountdown(caseObj, isFinal = false) {
+export function formatDeadlineCountdown(caseObj, isFinal) {
 	if (!caseObj.deadline) return { text: '—', style: '' }
 	if (isFinal) {
 		return { text: formatDate(caseObj.deadline), style: 'deadline--final' }
@@ -166,10 +186,20 @@ export function formatDeadlineCountdown(caseObj, isFinal = false) {
 			style: 'deadline--overdue',
 		}
 	}
-	if (isCaseDueToday(caseObj, isFinal)) {
+	return upcomingDeadlineCountdown(caseObj)
+}
+
+/**
+ * The countdown of an open case whose deadline has not passed.
+ *
+ * @param {object} caseObj Case object with a deadline property
+ * @return {{ text: string, style: string }} Countdown text and style class
+ */
+function upcomingDeadlineCountdown(caseObj) {
+	if (isCaseDueToday(caseObj)) {
 		return { text: t('dossiq', 'Due today'), style: 'deadline--today' }
 	}
-	if (isCaseDueTomorrow(caseObj, isFinal)) {
+	if (isCaseDueTomorrow(caseObj)) {
 		return { text: t('dossiq', 'Due tomorrow'), style: 'deadline--tomorrow' }
 	}
 	const days = getDaysRemaining(caseObj.deadline)

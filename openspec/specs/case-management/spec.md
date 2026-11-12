@@ -830,7 +830,7 @@ The system SHOULD support parent/child case hierarchies. A sub-case MUST be a fu
 
 ---
 
-### REQ-CM-19: Confidentiality Levels
+### Requirement: REQ-CM-19: Confidentiality Levels
 
 The system SHOULD support confidentiality levels on cases, defaulting from the case type. Cases MUST default their confidentiality from the case type.
 
@@ -3506,6 +3506,60 @@ lists and the Followers section on the People tab SHALL stay.
 - **WHEN** you press the bell beside the Follow control and reload
 - **THEN** the case SHALL still be followed
 - **AND** the bell SHALL read notifications off
+
+### Requirement: An action on the case page answers with a card notice
+
+An action endpoint a case page card calls SHALL answer its result as a `notice` `{ variant, role, title, text }`
+the card shows in place of a toast: `role` is `alert` for an error and `status` otherwise, and the texts are in the
+reader's language. A task is cancelled through the task engine only, behind the write guard on the task's own case.
+
+#### Scenario: Task completed
+
+- **WHEN** a handler completes the task "Documenten beoordelen"
+- **THEN** the answer carries a success notice titled "Taak Documenten beoordelen afgerond."
+
+#### Scenario: Cancel refused by the engine
+
+- **WHEN** a handler cancels a task the engine will not cancel
+- **THEN** the answer is 409 with an error notice titled "Annuleren geweigerd voor <task>:" and the engine's reason as
+  its text
+- **AND** the task stays open
+
+#### Scenario: Cancel without write access
+
+- **WHEN** a signed-in user without write access on the task's case cancels it
+- **THEN** the answer is 403 and the engine is not asked
+
+### Requirement: A reader who is not the handler can claim the case to edit it
+
+The case page SHALL read the record rights, so its edit controls are off while `@self.can.update` is false. While
+`@self.can.update` is false and `@self.can["claim-as-handler"]` is true, the banner row SHALL show "Voeg jezelf toe als
+behandelaar om te kunnen bewerken" with one button that runs the declared action `claim-as-handler` on the case and
+reads the page again.
+
+#### Scenario: A group member opens a case they do not handle
+
+- **GIVEN** a case whose `@self.can` is `{ update: false, "claim-as-handler": true }` for the reader
+- **WHEN** the reader opens the case
+- **THEN** the edit controls are off and the banner offers "Voeg mij toe als behandelaar"
+- **AND** pressing it runs `claim-as-handler` on the case, after which the page follows the new rights
+
+#### Scenario: The handler opens the case
+
+- **GIVEN** a case whose `@self.can.update` is true for the reader
+- **THEN** the banner does not show and every edit control is there
+
+### Requirement: Objects is reached from the Cases menu
+
+The simple profile SHALL list Objects in the Cases part of the menu, at `/objects`. Each row SHALL be one case on an object: the object first, then its type, the case and the status of that case.
+
+#### Scenario: A handler starts at the object
+@e2e exclude a menu entry and columns declared in the manifest; objectsIndexLook reads them
+
+- **GIVEN** a building linked to two cases
+- **WHEN** a handler opens Objecten under Zaken
+- **THEN** the list shows two rows for that building, each with its case, the case number and the status
+- **AND** View case opens that row's case
 
 ## Sharing, Transfer, Email & Public Access (retrofit)
 

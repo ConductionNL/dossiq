@@ -518,6 +518,103 @@ class CaseRecycleServiceTest extends TestCase {
 
 		$this->service()->restore(caseId: 'case-live');
 	}//end testALiveCaseCannotBeRestored()
+
+	/**
+	 * Only a soft-deleted case is found as deleted: a miss, another schema and an empty id are not.
+	 *
+	 * @return void
+	 */
+	public function testOnlyADeletedCaseIsFoundAsDeleted(): void {
+		$this->assertSame(expected: 'case-9', actual: $this->service()->findDeleted(caseId: 'case-9')->getUuid());
+		$this->assertNull(actual: $this->service()->findDeleted(caseId: ''));
+
+		$this->mapper = new class {
+
+			/**
+			 * A mapper that raises its miss.
+			 *
+			 * @return object Never.
+			 */
+			public function find(): object {
+				throw new RuntimeException('no such object');
+			}
+		};
+		$this->assertNull(actual: $this->service()->findDeleted(caseId: 'case-1'));
+
+		$this->mapper = new class {
+
+			/**
+			 * A deleted row of another schema.
+			 *
+			 * @return object The entity.
+			 */
+			public function find(): object {
+				return CaseRecycleServiceTestEntity::aDocument();
+			}
+		};
+		$this->assertNull(actual: $this->service()->findDeleted(caseId: 'doc-1'));
+	}//end testOnlyADeletedCaseIsFoundAsDeleted()
+
+	/**
+	 * Without the lens, without the table mappers, or with an unresolvable table, the lens scans every table.
+	 *
+	 * @return void
+	 */
+	public function testTheLensFallsBackOnTheScan(): void {
+		$this->assertSame(expected: 1, actual: $this->service(lens: true)->deletedCases(forUser: 'archivaris', isAdmin: true)['total']);
+
+		$this->withTableMappers();
+		$this->assertSame(expected: 1, actual: $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true)['total']);
+
+		$finder = new class {
+
+			/**
+			 * An unconfigured id.
+			 *
+			 * @return object Never.
+			 */
+			public function find(): object {
+				throw new RuntimeException('not configured');
+			}
+		};
+		$this->settingsService = $this->createMock(originalClassName: SettingsService::class);
+		$this->settingsService->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => 'case',
+				default => $default,
+			}
+		);
+		$this->settingsService->method('getOpenRegisterClass')->willReturnCallback(
+			fn (string $class): ?object => match ($class) {
+				CaseRecycleService::MAGIC_MAPPER => $this->mapper,
+				CaseRecycleService::REGISTER_MAPPER, CaseRecycleService::SCHEMA_MAPPER => $finder,
+				default => null,
+			}
+		);
+		$this->assertSame(expected: 1, actual: $this->service(lens: true)->deletedCases(forUser: 'archivaris', isAdmin: true)['total']);
+	}//end testTheLensFallsBackOnTheScan()
+
+	/**
+	 * A trash that cannot be read lists nothing rather than failing the page.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableTrashListsNothing(): void {
+		$this->mapper = new class {
+
+			/**
+			 * A scan that fails.
+			 *
+			 * @return array<int, object> Never.
+			 */
+			public function findDeletedAcrossAllMagicTables(): array {
+				throw new RuntimeException('database gone');
+			}
+		};
+
+		$this->assertSame(expected: 0, actual: $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true)['total']);
+	}//end testAnUnreadableTrashListsNothing()
 }//end class
 
 /**

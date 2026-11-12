@@ -582,4 +582,45 @@ class CaseAccessLinkServiceTest extends TestCase {
 		self::assertArrayHasKey('error', $result);
 		self::assertSame([], $this->objects->objects, 'No link means no share record.');
 	}//end testAFailedMintIsNotAShare()
+	/**
+	 * Capabilities are trimmed and lowercased, blanks and repeats dropped, reading first; one unknown refuses all.
+	 *
+	 * @return void
+	 */
+	public function testCapabilitiesAreNormalisedAndOneUnknownRefusesAll(): void {
+		$granted = $this->service->createTokenShare(
+			caseId: 'case-1',
+			label: '',
+			createdBy: 'anja',
+			expiresAt: '2030-01-01',
+			capabilities: [' Upload ', '', 'COMMENT', 'read', 'upload', '  '],
+		);
+		self::assertArrayNotHasKey('error', $granted);
+		$minted = $this->links->minted[array_key_first($this->links->minted)];
+		self::assertSame(['read', 'upload', 'comment'], $minted['capabilities']);
+
+		$this->links->minted = [];
+		$refused = $this->service->createTokenShare(
+			caseId: 'case-1',
+			label: '',
+			createdBy: 'anja',
+			expiresAt: '2030-01-01',
+			capabilities: ['comment', 'Read ', 'share'],
+		);
+		self::assertSame('A link may grant reading, commenting or uploading, and nothing else', $refused['error'] ?? null);
+		self::assertSame([], $this->links->minted);
+	}//end testCapabilitiesAreNormalisedAndOneUnknownRefusesAll()
+
+	/**
+	 * A blank or unreadable expiry leaves a link live; a disabled flag must be exactly true to pause it.
+	 *
+	 * @return void
+	 */
+	public function testStateOfTreatsAnUnreadableExpiryAsLive(): void {
+		self::assertSame('live', $this->accessLinks->stateOf([]));
+		self::assertSame('live', $this->accessLinks->stateOf(['expiresAt' => '  ']));
+		self::assertSame('live', $this->accessLinks->stateOf(['expiresAt' => 'not a date']));
+		self::assertSame('live', $this->accessLinks->stateOf(['disabled' => 'yes', 'revokedAt' => '']));
+		self::assertSame('revoked', $this->accessLinks->stateOf(['revokedAt' => '2026-01-01', 'disabled' => true]));
+	}//end testStateOfTreatsAnUnreadableExpiryAsLive()
 }//end class

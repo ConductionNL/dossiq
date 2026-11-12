@@ -173,28 +173,24 @@ class CasePlanProjectionService {
 			throw new UnexpectedValueException('caseModel.planItems must be a list of plan items.');
 		}
 
-		$byId = [];
-		$order = [];
-		foreach ($planItems as $index => $item) {
-			if (is_array($item) === false) {
-				throw new UnexpectedValueException(sprintf('caseModel.planItems[%d] must be an object.', (int)$index));
-			}
-
-			$id = trim((string)($item['id'] ?? ''));
-			if ($id === '') {
-				throw new UnexpectedValueException(sprintf('caseModel.planItems[%d] has no id.', (int)$index));
-			}
-
-			if (isset($byId[$id]) === true) {
-				throw new UnexpectedValueException(sprintf("caseModel repeats plan-item id '%s'; ids are unique within a model.", $id));
-			}
-
-			$byId[$id] = $item;
-			$order[] = $id;
-		}
+		$byId = $this->indexPlanItems(planItems: $planItems);
+		$order = array_map(static fn ($id): string => (string)$id, array_keys($byId));
 
 		$this->assertParentsResolve(byId: $byId);
+		$items = $this->convertRootItems(byId: $byId, order: $order);
 
+		return ['settings' => $this->convertSettings(caseModel: $caseModel), 'items' => $items];
+	}//end convertModel()
+
+	/**
+	 * Convert every plan item without a parent, each with its subtree, in declared order.
+	 *
+	 * @param array<string, array<string, mixed>> $byId  The plan items by id.
+	 * @param array<int, string>                  $order The ids in declared order.
+	 *
+	 * @return array<int, array<string, mixed>> The top-level nodes.
+	 */
+	private function convertRootItems(array $byId, array $order): array {
 		$items = [];
 		foreach ($order as $id) {
 			if (trim((string)($byId[$id]['parentId'] ?? '')) === '') {
@@ -202,8 +198,54 @@ class CasePlanProjectionService {
 			}
 		}
 
-		return ['settings' => $this->convertSettings(caseModel: $caseModel), 'items' => $items];
-	}//end convertModel()
+		return $items;
+	}//end convertRootItems()
+
+	/**
+	 * Index the plan items by their trimmed id, in declared order.
+	 *
+	 * @param array<int|string, mixed> $planItems The declared plan items.
+	 *
+	 * @return array<string, array<string, mixed>> The items by id.
+	 *
+	 * @throws UnexpectedValueException Naming the entry without an object, without an id, or with a repeated id.
+	 */
+	private function indexPlanItems(array $planItems): array {
+		$byId = [];
+		foreach ($planItems as $index => $item) {
+			$id = $this->planItemId(item: $item, index: (int)$index);
+			if (isset($byId[$id]) === true) {
+				throw new UnexpectedValueException(sprintf("caseModel repeats plan-item id '%s'; ids are unique within a model.", $id));
+			}
+
+			$byId[$id] = $item;
+		}
+
+		return $byId;
+	}//end indexPlanItems()
+
+	/**
+	 * The trimmed id of one declared plan item.
+	 *
+	 * @param mixed $item  The declared entry.
+	 * @param int   $index Its position, for the refusal message.
+	 *
+	 * @return string The id.
+	 *
+	 * @throws UnexpectedValueException When the entry is not an object or has no id.
+	 */
+	private function planItemId(mixed $item, int $index): string {
+		if (is_array($item) === false) {
+			throw new UnexpectedValueException(sprintf('caseModel.planItems[%d] must be an object.', $index));
+		}
+
+		$id = trim((string)($item['id'] ?? ''));
+		if ($id === '') {
+			throw new UnexpectedValueException(sprintf('caseModel.planItems[%d] has no id.', $index));
+		}
+
+		return $id;
+	}//end planItemId()
 
 	/**
 	 * Convert one dossiq sentry into an OpenRegister sentry.
@@ -224,22 +266,38 @@ class CasePlanProjectionService {
 			$converted['id'] = $id;
 		}
 
+		$parts = $this->convertSentryParts(sentry: $sentry, where: $where);
+		if ($parts === []) {
+			throw new UnexpectedValueException(sprintf('%s has neither an onPart nor an ifPart; there is nothing to convert.', $where));
+		}
+
+		return array_merge($converted, $parts);
+	}//end convertSentry()
+
+	/**
+	 * The converted on- and if-part of a sentry, each only when declared as a non-empty object.
+	 *
+	 * @param array<string, mixed> $sentry The dossiq sentry.
+	 * @param string               $where  Which criteria list, for the refusal message.
+	 *
+	 * @return array<string, mixed> `{on?, if?}`.
+	 *
+	 * @throws UnexpectedValueException Naming the part it refuses.
+	 */
+	private function convertSentryParts(array $sentry, string $where): array {
+		$parts = [];
 		$onPart = ($sentry['onPart'] ?? null);
 		if (is_array($onPart) === true && $onPart !== []) {
-			$converted['on'] = $this->convertOnPart(onPart: $onPart, where: $where);
+			$parts['on'] = $this->convertOnPart(onPart: $onPart, where: $where);
 		}
 
 		$ifPart = ($sentry['ifPart'] ?? null);
 		if (is_array($ifPart) === true && $ifPart !== []) {
-			$converted['if'] = $this->convertIfPart(ifPart: $ifPart, where: $where);
+			$parts['if'] = $this->convertIfPart(ifPart: $ifPart, where: $where);
 		}
 
-		if ($converted === [] || (isset($converted['on']) === false && isset($converted['if']) === false)) {
-			throw new UnexpectedValueException(sprintf('%s has neither an onPart nor an ifPart; there is nothing to convert.', $where));
-		}
-
-		return $converted;
-	}//end convertSentry()
+		return $parts;
+	}//end convertSentryParts()
 
 	/**
 	 * Convert a dossiq `{field, operator, value}` if-part into JSONLogic.
@@ -469,19 +527,8 @@ class CasePlanProjectionService {
 	 * @throws UnexpectedValueException Naming the item it refuses.
 	 */
 	private function nodeFor(array $item, string $id): array {
-		$type = (string)($item['type'] ?? '');
-		if (in_array($type, ['stage', 'humanTask', 'milestone'], true) === false) {
-			throw new UnexpectedValueException(
-				sprintf("caseModel plan item '%s' has type '%s'; expected stage, humanTask or milestone.", $id, $type)
-			);
-		}
-
+		$type = $this->convertibleType(item: $item, id: $id);
 		$discretionary = (($item['discretionary'] ?? false) === true);
-		if ($type === 'milestone' && $discretionary === true) {
-			throw new UnexpectedValueException(
-				sprintf("caseModel plan item '%s' is a discretionary milestone, which the case layer refuses: a milestone is never enabled.", $id)
-			);
-		}
 
 		$node = [
 			'key' => $id,
@@ -496,18 +543,57 @@ class CasePlanProjectionService {
 			'exitCriteria' => $this->convertCriteria(criteria: ($item['exitCriteria'] ?? []), where: sprintf("plan item '%s' exit", $id)),
 		];
 
+		return array_merge($node, $this->optionalNodeFields(item: $item));
+	}//end nodeFor()
+
+	/**
+	 * The type of a plan item, refused when the case layer cannot hold it.
+	 *
+	 * @param array<string, mixed> $item The dossiq plan item.
+	 * @param string               $id   Its id.
+	 *
+	 * @return string The type: stage, humanTask or milestone.
+	 *
+	 * @throws UnexpectedValueException For an unknown type or a discretionary milestone.
+	 */
+	private function convertibleType(array $item, string $id): string {
+		$type = (string)($item['type'] ?? '');
+		if (in_array($type, ['stage', 'humanTask', 'milestone'], true) === false) {
+			throw new UnexpectedValueException(
+				sprintf("caseModel plan item '%s' has type '%s'; expected stage, humanTask or milestone.", $id, $type)
+			);
+		}
+
+		if ($type === 'milestone' && ($item['discretionary'] ?? false) === true) {
+			throw new UnexpectedValueException(
+				sprintf("caseModel plan item '%s' is a discretionary milestone, which the case layer refuses: a milestone is never enabled.", $id)
+			);
+		}
+
+		return $type;
+	}//end convertibleType()
+
+	/**
+	 * The description and authorization of a node, each only when the plan item sets it.
+	 *
+	 * @param array<string, mixed> $item The dossiq plan item.
+	 *
+	 * @return array<string, mixed> `{description?, authorization?}`.
+	 */
+	private function optionalNodeFields(array $item): array {
+		$fields = [];
 		$description = trim((string)($item['description'] ?? ''));
 		if ($description !== '') {
-			$node['description'] = $description;
+			$fields['description'] = $description;
 		}
 
 		$authorization = ($item['authorization'] ?? []);
 		if (is_array($authorization) === true && $authorization !== []) {
-			$node['authorization'] = array_values(array_map(static fn ($rule): string => (string)$rule, $authorization));
+			$fields['authorization'] = array_values(array_map(static fn ($rule): string => (string)$rule, $authorization));
 		}
 
-		return $node;
-	}//end nodeFor()
+		return $fields;
+	}//end optionalNodeFields()
 
 	/**
 	 * Convert the direct children of a stage, in declared order.
@@ -769,19 +855,35 @@ class CasePlanProjectionService {
 		}
 
 		foreach ($value as $item) {
-			if (is_array($item) === true && $item !== []) {
-				return $item;
-			}
-
-			if (is_object($item) === true && method_exists($item, 'jsonSerialize') === true) {
-				$serialized = $item->jsonSerialize();
-				if (is_array($serialized) === true && $serialized !== []) {
-					return $serialized;
-				}
+			$row = $this->rowOf(item: $item);
+			if ($row !== []) {
+				return $row;
 			}
 		}
 
 		return null;
 	}//end firstAsArray()
+
+	/**
+	 * One search hit as a plain array: the array itself, or what a serialisable object answers.
+	 *
+	 * @param mixed $item One hit.
+	 *
+	 * @return array<string, mixed> The row, empty when the hit carries none.
+	 */
+	private function rowOf(mixed $item): array {
+		if (is_array($item) === true) {
+			return $item;
+		}
+
+		if (is_object($item) === true && method_exists($item, 'jsonSerialize') === true) {
+			$serialized = $item->jsonSerialize();
+			if (is_array($serialized) === true) {
+				return $serialized;
+			}
+		}
+
+		return [];
+	}//end rowOf()
 
 }//end class

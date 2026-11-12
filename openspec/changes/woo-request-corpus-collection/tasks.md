@@ -145,3 +145,9 @@ first and seen red. Build every OpenRegister double from the real class signatur
   `development` with CI green. The five rows then read `yes` (build); 19.18 reads `yes` for "from
   the last one" and partial for "from a named template" until 5.2 is done. `production` only with a
   store release.
+
+## 8. Mail conversations
+
+- [ ] 8.1 On the add, read `Message-ID`, `In-Reply-To` and `References` from `.eml` and `.msg` picks and record a shared `threadId` in `provenance`; a mail without those headers gets its own (REQ-WRC-006).
+- [ ] 8.2 Count conversations in GET `/api/cases/{id}/woo/collection` and group a conversation's messages in the collected documents list, in date order (REQ-WRC-006).
+- [ ] 8.3 Test: a three-mail reply chain from two custodians shares one `threadId`; a headerless `.msg` stands alone.

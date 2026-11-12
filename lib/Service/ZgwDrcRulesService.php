@@ -167,33 +167,69 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 
 		$body = $this->applyCreateDefaults(body: $body, iotUrl: $iotUrl);
 
-		// Drc-006b: If indicatieGebruiksrecht is explicitly true, gebruiksrechten must exist.
-		// On create the document does not yet exist, so indicatieGebruiksrecht=true is ALWAYS an error.
+		// Drc-006b, then drc-008: unique identificatie + bronorganisatie.
+		$error = ($this->checkCreateGebruiksrecht(body: $body) ?? $this->checkIdentificatieUnique(body: $body));
+		if ($error !== null) {
+			return $error;
+		}
+
+		// Drc-008: Auto-generate identificatie if not provided.
+		return $this->isValid(body: $this->withIdentificatie(body: $body));
+	}//end rulesEnkelvoudiginformatieobjectenCreate()
+
+	/**
+	 * Drc-006b: if indicatieGebruiksrecht is explicitly true, gebruiksrechten must exist.
+	 *
+	 * On create the document does not yet exist, so indicatieGebruiksrecht=true is ALWAYS an error
+	 * when there is a context to check against.
+	 *
+	 * @param array $body The request body, its defaults applied
+	 *
+	 * @return array|null The refusal, or null
+	 */
+	private function checkCreateGebruiksrecht(array $body): ?array {
 		if ($body['indicatieGebruiksrecht'] === true && $this->objectService !== null) {
 			return $this->validateIndicationGebruiksrechtTrue();
 		}
 
-		// Drc-008: Check unique identificatie + bronorganisatie.
-		if (empty($body['identificatie']) === false) {
-			$error = $this->checkFieldUniqueness(
-				field1Value: $body['identificatie'],
-				field1Search: 'identifier',
-				field2Value: $body['bronorganisatie'] ?? '',
-				field2Search: 'sourceOrganisation',
-				errorField: 'identificatie'
-			);
-			if ($error !== null) {
-				return $error;
-			}
+		return null;
+	}//end checkCreateGebruiksrecht()
+
+	/**
+	 * Drc-008: a given identificatie is unique together with the bronorganisatie.
+	 *
+	 * @param array $body The request body
+	 *
+	 * @return array|null The refusal, or null when unique or not given
+	 */
+	private function checkIdentificatieUnique(array $body): ?array {
+		if (empty($body['identificatie']) === true) {
+			return null;
 		}
 
-		// Drc-008: Auto-generate identificatie if not provided.
+		return $this->checkFieldUniqueness(
+			field1Value: $body['identificatie'],
+			field1Search: 'identifier',
+			field2Value: $body['bronorganisatie'] ?? '',
+			field2Search: 'sourceOrganisation',
+			errorField: 'identificatie'
+		);
+	}//end checkIdentificatieUnique()
+
+	/**
+	 * Drc-008: the body with a generated identificatie when it has none.
+	 *
+	 * @param array $body The request body
+	 *
+	 * @return array The body with an identificatie
+	 */
+	private function withIdentificatie(array $body): array {
 		if (empty($body['identificatie']) === true) {
 			$body['identificatie'] = $this->generateIdentificatie(prefix: 'DOCUMENT');
 		}
 
-		return $this->isValid(body: $body);
-	}//end rulesEnkelvoudiginformatieobjectenCreate()
+		return $body;
+	}//end withIdentificatie()
 
 	/**
 	 * Drc-001: the informatieobjecttype URL points at a published type.
@@ -311,50 +347,116 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 		array $body,
 		?array $existingObject = null,
 	): array {
-		if ($existingObject === null || $this->objectService === null) {
-			return $this->isValid(body: $body);
-		}
-
-		$existingId = $existingObject['id'] ?? ($existingObject['@self']['id'] ?? null);
+		$existingId = $this->storedDocumentId(existingObject: $existingObject);
 		if ($existingId === null) {
 			return $this->isValid(body: $body);
 		}
 
 		// Drc-007: Check for ObjectInformatieObject relations.
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$oioSchema = $this->settingsService->getConfigValue(key: 'document_link_schema');
-
-		if ($register !== '' && $oioSchema !== '') {
-			// OIO stores the full informatieobject URL in the 'document' field,
-			// so search with both UUID and partial match to find any OIO relations.
-			try {
-				$relatedIds = $this->relations->findOioRelationsForDocument(
-					register: $register,
-					schema: $oioSchema,
-					docUuid: $existingId
-				);
-			} catch (\Throwable $e) {
-				// The search did not run, so nobody knows whether relations point here. Refuse.
-				return $this->results->notVerified(rule: 'drc-007', object: 'document ' . $existingId, cause: $e->getMessage());
-			}
-
-			if (empty($relatedIds) === false) {
-				return $this->error(
-					status: 400,
-					detail: 'Het informatieobject kan niet verwijderd worden omdat er nog relaties aan gekoppeld zijn.',
-					invalidParams: [
-						$this->fieldError(
-							fieldName: 'nonFieldErrors',
-							code: 'pending-relations',
-							reason: 'Het informatieobject heeft nog ObjectInformatieObject relaties.'
-						),
-					]
-				);
-			}
-		}//end if
+		$refusal = $this->pendingRelationsRefusal(documentId: $existingId);
+		if ($refusal !== []) {
+			return $refusal;
+		}
 
 		return $this->isValid(body: $body);
 	}//end rulesEnkelvoudiginformatieobjectenDestroy()
+
+	/**
+	 * The id of the stored document a delete is about, null when there is none or nothing can be looked up.
+	 *
+	 * @param array|null $existingObject The existing EIO data
+	 *
+	 * @return mixed The id, or null
+	 */
+	private function storedDocumentId(?array $existingObject): mixed {
+		if ($existingObject === null || $this->objectService === null) {
+			return null;
+		}
+
+		return $existingObject['id'] ?? ($existingObject['@self']['id'] ?? null);
+	}//end storedDocumentId()
+
+	/**
+	 * Drc-007: the refusal of a delete while ObjectInformatieObject relations point at the document.
+	 *
+	 * Without a register or a link schema there is nothing to search. A search
+	 * that could not run refuses as not verified, because nobody knows whether
+	 * relations point here.
+	 *
+	 * @param mixed $documentId The stored document's id
+	 *
+	 * @return array The refusal, empty when the delete may go ahead
+	 */
+	private function pendingRelationsRefusal(mixed $documentId): array {
+		$scope = $this->documentLinkScope();
+		if ($scope === []) {
+			return [];
+		}
+
+		// OIO stores the full informatieobject URL in the 'document' field,
+		// so search with both UUID and partial match to find any OIO relations.
+		try {
+			$relatedIds = $this->linksToDocument(scope: $scope, documentId: $documentId);
+		} catch (\Throwable $e) {
+			return $this->results->notVerified(rule: 'drc-007', object: 'document ' . $documentId, cause: $e->getMessage());
+		}
+
+		if (empty($relatedIds) === true) {
+			return [];
+		}
+
+		return $this->pendingRelationsError();
+	}//end pendingRelationsRefusal()
+
+	/**
+	 * The ObjectInformatieObject links that point at a document, by its uuid or its URL.
+	 *
+	 * @param array{register: string, schema: string} $scope      Where the links are stored
+	 * @param mixed                                    $documentId The stored document's id
+	 *
+	 * @return array The ids of the links
+	 */
+	private function linksToDocument(array $scope, mixed $documentId): array {
+		return $this->relations->findOioRelationsForDocument(
+			register: $scope['register'],
+			schema: $scope['schema'],
+			docUuid: $documentId
+		);
+	}//end linksToDocument()
+
+	/**
+	 * Where the document's ObjectInformatieObject links are stored, empty when not configured.
+	 *
+	 * @return array{register: string, schema: string}|array{} The register and link schema
+	 */
+	private function documentLinkScope(): array {
+		$register = $this->mappingConfig['sourceRegister'] ?? '';
+		$oioSchema = $this->settingsService->getConfigValue(key: 'document_link_schema');
+		if ($register === '' || $oioSchema === '') {
+			return [];
+		}
+
+		return ['register' => $register, 'schema' => $oioSchema];
+	}//end documentLinkScope()
+
+	/**
+	 * The refusal of deleting a document that still has relations (drc-007).
+	 *
+	 * @return array Validation error
+	 */
+	private function pendingRelationsError(): array {
+		return $this->error(
+			status: 400,
+			detail: 'Het informatieobject kan niet verwijderd worden omdat er nog relaties aan gekoppeld zijn.',
+			invalidParams: [
+				$this->fieldError(
+					fieldName: 'nonFieldErrors',
+					code: 'pending-relations',
+					reason: 'Het informatieobject heeft nog ObjectInformatieObject relaties.'
+				),
+			]
+		);
+	}//end pendingRelationsError()
 
 	/**
 	 * Validate that indicatieGebruiksrecht=true requires existing gebruiksrechten (drc-006b).
@@ -385,48 +487,88 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	 * @return array|null Validation error, or null if valid
 	 */
 	private function validateLock(array $body, ?array $existingObject): ?array {
-		if ($existingObject === null) {
-			return null;
-		}
-
 		// Check if the document is locked.
-		$existingLock = $existingObject['locked'] ?? ($existingObject['lock'] ?? '');
+		$existingLock = $this->currentLock(existingObject: $existingObject);
 		if ($existingLock === '' || $existingLock === false) {
 			return null;
 		}
 
 		// Drc-006: Require valid lock ID.
-		$requestLock = $body['lock'] ?? '';
+		return $this->lockRefusal(requestLock: $body['lock'] ?? '', existingLock: $existingLock);
+	}//end validateLock()
+
+	/**
+	 * The lock a stored document carries, '' when there is no stored document.
+	 *
+	 * @param array|null $existingObject The existing EIO data
+	 *
+	 * @return mixed The lock id, '' or false when unlocked
+	 */
+	private function currentLock(?array $existingObject): mixed {
+		if ($existingObject === null) {
+			return '';
+		}
+
+		return $existingObject['locked'] ?? ($existingObject['lock'] ?? '');
+	}//end currentLock()
+
+	/**
+	 * Drc-006: the refusal of a modification of a locked document without its own lock id.
+	 *
+	 * @param mixed $requestLock  The lock id the request carries, '' when none
+	 * @param mixed $existingLock The lock id the document carries
+	 *
+	 * @return array|null Validation error, or null when the lock ids match
+	 */
+	private function lockRefusal(mixed $requestLock, mixed $existingLock): ?array {
 		if ($requestLock === '') {
-			return $this->error(
-				status: 400,
-				detail: 'Het document is vergrendeld. Geef een geldig lock ID mee.',
-				invalidParams: [
-					$this->fieldError(
-						fieldName: 'lock',
-						code: 'required',
-						reason: 'Het document is vergrendeld.'
-					),
-				]
-			);
+			return $this->lockRequiredError();
 		}
 
 		if ($requestLock !== $existingLock) {
-			return $this->error(
-				status: 400,
-				detail: 'Het opgegeven lock ID is niet geldig.',
-				invalidParams: [
-					$this->fieldError(
-						fieldName: 'lock',
-						code: 'incorrect-lock-id',
-						reason: 'Het opgegeven lock ID komt niet overeen.'
-					),
-				]
-			);
+			return $this->wrongLockError();
 		}
 
 		return null;
-	}//end validateLock()
+	}//end lockRefusal()
+
+	/**
+	 * The refusal of modifying a locked document without a lock id (drc-006).
+	 *
+	 * @return array Validation error
+	 */
+	private function lockRequiredError(): array {
+		return $this->error(
+			status: 400,
+			detail: 'Het document is vergrendeld. Geef een geldig lock ID mee.',
+			invalidParams: [
+				$this->fieldError(
+					fieldName: 'lock',
+					code: 'required',
+					reason: 'Het document is vergrendeld.'
+				),
+			]
+		);
+	}//end lockRequiredError()
+
+	/**
+	 * The refusal of modifying a locked document with another lock id (drc-006).
+	 *
+	 * @return array Validation error
+	 */
+	private function wrongLockError(): array {
+		return $this->error(
+			status: 400,
+			detail: 'Het opgegeven lock ID is niet geldig.',
+			invalidParams: [
+				$this->fieldError(
+					fieldName: 'lock',
+					code: 'incorrect-lock-id',
+					reason: 'Het opgegeven lock ID komt niet overeen.'
+				),
+			]
+		);
+	}//end wrongLockError()
 
 	/**
 	 * Derive vertrouwelijkheidaanduiding from informatieobjecttype (drc-005).
