@@ -413,6 +413,56 @@ describe('BulkDocumentActionDialog — copy-to-case (DqDocumentenBeheer "Kopiër
 	})
 })
 
+describe('BulkDocumentActionDialog — the gesture each mode runs', () => {
+	it('posts an empty target case when none was chosen', async () => {
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'copy-to-case', selectedIds: ['join-1'], caseId: 'case-1' },
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockPost).toHaveBeenCalledWith(
+			expect.stringContaining('/apps/dossiq/api/informatieobjecten/bulk/copy'),
+			{ ids: ['doc-1'], targetCaseId: '' },
+		)
+	})
+
+	it('downloads the ZIP for any mode it does not name', async () => {
+		mockPost.mockResolvedValue({ data: new Blob(['zip-bytes']) })
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'download', selectedIds: ['doc-1'], caseId: 'case-9' },
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockPost).toHaveBeenCalledTimes(1)
+		expect(mockPost).toHaveBeenCalledWith(
+			expect.stringContaining('cases/case-9/dossier/zip'),
+			{ ids: ['doc-1'] },
+			{ responseType: 'blob' },
+		)
+	})
+
+	it('answers a promise in every mode', async () => {
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'confidentiality', selectedIds: ['join-1'], caseId: 'case-1' },
+		})
+		await wrapper.setData({ level: 'openbaar' })
+
+		const answer = wrapper.vm.onConfirm()
+		expect(answer).toBeInstanceOf(Promise)
+		await answer
+		await flushPromises()
+
+		expect(mockPost).toHaveBeenCalledWith(
+			expect.stringContaining('/apps/dossiq/api/informatieobjecten/bulk/metadata'),
+			{ ids: ['doc-1'], metadata: { vertrouwelijkheidaanduiding: 'openbaar' } },
+		)
+	})
+})
+
 describe('BulkDocumentActionDialog — merge-pdf (DqDocumentenBeheer "Samenvoegen tot pdf")', () => {
 	it('asks the case to merge the ticked files, in order, into one PDF', async () => {
 		mockPost.mockResolvedValue({ data: { status: 'done', resultFileId: 99 } })
