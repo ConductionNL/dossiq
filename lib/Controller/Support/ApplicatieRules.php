@@ -133,24 +133,12 @@ final class ApplicatieRules {
 	 */
 	public function validateApplicatieBody(array $body, ?string $excludeUuid = null): ?JSONResponse {
 		// Ac-002: Check heeftAlleAutorisaties consistency (before uniqueness).
-		$authConsistencyError = $this->validateAutorisatieConsistency(body: $body);
-		if ($authConsistencyError !== null) {
-			return $authConsistencyError;
-		}
-
 		// Ac-003: Check scope-based field requirements (before uniqueness).
-		$scopeError = $this->validateAutorisatieScopes(body: $body);
-		if ($scopeError !== null) {
-			return $scopeError;
-		}
-
 		// Ac-001: Check clientId uniqueness (after content validation).
-		$clientIdError = $this->validateClientIdUniqueness(body: $body, excludeUuid: $excludeUuid);
-		if ($clientIdError !== null) {
-			return $clientIdError;
-		}
-
-		return null;
+		// The first rule that answers an error wins; the later ones do not run.
+		return $this->validateAutorisatieConsistency(body: $body)
+			?? $this->validateAutorisatieScopes(body: $body)
+			?? $this->validateClientIdUniqueness(body: $body, excludeUuid: $excludeUuid);
 	}//end validateApplicatieBody()
 
 	/**
@@ -169,34 +157,68 @@ final class ApplicatieRules {
 			return null;
 		}
 
+		return $this->clientIdsError(clientIds: $clientIds, excludeUuid: $excludeUuid);
+	}//end validateClientIdUniqueness()
+
+	/**
+	 * The error for a non-empty list of client ids: too many, or one already taken.
+	 *
+	 * @param array<int, mixed> $clientIds   The requested client ids.
+	 * @param string|null       $excludeUuid UUID of the applicatie being updated.
+	 *
+	 * @return JSONResponse|null The error, or null when the list may be used.
+	 */
+	private function clientIdsError(array $clientIds, ?string $excludeUuid): ?JSONResponse {
 		// Enforce a reasonable maximum to prevent DoS via large arrays.
 		if (count($clientIds) > 100) {
-			return $this->invalidParams(
-				params: [
-					[
-						'name' => 'clientIds',
-						'code' => 'max-items',
-						'reason' => 'A maximum of 100 clientIds per applicatie is allowed.',
-					],
-				]
+			return $this->clientIdsParamError(
+				code: 'max-items',
+				reason: 'A maximum of 100 clientIds per applicatie is allowed.'
 			);
 		}
 
+		return $this->clientIdTakenError(clientIds: $clientIds, excludeUuid: $excludeUuid);
+	}//end clientIdsError()
+
+	/**
+	 * The error naming the first requested client id another applicatie already uses.
+	 *
+	 * @param array<int, mixed> $clientIds   The requested client ids.
+	 * @param string|null       $excludeUuid UUID of the applicatie being updated.
+	 *
+	 * @return JSONResponse|null The error, or null when none is taken.
+	 */
+	private function clientIdTakenError(array $clientIds, ?string $excludeUuid): ?JSONResponse {
 		$takenId = $this->firstTakenClientId(clientIds: $clientIds, excludeUuid: $excludeUuid);
 		if ($takenId === null) {
 			return null;
 		}
 
+		return $this->clientIdsParamError(
+			code: 'clientId-exists',
+			reason: "clientId \"{$takenId}\" is already used by another applicatie."
+		);
+	}//end clientIdTakenError()
+
+	/**
+	 * A 400 with one invalid parameter on `clientIds`.
+	 *
+	 * @param string $code   The error code.
+	 * @param string $reason The reason.
+	 *
+	 * @return JSONResponse The response.
+	 */
+	private function clientIdsParamError(string $code, string $reason): JSONResponse {
 		return $this->invalidParams(
 			params: [
 				[
 					'name' => 'clientIds',
-					'code' => 'clientId-exists',
-					'reason' => "clientId \"{$takenId}\" is already used by another applicatie.",
+					'code' => $code,
+					'reason' => $reason,
 				],
 			]
 		);
-	}//end validateClientIdUniqueness()
+	}//end clientIdsParamError()
 
 	/**
 	 * Find the first requested clientId another consumer already holds.
@@ -218,14 +240,11 @@ final class ApplicatieRules {
 			$data = $consumer->jsonSerialize();
 
 			// Skip self when updating.
-			if ($excludeUuid !== null && ($data['uuid'] ?? '') === $excludeUuid) {
+			if ($this->isApplicatie(data: $data, uuid: $excludeUuid) === true) {
 				continue;
 			}
 
-			$takenId = $this->firstHeldClientId(
-				clientIds: $clientIds,
-				existingClientIds: (new ApplicatieRepresentation())->consumerClientIds(consumer: $consumer)
-			);
+			$takenId = $this->firstHeldBy(consumer: $consumer, clientIds: $clientIds);
 			if ($takenId !== null) {
 				return $takenId;
 			}
@@ -233,6 +252,33 @@ final class ApplicatieRules {
 
 		return null;
 	}//end firstTakenClientId()
+
+	/**
+	 * The first requested client id the consumer already holds.
+	 *
+	 * @param object            $consumer  The stored consumer.
+	 * @param array<int, mixed> $clientIds The requested client ids.
+	 *
+	 * @return mixed The first held id, or null when it holds none of them.
+	 */
+	private function firstHeldBy(object $consumer, array $clientIds): mixed {
+		return $this->firstHeldClientId(
+			clientIds: $clientIds,
+			existingClientIds: (new ApplicatieRepresentation())->consumerClientIds(consumer: $consumer)
+		);
+	}//end firstHeldBy()
+
+	/**
+	 * Whether a serialised consumer is the applicatie with the given UUID.
+	 *
+	 * @param array<string, mixed> $data The serialised consumer.
+	 * @param string|null          $uuid The UUID, or null when none is excluded.
+	 *
+	 * @return bool True when it is that applicatie.
+	 */
+	private function isApplicatie(array $data, ?string $uuid): bool {
+		return $uuid !== null && ($data['uuid'] ?? '') === $uuid;
+	}//end isApplicatie()
 
 	/**
 	 * Find the first requested clientId that appears among a consumer's clientIds.
@@ -268,9 +314,20 @@ final class ApplicatieRules {
 	 */
 	private function validateAutorisatieConsistency(array $body): ?JSONResponse {
 		$heeftAlle = $this->normaliseFlag(value: $body['heeftAlleAutorisaties'] ?? false);
-		$autorisaties = $body['autorisaties'] ?? [];
 
-		// Ac-002a: heeftAlleAutorisaties=true + non-empty autorisaties.
+		return $this->ambiguousAutorisatiesError(heeftAlle: $heeftAlle, autorisaties: ($body['autorisaties'] ?? []))
+			?? $this->missingAutorisatiesError(heeftAlle: $heeftAlle, body: $body);
+	}//end validateAutorisatieConsistency()
+
+	/**
+	 * Ac-002a: heeftAlleAutorisaties=true together with a non-empty autorisaties list.
+	 *
+	 * @param mixed $heeftAlle    The normalised heeftAlleAutorisaties flag.
+	 * @param mixed $autorisaties The autorisaties as sent.
+	 *
+	 * @return JSONResponse|null The error, or null when the two do not clash.
+	 */
+	private function ambiguousAutorisatiesError(mixed $heeftAlle, mixed $autorisaties): ?JSONResponse {
 		if ($heeftAlle === true && is_array($autorisaties) === true && count($autorisaties) > 0) {
 			// phpcs:ignore Generic.Files.LineLength.MaxExceeded
 			$reason = $this->l10n->t('When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified.');
@@ -278,7 +335,18 @@ final class ApplicatieRules {
 			return $this->nonFieldError(code: 'ambiguous-authorizations-specified', reason: $reason);
 		}
 
-		// Ac-002b: heeftAlleAutorisaties=false + empty autorisaties.
+		return null;
+	}//end ambiguousAutorisatiesError()
+
+	/**
+	 * Ac-002b: heeftAlleAutorisaties=false together with an empty autorisaties list.
+	 *
+	 * @param mixed                $heeftAlle The normalised heeftAlleAutorisaties flag.
+	 * @param array<string, mixed> $body      The request body.
+	 *
+	 * @return JSONResponse|null The error, or null when autorisaties are given.
+	 */
+	private function missingAutorisatiesError(mixed $heeftAlle, array $body): ?JSONResponse {
 		if ($heeftAlle === false && $this->declaresEmptyAutorisaties(body: $body) === true) {
 			return $this->nonFieldError(
 				code: 'missing-authorizations',
@@ -287,7 +355,7 @@ final class ApplicatieRules {
 		}
 
 		return null;
-	}//end validateAutorisatieConsistency()
+	}//end missingAutorisatiesError()
 
 	/**
 	 * Normalise the string and integer spellings of a boolean flag.
@@ -374,14 +442,7 @@ final class ApplicatieRules {
 		$invalidParams = [];
 
 		foreach ($autorisaties as $index => $autorisatie) {
-			$missing = $this->missingRequiredFields(
-				autorisatie: $autorisatie,
-				fields: $this->requiredFieldsFor(autorisatie: $autorisatie)
-			);
-			foreach ($missing as $param) {
-				$param['name'] = "autorisaties.{$index}.{$param['name']}";
-				$invalidParams[] = $param;
-			}
+			array_push($invalidParams, ...$this->missingFieldParams(index: $index, autorisatie: $autorisatie));
 		}
 
 		if (count($invalidParams) > 0) {
@@ -390,6 +451,28 @@ final class ApplicatieRules {
 
 		return null;
 	}//end validateAutorisatieScopes()
+
+	/**
+	 * The invalid parameters for the fields one autorisatie lacks, named by its position.
+	 *
+	 * @param int|string $index       The autorisatie's position in the list.
+	 * @param mixed      $autorisatie The autorisatie.
+	 *
+	 * @return array<int, array{name: string, code: string, reason: string}> The invalid parameters.
+	 */
+	private function missingFieldParams(int|string $index, mixed $autorisatie): array {
+		$params = [];
+		$missing = $this->missingRequiredFields(
+			autorisatie: $autorisatie,
+			fields: $this->requiredFieldsFor(autorisatie: $autorisatie)
+		);
+		foreach ($missing as $param) {
+			$param['name'] = "autorisaties.{$index}.{$param['name']}";
+			$params[] = $param;
+		}
+
+		return $params;
+	}//end missingFieldParams()
 
 	/**
 	 * The fields one autorisatie must carry for its component and scopes (ac-003).

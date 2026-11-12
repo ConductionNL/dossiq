@@ -41,6 +41,19 @@ export const SOURCE_PERSONAL = 'user-override'
 export const SOURCE_GROUP = 'group-default'
 
 /**
+ * A call's options with its defaults filled in: a default applies to an
+ * option that is left out or undefined, as a destructuring default does.
+ *
+ * @param {object} options The call.
+ * @param {object} defaults The defaults by option.
+ * @return {object} The options to read.
+ */
+function withDefaults(options, defaults) {
+	const given = Object.entries(options).filter(([, value]) => value !== undefined)
+	return { ...defaults, ...Object.fromEntries(given) }
+}
+
+/**
  * A stable id for one notification.
  *
  * Schema and key together, because the same key can exist on two schemas and
@@ -65,27 +78,45 @@ export function keyFor(entry) {
  * @return {Array<object>} `{ id, label, configured, unconfiguredReason }`.
  * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
-export function channelsFrom({
-	channels = [],
-	singleChannelLabel = 'Notifications',
-} = {}) {
-	if (Array.isArray(channels) === true && channels.length > 0) {
-		return channels.map((channel) => ({
-			id: String(channel?.id ?? ''),
-			label: String(channel?.label ?? channel?.id ?? ''),
-			configured: channel?.configured !== false,
-			unconfiguredReason: String(channel?.unconfiguredReason ?? ''),
-		}))
+export function channelsFrom(options = {}) {
+	const call = withDefaults(options, { channels: [], singleChannelLabel: 'Notifications' })
+	if (isFilledList(call.channels)) {
+		return call.channels.map(channelColumn)
 	}
 
 	return [
 		{
 			id: SINGLE_CHANNEL_ID,
-			label: singleChannelLabel,
+			label: call.singleChannelLabel,
 			configured: true,
 			unconfiguredReason: '',
 		},
 	]
+}
+
+/**
+ * Whether a value is a list with something in it.
+ *
+ * @param {unknown} value The value.
+ * @return {boolean} True for a non-empty array.
+ */
+function isFilledList(value) {
+	return Array.isArray(value) === true && value.length > 0
+}
+
+/**
+ * One column, from one channel the platform named.
+ *
+ * @param {object} channel The platform's channel.
+ * @return {object} `{ id, label, configured, unconfiguredReason }`.
+ */
+function channelColumn(channel) {
+	return {
+		id: String(channel?.id ?? ''),
+		label: String(channel?.label ?? channel?.id ?? ''),
+		configured: channel?.configured !== false,
+		unconfiguredReason: String(channel?.unconfiguredReason ?? ''),
+	}
 }
 
 /**
@@ -99,13 +130,33 @@ export function channelsFrom({
 export function channelAxisFrom(entries = []) {
 	const ids = []
 	for (const entry of entries) {
-		for (const id of Array.isArray(entry?.availableChannels) ? entry.availableChannels : []) {
-			if (typeof id === 'string' && id !== '' && ids.includes(id) === false) {
-				ids.push(id)
-			}
-		}
+		addNewChannelIds(ids, availableChannelsOf(entry))
 	}
 	return ids
+}
+
+/**
+ * The channels one entry can deliver on, or none when it names none.
+ *
+ * @param {object} entry One entry.
+ * @return {Array} Its `availableChannels`.
+ */
+function availableChannelsOf(entry) {
+	return Array.isArray(entry?.availableChannels) ? entry.availableChannels : []
+}
+
+/**
+ * Add each channel id that is a non-empty string and not in the list yet.
+ *
+ * @param {Array<string>} ids The ids so far, added to in place.
+ * @param {Array} candidates The ids an entry names.
+ */
+function addNewChannelIds(ids, candidates) {
+	for (const id of candidates) {
+		if (typeof id === 'string' && id !== '' && ids.includes(id) === false) {
+			ids.push(id)
+		}
+	}
 }
 
 /**
@@ -152,7 +203,13 @@ function perChannel(channelIds, on) {
  * @return {Array<object>} `{ id, label, group, groupLabel, appDefault, immediate }`.
  * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
-export function eventsFrom({ entries = [], label = (entry) => keyFor(entry), groupLabel = (title) => title, channelIds = [] } = {}) {
+export function eventsFrom(options = {}) {
+	const { entries, label, groupLabel, channelIds } = withDefaults(options, {
+		entries: [],
+		label: (entry) => keyFor(entry),
+		groupLabel: (title) => title,
+		channelIds: [],
+	})
 	return entries.map((entry) => ({
 		id: keyFor(entry),
 		label: String(label(entry)),
@@ -211,15 +268,16 @@ function appDefaultPerChannel(entry, channelIds) {
  * @return {object} `{ groupValues, personalValues, forcedValues, refusals }`.
  * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
-export function valuesFrom({ entries = [], channelId = SINGLE_CHANNEL_ID, channelIds = [] } = {}) {
+export function valuesFrom(options = {}) {
+	const call = withDefaults(options, { entries: [], channelId: SINGLE_CHANNEL_ID, channelIds: [] })
 	const run = {
-		channelId,
-		channelIds,
-		columns: channelIds.length > 0 ? channelIds : [channelId],
+		channelId: call.channelId,
+		channelIds: call.channelIds,
+		columns: call.channelIds.length > 0 ? call.channelIds : [call.channelId],
 		values: { groupValues: {}, personalValues: {}, forcedValues: {}, refusals: {} },
 	}
 
-	for (const entry of entries) {
+	for (const entry of call.entries) {
 		readEntry(run, entry)
 	}
 
@@ -338,19 +396,11 @@ function forcedPerColumn(run, forced) {
  * @return {object} The component's props.
  * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
-export function propsFor({
-	entries = [],
-	channels = [],
-	label,
-	groupLabel,
-	singleChannelLabel,
-	channelLabel = (id) => id,
-} = {}) {
+export function propsFor(options = {}) {
+	const call = withDefaults(options, { entries: [], channels: [], channelLabel: (id) => id })
+	const { entries, label, groupLabel, singleChannelLabel } = call
 	const axis = channelAxisFrom(entries)
-	const declared = axis.length > 0 && (Array.isArray(channels) === false || channels.length === 0)
-		? axis.map((id) => ({ id, label: channelLabel(id) }))
-		: channels
-	const columns = channelsFrom({ channels: declared, singleChannelLabel })
+	const columns = channelsFrom({ channels: declaredChannels(axis, call), singleChannelLabel })
 	const channelIds = axis.length > 0 ? columns.map((column) => column.id) : []
 
 	return {
@@ -358,6 +408,21 @@ export function propsFor({
 		channels: columns,
 		...valuesFrom({ entries, channelId: columns[0].id, channelIds }),
 	}
+}
+
+/**
+ * The channels to draw: the given ones, or, when the entries name an axis and
+ * none are given, one per axis channel, labelled by `channelLabel`.
+ *
+ * @param {Array<string>} axis The channel ids the entries name.
+ * @param {{channels: unknown, channelLabel: function(string): string}} call The call's channels and label.
+ * @return {unknown} The channels for `channelsFrom`.
+ */
+function declaredChannels(axis, call) {
+	if (axis.length > 0 && isFilledList(call.channels) === false) {
+		return axis.map((id) => ({ id, label: call.channelLabel(id) }))
+	}
+	return call.channels
 }
 
 /**
@@ -386,23 +451,35 @@ export function propsFor({
  *
  * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
-export function writeFor({ eventId, scope = '', value, channelId = SINGLE_CHANNEL_ID, current = null } = {}) {
-	const write = notificationWrite(eventId, value)
+export function writeFor(options = {}) {
+	const call = withDefaults(options, { scope: '', channelId: SINGLE_CHANNEL_ID, current: null })
+	const write = notificationWrite(call.eventId, call.value)
 	if (write === null) {
 		return null
 	}
 
 	// One cell of several channels: the write is the row's whole channel set
 	// with this one switched, and the row is on while any channel is.
-	if (channelId !== SINGLE_CHANNEL_ID && Array.isArray(current) === true) {
-		Object.assign(write, switchedChannels({ channelId, current }, value))
+	if (isChannelCell(call)) {
+		Object.assign(write, switchedChannels({ channelId: call.channelId, current: call.current }, call.value))
 	}
 
-	if (scope !== '') {
-		write.scope = `domain:${scope}`
+	if (call.scope !== '') {
+		write.scope = `domain:${call.scope}`
 	}
 
 	return write
+}
+
+/**
+ * Whether a write is for one cell of several channel columns, with the row's
+ * current channels known.
+ *
+ * @param {{channelId: string, current: ?Array<string>}} call The write's column and current channels.
+ * @return {boolean} True for a cell of a named channel with a current list.
+ */
+function isChannelCell(call) {
+	return call.channelId !== SINGLE_CHANNEL_ID && Array.isArray(call.current) === true
 }
 
 /**

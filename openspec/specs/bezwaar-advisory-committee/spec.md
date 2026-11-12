@@ -68,3 +68,38 @@ The system SHALL track which committee members participated in each bezwaar case
 - **WHEN** an advisory report is being created
 - **THEN** the system SHALL require at least a `committeeChair` to be assigned
 - **AND** the system SHALL display a recommendation to have at least 3 committee members (voorzitter + 2 leden) per municipal best practice
+
+### Requirement: a panel whose independence cannot be verified does not start deliberating
+
+When the advice request moves from `assigned` to `in-deliberation`, the independence check MUST be able to run. When it cannot, the transition MUST be refused. That covers a store read that fails while the check resolves the contested primair besluit, and an objection or decision schema that is not configured. The refusal MUST name no conflicting member. Its reason MUST be "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)". An `independence-check-unverifiable` entry MUST be written to the request's trail before the refusal, and the refusal MUST stand whether or not that entry is written.
+
+#### Scenario: the store fails while the check reads the contested decision
+- GIVEN an advice request in `assigned` with panel `["a.bakker", "p.janssen"]`
+- AND reading the contested primair besluit fails
+- WHEN the bezwaar handler moves the request to `in-deliberation`
+- THEN the transition is refused with reason "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+- AND the request stays in `assigned`
+- AND the request's trail holds an `independence-check-unverifiable` entry with no conflicting member
+
+#### Scenario: the decision schema is not configured
+- GIVEN no `decision_schema` is configured
+- WHEN the bezwaar handler moves an advice request with a panel to `in-deliberation`
+- THEN the transition is refused the same way
+- AND the request stays in `assigned`
+
+### Requirement: the panel check and the advice transition fail closed on every path
+
+The panel check MUST answer unverifiable, never independent, when no object store is available. The advice transition MUST mark its save under the stored advice request's own id, read after the request is loaded, so the guard recognises the transition whatever id form the caller used.
+
+#### Scenario: no object store
+@e2e exclude needs an instance without OpenRegister; covered by PanelIndependenceCheckerGoldenTest
+- **GIVEN** no object store is available
+- **WHEN** the panel check runs for a panel
+- **THEN** the verdict is unverifiable, with no conflicting member
+
+#### Scenario: the committee issues the advice through another id form
+@e2e exclude covered by DeliberationStartGuardTest
+- **GIVEN** an advice request in `in-deliberation` that the store also finds by its slug
+- **WHEN** `transitionAdviceStatus()` is called with the slug and moves it to `advice-issued`
+- **THEN** the guard lets the save through
+- **AND** the request is stored in `advice-issued`

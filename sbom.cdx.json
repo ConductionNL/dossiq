@@ -2,10 +2,8 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:de44a493-38b0-44ad-b850-0446ca124342",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-11T17:22:54Z",
     "tools": [
       {
         "name": "composer",
@@ -82,10 +80,10 @@
       }
     ],
     "component": {
-      "bom-ref": "conductionnl/dossiq-dev-development",
+      "bom-ref": "conductionnl/dossiq-0.1.0.0",
       "type": "application",
       "name": "dossiq",
-      "version": "dev-development",
+      "version": "0.1.0",
       "group": "conductionnl",
       "description": "Case management for Nextcloud powered by OpenRegister",
       "author": "Conduction b.v.",
@@ -96,16 +94,8 @@
           }
         }
       ],
-      "purl": "pkg:composer/conductionnl/dossiq@dev-development",
+      "purl": "pkg:composer/conductionnl/dossiq@0.1.0",
       "properties": [
-        {
-          "name": "cdx:composer:package:distReference",
-          "value": "e60bd875dfb21ec508fc1bb7ad3e21e640759518"
-        },
-        {
-          "name": "cdx:composer:package:sourceReference",
-          "value": "e60bd875dfb21ec508fc1bb7ad3e21e640759518"
-        },
         {
           "name": "cdx:composer:package:type",
           "value": "library"
@@ -24771,7 +24761,7 @@
   ],
   "dependencies": [
     {
-      "ref": "conductionnl/dossiq-dev-development"
+      "ref": "conductionnl/dossiq-0.1.0.0"
     }
   ]
 }

@@ -119,26 +119,26 @@ export function prioritySortWeight(priority) {
 }
 
 /**
+ * The sort weight of each task status group; any other status weighs 5.
+ *
+ * @type {Map<string, number>}
+ */
+const STATUS_GROUP_WEIGHTS = new Map([
+	['active', 0],
+	['available', 1],
+	['completed', 2],
+	['terminated', 3],
+	['disabled', 4],
+])
+
+/**
  * Get the status group weight for sorting (active tasks first).
  *
  * @param {string} status Task status
  * @return {number}
  */
 function statusGroupWeight(status) {
-	switch (status) {
-		case 'active':
-			return 0
-		case 'available':
-			return 1
-		case 'completed':
-			return 2
-		case 'terminated':
-			return 3
-		case 'disabled':
-			return 4
-		default:
-			return 5
-	}
+	return STATUS_GROUP_WEIGHTS.get(status) ?? 5
 }
 
 /**
@@ -150,19 +150,39 @@ function statusGroupWeight(status) {
  * @spec openspec/specs/task-management/spec.md
  */
 export function sortTasks(tasks) {
-	return [...tasks].sort((a, b) => {
-		const statusDiff = statusGroupWeight(a.status) - statusGroupWeight(b.status)
-		if (statusDiff !== 0) return statusDiff
+	return [...tasks].sort(compareTasks)
+}
 
-		const priorityDiff =
-			prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
-		if (priorityDiff !== 0) return priorityDiff
+/**
+ * Compare two tasks by status group, then priority, then due date.
+ *
+ * @param {object} a The one task
+ * @param {object} b The other task
+ * @return {number} Negative when a sorts first, positive when b does
+ */
+function compareTasks(a, b) {
+	const statusDiff = statusGroupWeight(a.status) - statusGroupWeight(b.status)
+	if (statusDiff !== 0) return statusDiff
 
-		if (a.dueDate && b.dueDate) {
-			return new Date(a.dueDate) - new Date(b.dueDate)
-		}
-		if (a.dueDate) return -1
-		if (b.dueDate) return 1
-		return 0
-	})
+	const priorityDiff =
+		prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
+	if (priorityDiff !== 0) return priorityDiff
+
+	return compareDueDates(a, b)
+}
+
+/**
+ * Compare two tasks by due date, earliest first, the ones without one last.
+ *
+ * @param {object} a The one task
+ * @param {object} b The other task
+ * @return {number} Negative when a sorts first, positive when b does
+ */
+function compareDueDates(a, b) {
+	if (a.dueDate && b.dueDate) {
+		return new Date(a.dueDate) - new Date(b.dueDate)
+	}
+	if (a.dueDate) return -1
+	if (b.dueDate) return 1
+	return 0
 }

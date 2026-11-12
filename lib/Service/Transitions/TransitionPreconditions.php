@@ -310,11 +310,7 @@ class TransitionPreconditions {
 		$label = trim((string)($dependency['label'] ?? ''));
 		$outcome = ($case[self::ERASURE_OUTCOME_FIELD] ?? null);
 		if (is_array($outcome) === false || $outcome === []) {
-			if ($label !== '') {
-				return $label;
-			}
-
-			return 'the erasure, which has not run yet';
+			return $this->labelOr(label: $label, fallback: 'the erasure, which has not run yet');
 		}
 
 		if (($outcome['complete'] ?? false) === true) {
@@ -323,15 +319,27 @@ class TransitionPreconditions {
 
 		$named = $this->withheldNames(outcome: $outcome);
 		if ($named === '') {
-			if ($label !== '') {
-				return $label;
-			}
-
-			return 'the erasure, which did not finish';
+			return $this->labelOr(label: $label, fallback: 'the erasure, which did not finish');
 		}
 
 		return 'the erasure, which did not reach ' . $named;
 	}//end erasureReason()
+
+	/**
+	 * The dependency's own label when its author wrote one, else the fallback.
+	 *
+	 * @param string $label    The trimmed label, possibly empty.
+	 * @param string $fallback The wording to use without one.
+	 *
+	 * @return string The reason.
+	 */
+	private function labelOr(string $label, string $fallback): string {
+		if ($label !== '') {
+			return $label;
+		}
+
+		return $fallback;
+	}//end labelOr()
 
 	/**
 	 * What the run left behind, as a sentence fragment a handler can act on.
@@ -348,6 +356,17 @@ class TransitionPreconditions {
 	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	private function withheldNames(array $outcome): string {
+		return $this->cappedList(names: $this->distinctEntryNames(outcome: $outcome));
+	}//end withheldNames()
+
+	/**
+	 * The names in the withheld, refused and failed buckets, in that order, each once.
+	 *
+	 * @param array<string, mixed> $outcome The platform's run report.
+	 *
+	 * @return array<int, string> The names.
+	 */
+	private function distinctEntryNames(array $outcome): array {
 		$names = [];
 		foreach (['withheld', 'refused', 'failed'] as $bucket) {
 			foreach ((array)($outcome[$bucket] ?? []) as $entry) {
@@ -358,6 +377,17 @@ class TransitionPreconditions {
 			}
 		}
 
+		return $names;
+	}//end distinctEntryNames()
+
+	/**
+	 * The names comma separated, the ones past the cap counted rather than listed.
+	 *
+	 * @param array<int, string> $names The names.
+	 *
+	 * @return string The fragment, or the empty string for no names.
+	 */
+	private function cappedList(array $names): string {
 		if ($names === []) {
 			return '';
 		}
@@ -370,7 +400,7 @@ class TransitionPreconditions {
 		}
 
 		return implode(', ', $names);
-	}//end withheldNames()
+	}//end cappedList()
 
 	/**
 	 * What one entry in a run report bucket is called.

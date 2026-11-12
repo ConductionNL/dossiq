@@ -37,6 +37,7 @@ use OCA\Dossiq\Service\Zgw\ZgwPatchMerger;
 use OCA\Dossiq\Service\Zgw\ResourceRoute;
 use OCA\Dossiq\Service\Zgw\ResourceWrite;
 use OCA\Dossiq\Service\Zgw\RuleFlags;
+use OCA\Dossiq\Service\Zgw\ZgwAuditedResource;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -56,6 +57,38 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwService {
+
+	/**
+	 * OpenRegister audit trail actions by the ZGW actie they map to.
+	 *
+	 * @var array<string, string>
+	 */
+	private const AUDIT_ACTIONS = [
+		'save' => 'create',
+		'create' => 'create',
+		'update' => 'update',
+		'patch' => 'partial_update',
+		'delete' => 'destroy',
+		'lock' => 'create',
+		'unlock' => 'destroy',
+		'publish' => 'update',
+		'depublish' => 'update',
+		'referential_integrity.cascade_delete' => 'destroy',
+	];
+
+	/**
+	 * How each ZGW actie is shown.
+	 *
+	 * @var array<string, string>
+	 */
+	private const AUDIT_ACTION_DISPLAY = [
+		'create' => 'Object aangemaakt',
+		'update' => 'Object bijgewerkt',
+		'partial_update' => 'Object deels bijgewerkt',
+		'destroy' => 'Object verwijderd',
+		'list' => 'Objecten opgevraagd',
+		'retrieve' => 'Object opgevraagd',
+	];
 	/**
 	 * Map of ZGW API + resource to the config key suffix used in Dossiq.
 	 *
@@ -1641,56 +1674,7 @@ class ZgwService {
 		string $resource,
 		string $uuid,
 	): JSONResponse {
-		$resourceUrl = $this->buildBaseUrl(
-			request: $request,
-			zgwApi: $zgwApi,
-			resource: $resource
-		) . '/' . $uuid;
-
-		// Fetch real audit trail from OpenRegister.
-		$entries = [];
-		if ($this->objectService !== null) {
-			try {
-				$logs = $this->objectService->getLogs($uuid, [], false, false);
-				foreach ($logs as $log) {
-					$entries[] = $this->mapAuditTrailToZgw(
-						log: $log,
-						resourceUrl: $resourceUrl,
-						resource: $resource
-					);
-				}
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Failed to fetch audit trail for ' . $uuid . ': ' . $e->getMessage()
-				);
-			}
-		}
-
-		// If no entries found, return a synthetic creation entry.
-		if (empty($entries) === true) {
-			$entries[] = [
-				'uuid' => $uuid . '-audit-1',
-				// `bron` and `applicatieId` are FROZEN at `procest`. They are the
-				// ZGW audit-trail SOURCE identifiers this app writes into the
-				// external zaaksysteem's audit trail; every entry already written
-				// carries them and consumers filter on them, so renaming would
-				// split one system's history into two. `applicatieWeergave` is a
-				// display label and does follow the brand.
-				'bron' => 'procest',
-				'applicatieId' => 'procest',
-				'applicatieWeergave' => 'Dossiq',
-				'action' => 'create',
-				'actieWeergave' => 'Object aangemaakt',
-				'result' => 200,
-				'hoofdObject' => $resourceUrl,
-				'resource' => $resource,
-				'resourceUrl' => $resourceUrl,
-				'resourceWeergave' => $resource,
-				'aanmaakdatum' => date('c'),
-			];
-		}
-
-		return new JSONResponse(data: $entries);
+		return $this->auditTrailIndex(route: new ResourceRoute(request: $request, api: $zgwApi, resource: $resource, uuid: $uuid));
 	}//end handleAudittrailIndex()
 
 	/**
@@ -1713,121 +1697,183 @@ class ZgwService {
 		string $uuid,
 		string $auditUuid,
 	): JSONResponse {
-		$resourceUrl = $this->buildBaseUrl(
-			request: $request,
-			zgwApi: $zgwApi,
-			resource: $resource
-		) . '/' . $uuid;
+		$route = new ResourceRoute(request: $request, api: $zgwApi, resource: $resource, uuid: $uuid);
 
-		// Try to find the specific audit trail entry from OpenRegister.
-		if ($this->objectService !== null) {
-			try {
-				$logs = $this->objectService->getLogs($uuid, [], false, false);
-				foreach ($logs as $log) {
-					$logData = $log;
-					if (is_array($log) === false) {
-						$logData = $log->jsonSerialize();
-					}
-
-					if (($logData['uuid'] ?? '') === $auditUuid) {
-						return new JSONResponse(
-							data: $this->mapAuditTrailToZgw(log: $log, resourceUrl: $resourceUrl, resource: $resource)
-						);
-					}
-				}
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Failed to fetch audit trail entry ' . $auditUuid . ': ' . $e->getMessage()
-				);
-			}
-		}//end if
-
-		// Fallback: return a synthetic entry with the requested UUID.
-		return new JSONResponse(
-			data: [
-				'uuid' => $auditUuid,
-				// `bron` and `applicatieId` are FROZEN at `procest`. They are the
-				// ZGW audit-trail SOURCE identifiers this app writes into the
-				// external zaaksysteem's audit trail; every entry already written
-				// carries them and consumers filter on them, so renaming would
-				// split one system's history into two. `applicatieWeergave` is a
-				// display label and does follow the brand.
-				'bron' => 'procest',
-				'applicatieId' => 'procest',
-				'applicatieWeergave' => 'Dossiq',
-				'action' => 'create',
-				'actieWeergave' => 'Object aangemaakt',
-				'result' => 200,
-				'hoofdObject' => $resourceUrl,
-				'resource' => $resource,
-				'resourceUrl' => $resourceUrl,
-				'resourceWeergave' => $resource,
-				'aanmaakdatum' => date('c'),
-			]
-		);
+		return $this->auditTrailEntry(route: $route, auditUuid: $auditUuid);
 	}//end handleAudittrailShow()
+
+	/**
+	 * The audit trail of one object, or one synthetic creation entry when it has none.
+	 *
+	 * @param ResourceRoute $route The route, with the object id.
+	 *
+	 * @return JSONResponse
+	 */
+	private function auditTrailIndex(ResourceRoute $route): JSONResponse {
+		$audited = $this->auditedResource(route: $route);
+
+		// Fetch real audit trail from OpenRegister.
+		$entries = $this->auditTrailEntries(audited: $audited);
+
+		// If no entries found, return a synthetic creation entry.
+		if (empty($entries) === true) {
+			$entries[] = $this->mapAuditTrailToZgw(log: ['uuid' => $route->uuid . '-audit-1'], audited: $audited);
+		}
+
+		return new JSONResponse(data: $entries);
+	}//end auditTrailIndex()
+
+	/**
+	 * One entry of an object's audit trail, or a synthetic one under the asked uuid when it is not found.
+	 *
+	 * @param ResourceRoute $route     The route, with the object id.
+	 * @param string        $auditUuid The audit trail entry UUID.
+	 *
+	 * @return JSONResponse
+	 */
+	private function auditTrailEntry(ResourceRoute $route, string $auditUuid): JSONResponse {
+		$audited = $this->auditedResource(route: $route);
+
+		// Try to find the specific audit trail entry from OpenRegister; fall
+		// back to a synthetic entry with the requested UUID.
+		return new JSONResponse(
+			data: $this->auditEntry(audited: $audited, auditUuid: $auditUuid) ?? $this->mapAuditTrailToZgw(log: ['uuid' => $auditUuid], audited: $audited)
+		);
+	}//end auditTrailEntry()
+
+	/**
+	 * The object an audit trail is read for, with its ZGW URL.
+	 *
+	 * @param ResourceRoute $route The route, with the object id.
+	 *
+	 * @return ZgwAuditedResource
+	 */
+	private function auditedResource(ResourceRoute $route): ZgwAuditedResource {
+		$url = $this->buildBaseUrl(request: $route->request, zgwApi: $route->api, resource: $route->resource) . '/' . $route->uuid;
+
+		return new ZgwAuditedResource(resource: $route->resource, uuid: $route->uuid, url: $url);
+	}//end auditedResource()
+
+	/**
+	 * Every entry of the object's audit trail in OpenRegister, mapped; on a failure, those read before it.
+	 *
+	 * @param ZgwAuditedResource $audited The object.
+	 *
+	 * @return array<int, array<string, mixed>> The entries.
+	 */
+	private function auditTrailEntries(ZgwAuditedResource $audited): array {
+		$entries = [];
+		try {
+			foreach ($this->auditLogs(audited: $audited) as $log) {
+				$entries[] = $this->mapAuditTrailToZgw(log: $log, audited: $audited);
+			}
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Failed to fetch audit trail for ' . $audited->uuid . ': ' . $e->getMessage()
+			);
+		}
+
+		return $entries;
+	}//end auditTrailEntries()
+
+	/**
+	 * The entry of the object's audit trail in OpenRegister with this uuid, mapped.
+	 *
+	 * @param ZgwAuditedResource $audited   The object.
+	 * @param string             $auditUuid The audit trail entry UUID.
+	 *
+	 * @return array<string, mixed>|null The entry, or null when there is none or it cannot be read.
+	 */
+	private function auditEntry(ZgwAuditedResource $audited, string $auditUuid): ?array {
+		try {
+			foreach ($this->auditLogs(audited: $audited) as $log) {
+				if (($this->auditLogData(log: $log)['uuid'] ?? '') === $auditUuid) {
+					return $this->mapAuditTrailToZgw(log: $log, audited: $audited);
+				}
+			}
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Failed to fetch audit trail entry ' . $auditUuid . ': ' . $e->getMessage()
+			);
+		}
+
+		return null;
+	}//end auditEntry()
+
+	/**
+	 * The object's audit trail entries in OpenRegister, none when OpenRegister is absent.
+	 *
+	 * @param ZgwAuditedResource $audited The object.
+	 *
+	 * @return iterable<object|array> The entries, as OpenRegister answers them.
+	 */
+	private function auditLogs(ZgwAuditedResource $audited): iterable {
+		if ($this->objectService === null) {
+			return [];
+		}
+
+		return $this->objectService->getLogs($audited->uuid, [], false, false);
+	}//end auditLogs()
+
+	/**
+	 * An OpenRegister audit trail entry as an array.
+	 *
+	 * @param object|array $log The entry.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function auditLogData(object|array $log): array {
+		if (is_array($log) === true) {
+			return $log;
+		}
+
+		return $log->jsonSerialize();
+	}//end auditLogData()
 
 	/**
 	 * Map an OpenRegister AuditTrail entry to ZGW audittrail format.
 	 *
-	 * @param object|array $log The OpenRegister audit trail entry
-	 * @param string $resourceUrl The ZGW resource URL
-	 * @param string $resource The ZGW resource name
+	 * A log that carries only a uuid maps to the synthetic creation entry.
+	 *
+	 * @param object|array       $log     The OpenRegister audit trail entry
+	 * @param ZgwAuditedResource $audited The object the entry is about
 	 *
 	 * @return array ZGW-formatted audit trail entry
 	 */
-	private function mapAuditTrailToZgw(
-		object|array $log,
-		string $resourceUrl,
-		string $resource,
-	): array {
-		$logData = $log;
-		if (is_array($log) === false) {
-			$logData = $log->jsonSerialize();
-		}
-
-		// Map OpenRegister action names to ZGW actie names.
-		$actionMap = [
-			'save' => 'create',
-			'create' => 'create',
-			'update' => 'update',
-			'patch' => 'partial_update',
-			'delete' => 'destroy',
-			'lock' => 'create',
-			'unlock' => 'destroy',
-			'publish' => 'update',
-			'depublish' => 'update',
-			'referential_integrity.cascade_delete' => 'destroy',
-		];
-
-		$actionDisplayMap = [
-			'create' => 'Object aangemaakt',
-			'update' => 'Object bijgewerkt',
-			'partial_update' => 'Object deels bijgewerkt',
-			'destroy' => 'Object verwijderd',
-			'list' => 'Objecten opgevraagd',
-			'retrieve' => 'Object opgevraagd',
-		];
-
-		$orAction = $logData['action'] ?? 'create';
-		$zgwAction = $actionMap[$orAction] ?? $orAction;
-		$weergave = $actionDisplayMap[$zgwAction] ?? ucfirst($orAction);
+	private function mapAuditTrailToZgw(object|array $log, ZgwAuditedResource $audited): array {
+		$logData = $this->auditLogData(log: $log);
 
 		return [
 			'uuid' => $logData['uuid'] ?? '',
+			// `bron` and `applicatieId` are FROZEN at `procest`. They are the
+			// ZGW audit-trail SOURCE identifiers this app writes into the
+			// external zaaksysteem's audit trail; every entry already written
+			// carries them and consumers filter on them, so renaming would
+			// split one system's history into two. `applicatieWeergave` is a
+			// display label and does follow the brand.
 			'bron' => 'procest',
 			'applicatieId' => $logData['user'] ?? 'procest',
 			'applicatieWeergave' => $logData['userName'] ?? 'Dossiq',
-			'action' => $zgwAction,
-			'actieWeergave' => $weergave,
+			...$this->auditAction(logData: $logData),
 			'result' => 200,
-			'hoofdObject' => $resourceUrl,
-			'resource' => $resource,
-			'resourceUrl' => $resourceUrl,
-			'resourceWeergave' => $resource,
+			...$audited->zgwFields(),
 			'aanmaakdatum' => $logData['created'] ?? date('c'),
 		];
 	}//end mapAuditTrailToZgw()
+
+	/**
+	 * The ZGW actie of an OpenRegister audit trail entry, and how it is shown.
+	 *
+	 * @param array<string, mixed> $logData The entry.
+	 *
+	 * @return array{action: string, actieWeergave: string}
+	 */
+	private function auditAction(array $logData): array {
+		$orAction = $logData['action'] ?? 'create';
+		$zgwAction = self::AUDIT_ACTIONS[$orAction] ?? $orAction;
+
+		return ['action' => $zgwAction, 'actieWeergave' => self::AUDIT_ACTION_DISPLAY[$zgwAction] ?? ucfirst($orAction)];
+	}//end auditAction()
 
 	/**
 	 * Resolve whether a zaak is closed (has einddatum set).

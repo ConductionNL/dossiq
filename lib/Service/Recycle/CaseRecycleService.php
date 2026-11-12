@@ -212,6 +212,22 @@ class CaseRecycleService {
 			return [];
 		}
 
+		$table = $this->resolvedCaseTable();
+		try {
+			return $this->readDeletedRows(mapper: $mapper, table: $table);
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: could not read the deleted cases: ' . $e->getMessage());
+		}
+
+		return [];
+	}//end deletedRows()
+
+	/**
+	 * The case table, or null when it cannot be resolved.
+	 *
+	 * @return array{register: object, schema: object}|null The pair.
+	 */
+	private function resolvedCaseTable(): ?array {
 		// A case table that cannot be resolved falls back on the scan of every table.
 		$table = null;
 		try {
@@ -220,25 +236,31 @@ class CaseRecycleService {
 			$this->logger->info('Dossiq: the case table could not be resolved: ' . $e->getMessage());
 		}
 
-		try {
-			if ($table !== null && $this->deletedLensAvailable() === true) {
-				return $mapper->searchObjectsInRegisterSchemaTable(
-					query: [
-						'_deleted' => 'true',
-						'_limit' => self::DELETED_ROW_CAP,
-					],
-					register: $table['register'],
-					schema: $table['schema']
-				);
-			}
+		return $table;
+	}//end resolvedCaseTable()
 
-			return $mapper->findDeletedAcrossAllMagicTables();
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: could not read the deleted cases: ' . $e->getMessage());
+	/**
+	 * The case table's deleted rows through the lens, else every deleted row on the instance.
+	 *
+	 * @param object                                       $mapper OpenRegister's magic mapper.
+	 * @param array{register: object, schema: object}|null $table  The case table, or null.
+	 *
+	 * @return array<int, object> OpenRegister's object entities.
+	 */
+	private function readDeletedRows(object $mapper, ?array $table): array {
+		if ($table !== null && $this->deletedLensAvailable() === true) {
+			return $mapper->searchObjectsInRegisterSchemaTable(
+				query: [
+					'_deleted' => 'true',
+					'_limit' => self::DELETED_ROW_CAP,
+				],
+				register: $table['register'],
+				schema: $table['schema']
+			);
 		}
 
-		return [];
-	}//end deletedRows()
+		return $mapper->findDeletedAcrossAllMagicTables();
+	}//end readDeletedRows()
 
 	/**
 	 * Whether OpenRegister's object list offers the `_deleted` lens.
@@ -373,10 +395,27 @@ class CaseRecycleService {
 			return null;
 		}
 
+		$entity = $this->findIncludingDeleted(mapper: $mapper, caseId: $caseId);
+		if ($this->isDeletedCase(entity: $entity) === false) {
+			return null;
+		}
+
+		return $entity;
+	}//end findDeleted()
+
+	/**
+	 * The entity behind an id, deleted rows included, or null on a miss.
+	 *
+	 * @param object $mapper OpenRegister's magic mapper.
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return object|null OpenRegister's object entity, or null.
+	 */
+	private function findIncludingDeleted(object $mapper, string $caseId): ?object {
 		// A miss is what the mapper RAISES rather than returns, so the catch is
 		// the read-miss path. It logs and answers nothing here; the single
-		// answer below covers a miss, a row of another schema and a row that
-		// is not in the recycle state, which are the same answer to a caller.
+		// answer in findDeleted() covers a miss, a row of another schema and a
+		// row that is not in the recycle state, which are the same answer to a caller.
 		$entity = null;
 		try {
 			$entity = $mapper->find(identifier: $caseId, register: null, schema: null, includeDeleted: true);
@@ -387,15 +426,21 @@ class CaseRecycleService {
 			);
 		}
 
-		if ($entity === null
-			|| $this->isCase(entity: $entity) === false
-			|| $this->windowReader->isSoftDeleted(entity: $entity) === false
-		) {
-			return null;
-		}
-
 		return $entity;
-	}//end findDeleted()
+	}//end findIncludingDeleted()
+
+	/**
+	 * Whether an entity is a case in the recycle state.
+	 *
+	 * @param object|null $entity OpenRegister's object entity, or null on a miss.
+	 *
+	 * @return bool True for a soft-deleted case.
+	 */
+	private function isDeletedCase(?object $entity): bool {
+		return $entity !== null
+			&& $this->isCase(entity: $entity) === true
+			&& $this->windowReader->isSoftDeleted(entity: $entity) === true;
+	}//end isDeletedCase()
 
 	/**
 	 * One row of the deleted lens.

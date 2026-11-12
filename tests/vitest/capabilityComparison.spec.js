@@ -827,6 +827,16 @@ describe('labelFor', () => {
 		expect(labelFor({ name: 'A', name_nl: '' }, 'nl')).toBe('A')
 		expect(labelFor({ name: 'A' }, 'nl')).toBe('A')
 	})
+
+	it('reads a missing entry, locale or name as empty or English', () => {
+		expect(labelFor(null, 'nl')).toBe('')
+		expect(labelFor(entry)).toBe('Case tags or labels')
+		expect(labelFor(entry, null)).toBe('Case tags or labels')
+		expect(labelFor(entry, 'NL-be')).toBe('Labels of tags op een zaak')
+		expect(labelFor({ name_nl: 'B' }, 'en')).toBe('')
+		expect(labelFor({ name: 'A', name_nl: '  ' }, 'nl')).toBe('A')
+		expect(labelFor({ name: 'A', name_nl: 7 }, 'nl')).toBe('A')
+	})
 })
 
 describe('tally', () => {
@@ -884,6 +894,15 @@ describe('formatComparedOn', () => {
 	it('returns the raw value when it is not a date', () => {
 		expect(formatComparedOn('not-a-date', 'en')).toBe('not-a-date')
 		expect(formatComparedOn('', 'en')).toBe('')
+	})
+
+	it('reads a missing value as empty and an unknown locale as the raw value', () => {
+		expect(formatComparedOn(null, 'en')).toBe('')
+		expect(formatComparedOn('   ', 'en')).toBe('')
+		expect(formatComparedOn('2026-09-07', '!!')).toBe('2026-09-07')
+		expect(formatComparedOn('2026-09-07', 'nl_NL')).toBe(formatComparedOn('2026-09-07', 'nl-NL'))
+		expect(formatComparedOn('2026-09-07')).toBe(formatComparedOn('2026-09-07', 'en'))
+		expect(formatComparedOn('2026-09-07')).not.toBe('2026-09-07')
 	})
 })
 

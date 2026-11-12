@@ -364,11 +364,23 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			return AuthenticationResult::NONE;
 		}
 
-		$validator = $this->service(name: self::DKIM_SERVICE);
-		if ($validator === null || method_exists($validator, 'validateRaw') === false) {
+		$validator = $this->serviceWith(name: self::DKIM_SERVICE, method: 'validateRaw');
+		if ($validator === null) {
 			return AuthenticationResult::UNAVAILABLE;
 		}
 
+		return $this->validateDkim(validator: $validator, source: $source);
+	}//end dkimResult()
+
+	/**
+	 * Ask Mail's DKIM validator about a raw message.
+	 *
+	 * @param object $validator Mail's DKIM service.
+	 * @param string $source    The raw message source.
+	 *
+	 * @return string One of the {@see AuthenticationResult} values.
+	 */
+	private function validateDkim(object $validator, string $source): string {
 		try {
 			$valid = $validator->validateRaw($source);
 		} catch (Throwable $e) {
@@ -379,6 +391,19 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			return AuthenticationResult::UNAVAILABLE;
 		}
 
+		return $this->dkimVerdictOf(valid: $valid);
+	}//end validateDkim()
+
+	/**
+	 * The DKIM verdict for the validator's answer.
+	 *
+	 * Only a boolean is an answer; anything else means the check did not run.
+	 *
+	 * @param mixed $valid The validator's answer.
+	 *
+	 * @return string One of the {@see AuthenticationResult} values.
+	 */
+	private function dkimVerdictOf(mixed $valid): string {
 		if (is_bool($valid) === false) {
 			return AuthenticationResult::UNAVAILABLE;
 		}
@@ -388,7 +413,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 		}
 
 		return AuthenticationResult::FAIL;
-	}//end dkimResult()
+	}//end dkimVerdictOf()
 
 	/**
 	 * Whether Mail's trusted-sender list carries this address.
@@ -404,38 +429,71 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 */
 	public function isTrustedSender(string $email): bool {
 		$address = trim(strtolower($email));
-		if ($address === '') {
+		$service = $this->trustedSenderService(address: $address);
+		if ($service === null) {
 			return false;
 		}
 
-		$service = $this->service(name: self::TRUSTED_SENDER_SERVICE);
-		if ($service === null || method_exists($service, 'isTrusted') === false) {
-			return false;
-		}
-
-		foreach ($this->mailTables->allAccounts() as $account) {
-			$owner = $this->mailTables->ownerOf(accountId: (int)$account['id']);
-			if ($owner === '') {
-				continue;
+		foreach ($this->trustAnswers(service: $service, address: $address) as $trusted) {
+			if ($trusted === true) {
+				return true;
 			}
+		}
 
+		return false;
+	}//end isTrustedSender()
+
+	/**
+	 * Mail's trusted-sender service, when there is an address to ask about.
+	 *
+	 * @param string $address The normalised sender address.
+	 *
+	 * @return object|null The service, or null for an empty address or an absent service.
+	 */
+	private function trustedSenderService(string $address): ?object {
+		if ($address === '') {
+			return null;
+		}
+
+		return $this->serviceWith(name: self::TRUSTED_SENDER_SERVICE, method: 'isTrusted');
+	}//end trustedSenderService()
+
+	/**
+	 * Each mailbox owner's answer to whether the address is trusted, asked lazily.
+	 *
+	 * A lookup that fails is logged and yields nothing, so the next owner is asked.
+	 *
+	 * @param object $service Mail's trusted-sender service.
+	 * @param string $address The normalised sender address.
+	 *
+	 * @return iterable<int, mixed> The answers, in account order.
+	 */
+	private function trustAnswers(object $service, string $address): iterable {
+		foreach ($this->accountOwners() as $owner) {
 			try {
-				$trusted = $service->isTrusted($owner, $address);
+				yield $service->isTrusted($owner, $address);
 			} catch (Throwable $e) {
 				$this->logger->debug(
 					'Dossiq: the trusted-sender lookup failed',
 					['error' => $e->getMessage()]
 				);
-				continue;
 			}
+		}
+	}//end trustAnswers()
 
-			if ($trusted === true) {
-				return true;
+	/**
+	 * The owner of each Mail account that has one, read one account at a time.
+	 *
+	 * @return iterable<int, string> The owners, in account order.
+	 */
+	private function accountOwners(): iterable {
+		foreach ($this->mailTables->allAccounts() as $account) {
+			$owner = $this->mailTables->ownerOf(accountId: (int)$account['id']);
+			if ($owner !== '') {
+				yield $owner;
 			}
-		}//end foreach
-
-		return false;
-	}//end isTrustedSender()
+		}
+	}//end accountOwners()
 
 	/**
 	 * The attachments of a message.
@@ -884,11 +942,23 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			return null;
 		}
 
-		$service = $this->service(name: self::ACCOUNT_SERVICE);
-		if ($service === null || method_exists($service, 'findById') === false) {
+		$service = $this->serviceWith(name: self::ACCOUNT_SERVICE, method: 'findById');
+		if ($service === null) {
 			return null;
 		}
 
+		return $this->findAccount(service: $service, accountId: $accountId);
+	}//end account()
+
+	/**
+	 * Read one Mail account through Mail's account service.
+	 *
+	 * @param object  $service   Mail's account service.
+	 * @param integer $accountId The account.
+	 *
+	 * @return object|null The account, or null when it cannot be read.
+	 */
+	private function findAccount(object $service, int $accountId): ?object {
 		try {
 			$account = $service->findById($accountId);
 		} catch (Throwable $e) {
@@ -904,5 +974,22 @@ class NextcloudMailGateway implements MailGatewayInterface {
 		}
 
 		return $account;
-	}//end account()
+	}//end findAccount()
+
+	/**
+	 * Resolve one of Mail's services that offers the given method.
+	 *
+	 * @param string $name   The fully qualified class name.
+	 * @param string $method The method the caller is about to use.
+	 *
+	 * @return object|null The service, or null when Mail is absent or the method is gone.
+	 */
+	private function serviceWith(string $name, string $method): ?object {
+		$service = $this->service(name: $name);
+		if ($service === null || method_exists($service, $method) === false) {
+			return null;
+		}
+
+		return $service;
+	}//end serviceWith()
 }//end class

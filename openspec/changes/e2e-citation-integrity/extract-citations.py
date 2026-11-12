@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+# SPDX-License-Identifier: EUPL-1.2
+
 """Enumerate every @e2e citation in an app's e2e suite, with gate-19 verdicts.
 
 Broader than gate-19's own regexes on purpose: the audit population includes
