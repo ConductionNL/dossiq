@@ -1,13 +1,24 @@
 <?php
 
 /**
- * The case-number recognizer: which patterns it accepts, which numbers it finds, and which cases it links.
+ * CaseNumberRecognizer unit tests
  *
- * @category Test
+ * The configured pattern is validated before a single mailbox is read, the
+ * candidates are pulled from the text deduplicated, and a candidate becomes a
+ * linked case only when exactly one readable case carries that identifier and
+ * the row names a numeric register and schema.
+ *
+ * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service\Email
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/email-case-matching/spec.md
  */
@@ -27,21 +38,23 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
+ * Pattern validation, candidate extraction and case resolution.
+ *
  * @covers \OCA\Dossiq\Service\Email\CaseNumberRecognizer
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses   \OCA\Dossiq\Support\SuppressesWarnings
  */
-class CaseNumberRecognizerTest extends TestCase {
+final class CaseNumberRecognizerTest extends TestCase {
 
 	/**
-	 * The configured pattern.
+	 * Where the configured pattern is read from.
 	 *
 	 * @var SettingsService&MockObject
 	 */
 	private SettingsService $settings;
 
 	/**
-	 * The per-case read check.
+	 * Answers whether the owner may read a case.
 	 *
 	 * @var CaseAccessGuard&MockObject
 	 */
@@ -62,7 +75,7 @@ class CaseNumberRecognizerTest extends TestCase {
 	private IUser $owner;
 
 	/**
-	 * Fresh mocks.
+	 * Build the collaborators.
 	 *
 	 * @return void
 	 */
@@ -74,340 +87,361 @@ class CaseNumberRecognizerTest extends TestCase {
 	}//end setUp()
 
 	/**
-	 * The recognizer under test.
+	 * The class under test.
 	 *
-	 * @return CaseNumberRecognizer
+	 * @return CaseNumberRecognizer The recognizer.
 	 */
 	private function recognizer(): CaseNumberRecognizer {
-		return new CaseNumberRecognizer(settingsService: $this->settings, caseAccess: $this->access, logger: $this->logger);
+		return new CaseNumberRecognizer(
+			settingsService: $this->settings,
+			caseAccess: $this->access,
+			logger: $this->logger,
+		);
 	}//end recognizer()
 
 	/**
-	 * A case row as OpenRegister returns it.
+	 * An object service whose numeric search answers the given rows, or throws.
 	 *
-	 * @param string     $identifier The case number.
-	 * @param int|string $register   The `@self` register.
-	 * @param int|string $schema     The `@self` schema.
+	 * @param array<int, mixed> $rows  The rows to answer.
+	 * @param bool              $fails Whether the search throws instead.
 	 *
-	 * @return array<string, mixed>
+	 * @return object The object service, with the queries it received in `$queries`.
 	 */
-	private static function caseRow(string $identifier, int|string $register=5, int|string $schema=7): array {
-		return ['identifier' => $identifier, '@self' => ['id' => 'uuid-' . $identifier, 'register' => $register, 'schema' => $schema]];
-	}//end caseRow()
+	private function objectService(array $rows, bool $fails = false): object {
+		return new class($rows, $fails) {
+			/** @var array<int, array<string, mixed>> */
+			public array $queries = [];
 
-	/**
-	 * The default recognizer and a pattern with a group are usable.
-	 *
-	 * @return void
-	 */
-	public function testAValidPatternIsAccepted(): void {
-		$recognizer = $this->recognizer();
+			/**
+			 * @param array<int, mixed> $rows  Rows.
+			 * @param bool              $fails Throw.
+			 */
+			public function __construct(private array $rows, private bool $fails) {
+			}
 
-		$this->assertNull($recognizer->validatePattern(pattern: CaseNumberRecognizer::DEFAULT_PATTERN));
-		$this->assertNull($recognizer->validatePattern(pattern: '#(\d{4})#'));
-		$this->assertNull($recognizer->validatePattern(pattern: '{ZK-(\d+)}i'));
-	}//end testAValidPatternIsAccepted()
+			/**
+			 * @param array<string, mixed> $query Query.
+			 * @param mixed                ...$scope Scope.
+			 *
+			 * @return array<int, mixed>
+			 */
+			public function searchObjects(array $query, mixed ...$scope): array {
+				$this->queries[] = $query;
+				if ($this->fails === true) {
+					throw new RuntimeException('database gone');
+				}
 
-	/**
-	 * Each unusable pattern is refused with its own reason.
-	 *
-	 * @return void
-	 */
-	public function testAnUnusablePatternIsRefusedNamingWhy(): void {
-		$recognizer = $this->recognizer();
+				return $this->rows;
+			}
 
-		$this->assertSame('The pattern is empty.', $recognizer->validatePattern(pattern: '   '));
-		$this->assertSame('The pattern does not compile.', $recognizer->validatePattern(pattern: '/(unclosed/'));
-		$this->assertSame('The pattern has no capture group for the case number.', $recognizer->validatePattern(pattern: '/\d{4}-\d{4}/'));
-		$this->assertSame('The pattern has no capture group for the case number.', $recognizer->validatePattern(pattern: '/(?:\d{4})/'));
-	}//end testAnUnusablePatternIsRefusedNamingWhy()
+			/**
+			 * @param string               $register Register slug.
+			 * @param string               $schema   Schema slug.
+			 * @param array<string, mixed> $filters  Filters.
+			 * @param mixed                ...$scope Scope.
+			 *
+			 * @return array<int, mixed>
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters, mixed ...$scope): array {
+				return $this->searchObjects(['slugs' => [$register, $schema]] + $filters);
+			}
+		};
+	}//end objectService()
 
-	/**
-	 * With nothing configured, the default recognizer is used.
-	 *
-	 * @return void
-	 */
-	public function testAnEmptyConfigurationLoadsTheDefault(): void {
-		$this->settings->method('getConfigValue')->with(CaseNumberRecognizer::PATTERN_KEY)->willReturn('  ');
-		$this->logger->expects($this->never())->method('error');
+	public function testAnEmptyPatternIsRefused(): void {
+		$this->assertSame('The pattern is empty.', $this->recognizer()->validatePattern(pattern: '  '));
+	}//end testAnEmptyPatternIsRefused()
+
+	public function testAPatternThatDoesNotCompileIsRefused(): void {
+		$this->assertSame('The pattern does not compile.', $this->recognizer()->validatePattern(pattern: '/(unclosed/'));
+	}//end testAPatternThatDoesNotCompileIsRefused()
+
+	public function testAPatternWithoutACaptureGroupIsRefused(): void {
+		$this->assertSame(
+			'The pattern has no capture group for the case number.',
+			$this->recognizer()->validatePattern(pattern: '/\d{4}-\d{6}/')
+		);
+	}//end testAPatternWithoutACaptureGroupIsRefused()
+
+	public function testABracketDelimitedPatternWithACaptureGroupIsAccepted(): void {
+		$this->assertNull($this->recognizer()->validatePattern(pattern: '{(\d{4}-\d{6})}i'));
+		$this->assertNull($this->recognizer()->validatePattern(pattern: CaseNumberRecognizer::DEFAULT_PATTERN));
+	}//end testABracketDelimitedPatternWithACaptureGroupIsAccepted()
+
+	public function testAnUnsetPatternFallsBackToTheDefault(): void {
+		$this->settings->expects($this->once())->method('getConfigValue')
+			->with(CaseNumberRecognizer::PATTERN_KEY)->willReturn('   ');
 
 		$this->assertSame(CaseNumberRecognizer::DEFAULT_PATTERN, $this->recognizer()->loadPattern());
-	}//end testAnEmptyConfigurationLoadsTheDefault()
+	}//end testAnUnsetPatternFallsBackToTheDefault()
+
+	public function testAnUnusableConfiguredPatternStopsMatchingAndIsLogged(): void {
+		$this->settings->method('getConfigValue')->willReturn('/no-group/');
+		$this->logger->expects($this->once())->method('error')->with(
+			'Dossiq: email case matching refused to run, the configured email_case_matching_pattern is unusable: '
+				. 'The pattern has no capture group for the case number.',
+			['app' => 'dossiq']
+		);
+
+		$this->assertNull($this->recognizer()->loadPattern());
+	}//end testAnUnusableConfiguredPatternStopsMatchingAndIsLogged()
+
+	public function testCandidatesAreTakenFromTheFirstGroupOnceEach(): void {
+		$text = 'Re: [ZAAK-2026-000142] zie ook 2026-000142 en 2025-0099, niet x2026-000143';
+
+		$this->assertSame(
+			['2026-000142', '2025-0099'],
+			$this->recognizer()->extractCaseNumberCandidates(text: $text, pattern: CaseNumberRecognizer::DEFAULT_PATTERN)
+		);
+	}//end testCandidatesAreTakenFromTheFirstGroupOnceEach()
+
+	public function testBlankTextOrNoMatchYieldsNoCandidates(): void {
+		$recognizer = $this->recognizer();
+
+		$this->assertSame([], $recognizer->extractCaseNumberCandidates(text: " \n", pattern: CaseNumberRecognizer::DEFAULT_PATTERN));
+		$this->assertSame([], $recognizer->extractCaseNumberCandidates(text: 'geen nummer', pattern: CaseNumberRecognizer::DEFAULT_PATTERN));
+	}//end testBlankTextOrNoMatchYieldsNoCandidates()
+
+	public function testOneReadableExactMatchBecomesALinkedCase(): void {
+		$service = $this->objectService(
+			[
+				['identifier' => '2026-000142', '@self' => ['id' => 'uuid-142', 'register' => '4', 'schema' => 9]],
+				['identifier' => '2026-0001420', '@self' => ['id' => 'uuid-other']],
+			]
+		);
+		$this->access->expects($this->once())->method('hasCaseReadAccess')
+			->with('uuid-142', $this->owner)->willReturn(true);
+
+		$cases = $this->recognizer()->resolveCases(
+			candidates: ['2026-000142'],
+			objectService: $service,
+			register: '1',
+			schema: '2',
+			owner: $this->owner
+		);
+
+		$this->assertSame(
+			[['uuid' => 'uuid-142', 'identifier' => '2026-000142', 'registerId' => 4, 'schemaId' => 9]],
+			$cases
+		);
+		$this->assertSame('2026-000142', $service->queries[0]['identifier']);
+		$this->assertTrue($service->queries[0]['_multitenancy_explicit']);
+		$this->assertSame(['register' => 1, 'schema' => 2], $service->queries[0]['@self']);
+	}//end testOneReadableExactMatchBecomesALinkedCase()
+
+	public function testTheConfiguredIdsAreUsedWhenTheRowCarriesNone(): void {
+		$service = $this->objectService([['identifier' => '2026-000142', 'uuid' => 'uuid-142', '@self' => 'not-a-block']]);
+		$this->access->method('hasCaseReadAccess')->willReturn(true);
+
+		$cases = $this->recognizer()->resolveCases(
+			candidates: ['2026-000142'],
+			objectService: $service,
+			register: '3',
+			schema: '5',
+			owner: $this->owner
+		);
+
+		$this->assertSame(
+			[['uuid' => 'uuid-142', 'identifier' => '2026-000142', 'registerId' => 3, 'schemaId' => 5]],
+			$cases
+		);
+	}//end testTheConfiguredIdsAreUsedWhenTheRowCarriesNone()
+
+	public function testTheSameCaseNamedTwiceIsLinkedOnce(): void {
+		$service = $this->objectService([['identifier' => '2026-000142', 'id' => 'uuid-142']]);
+		$this->access->method('hasCaseReadAccess')->willReturn(true);
+
+		$cases = $this->recognizer()->resolveCases(
+			candidates: ['2026-000142', '2026-000142'],
+			objectService: $service,
+			register: '3',
+			schema: '5',
+			owner: $this->owner
+		);
+
+		$this->assertCount(1, $cases);
+	}//end testTheSameCaseNamedTwiceIsLinkedOnce()
+
+	public function testAnAmbiguousNumberLinksNothingAndIsLogged(): void {
+		$service = $this->objectService(
+			[
+				['identifier' => '2026-000142', 'id' => 'a'],
+				['identifier' => '2026-000142', 'id' => 'b'],
+			]
+		);
+		$this->access->expects($this->never())->method('hasCaseReadAccess');
+		$this->logger->expects($this->once())->method('warning')->with(
+			'Dossiq: a case number resolves to more than one case; the mail is linked to none of them',
+			['app' => 'dossiq', 'case' => '2026-000142', 'matches' => 2]
+		);
+
+		$this->assertSame(
+			[],
+			$this->recognizer()->resolveCases(candidates: ['2026-000142'], objectService: $service, register: '3', schema: '5', owner: $this->owner)
+		);
+	}//end testAnAmbiguousNumberLinksNothingAndIsLogged()
+
+	public function testACaseTheOwnerCannotReadIsNotLinked(): void {
+		$service = $this->objectService([['identifier' => '2026-000142', 'id' => 'uuid-142']]);
+		$this->access->method('hasCaseReadAccess')->willReturn(false);
+
+		$this->assertSame(
+			[],
+			$this->recognizer()->resolveCases(candidates: ['2026-000142'], objectService: $service, register: '3', schema: '5', owner: $this->owner)
+		);
+	}//end testACaseTheOwnerCannotReadIsNotLinked()
+
+	public function testARowWithoutAnIdIsNotLinkedAndAccessIsNotAsked(): void {
+		$service = $this->objectService([['identifier' => '2026-000142']]);
+		$this->access->expects($this->never())->method('hasCaseReadAccess');
+
+		$this->assertSame(
+			[],
+			$this->recognizer()->resolveCases(candidates: ['2026-000142'], objectService: $service, register: '3', schema: '5', owner: $this->owner)
+		);
+	}//end testARowWithoutAnIdIsNotLinkedAndAccessIsNotAsked()
+
+	public function testACaseWithoutNumericIdsIsNotLinkedToIdZero(): void {
+		$service = $this->objectService(
+			[['identifier' => '2026-000142', '@self' => ['id' => 'uuid-142', 'register' => 'zaken', 'schema' => ['x']]]]
+		);
+		$this->access->method('hasCaseReadAccess')->willReturn(true);
+		$this->logger->expects($this->once())->method('warning')->with(
+			'Dossiq: a matched case carries no numeric register or schema id; it is not linked rather than linked to id 0',
+			['app' => 'dossiq', 'case' => '2026-000142']
+		);
+
+		$this->assertSame(
+			[],
+			$this->recognizer()->resolveCases(candidates: ['2026-000142'], objectService: $service, register: 'zaken', schema: 'zaak', owner: $this->owner)
+		);
+		$this->assertSame(['zaken', 'zaak'], $service->queries[0]['slugs']);
+	}//end testACaseWithoutNumericIdsIsNotLinkedToIdZero()
+
+	public function testASearchFailureIsLoggedAndLinksNothing(): void {
+		$service = $this->objectService([], fails: true);
+		$this->logger->expects($this->once())->method('warning')->with(
+			'Dossiq: resolving a case number failed: database gone',
+			['app' => 'dossiq']
+		);
+
+		$this->assertSame(
+			[],
+			$this->recognizer()->resolveCases(candidates: ['2026-000142'], objectService: $service, register: '3', schema: '5', owner: $this->owner)
+		);
+	}//end testASearchFailureIsLoggedAndLinksNothing()
 
 	/**
-	 * A configured recognizer is used as it is.
+	 * A non-capturing group is not a capture group for the case number.
+	 *
+	 * @return void
+	 */
+	public function testANonCapturingGroupIsRefused(): void {
+		$this->assertSame(
+			'The pattern has no capture group for the case number.',
+			$this->recognizer()->validatePattern(pattern: '/(?:\d{4})/')
+		);
+		$this->assertNull($this->recognizer()->validatePattern(pattern: '#(\d{4})#'));
+	}//end testANonCapturingGroupIsRefused()
+
+	/**
+	 * A configured recognizer is used as it is, trimmed.
 	 *
 	 * @return void
 	 */
 	public function testAConfiguredPatternIsLoaded(): void {
 		$this->settings->method('getConfigValue')->willReturn(' /ZK-(\d+)/ ');
+		$this->logger->expects($this->never())->method('error');
 
 		$this->assertSame('/ZK-(\d+)/', $this->recognizer()->loadPattern());
 	}//end testAConfiguredPatternIsLoaded()
 
 	/**
-	 * An unusable configured recognizer refuses the run and says why, never silently matching nothing.
+	 * Look-alikes are left alone, an empty capture is not a candidate, and a pattern that errors at run time finds nothing.
 	 *
 	 * @return void
 	 */
-	public function testAnUnusableConfigurationRefusesTheRunAndIsLogged(): void {
-		$this->settings->method('getConfigValue')->willReturn('/ZK-\d+/');
-		$this->logger->expects($this->once())->method('error')->with(
-			$this->logicalAnd(
-				$this->stringContains(CaseNumberRecognizer::PATTERN_KEY),
-				$this->stringContains('no capture group')
-			)
-		);
-
-		$this->assertNull($this->recognizer()->loadPattern());
-	}//end testAnUnusableConfigurationRefusesTheRunAndIsLogged()
-
-	/**
-	 * The default finds bare and tagged numbers once each, in order, and leaves look-alikes alone.
-	 *
-	 * @return void
-	 */
-	public function testTheDefaultFindsDistinctCaseNumbersInOrder(): void {
-		$text = 'Re: [ZAAK-2026-000142] en 2025-0042, nogmaals 2026-000142; niet 12026-00421, tel 06-12345678, of 1899-1234.';
-
-		$this->assertSame(
-			['2026-000142', '2025-0042'],
-			$this->recognizer()->extractCaseNumberCandidates(text: $text, pattern: CaseNumberRecognizer::DEFAULT_PATTERN)
-		);
-	}//end testTheDefaultFindsDistinctCaseNumbersInOrder()
-
-	/**
-	 * Empty text, text without a number, and a pattern that errors at run time find nothing.
-	 *
-	 * @return void
-	 */
-	public function testNothingIsFoundWhereThereIsNothingToFind(): void {
+	public function testLookAlikesEmptyCapturesAndBrokenPatternsYieldNothing(): void {
 		$recognizer = $this->recognizer();
 
-		$this->assertSame([], $recognizer->extractCaseNumberCandidates(text: '  ', pattern: CaseNumberRecognizer::DEFAULT_PATTERN));
-		$this->assertSame([], $recognizer->extractCaseNumberCandidates(text: 'Geen nummer hier', pattern: CaseNumberRecognizer::DEFAULT_PATTERN));
+		$this->assertSame(
+			['2025-0042'],
+			$recognizer->extractCaseNumberCandidates(
+				text: 'niet 12026-00421, tel 06-12345678, of 1899-1234, wel 2025-0042',
+				pattern: CaseNumberRecognizer::DEFAULT_PATTERN
+			)
+		);
+		$this->assertSame(['7'], $recognizer->extractCaseNumberCandidates(text: 'a- b-7', pattern: '/-\s*(\d*)/'));
 		$this->assertSame([], $recognizer->extractCaseNumberCandidates(text: 'abc', pattern: '/(unclosed/'));
-	}//end testNothingIsFoundWhereThereIsNothingToFind()
+	}//end testLookAlikesEmptyCapturesAndBrokenPatternsYieldNothing()
 
 	/**
-	 * An empty capture is not a candidate.
+	 * On the slug path, one readable case links with the row's numeric ids, and the search is scoped to the owner's organisation with RBAC on.
 	 *
 	 * @return void
 	 */
-	public function testAnEmptyCaptureIsNotACandidate(): void {
-		$this->assertSame(['7'], $this->recognizer()->extractCaseNumberCandidates(text: 'a- b-7', pattern: '/-\s*(\d*)/'));
-	}//end testAnEmptyCaptureIsNotACandidate()
-
-	/**
-	 * A number that resolves to exactly one readable case links it, with the case's own numeric ids.
-	 *
-	 * @return void
-	 */
-	public function testOneReadableCaseIsLinked(): void {
+	public function testTheSlugPathLinksOneReadableCaseScopedToTheOwner(): void {
 		$store = new InMemoryRegister();
-		$store->seed(schema: 'case', uuid: 'uuid-2026-0042', row: self::caseRow(identifier: '2026-0042'));
+		$store->seed(
+			schema: 'case',
+			uuid: 'uuid-2026-0042',
+			row: ['identifier' => '2026-0042', '@self' => ['id' => 'uuid-2026-0042', 'register' => 5, 'schema' => 7]]
+		);
 		$this->access->method('hasCaseReadAccess')->with('uuid-2026-0042', $this->owner)->willReturn(true);
 
-		$cases = $this->recognizer()->resolveCases(candidates: ['2026-0042'], objectService: $store, register: 'dossiq', schema: 'case', owner: $this->owner);
-
-		$this->assertSame([['uuid' => 'uuid-2026-0042', 'identifier' => '2026-0042', 'registerId' => 5, 'schemaId' => 7]], $cases);
-	}//end testOneReadableCaseIsLinked()
-
-	/**
-	 * Two candidates naming the same case link it once.
-	 *
-	 * @return void
-	 */
-	public function testTheSameCaseIsLinkedOnce(): void {
-		$store = new InMemoryRegister();
-		$store->seed(schema: 'case', uuid: 'uuid-2026-0042', row: self::caseRow(identifier: '2026-0042'));
-		$this->access->method('hasCaseReadAccess')->willReturn(true);
-
-		$cases = $this->recognizer()->resolveCases(candidates: ['2026-0042', '2026-0042'], objectService: $store, register: 'dossiq', schema: 'case', owner: $this->owner);
-
-		$this->assertCount(1, $cases);
-	}//end testTheSameCaseIsLinkedOnce()
-
-	/**
-	 * A case the owner may not read is not linked, whatever the subject says.
-	 *
-	 * @return void
-	 */
-	public function testACaseTheOwnerMayNotReadIsNotLinked(): void {
-		$store = new InMemoryRegister();
-		$store->seed(schema: 'case', uuid: 'uuid-2026-0042', row: self::caseRow(identifier: '2026-0042'));
-		$this->access->method('hasCaseReadAccess')->willReturn(false);
-
-		$this->assertSame([], $this->recognizer()->resolveCases(candidates: ['2026-0042'], objectService: $store, register: 'dossiq', schema: 'case', owner: $this->owner));
-	}//end testACaseTheOwnerMayNotReadIsNotLinked()
-
-	/**
-	 * Two visible cases with one number link to neither, and say so.
-	 *
-	 * @return void
-	 */
-	public function testAnAmbiguousNumberLinksNothingAndIsLogged(): void {
-		$store = new InMemoryRegister();
-		$store->seed(schema: 'case', uuid: 'a', row: self::caseRow(identifier: '2026-0042'));
-		$store->seed(schema: 'case', uuid: 'b', row: self::caseRow(identifier: '2026-0042'));
-		$this->access->expects($this->never())->method('hasCaseReadAccess');
-		$this->logger->expects($this->once())->method('warning')->with(
-			$this->stringContains('more than one case'),
-			$this->callback(static fn (array $context): bool => $context['case'] === '2026-0042' && $context['matches'] === 2)
+		$cases = $this->recognizer()->resolveCases(
+			candidates: ['2026-0042'],
+			objectService: $store,
+			register: 'dossiq',
+			schema: 'case',
+			owner: $this->owner
 		);
+		$this->assertSame([['uuid' => 'uuid-2026-0042', 'identifier' => '2026-0042', 'registerId' => 5, 'schemaId' => 7]], $cases);
 
-		$this->assertSame([], $this->recognizer()->resolveCases(candidates: ['2026-0042'], objectService: $store, register: 'dossiq', schema: 'case', owner: $this->owner));
-	}//end testAnAmbiguousNumberLinksNothingAndIsLogged()
+		$service = $this->objectService([]);
+		$this->recognizer()->resolveCases(
+			candidates: ['2026-0042'],
+			objectService: $service,
+			register: 'dossiq',
+			schema: 'case',
+			owner: $this->owner
+		);
+		$this->assertSame(
+			[
+				'slugs'                  => ['dossiq', 'case'],
+				'identifier'             => '2026-0042',
+				'_limit'                 => 10,
+				'_rbac'                  => true,
+				'_multitenancy'          => true,
+				'_multitenancy_explicit' => true,
+			],
+			$service->queries[0]
+		);
+	}//end testTheSlugPathLinksOneReadableCaseScopedToTheOwner()
 
 	/**
-	 * A number nobody uses links nothing, silently.
+	 * A loose search hit is held to exact equality, and a number nobody uses links nothing, silently.
 	 *
 	 * @return void
 	 */
-	public function testAnUnknownNumberLinksNothingSilently(): void {
+	public function testANearMissOrUnknownNumberLinksNothingSilently(): void {
+		$this->access->expects($this->never())->method('hasCaseReadAccess');
 		$this->logger->expects($this->never())->method('warning');
 
-		$this->assertSame([], $this->recognizer()->resolveCases(candidates: ['2026-9999'], objectService: new InMemoryRegister(), register: 'dossiq', schema: 'case', owner: $this->owner));
-	}//end testAnUnknownNumberLinksNothingSilently()
-
-	/**
-	 * A loose search hit is held to exact equality, and a row without an id is not linked.
-	 *
-	 * @return void
-	 */
-	public function testOnlyAnExactMatchWithAnIdIsLinked(): void {
-		$loose = new class () {
-			/**
-			 * Answers every search with a near miss and a row without an id.
-			 *
-			 * @param string               $register The register.
-			 * @param string               $schema   The schema.
-			 * @param array<string, mixed> $filters  The filters.
-			 *
-			 * @return array<int, array<string, mixed>>
-			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
-				return [['identifier' => $filters['identifier'] . '-1', '@self' => ['id' => 'near']]];
-			}
-		};
-		$noId = new class () {
-			/**
-			 * Answers with an exact row that carries no id.
-			 *
-			 * @param string               $register The register.
-			 * @param string               $schema   The schema.
-			 * @param array<string, mixed> $filters  The filters.
-			 *
-			 * @return array<int, array<string, mixed>>
-			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
-				return [['identifier' => $filters['identifier']]];
-			}
-		};
-		$this->access->expects($this->never())->method('hasCaseReadAccess');
-
-		$this->assertSame([], $this->recognizer()->resolveCases(candidates: ['2026-0042'], objectService: $loose, register: 'dossiq', schema: 'case', owner: $this->owner));
-		$this->assertSame([], $this->recognizer()->resolveCases(candidates: ['2026-0042'], objectService: $noId, register: 'dossiq', schema: 'case', owner: $this->owner));
-	}//end testOnlyAnExactMatchWithAnIdIsLinked()
-
-	/**
-	 * The search asks OpenRegister for the owner's organisation explicitly, with RBAC on.
-	 *
-	 * @return void
-	 */
-	public function testTheSearchIsScopedToTheOwnersOrganisation(): void {
-		$recording = new class () {
-			/**
-			 * The filters of the last search.
-			 *
-			 * @var array<string, mixed>
-			 */
-			public array $filters = [];
-
-			/**
-			 * Records the filters and finds nothing.
-			 *
-			 * @param string               $register The register.
-			 * @param string               $schema   The schema.
-			 * @param array<string, mixed> $filters  The filters.
-			 *
-			 * @return array<int, array<string, mixed>>
-			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
-				$this->filters = $filters;
-				return [];
-			}
-		};
-
-		$this->recognizer()->resolveCases(candidates: ['2026-0042'], objectService: $recording, register: 'dossiq', schema: 'case', owner: $this->owner);
-
+		$nearMiss = $this->objectService([['identifier' => '2026-0042-1', '@self' => ['id' => 'near']]]);
 		$this->assertSame(
-			['identifier' => '2026-0042', '_limit' => 10, '_rbac' => true, '_multitenancy' => true, '_multitenancy_explicit' => true],
-			$recording->filters
+			[],
+			$this->recognizer()->resolveCases(candidates: ['2026-0042'], objectService: $nearMiss, register: 'dossiq', schema: 'case', owner: $this->owner)
 		);
-	}//end testTheSearchIsScopedToTheOwnersOrganisation()
-
-	/**
-	 * A search that fails links nothing and is logged.
-	 *
-	 * @return void
-	 */
-	public function testAFailingSearchLinksNothingAndIsLogged(): void {
-		$failing = new class () {
-			/**
-			 * Fails.
-			 *
-			 * @param string               $register The register.
-			 * @param string               $schema   The schema.
-			 * @param array<string, mixed> $filters  The filters.
-			 *
-			 * @return array<int, array<string, mixed>>
-			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
-				throw new RuntimeException('index down');
-			}
-		};
-		$this->logger->expects($this->once())->method('warning')->with($this->stringContains('resolving a case number failed: index down'));
-
-		$this->assertSame([], $this->recognizer()->resolveCases(candidates: ['2026-0042'], objectService: $failing, register: 'dossiq', schema: 'case', owner: $this->owner));
-	}//end testAFailingSearchLinksNothingAndIsLogged()
-
-	/**
-	 * Without a numeric register or schema on the row or in the configuration, the case is not linked to id 0.
-	 *
-	 * @return void
-	 */
-	public function testACaseWithoutNumericIdsIsNotLinkedToZero(): void {
-		$store = new InMemoryRegister();
-		$store->seed(schema: 'case', uuid: 'uuid-2026-0042', row: self::caseRow(identifier: '2026-0042', register: 'dossiq', schema: 'case'));
-		$this->access->method('hasCaseReadAccess')->willReturn(true);
-		$this->logger->expects($this->once())->method('warning')->with($this->stringContains('carries no numeric register or schema id'));
-
-		$this->assertSame([], $this->recognizer()->resolveCases(candidates: ['2026-0042'], objectService: $store, register: 'dossiq', schema: 'case', owner: $this->owner));
-	}//end testACaseWithoutNumericIdsIsNotLinkedToZero()
-
-	/**
-	 * The configured numeric ids are used when the row carries none, and a row without `@self` falls back to `id`.
-	 *
-	 * @return void
-	 */
-	public function testConfiguredNumericIdsFillInForTheRow(): void {
-		$numeric = new class () {
-			/**
-			 * Answers the numeric-path search with a row that has no `@self`.
-			 *
-			 * @param array<string, mixed> $query The query.
-			 *
-			 * @return array<int, array<string, mixed>>
-			 */
-			public function searchObjects(array $query): array {
-				return [['identifier' => $query['identifier'], 'id' => 'plain-id']];
-			}
-		};
-		$this->access->method('hasCaseReadAccess')->with('plain-id', $this->owner)->willReturn(true);
-
-		$cases = $this->recognizer()->resolveCases(candidates: ['2026-0042'], objectService: $numeric, register: '12', schema: '34', owner: $this->owner);
-
-		$this->assertSame([['uuid' => 'plain-id', 'identifier' => '2026-0042', 'registerId' => 12, 'schemaId' => 34]], $cases);
-	}//end testConfiguredNumericIdsFillInForTheRow()
+		$this->assertSame(
+			[],
+			$this->recognizer()->resolveCases(
+				candidates: ['2026-9999'],
+				objectService: new InMemoryRegister(),
+				register: 'dossiq',
+				schema: 'case',
+				owner: $this->owner
+			)
+		);
+	}//end testANearMissOrUnknownNumberLinksNothingSilently()
 }//end class
