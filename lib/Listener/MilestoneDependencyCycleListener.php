@@ -51,10 +51,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\MilestoneRepositoryInterface;
 use OCA\Dossiq\Kernel\Contracts\MilestoneScheduleInterface;
 use OCA\Dossiq\Kernel\Contracts\SchemaScopeResolverInterface;
 use OCA\Dossiq\Listener\Support\PreSaveCheck;
-use OCA\Dossiq\Service\Milestone\MilestoneRepository;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -98,14 +98,14 @@ class MilestoneDependencyCycleListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param SchemaScopeResolverInterface $schemaScope Decides whether a write is ours.
-	 * @param MilestoneRepository $repository Reads the case type's other definitions.
+	 * @param MilestoneRepositoryInterface $repository Reads the case type's other definitions.
 	 * @param MilestoneScheduleInterface $schedule Owns the cycle rule.
 	 * @param IL10N $l10n Translation service.
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
 		private readonly SchemaScopeResolverInterface $schemaScope,
-		private readonly MilestoneRepository $repository,
+		private readonly MilestoneRepositoryInterface $repository,
 		private readonly MilestoneScheduleInterface $schedule,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,

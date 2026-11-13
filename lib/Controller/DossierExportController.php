@@ -36,8 +36,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\BeroepDossierExportInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
-use OCA\Dossiq\Service\BeroepDossierExport;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -56,7 +56,7 @@ class DossierExportController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The HTTP request.
-	 * @param BeroepDossierExport $fileExport The export service.
+	 * @param BeroepDossierExportInterface $fileExport The export service.
 	 * @param IUserSession $userSession The current session.
 	 * @param LoggerInterface $logger The logger.
 	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
@@ -66,7 +66,7 @@ class DossierExportController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly BeroepDossierExport $fileExport,
+		private readonly BeroepDossierExportInterface $fileExport,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,

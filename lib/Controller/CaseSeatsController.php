@@ -38,8 +38,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\CaseCaller;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseSeatsInterface;
+use OCA\Dossiq\Kernel\Contracts\CoordinatorRequirementInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\People\CoordinatorRequirement;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -66,7 +66,7 @@ class CaseSeatsController extends Controller {
 	 * @param string                 $appName     The app name.
 	 * @param IRequest               $request     The request.
 	 * @param CaseSeatsInterface              $seats       The handler and the coordinator.
-	 * @param CoordinatorRequirement $requirement Whether this case type asks for a coordinator.
+	 * @param CoordinatorRequirementInterface $requirement Whether this case type asks for a coordinator.
 	 * @param CaseAccessGuardInterface        $accessGuard Per-case authorization, failing closed.
 	 * @param SettingsServiceInterface        $settings    Bridge to OpenRegister.
 	 * @param IUserSession           $userSession The session.
@@ -80,7 +80,7 @@ class CaseSeatsController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly CaseSeatsInterface $seats,
-		private readonly CoordinatorRequirement $requirement,
+		private readonly CoordinatorRequirementInterface $requirement,
 		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly SettingsServiceInterface $settings,
 		private readonly IUserSession $userSession,

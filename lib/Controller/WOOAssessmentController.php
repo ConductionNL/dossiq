@@ -29,12 +29,12 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\DecisionLetterInterface;
+use OCA\Dossiq\Kernel\Contracts\ExtensionNoticeInterface;
+use OCA\Dossiq\Kernel\Contracts\HandlerActsAsSystemInterface;
 use OCA\Dossiq\Kernel\Contracts\WOOAnonymisationAssistServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WOODeadlineServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooPublicationServiceInterface;
-use OCA\Dossiq\Service\Cases\HandlerActsAsSystem;
-use OCA\Dossiq\Service\Termijn\ExtensionNotice;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -80,9 +80,9 @@ class WOOAssessmentController extends Controller {
 	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case mutation authorization (fails closed)
 	 * @param LoggerInterface $logger Logger
 	 * @param IL10N $l10n Translations for the refusal a header action shows
-	 * @param HandlerActsAsSystem $handlerActs Runs a publish or withdraw as the system, for the
+	 * @param HandlerActsAsSystemInterface $handlerActs Runs a publish or withdraw as the system, for the
 	 *        case's handler at the publication step.
-	 * @param ExtensionNotice|null $extensionNotice Tells the requester about an extension, with the
+	 * @param ExtensionNoticeInterface|null $extensionNotice Tells the requester about an extension, with the
 	 *        reason and the new end. Absent, the answer says the requester was not told.
 	 * @param DecisionLetterInterface|null $letters Checks a chosen letter is on the case and links the
 	 *        decision to its letter. Absent, no letter is checked and none is linked.
@@ -99,8 +99,8 @@ class WOOAssessmentController extends Controller {
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly LoggerInterface $logger,
 		private readonly IL10N $l10n,
-		private readonly HandlerActsAsSystem $handlerActs,
-		private readonly ?ExtensionNotice $extensionNotice = null,
+		private readonly HandlerActsAsSystemInterface $handlerActs,
+		private readonly ?ExtensionNoticeInterface $extensionNotice = null,
 		private readonly ?DecisionLetterInterface $letters = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);

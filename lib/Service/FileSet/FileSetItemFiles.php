@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\FileSet;
 
+use OCA\Dossiq\Kernel\Contracts\FileSetItemFilesInterface;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 
 /**
@@ -37,7 +38,7 @@ use OCA\Dossiq\Woo\WooCaseDocuments;
  *
  * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
  */
-class FileSetItemFiles {
+class FileSetItemFiles implements FileSetItemFilesInterface {
 
 	/**
 	 * The two sides of an item, in reading order.

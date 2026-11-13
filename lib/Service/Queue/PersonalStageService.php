@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Service\Queue;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PersonalStageServiceInterface;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
 
@@ -50,7 +51,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/my-work/spec.md
  */
-class PersonalStageService {
+class PersonalStageService implements PersonalStageServiceInterface {
 	/**
 	 * The preference holding the map of case id to stage.
 	 *

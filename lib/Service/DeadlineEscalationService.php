@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\DeadlineEscalationServiceInterface;
 use OCA\Dossiq\Service\Termijn\TermHandlerNotice;
 use Psr\Log\LoggerInterface;
 
@@ -39,7 +40,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
  */
-class DeadlineEscalationService {
+class DeadlineEscalationService implements DeadlineEscalationServiceInterface {
 	/**
 	 * Default escalation matrix.
 	 *

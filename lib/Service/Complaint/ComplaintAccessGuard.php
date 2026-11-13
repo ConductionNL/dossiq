@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Complaint;
 
+use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
@@ -47,7 +48,7 @@ use OCP\IUserSession;
  *
  * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
-class ComplaintAccessGuard {
+class ComplaintAccessGuard implements ComplaintAccessGuardInterface {
 	/**
 	 * Constructor.
 	 *

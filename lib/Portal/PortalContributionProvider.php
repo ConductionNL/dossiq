@@ -62,8 +62,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeCaseTypesInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
 use OCA\Dossiq\Woo\WooReceivedAnswers;
 use OCA\Dossiq\Woo\WooRequestIntake;
@@ -484,7 +484,7 @@ class PortalContributionProvider {
 	 * @param PortalCaseSteps|null           $steps      Where a case stands in its type's public steps, or null.
 	 * @param PortalCaseMessages|null        $messages   The resident's messages on a case, or null.
 	 * @param WooRequestIntake|null          $wooRequests Opens the case for a Woo request a portal form sent, or null.
-	 * @param IntakeCaseTypes|null           $caseTypes  The case type each case-opening action opens, or
+	 * @param IntakeCaseTypesInterface|null           $caseTypes  The case type each case-opening action opens, or
 	 *                                                   null, which leaves those actions out.
 	 * @param SettingsServiceInterface|null           $settings   Reads the text shown above Mijn zaken.
 	 */
@@ -495,7 +495,7 @@ class PortalContributionProvider {
 		private readonly ?PortalCaseSteps $steps = null,
 		private readonly ?PortalCaseMessages $messages = null,
 		private readonly ?WooRequestIntake $wooRequests = null,
-		private readonly ?IntakeCaseTypes $caseTypes = null,
+		private readonly ?IntakeCaseTypesInterface $caseTypes = null,
 		private readonly ?SettingsServiceInterface $settings = null,
 	) {
 		$this->pages = new PortalPages();

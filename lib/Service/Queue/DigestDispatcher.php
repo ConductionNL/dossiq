@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue;
 
+use OCA\Dossiq\Kernel\Contracts\DigestDispatcherInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
@@ -40,7 +41,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/my-work/spec.md
  */
-class DigestDispatcher {
+class DigestDispatcher implements DigestDispatcherInterface {
 	use SearchesObjects;
 
 	/**

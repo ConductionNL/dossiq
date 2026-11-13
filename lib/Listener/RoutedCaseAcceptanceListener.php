@@ -33,8 +33,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TakeBackWindowInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\Routing\TakeBackWindow;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\EventDispatcher\Event;
@@ -77,14 +77,14 @@ class RoutedCaseAcceptanceListener implements IEventListener {
 	 * Build the listener.
 	 *
 	 * @param SettingsServiceInterface $settingsService Names the case schema and holds the object service.
-	 * @param TakeBackWindow  $window          Cancels the take-back timer.
+	 * @param TakeBackWindowInterface  $window          Cancels the take-back timer.
 	 * @param IUserSession    $userSession     Who saved.
 	 * @param ITimeFactory    $time            Now.
 	 * @param LoggerInterface $logger          Logs a failed stamp.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly TakeBackWindow $window,
+		private readonly TakeBackWindowInterface $window,
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $time,
 		private readonly LoggerInterface $logger,

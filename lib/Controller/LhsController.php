@@ -31,8 +31,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\LhsLookupServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\LhsRecommendationServiceInterface;
-use OCA\Dossiq\Service\LhsLookupService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -59,7 +59,7 @@ class LhsController extends Controller {
 	 * @param string $appName App name
 	 * @param IRequest $request Request
 	 * @param LhsRecommendationServiceInterface $lhsService LHS engine
-	 * @param LhsLookupService $lhsLookupService LHS simple lookup service
+	 * @param LhsLookupServiceInterface $lhsLookupService LHS simple lookup service
 	 * @param IUserSession $userSession User session
 	 * @param IGroupManager $groupManager Group manager
 	 * @param LoggerInterface $logger Logger
@@ -69,7 +69,7 @@ class LhsController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly LhsRecommendationServiceInterface $lhsService,
-		private readonly LhsLookupService $lhsLookupService,
+		private readonly LhsLookupServiceInterface $lhsLookupService,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,

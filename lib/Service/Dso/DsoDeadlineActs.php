@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Service\Dso;
 
 use DateTime;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DsoDeadlineActsInterface;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -45,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class DsoDeadlineActs {
+class DsoDeadlineActs implements DsoDeadlineActsInterface {
 	use SearchesObjects;
 
 	/**

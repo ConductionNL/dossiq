@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Subsidie;
 
+use OCA\Dossiq\Kernel\Contracts\SubsidieRegisterExporterInterface;
+
 /**
  * Wet open overheid subsidieregister feed builder.
  *
@@ -36,7 +38,7 @@ namespace OCA\Dossiq\Service\Subsidie;
  *
  * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
-class SubsidieRegisterExporter {
+class SubsidieRegisterExporter implements SubsidieRegisterExporterInterface {
 	/**
 	 * JSON-LD context for linked-data consumers.
 	 */

@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\OptOutGateInterface;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -49,7 +50,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
  */
-class OptOutGate {
+class OptOutGate implements OptOutGateInterface {
 
 	/**
 	 * The integriq event, relative to integriq's namespace.
@@ -70,16 +71,6 @@ class OptOutGate {
 	 * The code for "the check is switched off".
 	 */
 	public const CODE_CHECK_OFF = 'check-disabled';
-
-	/**
-	 * A status update or mail about one case. Respects opt-outs.
-	 */
-	public const CATEGORY_CASE_UPDATE = 'case-update';
-
-	/**
-	 * A decision. Always sent, never carries a link.
-	 */
-	public const CATEGORY_BESLUIT = 'besluit';
 
 	/**
 	 * A notice the law requires. Always sent, never carries a link.

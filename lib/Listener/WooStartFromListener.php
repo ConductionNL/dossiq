@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Woo\WooSearchPlans;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
@@ -50,12 +50,12 @@ class WooStartFromListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param WooSearchPlans           $plans        Copies the configuration and writes the draft plan.
-	 * @param ObjectSchemaSlugResolver $slugResolver Tells a case from any other object.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Tells a case from any other object.
 	 * @param LoggerInterface          $logger       Logs a copy that could not be made.
 	 */
 	public function __construct(
 		private readonly WooSearchPlans $plans,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

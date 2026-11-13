@@ -29,12 +29,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Kernel\Contracts\TriageChannelInterface;
+
 /**
  * Names, narrows to and counts the channels of the triage queue.
  *
  * @spec openspec/specs/intake-from-a-channel/spec.md
  */
-class TriageChannel {
+class TriageChannel implements TriageChannelInterface {
 
 	/**
 	 * The channel of an entry the mailbox received.

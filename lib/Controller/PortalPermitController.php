@@ -13,9 +13,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\PermitChangeRefusedInterface;
+use OCA\Dossiq\Kernel\Contracts\PermitPlateChangeInterface;
 use OCA\Dossiq\Portal\PortalAssertionVerifier;
-use OCA\Dossiq\Service\Permit\PermitChangeRefused;
-use OCA\Dossiq\Service\Permit\PermitPlateChange;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -53,17 +53,17 @@ class PortalPermitController extends Controller {
 	 * The status each refusal answers with.
 	 */
 	private const STATUS = [
-		PermitChangeRefused::INVALID => Http::STATUS_BAD_REQUEST,
-		PermitChangeRefused::NOT_FOUND => Http::STATUS_NOT_FOUND,
-		PermitChangeRefused::NOT_ACTIVE => Http::STATUS_CONFLICT,
-		PermitChangeRefused::UNAVAILABLE => Http::STATUS_SERVICE_UNAVAILABLE,
+		PermitChangeRefusedInterface::INVALID => Http::STATUS_BAD_REQUEST,
+		PermitChangeRefusedInterface::NOT_FOUND => Http::STATUS_NOT_FOUND,
+		PermitChangeRefusedInterface::NOT_ACTIVE => Http::STATUS_CONFLICT,
+		PermitChangeRefusedInterface::UNAVAILABLE => Http::STATUS_SERVICE_UNAVAILABLE,
 	];
 
 	/**
 	 * @param string                  $appName   The app name.
 	 * @param IRequest                $request   The request.
 	 * @param PortalAssertionVerifier $verifier  Verifies portaliq's assertion.
-	 * @param PermitPlateChange       $change    Opens the change case.
+	 * @param PermitPlateChangeInterface       $change    Opens the change case.
 	 * @param IThrottler              $throttler Counts rejected assertions.
 	 * @param LoggerInterface         $logger    Logger.
 	 */
@@ -71,7 +71,7 @@ class PortalPermitController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly PortalAssertionVerifier $verifier,
-		private readonly PermitPlateChange $change,
+		private readonly PermitPlateChangeInterface $change,
 		private readonly IThrottler $throttler,
 		private readonly LoggerInterface $logger,
 	) {
@@ -109,7 +109,7 @@ class PortalPermitController extends Controller {
 				),
 				Http::STATUS_CREATED
 			);
-		} catch (PermitChangeRefused $refused) {
+		} catch (PermitChangeRefusedInterface $refused) {
 			return new JSONResponse(
 				['error' => $refused->getReason(), 'message' => $refused->getDetail()],
 				(self::STATUS[$refused->getReason()] ?? Http::STATUS_BAD_REQUEST)

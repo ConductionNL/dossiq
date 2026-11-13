@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Money;
 
+use OCA\Dossiq\Kernel\Contracts\CasePaymentReaderInterface;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Container\ContainerInterface;
@@ -51,13 +52,7 @@ use Throwable;
  *
  * @spec openspec/specs/financial-integration/spec.md
  */
-class CasePaymentReader {
-	/**
-	 * The app that holds the money.
-	 *
-	 * @var string
-	 */
-	public const MONEY_APP = 'shillinq';
+class CasePaymentReader implements CasePaymentReaderInterface {
 
 	/**
 	 * The register and schema shillinq's leaf identifies a dossiq case by.

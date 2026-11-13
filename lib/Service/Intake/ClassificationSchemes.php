@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ClassificationSchemesInterface;
 use OCP\IAppConfig;
 
 /**
@@ -50,7 +51,7 @@ use OCP\IAppConfig;
  *
  * @spec openspec/specs/semantic-case-intake/spec.md
  */
-class ClassificationSchemes {
+class ClassificationSchemes implements ClassificationSchemesInterface {
 
 	/**
 	 * The app-config key holding the administered schemes.

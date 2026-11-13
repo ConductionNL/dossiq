@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Subsidie\SubsidieRegisterExporter;
+use OCA\Dossiq\Kernel\Contracts\SubsidieRegisterExporterInterface;
 use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -51,12 +51,12 @@ class SubsidieRegisterController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param SettingsServiceInterface $settingsService Schema/register bridge.
-	 * @param SubsidieRegisterExporter $exporter Feed builder.
+	 * @param SubsidieRegisterExporterInterface $exporter Feed builder.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly SubsidieRegisterExporter $exporter,
+		private readonly SubsidieRegisterExporterInterface $exporter,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

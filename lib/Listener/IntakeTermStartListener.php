@@ -44,10 +44,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseReceiptDatesInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeTermStartInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Intake\CaseReceiptDates;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\EventDispatcher\Event;
@@ -70,7 +70,7 @@ class IntakeTermStartListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param IntakeTermStartInterface          $intake          The two moments and the flag between them.
-	 * @param ObjectSchemaSlugResolver $slugResolver    Schema id-to-slug resolver.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver    Schema id-to-slug resolver.
 	 * @param SettingsServiceInterface          $settingsService Bridge to OpenRegister.
 	 * @param LoggerInterface          $logger          Records a case that went unstamped.
 	 * @param ReceiptClock $clock The receipt dates, the receipt moment and the time factory.
@@ -81,7 +81,7 @@ class IntakeTermStartListener implements IEventListener {
 	 */
 	public function __construct(
 		private readonly IntakeTermStartInterface $intake,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ReceiptClock $clock,
@@ -239,7 +239,7 @@ class IntakeTermStartListener implements IEventListener {
 
 		$changes = array_merge($changes, $this->clock->receiptDates->changesFor(case: $case, termStartsAt: $termStartsAt));
 		if ($sentAt !== '') {
-			$changes[CaseReceiptDates::START_DATE] = $this->clock->receiptDates->startDateFor(case: $case, termStartsAt: $termStartsAt);
+			$changes[CaseReceiptDatesInterface::START_DATE] = $this->clock->receiptDates->startDateFor(case: $case, termStartsAt: $termStartsAt);
 		}
 
 		return $changes;

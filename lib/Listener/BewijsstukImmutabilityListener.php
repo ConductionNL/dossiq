@@ -44,9 +44,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\BewijsstukServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
-use OCA\Dossiq\Service\Subsidie\BewijsstukService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -68,13 +68,13 @@ class BewijsstukImmutabilityListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface $settingsService Schema slug bridge.
-	 * @param BewijsstukService $bewijsstukService Owns the REQ-SUB-007
+	 * @param BewijsstukServiceInterface $bewijsstukService Owns the REQ-SUB-007
 	 *                                             immutability rule.
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly BewijsstukService $bewijsstukService,
+		private readonly BewijsstukServiceInterface $bewijsstukService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

@@ -36,9 +36,9 @@ use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\MandaatCheckServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\MandaatEscalatieServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\MandaatGebruikServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\MandaatImportServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\MandaatGebruikService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -83,7 +83,7 @@ class MandaatMatrixController extends Controller {
 	 * @param IUserSession $userSession User session (for current user id).
 	 * @param MandaatCheckServiceInterface $check Check service.
 	 * @param MandaatEscalatieServiceInterface $escalation Escalation service.
-	 * @param MandaatGebruikService $gebruik Audit log service.
+	 * @param MandaatGebruikServiceInterface $gebruik Audit log service.
 	 * @param MandaatImportServiceInterface $import Import service.
 	 * @param SettingsServiceInterface $settings Settings (OpenRegister access).
 	 * @param LoggerInterface $logger Logger.
@@ -94,7 +94,7 @@ class MandaatMatrixController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly MandaatCheckServiceInterface $check,
 		private readonly MandaatEscalatieServiceInterface $escalation,
-		private readonly MandaatGebruikService $gebruik,
+		private readonly MandaatGebruikServiceInterface $gebruik,
 		private readonly MandaatImportServiceInterface $import,
 		private readonly SettingsServiceInterface $settings,
 		private readonly LoggerInterface $logger,

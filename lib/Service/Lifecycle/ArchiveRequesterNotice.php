@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Lifecycle;
 
+use OCA\Dossiq\Kernel\Contracts\ArchiveRequesterNoticeInterface;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 
@@ -41,7 +42,7 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
  *
  * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
  */
-class ArchiveRequesterNotice {
+class ArchiveRequesterNotice implements ArchiveRequesterNoticeInterface {
 
 	/**
 	 * The template the notice is recorded under.

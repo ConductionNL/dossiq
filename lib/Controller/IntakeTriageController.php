@@ -46,18 +46,18 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AdmissibilityJudgementInterface;
 use OCA\Dossiq\Kernel\Contracts\AssigneeNarrowingInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseClassificationInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseMatchSuggestionInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseTypeResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\ClassificationSchemesInterface;
 use OCA\Dossiq\Kernel\Contracts\DuplicatePolicyInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeFanOutInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakePolicyInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeRequirementsInterface;
 use OCA\Dossiq\Kernel\Contracts\RefusalOutcomeInterface;
+use OCA\Dossiq\Kernel\Contracts\TriageChannelInterface;
 use OCA\Dossiq\Kernel\Contracts\TriageSleepInterface;
-use OCA\Dossiq\Service\Email\IntakePolicy;
-use OCA\Dossiq\Service\Intake\CaseClassification;
-use OCA\Dossiq\Service\Intake\CaseMatchSuggestion;
-use OCA\Dossiq\Service\Intake\ClassificationSchemes;
-use OCA\Dossiq\Service\Intake\TriageChannel;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -100,8 +100,8 @@ class IntakeTriageController extends Controller {
 	 * @param IRequest              $request          Inbound request.
 	 * @param CaseTypeResolverInterface      $caseTypeResolver The effective case type.
 	 * @param IntakeRequirementsInterface    $requirements     What must be answered, and when.
-	 * @param CaseClassification    $classification   The facets and the access rule.
-	 * @param ClassificationSchemes $schemes          The schemes this instance knows.
+	 * @param CaseClassificationInterface    $classification   The facets and the access rule.
+	 * @param ClassificationSchemesInterface $schemes          The schemes this instance knows.
 	 * @param AssigneeNarrowingInterface     $narrowing        Who may hold the case.
 	 * @param DuplicatePolicyInterface       $duplicates       What this case type does about a case that already exists.
 	 * @param RefusalOutcomeInterface        $refusal          Refusal as an outcome of routing.
@@ -109,19 +109,19 @@ class IntakeTriageController extends Controller {
 	 * @param TriageSleepInterface           $sleep            The triage sleep.
 	 * @param IntakeFanOutInterface          $fanOut           One submission, several cases.
 	 * @param IntakeLogInterface             $log              The triage queue.
-	 * @param IntakePolicy          $policy           Who may run intake.
+	 * @param IntakePolicyInterface          $policy           Who may run intake.
 	 * @param CaseAccessGuardInterface       $caseAccessGuard  Per-case authorization.
 	 * @param IUserSession          $userSession      The caller.
 	 * @param LoggerInterface       $logger           Logger.
-	 * @param CaseMatchSuggestion   $suggestions      The case each queued message probably belongs to.
-	 * @param TriageChannel         $channels         The channel each queued message came in on.
+	 * @param CaseMatchSuggestionInterface   $suggestions      The case each queued message probably belongs to.
+	 * @param TriageChannelInterface         $channels         The channel each queued message came in on.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly CaseTypeResolverInterface $caseTypeResolver,
 		private readonly IntakeRequirementsInterface $requirements,
-		private readonly CaseClassification $classification,
-		private readonly ClassificationSchemes $schemes,
+		private readonly CaseClassificationInterface $classification,
+		private readonly ClassificationSchemesInterface $schemes,
 		private readonly AssigneeNarrowingInterface $narrowing,
 		private readonly DuplicatePolicyInterface $duplicates,
 		private readonly RefusalOutcomeInterface $refusal,
@@ -129,12 +129,12 @@ class IntakeTriageController extends Controller {
 		private readonly TriageSleepInterface $sleep,
 		private readonly IntakeFanOutInterface $fanOut,
 		private readonly IntakeLogInterface $log,
-		private readonly IntakePolicy $policy,
+		private readonly IntakePolicyInterface $policy,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseMatchSuggestion $suggestions,
-		private readonly TriageChannel $channels,
+		private readonly CaseMatchSuggestionInterface $suggestions,
+		private readonly TriageChannelInterface $channels,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

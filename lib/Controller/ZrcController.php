@@ -35,9 +35,9 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Exception\CaseHeldException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseRelationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentJoinHomingInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZrcStatusEffectsInterface;
-use OCA\Dossiq\Service\Zaakdossier\DocumentJoinHoming;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCA\OpenRegister\Exception\HookStoppedException;
 use OCP\AppFramework\Http;
@@ -94,7 +94,7 @@ class ZrcController extends ZgwController {
 	 * @param IL10N $l10n The localization service
 	 * @param CaseRelationServiceInterface $caseRelationService Typed peer-relation service
 	 * @param ZrcStatusEffectsInterface $statusEffects What a new status or resultaat does to its zaak
-	 * @param DocumentJoinHoming $joinHoming Refuses a join to a case without a folder, and moves the file into it
+	 * @param DocumentJoinHomingInterface $joinHoming Refuses a join to a case without a folder, and moves the file into it
 	 */
 	public function __construct(
 		IRequest $request,
@@ -102,7 +102,7 @@ class ZrcController extends ZgwController {
 		private readonly IL10N $l10n,
 		private readonly CaseRelationServiceInterface $caseRelationService,
 		private readonly ZrcStatusEffectsInterface $statusEffects,
-		private readonly DocumentJoinHoming $joinHoming,
+		private readonly DocumentJoinHomingInterface $joinHoming,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Conversation;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseConversationServiceInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -44,40 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseConversationService {
-
-	/**
-	 * Refusal reason: this instance has no Talk, so there is no conversation
-	 * to start and the case says so instead of offering a dead affordance.
-	 *
-	 * @var string
-	 */
-	public const REASON_NO_TALK = 'talk_not_available';
-
-	/**
-	 * Refusal reason: the case is not readable, or OpenRegister is not
-	 * configured for cases.
-	 *
-	 * @var string
-	 */
-	public const REASON_NO_CASE = 'case_not_found';
-
-	/**
-	 * Refusal reason: no conversation on this case carries the room id given,
-	 * so there is nothing to record an ending against.
-	 *
-	 * @var string
-	 */
-	public const REASON_UNKNOWN_ROOM = 'conversation_not_found';
-
-	/**
-	 * Refusal reason: the case type names responders that do not resolve, so
-	 * the major declaration is refused rather than opening an empty channel
-	 * (ADR-102: absent config fails closed with a status).
-	 *
-	 * @var string
-	 */
-	public const REASON_UNRESOLVED_RESPONDERS = 'responders_unresolved';
+class CaseConversationService implements CaseConversationServiceInterface {
 
 	/**
 	 * What a conversation on a case is called when no subject is given.

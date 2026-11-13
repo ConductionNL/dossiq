@@ -26,7 +26,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Checklist\ChecklistTemplateStore;
+use OCA\Dossiq\Kernel\Contracts\ChecklistTemplateStoreInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
 use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
@@ -49,7 +49,7 @@ class ChecklistTemplateController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param ChecklistTemplateStore $templates The template catalogue
+	 * @param ChecklistTemplateStoreInterface $templates The template catalogue
 	 * @param LoggerInterface $logger Logger
 	 *
 	 * @spec openspec/specs/inspection-checklists/spec.md
@@ -57,7 +57,7 @@ class ChecklistTemplateController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ChecklistTemplateStore $templates,
+		private readonly ChecklistTemplateStoreInterface $templates,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);

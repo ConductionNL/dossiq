@@ -31,9 +31,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\DsoDeadlineActsInterface;
 use OCA\Dossiq\Kernel\Contracts\DsoDeadlineTimerInterface;
 use OCA\Dossiq\Listener\Support\TimerFire;
-use OCA\Dossiq\Service\Dso\DsoDeadlineActs;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
@@ -52,12 +52,12 @@ class DsoDeadlineTimerFiredListener implements IEventListener {
 	/**
 	 * Build the listener.
 	 *
-	 * @param DsoDeadlineActs          $acts           Reads the case and acts on it.
+	 * @param DsoDeadlineActsInterface          $acts           Reads the case and acts on it.
 	 * @param BackgroundServiceAccount $serviceAccount The identity a cron-driven fire writes as.
 	 * @param LoggerInterface          $logger         Logs a failed fire.
 	 */
 	public function __construct(
-		private readonly DsoDeadlineActs $acts,
+		private readonly DsoDeadlineActsInterface $acts,
 		private readonly BackgroundServiceAccount $serviceAccount,
 		private readonly LoggerInterface $logger,
 	) {

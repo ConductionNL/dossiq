@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Milestone;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\MilestoneStallTimerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -53,7 +54,7 @@ use Throwable;
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class MilestoneStallTimer {
+class MilestoneStallTimer implements MilestoneStallTimerInterface {
 
 	/**
 	 * The engine class, resolved lazily so dossiq runs without OpenRegister.
@@ -63,25 +64,11 @@ class MilestoneStallTimer {
 	public const ENGINE_CLASS = 'OCA\\OpenRegister\\Service\\Flow\\Timer\\FlowTimerService';
 
 	/**
-	 * The metadata source the fired listener recognises the timer by.
-	 *
-	 * @var string
-	 */
-	public const METADATA_SOURCE = 'dossiq-milestone';
-
-	/**
 	 * The suffix that keeps the timer's subject apart from the case's own timers.
 	 *
 	 * @var string
 	 */
 	public const SUBJECT_SUFFIX = ':milestone';
-
-	/**
-	 * Outcome: a timer is armed.
-	 *
-	 * @var string
-	 */
-	public const ARMED = 'armed';
 
 	/**
 	 * Outcome: the case waits on no milestone and its timer is cancelled.
@@ -91,25 +78,11 @@ class MilestoneStallTimer {
 	public const CANCELLED = 'cancelled';
 
 	/**
-	 * Outcome: the case is already stalled; the caller tells the assignee now.
-	 *
-	 * @var string
-	 */
-	public const DUE = 'due';
-
-	/**
 	 * Outcome: nothing to time.
 	 *
 	 * @var string
 	 */
 	public const SKIPPED = 'skipped';
-
-	/**
-	 * Outcome: the engine is absent or refused.
-	 *
-	 * @var string
-	 */
-	public const UNAVAILABLE = 'unavailable';
 
 	/**
 	 * Build the service.

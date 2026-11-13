@@ -24,7 +24,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
-use OCA\Dossiq\Service\FilinqMergeClient;
+use OCA\Dossiq\Kernel\Contracts\FilinqMergeClientInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -50,7 +50,7 @@ class CaseDocumentMergeController extends Controller {
 	 * @param IRequest          $request         The request.
 	 * @param CaseAccessGuardInterface   $caseAccessGuard The per-case access check.
 	 * @param IUserSession      $userSession     The session.
-	 * @param FilinqMergeClient $merges          Filinq's merge.
+	 * @param FilinqMergeClientInterface $merges          Filinq's merge.
 	 * @param IL10N             $l10n            The translations.
 	 *
 	 * @return void
@@ -59,7 +59,7 @@ class CaseDocumentMergeController extends Controller {
 		IRequest $request,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
-		private readonly FilinqMergeClient $merges,
+		private readonly FilinqMergeClientInterface $merges,
 		private readonly IL10N $l10n,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

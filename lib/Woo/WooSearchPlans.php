@@ -38,8 +38,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\RecordTemplateReaderInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\RecordTemplate\RecordTemplateReader;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
@@ -71,12 +71,12 @@ class WooSearchPlans {
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface      $settingsService The register, the schemas and OpenRegister.
-	 * @param RecordTemplateReader $templates       Reads a named template of the configuration schema.
+	 * @param RecordTemplateReaderInterface $templates       Reads a named template of the configuration schema.
 	 * @param CaseReviewerAccessInterface   $access          The read a rule makes, and the grants of a new plan.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly RecordTemplateReader $templates,
+		private readonly RecordTemplateReaderInterface $templates,
 		private readonly CaseReviewerAccessInterface $access,
 	) {
 	}//end __construct()

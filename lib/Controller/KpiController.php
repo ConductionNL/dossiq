@@ -28,8 +28,8 @@ namespace OCA\Dossiq\Controller;
 
 use DateTime;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DashboardWidgetScopeInterface;
 use OCA\Dossiq\Kernel\Contracts\KpiAggregationServiceInterface;
-use OCA\Dossiq\Service\Dashboard\DashboardWidgetScope;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -79,7 +79,7 @@ class KpiController extends Controller {
 	 * @param IUserSession $userSession The user session
 	 * @param KpiAggregationServiceInterface $kpiAggregation The KPI aggregation service
 	 * @param ICacheFactory $cacheFactory The cache factory
-	 * @param DashboardWidgetScope $widgetScope Narrows the payload to the widgets this reader may see
+	 * @param DashboardWidgetScopeInterface $widgetScope Narrows the payload to the widgets this reader may see
 	 * @param LoggerInterface $logger Logger
 	 *
 	 * @return void
@@ -89,7 +89,7 @@ class KpiController extends Controller {
 		private IUserSession $userSession,
 		private KpiAggregationServiceInterface $kpiAggregation,
 		ICacheFactory $cacheFactory,
-		private DashboardWidgetScope $widgetScope,
+		private DashboardWidgetScopeInterface $widgetScope,
 		private LoggerInterface $logger,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

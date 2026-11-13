@@ -29,9 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\DeadlineMonitoringSeedDataServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\DeadlineMonitoringSeedDataService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -53,12 +53,12 @@ class SeedDeadlineMonitoringData implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param DeadlineMonitoringSeedDataService $seedService Seed service.
+	 * @param DeadlineMonitoringSeedDataServiceInterface $seedService Seed service.
 	 * @param SettingsServiceInterface $settingsService Settings service.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly DeadlineMonitoringSeedDataService $seedService,
+		private readonly DeadlineMonitoringSeedDataServiceInterface $seedService,
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {

@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Kernel\Contracts\RolePermissionsInterface;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 
@@ -39,7 +40,7 @@ use OCP\IUserSession;
  *
  * @spec openspec/specs/admin-data-access/spec.md
  */
-class RolePermissions {
+class RolePermissions implements RolePermissionsInterface {
 
 	/**
 	 * The privacy officers' group: reads and handles data breaches.

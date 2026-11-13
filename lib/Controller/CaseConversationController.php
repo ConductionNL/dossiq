@@ -38,8 +38,8 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseCaptureServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseConversationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\MajorCaseDeclarationInterface;
-use OCA\Dossiq\Service\Conversation\CaseConversationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -64,10 +64,10 @@ class CaseConversationController extends Controller {
 	 * @var array<string, int>
 	 */
 	private const REASON_STATUS = [
-		CaseConversationService::REASON_NO_TALK => Http::STATUS_SERVICE_UNAVAILABLE,
-		CaseConversationService::REASON_NO_CASE => Http::STATUS_NOT_FOUND,
-		CaseConversationService::REASON_UNKNOWN_ROOM => Http::STATUS_NOT_FOUND,
-		CaseConversationService::REASON_UNRESOLVED_RESPONDERS => Http::STATUS_CONFLICT,
+		CaseConversationServiceInterface::REASON_NO_TALK => Http::STATUS_SERVICE_UNAVAILABLE,
+		CaseConversationServiceInterface::REASON_NO_CASE => Http::STATUS_NOT_FOUND,
+		CaseConversationServiceInterface::REASON_UNKNOWN_ROOM => Http::STATUS_NOT_FOUND,
+		CaseConversationServiceInterface::REASON_UNRESOLVED_RESPONDERS => Http::STATUS_CONFLICT,
 		CaseCaptureServiceInterface::REASON_NOT_A_CAPTURE => Http::STATUS_BAD_REQUEST,
 		CaseCaptureServiceInterface::REASON_EMPTY => Http::STATUS_BAD_REQUEST,
 	];
@@ -76,7 +76,7 @@ class CaseConversationController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest                 $request         Inbound request.
-	 * @param CaseConversationService  $conversations   Conversations and the record they leave.
+	 * @param CaseConversationServiceInterface  $conversations   Conversations and the record they leave.
 	 * @param MajorCaseDeclarationInterface     $major           Declaring a case major, and closing its channel.
 	 * @param CaseCaptureServiceInterface       $captures        Voice notes and screen captures.
 	 * @param CaseAccessGuardInterface          $caseAccessGuard Per-case authorization, failing closed.
@@ -85,7 +85,7 @@ class CaseConversationController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseConversationService $conversations,
+		private readonly CaseConversationServiceInterface $conversations,
 		private readonly MajorCaseDeclarationInterface $major,
 		private readonly CaseCaptureServiceInterface $captures,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,

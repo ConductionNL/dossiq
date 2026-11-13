@@ -31,9 +31,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AiAuditServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\AiServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
-use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -73,7 +73,7 @@ class AiController extends Controller {
 	 *
 	 * @param IRequest $request The request object
 	 * @param AiServiceInterface $aiService The AI service
-	 * @param AiAuditService $auditService The AI oversight audit service
+	 * @param AiAuditServiceInterface $auditService The AI oversight audit service
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger interface
 	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
@@ -83,7 +83,7 @@ class AiController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private AiServiceInterface $aiService,
-		private AiAuditService $auditService,
+		private AiAuditServiceInterface $auditService,
 		private IUserSession $userSession,
 		private LoggerInterface $logger,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,

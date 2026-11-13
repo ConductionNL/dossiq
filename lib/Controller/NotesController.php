@@ -34,8 +34,8 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\MentionNotificationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\NotePushInterface;
-use OCA\Dossiq\Service\MentionNotificationService;
 use OCA\Dossiq\Service\Notes\MentionedNote;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -57,7 +57,7 @@ class NotesController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The HTTP request
-	 * @param MentionNotificationService $mentionSvc The mention notification service
+	 * @param MentionNotificationServiceInterface $mentionSvc The mention notification service
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger
 	 * @param NotePushInterface $notePush Hands a note to integriq for the neighbouring register, or says why it did not
@@ -66,7 +66,7 @@ class NotesController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly MentionNotificationService $mentionSvc,
+		private readonly MentionNotificationServiceInterface $mentionSvc,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly NotePushInterface $notePush,

@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Sharing;
 
+use OCA\Dossiq\Kernel\Contracts\CaseShareListInterface;
 use OCP\IL10N;
 
 /**
@@ -36,7 +37,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-case-lists-its-shares-and-a-refused-revoke-is-a-card-notice
  */
-class CaseShareList {
+class CaseShareList implements CaseShareListInterface {
 
 	/**
 	 * The link state (CaseAccessLinkService::stateOf) as the share list names it.

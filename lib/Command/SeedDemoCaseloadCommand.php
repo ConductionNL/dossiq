@@ -29,8 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
+use OCA\Dossiq\Kernel\Contracts\DemoCaseloadReportInterface;
 use OCA\Dossiq\Kernel\Contracts\DemoCaseloadSeedDataServiceInterface;
-use OCA\Dossiq\Service\DemoCaseloadReport;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -49,13 +49,13 @@ class SeedDemoCaseloadCommand extends Command {
 	 * Wire the command against the seeder and the user/group managers.
 	 *
 	 * @param DemoCaseloadSeedDataServiceInterface $seeder The demo caseload seeder.
-	 * @param DemoCaseloadReport $report Reads the caseload buckets back.
+	 * @param DemoCaseloadReportInterface $report Reads the caseload buckets back.
 	 * @param IUserSession $userSession Session used to impersonate an admin.
 	 * @param IGroupManager $groupManager Resolves an admin to impersonate.
 	 */
 	public function __construct(
 		private readonly DemoCaseloadSeedDataServiceInterface $seeder,
-		private readonly DemoCaseloadReport $report,
+		private readonly DemoCaseloadReportInterface $report,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 	) {

@@ -32,9 +32,9 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\EmailTemplateServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SenderBlocklistInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
-use OCA\Dossiq\Service\Email\SenderBlocklist;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -96,7 +96,7 @@ class EmailTemplateController extends Controller {
 	 * @param IGroupManager $groupManager Group manager (admin check on config writes).
 	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 * @param MailGatewayInterface $mailGateway The mail gateway (the accounts intake can read).
-	 * @param SenderBlocklist $blocklist Who may not open a case by mail, normalised as it is stored.
+	 * @param SenderBlocklistInterface $blocklist Who may not open a case by mail, normalised as it is stored.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -107,7 +107,7 @@ class EmailTemplateController extends Controller {
 		private readonly IGroupManager $groupManager,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly MailGatewayInterface $mailGateway,
-		private readonly SenderBlocklist $blocklist,
+		private readonly SenderBlocklistInterface $blocklist,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -327,7 +327,7 @@ class EmailTemplateController extends Controller {
 			// capitals and the trailing space — matches nothing and the surface
 			// still shows the address as blocked. Normalising on the way in is
 			// the only place that can be true for every reader.
-			if ($key === SenderBlocklist::BLOCKLIST_KEY) {
+			if ($key === SenderBlocklistInterface::BLOCKLIST_KEY) {
 				$this->blocklist->replace(entries: explode(',', (string)$value));
 				continue;
 			}

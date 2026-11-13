@@ -32,12 +32,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\ActiveOrganisationProfileInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypePackageChoiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DemoDataServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\FirstRunReadinessInterface;
 use OCA\Dossiq\Kernel\Contracts\PackageInstallerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Setup\ActiveOrganisationProfile;
-use OCA\Dossiq\Service\Setup\CaseTypePackageChoice;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -113,8 +113,8 @@ class SetupController extends Controller {
 	 * @param SettingsServiceInterface $settingsService OpenRegister availability + config import.
 	 * @param PackageInstallerInterface $packages Installs the case definition package the `seed` action asks for.
 	 * @param FirstRunReadinessInterface $readiness The minimum an instance needs, read live.
-	 * @param ActiveOrganisationProfile $organisationProfile The active organisation's name and logo (Organisation step).
-	 * @param CaseTypePackageChoice $caseTypes The on-request case type packages (Case types step).
+	 * @param ActiveOrganisationProfileInterface $organisationProfile The active organisation's name and logo (Organisation step).
+	 * @param CaseTypePackageChoiceInterface $caseTypes The on-request case type packages (Case types step).
 	 */
 	public function __construct(
 		string $appName,
@@ -124,8 +124,8 @@ class SetupController extends Controller {
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly PackageInstallerInterface $packages,
 		private readonly FirstRunReadinessInterface $readiness,
-		private readonly ActiveOrganisationProfile $organisationProfile,
-		private readonly CaseTypePackageChoice $caseTypes,
+		private readonly ActiveOrganisationProfileInterface $organisationProfile,
+		private readonly CaseTypePackageChoiceInterface $caseTypes,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -312,7 +312,7 @@ class SetupController extends Controller {
 		// The organisation's name and logo live on the OpenRegister
 		// Organisation, not in app config.
 		$params = $this->request->getParams();
-		$organisationFields = [ActiveOrganisationProfile::NAME_FIELD, ActiveOrganisationProfile::LOGO_FIELD];
+		$organisationFields = [ActiveOrganisationProfileInterface::NAME_FIELD, ActiveOrganisationProfileInterface::LOGO_FIELD];
 		if ($this->organisationProfile->write(fields: array_intersect_key($params, array_flip($organisationFields))) === false) {
 			return new DataResponse(
 				['success' => false, 'message' => 'The organisation name and logo could not be saved. A logo address starts with http:// or https://.']

@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Pause;
 
+use OCA\Dossiq\Kernel\Contracts\PauseReasonReaderInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermDeclarationReader;
@@ -53,7 +54,7 @@ use OCA\Dossiq\Service\TermDeclarationReader;
  * inject. Making it an instance would add a constructor dependency to every
  * class that names a category, to hide a `::` behind a `->`.
  */
-class PauseReasonReader {
+class PauseReasonReader implements PauseReasonReaderInterface {
 	use SearchesObjects;
 
 	/**
