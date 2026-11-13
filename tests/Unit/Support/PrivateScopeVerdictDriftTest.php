@@ -15,10 +15,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Support;
 
 use OCA\Dossiq\Tests\Support\ShippedPrivateRecords;
+use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserManager;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
+use Psr\Log\NullLogger;
 use ReflectionClass;
 use ReflectionParameter;
 
@@ -170,7 +174,6 @@ final class PrivateScopeVerdictDriftTest extends TestCase {
 	 */
 	private function openRegisterSays(array $case): string {
 		$handler = new ReflectionClass(self::HANDLER);
-		$instance = $handler->newInstanceWithoutConstructor();
 
 		$key = implode(',', $case['userGroups']);
 		if (isset($this->managers[$key]) === false) {
@@ -206,19 +209,7 @@ final class PrivateScopeVerdictDriftTest extends TestCase {
 			}//end grantedObjectUuids()
 		};
 
-		$collaborators = [
-			'userManager' => $userManager,
-			'groupManager' => $groupManager,
-			'objectScopeResolver' => new (self::SCOPE_RESOLVER)(),
-			'objectGrantResolver' => $grants,
-		];
-		foreach ($collaborators as $property => $value) {
-			if ($handler->hasProperty($property) === false) {
-				self::fail('PermissionHandler no longer has $' . $property . ': re-read the rule and this test.');
-			}
-
-			$handler->getProperty($property)->setValue($instance, $value);
-		}
+		$instance = $this->handlerWith(handler: $handler, userManager: $userManager, groupManager: $groupManager, grants: $grants);
 
 		$object = null;
 		if ($case['record'] !== null) {
@@ -244,6 +235,64 @@ final class PrivateScopeVerdictDriftTest extends TestCase {
 			null => ShippedPrivateRecords::NOT_PRIVATE,
 		};
 	}//end openRegisterSays()
+
+	/**
+	 * OpenRegister's PermissionHandler with the doubled managers and grants.
+	 *
+	 * OpenRegister main builds the handler from four collaborator bundles; an
+	 * older checkout holds the collaborators as properties, which are set on an
+	 * instance built without its constructor.
+	 *
+	 * @param ReflectionClass<object> $handler      The handler class.
+	 * @param IUserManager            $userManager  The user manager double.
+	 * @param IGroupManager           $groupManager The group manager double.
+	 * @param object                  $grants       The grant resolver.
+	 *
+	 * @return object
+	 */
+	private function handlerWith(ReflectionClass $handler, IUserManager $userManager, IGroupManager $groupManager, object $grants): object {
+		$bundle = 'OCA\\OpenRegister\\Service\\Object\\Permission\\';
+		if (class_exists(class: $bundle . 'PermissionCallerServices') === true) {
+			return $handler->newInstance(
+				new ($bundle . 'PermissionCallerServices')(
+					$this->createStub(originalClassName: IUserSession::class),
+					$userManager,
+					$groupManager,
+					$this->createStub(originalClassName: IAppConfig::class)
+				),
+				new ($bundle . 'PermissionDataServices')(
+					$this->createStub(originalClassName: 'OCA\\OpenRegister\\Db\\SchemaMapperInterface'),
+					$this->createStub(originalClassName: 'OCA\\OpenRegister\\Db\\MagicMapperInterface'),
+					$this->createStub(originalClassName: ContainerInterface::class),
+					new NullLogger()
+				),
+				new ($bundle . 'PermissionRuleServices')(
+					$this->createStub(originalClassName: 'OCA\\OpenRegister\\Service\\ConditionMatcher'),
+					null,
+					new (self::SCOPE_RESOLVER)(),
+					$grants
+				),
+				new ($bundle . 'PermissionGrantServices')(new ($bundle . 'PermissionDenyServices')(), new ($bundle . 'PermissionDerivedGrantServices')())
+			);
+		}
+
+		$instance = $handler->newInstanceWithoutConstructor();
+		$collaborators = [
+			'userManager' => $userManager,
+			'groupManager' => $groupManager,
+			'objectScopeResolver' => new (self::SCOPE_RESOLVER)(),
+			'objectGrantResolver' => $grants,
+		];
+		foreach ($collaborators as $property => $value) {
+			if ($handler->hasProperty($property) === false) {
+				self::fail('PermissionHandler no longer has $' . $property . ': re-read the rule and this test.');
+			}
+
+			$handler->getProperty($property)->setValue($instance, $value);
+		}
+
+		return $instance;
+	}//end handlerWith()
 
 	/**
 	 * The comparison is against OpenRegister's file, not against a stub of it.
