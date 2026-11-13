@@ -36,18 +36,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Flow;
 
-// 🔑 ASK FOR THE REAL ENGINE, HERE, AT FILE SCOPE.
-//
-// The bootstrap registers OpenRegister's own source and its dependencies only
-// when this is set, and every other suite in this app runs against the stubs
-// it always did. That is deliberate rather than shy: swapping the whole app's
-// suite onto the real classes surfaces 48 stub-versus-real disagreements, each
-// a real finding and none of them this change's business.
-//
-// File scope, because PHPUnit loads every test file while building the suite —
-// long before it forks the isolated processes below, which inherit it.
-putenv('DOSSIQ_REAL_FLOW_ENGINE=1');
-
 use OCA\Dossiq\Flow\DossiqAskPersonNode;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
@@ -137,6 +125,32 @@ class AskPersonPassNode implements IFlowNode {
 #[RunTestsInSeparateProcesses]
 #[PreserveGlobalState(false)]
 class AskPersonHeartbeatRecoveryTest extends TestCase {
+
+	/**
+	 * Ask for the real engine, for this class's processes only.
+	 *
+	 * The bootstrap registers OpenRegister's own source and its dependencies
+	 * only when DOSSIQ_REAL_FLOW_ENGINE is set; every other suite in this app
+	 * runs against the stubs. PHPUnit calls this in the parent before it forks
+	 * this class's isolated processes, which inherit the variable, and again
+	 * inside each of them. It used to be set at file scope, which PHPUnit runs
+	 * while it builds the whole suite, so every isolated test of every class
+	 * ran against the real engine.
+	 *
+	 * @return void
+	 */
+	public static function setUpBeforeClass(): void {
+		putenv('DOSSIQ_REAL_FLOW_ENGINE=1');
+	}//end setUpBeforeClass()
+
+	/**
+	 * Hand the stubs back to the isolated tests of the classes after this one.
+	 *
+	 * @return void
+	 */
+	public static function tearDownAfterClass(): void {
+		putenv('DOSSIQ_REAL_FLOW_ENGINE');
+	}//end tearDownAfterClass()
 
 	/**
 	 * The task rows the store holds, by uuid.
