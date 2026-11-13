@@ -153,6 +153,46 @@ class CaseGoalController extends Controller {
 	}//end create()
 
 	/**
+	 * Close one of the case's goals as met, not met or withdrawn, with what was seen.
+	 *
+	 * The caller must be allowed to update the case, checked before the store
+	 * is touched; a goal of another case is answered as not found.
+	 *
+	 * @param string $caseId Case UUID.
+	 * @param string $goalId Goal UUID.
+	 *
+	 * @return JSONResponse The closed goal, or the refusal.
+	 *
+	 * @spec openspec/changes/case-goals/tasks.md#2.1
+	 */
+	#[NoAdminRequired]
+	public function close(string $caseId, string $goalId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['message' => 'access_denied'], Http::STATUS_FORBIDDEN);
+		}
+
+		try {
+			return new JSONResponse(
+				$this->goals->closeOfCase(
+					caseId: $caseId,
+					goalId: $goalId,
+					state: (string)$this->request->getParam('state', ''),
+					observation: (string)$this->request->getParam('observation', ''),
+				)
+			);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'case-goal-close', e: $e);
+		} catch (Throwable $e) {
+			return $this->broke(op: 'case-goal-close', e: $e);
+		}
+	}//end close()
+
+	/**
 	 * A failure that is not a refusal, logged and answered as one.
 	 *
 	 * @param string    $op The endpoint, for the log line.
