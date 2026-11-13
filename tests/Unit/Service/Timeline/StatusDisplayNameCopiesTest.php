@@ -44,6 +44,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Timeline\StatusMoveEntry
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Timeline\StatusDisplayName
  */
 class StatusDisplayNameCopiesTest extends TestCase {
 	/**

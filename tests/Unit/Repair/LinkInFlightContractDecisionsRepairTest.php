@@ -28,6 +28,7 @@ use RuntimeException;
  * Characterisation tests for the in-flight contract decision link.
  *
  * @covers \OCA\Dossiq\Repair\LinkInFlightContractDecisionsRepair
+ * @uses \OCA\Dossiq\Repair\InFlightDecisionLinkRun
  */
 class LinkInFlightContractDecisionsRepairTest extends TestCase {
 

@@ -36,6 +36,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Intake\ReceiptMoment
  *
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  */
 class ReceiptMomentTest extends TestCase {
 

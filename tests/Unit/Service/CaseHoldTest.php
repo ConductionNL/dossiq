@@ -40,6 +40,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class CaseHoldTest extends TestCase {
 

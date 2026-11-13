@@ -84,6 +84,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Woo\WooPickRun
  * @uses \OCA\Dossiq\Woo\WooPickedFile
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class WooGatherAddTest extends TestCase {
 

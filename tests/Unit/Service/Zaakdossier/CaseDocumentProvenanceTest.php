@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class CaseDocumentProvenanceTest extends TestCase {
 

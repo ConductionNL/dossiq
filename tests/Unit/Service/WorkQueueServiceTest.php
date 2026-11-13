@@ -59,6 +59,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Queue\CaseQueueSource
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class WorkQueueServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -33,6 +33,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Listener\OneStatutoryTermPerCaseListener
  * @uses \OCA\Dossiq\Service\TermKind
  * @uses \OCA\Dossiq\AppInfo\Registrar\DeadlineTimerRegistrar
+ * @uses \OCA\Dossiq\Service\Support\ReferencedUuid
  */
 class OneStatutoryTermPerCaseListenerTest extends TestCase {
 

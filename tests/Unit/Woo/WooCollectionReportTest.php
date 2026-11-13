@@ -62,6 +62,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
  * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
+ * @uses \OCA\Dossiq\Service\WooAssessmentLocation
  */
 class WooCollectionReportTest extends TestCase {
 

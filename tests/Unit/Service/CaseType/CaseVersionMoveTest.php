@@ -61,6 +61,9 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\Transitions\StatusPublicLabels
  * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
+ * @uses \OCA\Dossiq\Service\CaseType\WorkflowTemplateBinding
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseVersionMoveTest extends TestCase {
 

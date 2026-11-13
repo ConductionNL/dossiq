@@ -38,6 +38,8 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Bulk\MixedCaseTypeVersionsException
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\People\CoordinatorRequirement
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseTypeVersionGuardTest extends TestCase {
 

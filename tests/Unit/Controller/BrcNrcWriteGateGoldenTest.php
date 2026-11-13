@@ -44,6 +44,9 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Controller\NrcController
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
+ * @uses \OCA\Dossiq\Controller\ZgwController
+ * @uses \OCA\Dossiq\Service\Zgw\BrcCrossRegisterSync
+ * @uses \OCA\Dossiq\Service\Zgw\BrcDocumentLinkHandler
  */
 class BrcNrcWriteGateGoldenTest extends TestCase {
 	/**

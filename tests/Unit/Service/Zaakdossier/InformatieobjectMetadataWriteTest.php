@@ -47,6 +47,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class InformatieobjectMetadataWriteTest extends TestCase {
 

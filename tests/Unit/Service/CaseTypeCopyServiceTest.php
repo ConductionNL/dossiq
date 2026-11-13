@@ -49,6 +49,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseTypeCopyServiceTest extends TestCase {
 

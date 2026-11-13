@@ -35,6 +35,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Repair\FoldInspectionChecklistTemplates
  * @uses   \OCA\Dossiq\Service\Inspection\InspectionTemplateMapper
+ * @uses \OCA\Dossiq\Repair\ChecklistFoldRun
  */
 final class FoldInspectionChecklistTemplatesTest extends TestCase {
 
