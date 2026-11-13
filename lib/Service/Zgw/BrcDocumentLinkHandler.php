@@ -51,6 +51,13 @@ class BrcDocumentLinkHandler {
 	private const ZGW_API = 'besluiten';
 
 	/**
+	 * The resource this handler serves.
+	 *
+	 * @var string
+	 */
+	private const BIO_RESOURCE = 'besluitinformatieobjecten';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ZgwService $zgwService The shared ZGW service.
@@ -172,57 +179,12 @@ class BrcDocumentLinkHandler {
 				);
 			}
 
-			$enrichedBody = $ruleResult['enrichedBody'];
-
-			// Create the BIO via standard mapping flow.
-			$inboundMapping = $this->zgwService->createInboundMapping(mappingConfig: $mappingConfig);
-			$englishData = $this->zgwService->applyInboundMapping(
-				body: $enrichedBody,
-				mapping: $inboundMapping,
-				mappingConfig: $mappingConfig
-			);
-
-			// @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
-			if (is_array($englishData) === false) {
-				return new JSONResponse(
-					data: ['detail' => 'Invalid mapping result'],
-					statusCode: Http::STATUS_BAD_REQUEST
-				);
-			}
-
-			$object = $objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $englishData
-			);
-			$objectData = $this->objectToArray(row: $object);
-
-			$objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
-
-			$baseUrl = $this->zgwService->buildBaseUrl($request, self::ZGW_API, $resource);
-			$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-			$mapped = $this->zgwService->applyOutboundMapping(
-				objectData: $objectData,
-				mapping: $outboundMapping,
+			return $this->storeValidated(
+				objectService: $objectService,
 				mappingConfig: $mappingConfig,
-				baseUrl: $baseUrl
+				request: $request,
+				enrichedBody: $ruleResult['enrichedBody']
 			);
-
-			// Brc-005a: Create OIO in DRC.
-			$decisionUrl = $enrichedBody['decision'] ?? '';
-			$ioUrl = $enrichedBody['informatieobject'] ?? '';
-			if ($decisionUrl !== '' && $ioUrl !== '') {
-				$this->sync->createOioInDrc(decisionUrl: $decisionUrl, ioUrl: $ioUrl);
-			}
-
-			$this->zgwService->publishNotification(
-				self::ZGW_API,
-				$resource,
-				$baseUrl . '/' . $objectUuid,
-				'create'
-			);
-
-			return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'BRC create BIO error: ' . $e->getMessage(),
@@ -234,6 +196,71 @@ class BrcDocumentLinkHandler {
 			);
 		}//end try
 	}//end createBesluitInformatieObject()
+
+	/**
+	 * Store a BesluitInformatieObject the business rules accepted, mirror it as
+	 * an ObjectInformatieObject in the DRC (brc-005a) and announce it.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param array<string, mixed> $mappingConfig The resource's mapping.
+	 * @param IRequest             $request       The incoming request.
+	 * @param array<string, mixed> $enrichedBody  The body as the business rules enriched it.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function storeValidated(object $objectService, array $mappingConfig, IRequest $request, array $enrichedBody): JSONResponse {
+		// Create the BIO via standard mapping flow.
+		$inboundMapping = $this->zgwService->createInboundMapping(mappingConfig: $mappingConfig);
+		$englishData = $this->zgwService->applyInboundMapping(
+			body: $enrichedBody,
+			mapping: $inboundMapping,
+			mappingConfig: $mappingConfig
+		);
+
+		// @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
+		if (is_array($englishData) === false) {
+			return new JSONResponse(
+				data: ['detail' => 'Invalid mapping result'],
+				statusCode: Http::STATUS_BAD_REQUEST
+			);
+		}
+
+		$object = $objectService->saveObject(
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema'],
+			object: $englishData
+		);
+		$objectData = $this->objectToArray(row: $object);
+
+		$objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
+
+		$baseUrl = $this->zgwService->buildBaseUrl($request, self::ZGW_API, self::BIO_RESOURCE);
+		$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
+		$mapped = $this->zgwService->applyOutboundMapping(
+			objectData: $objectData,
+			mapping: $outboundMapping,
+			mappingConfig: $mappingConfig,
+			baseUrl: $baseUrl
+		);
+
+		// Brc-005a: Create OIO in DRC.
+		$decisionUrl = $enrichedBody['decision'] ?? '';
+		$ioUrl = $enrichedBody['informatieobject'] ?? '';
+		if ($decisionUrl !== '' && $ioUrl !== '') {
+			$this->sync->createOioInDrc(decisionUrl: $decisionUrl, ioUrl: $ioUrl);
+		}
+
+		$this->zgwService->publishNotification(
+			self::ZGW_API,
+			self::BIO_RESOURCE,
+			$baseUrl . '/' . $objectUuid,
+			'create'
+		);
+
+		return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
+	}//end storeValidated()
 
 	/**
 	 * Delete a BesluitInformatieObject and its OIO in DRC (brc-005b).
