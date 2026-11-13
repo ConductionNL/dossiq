@@ -1,67 +1,67 @@
 {
     "total": {
         "lines": {
-            "total": 111028,
-            "covered": 84156,
+            "total": 110961,
+            "covered": 98119,
             "skipped": 0,
-            "pct": 75.8
+            "pct": 88.43
         },
         "statements": {
-            "total": 111548,
-            "covered": 84580,
+            "total": 111468,
+            "covered": 98554,
             "skipped": 0,
-            "pct": 75.82
+            "pct": 88.41
         },
         "functions": {
-            "total": 17154,
-            "covered": 11383,
+            "total": 17160,
+            "covered": 13273,
             "skipped": 0,
-            "pct": 66.36
+            "pct": 77.35
         }
     },
     "suites": {
         "phpunit": {
             "statements": {
-                "total": 99211,
-                "covered": 74536,
+                "total": 99158,
+                "covered": 88052,
                 "skipped": 0,
-                "pct": 75.13
+                "pct": 88.8
             },
             "functions": {
-                "total": 12175,
-                "covered": 7787,
+                "total": 12186,
+                "covered": 9473,
                 "skipped": 0,
-                "pct": 63.96
+                "pct": 77.74
             },
             "lines": {
-                "total": 99211,
-                "covered": 74536,
+                "total": 99158,
+                "covered": 88052,
                 "skipped": 0,
-                "pct": 75.13
+                "pct": 88.8
             }
         },
         "vitest": {
             "lines": {
-                "total": 11817,
-                "covered": 9620,
+                "total": 11803,
+                "covered": 10067,
                 "skipped": 0,
-                "pct": 81.41
+                "pct": 85.29
             },
             "statements": {
-                "total": 12337,
-                "covered": 10044,
+                "total": 12310,
+                "covered": 10502,
                 "skipped": 0,
-                "pct": 81.41
+                "pct": 85.31
             },
             "functions": {
-                "total": 4979,
-                "covered": 3596,
+                "total": 4974,
+                "covered": 3800,
                 "skipped": 0,
-                "pct": 72.22
+                "pct": 76.4
             }
         }
     },
     "measuredAt": "2026-11-13",
-    "commit": "49bd71abc9",
+    "commit": "fd9bc4b8b9",
     "generator": "scripts/coverage-publish.php"
 }
