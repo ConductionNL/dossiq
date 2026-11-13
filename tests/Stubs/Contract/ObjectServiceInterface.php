@@ -28,6 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\OpenRegister\Contract;
 
+use OCA\OpenRegister\Service\Object\LockRequest;
+use OCA\OpenRegister\Service\Object\UnlockRequest;
 use OCP\IUser;
 
 /**
@@ -412,36 +414,21 @@ interface ObjectServiceInterface {
 	/**
 	 * Release a lock on an object.
 	 *
-	 * @param string|int $identifier The object id or UUID.
-	 * @param bool $advisory Take an advisory (non-blocking) lock.
-	 * @param ?string $runUuid The flow run releasing the lock, for a run-scoped lock.
+	 * @param UnlockRequest $request The object, and whether the lock is advisory, run-scoped or broken.
 	 *
 	 * @return bool True when the lock was released.
 	 */
-	public function unlockObject(string|int $identifier, bool $advisory = false, ?string $runUuid = null): bool;
+	public function unlockObject(UnlockRequest $request): bool;
 
 	/**
 	 * Take a lock on an object.
 	 *
-	 * @param string $identifier The object id or UUID.
-	 * @param ?string $process A label for the process holding the lock.
-	 * @param ?int $duration Lock duration in seconds.
-	 * @param bool $advisory Take an advisory (non-blocking) lock.
-	 * @param ?string $runUuid The flow run taking the lock. A run-scoped lock
-	 *                         refuses every other caller, the run's own runAs
-	 *                         user included.
-	 * @param ?string $nodeId The flow node that took it, recorded for the sweep.
+	 * @param LockRequest $request  The object, the holding process, the duration and the flow run and node.
+	 * @param bool        $advisory Take an advisory (non-blocking) lock.
 	 *
 	 * @return array The resulting lock state.
 	 */
-	public function lockObject(
-		string $identifier,
-		?string $process = null,
-		?int $duration = null,
-		bool $advisory = false,
-		?string $runUuid = null,
-		?string $nodeId = null,
-	): array;
+	public function lockObject(LockRequest $request, bool $advisory = false): array;
 
 	/**
 	 * Delete many objects by UUID.

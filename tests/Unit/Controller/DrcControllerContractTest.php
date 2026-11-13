@@ -45,6 +45,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DrcController;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\UnlockRequest;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -89,7 +90,7 @@ interface DrcContractObjectServiceStub {
 	 *
 	 * @return mixed The unlocked object row.
 	 */
-	public function unlockObject(string $identifier): mixed;
+	public function unlockObject(UnlockRequest $request): mixed;
 }//end interface
 
 /**
@@ -363,7 +364,7 @@ class DrcControllerContractTest extends TestCase {
 		$objectService->method('find')->willReturn(['lockId' => 'the-real-lock', 'locked' => true]);
 		$objectService->expects($this->once())
 			->method('unlockObject')
-			->with('doc-1')
+			->with($this->callback(static fn (UnlockRequest $request): bool => $request->identifier === 'doc-1'))
 			->willReturn(['id' => 'doc-1']);
 		$objectService->method('saveObject')->willReturnCallback(
 			static function (

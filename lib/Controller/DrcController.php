@@ -33,6 +33,8 @@ use OCA\Dossiq\Service\Zgw\RelationSearch;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
+use OCA\OpenRegister\Service\Object\LockRequest;
+use OCA\OpenRegister\Service\Object\UnlockRequest;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -885,7 +887,7 @@ class DrcController extends ZgwController {
 		}
 
 		try {
-			$objectService->lockObject(identifier: $uuid);
+			$objectService->lockObject(request: new LockRequest(identifier: $uuid));
 
 			// OpenRegister's lock system doesn't produce a ZGW lockId.
 			// Generate one and store it in the data blob for verification.
@@ -1026,7 +1028,7 @@ class DrcController extends ZgwController {
 
 		// Try OpenRegister's LockHandler, fall back to clearing data blob.
 		try {
-			$objectService->unlockObject(identifier: $uuid);
+			$objectService->unlockObject(request: new UnlockRequest(identifier: $uuid));
 
 			// Clear lockId from the data blob.
 			if ($mappingConfig !== null) {
