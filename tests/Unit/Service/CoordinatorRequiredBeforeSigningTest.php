@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\People\CoordinatorRequirement
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\People\CaseSeats
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  *
  * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
  */
