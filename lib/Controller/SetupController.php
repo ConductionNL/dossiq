@@ -584,11 +584,17 @@ class SetupController extends Controller {
 	 * that stored nothing now throws rather than returning zeroes.
 	 * Loading IS choosing the set, so the pick is recorded too.
 	 *
+	 * The packages installed before this choice skipped their example rows,
+	 * and reinstalling a current package writes nothing, so their examples
+	 * are written now, once the decision says this instance wants them. Their
+	 * outcomes travel in `detail.packageExamples`.
+	 *
 	 * @param string $picked The dataset.
 	 *
 	 * @return DataResponse The outcome, carrying the counts.
 	 *
 	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
 	 */
 	private function importDataset(string $picked): DataResponse {
 		try {
@@ -600,7 +606,7 @@ class SetupController extends Controller {
 		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, $picked);
 		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, DemoDataService::DECIDED_INSTALLED);
 
-		return $this->importedAnswer(imported: $imported);
+		return $this->importedAnswer(imported: $imported + ['packageExamples' => $this->caseTypes->writeExamplesOfInstalled()]);
 	}//end importDataset()
 
 	/**
