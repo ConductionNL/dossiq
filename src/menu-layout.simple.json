@@ -2114,6 +2114,12 @@
 					"message-applicant": {
 						"group": "Case"
 					},
+					"dso-forward": {
+						"group": "Case"
+					},
+					"dso-collaborate": {
+						"group": "Case"
+					},
 					"link-object": {
 						"group": "Case"
 					},
@@ -6624,6 +6630,8 @@
 					"case-version-move",
 					"cross-domain-lookup",
 					"message-applicant",
+					"dso-forward",
+					"dso-collaborate",
 					"remedy-lodge",
 					"start-enforcement",
 					"advice-request",

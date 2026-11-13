@@ -5606,6 +5606,79 @@
 								}
 							]
 						}
+					},
+					{
+						"id": "case-inspection-checklist",
+						"type": "checklist-run",
+						"title": "Inspection checklist",
+						"visibleWhen": {
+							"field": "@context.caseType.inspectionChecklist",
+							"op": "notEmpty"
+						},
+						"content": {
+							"record": {
+								"register": "dossiq",
+								"schema": "inspectionChecklistRun",
+								"filter": {
+									"case": "@objectId"
+								},
+								"sort": {
+									"field": "startedAt",
+									"dir": "desc"
+								}
+							},
+							"emptyText": "No inspection has been started on this case yet",
+							"questionsPath": "templateSnapshot.sections",
+							"itemsKey": "items",
+							"groupLabelField": "name",
+							"orderField": "order",
+							"fields": {
+								"id": "id",
+								"text": "label",
+								"type": "responseType",
+								"options": "choices",
+								"required": "required",
+								"help": "helpText",
+								"photoRequired": "photoRequired"
+							},
+							"typeMap": {
+								"yes_no_na": "yes_no_na",
+								"text": "text",
+								"getal": "number",
+								"meerkeuze": "choice",
+								"photo": "photo",
+								"meting": "number"
+							},
+							"choiceValues": {
+								"yes": "ja",
+								"no": "nee",
+								"na": "nvt"
+							},
+							"noteWhen": {
+								"answers": [
+									"nee"
+								]
+							},
+							"photoRequiredValues": {
+								"nooit": "never",
+								"altijd": "always",
+								"if_no": {
+									"whenAnswer": "nee"
+								}
+							},
+							"answersPath": "responses",
+							"answerKey": "itemId",
+							"answerFields": {
+								"value": "value",
+								"number": "numericValue",
+								"choice": "choice",
+								"note": "comment",
+								"photos": "photos",
+								"at": "respondedAt"
+							},
+							"recordPhotosField": "photos",
+							"caption": "{templateSnapshot.name} version {templateVersion}"
+						}
 					}
 				],
 				"layout": [
@@ -6679,6 +6752,50 @@
 						"visibleWhen": {
 							"field": "@self.archived",
 							"op": "empty"
+						}
+					},
+					{
+						"id": "dso-forward",
+						"type": "open-modal",
+						"label": "Forward to another competent authority",
+						"icon": "SendOutline",
+						"target": "DsoForwardDialog",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "dsoStatus",
+									"op": "notEmpty"
+								},
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							]
+						}
+					},
+					{
+						"id": "dso-collaborate",
+						"type": "open-modal",
+						"label": "Start a collaboration",
+						"icon": "AccountGroupOutline",
+						"target": "DsoCollaborationDialog",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "dsoStatus",
+									"op": "notEmpty"
+								},
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							]
 						}
 					},
 					{

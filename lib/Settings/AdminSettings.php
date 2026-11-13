@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Settings;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Prerequisites;
 use OCA\Dossiq\Service\Settings\MenuStructure;
+use OCA\Dossiq\Service\CaseDefinition\PackageAdminTabs;
 use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
@@ -53,6 +54,7 @@ class AdminSettings implements IDelegatedSettings {
 	 * @param SettingsService $settingsService Reads the stored config values.
 	 * @param QueueUrgencySettings $queueUrgency The queue thresholds and weights.
 	 * @param ServerVersion        $serverVersion The Nextcloud this instance runs.
+	 * @param PackageAdminTabs     $packageTabs   The installed packages that declare an admin tab.
 	 */
 	public function __construct(
 		private IAppManager $appManager,
@@ -60,6 +62,7 @@ class AdminSettings implements IDelegatedSettings {
 		private SettingsService $settingsService,
 		private QueueUrgencySettings $queueUrgency,
 		private ServerVersion $serverVersion,
+		private PackageAdminTabs $packageTabs,
 	) {
 	}//end __construct()
 
@@ -77,6 +80,7 @@ class AdminSettings implements IDelegatedSettings {
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
 	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/changes/vth-cases-run-end-to-end
 	 */
 	public function getForm(): TemplateResponse {
 		$version = $this->appManager->getAppVersion(appId: Application::APP_ID);
@@ -134,6 +138,14 @@ class AdminSettings implements IDelegatedSettings {
 		$this->initialState->provideInitialState(
 			MenuStructure::KEY,
 			(new MenuStructure())->normalise(stored: $this->settingsService->getConfigValue(MenuStructure::KEY, ''))
+		);
+
+		// One tab per installed package that declares one, with the ids of
+		// what it installed, read from the shipped-set ledger. This page is
+		// admin-only, so the list never reaches anybody else.
+		$this->initialState->provideInitialState(
+			'packageAdminTabs',
+			$this->packageTabs->installed()
 		);
 
 		return new TemplateResponse(

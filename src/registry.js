@@ -99,6 +99,8 @@ import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
 import DocumentAccessExceptionDialog from './dialogs/DocumentAccessExceptionDialog.vue'
 import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
 import DocumentCompareDialog from './dialogs/DocumentCompareDialog.vue'
+import DsoCollaborationDialog from './dialogs/DsoCollaborationDialog.vue'
+import DsoForwardDialog from './dialogs/DsoForwardDialog.vue'
 import FieldCatalogueDialog from './dialogs/FieldCatalogueDialog.vue'
 import FileContactMomentDialog from './dialogs/FileContactMomentDialog.vue'
 import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
@@ -414,6 +416,22 @@ const registry = {
 		component: NoticeOfDefaultDialog,
 		propsSchema: {},
 		_note: "CaseDetail `notice-of-default-register` header action, boards DqZaak and DqTermijnen. Posts to /api/notices-of-default with the case id, so the server picks the case's statutory decision term, checks the caller may change the case, and refuses a notice while the term runs (409, nothing stored). A form over the noticeOfDefault schema would store a premature notice and start no accrual.",
+	},
+
+	// @spec openspec/changes/vth-cases-run-end-to-end
+	DsoForwardDialog: {
+		kind: 'modal',
+		component: DsoForwardDialog,
+		propsSchema: {},
+		_note: "CaseDetail `dso-forward` header action, on a case whose source is the DSO. Posts to /api/dso/cases/{caseId}/doorsturen, where the server checks the caller may change the case, sends the forward and records it on the case history; a declared form over a schema could not send anything to the DSO.",
+	},
+
+	// @spec openspec/changes/vth-cases-run-end-to-end
+	DsoCollaborationDialog: {
+		kind: 'modal',
+		component: DsoCollaborationDialog,
+		propsSchema: {},
+		_note: "CaseDetail `dso-collaborate` header action, on a case whose source is the DSO. Posts to /api/dso/cases/{caseId}/samenwerking, where the server checks the caller may change the case and starts the collaboration request with the other competent authority.",
 	},
 
 	LogContactDialog: {

@@ -351,7 +351,9 @@
 			</CnSettingsSection>
 		</template>
 
-		<template #tab-vth>
+		<template v-for="pkg in packageTabs" :key="pkg.id" #[`tab-${pkg.id}`]>
+			<PackageAdminTab :pkg="pkg" />
+			<template v-if="pkg.id === 'vth'">
 			<CnSettingsSection
 				id="section-intake-activities"
 				:actionsInTitle="true"
@@ -427,7 +429,7 @@
 					:name="t('dossiq', 'Inspection checklists')"
 					:loading="!storesReady">
 					<template v-if="storesReady" #actions>
-						<NcButton variant="secondary" @click="$refs.checklists.openEditor(null)">
+						<NcButton variant="secondary" @click="openNewChecklist">
 							<template #icon>
 								<Plus :size="20" />
 							</template>
@@ -483,6 +485,7 @@
 						:emptyText="t('dossiq', 'No enforcement matrix yet.')" />
 				</CnSettingsSection>
 			</div>
+			</template>
 		</template>
 
 		<template #tab-substitution>
@@ -768,6 +771,7 @@ import Plus from 'vue-material-design-icons/Plus.vue'
 import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
 import AdviceSettingsFacts from './components/AdviceSettingsFacts.vue'
 import DependencyAppsList from './components/DependencyAppsList.vue'
+import PackageAdminTab from './components/PackageAdminTab.vue'
 import SearchIndexFacts from './components/SearchIndexFacts.vue'
 import SettingsFactsList from './components/SettingsFactsList.vue'
 import ShippedConfiguration from './ShippedConfiguration.vue'
@@ -786,6 +790,7 @@ import { fetchAdminTabCounts } from '../../services/adminTabCounts.js'
 import { initializeStores } from '../../store/store.js'
 import { feeRuleBasis, feeRuleCalculation, feeRuleName } from '../../utils/feeRules.js'
 import { INTEGRIQ_CONNECTIONS_PATH } from '../../utils/integriqConnections.js'
+import { packageTabsOf } from '../../utils/packageAdminTab.js'
 import { activityOverviewFormatters } from './activityOverviewFormatters.js'
 import {
 	aiFields,
@@ -841,6 +846,7 @@ export default {
 		SubstitutionAdmin,
 		AdviceSettingsFacts,
 		DependencyAppsList,
+		PackageAdminTab,
 		SearchIndexFacts,
 		SettingsFactsList,
 	},
@@ -890,6 +896,8 @@ export default {
 			}),
 
 			publicationSettings: loadState('dossiq', 'publicationSettings', {}),
+			/** The installed packages that declare an admin tab, with what each installed. */
+			packageTabs: loadState('dossiq', 'packageAdminTabs', []),
 		}
 	},
 
@@ -901,6 +909,7 @@ export default {
 		 *
 		 * @return {Array<{id: string, label: string, count?: number}>} The tabs.
 		 * @spec openspec/specs/admin-settings/spec.md
+		 * @spec openspec/changes/vth-cases-run-end-to-end
 		 */
 		adminTabs() {
 			return this.withCounts([
@@ -912,7 +921,9 @@ export default {
 				},
 				{ id: 'mail', label: this.t('dossiq', 'Mail') },
 				{ id: 'map-layers', label: this.t('dossiq', 'Map layers') },
-				{ id: 'vth', label: this.t('dossiq', 'VTH') },
+				// One tab per installed package that declares one (package.json
+				// `adminTab`); a package not installed here has none.
+				...packageTabsOf(this.packageTabs),
 				{ id: 'substitution', label: this.t('dossiq', 'Substitution') },
 				// The settings set once or by a specialist: ZGW, KCC, StUF, Store,
 				// first run, prerequisites, terms, mandates, archiving, reports.
@@ -1540,6 +1551,18 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Open the checklist editor on a new checklist. The checklist card sits
+		 * in a package tab drawn per package, so its ref is a list.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/vth-cases-run-end-to-end
+		 */
+		openNewChecklist() {
+			const editor = [].concat(this.$refs.checklists ?? [])[0]
+			editor?.openEditor(null)
+		},
+
 		/**
 		 * Add the known counts to the tabs.
 		 *
