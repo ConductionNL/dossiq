@@ -90,7 +90,7 @@ criteria under a task are plain bullets.
   path from 3.1 without a `targetField`.
   - `npm run check:manifest` exits 0
   - `@spec openspec/specs/beschikking-generatie/spec.md`
-- [ ] 3.3 RESCOPED 2026-10-22 to the Files tab (coordinator call). The
+- [x] 3.3 RESCOPED 2026-10-22 to the Files tab (coordinator call). The
   run-action form this task waited on is not needed for what a handler does:
   generating a document from a template is the dialog 3.2 ships
   (`BeschikkingComposerDialog`), and the place a handler looks for "a new
@@ -100,6 +100,13 @@ criteria under a task are plain bullets.
   that is not archived like the header action.
   - vitest on the manifest: the New menu entry, its dialog and its case
   - `@spec openspec/specs/beschikking-generatie/spec.md`
+  - SUPERSEDED. Built on 2026-10-22 (c62f7a524), then moved on 2026-10-24
+    (e96293b73, "the files toolbar leaves Generate document to the page
+    header") so the files toolbar draws the board's three buttons
+    (DqZaakDocumenten). Generate document now lives only in the CaseDetail
+    header, which opens the same dialog for the case and is hidden on an
+    archived case; `tests/vitest/filesTabDocumentMetadata.spec.js` pins that
+    the New menu does not offer it. Nothing left to build here.
 ## 4. Demo data
 
 - [x] 4.1 `lib/Settings/register.d/46-demo-cases-english.json` (or the
