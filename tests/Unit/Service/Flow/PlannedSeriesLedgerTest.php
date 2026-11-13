@@ -488,4 +488,23 @@ class PlannedSeriesLedgerTest extends TestCase {
 
 		self::assertSame(0, $ledger->retireSpent(new DateTimeImmutable('2026-10-16')));
 	}//end testARetirementThatCannotBeSavedIsNotCounted()
+
+	/**
+	 * The planned follow-ups are read by their marker; an unreadable store is
+	 * logged and reads as none, and without OpenRegister there are none.
+	 *
+	 * @return void
+	 */
+	public function testPlannedFlowsAreReadOrNone(): void {
+		$flows = [self::flow('f-1', PlannedFollowUpDocument::RECURRENCE_NONE, 0, null)];
+		self::assertSame($flows, $this->ledger(['FlowMapper' => self::mapper($flows)])->plannedFlows());
+
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects(self::once())
+			->method('warning')
+			->with('PlannedSeriesLedger: could not read the planned follow-ups', ['exception' => 'flows table missing']);
+		self::assertSame([], $this->ledger(['FlowMapper' => self::mapper(new RuntimeException('flows table missing'))], logger: $logger)->plannedFlows());
+
+		self::assertSame([], $this->ledger()->plannedFlows());
+	}//end testPlannedFlowsAreReadOrNone()
 }//end class
