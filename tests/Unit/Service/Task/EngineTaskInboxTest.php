@@ -520,4 +520,75 @@ class EngineTaskInboxTest extends TestCase {
 		$service->openForAssignee('admin');
 		$this->assertSame('', $service->lastError(), 'the second read succeeded, so nothing is wrong now');
 	}//end testAFailureDoesNotOutliveTheReadThatCausedIt()
+
+	/**
+	 * Counting everywhere asks for every open task on the instance, bounded only above.
+	 *
+	 * @return void
+	 */
+	public function testCountOpenEverywhereAsksForAllOpenTasks(): void {
+		$inbox = $this->inboxDouble(['results' => [], 'total' => 12]);
+
+		self::assertSame(12, $this->service($inbox)->countOpenEverywhere('admin', '2026-09-10T23:59:59+00:00'));
+
+		$criteria = $inbox->seenCriteria;
+		self::assertInstanceOf(TaskInboxCriteria::class, $criteria);
+		self::assertSame(TaskInboxCriteria::SCOPE_ALL, $criteria->scope);
+		self::assertFalse($criteria->isTerminal);
+		self::assertNull($criteria->dueAfter);
+		self::assertInstanceOf(DateTime::class, $criteria->dueBefore);
+		self::assertSame('2026-09-10T23:59:59+00:00', $criteria->dueBefore->format('c'));
+	}//end testCountOpenEverywhereAsksForAllOpenTasks()
+
+	/**
+	 * A case's tasks are read across every scope, closed ones included.
+	 *
+	 * @return void
+	 */
+	public function testForCaseReadsEveryTaskOfTheCase(): void {
+		$inbox = $this->inboxDouble(
+			['results' => [['uuid' => 'task-9', 'objectUuid' => 'case-1', 'state' => 'completed']]]
+		);
+
+		$tasks = $this->service($inbox)->forCase('case-1', 'admin', 50);
+
+		self::assertSame(['task-9'], array_column($tasks, 'id'));
+		self::assertSame('completed', $tasks[0]['status']);
+		$criteria = $inbox->seenCriteria;
+		self::assertInstanceOf(TaskInboxCriteria::class, $criteria);
+		self::assertSame(TaskInboxCriteria::SCOPE_ALL, $criteria->scope);
+		self::assertSame('case-1', $criteria->objectUuid);
+		self::assertNull($criteria->isTerminal, 'a case view shows closed tasks too');
+		self::assertSame(50, $inbox->seenLimit);
+	}//end testForCaseReadsEveryTaskOfTheCase()
+
+	/**
+	 * A blank case or actor never reaches the engine.
+	 *
+	 * @return void
+	 */
+	public function testBlankCaseAndActorDoNotReachTheEngine(): void {
+		$inbox   = $this->inboxDouble(['results' => [['uuid' => 'task-1']], 'total' => 3]);
+		$service = $this->service($inbox);
+
+		self::assertSame([], $service->forCase(' ', 'admin'));
+		self::assertSame(0, $service->countOpenForAssignee(' '));
+		self::assertNull($inbox->seenCriteria);
+	}//end testBlankCaseAndActorDoNotReachTheEngine()
+
+	/**
+	 * Without the test seam the inbox builds its own query once, and an absent
+	 * engine reads empty and says why.
+	 *
+	 * @return void
+	 */
+	public function testTheDefaultQueryReportsAnAbsentEngine(): void {
+		$settings = $this->getMockBuilder(SettingsService::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$service = new EngineTaskInbox($settings, $this->createMock(ContainerInterface::class), new NullLogger());
+
+		self::assertSame([], $service->forCase('case-1', 'admin'));
+		self::assertNotSame('', $service->lastError());
+	}//end testTheDefaultQueryReportsAnAbsentEngine()
 }//end class
