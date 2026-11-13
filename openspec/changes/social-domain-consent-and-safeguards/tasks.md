@@ -2,7 +2,8 @@
 
 ## 1. Case type configuration
 
-- [ ] 1.1 Case type properties `requiresConsentForSharing`, `requiresSpecialCategory`, `handlingTeamOnly` and `identifyingFields` (property names) on the case type schema; the packages `jeugdwet`, `wmo-melding`, `bijstandsaanvraag` and `re-integratietraject` set them (version bumps).
+- [x] 1.1 Case type properties `requiresConsentForSharing`, `requiresSpecialCategory`, `handlingTeamOnly` and `identifyingFields` (property names) on the case type schema; the packages `jeugdwet`, `wmo-melding`, `bijstandsaanvraag` and `re-integratietraject` set them (version bumps).
+  - `lib/Settings/register.d/99-case-type-social-safeguards.json` (caseType 1.48.0); the four packages set `requiresConsentForSharing`, `requiresSpecialCategory` and `identifyingFields` (jeugdwet 1.16.0, wmo-melding 1.2.0, bijstandsaanvraag 1.3.0, re-integratietraject 1.4.0). `handlingTeamOnly` is declared but no package sets it until 3.2 enforces it. Test: `tests/Unit/Settings/SocialSafeguardFlagsTest.php`.
 
 ## 2. Consent
 
