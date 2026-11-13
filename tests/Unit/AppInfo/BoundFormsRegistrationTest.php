@@ -26,8 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar;
-use OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\IntakeFormListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar;
 use OCA\Dossiq\Listener\CaseTypeBoundFormsListener;
 use OCA\Dossiq\Listener\IntakeFormDependentsListener;
 use OCA\Dossiq\Service\Intake\BoundFormsCheck;
@@ -58,8 +58,8 @@ use RuntimeException;
 /**
  * The registered listeners judge the forms bound to a case type, and answer for dossiq's own.
  *
- * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
- * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\IntakeFormListenerRegistrar
  * @covers \OCA\Dossiq\Listener\CaseTypeBoundFormsListener
  * @covers \OCA\Dossiq\Listener\IntakeFormDependentsListener
  * @covers \OCA\Dossiq\Service\Intake\BoundFormsCheck
