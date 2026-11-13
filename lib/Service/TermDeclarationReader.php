@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 /**
  * The term declarations on a case type and on its phases.
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 class TermDeclarationReader {
 	use SearchesObjects;
@@ -78,7 +78,7 @@ class TermDeclarationReader {
 	 *               statutoryWarningDays: int, plannedWarningDays: int, chainTermDays: int,
 	 *               suspensionAllowed: bool, extensionAllowed: bool}
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function forCaseType(string $caseTypeId): array {
 		$row = $this->findRow(schemaKey: 'case_type_schema', id: $caseTypeId);
@@ -110,7 +110,7 @@ class TermDeclarationReader {
 	 *
 	 * @return array<string, mixed> The same shape {@see forCaseType()} answers.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function forCase(string $caseId): array {
 		$context = $this->caseContext(caseId: $caseId);
@@ -130,7 +130,7 @@ class TermDeclarationReader {
 	 *
 	 * @return array{caseType: string, status: string} The two references, empty when unreadable.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function caseContext(string $caseId): array {
 		$case = $this->findRow(schemaKey: 'case_schema', id: $caseId);
@@ -163,7 +163,7 @@ class TermDeclarationReader {
 	 *
 	 * @return array{termDays: int, share: float, order: int, name: string}
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function forStatusType(string $statusTypeId): array {
 		$row = $this->findRow(schemaKey: 'status_type_schema', id: $statusTypeId);
@@ -181,7 +181,7 @@ class TermDeclarationReader {
 	 *
 	 * @return array<int, array{id: string, termDays: int, share: float, order: int, name: string}>
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function phasesOf(string $caseTypeId): array {
 		$rows = $this->statusRowsOf(caseTypeId: $caseTypeId);
@@ -268,7 +268,7 @@ class TermDeclarationReader {
 	 *
 	 * @return int The length in days, 0 when nothing is declared.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function days(mixed $value): int {
 		if (is_int($value) === true) {

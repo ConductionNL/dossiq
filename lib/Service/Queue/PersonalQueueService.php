@@ -25,7 +25,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
 /**
  * Assembles a person's queue out of the declared sources.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class PersonalQueueService {
 	/**
@@ -57,7 +57,7 @@ class PersonalQueueService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly QueueSourceCatalogue $catalogue,
@@ -76,7 +76,7 @@ class PersonalQueueService {
 	 *
 	 * @return array<string, mixed> The queue: items, groups, unavailable sources and the reader's view settings.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function forPerson(string $userId, ?DateTimeImmutable $now = null): array {
 		$now = ($now ?? new DateTimeImmutable());
@@ -185,7 +185,7 @@ class PersonalQueueService {
 	 *
 	 * @return bool TRUE when the item should not be shown.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function hasClosed(QueueItem $item, string $userId): bool {
 		if ($item->subject === []) {
@@ -208,7 +208,7 @@ class PersonalQueueService {
 	 *
 	 * @return array<int, array<string, mixed>> The groups, in queue order.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function group(array $items, string $groupBy, array $closings): array {
 		$groups = [];
@@ -238,7 +238,7 @@ class PersonalQueueService {
 	 *
 	 * @return string The group key.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function groupKeyOf(array $item, string $groupBy): string {
 		if ($groupBy === 'priority') {

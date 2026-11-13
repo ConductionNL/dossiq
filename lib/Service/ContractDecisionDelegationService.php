@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md
+ * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Throwable;
  * Raises decidesk Decisions (via `DecisionRequestedEvent`) for contract /
  * besluit decisions.
  *
- * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md
+ * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 class ContractDecisionDelegationService {
 	/**
@@ -189,8 +189,8 @@ class ContractDecisionDelegationService {
 	 *
 	 * @throws RuntimeException When decidesk is unavailable or the Decision could not be created.
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-001-contract-decisions-are-raised-as-decidesk-decisions-via-events
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-002-delegation-fails-closed-when-decidesk-is-unavailable
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-001-contract-decisions-are-raised-as-decidesk-decisions-via-events
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-002-delegation-fails-closed-when-decidesk-is-unavailable
 	 */
 	public function raiseContractDecision(
 		string $caseRef,
@@ -233,8 +233,8 @@ class ContractDecisionDelegationService {
 	 *
 	 * @throws RuntimeException When decidesk is unavailable or the Decision could not be created.
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-001-contract-decisions-are-raised-as-decidesk-decisions-via-events
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-002-delegation-fails-closed-when-decidesk-is-unavailable
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-001-contract-decisions-are-raised-as-decidesk-decisions-via-events
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-002-delegation-fails-closed-when-decidesk-is-unavailable
 	 */
 	public function raiseDecision(
 		string $decisionType,
@@ -288,7 +288,7 @@ class ContractDecisionDelegationService {
 	 *
 	 * @return array{state: string, status: string, envelope: array<string, mixed>} The state, decidiq's own status word, and the outcome envelope.
 	 *
-	 * @spec openspec/changes/requestdecision-recovers-a-missed-conclusion/specs/case-flow-human-steps/spec.md#requirement-a-consumer-can-read-back-a-decision-it-raised
+	 * @spec openspec/specs/case-flow-human-steps/spec.md#requirement-a-consumer-can-read-back-a-decision-it-raised
 	 */
 	public function readDecisionState(string $decisionId, string $actorId): array {
 		$read = new DecisionStateRead(decisionId: trim($decisionId), actorId: trim($actorId));
@@ -398,7 +398,7 @@ class ContractDecisionDelegationService {
 	 *
 	 * @return array{state: string, status: string, envelope: array<string, mixed>} The resolved state.
 	 *
-	 * @spec openspec/changes/requestdecision-recovers-a-missed-conclusion/specs/case-flow-human-steps/spec.md#requirement-a-consumer-can-read-back-a-decision-it-raised
+	 * @spec openspec/specs/case-flow-human-steps/spec.md#requirement-a-consumer-can-read-back-a-decision-it-raised
 	 */
 	private function stateFromEnvelope(array $envelope, string $decisionId): array {
 		$status = strtolower(trim((string)($envelope['status'] ?? '')));

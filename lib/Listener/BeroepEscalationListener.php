@@ -106,7 +106,7 @@ class BeroepEscalationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectCreatedEvent === false

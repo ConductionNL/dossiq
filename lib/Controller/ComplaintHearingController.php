@@ -26,7 +26,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 class ComplaintHearingController extends Controller {
 	/**
@@ -80,7 +80,7 @@ class ComplaintHearingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function hearings(string $id): JSONResponse {
 		if ($this->accessGuard->currentUid() === '') {
@@ -100,7 +100,7 @@ class ComplaintHearingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function scheduleHearing(string $id): JSONResponse {
 		$refusal = $this->mutationGate()->refusal(id: $id);
@@ -129,7 +129,7 @@ class ComplaintHearingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function recordHearingOutcome(string $id, string $hearingId): JSONResponse {
 		$refusal = $this->mutationGate()->refusal(id: $id);
@@ -153,7 +153,7 @@ class ComplaintHearingController extends Controller {
 	 *
 	 * @return ComplaintMutationGate
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	private function mutationGate(): ComplaintMutationGate {
 		return new ComplaintMutationGate(accessGuard: $this->accessGuard, complaintService: $this->complaintService);

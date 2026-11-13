@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Dossiq\Service;
 /**
  * Trigger-word detection and sentiment scoring for KCC contactmomenten.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
  */
 class SentimentService {
 	/**
@@ -73,7 +73,7 @@ class SentimentService {
 	 *
 	 * @return array{score: float, label: string, triggers: array<int, string>, escalationRecommended: bool, escalationLevel: string, snippet: string}
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
 	 */
 	public function analyzeSentiment(string $text, array $triggerWords): array {
 		$haystack = ' ' . mb_strtolower(trim($text)) . ' ';
@@ -149,7 +149,7 @@ class SentimentService {
 	 *
 	 * @return bool True when escalation is recommended.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
 	 */
 	public function shouldEscalate(float $score, array $triggers): bool {
 		if ($score <= -0.5) {
@@ -184,7 +184,7 @@ class SentimentService {
 	 *
 	 * @return string One of geen|geel|oranje|rood.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
 	 */
 	public function getEscalationLevel(float $score, array $triggers): string {
 		if (self::hasSeriousTrigger(triggers: $triggers) === true) {

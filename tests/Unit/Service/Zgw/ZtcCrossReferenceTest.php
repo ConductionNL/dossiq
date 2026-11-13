@@ -143,6 +143,24 @@ class ZtcCrossReferenceTest extends TestCase {
 	}//end testBesluittypeListsComeFromItsStoredUuids()
 
 	/**
+	 * An empty stored list adds nothing; a list of only unusable entries adds an empty list.
+	 *
+	 * @return void
+	 */
+	public function testBesluittypeListShapes(): void {
+		$enrich = fn (array $stored): array => (new ZtcCrossReferenceEnricher(
+			zgwService: $this->zgw(objectService: $this->objects(finds: ['besluittypen:'.self::BT => $stored]))
+		))->enrich(resource: 'besluittypen', data: ['uuid' => self::BT], baseUrl: self::BASE);
+
+		$this->assertSame(['uuid' => self::BT], $enrich(['documentTypes' => '[]', 'caseTypes' => []]));
+		$this->assertSame(['uuid' => self::BT], $enrich(['documentTypes' => 'null', 'caseTypes' => 5]));
+		$this->assertSame(
+			['uuid' => self::BT, 'informatieobjecttypen' => [], 'zaaktypen' => [self::BASE.'/zaaktypen/x', self::BASE.'/zaaktypen/y']],
+			$enrich(['documentTypes' => '["", 3]', 'caseTypes' => ['x', null, 'y']])
+		);
+	}//end testBesluittypeListShapes()
+
+	/**
 	 * A besluittype that cannot be read, or stores nothing, is left as it was.
 	 *
 	 * @return void

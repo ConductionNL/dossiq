@@ -8,7 +8,7 @@
  * CnBulkJobProgress. dossiq proxies none of it, because a proxy would be a
  * second job model that can disagree with the first.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 import axios from '@nextcloud/axios'
@@ -42,7 +42,7 @@ const dossiq = (suffix = '') => generateUrl(`/apps/dossiq${suffix}`)
  * @param {string} [request.justification] The reason the coordinator typed.
  *
  * @return {Promise<object>} The previewed job.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export async function previewBulkJob({
 	action,
@@ -69,7 +69,7 @@ export async function previewBulkJob({
  * @param {object} error The axios error.
  *
  * @return {{reason: string, message: string, details: object}} What was refused, and why.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function readRefusal(error) {
 	const body = (error && error.response && error.response.data) || {}
@@ -96,7 +96,7 @@ export function readRefusal(error) {
  * @param {object} filters The list's current filters.
  *
  * @return {Promise<number>} How many cases match.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export async function countMatchingCases(filters) {
 	try {

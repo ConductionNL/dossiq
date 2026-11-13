@@ -15,7 +15,7 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 		getMappings: (state) => state.mappings,
 	},
 	actions: {
-		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		async fetchMappings() {
 			return guarded(this, {
 				work: async () => {
@@ -30,7 +30,7 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 		/**
 		 * @param {string} resourceKey The resource key.
 		 * @param {object} config The config.
-		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		async saveMapping(resourceKey, config) {
 			return guarded(this, {
@@ -46,7 +46,7 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 
 		/**
 		 * @param {string} resourceKey The resource key.
-		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		async resetMapping(resourceKey) {
 			return guarded(this, {

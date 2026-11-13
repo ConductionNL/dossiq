@@ -12,7 +12,7 @@
  * gets the plain layout. Every label is a literal `t()` call, so the l10n
  * extractor finds it.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
@@ -35,7 +35,7 @@ import { contentTemplateOption } from './templatePicker.js'
  * - `title` names the dialog while the act is open; `confirmIcon` sits on its confirm button.
  *
  * @return {object} The layouts by act id.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function actLayouts() {
 	return {
@@ -287,7 +287,7 @@ const ACT_INPUTS = [
  * @param {string} [scope.requester] The requester's name, for the notify checkbox.
  * @param {object|null} [scope.reminder] The case type's reminder policy from `/lifecycle`.
  * @return {{inputs: Array<object>, columns: number, summary: object|null, notice: object|null, title: string, confirmIcon: object|null}} The form.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function actForm(entry, { caseType = '', caseId = '', requester = '', reminder = null } = {}) {
 	if (!entry) {

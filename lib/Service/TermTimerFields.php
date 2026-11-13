@@ -98,7 +98,7 @@ final class TermTimerFields {
 	 *
 	 * @return array<int, array<string, mixed>> The rules.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function pauseRules(array $offsets): array {
 		return array_merge([self::PAUSE_EXPIRED_RULE], $this->chaseRules(offsets: $offsets));
@@ -117,7 +117,7 @@ final class TermTimerFields {
 	 *
 	 * @return array<int, array<string, mixed>> The rules, empty when the reason does not chase.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function chaseRules(array $offsets): array {
 		$rules = [];

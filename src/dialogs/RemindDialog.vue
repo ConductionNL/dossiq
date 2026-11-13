@@ -31,7 +31,7 @@
   It reads the case from the ROUTE, because an open-modal action forwards its
   props verbatim and `@objectId` would arrive as that literal string.
 
-  @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+  @spec openspec/specs/task-management/spec.md
 -->
 <template>
 	<CnDialog
@@ -122,7 +122,7 @@ export default {
 	 * The engine task store, which is where a reminder actually lives.
 	 *
 	 * @return {object} The store, exposed to the options API half.
-	 * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	setup() {
 		return { tasks: useEngineTaskStore() }
@@ -143,7 +143,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The case this dialog acts on.
-		 * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
@@ -151,7 +151,7 @@ export default {
 
 		/**
 		 * @return {string} The chosen date as YYYY-MM-DD, or the empty string.
-		 * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		isoDate() {
 			if (!this.date) {
@@ -169,7 +169,7 @@ export default {
 
 		/**
 		 * @return {object} The form, in the shape the helpers read.
-		 * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		form() {
 			return {
@@ -182,7 +182,7 @@ export default {
 
 		/**
 		 * @return {boolean} Whether the reminder may be sent.
-		 * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		canConfirm() {
 			return (
@@ -205,7 +205,7 @@ export default {
 		 * close the dialog and hope.
 		 *
 		 * @return {Promise<void>} Nothing.
-		 * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async confirm() {
 			if (!this.canConfirm) {

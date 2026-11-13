@@ -75,6 +75,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Subsidie\BeschikkingService
  * @uses \OCA\Dossiq\Service\Subsidie\SubsidieService
+ * @uses \OCA\Dossiq\Service\Subsidie\SubsidieSchemaLookup
  *
  * @spec openspec/specs/subsidieverlening-keten/spec.md
  */

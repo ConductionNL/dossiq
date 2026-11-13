@@ -467,7 +467,7 @@ export default {
 		 *
 		 * @param {string|undefined} code integriq's refusal code.
 		 * @return {string|null} The sentence.
-		 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+		 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
 		 */
 		refusalText(code) {
 			if (code === 'opted-out') {
@@ -485,7 +485,7 @@ export default {
 			return null
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-berichtenbox-integration/tasks.md */
 		validate() {
 			this.errors = {}
 			if (!this.form.bsn) {
@@ -503,7 +503,7 @@ export default {
 			return Object.keys(this.errors).length === 0
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-berichtenbox-integration/tasks.md */
 		async send() {
 			if (!this.validate()) return
 			this.sending = true
@@ -525,7 +525,7 @@ export default {
 		 * Send the message and emit `sent` only for a letter that went out.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-berichtenbox-integration/tasks.md
 		 */
 		async deliver() {
 			const answer = await sendMessage(this.messageToSend())
@@ -548,7 +548,7 @@ export default {
 		 * The message the form describes.
 		 *
 		 * @return {object} The message to send.
-		 * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-berichtenbox-integration/tasks.md
 		 */
 		messageToSend() {
 			return {
@@ -568,7 +568,7 @@ export default {
 		 *
 		 * @param {object} answer The answer.
 		 * @return {void}
-		 * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-berichtenbox-integration/tasks.md
 		 */
 		keepRefusal(answer) {
 			const code = refusalCode(answer)
@@ -588,7 +588,7 @@ export default {
 		 *
 		 * @param {object|undefined} data What the failed request answered.
 		 * @return {void}
-		 * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-berichtenbox-integration/tasks.md
 		 */
 		keepSendFailure(data) {
 			this.sendCode = String(data?.code || '')

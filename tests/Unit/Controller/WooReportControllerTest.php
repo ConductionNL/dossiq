@@ -51,6 +51,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Csv\CsvWriter
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
+ * @uses \OCA\Dossiq\Woo\ReportPeriod
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
  */

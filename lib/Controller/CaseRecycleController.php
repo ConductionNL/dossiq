@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -60,7 +60,7 @@ use Throwable;
 /**
  * Lists deleted cases, restores one, and destroys one as a second act.
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the recycle, destruction,
  * retention and access services each own one rule of the gesture; the
@@ -124,7 +124,7 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @return JSONResponse The rows, each with the date its window ends.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function deleted(): JSONResponse {
@@ -152,7 +152,7 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function deletedPage(IUser $user): array {
 		// `=== true` and not a cast: IGroupManager::isAdmin() carries no
@@ -182,7 +182,7 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function restore(string $caseId): JSONResponse {
@@ -199,7 +199,7 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function destructionPreview(string $caseId): JSONResponse {
@@ -216,7 +216,7 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function destroy(string $caseId): JSONResponse {
@@ -238,7 +238,7 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function clocks(string $caseId): JSONResponse {
@@ -309,7 +309,7 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @return string The note, or an empty string when the window is unknown
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function windowNote(array $row): string {
 		if (($row['lapsed'] ?? null) === true) {
@@ -330,7 +330,7 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @return string The sentence
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function refusalSentence(string $code): string {
 		return match ($code) {

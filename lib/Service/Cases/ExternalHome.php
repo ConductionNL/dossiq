@@ -44,7 +44,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ namespace OCA\Dossiq\Service\Cases;
 /**
  * Reads a case's external-home declaration, and says what it means for an act.
  *
- * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class ExternalHome {
 
@@ -92,7 +92,7 @@ class ExternalHome {
 	 *
 	 * @return bool True when the case names an application.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
 	 */
 	public function isHomedElsewhere(array $case): bool {
 		return ($this->applicationOf(case: $case) !== '');
@@ -106,7 +106,7 @@ class ExternalHome {
 	 * @return array{application: string, identifier: string, url: string}|array{}
 	 *         The declaration, or [].
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
 	 */
 	public function declarationOn(array $case): array {
 		$application = $this->applicationOf(case: $case);
@@ -132,7 +132,7 @@ class ExternalHome {
 	 *
 	 * @return string The sentence, '' when the case is handled here.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
 	 */
 	public function whereTheWorkIs(array $case): string {
 		$declaration = $this->declarationOn(case: $case);

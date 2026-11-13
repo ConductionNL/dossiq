@@ -119,7 +119,7 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 	 *
 	 * @return array The validation result
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesResultaattypenCreate(array $body): array {
 		// Ztc-002: Validate and fetch external URLs for enrichment.

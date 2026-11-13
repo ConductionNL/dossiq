@@ -132,7 +132,7 @@ class ObjectListenerRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-delete-guard/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function registerCaseDeleteGuard(IRegistrationContext $context): void {
 		$context->registerEventListener(

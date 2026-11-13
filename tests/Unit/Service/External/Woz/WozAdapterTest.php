@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\External\IntegrationMode
  * @uses \OCA\Dossiq\Service\External\Woz\WozLookupResult
  * @uses \OCA\Dossiq\Service\External\Woz\WozResponseMapper
+ * @uses \OCA\Dossiq\Service\External\RegisterValues
  */
 class WozAdapterTest extends TestCase {
 	/**
@@ -428,4 +429,51 @@ class WozAdapterTest extends TestCase {
 			WozApiAdapter::DEFAULT_BASE_URL
 		);
 	}//end testDefaultBaseUrlIsDocumentedSandbox()
+
+	/**
+	 * A 2xx answer whose body holds no object is NOT_FOUND, and the request
+	 * carries the timeout and the HAL headers, with the API key when one is set.
+	 *
+	 * @return void
+	 */
+	public function testObjectLookupEmptyBodyIsNotFound(): void {
+		foreach (['', '[]', 'null', json_encode(['wozObject' => []])] as $body) {
+			$captured = [];
+			$adapter = new WozApiAdapter(
+				clientService: $this->clientCapturing(200, $body, $captured),
+				mode: $this->mode(['integration.woz.mode' => 'test', 'integration.woz.apiKey' => 'secret']),
+				mapper: new WozResponseMapper(),
+				logger: $this->createMock(LoggerInterface::class),
+			);
+
+			$result = $adapter->lookupByWozObjectNummer(wozobjectnummer: '05180000001234');
+			$this->assertSame('NOT_FOUND', $result->lookupStatus, 'body: '.$body);
+			$this->assertSame([], $result->extras);
+			$this->assertStringEndsWith('/wozobjecten/05180000001234', $captured['url']);
+			$this->assertSame(
+				['timeout' => 10, 'headers' => ['Accept' => 'application/hal+json', 'X-Api-Key' => 'secret']],
+				$captured['options']
+			);
+		}
+	}//end testObjectLookupEmptyBodyIsNotFound()
+
+	/**
+	 * A body that is the object itself, not wrapped, still maps to FOUND with the tier.
+	 *
+	 * @return void
+	 */
+	public function testObjectLookupBareBodyIsFound(): void {
+		$captured = [];
+		$adapter = new WozApiAdapter(
+			clientService: $this->clientCapturing(200, (string)json_encode(['identificatie' => 'x-1']), $captured),
+			mode: $this->mode(['integration.woz.mode' => 'test']),
+			mapper: new WozResponseMapper(),
+			logger: $this->createMock(LoggerInterface::class),
+		);
+
+		$result = $adapter->lookupByWozObjectNummer(wozobjectnummer: '05180000001234');
+		$this->assertSame('FOUND', $result->lookupStatus);
+		$this->assertSame(['tier' => 'test'], $result->extras);
+		$this->assertSame(['timeout' => 10, 'headers' => ['Accept' => 'application/hal+json']], $captured['options']);
+	}//end testObjectLookupBareBodyIsFound()
 }//end class

@@ -42,6 +42,7 @@ use Throwable;
  * Golden test for CaseTaskCancelController::cancel.
  *
  * @covers \OCA\Dossiq\Controller\CaseTaskCancelController
+ * @uses \OCA\Dossiq\Service\Notice\CaseActNotices
  */
 class CaseTaskCancelGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

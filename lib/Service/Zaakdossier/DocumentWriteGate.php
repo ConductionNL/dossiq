@@ -106,7 +106,7 @@ class DocumentWriteGate {
 	 *
 	 * @return JSONResponse|null 403, or null.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function refusedBulkTransition(IUser $user, array $ids): ?JSONResponse {
 		$refusal = $this->refusedBulkMetadata(user: $user, ids: $ids);
@@ -133,7 +133,7 @@ class DocumentWriteGate {
 	 *
 	 * @return array<int, array<string, mixed>> One result entry per id, in order.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function updateAll(IUser $user, array $ids, array $metadata): array {
 		return $this->bulk->updateAll(user: $user, ids: $ids, metadata: $metadata);

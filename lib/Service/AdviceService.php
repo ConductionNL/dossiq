@@ -114,7 +114,7 @@ class AdviceService {
 	 *
 	 * @throws \RuntimeException When OpenRegister unavailable / invalid status
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function transitionStatus(string $adviceId, string $to, array $payload = []): array {
 		if (in_array($to, self::VALID_STATUSES, true) === false) {
@@ -187,7 +187,7 @@ class AdviceService {
 	 *
 	 * @return array<string, mixed> The fields to store; an unknown conclusion is left out.
 	 *
-	 * @spec openspec/changes/dialogs-answer-what-the-boards-draw/specs/advice-management/spec.md#requirement-an-advice-request-keeps-its-kind-subject-and-outcome
+	 * @spec openspec/specs/advice-management/spec.md#requirement-an-advice-request-keeps-its-kind-subject-and-outcome
 	 */
 	private function outcomeOf(array $payload): array {
 		$outcome    = [];
@@ -320,7 +320,7 @@ class AdviceService {
 	 *
 	 * @return array<int, array<string, mixed>> Pending advice records
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function applyWorkflowGuard(string $caseId): array {
 		$all = $this->getAdviceForCase(caseId: $caseId);
@@ -345,7 +345,7 @@ class AdviceService {
 	 *
 	 * @return array<int, array<string, mixed>> Advice records for the case
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getAdviceForCase(string $caseId): array {
 		return $this->repository->findForCase(caseId: $caseId);
@@ -356,7 +356,7 @@ class AdviceService {
 	 *
 	 * @return array<int, array<string, mixed>> Open advice records
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getOpenAdvice(): array {
 		return $this->repository->findOpen();
@@ -428,7 +428,7 @@ class AdviceService {
 	 * @throws RuntimeException If OpenRegister is unavailable or decidesk fails closed
 	 * @throws \InvalidArgumentException If the deadline is not a date this system can read
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-6
+	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-6
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
 	 */

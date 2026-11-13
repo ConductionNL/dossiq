@@ -34,6 +34,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\DeadlineMonitoringSeedDataService
+ * @uses \OCA\Dossiq\Service\DefinitionSeedRun
  */
 class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 	private FakeTermijnObjectService $objects;

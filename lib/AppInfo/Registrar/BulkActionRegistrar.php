@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class BulkActionRegistrar {
 
@@ -58,7 +58,7 @@ class BulkActionRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
 		if (class_exists(\OCA\OpenRegister\Event\BulkActionRegistrationEvent::class) === false) {

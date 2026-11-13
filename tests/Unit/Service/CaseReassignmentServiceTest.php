@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\CaseReassignmentService
  *
  * @uses \OCA\Dossiq\Service\Support\ReassignmentBatch
+ * @uses \OCA\Dossiq\Service\CaseloadReleaseRun
  */
 class CaseReassignmentServiceTest extends TestCase {
 

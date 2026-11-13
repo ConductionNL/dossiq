@@ -458,7 +458,7 @@ export default {
 		 * @param {object} holding The holding row.
 		 * @return {string} The line.
 		 *
-		 * @spec openspec/changes/custody-board-rows/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		metaOf(holding) {
 			const reason = String(holding?.reason ?? '')
@@ -477,7 +477,7 @@ export default {
 		 * @param {string} name The unit.
 		 * @return {string} The initials.
 		 *
-		 * @spec openspec/changes/custody-board-rows/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		/**
 		 * The line under a request: since when, why, and what became of it.
@@ -557,7 +557,7 @@ export default {
 		 * @param {string} raw The stored moment.
 		 * @return {string} The moment, or the raw value when it cannot be read.
 		 *
-		 * @spec openspec/changes/custody-board-rows/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		momentOf(raw) {
 			const moment = new Date(raw)

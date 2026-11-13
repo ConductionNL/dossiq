@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/zaaktype-copy/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ namespace OCA\Dossiq\Service\CaseType;
 /**
  * The object service, register and schema one step of a copy works on.
  *
- * @spec openspec/changes/zaaktype-copy/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
  */
 final class CaseTypeCopyTarget {
 
@@ -54,7 +54,7 @@ final class CaseTypeCopyTarget {
 	 *
 	 * @return self
 	 *
-	 * @spec openspec/changes/zaaktype-copy/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
 	 */
 	public function forSchema(string $schema): self {
 		return new self(objectService: $this->objectService, register: $this->register, schema: $schema);

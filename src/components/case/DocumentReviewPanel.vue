@@ -504,6 +504,69 @@ function percent(value) {
 	return (Math.round(Number(value) * 1000) / 10).toLocaleString('nl-NL')
 }
 
+/**
+ * A count the summary may leave out, as a number.
+ *
+ * @param {number|null|undefined} value The count.
+ * @return {number} The count, or 0.
+ */
+function countOf(value) {
+	return value ?? 0
+}
+
+/**
+ * The list in a list answer, or none when the answer carries no list.
+ *
+ * @param {object} response The axios response.
+ * @return {Array<object>} The results.
+ */
+function resultsOf(response) {
+	return Array.isArray(response.data?.results) ? response.data.results : []
+}
+
+/**
+ * Why the review could not be read: the server's message, or a plain sentence.
+ *
+ * @param {object} error The failure.
+ * @return {string} The sentence to show.
+ */
+function loadFailure(error) {
+	return error?.response?.data?.message
+		|| t('dossiq', 'The document review could not be read.')
+}
+
+/**
+ * The four tiles of the board, each reading its count from the summary.
+ *
+ * @type {Array<object>}
+ */
+const REVIEW_TILES = [
+	{
+		key: 'in-scope',
+		label: () => t('dossiq', 'Relevant'),
+		value: (summary) => countOf(summary?.relevance?.inScope),
+		note: (summary) => t('dossiq', '{count} with a verdict', { count: countOf(summary?.verdicts?.total) }),
+	},
+	{
+		key: 'out-of-scope',
+		label: () => t('dossiq', 'Not relevant'),
+		value: (summary) => countOf(summary?.relevance?.outOfScope),
+		note: () => t('dossiq', 'no verdict needed'),
+	},
+	{
+		key: 'unmarked',
+		label: () => t('dossiq', 'Not marked yet'),
+		value: (summary) => countOf(summary?.relevance?.unmarked),
+		note: () => t('dossiq', 'waiting for a rule or a reviewer'),
+	},
+	{
+		key: 'outstanding',
+		label: () => t('dossiq', 'Still to assess'),
+		value: (summary) => countOf(summary?.outstanding?.count),
+		note: () => t('dossiq', 'relevant without a verdict, and unmarked'),
+	},
+]
+
 export default {
 	name: 'DocumentReviewPanel',
 
@@ -570,35 +633,12 @@ export default {
 		 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
 		 */
 		tiles() {
-			const relevance = this.summary?.relevance ?? {}
-			const verdicts = this.summary?.verdicts?.total ?? 0
-			const open = this.summary?.outstanding?.count ?? 0
-			return [
-				{
-					key: 'in-scope',
-					label: t('dossiq', 'Relevant'),
-					value: relevance.inScope ?? 0,
-					note: t('dossiq', '{count} with a verdict', { count: verdicts }),
-				},
-				{
-					key: 'out-of-scope',
-					label: t('dossiq', 'Not relevant'),
-					value: relevance.outOfScope ?? 0,
-					note: t('dossiq', 'no verdict needed'),
-				},
-				{
-					key: 'unmarked',
-					label: t('dossiq', 'Not marked yet'),
-					value: relevance.unmarked ?? 0,
-					note: t('dossiq', 'waiting for a rule or a reviewer'),
-				},
-				{
-					key: 'outstanding',
-					label: t('dossiq', 'Still to assess'),
-					value: open,
-					note: t('dossiq', 'relevant without a verdict, and unmarked'),
-				},
-			]
+			return REVIEW_TILES.map((tile) => ({
+				key: tile.key,
+				label: tile.label(),
+				value: tile.value(this.summary),
+				note: tile.note(this.summary),
+			}))
 		},
 
 		/**
@@ -737,34 +777,54 @@ export default {
 			this.loading = true
 			this.error = ''
 			try {
-				const { data } = await axios.get(this.url('/summary'))
-				this.summary = data ?? null
-				if (this.enabled) {
-					const [batches, recall, rules] = await Promise.all([
-						axios.get(this.url('/batches')),
-						axios.get(this.url('/recall')),
-						axios.get(this.url('/triage/rules')),
-					])
-					this.batches = Array.isArray(batches.data?.results)
-						? batches.data.results
-						: []
-					this.rules = Array.isArray(rules.data?.results)
-						? rules.data.results
-						: []
-					this.rule = recall.data?.rule ?? null
-					this.reviewStarted = recall.data?.reviewStarted === true
-					this.samples = Array.isArray(recall.data?.samples)
-						? recall.data.samples
-						: []
-				}
+				await this.readSummary()
 			} catch (e) {
 				// Fails closed: an unreadable review and an empty one look the same, and only one is safe to decide on.
-				this.error =
-					e?.response?.data?.message
-					|| t('dossiq', 'The document review could not be read.')
+				this.error = loadFailure(e)
 			} finally {
 				this.loading = false
 			}
+		},
+
+		/**
+		 * Read the summary, and when review is on, the rest of the review.
+		 *
+		 * @return {Promise<void>}
+		 */
+		async readSummary() {
+			const { data } = await axios.get(this.url('/summary'))
+			this.summary = data ?? null
+			if (this.enabled) {
+				await this.loadReview()
+			}
+		},
+
+		/**
+		 * Read the batches, the recall and the rules of a case that reviews its documents.
+		 *
+		 * @return {Promise<void>}
+		 */
+		async loadReview() {
+			const [batches, recall, rules] = await Promise.all([
+				axios.get(this.url('/batches')),
+				axios.get(this.url('/recall')),
+				axios.get(this.url('/triage/rules')),
+			])
+			this.batches = resultsOf(batches)
+			this.rules = resultsOf(rules)
+			this.keepRecall(recall.data)
+		},
+
+		/**
+		 * Keep the stopping rule, whether review started, and the samples.
+		 *
+		 * @param {object|undefined} recall The recall answer.
+		 * @return {void}
+		 */
+		keepRecall(recall) {
+			this.rule = recall?.rule ?? null
+			this.reviewStarted = recall?.reviewStarted === true
+			this.samples = Array.isArray(recall?.samples) ? recall.samples : []
 		},
 
 		/**
@@ -1041,8 +1101,8 @@ export default {
 		sampleState(sample) {
 			if (sample.recallLowerBound === undefined) {
 				return t('dossiq', '{judged} of {total} judged', {
-					judged: sample.progress?.judged ?? 0,
-					total: sample.progress?.total ?? 0,
+					judged: countOf(sample.progress?.judged),
+					total: countOf(sample.progress?.total),
 				})
 			}
 			if (sample.stoppingRuleMetAt) {

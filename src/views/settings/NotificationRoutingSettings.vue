@@ -31,7 +31,7 @@
   screen has no such control, so clearing is what a handler does by switching a
   row back to what the layer below says, and the row then names that layer.
 
-  @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+  @spec openspec/specs/case-management/spec.md
 -->
 <template>
 	<div class="notification-routing">
@@ -179,7 +179,7 @@ export default {
 		 * What the shared screen renders.
 		 *
 		 * @return {object} Its props.
-		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		preferenceProps() {
 			return propsFor({
@@ -198,7 +198,7 @@ export default {
 		 * The notifications a team default can be set on.
 		 *
 		 * @return {Array<object>} The entries, each carrying its own label.
-		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		entryOptions() {
 			return this.entries.map((entry) => ({
@@ -211,7 +211,7 @@ export default {
 		 * The domains a preference may be pinned to, plus the unpinned answer.
 		 *
 		 * @return {Array<{id: string, label: string}>} The options.
-		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		domainOptions() {
 			return [
@@ -226,7 +226,7 @@ export default {
 		 * The domain currently being shown.
 		 *
 		 * @return {{id: string, label: string}} The option.
-		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		selectedDomain() {
 			return (
@@ -239,7 +239,7 @@ export default {
 		 * Whether a team default can be written from what is filled in.
 		 *
 		 * @return {boolean} TRUE when a group and a notification are chosen.
-		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		canWriteGroupDefault() {
 			return this.group.trim() !== '' && this.selectedGroupEntry !== null
@@ -250,7 +250,7 @@ export default {
 	 * Read the reader's own effective preferences.
 	 *
 	 * @return {Promise<void>} When the read has finished.
-	 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	async mounted() {
 		await this.load()
@@ -264,7 +264,7 @@ export default {
 		 * Read the preferences as they apply in the chosen domain.
 		 *
 		 * @return {Promise<void>} When the read has finished.
-		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async load() {
 			this.loading = true
@@ -290,7 +290,7 @@ export default {
 		 *
 		 * @param {object} entry The entry.
 		 * @return {string} The label.
-		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		labelFor(entry) {
 			const known = {
@@ -341,7 +341,7 @@ export default {
 		 *
 		 * @param {?{id: string}} option The chosen domain.
 		 * @return {Promise<void>} When the read has finished.
-		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async chooseDomain(option) {
 			this.domain = option ? option.id : ''
@@ -362,7 +362,7 @@ export default {
 		 * @param {string} [change.channelId] The column the cell is in.
 		 * @param {boolean} change.value The new value.
 		 * @return {Promise<void>} When the write has finished.
-		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async onChange({ eventId, channelId, scope = '', value }) {
 			const entry = this.entries.find((candidate) => keyFor(candidate) === eventId)
@@ -410,7 +410,7 @@ export default {
 		 *
 		 * @param {boolean} enabled Whether the team gets it by default.
 		 * @return {Promise<void>} When the write has finished.
-		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async setGroupDefault(enabled) {
 			this.groupMessage = ''

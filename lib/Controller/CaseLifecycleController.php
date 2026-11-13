@@ -227,7 +227,7 @@ class CaseLifecycleController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function delete(string $caseId): JSONResponse {
@@ -251,7 +251,7 @@ class CaseLifecycleController extends Controller {
 	 *
 	 * @throws RuntimeException `case_held` when the guard refused.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function recycle(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();

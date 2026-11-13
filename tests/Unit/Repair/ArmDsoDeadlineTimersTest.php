@@ -106,4 +106,73 @@ class ArmDsoDeadlineTimersTest extends TestCase {
 		$step->run(output: $output);
 		$this->assertSame(expected: 'Arm OpenRegister engine timers for running Dossiq DSO terms', actual: $step->getName());
 	}//end testWithoutOpenRegisterItSkips()
+
+	/**
+	 * A failed read is logged and counts nothing; an unavailable engine counts a failure.
+	 *
+	 * @return void
+	 */
+	public function testAFailedReadAndAnUnavailableEngineAreCounted(): void {
+		foreach ([true, false] as $readFails) {
+			$objects = new class ($readFails) {
+				/**
+				 * Build the store.
+				 *
+				 * @param bool $readFails Whether the search throws.
+				 */
+				public function __construct(private bool $readFails) {
+				}
+
+				/**
+				 * Search by slug, or throw.
+				 *
+				 * @param string               $register The register.
+				 * @param string               $schema   The schema.
+				 * @param array<string, mixed> $filters  The filters.
+				 *
+				 * @return array<int, array<string, mixed>>
+				 */
+				public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+					if ($this->readFails === true) {
+						throw new \RuntimeException('down');
+					}
+
+					return [['id' => 'case-1']];
+				}
+			};
+
+			$settings = $this->createMock(SettingsService::class);
+			$settings->method('isOpenRegisterAvailable')->willReturn(true);
+			$settings->method('getObjectService')->willReturn($objects);
+			$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ['register' => 'dossiq', 'case_schema' => 'case'][$key] ?? '');
+			$timer = $this->createMock(DsoDeadlineTimer::class);
+			$timer->method('sync')->willReturn(DsoDeadlineTimer::UNAVAILABLE);
+			$logger = $this->createMock(LoggerInterface::class);
+			if ($readFails === true) {
+				$logger->expects($this->once())->method('error')->with('Dossiq DSO term timer migration: the cases could not be read', ['error' => 'down']);
+			}
+
+			$logger->expects($this->once())->method('info')->with('Dossiq DSO term timer migration complete', $readFails === true ? ['armed' => 0, 'overdue' => 0, 'failed' => 0] : ['armed' => 0, 'overdue' => 0, 'failed' => 1]);
+			$output = $this->createMock(IOutput::class);
+			$output->expects($this->once())->method('info')->with($readFails === true ? 'DSO term timer migration: 0 armed, 0 marked overdue, 0 failed.' : 'DSO term timer migration: 0 armed, 0 marked overdue, 1 failed.');
+
+			(new ArmDsoDeadlineTimers(settingsService: $settings, timer: $timer, acts: $this->createMock(DsoDeadlineActs::class), logger: $logger))->run(output: $output);
+		}
+	}//end testAFailedReadAndAnUnavailableEngineAreCounted()
+
+	/**
+	 * Without a register the step warns with its own name.
+	 *
+	 * @return void
+	 */
+	public function testWithoutARegisterItWarnsByName(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('isOpenRegisterAvailable')->willReturn(true);
+		$settings->method('getObjectService')->willReturn(new \stdClass());
+		$settings->method('getConfigValue')->willReturn('');
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('warning')->with('OpenRegister or the case schema is not available. Skipping DSO term timer migration.');
+
+		(new ArmDsoDeadlineTimers(settingsService: $settings, timer: $this->createMock(DsoDeadlineTimer::class), acts: $this->createMock(DsoDeadlineActs::class), logger: $this->createMock(LoggerInterface::class)))->run(output: $output);
+	}//end testWithoutARegisterItWarnsByName()
 }//end class

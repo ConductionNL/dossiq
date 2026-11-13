@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
  */
 
 declare(strict_types=1);
@@ -163,7 +163,7 @@ class DeadlineReportingService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function generateQuarterlyReport(string $period, ?string $department = null): array {
 		$bounds = $this->resolveQuarter(period: $period);
@@ -431,7 +431,7 @@ class DeadlineReportingService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function generateDwangsomAuditReport(int $year): array {
 		$source = $this->payoutSource();
@@ -585,7 +585,7 @@ class DeadlineReportingService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function getTermijnKpi(array $filters = [], ?DateTimeImmutable $today = null, ?string $from = null, ?string $until = null): array {
 		$rows = $this->listInstances(from: '1970-01-01', until: '2999-12-31');
@@ -730,7 +730,7 @@ class DeadlineReportingService {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function quarterlyReportAsCsv(array $report): string {
 		$header = [

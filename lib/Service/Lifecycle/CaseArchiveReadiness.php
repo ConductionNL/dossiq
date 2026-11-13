@@ -27,7 +27,7 @@
  * @version GIT: <git-id>
  * @link https://conduction.nl
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Throwable;
 /**
  * The archive checklist of one case.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseArchiveReadiness {
 
@@ -81,7 +81,7 @@ class CaseArchiveReadiness {
 	 * @return array<int, array{id: string, met: bool|null, count?: int, total?: int, detail?: string, date?: string, channel?: string}>
 	 *         One item per fact; `met` is null when the fact could not be read.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function checklist(string $caseId, array $case): array {
 		return [
@@ -105,7 +105,7 @@ class CaseArchiveReadiness {
 	 *
 	 * @return array<string, mixed> The item.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function decision(array $case): array {
 		$decisions = $case['decisions'] ?? [];
@@ -164,7 +164,7 @@ class CaseArchiveReadiness {
 	 *
 	 * @return array<string, mixed> The item.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function publication(array $case): array {
 		$date = (string)($case['publishedAt'] ?? '');

@@ -45,6 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @uses \OCA\Dossiq\Service\External\Brk\BrkLookupResult
  * @uses \OCA\Dossiq\Service\External\IntegrationMode
+ * @uses \OCA\Dossiq\Service\External\RegisterValues
  */
 class BrkContractTest extends TestCase {
 	private const FIXTURES = __DIR__ . '/../../../../fixtures/contracts/brk';

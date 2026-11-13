@@ -36,7 +36,7 @@ use Throwable;
  *
  * The consuming class supplies MARKER_PREFIX, a logger and a container.
  *
- * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+ * @spec openspec/specs/workflow-definitions-to-flow/spec.md
  */
 trait ProjectsOntoFlows {
 
@@ -178,28 +178,7 @@ trait ProjectsOntoFlows {
 	 * @return array<int, array<string, mixed>> The decoded list.
 	 */
 	private function decodeList(mixed $value): array {
-		if (is_string($value) === true) {
-			$decoded = json_decode($value, true);
-			if (is_array($decoded) === false) {
-				return [];
-			}
-
-			$value = $decoded;
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$rows = [];
-		foreach ($value as $row) {
-			if (is_array($row) === true) {
-				$rows[] = $row;
-			}
-		}
-
-		return $rows;
-
+		return RowList::from(value: $value);
 	}//end decodeList()
 
 }//end trait

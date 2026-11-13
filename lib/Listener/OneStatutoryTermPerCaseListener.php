@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReferencedUuid;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermKind;
 use OCA\OpenRegister\Db\ObjectEntity;
@@ -175,14 +176,6 @@ class OneStatutoryTermPerCaseListener implements IEventListener {
 	 * @return string The uuid, empty when there is none.
 	 */
 	private function referenced(mixed $value): string {
-		if (is_array($value) === true) {
-			return trim((string)($value['id'] ?? ''));
-		}
-
-		if (is_string($value) === true) {
-			return trim($value);
-		}
-
-		return '';
+		return ReferencedUuid::inReference(value: $value);
 	}//end referenced()
 }//end class

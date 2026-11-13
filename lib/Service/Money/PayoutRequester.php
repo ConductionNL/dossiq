@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use ReflectionParameter;
  * stays with dossiq, as before the handoff. A refusal is an error, because
  * finance looked at the payout and said no.
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 class PayoutRequester {
 	/**
@@ -76,7 +76,7 @@ class PayoutRequester {
 	 *
 	 * @throws RuntimeException When the finance app refuses the payout.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function request(array $payout): ?array {
 		if (class_exists(PayableRaisedEvent::class) === false) {
@@ -136,7 +136,7 @@ class PayoutRequester {
 	 *
 	 * @throws RuntimeException When the finance app refuses, for example because it already approved the payout.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function cancel(string $reference, string $reason): ?array {
 		if (class_exists(PayableCancelRequestedEvent::class) === false) {

@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use OCP\IL10N;
 /**
  * Turns queue items into the widget's summary rows.
  *
- * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 class OpenWorkSummary {
 	/**
@@ -46,7 +46,7 @@ class OpenWorkSummary {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function __construct(
 		private readonly IL10N $l10n,
@@ -59,7 +59,7 @@ class OpenWorkSummary {
 	 *
 	 * @return QueueWidgetItems The links.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function links(): QueueWidgetItems {
 		return $this->items;
@@ -72,7 +72,7 @@ class OpenWorkSummary {
 	 *
 	 * @return array<int, WidgetItem> The rows.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function rows(array $queueItems): array {
 		$rows = [
@@ -90,7 +90,7 @@ class OpenWorkSummary {
 	 *
 	 * @return WidgetItem|null The row, or null without cases.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	private function caseRow(array $cases): ?WidgetItem {
 		if ($cases === []) {
@@ -113,7 +113,7 @@ class OpenWorkSummary {
 	 *
 	 * @return WidgetItem|null The row, or null without tasks.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	private function taskRow(array $tasks): ?WidgetItem {
 		if ($tasks === []) {
@@ -136,7 +136,7 @@ class OpenWorkSummary {
 	 *
 	 * @return array<int, QueueItem> The matching items.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	private function ofType(array $queueItems, string $type): array {
 		return array_values(array_filter($queueItems, static fn (QueueItem $item): bool => $item->subjectType === $type));
@@ -150,7 +150,7 @@ class OpenWorkSummary {
 	 *
 	 * @return WidgetItem The row.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	private function row(string $title, string $subtitle): WidgetItem {
 		return new WidgetItem($title, $subtitle, $this->items->myWorkUrl(), $this->items->iconUrl(), $title);

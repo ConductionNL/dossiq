@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use RuntimeException;
 /**
  * Case and case type reads, built by their owner.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
 final class CaseRegisterReads {
 	use SearchesObjects;
@@ -57,7 +57,7 @@ final class CaseRegisterReads {
 	 *
 	 * @throws RuntimeException When OpenRegister is not available.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function objectService(): object {
 		$objectService = $this->settingsService->getObjectService();
@@ -77,7 +77,7 @@ final class CaseRegisterReads {
 	 *
 	 * @throws RuntimeException When the key is not configured.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function schemaKey(string $key): string {
 		$schema = $this->settingsService->getConfigValue(key: $key);
@@ -95,7 +95,7 @@ final class CaseRegisterReads {
 	 *
 	 * @return string The uuid, or ''.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public static function uuidOf(mixed $value): string {
 		if (is_string($value) === true) {
@@ -123,7 +123,7 @@ final class CaseRegisterReads {
 	 *
 	 * @throws RuntimeException When the case or its case type cannot be read.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function caseTypeOf(array $location, string $caseId): ?array {
 		[$objectService, $register] = $location;

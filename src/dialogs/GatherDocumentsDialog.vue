@@ -219,15 +219,51 @@ function uuidOf(entry) {
  * @return {object} `{key, name, location, date, snippet}`.
  */
 function rowOf(source, entry) {
+	return source === 'files' ? fileRowOf(entry) : recordRowOf(entry)
+}
+
+/**
+ * A Files search entry as a dialog row, keyed by its file id.
+ *
+ * @param {object} entry The entry.
+ * @return {object} `{key, name, location, date, snippet}`.
+ */
+function fileRowOf(entry) {
 	const attributes = entry?.attributes ?? {}
-	const key = source === 'files' ? String(attributes.fileId ?? '') : uuidOf(entry)
 	return {
-		key,
+		key: String(attributes.fileId ?? ''),
 		name: String(entry?.title ?? ''),
-		location: String(attributes.path ?? entry?.subline ?? ''),
+		location: locationOf(entry),
 		date: '',
-		snippet: source === 'files' ? '' : String(entry?.subline ?? ''),
+		snippet: '',
 	}
+}
+
+/**
+ * A record search entry as a dialog row, keyed by the uuid it links to.
+ *
+ * @param {object} entry The entry.
+ * @return {object} `{key, name, location, date, snippet}`.
+ */
+function recordRowOf(entry) {
+	return {
+		key: uuidOf(entry),
+		name: String(entry?.title ?? ''),
+		location: locationOf(entry),
+		date: '',
+		snippet: String(entry?.subline ?? ''),
+	}
+}
+
+/**
+ * Where a unified search entry lives: its path, else its subline.
+ *
+ * @param {object} entry The entry.
+ * @return {string} The location, or ''.
+ */
+function locationOf(entry) {
+	const attributes = entry?.attributes ?? {}
+	return String(attributes.path ?? entry?.subline ?? '')
 }
 
 /**
@@ -659,35 +695,73 @@ export default {
 			if (this.busy || this.picks.length === 0) {
 				return
 			}
+			this.startAdding()
+			const names = this.pickNames()
+			try {
+				const { data } = await axios.post(this.endpoint('/add'), this.addBody())
+				this.readResults(data, names)
+			} catch (error) {
+				this.readAddFailure(error, names)
+			} finally {
+				this.busy = false
+			}
+		},
+
+		/**
+		 * Mark the dialog busy and clear the last add's error and refusals.
+		 *
+		 * @return {void}
+		 */
+		startAdding() {
 			this.busy = true
 			this.error = ''
 			this.refusals = []
-			const names = Object.fromEntries(
+		},
+
+		/**
+		 * The picks' names by `source:key`, for the refusal lines.
+		 *
+		 * @return {object} Pick names by `source:key`.
+		 */
+		pickNames() {
+			return Object.fromEntries(
 				this.picks.map((pick) => [`${pick.source}:${pick.key}`, pick.name]),
 			)
-			try {
-				const { data } = await axios.post(this.endpoint('/add'), {
-					terms: this.searchedTerms,
-					picks: this.picks.map(
-						({ source, custodian, key, location }) => ({
-							source,
-							custodian,
-							key,
-							location,
-						}),
-					),
-				})
+		},
+
+		/**
+		 * What adding the picks sends: the searched terms and each pick's source, custodian, key and location.
+		 *
+		 * @return {object} The body.
+		 */
+		addBody() {
+			return {
+				terms: this.searchedTerms,
+				picks: this.picks.map(
+					({ source, custodian, key, location }) => ({
+						source,
+						custodian,
+						key,
+						location,
+					}),
+				),
+			}
+		},
+
+		/**
+		 * Read a refused add: its per-pick answer when it has one, else its sentence.
+		 *
+		 * @param {Error} error The failure.
+		 * @param {object} names Pick names by `source:key`.
+		 * @return {void}
+		 */
+		readAddFailure(error, names) {
+			const data = error?.response?.data
+			if (Array.isArray(data?.results)) {
 				this.readResults(data, names)
-			} catch (error) {
-				const data = error?.response?.data
-				if (Array.isArray(data?.results)) {
-					this.readResults(data, names)
-				} else {
-					this.error =
-						data?.message || t('dossiq', 'The documents were not added.')
-				}
-			} finally {
-				this.busy = false
+			} else {
+				this.error =
+					data?.message || t('dossiq', 'The documents were not added.')
 			}
 		},
 

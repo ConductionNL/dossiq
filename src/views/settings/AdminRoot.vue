@@ -1528,7 +1528,7 @@ export default {
 
 	/**
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-admin-settings/tasks.md
 	 */
 	async created() {
 		fetchAdminTabCounts().then((counts) => {
@@ -1602,7 +1602,7 @@ export default {
 		/**
 		 * Refresh the app stores after the shell re-imports the OpenRegister configuration.
 		 *
-		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-admin-settings/tasks.md
 		 */
 		async onReimported() {
 			this.storesReady = false

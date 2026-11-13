@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  */
 
 declare(strict_types=1);
@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -47,7 +48,7 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  */
 class InformatieobjectStatusLifecycle {
 
@@ -76,6 +77,13 @@ class InformatieobjectStatusLifecycle {
 	];
 
 	/**
+	 * The register, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service (config + ObjectService).
@@ -91,6 +99,7 @@ class InformatieobjectStatusLifecycle {
 		private readonly LoggerInterface $logger,
 		private readonly ?DocumentApprovalClearance $approvals = null,
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -101,7 +110,7 @@ class InformatieobjectStatusLifecycle {
 	 *
 	 * @return bool True when allowed.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function isTransitionAllowed(string $from, string $to): bool {
 		if ($from === $to) {
@@ -124,7 +133,7 @@ class InformatieobjectStatusLifecycle {
 	 * @throws RuntimeException When OpenRegister/config is unavailable or the document is missing.
 	 * @throws InvalidArgumentException When the status is unknown or the transition is not permitted.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function transition(string $infoObjectId, string $newStatus): array {
 		if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
@@ -304,7 +313,7 @@ class InformatieobjectStatusLifecycle {
 	 *
 	 * @return array<int, array<string, mixed>> Per-id results with `id`, `success`, optional `error`.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function transitionMany(array $infoObjectIds, string $newStatus): array {
 		$results = [];
@@ -329,16 +338,6 @@ class InformatieobjectStatusLifecycle {
 	 * @throws RuntimeException When OpenRegister or the register config is unavailable.
 	 */
 	private function requireRegister(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
+		return $this->dossierRegister->context();
 	}//end requireRegister()
 }//end class

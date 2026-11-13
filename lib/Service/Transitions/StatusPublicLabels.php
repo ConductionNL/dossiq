@@ -44,7 +44,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -60,7 +60,7 @@ use OCA\Dossiq\Service\Support\LanguageMapText;
  * provider (which must stay constructible with `new`, hydra ADR-046) can name
  * the case fields from here instead of keeping a second spelling of them.
  *
- * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 final class StatusPublicLabels {
 	/**
@@ -88,7 +88,7 @@ final class StatusPublicLabels {
 	 *
 	 * @return string The public label, the name when there is none, or ''.
 	 *
-	 * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public static function publicLabelOf(array $statusType): string {
 		$label = self::textOf(value: ($statusType['publicLabel'] ?? null));
@@ -110,7 +110,7 @@ final class StatusPublicLabels {
 	 *
 	 * @return string The public description, or ''.
 	 *
-	 * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public static function publicDescriptionOf(array $statusType): string {
 		return self::textOf(value: ($statusType['publicDescription'] ?? null));
@@ -136,8 +136,8 @@ final class StatusPublicLabels {
 	 *
 	 * @return string The text, trimmed, or '' when there is none.
 	 *
-	 * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
-	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/case-types/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public static function textOf(mixed $value, string $language = ''): string {
 		// The one reading lives in LanguageMapText, which classes that need it
@@ -157,7 +157,7 @@ final class StatusPublicLabels {
 	 *
 	 * @return string The label, or ''.
 	 *
-	 * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public static function labelOnCase(array $case): string {
 		return trim((string)($case[self::CASE_LABEL_FIELD] ?? ''));
@@ -170,7 +170,7 @@ final class StatusPublicLabels {
 	 *
 	 * @return string The description, or ''.
 	 *
-	 * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public static function descriptionOnCase(array $case): string {
 		return trim((string)($case[self::CASE_DESCRIPTION_FIELD] ?? ''));

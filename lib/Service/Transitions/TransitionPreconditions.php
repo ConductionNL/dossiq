@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use OCA\Dossiq\Service\Support\TranslatedText;
 /**
  * Decides whether a transition is available, and says what is in the way.
  *
- * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class TransitionPreconditions {
 
@@ -114,7 +114,7 @@ class TransitionPreconditions {
 	 *
 	 * @return array<int, array<string, mixed>> The dependencies worth evaluating.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function declaredFor(array $transition): array {
 		$declared = ($transition['requiresSettled'] ?? null);
@@ -159,7 +159,7 @@ class TransitionPreconditions {
 	 *
 	 * @return array<int, string> The reasons, in declaration order.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function withheldReasons(array $transition, array $case, bool $toIsClosing): array {
 		$dependencies = $this->declaredFor(transition: $transition);
@@ -198,7 +198,7 @@ class TransitionPreconditions {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function reasonFor(
 		array $dependency,
@@ -245,7 +245,7 @@ class TransitionPreconditions {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function obligationReason(
 		array $dependency,
@@ -304,17 +304,13 @@ class TransitionPreconditions {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function erasureReason(array $dependency, array $case): string {
 		$label = trim((string)($dependency['label'] ?? ''));
 		$outcome = ($case[self::ERASURE_OUTCOME_FIELD] ?? null);
 		if (is_array($outcome) === false || $outcome === []) {
-			if ($label !== '') {
-				return $label;
-			}
-
-			return 'the erasure, which has not run yet';
+			return $this->labelOr(label: $label, fallback: 'the erasure, which has not run yet');
 		}
 
 		if (($outcome['complete'] ?? false) === true) {
@@ -323,15 +319,27 @@ class TransitionPreconditions {
 
 		$named = $this->withheldNames(outcome: $outcome);
 		if ($named === '') {
-			if ($label !== '') {
-				return $label;
-			}
-
-			return 'the erasure, which did not finish';
+			return $this->labelOr(label: $label, fallback: 'the erasure, which did not finish');
 		}
 
 		return 'the erasure, which did not reach ' . $named;
 	}//end erasureReason()
+
+	/**
+	 * The dependency's own label when its author wrote one, else the fallback.
+	 *
+	 * @param string $label    The trimmed label, possibly empty.
+	 * @param string $fallback The wording to use without one.
+	 *
+	 * @return string The reason.
+	 */
+	private function labelOr(string $label, string $fallback): string {
+		if ($label !== '') {
+			return $label;
+		}
+
+		return $fallback;
+	}//end labelOr()
 
 	/**
 	 * What the run left behind, as a sentence fragment a handler can act on.
@@ -345,9 +353,20 @@ class TransitionPreconditions {
 	 *
 	 * @return string The names, comma separated, or the empty string.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function withheldNames(array $outcome): string {
+		return $this->cappedList(names: $this->distinctEntryNames(outcome: $outcome));
+	}//end withheldNames()
+
+	/**
+	 * The names in the withheld, refused and failed buckets, in that order, each once.
+	 *
+	 * @param array<string, mixed> $outcome The platform's run report.
+	 *
+	 * @return array<int, string> The names.
+	 */
+	private function distinctEntryNames(array $outcome): array {
 		$names = [];
 		foreach (['withheld', 'refused', 'failed'] as $bucket) {
 			foreach ((array)($outcome[$bucket] ?? []) as $entry) {
@@ -358,6 +377,17 @@ class TransitionPreconditions {
 			}
 		}
 
+		return $names;
+	}//end distinctEntryNames()
+
+	/**
+	 * The names comma separated, the ones past the cap counted rather than listed.
+	 *
+	 * @param array<int, string> $names The names.
+	 *
+	 * @return string The fragment, or the empty string for no names.
+	 */
+	private function cappedList(array $names): string {
 		if ($names === []) {
 			return '';
 		}
@@ -370,7 +400,7 @@ class TransitionPreconditions {
 		}
 
 		return implode(', ', $names);
-	}//end withheldNames()
+	}//end cappedList()
 
 	/**
 	 * What one entry in a run report bucket is called.
@@ -379,7 +409,7 @@ class TransitionPreconditions {
 	 *
 	 * @return string The name, or the empty string.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function nameOf(mixed $entry): string {
 		if (is_string($entry) === true) {
@@ -410,7 +440,7 @@ class TransitionPreconditions {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function isBlocking(array $obligation): bool {
 		return $this->declaration->isBlocking(obligation: $obligation);

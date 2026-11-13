@@ -41,7 +41,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+ * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 
 declare(strict_types=1);
@@ -58,7 +58,7 @@ use Throwable;
 /**
  * Elapsed working time, on the engine's calendar when there is one.
  *
- * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+ * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 class WorkingClock {
 	/**
@@ -157,7 +157,7 @@ class WorkingClock {
 	 *
 	 * @return string One of the CLOCK_* constants.
 	 *
-	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function clock(): string {
 		$this->resolve();
@@ -185,7 +185,7 @@ class WorkingClock {
 	 *
 	 * @return array{workingHours: float, wallHours: float} The two numbers.
 	 *
-	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function hoursBetween(DateTimeInterface $from, DateTimeInterface $to): array {
 		$wall = (($to->getTimestamp() - $from->getTimestamp()) / 3600.0);

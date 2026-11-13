@@ -41,7 +41,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/specs/lhs-decision-table/spec.md
  */
 
 declare(strict_types=1);
@@ -49,8 +49,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
+use OCA\Dossiq\Repair\Support\StoredValueRewriter;
+use OCA\Dossiq\Repair\Support\ValueRewrite;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -59,16 +60,10 @@ use Throwable;
 /**
  * Repair step restoring the LHS actorType axis vocabulary.
  *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/specs/lhs-decision-table/spec.md
  */
 class RealignLhsActorTypeVocabulary implements IRepairStep {
 	use RunsUnderSystemIdentity;
-	use SearchesObjects;
-
-	/**
-	 * The dossiq register slug.
-	 */
-	private const REGISTER_SLUG = 'dossiq';
 
 	/**
 	 * The recommendation schema slug.
@@ -104,7 +99,7 @@ class RealignLhsActorTypeVocabulary implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	public function getName(): string {
 		return 'Realign Dossiq LHS actorType vocabulary (government -> overheid)';
@@ -120,7 +115,7 @@ class RealignLhsActorTypeVocabulary implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -165,39 +160,17 @@ class RealignLhsActorTypeVocabulary implements IRepairStep {
 	 *
 	 * @return integer The number of rows rewritten.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	private function rewriteRows(object $objectService): int {
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: self::REGISTER_SLUG,
-			schema: self::SCHEMA_SLUG,
-			filters: ['actorType' => self::WRONG, '_limit' => 5000],
-		);
+		$rewrite = new ValueRewrite();
+		$rewrite->schema = self::SCHEMA_SLUG;
+		$rewrite->property = 'actorType';
+		$rewrite->wrong = self::WRONG;
+		$rewrite->right = self::RIGHT;
 
-		$repaired = 0;
-		foreach ($rows as $row) {
-			// Defensive: a filter the backend cannot express server-side would
-			// return everything, and rewriting a `burger` row to `overheid`
-			// would be a far worse bug than the one being fixed.
-			if (($row['actorType'] ?? null) !== self::WRONG) {
-				continue;
-			}
-
-			$row['actorType'] = self::RIGHT;
-
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: self::REGISTER_SLUG,
-				schema: self::SCHEMA_SLUG,
-				object: $row,
-			);
-
-			if ($saved !== null) {
-				$repaired++;
-			}
-		}
-
-		return $repaired;
+		// The rewriter re-checks every row before writing: a backend that
+		// ignored the filter would otherwise relabel a `burger` as `overheid`.
+		return (new StoredValueRewriter(objectService: $objectService))->rewrite(rewrite: $rewrite);
 	}//end rewriteRows()
 }//end class

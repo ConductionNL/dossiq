@@ -45,6 +45,9 @@ use RuntimeException;
  * @covers \OCA\Dossiq\BackgroundJob\SentimentAnalysisJob
  * @covers \OCA\Dossiq\BackgroundJob\SentimentRun
  * @covers \OCA\Dossiq\BackgroundJob\OpenRegisterObjects
+ * @uses \OCA\Dossiq\Service\SentimentService
+ * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class SentimentAnalysisJobWorkTest extends TestCase {
 	use MakesBackgroundServiceAccount;

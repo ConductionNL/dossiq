@@ -39,7 +39,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -53,7 +53,7 @@ use RuntimeException;
 /**
  * Builds and reads the flow behind one planned follow-up case, or one series.
  *
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 class PlannedFollowUpDocument {
 
@@ -131,7 +131,7 @@ class PlannedFollowUpDocument {
 	 *
 	 * @return array<string, mixed> The flow document.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function build(
 		string $caseId,
@@ -231,7 +231,7 @@ class PlannedFollowUpDocument {
 	 *
 	 * @return array<int, mixed> The nodes, with `handoffSource` on the create node.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function withSeriesSource(array $document, string $flowId): array {
 		$nodes = (array)($document['nodes'] ?? []);
@@ -289,7 +289,7 @@ class PlannedFollowUpDocument {
 	 *
 	 * @throws RuntimeException `invalid_recurrence` when the token is not one of ours.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function recurrenceOf(string $recurrence): string {
 		return $this->calendar->recurrenceOf(recurrence: $recurrence);
@@ -312,7 +312,7 @@ class PlannedFollowUpDocument {
 	 *
 	 * @throws RuntimeException `invalid_end` when both or neither shape is well formed.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function endOf(string $recurrence, string $until, int $count): array {
 		$date = trim($until);
@@ -362,7 +362,7 @@ class PlannedFollowUpDocument {
 	 *     count: int
 	 * }|null The marker, or null when the graph is not one of ours.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function markerOf(array $nodes, ?DateTimeImmutable $from = null): ?array {
 		['create' => $create, 'cron' => $cron] = $this->readNodes(nodes: $nodes);
@@ -396,7 +396,7 @@ class PlannedFollowUpDocument {
 	 *
 	 * @return array{recurrence: string, anchor: string, until: string, count: int} The series.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function seriesOf(array $nodes): array {
 		['create' => $create] = $this->readNodes(nodes: $nodes);
@@ -431,7 +431,7 @@ class PlannedFollowUpDocument {
 	 *
 	 * @return DateTimeImmutable|null The next occurrence, or null when there is none.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function nextOccurrence(string $recurrence, DateTimeImmutable $anchor, DateTimeImmutable $from): ?DateTimeImmutable {
 		return $this->calendar->nextOccurrence(recurrence: $recurrence, anchor: $anchor, from: $from);
@@ -451,7 +451,7 @@ class PlannedFollowUpDocument {
 	 *
 	 * @return boolean Whether the flow may be switched off.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function isSpent(array $document, int $firedCount, DateTimeImmutable $today): bool {
 		$series = $this->seriesOf(nodes: (array)($document['nodes'] ?? []));

@@ -58,7 +58,7 @@ use RuntimeException;
 /**
  * Imports the generated demo dataset into OpenRegister on request.
  *
- * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 class DemoDataService {
 	/**
@@ -135,7 +135,7 @@ class DemoDataService {
 	 *
 	 * @return boolean True when the descriptor is present on disk.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function isAvailable(): bool {
 		return is_file($this->descriptorPath()) === true;
@@ -287,7 +287,7 @@ class DemoDataService {
 	 * @throws RuntimeException When the descriptor is missing or unreadable, OpenRegister is
 	 *     absent, or nothing was stored and nothing was already present.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function install(): array {
 		$data = $this->withFragments(data: $this->readDescriptor());
@@ -413,7 +413,7 @@ class DemoDataService {
 	 * @return array{objects: integer, requested: integer, refused: integer, unchanged: integer,
 	 *     registers: integer, schemas: integer} The landing, next to the ask.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function readLanding(array $result, int $requested): array {
 		$skipped   = (array)($result['skipped'] ?? []);
@@ -437,7 +437,7 @@ class DemoDataService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function reportLanding(array $imported, int $requested): void {
 		$this->logger->info(
@@ -503,7 +503,7 @@ class DemoDataService {
 	 *
 	 * @return array<string, mixed> The same descriptor with no register or schema definitions.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function objectsOnly(array $data): array {
 		unset($data['registers'], $data['schemas']);

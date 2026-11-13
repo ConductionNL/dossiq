@@ -111,24 +111,7 @@ class CaseAccessPurposeService {
 		$note = trim($note);
 		$this->assertPurpose(purpose: $purpose, note: $note);
 
-		$objectService = $this->settingsService->getObjectService();
-		$mapper = $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER);
-		$register = $this->settingsService->getConfigValue('register');
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
-		if ($objectService === null || $mapper === null || $register === '' || $caseSchema === '' || $caseTypeSchema === '') {
-			throw $this->notRecorded(previous: null);
-		}
-
-		$case = $this->find(
-			objectService: $objectService,
-			id: $caseId,
-			register: $register,
-			schema: $caseSchema,
-			refusal: new RefusedException(rule: 'case-not-readable', sentence: 'This case cannot be opened.', status: 404)
-		);
-
-		$categories = $this->categoriesOf(objectService: $objectService, case: $case, register: $register, schema: $caseTypeSchema);
+		['mapper' => $mapper, 'case' => $case, 'categories' => $categories] = $this->purposeRead(caseId: $caseId);
 		if ($categories === []) {
 			return ['recorded' => false, 'required' => false];
 		}
@@ -164,24 +147,7 @@ class CaseAccessPurposeService {
 	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
 	 */
 	public function check(string $caseId, string $readerId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$mapper = $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER);
-		$register = $this->settingsService->getConfigValue('register');
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
-		if ($objectService === null || $mapper === null || $register === '' || $caseSchema === '' || $caseTypeSchema === '') {
-			throw $this->notRecorded(previous: null);
-		}
-
-		$case = $this->find(
-			objectService: $objectService,
-			id: $caseId,
-			register: $register,
-			schema: $caseSchema,
-			refusal: new RefusedException(rule: 'case-not-readable', sentence: 'This case cannot be opened.', status: 404)
-		);
-
-		$categories = $this->categoriesOf(objectService: $objectService, case: $case, register: $register, schema: $caseTypeSchema);
+		['mapper' => $mapper, 'case' => $case, 'categories' => $categories] = $this->purposeRead(caseId: $caseId);
 		if ($categories === []) {
 			return ['required' => false, 'recorded' => false];
 		}
@@ -455,6 +421,76 @@ class CaseAccessPurposeService {
 
 		return [];
 	}//end dataOf()
+
+	/**
+	 * The audit mapper, the case and its special data categories, read before a purpose is
+	 * recorded or checked.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array{mapper: object, case: object, categories: array<int, string>} The three.
+	 *
+	 * @throws RefusedException When OpenRegister, the mapper, the register or a schema is missing,
+	 *                           the case cannot be opened (404), or its type cannot be read.
+	 */
+	private function purposeRead(string $caseId): array {
+		$target = $this->purposeTarget();
+		$case = $this->readableCase(target: $target, caseId: $caseId);
+		$categories = $this->categoriesOf(
+			objectService: $target['objectService'],
+			case: $case,
+			register: $target['register'],
+			schema: $target['caseTypeSchema']
+		);
+
+		return ['mapper' => $target['mapper'], 'case' => $case, 'categories' => $categories];
+	}//end purposeRead()
+
+	/**
+	 * The case, or the refusal that it cannot be opened.
+	 *
+	 * @param array{objectService: object, register: string, caseSchema: string} $target Where cases are read.
+	 * @param string                                                             $caseId The case.
+	 *
+	 * @return object The case.
+	 *
+	 * @throws RefusedException When the case cannot be opened (404).
+	 */
+	private function readableCase(array $target, string $caseId): object {
+		return $this->find(
+			objectService: $target['objectService'],
+			id: $caseId,
+			register: $target['register'],
+			schema: $target['caseSchema'],
+			refusal: new RefusedException(rule: 'case-not-readable', sentence: 'This case cannot be opened.', status: 404)
+		);
+	}//end readableCase()
+
+	/**
+	 * The object service, the audit mapper, the register and the two schemas, or the not-recorded refusal.
+	 *
+	 * Read in that order; any of them missing (no service or mapper, an empty register or schema)
+	 * refuses before a case is read.
+	 *
+	 * @return array{objectService: object, mapper: object, register: string, caseSchema: string, caseTypeSchema: string}
+	 *                                                                                                                The five.
+	 *
+	 * @throws RefusedException When any of them is missing.
+	 */
+	private function purposeTarget(): array {
+		$target = [
+			'objectService' => $this->settingsService->getObjectService(),
+			'mapper' => $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER),
+			'register' => $this->settingsService->getConfigValue('register'),
+			'caseSchema' => $this->settingsService->getConfigValue('case_schema'),
+			'caseTypeSchema' => $this->settingsService->getConfigValue('case_type_schema'),
+		];
+		if (in_array(null, $target, true) === true || in_array('', $target, true) === true) {
+			throw $this->notRecorded(previous: null);
+		}
+
+		return $target;
+	}//end purposeTarget()
 
 	/**
 	 * The refusal of a purpose that could not be recorded.

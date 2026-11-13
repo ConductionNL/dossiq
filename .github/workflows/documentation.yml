@@ -12,6 +12,9 @@ on:
   pull_request:
     branches: [development]
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     # The callee's deploy job pushes gh-pages and its image job pushes to GHCR.

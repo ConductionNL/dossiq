@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\Routing\CaseRouter;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ObjectArray;
+use OCA\Dossiq\Service\Support\RowList;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -47,7 +48,7 @@ use Throwable;
 /**
  * Controller for routing engine actions.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T05
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T05
  *
  * @psalm-suppress UnusedClass
  */
@@ -98,7 +99,7 @@ class RoutingController extends Controller {
 	 * IGroupManager::isAdmin() and this declaration states it rather than
 	 * contradicting it with @NoAdminRequired.
 	 *
-	 * @spec openspec/changes/role-based-step-routing/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T05
 	 */
 	public function reroute(string $id): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -215,7 +216,7 @@ class RoutingController extends Controller {
 	 *
 	 * @throws RefusedException When a case's roles could not be read at all.
 	 *
-	 * @spec openspec/changes/role-based-step-routing/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T05
 	 */
 	private function resolveSteps(array $steps, array $case): array {
 		$affected = [];
@@ -243,26 +244,7 @@ class RoutingController extends Controller {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function decodeSteps(mixed $value): array {
-		if (is_string($value) === true) {
-			$decoded = json_decode($value, true);
-			$value = [];
-			if (is_array($decoded) === true) {
-				$value = $decoded;
-			}
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$rows = [];
-		foreach ($value as $row) {
-			if (is_array($row) === true) {
-				$rows[] = $row;
-			}
-		}
-
-		return $rows;
+		return RowList::from(value: $value);
 	}//end decodeSteps()
 
 	/**

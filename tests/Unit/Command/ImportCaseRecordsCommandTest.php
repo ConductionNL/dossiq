@@ -48,6 +48,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @uses   \OCA\Dossiq\Service\Term\TermCarryOver
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Import\RecordImportReferences
+ * @uses \OCA\Dossiq\Service\Import\RecordMappingRun
  */
 class ImportCaseRecordsCommandTest extends TestCase {
 

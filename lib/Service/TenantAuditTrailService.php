@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-12-isolation-tests-compliance/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-12-isolation-tests-compliance/tasks.md
  */
 
 declare(strict_types=1);

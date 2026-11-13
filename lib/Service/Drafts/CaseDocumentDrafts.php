@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Service\Drafts;
 
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Access\CaseRecordLookup;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
@@ -335,14 +336,13 @@ class CaseDocumentDrafts {
 	 * @return array<string, mixed>
 	 */
 	private function caseRow(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '' || $caseId === '') {
-			return [];
-		}
+		$lookup = new CaseRecordLookup(
+			settingsService: $this->settingsService,
+			caseTypes: $this->caseTypes,
+			resolver: $this->resolver,
+		);
 
-		return ($this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId) ?? []);
+		return $lookup->caseRow(caseId: $caseId);
 	}//end caseRow()
 
 	/**

@@ -618,7 +618,7 @@ class CaseTransferService {
 	 *
 	 * @return array The transfer record.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The declaration Awb 2:3
 	 * hangs on, stored on the record. See InternalHandover::initiate().
@@ -660,7 +660,7 @@ class CaseTransferService {
 	 *
 	 * @return array The settled record.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	public function acceptHandover(string $transferId, string $acceptedBy): array {
 		return $this->internal->accept(transferId: $transferId, acceptedBy: $acceptedBy);
@@ -675,7 +675,7 @@ class CaseTransferService {
 	 *
 	 * @return array The settled record.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	public function refuseHandover(string $transferId, string $reason, string $refusedBy): array {
 		return $this->internal->refuse(transferId: $transferId, reason: $reason, refusedBy: $refusedBy);
@@ -688,7 +688,7 @@ class CaseTransferService {
 	 *
 	 * @return array The outstanding handovers.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	public function outstandingHandovers(string $team): array {
 		return $this->internal->outstandingFor(team: $team);

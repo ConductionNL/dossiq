@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/vth-module/tasks.md#task-8
+ * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-8
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -41,7 +41,7 @@ use Throwable;
  * combination. Falls back to the embedded seed table when OpenRegister is
  * unavailable or the matrix has not been seeded yet.
  *
- * @spec openspec/changes/vth-module/tasks.md#task-8
+ * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-8
  */
 class LhsLookupService {
 
@@ -99,7 +99,7 @@ class LhsLookupService {
 	 * @param LoggerInterface $logger Logger
 	 * @param StoredDecisionTables|null $tables The stored LHS intervention table in OpenRegister.
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-8
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -118,7 +118,7 @@ class LhsLookupService {
 	 *
 	 * @throws RuntimeException If gedrag or gevolg are invalid
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-8
 	 */
 	public function lookup(string $behaviour, string $gevolg): array {
 		$behaviour = strtoupper(string: trim(string: $behaviour));

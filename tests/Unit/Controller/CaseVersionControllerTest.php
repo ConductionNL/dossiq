@@ -61,6 +61,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Controller\CaseVersionController
  *
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Controller\Support\CaseCaller
  *
  * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
  */

@@ -41,7 +41,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Psr\Log\LoggerInterface;
 /**
  * One act that asks, records and suspends, and one that resumes (REQ-TERM-067).
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
  * constants and four pure predicates over an array, with no state, no I/O and
@@ -130,7 +130,7 @@ class InformationRequestService {
 	 *         the case type refuses a suspension this long, or it does not declare
 	 *         the reason named.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function ask(
 		string $caseId,
@@ -292,7 +292,7 @@ class InformationRequestService {
 	 *
 	 * @throws RefusedException When the case carries no suspended term to resume.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function receive(string $caseId, array $items, ?DateTimeImmutable $when = null): array {
 		$moment = ($when ?? new DateTimeImmutable());

@@ -16,7 +16,7 @@
 // under the same kind. That list is OpenRegister's own answer for this reader
 // in this state, which is the only authority on the question.
 //
-// @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+// @spec openspec/specs/security-hardening/spec.md
 
 /**
  * The two things a role rule can do to a field.
@@ -32,7 +32,7 @@ export const ROLE_RULES = ['hidden', 'readOnly']
  *
  * @return {object} The labels, by rule id.
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 export function roleRuleLabels() {
 	return {
@@ -53,7 +53,7 @@ export function roleRuleLabels() {
  *
  * @return {Array<object>} The rows.
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 export function fieldRoleRows(declared, decided) {
 	if (Array.isArray(declared) === false) {
@@ -95,7 +95,7 @@ export function fieldRoleRows(declared, decided) {
  *
  * @return {boolean} True when the reader met this rule.
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 function appliesToMe(field, rule, decided) {
 	const applied = decided?.[rule]
@@ -113,7 +113,7 @@ function appliesToMe(field, rule, decided) {
  *
  * @return {Array<string>} The names.
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 function names(value) {
 	if (Array.isArray(value) === false) {
@@ -142,7 +142,7 @@ function names(value) {
  *
  * @return {string} The sentence.
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 export function roleRuleSentence(row) {
 	const groups = row?.groups?.join(', ') ?? ''

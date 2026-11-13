@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 
 declare(strict_types=1);
@@ -57,7 +57,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 class TaskCompletionEffectsListener implements IEventListener {
 
@@ -99,7 +99,7 @@ class TaskCompletionEffectsListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof TaskTerminalEvent) === false || $event->isCommitted() === false) {

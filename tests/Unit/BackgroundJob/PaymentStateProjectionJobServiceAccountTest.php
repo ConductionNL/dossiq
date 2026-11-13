@@ -39,6 +39,8 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\BackgroundJob\PaymentStateProjectionJob
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
+ * @uses \OCA\Dossiq\BackgroundJob\OpenCaseSweep
+ * @uses \OCA\Dossiq\Service\EmailArchivalService
  */
 class PaymentStateProjectionJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

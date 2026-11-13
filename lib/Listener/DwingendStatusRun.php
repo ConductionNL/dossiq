@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Listener;
  *
  * Built by {@see BeroepEscalationListener} only; it never leaves it.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 final class DwingendStatusRun {
 

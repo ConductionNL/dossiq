@@ -47,6 +47,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Intake\IntakeFormBindingCheck
  * @uses   \OCA\Dossiq\Service\Intake\IntakeFormBinding
  * @uses   \OCA\Dossiq\Service\Intake\IntakeRequirements
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
  */
 class IntakeFormBindingRegistrationTest extends TestCase {
 

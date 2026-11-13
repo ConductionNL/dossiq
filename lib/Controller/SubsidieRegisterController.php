@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Subsidie\SubsidieRegisterExporter;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -42,7 +43,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-39
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-39
  */
 class SubsidieRegisterController extends Controller {
 	/**
@@ -71,7 +72,7 @@ class SubsidieRegisterController extends Controller {
 	 * @PublicPage
 	 * @NoCSRFRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-39
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-39
 	 */
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function export(): JSONResponse {
@@ -187,17 +188,6 @@ class SubsidieRegisterController extends Controller {
 	 * @return array<string, mixed> The array form.
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

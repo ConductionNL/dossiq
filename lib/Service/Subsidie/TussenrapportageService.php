@@ -46,7 +46,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/specs.md
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
 class TussenrapportageService {
 
@@ -70,6 +70,16 @@ class TussenrapportageService {
 	 * Default assessment term for an interim report, in weeks.
 	 */
 	public const DEFAULT_TERMIJN_WEKEN = 22;
+
+	/**
+	 * Per assessment status, the operation a failed write is logged under and the sentence it refuses with.
+	 *
+	 * @var array<string, array{0: string, 1: string}>
+	 */
+	private const ASSESSMENT_FAILURES = [
+		'approved' => ['approveReport', 'Kon tussenrapportage niet goedkeuren'],
+		'gedeeltelijk_approved' => ['partialApprove', 'Kon tussenrapportage niet gedeeltelijk goedkeuren'],
+	];
 
 	/**
 	 * Constructor.
@@ -97,7 +107,7 @@ class TussenrapportageService {
 	 *
 	 * @return DateTimeImmutable The assessment deadline, on a working day.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function computeBeoordelingstermijn(DateTimeImmutable $periodEnd, int $termWeken): DateTimeImmutable {
 		$termWeken = max(1, $termWeken);
@@ -116,7 +126,7 @@ class TussenrapportageService {
 	 *
 	 * @return array<int, array{start: string, eind: string}> The reporting periods.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function periodsForFrequentie(string $frequency, int $year): array {
 		if ($frequency === 'annually') {
@@ -183,16 +193,9 @@ class TussenrapportageService {
 	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-004-tussenrapportage-as-typed-sub-zaak
 	 */
 	public function approveReport(string $reportId, ?string $beoordelingsoordeel = null, ?float $approvedAmount = null): array {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new OCSBadRequestException('Authenticatie vereist om te beoordelen');
-		}
-
-		[$objectService, $register, $schema] = $this->resolve();
-
 		$patch = [
 			'status' => 'approved',
-			'assessor' => $user->getUID(),
+			'assessor' => $this->assessorId(),
 			'beoordelingsdatum' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
 		];
 		if ($beoordelingsoordeel !== null) {
@@ -203,18 +206,7 @@ class TussenrapportageService {
 			$patch['approvedAmount'] = $approvedAmount;
 		}
 
-		try {
-			return ($this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: (string)$reportId,
-				changes: $patch
-			) ?? $patch);
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq subsidie: approveReport failed: ' . $e->getMessage());
-			throw new OCSBadRequestException('Kon tussenrapportage niet goedkeuren');
-		}
+		return $this->assessed(reportId: $reportId, patch: $patch);
 	}//end approveReport()
 
 	/**
@@ -237,34 +229,73 @@ class TussenrapportageService {
 			throw new OCSBadRequestException('Een correctieverzoek is verplicht bij gedeeltelijke goedkeuring');
 		}
 
+		return $this->assessed(
+			reportId: $reportId,
+			patch: [
+				'status' => 'gedeeltelijk_approved',
+				'correctionRequest' => $correctionRequest,
+				'amendmentNumerator' => ($currentTeller + 1),
+				'assessor' => $this->assessorId(),
+				'beoordelingsdatum' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
+			]
+		);
+	}//end partialApprove()
+
+	/**
+	 * The signed-in assessor's uid, or a refusal.
+	 *
+	 * @return string The uid.
+	 *
+	 * @throws OCSBadRequestException When nobody is signed in.
+	 */
+	private function assessorId(): string {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new OCSBadRequestException('Authenticatie vereist om te beoordelen');
 		}
 
+		return $user->getUID();
+	}//end assessorId()
+
+	/**
+	 * Write an assessment onto a report, or refuse in the assessment's own words.
+	 *
+	 * @param string               $reportId The report id.
+	 * @param array<string, mixed> $patch    The assessment; its `status` names the failure sentence.
+	 *
+	 * @return array<string, mixed> The stored report, or the patch when nothing was read back.
+	 *
+	 * @throws OCSBadRequestException When OpenRegister or the schema is missing, or the write fails.
+	 */
+	private function assessed(string $reportId, array $patch): array {
 		[$objectService, $register, $schema] = $this->resolve();
-
-		$patch = [
-			'status' => 'gedeeltelijk_approved',
-			'correctionRequest' => $correctionRequest,
-			'amendmentNumerator' => ($currentTeller + 1),
-			'assessor' => $user->getUID(),
-			'beoordelingsdatum' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
-		];
-
 		try {
 			return ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				id: (string)$reportId,
+				id: $reportId,
 				changes: $patch
 			) ?? $patch);
 		} catch (Throwable $e) {
-			$this->logger->error('Dossiq subsidie: partialApprove failed: ' . $e->getMessage());
-			throw new OCSBadRequestException('Kon tussenrapportage niet gedeeltelijk goedkeuren');
+			throw $this->assessmentRefusal(status: $patch['status'], e: $e);
 		}
-	}//end partialApprove()
+	}//end assessed()
+
+	/**
+	 * Log a failed assessment write under its operation, and the refusal in its own words.
+	 *
+	 * @param string    $status The assessment status written.
+	 * @param Throwable $e      Why the write failed.
+	 *
+	 * @return OCSBadRequestException The refusal to throw.
+	 */
+	private function assessmentRefusal(string $status, Throwable $e): OCSBadRequestException {
+		[$operation, $sentence] = self::ASSESSMENT_FAILURES[$status];
+		$this->logger->error('Dossiq subsidie: ' . $operation . ' failed: ' . $e->getMessage());
+
+		return new OCSBadRequestException($sentence);
+	}//end assessmentRefusal()
 
 	/**
 	 * Resolve the ObjectService and register/schema ids.

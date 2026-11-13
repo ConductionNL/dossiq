@@ -37,7 +37,7 @@ The system SHALL expose `/api/stuf/{service}` endpoints (`zaken`, `personen`) on
 - Both endpoints (`zaken`, `personen`) share the same dispatcher — the `{service}` segment is logged but does not constrain which message types are accepted.
 - Unknown message types route to `handleUnknownMessage` which returns `Fo01` with code `StUF001` and HTTP 400.
 
-### REQ-002: StUF-ZKN case handlers (zakLk01, zakLv01, edcLk01)
+### Requirement: REQ-002: StUF-ZKN case handlers (zakLk01, zakLv01, edcLk01)
 
 The system SHALL handle StUF-ZKN case-lifecycle messages: `zakLk01` (create/update) extracts standard case fields, maps them to internal properties, captures `mutatiesoort` + `referentienummer`, and returns a `Bv01` confirmation; `zakLv01` (query) extracts criteria from the `gelijk` element and returns an empty `zakLa01` answer envelope; `edcLk01` (document message) returns a `Bv01` confirmation with the inbound `referentienummer`.
 
@@ -65,7 +65,7 @@ The system SHALL handle StUF-ZKN case-lifecycle messages: `zakLk01` (create/upda
 - Persistence to OpenRegister is observed-but-stubbed (`// In a full implementation, create/update OpenRegister objects here`). The handler logs the mapped data and returns success without writing.
 - `zakLv01` always returns an empty `<antwoord/>` — OpenRegister query is observed-but-stubbed.
 
-### REQ-003: StUF-BG person query handler (npsLv01)
+### Requirement: REQ-003: StUF-BG person query handler (npsLv01)
 
 The system SHALL handle `npsLv01` (person-by-BSN query) by extracting the BSN from `gelijk/bsn`, logging the first 3 digits with the rest masked (`BSN abc***`), and returning an empty `<bg:npsLa01>` envelope.
 

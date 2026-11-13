@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\Pipelinq\ProgrammeConsumer;
+use OCA\Dossiq\Service\Support\ReferenceId;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -184,15 +185,7 @@ class CaseCompletedSatisfactionListener implements IEventListener {
 	 * @return string The id, or the empty string.
 	 */
 	private function reference(mixed $value): string {
-		if (is_array($value) === true) {
-			$value = ($value['id'] ?? ($value['uuid'] ?? ''));
-		}
-
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
+		return ReferenceId::of(value: $value);
 	}//end reference()
 
 	/**

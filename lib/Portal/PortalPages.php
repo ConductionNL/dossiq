@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Portal;
 /**
  * Builds dossiq's declared portal pages.
  *
- * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
  */
 class PortalPages {
 
@@ -58,7 +58,7 @@ class PortalPages {
 	 *
 	 * @return array<int, array<string, mixed>> The pages.
 	 *
-	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
 	 */
 	public function forCollections(array $collections, array $actions, string $group, array $labels=[]): array {
 		$pages = [];
@@ -296,11 +296,11 @@ class PortalPages {
 	 *
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
 	 * @spec openspec/changes/site-business-and-authorisation/specs/portal-contribution/spec.md
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
-	 * @spec openspec/changes/resident-overview-reads-as-designed/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
 	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
 	 */
 	private function residentOverviewBlocks(array $collections, array $labels = [], array $startPages = []): array {
@@ -400,7 +400,7 @@ class PortalPages {
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
-	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
 	 */
 	private function residentCaseBlocks(array $collections, array $actions): array {
 		$blocks = [];
@@ -485,7 +485,7 @@ class PortalPages {
 	 *
 	 * @return array<int, array<string, mixed>> The pages, the case page with the case screen.
 	 *
-	 * @spec openspec/changes/portal-case-page-withdraws/specs/portal-contribution/spec.md#requirement-req-portal-021-a-resident-must-open-their-own-case-on-a-page-that-can-withdraw-it
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-req-portal-021-a-resident-must-open-their-own-case-on-a-page-that-can-withdraw-it
 	 */
 	public function withCaseScreen(array $pages): array {
 		foreach ($pages as $index => $page) {

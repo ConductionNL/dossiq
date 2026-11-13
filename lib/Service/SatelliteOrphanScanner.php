@@ -161,7 +161,7 @@ class SatelliteOrphanScanner {
 
 				if (array_key_exists($tenantRef, $resolves) === false) {
 					$resolves[$tenantRef] = ($tenantRef !== ''
-						&& $this->findOrganisationByUuid(mapper: $mapper, uuid: $tenantRef) !== null);
+						&& OrganisationLookup::byUuid(mapper: $mapper, uuid: $tenantRef) !== null);
 				}
 
 				if ($resolves[$tenantRef] === true) {
@@ -219,22 +219,6 @@ class SatelliteOrphanScanner {
 		}
 	}//end readSatelliteRows()
 
-	/**
-	 * Find an Organisation by uuid, returning null when absent.
-	 *
-	 * @param object $mapper OR OrganisationMapper.
-	 * @param string $uuid   Uuid to look up.
-	 *
-	 * @return object|null The Organisation, or null when none matches.
-	 */
-	private function findOrganisationByUuid(object $mapper, string $uuid): ?object {
-		try {
-			return $mapper->findByUuid($uuid);
-		} catch (Throwable $e) {
-			// DoesNotExistException, and any other lookup failure, reads as absent.
-			return null;
-		}
-	}//end findOrganisationByUuid()
 
 	/**
 	 * Resolve OpenRegister's OrganisationMapper from the DI container.
@@ -242,18 +226,7 @@ class SatelliteOrphanScanner {
 	 * @return object|null The mapper, or null when OpenRegister is unavailable.
 	 */
 	private function getOrganisationMapper(): ?object {
-		if (in_array('openregister', (array)$this->appManager->getInstalledApps(), true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Db\\OrganisationMapper');
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: could not resolve OrganisationMapper for the satellite orphan scan',
-				['exception' => $e->getMessage()],
-			);
-			return null;
-		}
+		$lookup = new OrganisationLookup(appManager: $this->appManager, container: $this->container);
+		return $lookup->mapper(logger: $this->logger, failureMessage: 'Dossiq: could not resolve OrganisationMapper for the satellite orphan scan');
 	}//end getOrganisationMapper()
 }//end class

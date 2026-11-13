@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use OCA\Dossiq\Service\Support\TranslatedText;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseTypeVersionChain {
 
@@ -77,7 +77,7 @@ class CaseTypeVersionChain {
 	 *
 	 * @return array<int, array<string, mixed>> The versions, newest first.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function versionsOf(string $caseTypeId): array {
 		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
@@ -121,7 +121,7 @@ class CaseTypeVersionChain {
 	 *
 	 * @return array<string, mixed> The current version's entry, or an empty array.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function currentOf(string $caseTypeId): array {
 		foreach ($this->versionsOf(caseTypeId: $caseTypeId) as $entry) {
@@ -145,7 +145,7 @@ class CaseTypeVersionChain {
 	 *
 	 * @return array<int, array<string, mixed>> The candidate versions, newest first.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function targetsFor(string $caseTypeId): array {
 		$targets = [];

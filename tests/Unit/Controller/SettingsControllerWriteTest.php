@@ -49,6 +49,7 @@ use Psr\Container\ContainerInterface;
  *
  * @covers \OCA\Dossiq\Controller\SettingsController
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Settings\SettingValueRules
  */
 class SettingsControllerWriteTest extends TestCase {
 

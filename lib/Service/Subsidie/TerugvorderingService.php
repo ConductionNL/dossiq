@@ -43,7 +43,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/specs.md
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
 class TerugvorderingService {
 
@@ -89,7 +89,7 @@ class TerugvorderingService {
 	 *
 	 * @return DateTimeImmutable The bezwaartermijn end, on a working day.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function computeBezwaartermijn(DateTimeImmutable $publication): DateTimeImmutable {
 		$end = $publication->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
@@ -104,7 +104,7 @@ class TerugvorderingService {
 	 *
 	 * @return DateTimeImmutable The betaaltermijn end, on a working day.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function computeBetaaltermijn(DateTimeImmutable $publication): DateTimeImmutable {
 		$end = $publication->add(new DateInterval('P' . (self::BETAALTERMIJN_WEKEN * 7) . 'D'));
@@ -124,7 +124,7 @@ class TerugvorderingService {
 	 *
 	 * @return float The accrued rente in EUR.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function computeInvorderingsrente(
 		float $openstaandBedrag,
@@ -151,7 +151,7 @@ class TerugvorderingService {
 	 *
 	 * @return string The resulting status.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function statusAfterPayment(float $amount, float $paid): string {
 		if ($paid <= 0.0) {

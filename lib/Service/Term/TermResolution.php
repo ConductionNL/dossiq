@@ -36,7 +36,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use OCA\Dossiq\Service\TermKind;
 /**
  * Resolves a term definition for a case, and says which rule produced it.
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
  */
 class TermResolution {
 	/**
@@ -85,7 +85,7 @@ class TermResolution {
 	 * @return array{definition: array<string, mixed>, resolvedFrom: string, snapshot: array<string, mixed>}|null
 	 *         The resolution, or null when the case type declares no term at all.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
 	 */
 	public function resolve(string $caseType, array $context, string $kind = TermKind::STATUTORY): ?array {
 		$candidates = $this->ofKind(rows: $this->terms->definitionsFor(caseType: $caseType), kind: $kind);

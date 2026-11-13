@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ namespace OCA\Dossiq\Service\Task;
 /**
  * One completed task on one case, as the caller named them.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 final class CaseTask {
 	/**

@@ -41,7 +41,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -65,7 +65,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseVersionMove {
 
@@ -83,10 +83,17 @@ class CaseVersionMove {
 	 *
 	 * @var string
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public const RUN_NOT_MOVED = 'The case moves to the new version. A flow run already in progress stays on the '
 		. 'definition version it started under, until openregister ships migrate-run-between-versions.';
+
+	/**
+	 * Binds a moved case to the workflow template of its new case type.
+	 *
+	 * @var WorkflowTemplateBinding
+	 */
+	private readonly WorkflowTemplateBinding $templates;
 
 	/**
 	 * Constructor.
@@ -104,6 +111,7 @@ class CaseVersionMove {
 		private readonly CaseVersionDiff $diff,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->templates = new WorkflowTemplateBinding(store: $store);
 	}//end __construct()
 
 	/**
@@ -115,7 +123,7 @@ class CaseVersionMove {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function options(string $caseId): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -152,7 +160,7 @@ class CaseVersionMove {
 	 *
 	 * @throws RefusedException When the case or the target cannot be read, or the target is not a version of this type.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function preview(string $caseId, string $targetCaseTypeId): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -190,7 +198,7 @@ class CaseVersionMove {
 	 *
 	 * @throws RefusedException When the move is refused, or the write fails.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function move(string $caseId, string $targetCaseTypeId, string $reason, string $actorUid): array {
 		$reason = trim($reason);
@@ -254,7 +262,7 @@ class CaseVersionMove {
 	 *
 	 * @throws RefusedException When the two are not versions of one case type.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function assertSameChain(string $sourceId, string $targetId): void {
 		if ($sourceId === '' || $targetId === '') {
@@ -300,37 +308,10 @@ class CaseVersionMove {
 	 *
 	 * @return array<string, mixed> The case, re-pinned.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function rebindTemplate(array $case, string $targetCaseTypeId): array {
-		$rows = $this->store->rowsOfType(
-			schemaKey: 'workflow_template_schema',
-			caseTypeId: $targetCaseTypeId
-		);
-
-		$chosen = [];
-		foreach ($rows as $row) {
-			if (($row['isActive'] ?? false) === true) {
-				$chosen = $row;
-				break;
-			}
-
-			if ($chosen === []) {
-				$chosen = $row;
-			}
-		}
-
-		if ($chosen === []) {
-			$case['workflowTemplate'] = null;
-			$case['workflowVersion'] = null;
-
-			return $case;
-		}
-
-		$case['workflowTemplate'] = $this->store->rowId(row: $chosen);
-		$case['workflowVersion'] = (int)($chosen['version'] ?? 1);
-
-		return $case;
+		return $this->templates->bind(case: $case, targetCaseTypeId: $targetCaseTypeId);
 	}//end rebindTemplate()
 
 	/**
@@ -348,7 +329,7 @@ class CaseVersionMove {
 	 *
 	 * @return array<string, mixed> The case, with the entry appended.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function journal(array $case, string $sourceId, array $preview, string $reason, string $actorUid): array {
 		$entries = [];

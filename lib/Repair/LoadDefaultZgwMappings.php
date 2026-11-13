@@ -81,20 +81,55 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function run(IOutput $output): void {
 		$output->info('Loading default ZGW API mappings...');
 
-		$registerId = $this->settingsService->getConfigValue(key: 'register', default: '');
-		if ($registerId === '') {
-			$output->warning('No Dossiq register configured yet. Skipping ZGW mapping defaults.');
+		$defaults = $this->registerDefaults(output: $output);
+		if ($defaults === null) {
 			return;
 		}
 
-		$defaults = $this->getDefaultMappings(registerId: $registerId);
-		$loaded = 0;
+		$loaded = $this->loadMissingMappings(defaults: $defaults);
+		$output->info("Loaded {$loaded} default ZGW mapping configurations.");
 
+		// Patch existing mappings that have known bugs (e.g., Twig renders false as "").
+		$this->patchExistingMappings(defaults: $defaults, output: $output);
+		$this->seedDefaults(output: $output);
+
+		$this->logger->info(
+			'Dossiq: Default ZGW mappings loaded',
+			['loaded' => $loaded, 'total' => count(value: $defaults)]
+		);
+	}//end run()
+
+	/**
+	 * The default mappings for the configured register, or null when none is configured yet.
+	 *
+	 * @param IOutput $output The output interface for progress reporting
+	 *
+	 * @return array<string, array<string, mixed>>|null The defaults by resource key.
+	 */
+	private function registerDefaults(IOutput $output): ?array {
+		$registerId = $this->settingsService->getConfigValue(key: 'register', default: '');
+		if ($registerId === '') {
+			$output->warning('No Dossiq register configured yet. Skipping ZGW mapping defaults.');
+			return null;
+		}
+
+		return $this->getDefaultMappings(registerId: $registerId);
+	}//end registerDefaults()
+
+	/**
+	 * Save every default mapping this instance does not have yet.
+	 *
+	 * @param array<string, array<string, mixed>> $defaults The defaults by resource key.
+	 *
+	 * @return int How many were saved.
+	 */
+	private function loadMissingMappings(array $defaults): int {
+		$loaded = 0;
 		foreach ($defaults as $resourceKey => $config) {
 			if ($this->zgwMappingService->hasMapping($resourceKey) === true) {
 				continue;
@@ -104,11 +139,17 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			$loaded++;
 		}
 
-		$output->info("Loaded {$loaded} default ZGW mapping configurations.");
+		return $loaded;
+	}//end loadMissingMappings()
 
-		// Patch existing mappings that have known bugs (e.g., Twig renders false as "").
-		$this->patchExistingMappings(defaults: $defaults, output: $output);
-
+	/**
+	 * Seed the default test applicaties and notification channels, each phase warning rather than throwing.
+	 *
+	 * @param IOutput $output The output interface for progress reporting
+	 *
+	 * @return void
+	 */
+	private function seedDefaults(IOutput $output): void {
 		// The two seeding phases below are conveniences, and a repair step
 		// that THROWS aborts the whole install. On a fresh install the schema
 		// settings this register was configured with can still be empty, and a
@@ -129,12 +170,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			$output->warning('Could not create default notification channels: ' . $e->getMessage());
 			$this->logger->warning('Dossiq: default kanalen seed failed', ['exception' => $e->getMessage()]);
 		}
-
-		$this->logger->info(
-			'Dossiq: Default ZGW mappings loaded',
-			['loaded' => $loaded, 'total' => count(value: $defaults)]
-		);
-	}//end run()
+	}//end seedDefaults()
 
 	/**
 	 * Patch existing mappings that contain known bugs.
@@ -198,33 +234,78 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		$healed = 0;
 
 		foreach ($defaults as $resourceKey => $config) {
-			$resolved = (string)($config['sourceSchema'] ?? '');
-			if ($resolved === '') {
+			$existing = $this->healedMapping(resourceKey: $resourceKey, config: $config);
+			if ($existing === null) {
 				continue;
 			}
 
-			if ($this->zgwMappingService->hasMapping($resourceKey) === false) {
-				continue;
-			}
-
-			$existing = $this->zgwMappingService->getMapping($resourceKey);
-			if ($existing === null || (string)($existing['sourceSchema'] ?? '') !== '') {
-				continue;
-			}
-
-			$existing['sourceSchema'] = $resolved;
 			$this->zgwMappingService->saveMapping(resourceKey: $resourceKey, config: $existing);
 			$healed++;
 			$output->info("Filled in the empty sourceSchema on the {$resourceKey} ZGW mapping.");
 		}
 
+		$this->logHealed(healed: $healed);
+	}//end healEmptySourceSchemas()
+
+	/**
+	 * The stored mapping with the schema its default resolves to, when it has none yet.
+	 *
+	 * @param string               $resourceKey The resource key.
+	 * @param array<string, mixed> $config      The default mapping.
+	 *
+	 * @return array<string, mixed>|null The mapping to save, or null when there is nothing to fill in.
+	 */
+	private function healedMapping(string $resourceKey, array $config): ?array {
+		$resolved = (string)($config['sourceSchema'] ?? '');
+		if ($resolved === '') {
+			return null;
+		}
+
+		$existing = $this->storedMappingWithoutSchema(resourceKey: $resourceKey);
+		if ($existing === null) {
+			return null;
+		}
+
+		$existing['sourceSchema'] = $resolved;
+
+		return $existing;
+	}//end healedMapping()
+
+	/**
+	 * The stored mapping of a resource, when it exists and its sourceSchema is empty.
+	 *
+	 * @param string $resourceKey The resource key.
+	 *
+	 * @return array<string, mixed>|null The mapping, or null.
+	 */
+	private function storedMappingWithoutSchema(string $resourceKey): ?array {
+		if ($this->zgwMappingService->hasMapping($resourceKey) === false) {
+			return null;
+		}
+
+		$existing = $this->zgwMappingService->getMapping($resourceKey);
+		if ($existing === null || (string)($existing['sourceSchema'] ?? '') !== '') {
+			return null;
+		}
+
+		return $existing;
+	}//end storedMappingWithoutSchema()
+
+	/**
+	 * Log how many mappings had their empty schema filled in, when any did.
+	 *
+	 * @param int $healed The number filled in.
+	 *
+	 * @return void
+	 */
+	private function logHealed(int $healed): void {
 		if ($healed > 0) {
 			$this->logger->info(
 				'Dossiq: filled in empty ZGW mapping schemas',
 				['healed' => $healed]
 			);
 		}
-	}//end healEmptySourceSchemas()
+	}//end logHealed()
 
 	/**
 	 * Get the default mapping configurations for all 12 ZGW resources.
@@ -233,7 +314,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array<string, array> Mapping configurations keyed by resource key
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getDefaultMappings(string $registerId): array {
 		$settings = $this->settingsService->getSettings();

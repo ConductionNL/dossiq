@@ -35,7 +35,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class IntakeSourceSeeder {
 	use SearchesObjects;
@@ -108,7 +108,7 @@ class IntakeSourceSeeder {
 	 *
 	 * @return array<int, array<string, mixed>> The channel definitions.
 	 *
-	 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function catalogue(): array {
 		$content = file_get_contents(self::CATALOGUE_PATH);
@@ -137,7 +137,7 @@ class IntakeSourceSeeder {
 	 * @return array{available: bool, created: int, updated: int, refused: array<int, string>}
 	 *                                                                                        What the seed did.
 	 *
-	 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function seed(): array {
 		$empty = [
@@ -188,7 +188,7 @@ class IntakeSourceSeeder {
 	 * @return array{available: bool, created: int, updated: int, refused: array<int, string>}
 	 *                                                                                        What the seed did.
 	 *
-	 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function upsertAll(object $objectService, string $register): array {
 		$created = 0;
@@ -252,7 +252,7 @@ class IntakeSourceSeeder {
 	 *
 	 * @return array<string, mixed> The object to write.
 	 *
-	 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function newRow(array $source): array {
 		$row = ['slug' => (string)$source['slug'], 'enabled' => false];
@@ -273,7 +273,7 @@ class IntakeSourceSeeder {
 	 *
 	 * @return array<string, mixed> The object to write back.
 	 *
-	 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function refreshedRow(array $existing, array $source): array {
 		$row = $existing;

@@ -39,6 +39,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Relation;
 
+use OCA\Dossiq\Service\Support\ReferenceId;
+
 /**
  * Encodes, decodes and edits the typed peer-relation list of a case.
  *
@@ -165,15 +167,7 @@ class CaseRelationCodec {
 	 * @return string The uuid, or '' when there is none.
 	 */
 	private function uuidOf(mixed $value): string {
-		if (is_array($value) === true) {
-			$value = ($value['id'] ?? ($value['uuid'] ?? ''));
-		}
-
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
+		return ReferenceId::of(value: $value);
 	}//end uuidOf()
 
 	/**

@@ -17,6 +17,7 @@ namespace OCA\Dossiq\Service\Kcc;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IRequest;
@@ -52,7 +53,7 @@ use Throwable;
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+ * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
  */
 class CitizenLookupRecorder {
 
@@ -76,6 +77,13 @@ class CitizenLookupRecorder {
 	public const RESULT_REFUSED = 'geweigerd-none-toegang';
 
 	/**
+	 * The register, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService OpenRegister access and the configured register.
@@ -85,10 +93,11 @@ class CitizenLookupRecorder {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		SettingsService $settingsService,
 		private readonly IRequest $request,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -102,7 +111,7 @@ class CitizenLookupRecorder {
 	 *
 	 * @return bool True when the row was written. Never throws.
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	public function record(
 		string $employeeId,
@@ -194,16 +203,6 @@ class CitizenLookupRecorder {
 	 * @throws RuntimeException When OpenRegister or the register is absent.
 	 */
 	private function target(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
+		return $this->dossierRegister->context();
 	}//end target()
 }//end class

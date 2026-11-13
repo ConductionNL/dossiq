@@ -37,6 +37,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\AppointmentBackend\JccBackend
  * @covers \OCA\Dossiq\Service\AppointmentBackend\QmaticBackend
+ * @uses \OCA\Dossiq\Service\AppointmentBackend\RestAppointmentBackend
  *
  * @spec openspec/specs/appointment-booking/spec.md
  */

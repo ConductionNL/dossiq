@@ -41,7 +41,7 @@ namespace OCA\Dossiq\Service\Lifecycle;
 /**
  * One seam over the classes that own the acts on a case.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseActs {
 
@@ -71,7 +71,7 @@ class CaseActs {
 	 *
 	 * @return array<string, mixed> What was recorded.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function finish(string $caseId, string $reason, string $resultTypeId, string $toStatus): array {
 		return $this->endings->finish(
@@ -92,7 +92,7 @@ class CaseActs {
 	 *
 	 * @return array<string, mixed> What was recorded.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function abort(string $caseId, string $reason, string $resultTypeId, string $toStatus): array {
 		return $this->endings->abort(
@@ -111,7 +111,7 @@ class CaseActs {
 	 *
 	 * @return array<string, mixed> The nomination and action date written.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function archive(string $caseId, string $reason): array {
 		return $this->endings->archive(caseId: $caseId, reason: $reason);
@@ -125,7 +125,7 @@ class CaseActs {
 	 *
 	 * @return array<string, mixed> The archive status it carries afterwards.
 	 *
-	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function unarchive(string $caseId, string $reason): array {
 		return $this->endings->unarchive(caseId: $caseId, reason: $reason);
@@ -140,7 +140,7 @@ class CaseActs {
 	 *
 	 * @return array<string, mixed> The hold as it was recorded.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function hold(string $caseId, string $reason, string $until): array {
 		return $this->holds->hold(caseId: $caseId, reason: $reason, until: $until);
@@ -154,7 +154,7 @@ class CaseActs {
 	 *
 	 * @return array<string, mixed> The hold state afterwards.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function releaseHold(string $caseId, string $reason): array {
 		return $this->holds->release(caseId: $caseId, reason: $reason);
@@ -167,7 +167,7 @@ class CaseActs {
 	 *
 	 * @return array<string, mixed> How the case now reads.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function draft(string $caseId): array {
 		return $this->drafts->begin(caseId: $caseId);
@@ -180,7 +180,7 @@ class CaseActs {
 	 *
 	 * @return array<string, mixed> The bound term and the kept draft moment.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function promote(string $caseId): array {
 		return $this->drafts->promote(caseId: $caseId);
@@ -194,7 +194,7 @@ class CaseActs {
 	 *
 	 * @return array<string, mixed> How the case now reads.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function recordIncompleteness(string $caseId, array $fields): array {
 		return $this->incompleteness->record(caseId: $caseId, missing: $fields);

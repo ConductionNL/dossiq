@@ -332,17 +332,6 @@ class StarterStore {
 	 * @return array<string, mixed>|null The array, or null.
 	 */
 	private function asArray(mixed $object): ?array {
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
+		return $this->objectToArrayOrNull(value: $object);
 	}//end asArray()
 }//end class

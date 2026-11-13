@@ -48,7 +48,7 @@ use RuntimeException;
 /**
  * Central role-routing engine.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T02
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T02
  */
 class RoleResolverService {
 	use RefusesWhenIndeterminate;
@@ -141,7 +141,7 @@ class RoleResolverService {
 	 * @throws RefusedException When the case's roles could not be read at all
 	 *
 	 * @spec openspec/specs/role-based-step-routing/spec.md
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function resolve(array $rule, array $case): array {
 		$strategyName = $this->registeredStrategy(rule: $rule);

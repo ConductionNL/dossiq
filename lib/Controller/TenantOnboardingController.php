@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCP\IUserSession;
 /**
  * Onboarding REST controller.
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
  */
 class TenantOnboardingController extends Controller {
 	/**
@@ -64,7 +64,7 @@ class TenantOnboardingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function progress(string $tenantId): JSONResponse {
@@ -84,7 +84,7 @@ class TenantOnboardingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function complete(string $tenantId, string $step): JSONResponse {
@@ -117,7 +117,7 @@ class TenantOnboardingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function activate(string $tenantId): JSONResponse {
@@ -140,7 +140,7 @@ class TenantOnboardingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]

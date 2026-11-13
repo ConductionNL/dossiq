@@ -27,7 +27,7 @@
   ids, with every removed value. The number, the folder, the documents and the roles do not change: this
   is a change of blueprint, not a new case.
 
-  @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+  @spec openspec/specs/zaaktype-versioning/spec.md
   @spec openspec/specs/zaaktype-versioning/spec.md
 -->
 <template>
@@ -192,7 +192,7 @@ export default {
 		 *
 		 * @return {string} The id.
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
@@ -208,7 +208,7 @@ export default {
 		 *
 		 * @return {Array<object>} The options.
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		targetOptions() {
 			return this.targets.map((type) => ({
@@ -227,7 +227,7 @@ export default {
 		 *
 		 * @return {Array<object>} The options.
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		statusOptions() {
 			return (this.preview?.statuses ?? []).map((entry) => ({
@@ -244,7 +244,7 @@ export default {
 		 *
 		 * @return {boolean} True when it may.
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		canConfirm() {
@@ -307,7 +307,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async loadOptions() {
 			this.loading = true
@@ -331,7 +331,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async onTargetChange() {
@@ -362,7 +362,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async loadPreview() {
@@ -405,7 +405,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async confirm() {
@@ -439,7 +439,7 @@ export default {
 		 *
 		 * @return {string} The url.
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		endpoint() {
 			return generateUrl(
@@ -458,7 +458,7 @@ export default {
 		 * @param {object} e The axios error.
 		 * @return {string} The sentence.
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		refusalOf(e) {
 			return (

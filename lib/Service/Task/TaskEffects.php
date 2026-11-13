@@ -45,7 +45,7 @@ use Throwable;
 /**
  * Reads, checks and runs the effects a task declared.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 class TaskEffects {
 
@@ -85,7 +85,7 @@ class TaskEffects {
 	 *
 	 * @return array<int, array<string, mixed>> The effects; empty when it declares none.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function declaredOn(array $task): array {
 		$metadata = ($task['metadata'] ?? []);
@@ -132,7 +132,7 @@ class TaskEffects {
 	 *
 	 * @return array<int, string> The unresolvable types, in declared order.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function unresolved(array $effects): array {
 		$missing = [];
@@ -165,7 +165,7 @@ class TaskEffects {
 	 *
 	 * @return array<int, array{type: string, ran: bool, error: string}> One result per effect.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function run(array $effects, array $case, array $context): array {
 		$results = [];
@@ -249,7 +249,7 @@ class TaskEffects {
 	 *
 	 * @return bool True when the retired runner can run it.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	private function runsRetired(string $type): bool {
 		return $this->retired !== null && in_array($type, $this->retired->runnableTypes(), true) === true;

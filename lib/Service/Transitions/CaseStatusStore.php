@@ -274,42 +274,83 @@ class CaseStatusStore {
 			return null;
 		}
 
+		$query = $this->statusRecordQuery(caseId: $caseId);
+		if ($query === null) {
+			return null;
+		}
+
+		$records = $this->searchStatusRecords(objectService: $objectService, query: $query);
+		if ($records === null) {
+			return null;
+		}
+
+		return $this->recordArrays(records: $records);
+	}//end findStatusRecords()
+
+	/**
+	 * The searchObjects() query for a case's status records, or null when they are not configured.
+	 *
+	 * @param string $caseId Case UUID.
+	 *
+	 * @return array<string, mixed>|null The query.
+	 */
+	private function statusRecordQuery(string $caseId): ?array {
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$recordSchema = $this->settingsService->getConfigValue(key: 'status_record_schema');
 		if ($register === '' || $recordSchema === '') {
 			return null;
 		}
 
+		return [
+			'@self' => [
+				'register' => (int)$register,
+				'schema' => (int)$recordSchema,
+			],
+			'case' => $caseId,
+		];
+	}//end statusRecordQuery()
+
+	/**
+	 * Run the status record search; a failed read is logged and answers null.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param array<string, mixed> $query         The query, its `case` the case UUID.
+	 *
+	 * @return array<int, mixed>|null The records found, or null when the history cannot be read.
+	 */
+	private function searchStatusRecords(object $objectService, array $query): ?array {
 		try {
-			$records = $objectService->searchObjects(
-				[
-					'@self' => [
-						'register' => (int)$register,
-						'schema' => (int)$recordSchema,
-					],
-					'case' => $caseId,
-				],
-			);
+			$records = $objectService->searchObjects($query);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'StatusTransitionService: replay searchObjects failed',
-				['exception' => $e->getMessage(), 'caseId' => $caseId],
+				['exception' => $e->getMessage(), 'caseId' => $query['case']],
 			);
 			return null;
 		}//end try
 
-		$recordList = [];
 		if (is_array($records) === true) {
-			$recordList = $records;
+			return $records;
 		}
 
+		return [];
+	}//end searchStatusRecords()
+
+	/**
+	 * Every record as an array.
+	 *
+	 * @param array<int, mixed> $records The records found.
+	 *
+	 * @return array<int, array<string, mixed>> The records.
+	 */
+	private function recordArrays(array $records): array {
 		$list = [];
-		foreach ($recordList as $record) {
+		foreach ($records as $record) {
 			$list[] = $this->toArray(value: $record);
 		}
 
 		return $list;
-	}//end findStatusRecords()
+	}//end recordArrays()
 
 	/**
 	 * Look up a human-readable status name for the case-detail panel header.
@@ -363,7 +404,7 @@ class CaseStatusStore {
 	 *
 	 * @return string The description, or the empty string.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function lookupStatusDescription(string $statusTypeId): string {
 		return $this->text->forReader(value: ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['description'] ?? ''));

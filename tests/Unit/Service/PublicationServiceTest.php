@@ -63,6 +63,7 @@ interface PublicationObjectServiceStub {
  * Unit tests for PublicationService.
  *
  * @covers \OCA\Dossiq\Service\PublicationService
+ * @uses \OCA\Dossiq\Service\Publication\PublicationDateRule
  */
 class PublicationServiceTest extends TestCase {
 

@@ -251,7 +251,7 @@ class SubstitutionService {
 	 *
 	 * @return array<int, array<string, mixed>> The active substitution records.
 	 *
-	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	public function getActiveSubstitutionsFor(string $userId, ?DateTimeImmutable $date = null): array {
 		$userId = trim($userId);
@@ -333,7 +333,7 @@ class SubstitutionService {
 	 *
 	 * @return array<string, mixed>|null The applicable row, or null.
 	 *
-	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	private function activeRowOn(
 		array $row,

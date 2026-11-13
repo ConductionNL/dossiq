@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\ProcessMining\StatusLabels
  */
 class TransitionMatrixBuilderTest extends TestCase {
 

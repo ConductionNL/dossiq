@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Workflow;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Flow\FlowMigrationSummary;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\ProjectsOntoFlows;
@@ -46,7 +47,7 @@ use Throwable;
  * fires twice from the moment the migration runs. Adopting the flow stays a
  * deliberate act, which is also how the shipped `x-openregister-flows` arrive.
  *
- * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+ * @spec openspec/specs/workflow-definitions-to-flow/spec.md
  */
 class WorkflowTemplateFlowMigrator {
 
@@ -96,21 +97,21 @@ class WorkflowTemplateFlowMigrator {
 	 *
 	 * @return array<string, mixed> The summary.
 	 *
-	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 * @spec openspec/specs/workflow-definitions-to-flow/spec.md
 	 */
 	public function migrate(IUser $user, bool $dryRun): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return $this->emptySummary(note: 'OpenRegister is not available.');
+			return FlowMigrationSummary::empty(note: 'OpenRegister is not available.');
 		}
 
 		$flowService = $this->flowService();
 		if ($flowService === null) {
-			return $this->emptySummary(note: 'OpenRegister exposes no FlowService on this instance.');
+			return FlowMigrationSummary::empty(note: 'OpenRegister exposes no FlowService on this instance.');
 		}
 
 		if (method_exists($objectService, 'runAs') === false) {
-			return $this->emptySummary(note: 'OpenRegister exposes no runAs(); the migration needs an owner for the flows it creates.');
+			return FlowMigrationSummary::empty(note: 'OpenRegister exposes no runAs(); the migration needs an owner for the flows it creates.');
 		}
 
 		return $objectService->runAs(
@@ -120,26 +121,6 @@ class WorkflowTemplateFlowMigrator {
 
 	}//end migrate()
 
-
-	/**
-	 * A summary describing a run that could not start.
-	 *
-	 * @param string $note Why nothing happened.
-	 *
-	 * @return array<string, mixed> The summary.
-	 */
-	private function emptySummary(string $note): array {
-		return [
-			'total' => 0,
-			'created' => 0,
-			'updated' => 0,
-			'skipped' => 0,
-			'failed' => 0,
-			'rows' => [],
-			'note' => $note,
-		];
-
-	}//end emptySummary()
 
 	/**
 	 * Walk every template and project it, inside the acting user's context.
@@ -156,7 +137,7 @@ class WorkflowTemplateFlowMigrator {
 		// template: every template in a pass resolves against the same index.
 		$statusNames = $this->statusNames();
 
-		$summary = $this->emptySummary(note: '');
+		$summary = FlowMigrationSummary::empty(note: '');
 		$summary['total'] = count($templates);
 		unset($summary['note']);
 
@@ -414,7 +395,7 @@ class WorkflowTemplateFlowMigrator {
 	 *
 	 * @return string The status name.
 	 *
-	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 * @spec openspec/specs/workflow-definitions-to-flow/spec.md
 	 */
 	private function statusName(mixed $value, array $names): string {
 		$raw = trim((string)$value);
@@ -446,7 +427,7 @@ class WorkflowTemplateFlowMigrator {
 	 *
 	 * @return array<string, string> uuid => name, empty when unavailable.
 	 *
-	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 * @spec openspec/specs/workflow-definitions-to-flow/spec.md
 	 */
 	private function statusNames(): array {
 		$store = $this->storeFor(schemaKey: 'status_type_schema');

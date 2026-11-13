@@ -56,6 +56,10 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Custody\CustodyMove
+ * @uses \OCA\Dossiq\Service\Custody\CustodyRows
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
+ * @uses \OCA\Dossiq\Service\Custody\StoredInstant
  *
  * @spec openspec/specs/case-management/spec.md
  */

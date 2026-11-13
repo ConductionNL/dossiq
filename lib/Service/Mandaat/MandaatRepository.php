@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
 class MandaatRepository {
 	use SearchesObjects;
@@ -71,7 +71,7 @@ class MandaatRepository {
 	 *
 	 * @throws RuntimeException When the mandaat services are not configured.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function resolveApprovalContext(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -101,7 +101,7 @@ class MandaatRepository {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function activateMandatenForBesluit(
 		object $objectService,
@@ -136,7 +136,7 @@ class MandaatRepository {
 	 *
 	 * @return array<string, string> rolNaam → rolId.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function loadRoleIndex(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -176,7 +176,7 @@ class MandaatRepository {
 	 *
 	 * @return array<string, mixed>|null The prior adopted decision, or null.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function findPriorDecision(string $decisionNumber, ?string $excludeId = null): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -241,7 +241,7 @@ class MandaatRepository {
 	 *
 	 * @return array<int, array<string, mixed>> The besluit's mandaten.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function findMandatenForBesluit(string $decisionId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -272,7 +272,7 @@ class MandaatRepository {
 	 * @return array<string, mixed> The saved object, or the payload when the
 	 *                              save could not be performed.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function save(string $schemaConfigKey, array $object): array {
 		$writer = new ConfiguredSchemaWriter(

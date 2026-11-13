@@ -56,7 +56,7 @@ use OCP\IUserSession;
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 class WidgetVisibilityController extends Controller {
 
@@ -89,7 +89,7 @@ class WidgetVisibilityController extends Controller {
 	 *
 	 * @return JSONResponse `{"visible": {"<widgetId>": bool}}`.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
+	 * @spec openspec/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {

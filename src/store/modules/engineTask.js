@@ -49,7 +49,7 @@ export const FLOW_TASKS_URL = '/apps/openregister/api/flow-tasks'
  * refuses when a required field is empty or a declared effect resolves to
  * nothing. Claiming and the rest are the engine's alone.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export const DOSSIQ_TASKS_URL = '/apps/dossiq/api/case-tasks'
 
@@ -107,14 +107,12 @@ export function isTerminal(task) {
  * @spec openspec/specs/task-management/spec.md
  */
 export function signedDaysUntilDue(task) {
-	if (!task || typeof task !== 'object') {
+	if (!isRow(task)) {
 		return null
 	}
 
 	if (typeof task.daysOverdue === 'number') {
-		// `-0` prints as "0" but fails a `< 0` test, so a task overdue by
-		// less than a day stays a plain zero rather than a negative one.
-		return task.daysOverdue === 0 ? 0 : -task.daysOverdue
+		return negatedOverdue(task.daysOverdue)
 	}
 
 	if (typeof task.daysUntilDue === 'number') {
@@ -133,6 +131,29 @@ const REGISTER_NAMES = [
 	['dueDate', 'dueDate', 'dueAt'],
 	['case', 'case', 'objectUuid'],
 ]
+
+/**
+ * Whether a value is an engine row at all: a non-null object.
+ *
+ * @param {unknown} value The value.
+ * @return {boolean} Whether it is.
+ */
+function isRow(value) {
+	return Boolean(value) && typeof value === 'object'
+}
+
+/**
+ * An overdue count as a negative number of days left.
+ *
+ * `-0` prints as "0" but fails a `< 0` test, so a task overdue by less than
+ * a day stays a plain zero rather than a negative one.
+ *
+ * @param {number} daysOverdue The days the task is overdue.
+ * @return {number} The days left.
+ */
+function negatedOverdue(daysOverdue) {
+	return daysOverdue === 0 ? 0 : -daysOverdue
+}
 
 /**
  * A value as a trimmed string, '' for nothing.
@@ -315,7 +336,7 @@ function engineState(state) {
  * @spec openspec/specs/task-management/spec.md
  */
 export function asTaskRow(row) {
-	if (!row || typeof row !== 'object') {
+	if (!isRow(row)) {
 		return row
 	}
 
@@ -337,6 +358,17 @@ export function asTaskRow(row) {
 	// The other three keep `row.<registerName> ?? row.<engineName>`: unlike
 	// `id`, none of them is emitted by the engine at all, so the register
 	// name is only ever present on a row that already carries it.
+	return withRegisterNames(row)
+}
+
+/**
+ * A copy of an engine row with the register's name added for every value
+ * that resolves to something.
+ *
+ * @param {object} row The engine row.
+ * @return {object} The copy.
+ */
+function withRegisterNames(row) {
 	const mapped = { ...row }
 	for (const [name, first, second] of REGISTER_NAMES) {
 		const value = row[first] ?? row[second]
@@ -344,8 +376,92 @@ export function asTaskRow(row) {
 			mapped[name] = value
 		}
 	}
-
 	return mapped
+}
+
+/**
+ * The text of a failed read: the error's own message.
+ *
+ * @param {unknown} error What the request threw.
+ * @return {string} The text.
+ */
+function readFailure(error) {
+	return error?.message || String(error)
+}
+
+/**
+ * Keep the rows and the datastore total a list read answered.
+ *
+ * @param {object} store The engine task store.
+ * @param {object|undefined} data The list response body.
+ * @return {Array<object>} The rows kept.
+ */
+function keepListedRows(store, data) {
+	store.tasks = (data?.results ?? []).map(asTaskRow)
+	store.total = Number(data?.total ?? store.tasks.length) || 0
+	return store.tasks
+}
+
+/**
+ * Keep the failure of a list read and empty the list.
+ *
+ * @param {object} store The engine task store.
+ * @param {unknown} error What the request threw.
+ * @return {Array<object>} No rows.
+ */
+function clearListedRows(store, error) {
+	store.error = readFailure(error)
+	store.tasks = []
+	store.total = 0
+	return []
+}
+
+/**
+ * Read one task with the store loading, keep it, or keep the failure and
+ * answer null.
+ *
+ * @param {object} store The engine task store.
+ * @param {string} id The engine task uuid, trimmed and not blank.
+ * @return {Promise<object|null>} The task, or null.
+ */
+async function readOneTask(store, id) {
+	store.loading = true
+	store.error = null
+	try {
+		const response = await axios.get(
+			generateUrl(`${FLOW_TASKS_URL}/${encodeURIComponent(id)}`),
+		)
+		return keepReadTask(store, response.data)
+	} catch (error) {
+		return clearReadTask(store, error)
+	} finally {
+		store.loading = false
+	}
+}
+
+/**
+ * Keep the task a read answered, unwrapped from its envelope.
+ *
+ * @param {object} store The engine task store.
+ * @param {object|undefined} data The read response body.
+ * @return {object|null} The task kept.
+ */
+function keepReadTask(store, data) {
+	store.task = asTaskRow(data?.results ?? data ?? null)
+	return store.task
+}
+
+/**
+ * Keep the failure of a task read and forget the task.
+ *
+ * @param {object} store The engine task store.
+ * @param {unknown} error What the request threw.
+ * @return {null} No task.
+ */
+function clearReadTask(store, error) {
+	store.error = readFailure(error)
+	store.task = null
+	return null
 }
 
 export const useEngineTaskStore = defineStore('dossiqEngineTask', {
@@ -383,14 +499,9 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 				const response = await axios.get(generateUrl(FLOW_TASKS_URL), {
 					params,
 				})
-				this.tasks = (response.data?.results ?? []).map(asTaskRow)
-				this.total = Number(response.data?.total ?? this.tasks.length) || 0
-				return this.tasks
+				return keepListedRows(this, response.data)
 			} catch (error) {
-				this.error = error?.message || String(error)
-				this.tasks = []
-				this.total = 0
-				return []
+				return clearListedRows(this, error)
 			} finally {
 				this.loading = false
 			}
@@ -431,28 +542,12 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 		 * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
 		 */
 		async fetch(uuid) {
-			const id = String(uuid ?? '').trim()
+			const id = trimmed(uuid)
 			if (id === '') {
 				return null
 			}
 
-			this.loading = true
-			this.error = null
-			try {
-				const response = await axios.get(
-					generateUrl(`${FLOW_TASKS_URL}/${encodeURIComponent(id)}`),
-				)
-				this.task = asTaskRow(
-					response.data?.results ?? response.data ?? null,
-				)
-				return this.task
-			} catch (error) {
-				this.error = error?.message || String(error)
-				this.task = null
-				return null
-			} finally {
-				this.loading = false
-			}
+			return readOneTask(this, id)
 		},
 
 		/**

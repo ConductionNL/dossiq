@@ -43,7 +43,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -56,6 +56,7 @@ use OCA\Dossiq\Service\Cases\CaseRebindImpact;
 use OCA\Dossiq\Service\Cases\CaseRebindTerms;
 use OCA\Dossiq\Service\Cases\RebindMove;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
+use OCA\Dossiq\Service\CaseType\WorkflowTemplateBinding;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use Psr\Log\LoggerInterface;
@@ -66,7 +67,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseRebindService {
 
@@ -84,6 +85,13 @@ class CaseRebindService {
 	 * @var string
 	 */
 	public const COORDINATOR_GROUP = CaseRebindGate::COORDINATOR_GROUP;
+
+	/**
+	 * Binds a moved case to the workflow template of its new case type.
+	 *
+	 * @var WorkflowTemplateBinding
+	 */
+	private readonly WorkflowTemplateBinding $templates;
 
 	/**
 	 * Constructor.
@@ -111,6 +119,7 @@ class CaseRebindService {
 		private readonly LoggerInterface $logger,
 		private readonly TranslatedText $text,
 	) {
+		$this->templates = new WorkflowTemplateBinding(store: $store);
 	}//end __construct()
 
 	/**
@@ -124,7 +133,7 @@ class CaseRebindService {
 	 *
 	 * @return boolean True when they may.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function mayRebind(string $uid): bool {
 		return $this->gate->mayRebind(uid: $uid);
@@ -144,8 +153,8 @@ class CaseRebindService {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function options(string $caseId): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -180,9 +189,9 @@ class CaseRebindService {
 	 *
 	 * @throws RefusedException When the case or the target cannot be read, or a remap cannot be made.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function preview(
 		string $caseId,
@@ -234,7 +243,7 @@ class CaseRebindService {
 	 *
 	 * @throws RefusedException When the rebind is refused, or a write fails.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function rebind(
@@ -306,37 +315,10 @@ class CaseRebindService {
 	 *
 	 * @return array<string, mixed> The case, re-pinned.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function rebindTemplate(array $case, string $targetCaseTypeId): array {
-		$rows = $this->store->rowsOfType(
-			schemaKey: 'workflow_template_schema',
-			caseTypeId: $targetCaseTypeId
-		);
-
-		$chosen = [];
-		foreach ($rows as $row) {
-			if (($row['isActive'] ?? false) === true) {
-				$chosen = $row;
-				break;
-			}
-
-			if ($chosen === []) {
-				$chosen = $row;
-			}
-		}
-
-		if ($chosen === []) {
-			$case['workflowTemplate'] = null;
-			$case['workflowVersion'] = null;
-
-			return $case;
-		}
-
-		$case['workflowTemplate'] = $this->store->rowId(row: $chosen);
-		$case['workflowVersion'] = (int)($chosen['version'] ?? 1);
-
-		return $case;
+		return $this->templates->bind(case: $case, targetCaseTypeId: $targetCaseTypeId);
 	}//end rebindTemplate()
 
 	/**

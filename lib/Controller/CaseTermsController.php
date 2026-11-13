@@ -29,13 +29,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
@@ -57,12 +58,13 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 class CaseTermsController extends Controller {
 	use TranslatesRefusals;
+	use ReadsJsonRequests;
 
 	/**
 	 * Constructor.
@@ -99,7 +101,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	#[NoAdminRequired]
 	public function index(string $caseId): JSONResponse {
@@ -134,7 +136,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	#[NoAdminRequired]
 	public function citizen(string $caseId): JSONResponse {
@@ -164,7 +166,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	#[NoAdminRequired]
 	public function requestInformation(string $caseId): JSONResponse {
@@ -237,7 +239,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	#[NoAdminRequired]
 	public function receiveInformation(string $caseId): JSONResponse {
@@ -286,7 +288,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	#[NoAdminRequired]
 	public function aanvullingsverzoeken(string $caseId): JSONResponse {
@@ -367,7 +369,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	#[NoAdminRequired]
 	public function workloadAge(): JSONResponse {
@@ -402,7 +404,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the caller may read it.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	private function refuseUnlessMayRead(string $caseId): ?JSONResponse {
 		$user = $this->userSession->getUser();
@@ -430,7 +432,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the caller may change it.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function refuseUnlessMayChange(string $caseId): ?JSONResponse {
 		$user = $this->userSession->getUser();
@@ -498,28 +500,13 @@ class CaseTermsController extends Controller {
 	}//end currentUserId()
 
 	/**
-	 * Decode the JSON request body into an array.
-	 *
-	 * @return array<string, mixed> The body, empty when there is none.
-	 */
-	private function jsonBody(): array {
-		$raw = (string)file_get_contents('php://input');
-		$body = json_decode($raw, true);
-		if (is_array($body) === false) {
-			return [];
-		}
-
-		return $body;
-	}//end jsonBody()
-
-	/**
 	 * workloadAge() on its old address.
 	 *
 	 * Deprecated alias of /api/deadlines/reports/open-workload-age; remove after the next major.
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 *
 	 * @contract exclude Deprecated path alias for workloadAge(); behaviour covered by the workloadAge() tests.
 	 */

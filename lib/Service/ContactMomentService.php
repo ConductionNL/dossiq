@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
  */
 
 declare(strict_types=1);
@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\CastArray;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -39,7 +40,7 @@ use Throwable;
 /**
  * Service for logging KCC contactmomenten and case activity.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
  */
 class ContactMomentService {
 	use SearchesObjects;
@@ -249,7 +250,7 @@ class ContactMomentService {
 	 *
 	 * @return array<int, array<string, mixed>> The contactmoment records.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
 	 */
 	public function listForBurger(string $burgerId, int $limit = 50): array {
 		if ($burgerId === '') {
@@ -307,7 +308,7 @@ class ContactMomentService {
 	 *
 	 * @return bool True on success.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
 	 */
 	public function recordActivity(
 		string $caseId,
@@ -374,7 +375,7 @@ class ContactMomentService {
 	 *
 	 * @throws RuntimeException When the schema is unconfigured or the update fails.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
 	 */
 	public function linkUnlinkedContactmoment(
 		string $interactionId,
@@ -439,18 +440,6 @@ class ContactMomentService {
 	 * @return array<string, mixed> The normalised record.
 	 */
 	private function normalize($result): array {
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		if (is_object($result) === true && method_exists($result, 'jsonSerialize') === true) {
-			return (array)$result->jsonSerialize();
-		}
-
-		if (is_object($result) === true) {
-			return (array)$result;
-		}
-
-		return [];
+		return CastArray::of(value: $result);
 	}//end normalize()
 }//end class

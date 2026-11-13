@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use Throwable;
 /**
  * Places, settles and withdraws the obligations a case is waiting on.
  *
- * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  */
 class ObligationService {
 
@@ -93,7 +93,7 @@ class ObligationService {
 	 *
 	 * @return string The obligation id, or the empty string when it could not be placed.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function place(array $obligation): string {
 		$caseId = trim((string)($obligation['case'] ?? ''));
@@ -117,7 +117,7 @@ class ObligationService {
 	 *
 	 * @return bool True when the obligation was settled.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function meet(string $obligationId, string $note = ''): bool {
 		return $this->close(
@@ -142,7 +142,7 @@ class ObligationService {
 	 *
 	 * @return bool True when the obligation was withdrawn.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function withdraw(string $obligationId, string $reason): bool {
 		return $this->close(
@@ -161,7 +161,7 @@ class ObligationService {
 	 *
 	 * @return array<int, array<string, mixed>> The open obligations.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function openFor(string $caseId): array {
 		$open = [];
@@ -181,7 +181,7 @@ class ObligationService {
 	 *
 	 * @return array<int, array<string, mixed>> The rows, or an empty list.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function allFor(string $caseId): array {
 		if (trim($caseId) === '') {
@@ -235,7 +235,7 @@ class ObligationService {
 	 *
 	 * @return string The obligation id, or the empty string when there is none.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function idForSource(string $source): string {
 		if (trim($source) === '') {
@@ -285,7 +285,7 @@ class ObligationService {
 	 *
 	 * @return array<int, array<string, mixed>> The obligations in the way.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function blocking(string $caseId, string $statusId, bool $isClosing): array {
 		$blocking = [];
@@ -313,7 +313,7 @@ class ObligationService {
 	 *
 	 * @return bool True when the write landed.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	private function close(
 		string $obligationId,
@@ -367,7 +367,7 @@ class ObligationService {
 	 *
 	 * @return string The id, or the empty string when the write failed.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	private function save(array $payload, string $context): string {
 		[$objectService, $register, $schema] = $this->store();
@@ -399,7 +399,7 @@ class ObligationService {
 	 *
 	 * @return array{0: object|null, 1: string, 2: string}
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	private function store(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -419,20 +419,9 @@ class ObligationService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return ($this->objectToArrayOrNull(value: $value) ?? []);
 	}//end toArray()
 }//end class

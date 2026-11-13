@@ -165,17 +165,42 @@ class ZtcCrossReferenceEnricher {
 	 * @return array<string>|null The URLs, or null when the stored list is empty
 	 */
 	private function uuidListUrls(mixed $stored, string $prefix): ?array {
-		$ids = [];
-		if (is_string($stored) === true && $stored !== '') {
-			$ids = json_decode($stored, true);
-		} elseif (is_array($stored) === true) {
-			$ids = $stored;
-		}
-
+		$ids = $this->storedIds(stored: $stored);
 		if (empty($ids) === true) {
 			return null;
 		}
 
+		return $this->prefixedUrls(ids: $ids, prefix: $prefix);
+	}//end uuidListUrls()
+
+	/**
+	 * The uuids a stored list holds: a JSON string decoded, an array as it is, anything else none.
+	 *
+	 * @param mixed $stored The stored list
+	 *
+	 * @return mixed The decoded list
+	 */
+	private function storedIds(mixed $stored): mixed {
+		if (is_string($stored) === true && $stored !== '') {
+			return json_decode($stored, true);
+		}
+
+		if (is_array($stored) === true) {
+			return $stored;
+		}
+
+		return [];
+	}//end storedIds()
+
+	/**
+	 * The URL of every non-empty string uuid in the list.
+	 *
+	 * @param mixed  $ids    The decoded list
+	 * @param string $prefix The URL each uuid is appended to
+	 *
+	 * @return array<string> The URLs
+	 */
+	private function prefixedUrls(mixed $ids, string $prefix): array {
 		$urls = [];
 		foreach ($ids as $id) {
 			if (is_string($id) === true && $id !== '') {
@@ -184,7 +209,7 @@ class ZtcCrossReferenceEnricher {
 		}
 
 		return $urls;
-	}//end uuidListUrls()
+	}//end prefixedUrls()
 
 	/**
 	 * Fill a zaaktype's lists: deelzaaktypen, besluittypen, gerelateerdeZaaktypen,

@@ -459,4 +459,66 @@ class MigrateSubsidieRegelingToCaseTypeTest extends TestCase {
 		$this->assertSame('zaaktype-eigen', $caseType['@self']['slug']);
 		$this->assertArrayNotHasKey('id', $caseType);
 	}
-}
+	/**
+	 * The run reports what it found, skipped and migrated, and reads entity rows through jsonSerialize.
+	 *
+	 * @return void
+	 */
+	public function testTheRunReportsItsCountsAndReadsEntityRows(): void {
+		$entity = new class implements \JsonSerializable {
+			/**
+			 * The row.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function jsonSerialize(): array {
+				return ['schemeName' => 'Entiteitregeling', 'requestTermWeeks' => 0, 'legalBasis' => ''];
+			}
+		};
+		$this->existingCaseTypes = ['Bestaande regeling'];
+
+		[$step, $output] = $this->newStep(schemes: [$entity, ['legalBasis' => 'x'], ['schemeName' => 'Bestaande regeling'], $this->scheme()]);
+		$messages = [];
+		$output->method('info')->willReturnCallback(
+			static function (string $message) use (&$messages): void {
+				$messages[] = 'info: ' . $message;
+			}
+		);
+		$output->method('warning')->willReturnCallback(
+			static function (string $message) use (&$messages): void {
+				$messages[] = 'warning: ' . $message;
+			}
+		);
+
+		$step->run($output);
+
+		$this->assertSame(
+			[
+				'info: Found 4 subsidieregeling(en) to migrate.',
+				'warning: Skipping a subsidieregeling with no schemeName — it cannot become a case type title.',
+				'info: Subsidieregeling migration: 2 migrated, 2 already present or unusable, 4 seen.',
+			],
+			array_values(array_filter($messages, static fn (string $m): bool => str_contains($m, 'subsidieregeling') || str_contains($m, 'Subsidieregeling')))
+		);
+		$caseTypes = $this->caseTypes();
+		$this->assertCount(2, $caseTypes);
+		$this->assertSame('Entiteitregeling', $caseTypes[0]['title']);
+		$this->assertArrayNotHasKey('processingDeadline', $caseTypes[0]);
+		$this->assertArrayNotHasKey('purpose', $caseTypes[0]);
+		$this->assertSame('Innovatiefonds 2026', $caseTypes[1]['title']);
+	}//end testTheRunReportsItsCountsAndReadsEntityRows()
+
+	/**
+	 * A run over no schemes says so and writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testARunOverNoSchemesSaysSo(): void {
+		[$step, $output] = $this->newStep(schemes: []);
+		$output->expects($this->once())->method('info')->with('No subsidieregelingen found — nothing to migrate.');
+
+		$step->run($output);
+
+		$this->assertSame([], $this->caseTypes());
+	}//end testARunOverNoSchemesSaysSo()
+}//end class

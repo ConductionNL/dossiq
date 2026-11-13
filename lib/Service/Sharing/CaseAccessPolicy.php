@@ -95,7 +95,7 @@ class CaseAccessPolicy {
 	 *
 	 * @return bool True when the user may proceed
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function canUserAccessCase(string $caseId, string $userId): bool {
 		// First, and before the case is loaded: an admin needs no assignment,

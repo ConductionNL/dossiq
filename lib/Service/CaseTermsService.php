@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -54,8 +54,8 @@ use Psr\Log\LoggerInterface;
 /**
  * Binding, reading and reporting the four clocks on a case.
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
  * constants and four pure predicates over an array, with no state, no I/O and
@@ -107,7 +107,7 @@ class CaseTermsService {
 	 *
 	 * @return array<int, array<string, mixed>> The instances this call created or moved.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function bindForCase(
@@ -199,7 +199,7 @@ class CaseTermsService {
 	 *
 	 * @return array<string, mixed>|null The instance, or null when no fixed date is declared.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	private function bindStatutory(string $caseId, array $declared, DateTimeImmutable $start): ?array {
 		$fixed = (string)$declared['fixedEndDate'];
@@ -249,7 +249,7 @@ class CaseTermsService {
 	 *
 	 * @return array<string, mixed>|null The instance, or null when nothing is declared.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function bindLeadTime(
 		string $caseId,
@@ -294,7 +294,7 @@ class CaseTermsService {
 	 *
 	 * @return string The end date as `Y-m-d`.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
 	public function endAfter(
@@ -325,7 +325,7 @@ class CaseTermsService {
 	 *               daysLeft: int, overdue: bool, citizenVisible: bool,
 	 *               pauseReason: string, pauseWaitingOn: string, chasesSent: int}>
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function termsForCase(string $caseId, ?DateTimeImmutable $now = null): array {
 		$today = ($now ?? new DateTimeImmutable())->setTime(0, 0);
@@ -387,7 +387,7 @@ class CaseTermsService {
 	 *               termConsumed: int, phaseOverdue: bool, plannedOverdue: bool,
 	 *               statutoryOverdue: bool}
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	public function progressFor(
 		string $caseId,
@@ -443,7 +443,7 @@ class CaseTermsService {
 	 * @return array{case: string, terms: array<int, array<string, mixed>>,
 	 *               progress: array<string, mixed>}
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	public function overviewFor(string $caseId, ?DateTimeImmutable $now = null): array {
 		$context = $this->sources->declarations->caseContext(caseId: $caseId);
@@ -468,7 +468,7 @@ class CaseTermsService {
 	 *
 	 * @return array<int, array<string, mixed>> The statutory term, and nothing else.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function citizenTermsFor(string $caseId, ?DateTimeImmutable $now = null): array {
 		return TermKind::citizenVisible($this->termsForCase(caseId: $caseId, now: $now));

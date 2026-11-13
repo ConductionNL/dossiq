@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
 
 declare(strict_types=1);
@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\CastArray;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -39,7 +40,7 @@ use Throwable;
 /**
  * Routes inbound calls onto available specialists per belplan.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
 class BelplanRoutingService {
 	use SearchesObjects;
@@ -63,7 +64,7 @@ class BelplanRoutingService {
 	 *
 	 * @return array<string, mixed>|null The belplan record, or null when none matches.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function getActiveBelplan(string $phoneNumber): ?array {
 		$phoneNumber = trim($phoneNumber);
@@ -95,7 +96,7 @@ class BelplanRoutingService {
 	 *
 	 * @throws RuntimeException When no belplan matches the dialed number.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function routeCall(string $phoneNumber, string $menuSelection): array {
 		$belplan = $this->getActiveBelplan(phoneNumber: $phoneNumber);
@@ -153,7 +154,7 @@ class BelplanRoutingService {
 	 *
 	 * @return array<int, array<string, mixed>> The availability records.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function getSpecialistBeschikbaarheid(string $vaardigheid = ''): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -313,18 +314,6 @@ class BelplanRoutingService {
 	 * @return array<string, mixed> The normalised record.
 	 */
 	private function toArray($result): array {
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		if (is_object($result) === true && method_exists($result, 'jsonSerialize') === true) {
-			return (array)$result->jsonSerialize();
-		}
-
-		if (is_object($result) === true) {
-			return (array)$result;
-		}
-
-		return [];
+		return CastArray::of(value: $result);
 	}//end toArray()
 }//end class

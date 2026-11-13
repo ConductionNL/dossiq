@@ -34,7 +34,7 @@ use OCP\IRequest;
 /**
  * Public (citizen-facing) endpoints for appointment view/cancel by token.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class PublicAppointmentController extends Controller {
 	/**
@@ -60,7 +60,7 @@ class PublicAppointmentController extends Controller {
 	 * @PublicPage
 	 * @NoCSRFRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function view(string $token): JSONResponse {
@@ -96,7 +96,7 @@ class PublicAppointmentController extends Controller {
 	 * @PublicPage
 	 * @NoCSRFRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function cancel(string $token): JSONResponse {

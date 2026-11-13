@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Service;
 use DomainException;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
@@ -49,7 +50,7 @@ use RuntimeException;
  * {@see InformatieobjectStatusLifecycle}; this service orchestrates the
  * dossier around it.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  */
 class ZaakdossierService {
 	use SearchesObjects;
@@ -100,6 +101,13 @@ class ZaakdossierService {
 	public const KEYWORD_MAX_LENGTH = InformatieobjectMetadataNormaliser::KEYWORD_MAX_LENGTH;
 
 	/**
+	 * The register, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service (config + ObjectService).
@@ -122,6 +130,7 @@ class ZaakdossierService {
 		private readonly DocumentRecordStore $recordStore,
 		private readonly CorrespondentWriter $correspondents,
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -137,7 +146,7 @@ class ZaakdossierService {
 	 *
 	 * @throws \RuntimeException When OpenRegister is unavailable or required fields/config missing.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function uploadDocument(string $caseId, string $fileName, string $content, array $metadata): array {
 		[$objectService, $register] = $this->requireRegister();
@@ -255,7 +264,7 @@ class ZaakdossierService {
 	 *
 	 * @return array<string, mixed> The record to store.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	private function uploadedRecord(
 		string $fileName,
@@ -305,7 +314,7 @@ class ZaakdossierService {
 	 *
 	 * @throws \RuntimeException When OpenRegister is unavailable or config missing.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function linkExistingInformatieobject(string $caseId, string $infoObjectId): array {
 		[$objectService, $register] = $this->requireRegister();
@@ -342,7 +351,7 @@ class ZaakdossierService {
 	 *
 	 * @throws \RuntimeException When OpenRegister is unavailable or config missing.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function unlinkInformatieobject(string $caseId, string $infoObjectId): bool {
 		[$objectService, $register] = $this->requireRegister();
@@ -380,7 +389,7 @@ class ZaakdossierService {
 	 * @throws \RuntimeException When OpenRegister/config is unavailable or status invalid.
 	 * @throws \InvalidArgumentException When the transition is not permitted (caller maps to HTTP 400).
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function transitionStatus(string $infoObjectId, string $newStatus): array {
 		return $this->statusLifecycle->transition(infoObjectId: $infoObjectId, newStatus: $newStatus);
@@ -394,7 +403,7 @@ class ZaakdossierService {
 	 *
 	 * @return bool True when allowed.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function isTransitionAllowed(string $from, string $to): bool {
 		return $this->statusLifecycle->isTransitionAllowed(from: $from, to: $to);
@@ -414,8 +423,8 @@ class ZaakdossierService {
 	 *
 	 * @throws \RuntimeException When OpenRegister is unavailable or config missing.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
 	 */
 	public function getDossierForCase(string $caseId, string $correspondent = ''): array {
 		[$objectService, $register] = $this->requireRegister();
@@ -468,7 +477,7 @@ class ZaakdossierService {
 	 *
 	 * @return array<string, mixed> Grouped structure.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function groupByType(array $documents): array {
 		$groups = [];
@@ -505,7 +514,7 @@ class ZaakdossierService {
 	 *
 	 * @return array<int, array<string, mixed>> Per-id results with `id`, `success`, optional `error`.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function bulkTransitionStatus(array $infoObjectIds, string $newStatus): array {
 		return $this->statusLifecycle->transitionMany(infoObjectIds: $infoObjectIds, newStatus: $newStatus);
@@ -524,7 +533,7 @@ class ZaakdossierService {
 	 * @throws \RuntimeException When OpenRegister/config unavailable or document missing.
 	 * @throws \DomainException When the document is definitief and therefore immutable.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function updateMetadata(string $infoObjectId, array $metadata): array {
 		[$objectService, $register] = $this->requireRegister();
@@ -604,7 +613,7 @@ class ZaakdossierService {
 	 *
 	 * @throws \RuntimeException When OpenRegister/config unavailable.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function getInformatieobject(string $infoObjectId): ?array {
 		[$objectService, $register] = $this->requireRegister();
@@ -625,7 +634,7 @@ class ZaakdossierService {
 	 *
 	 * @return string The default vertrouwelijkheidaanduiding ('intern' fallback).
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function resolveDefaultClassification(string $type): string {
 		$objectService = $this->settingsService->getObjectService();
@@ -689,17 +698,7 @@ class ZaakdossierService {
 	 * @throws \RuntimeException When OpenRegister or the register config is unavailable.
 	 */
 	private function requireRegister(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
+		return $this->dossierRegister->context();
 	}//end requireRegister()
 
 	/**

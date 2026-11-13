@@ -106,7 +106,7 @@ class CaseTypePackageChoice {
 	 *
 	 * @return array<int, array{id: string, title: string, version: string, summary: string, installed: string, onRequest: bool}> The packages.
 	 *
-	 * @spec openspec/changes/marketplace-lists-shipped-packages/specs/dossiq-store-surface/spec.md#requirement-the-marketplace-lists-the-shipped-packages
+	 * @spec openspec/specs/dossiq-store-surface/spec.md#requirement-the-marketplace-lists-the-shipped-packages
 	 */
 	public function shipped(): array {
 		$shipped = [];
@@ -135,7 +135,7 @@ class CaseTypePackageChoice {
 	 *
 	 * @return bool True for a valid on-request package.
 	 *
-	 * @spec openspec/changes/marketplace-lists-shipped-packages/specs/dossiq-store-surface/spec.md#requirement-an-administrator-installs-a-shipped-package
+	 * @spec openspec/specs/dossiq-store-surface/spec.md#requirement-an-administrator-installs-a-shipped-package
 	 */
 	public function isOffered(string $id): bool {
 		return in_array($id, array_column($this->offered(), 'id'), true);

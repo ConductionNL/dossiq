@@ -38,7 +38,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -54,6 +54,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -61,7 +62,7 @@ use RuntimeException;
 /**
  * Raise and clear the attention flag, and read what a case is saying.
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseAttentionController extends Controller {
 
@@ -105,7 +106,7 @@ class CaseAttentionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function state(string $caseId): JSONResponse {
@@ -127,17 +128,13 @@ class CaseAttentionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function raise(string $caseId, string $reason = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return $this->notSignedIn();
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return $this->notYours();
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return $this->answer(
@@ -158,17 +155,13 @@ class CaseAttentionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function clear(string $caseId, string $reason = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return $this->notSignedIn();
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return $this->notYours();
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return $this->answer(
@@ -180,6 +173,26 @@ class CaseAttentionController extends Controller {
 			),
 		);
 	}//end clear()
+
+	/**
+	 * The signed-in user when they may change the case, else the refusal.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return IUser|JSONResponse The user, or 401 without a session user, or 403 without mutation access.
+	 */
+	private function caseMutator(string $caseId): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->notSignedIn();
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return $this->notYours();
+		}
+
+		return $user;
+	}//end caseMutator()
 
 	/**
 	 * Run a gesture and answer it, turning a refusal into its status.

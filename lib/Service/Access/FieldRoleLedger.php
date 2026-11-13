@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ namespace OCA\Dossiq\Service\Access;
 /**
  * Keeps the record of what each case type projects, and merges it onto the properties.
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 class FieldRoleLedger {
 
@@ -79,7 +79,7 @@ class FieldRoleLedger {
 	 *
 	 * @return array<string, mixed> The ledger.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function ledgerWith(array $ledger, string $caseTypeId, array $own): array {
 		if ($caseTypeId === '') {
@@ -115,7 +115,7 @@ class FieldRoleLedger {
 	 *
 	 * @return array<string, mixed> The properties.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function propertiesWith(
 		array $properties,
@@ -185,7 +185,7 @@ class FieldRoleLedger {
 	 *
 	 * @return array<string, array<string, mixed>> The fields to clear.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function withdrawn(array $ledger, array $previous): array {
 		$owned = [];
@@ -219,7 +219,7 @@ class FieldRoleLedger {
 	 *
 	 * @return array<string, mixed> The merged block.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function mergeBlocks(array $current, array $added): array {
 		foreach ($added as $verb => $grants) {

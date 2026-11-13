@@ -57,7 +57,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/inspection-checklists/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-inspection-checklists/tasks.md#T03
  */
 class ChecklistRunImmutabilityListener implements IEventListener {
 	/**

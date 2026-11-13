@@ -42,7 +42,7 @@ use Psr\Container\ContainerInterface;
 /**
  * Resolves the per-task declaration a case's workflow holds for one task.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+ * @spec openspec/specs/process-step-configuration/spec.md
  */
 class TaskDeclarationReader {
 
@@ -82,7 +82,7 @@ class TaskDeclarationReader {
 	 *
 	 * @return array<int, array<string, mixed>> The steps, or an empty list.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function stepsForCase(string $caseId): array {
 		if (trim($caseId) === '') {
@@ -117,7 +117,7 @@ class TaskDeclarationReader {
 	 *
 	 * @return array<string, mixed> The normalised declaration; the unconfigured default when none matches.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function forTask(string $caseId, string $statusTypeId, string $title): array {
 		$step = $this->matching(
@@ -145,7 +145,7 @@ class TaskDeclarationReader {
 	 *
 	 * @return array<string, mixed>|null The step.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function matching(array $steps, string $statusTypeId, string $title): ?array {
 		$wanted = trim($title);
@@ -173,7 +173,7 @@ class TaskDeclarationReader {
 	 *
 	 * @return array<int, array<string, mixed>> The steps.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function stepsOf(array $definition): array {
 		return $this->json->stepsOf(definition: $definition);

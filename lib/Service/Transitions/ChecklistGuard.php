@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
  * evaluator uses. `requiredItems` narrows that corpus to named labels, and a
  * named label the checklist does not carry counts as missing.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T05
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T05
  */
 class ChecklistGuard implements GuardEvaluatorInterface {
 

@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -36,16 +36,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\ProcessMining;
 
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 
 /**
  * Loads and indexes every register the process-mining report reads.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 class ProcessMiningDataLoader {
-	use SearchesObjects;
-
 	/**
 	 * The most records one read loads. A report that receives this many says
 	 * so, since anything past it is missing from its figures.
@@ -55,6 +53,13 @@ class ProcessMiningDataLoader {
 	public const CASE_LIMIT = 2000;
 
 	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Shared settings/OR resolver.
@@ -62,8 +67,9 @@ class ProcessMiningDataLoader {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		SettingsService $settingsService,
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -73,31 +79,15 @@ class ProcessMiningDataLoader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function loadCases(?string $caseTypeFilter): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
 		$filters = ['_limit' => self::CASE_LIMIT];
 		if ($caseTypeFilter !== null && $caseTypeFilter !== '') {
 			$filters['caseType'] = $caseTypeFilter;
 		}
 
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: $filters,
-		);
+		return $this->rows->search(schemaKey: 'case_schema', filters: $filters);
 	}//end loadCases()
 
 	/**
@@ -105,26 +95,10 @@ class ProcessMiningDataLoader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function loadCaseTypes(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_type_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['_limit' => 500],
-		);
+		return $this->rows->search(schemaKey: 'case_type_schema', filters: ['_limit' => 500]);
 	}//end loadCaseTypes()
 
 	/**
@@ -132,26 +106,10 @@ class ProcessMiningDataLoader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function loadStatusTypes(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('status_type_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['_limit' => 500],
-		);
+		return $this->rows->search(schemaKey: 'status_type_schema', filters: ['_limit' => 500]);
 	}//end loadStatusTypes()
 
 	/**
@@ -162,26 +120,10 @@ class ProcessMiningDataLoader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function loadStatusRecords(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('status_record_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['_limit' => 10000],
-		);
+		return $this->rows->search(schemaKey: 'status_record_schema', filters: ['_limit' => 10000]);
 	}//end loadStatusRecords()
 
 	/**
@@ -191,7 +133,7 @@ class ProcessMiningDataLoader {
 	 *
 	 * @return array<string, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function indexById(array $rows): array {
 		$index = [];
@@ -215,7 +157,7 @@ class ProcessMiningDataLoader {
 	 *
 	 * @return array<string, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function indexByIdAndSlug(array $rows): array {
 		$index = [];

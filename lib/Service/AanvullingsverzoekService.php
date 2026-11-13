@@ -40,7 +40,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
@@ -60,7 +60,7 @@ use Throwable;
 /**
  * Asking the applicant, written down as a record that outlives the pause.
  *
- * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 class AanvullingsverzoekService {
 
@@ -136,7 +136,7 @@ class AanvullingsverzoekService {
 	 *
 	 * @throws RefusedException When the act refuses, or the record cannot be written.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function ask(
 		string $caseId,
@@ -467,7 +467,7 @@ class AanvullingsverzoekService {
 	 *
 	 * @return array<string, mixed>|null The request, or null.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function openFor(string $caseId): ?array {
 		foreach ($this->forCase(caseId: $caseId) as $request) {
@@ -486,7 +486,7 @@ class AanvullingsverzoekService {
 	 *
 	 * @return array<int, array<string, mixed>> The requests.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function forCase(string $caseId): array {
 		$caseId = trim($caseId);
@@ -559,7 +559,7 @@ class AanvullingsverzoekService {
 	 *
 	 * @return integer The days, 0 when the moment cannot be read.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function daysOpen(array $request, ?DateTimeImmutable $now = null): int {
 		$sent = trim((string)($request['requestedAt'] ?? ''));
@@ -591,7 +591,7 @@ class AanvullingsverzoekService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function markCaseWaiting(string $caseId, ?string $since): void {
 		[$objectService, $register] = $this->openRegister();
@@ -633,7 +633,7 @@ class AanvullingsverzoekService {
 	 *
 	 * @throws RefusedException When the write fails.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function write(array $request, string $id = ''): array {
 		[$objectService, $register] = $this->openRegister();

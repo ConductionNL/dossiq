@@ -43,6 +43,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\BackgroundJob\AutoCloseOnSilenceJob
  * @covers \OCA\Dossiq\BackgroundJob\PaymentStateProjectionJob
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\BackgroundJob\OpenCaseSweep
  *
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
  */

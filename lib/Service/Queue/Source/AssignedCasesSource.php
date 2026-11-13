@@ -17,7 +17,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use Throwable;
 /**
  * Open cases assigned to the reader.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class AssignedCasesSource extends RegisterBackedSource {
 	/**
@@ -47,7 +47,7 @@ class AssignedCasesSource extends RegisterBackedSource {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		SettingsService $settings,
@@ -62,7 +62,7 @@ class AssignedCasesSource extends RegisterBackedSource {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function name(): string {
 		return 'assigned-cases';
@@ -73,7 +73,7 @@ class AssignedCasesSource extends RegisterBackedSource {
 	 *
 	 * @return string The label.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function label(): string {
 		return $this->l10n->t('Cases assigned to you');
@@ -84,7 +84,7 @@ class AssignedCasesSource extends RegisterBackedSource {
 	 *
 	 * @return string The closing condition.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function closesWhen(): string {
 		return $this->l10n->t('A case leaves when it is closed or goes to somebody else.');
@@ -95,7 +95,7 @@ class AssignedCasesSource extends RegisterBackedSource {
 	 *
 	 * @return array<int, string> The mechanism ids.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function mechanisms(): array {
 		return ['notification:caseAssigned', 'notification:caseHandoffIntake'];
@@ -108,7 +108,7 @@ class AssignedCasesSource extends RegisterBackedSource {
 	 *
 	 * @return array<int, QueueItem> The items.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function itemsFor(string $userId): array {
 		$schema = trim((string)$this->settings->getConfigValue('case_schema', 'case'));
@@ -164,7 +164,7 @@ class AssignedCasesSource extends RegisterBackedSource {
 	 *
 	 * @return array{on: string, since: string, days: int, chases: int}|array{} The facts, empty when none.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function waitingFactsOf(array $row, ?DateTimeImmutable $now = null): array {
 		$party = trim((string)($row['pauseWaitingOn'] ?? ''));

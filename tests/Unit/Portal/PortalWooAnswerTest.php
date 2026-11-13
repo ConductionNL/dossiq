@@ -51,6 +51,9 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
+ * @uses \OCA\Dossiq\Service\AanvullingAnswerRun
+ * @uses \OCA\Dossiq\Service\ItemArrivalMarker
+ * @uses \OCA\Dossiq\Service\RequestWrite
  */
 class PortalWooAnswerTest extends TestCase {
 

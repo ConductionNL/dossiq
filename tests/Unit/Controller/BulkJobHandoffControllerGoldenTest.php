@@ -38,6 +38,7 @@ use Throwable;
  * Every hand-over answer matches the recording.
  *
  * @covers \OCA\Dossiq\Controller\BulkJobHandoffController
+ * @uses \OCA\Dossiq\Service\Bulk\MixedCaseTypeVersionsException
  *
  * @spec openspec/specs/case-bulk-status-transition/spec.md
  */

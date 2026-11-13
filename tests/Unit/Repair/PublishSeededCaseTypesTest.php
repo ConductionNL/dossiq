@@ -112,6 +112,7 @@ class FakePublishCaseTypeObjectService {
  * PublishSeededCaseTypes.
  *
  * @covers \OCA\Dossiq\Repair\PublishSeededCaseTypes
+ * @uses \OCA\Dossiq\Repair\SeededCaseTypePublication
  */
 class PublishSeededCaseTypesTest extends TestCase {
 

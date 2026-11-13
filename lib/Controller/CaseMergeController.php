@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-merge/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use OCP\IUserSession;
 /**
  * Merge one case into another.
  *
- * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+ * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
  */
 class CaseMergeController extends Controller {
 	/**
@@ -99,7 +99,7 @@ class CaseMergeController extends Controller {
 	 *
 	 * @return JSONResponse The merge operation, or the rule that refused it.
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	#[NoAdminRequired]
 	public function merge(string $caseId, string $into = '', string $reason = ''): JSONResponse {
@@ -144,7 +144,7 @@ class CaseMergeController extends Controller {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	private function mayChangeBoth(IUser $user, array $cases): bool {
 		foreach ($cases as $subject) {
@@ -163,7 +163,7 @@ class CaseMergeController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	private function mergeRefused(string $rule): JSONResponse {
 		return new JSONResponse(

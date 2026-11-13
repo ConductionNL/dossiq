@@ -29,7 +29,7 @@ namespace OCA\Dossiq\Service\Transitions;
 /**
  * Immutable value object returned by every GuardEvaluator.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T04
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T04
  */
 final class GuardResult {
 	/**

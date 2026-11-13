@@ -48,6 +48,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\Status\DerivedStatusJournal;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Timeline\StatusDisplayName;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
@@ -67,6 +68,13 @@ use Throwable;
 class DerivedStatusTimelineListener implements IEventListener {
 
 	/**
+	 * The name a status is shown under.
+	 *
+	 * @var StatusDisplayName
+	 */
+	private readonly StatusDisplayName $statusNames;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param DerivedStatusJournal $journal  What the derivation staged this request.
@@ -80,6 +88,7 @@ class DerivedStatusTimelineListener implements IEventListener {
 		private readonly StatusTypeLookup $statuses,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->statusNames = new StatusDisplayName(statuses: $statuses);
 	}//end __construct()
 
 	/**
@@ -233,7 +242,7 @@ class DerivedStatusTimelineListener implements IEventListener {
 	 *
 	 * @return string The public label, or ''.
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	private function publicLabel(string $statusTypeId): string {
 		if ($statusTypeId === '') {
@@ -255,21 +264,7 @@ class DerivedStatusTimelineListener implements IEventListener {
 	 * @return string The name, the id, or '' when nothing was asked for.
 	 */
 	private function statusName(string $statusTypeId): string {
-		if ($statusTypeId === '') {
-			return '';
-		}
-
-		try {
-			$name = trim($this->statuses->nameFor(statusTypeId: $statusTypeId));
-		} catch (Throwable $e) {
-			$name = '';
-		}
-
-		if ($name === '') {
-			return $statusTypeId;
-		}
-
-		return $name;
+		return $this->statusNames->of(statusTypeId: $statusTypeId);
 	}//end statusName()
 
 	/**

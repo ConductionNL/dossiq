@@ -24,7 +24,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+ * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCP\IUser;
 /**
  * Builds the completeness answer of one case.
  *
- * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+ * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
  */
 class CaseCompleteness {
 
@@ -71,7 +71,7 @@ class CaseCompleteness {
 	 *
 	 * @return array<string, mixed>|null The answer (see check()), or null when the case is not found.
 	 *
-	 * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+	 * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
 	 */
 	public function forCase(string $caseId, IUser $user): ?array {
 		$case = $this->cases->loadCase(caseId: $caseId);
@@ -79,12 +79,7 @@ class CaseCompleteness {
 			return null;
 		}
 
-		$caseTypeId = ($case['caseType'] ?? '');
-		if (is_array($caseTypeId) === true) {
-			$caseTypeId = ($caseTypeId['id'] ?? '');
-		}
-
-		$items = $this->itemsOf(caseType: $this->caseTypes->effectiveCaseType(caseTypeId: (string)$caseTypeId));
+		$items = $this->itemsOfCase(case: $case);
 		if ($items === []) {
 			return ['items' => []];
 		}
@@ -106,7 +101,7 @@ class CaseCompleteness {
 	 *
 	 * @return array<int, array<string, string>> The items, malformed ones left out.
 	 *
-	 * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+	 * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
 	 */
 	public function itemsOf(array $caseType): array {
 		$declared = ($caseType[IntakeRequirements::PROPERTY]['completenessItems'] ?? []);
@@ -116,28 +111,80 @@ class CaseCompleteness {
 
 		$items = [];
 		foreach ($declared as $item) {
-			if (is_array($item) === false) {
-				continue;
+			$clean = $this->cleanItem(item: $item);
+			if ($clean !== null) {
+				$items[] = $clean;
 			}
-
-			$key   = trim((string)($item['key'] ?? ''));
-			$label = trim((string)($item['label'] ?? ''));
-			if ($key === '' || $label === '') {
-				continue;
-			}
-
-			$clean = ['key' => $key, 'label' => $label];
-			foreach (['documentType', 'documentTitleContains', 'field', 'evidence'] as $option) {
-				if (is_string($item[$option] ?? null) === true && trim($item[$option]) !== '') {
-					$clean[$option] = trim($item[$option]);
-				}
-			}
-
-			$items[] = $clean;
-		}//end foreach
+		}
 
 		return $items;
 	}//end itemsOf()
+
+	/**
+	 * The declared items of the effective case type of a case.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function itemsOfCase(array $case): array {
+		return $this->itemsOf(caseType: $this->caseTypes->effectiveCaseType(caseTypeId: $this->caseTypeIdOf(case: $case)));
+	}//end itemsOfCase()
+
+	/**
+	 * The case type id of a case, whether stored flat or as a nested object.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return string
+	 */
+	private function caseTypeIdOf(array $case): string {
+		$caseTypeId = ($case['caseType'] ?? '');
+		if (is_array($caseTypeId) === true) {
+			$caseTypeId = ($caseTypeId['id'] ?? '');
+		}
+
+		return (string)$caseTypeId;
+	}//end caseTypeIdOf()
+
+	/**
+	 * One declared item with a trimmed key and label and its usable options, or null when malformed.
+	 *
+	 * @param mixed $item The declared entry.
+	 *
+	 * @return array<string, string>|null
+	 */
+	private function cleanItem(mixed $item): ?array {
+		if (is_array($item) === false) {
+			return null;
+		}
+
+		$key   = trim((string)($item['key'] ?? ''));
+		$label = trim((string)($item['label'] ?? ''));
+		if ($key === '' || $label === '') {
+			return null;
+		}
+
+		return array_merge(['key' => $key, 'label' => $label], $this->itemOptions(item: $item));
+	}//end cleanItem()
+
+	/**
+	 * The non-blank string options of a declared item, trimmed, in their fixed order.
+	 *
+	 * @param array<string, mixed> $item The declared item.
+	 *
+	 * @return array<string, string>
+	 */
+	private function itemOptions(array $item): array {
+		$options = [];
+		foreach (['documentType', 'documentTitleContains', 'field', 'evidence'] as $option) {
+			if (is_string($item[$option] ?? null) === true && trim($item[$option]) !== '') {
+				$options[$option] = trim($item[$option]);
+			}
+		}
+
+		return $options;
+	}//end itemOptions()
 
 	/**
 	 * The completeness answer: each item ticked, the counts and the verdict.
@@ -152,17 +199,14 @@ class CaseCompleteness {
 	 *
 	 * @return array<string, mixed> `{ items, present, total, missing, verdict }`, or `{ items: [] }` without items.
 	 *
-	 * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+	 * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
 	 */
 	public function check(array $items, array $case, array $documents, array $readable): array {
 		if ($items === []) {
 			return ['items' => []];
 		}
 
-		$readableIds = [];
-		foreach ($readable as $document) {
-			$readableIds[] = $this->documentId(document: $document);
-		}
+		$readableIds = $this->documentIds(documents: $readable);
 
 		$rows    = [];
 		$present = 0;
@@ -175,20 +219,48 @@ class CaseCompleteness {
 			$rows[] = $row;
 		}
 
-		$total   = count($rows);
-		$verdict = 'incomplete';
-		if ($present === $total) {
-			$verdict = 'complete';
-		}
+		$total = count($rows);
 
 		return [
 			'items' => $rows,
 			'present' => $present,
 			'total' => $total,
 			'missing' => ($total - $present),
-			'verdict' => $verdict,
+			'verdict' => $this->verdictOf(present: $present, total: $total),
 		];
 	}//end check()
+
+	/**
+	 * The ids of documents.
+	 *
+	 * @param array<int, array<string, mixed>> $documents The documents.
+	 *
+	 * @return array<int, string>
+	 */
+	private function documentIds(array $documents): array {
+		$ids = [];
+		foreach ($documents as $document) {
+			$ids[] = $this->documentId(document: $document);
+		}
+
+		return $ids;
+	}//end documentIds()
+
+	/**
+	 * The verdict: complete when every item is present.
+	 *
+	 * @param int $present How many items are present.
+	 * @param int $total   How many items there are.
+	 *
+	 * @return string `complete` or `incomplete`.
+	 */
+	private function verdictOf(int $present, int $total): string {
+		if ($present === $total) {
+			return 'complete';
+		}
+
+		return 'incomplete';
+	}//end verdictOf()
 
 	/**
 	 * One item, ticked against the documents and then the case field.
@@ -201,35 +273,102 @@ class CaseCompleteness {
 	 * @return array{key: string, label: string, present: bool, evidence: string|null}
 	 */
 	private function tick(array $item, array $case, array $documents, array $readableIds): array {
-		$row = ['key' => $item['key'], 'label' => $item['label'], 'present' => false, 'evidence' => null];
+		$answering = $this->answeringDocuments(item: $item, documents: $documents);
+		if ($answering !== []) {
+			$row = $this->emptyRow(item: $item);
+			$row['present']  = true;
+			$row['evidence'] = $this->readableName(answering: $answering, readableIds: $readableIds);
+			return $row;
+		}
 
+		return $this->fieldRow(item: $item, case: $case);
+	}//end tick()
+
+	/**
+	 * The row of an item that nothing answers yet.
+	 *
+	 * @param array<string, string> $item The item.
+	 *
+	 * @return array{key: string, label: string, present: bool, evidence: string|null}
+	 */
+	private function emptyRow(array $item): array {
+		return ['key' => $item['key'], 'label' => $item['label'], 'present' => false, 'evidence' => null];
+	}//end emptyRow()
+
+	/**
+	 * The documents that answer an item, in their order.
+	 *
+	 * @param array<string, string>            $item      The item.
+	 * @param array<int, array<string, mixed>> $documents Every document of the case.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function answeringDocuments(array $item, array $documents): array {
+		$answering = [];
 		foreach ($documents as $document) {
-			if ($this->documentAnswers(item: $item, document: $document) === false) {
-				continue;
-			}
-
-			$row['present'] = true;
-			if (in_array($this->documentId(document: $document), $readableIds, true) === true) {
-				$row['evidence'] = $this->documentName(document: $document);
-				return $row;
+			if ($this->documentAnswers(item: $item, document: $document) === true) {
+				$answering[] = $document;
 			}
 		}
 
-		if ($row['present'] === true || isset($item['field']) === false) {
+		return $answering;
+	}//end answeringDocuments()
+
+	/**
+	 * The name of the first answering document the reader may read, or null when none is readable.
+	 *
+	 * @param array<int, array<string, mixed>> $answering   The answering documents.
+	 * @param array<int, string>               $readableIds Ids of the documents the reader may read.
+	 *
+	 * @return string|null
+	 */
+	private function readableName(array $answering, array $readableIds): ?string {
+		foreach ($answering as $document) {
+			if (in_array($this->documentId(document: $document), $readableIds, true) === true) {
+				return $this->documentName(document: $document);
+			}
+		}
+
+		return null;
+	}//end readableName()
+
+	/**
+	 * An item ticked against its case field: present when the field carries a value.
+	 *
+	 * @param array<string, string> $item The item.
+	 * @param array<string, mixed>  $case The case.
+	 *
+	 * @return array{key: string, label: string, present: bool, evidence: string|null}
+	 */
+	private function fieldRow(array $item, array $case): array {
+		$row = $this->emptyRow(item: $item);
+		if (isset($item['field']) === false) {
 			return $row;
 		}
 
 		$value = $this->fieldValue(case: $case, path: $item['field']);
 		if ($this->isAnswered(value: $value) === true) {
 			$row['present']  = true;
-			$row['evidence'] = ($item['evidence'] ?? null);
-			if ($row['evidence'] === null && is_scalar($value) === true) {
-				$row['evidence'] = (string)$value;
-			}
+			$row['evidence'] = ($item['evidence'] ?? $this->scalarText(value: $value));
 		}
 
 		return $row;
-	}//end tick()
+	}//end fieldRow()
+
+	/**
+	 * A scalar value as text, or null for a list or object.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return string|null
+	 */
+	private function scalarText(mixed $value): ?string {
+		if (is_scalar($value) === true) {
+			return (string)$value;
+		}
+
+		return null;
+	}//end scalarText()
 
 	/**
 	 * Whether a document answers an item.

@@ -41,7 +41,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 
 declare(strict_types=1);
@@ -60,7 +60,7 @@ use Throwable;
 /**
  * The case-number recognizer and its identifier resolution.
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 class CaseNumberRecognizer {
 
@@ -115,7 +115,7 @@ class CaseNumberRecognizer {
 	 *
 	 * @return string|null The reason it is unusable, or null.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function validatePattern(string $pattern): ?string {
 		if (trim($pattern) === '') {
@@ -153,7 +153,7 @@ class CaseNumberRecognizer {
 	 *
 	 * @return string|null The pattern, or null after logging why it was refused.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function loadPattern(): ?string {
 		$pattern = trim($this->settingsService->getConfigValue(self::PATTERN_KEY));
@@ -181,7 +181,7 @@ class CaseNumberRecognizer {
 	 *
 	 * @return array<int, string> The identifiers captured by group 1.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function extractCaseNumberCandidates(string $text, string $pattern): array {
 		if (trim($text) === '') {
@@ -223,7 +223,7 @@ class CaseNumberRecognizer {
 	 *
 	 * @return array<int, array{uuid: string, identifier: string, registerId: int, schemaId: int}> The cases.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function resolveCases(array $candidates, object $objectService, string $register, string $schema, IUser $owner): array {
 		$cases = [];

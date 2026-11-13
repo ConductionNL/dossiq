@@ -23,7 +23,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+ * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * Cancels a task from the case it is on.
  *
- * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+ * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
  */
 class CaseTaskCancelController extends Controller {
 
@@ -79,7 +79,7 @@ class CaseTaskCancelController extends Controller {
 	 *
 	 * @return JSONResponse `{ cancelled, task }`, or a refusal (409 with a notice when the engine refuses).
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
 	 */
 	#[NoAdminRequired]
 	public function cancel(string $taskId): JSONResponse {
@@ -122,7 +122,7 @@ class CaseTaskCancelController extends Controller {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the caller may cancel the task.
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
 	 */
 	private function refusalFor(?array $task, IUser $user): ?JSONResponse {
 		$caseId = (string)($task['objectUuid'] ?? '');
@@ -147,7 +147,7 @@ class CaseTaskCancelController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
 	 */
 	private function engineRefused(array $task, RuntimeException $e): JSONResponse {
 		[, $why] = array_pad(explode(':', $e->getMessage(), 2), 2, '');

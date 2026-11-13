@@ -27,7 +27,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use Throwable;
 /**
  * Previews and runs the handover of a leaver's work.
  *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 class LeaverHandoverController extends Controller {
 
@@ -66,7 +66,7 @@ class LeaverHandoverController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+	 * @spec openspec/specs/people-on-the-case/spec.md
 	 */
 	public function __construct(
 		string $appName,
@@ -84,7 +84,7 @@ class LeaverHandoverController extends Controller {
 	 *
 	 * @return JSONResponse The preview.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function preview(): JSONResponse {
@@ -112,7 +112,7 @@ class LeaverHandoverController extends Controller {
 	 *
 	 * @return JSONResponse What moved.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function execute(): JSONResponse {
@@ -141,7 +141,7 @@ class LeaverHandoverController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
 	private function incomplete(): JSONResponse {
 		return new JSONResponse(

@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
 class MandaatCsvParser {
 	/**
@@ -84,7 +84,7 @@ class MandaatCsvParser {
 	 *
 	 * @throws RuntimeException When a required column is missing from the header.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function parse(string $csv): array {
 		$lines = preg_split('/\r\n|\n|\r/', trim($csv));
@@ -120,7 +120,7 @@ class MandaatCsvParser {
 	 *
 	 * @return bool True for `1`, `true`, `ja`, `yes` or `y` (case-insensitive).
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function parseBool(string $value): bool {
 		return in_array(strtolower(trim($value)), self::TRUTHY_VALUES, true);
@@ -133,7 +133,7 @@ class MandaatCsvParser {
 	 *
 	 * @return array<int, string> The trimmed, non-empty entries.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function parseList(string $value): array {
 		$value = trim($value);

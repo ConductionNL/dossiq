@@ -73,6 +73,37 @@ final class FoldInspectionChecklistTemplatesTest extends TestCase {
 	}//end testEachSourceFoldsOnceAndAHalfReadableOneIsLeft()
 
 	/**
+	 * A source the store refuses to save is left, logged and reported, and the next one still folds.
+	 *
+	 * @return void
+	 */
+	public function testARefusedSaveIsLeftAndTheNextStillFolds(): void {
+		$store = self::store(
+			[
+				'inspectieChecklist' => [
+					['@self' => ['id' => 'a-1'], 'name' => 'Weigeren', 'status' => 'active', 'items' => []],
+					['@self' => ['id' => 'a-2'], 'name' => 'Fundering', 'status' => 'active', 'items' => []],
+				],
+				'inspectionChecklistTemplate' => [],
+			]
+		);
+		$store->refuse = 'Weigeren';
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with(
+			'Checklist template fold refused',
+			['source' => 'inspectieChecklist/a-1', 'exception' => 'store said no']
+		);
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('warning')->with('Checklist inspectieChecklist/a-1 could not be folded: store said no');
+		$output->expects($this->once())->method('info')->with($this->stringContains('1 folded, 0 already folded, 1 left'));
+
+		(new FoldInspectionChecklistTemplates($this->settings(store: $store), $logger))->run($output);
+
+		$refs = array_map(static fn (array $t): string => $t['legacyRef'], $store->rows['inspectionChecklistTemplate']);
+		$this->assertSame(['inspectieChecklist/a-2'], $refs);
+	}//end testARefusedSaveIsLeftAndTheNextStillFolds()
+
+	/**
 	 * Without OpenRegister the step says so and does nothing.
 	 *
 	 * @return void
@@ -119,6 +150,13 @@ final class FoldInspectionChecklistTemplatesTest extends TestCase {
 			}//end __construct()
 
 			/**
+			 * The name of a template whose save throws, or ''.
+			 *
+			 * @var string
+			 */
+			public string $refuse = '';
+
+			/**
 			 * Run the work.
 			 *
 			 * @param callable $operation The work.
@@ -158,6 +196,10 @@ final class FoldInspectionChecklistTemplatesTest extends TestCase {
 			 */
 			public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): array {
 				unset($register, $uuid);
+				if ($this->refuse !== '' && ($object['name'] ?? '') === $this->refuse) {
+					throw new \RuntimeException('store said no');
+				}
+
 				$this->rows[(string)$schema][] = $object;
 
 				return $object;

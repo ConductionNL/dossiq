@@ -183,7 +183,7 @@ class CaseTransferConsentGate {
 	 *
 	 * @return Outcome|null The outcome, or null to check the recorded consents.
 	 *
-	 * @spec openspec/changes/an-internal-move-whose-case-cannot-be-read-is-refused/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	private function insideOutcome(string $caseId): ?array {
 		try {
@@ -326,7 +326,7 @@ class CaseTransferConsentGate {
 	 *
 	 * @return bool Whether an internal move needs consent too.
 	 *
-	 * @spec openspec/changes/an-internal-move-whose-case-cannot-be-read-is-refused/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function consentRequiredInside(string $caseId): bool {
 		return (($this->insideOutcome(caseId: $caseId)['allowed'] ?? false) === false);
@@ -341,7 +341,7 @@ class CaseTransferConsentGate {
 	 *
 	 * @throws RuntimeException When the case or its case type cannot be read, or the case has none.
 	 *
-	 * @spec openspec/changes/an-internal-move-whose-case-cannot-be-read-is-refused/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	private function readInsideRule(string $caseId): bool {
 		if ($caseId === '') {

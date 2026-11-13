@@ -79,7 +79,7 @@ class TemplateLibraryService {
 	 *
 	 * @return array<int, array<string, mixed>> List of template metadata
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function listTemplates(): array {
 		$templates = [];
@@ -119,7 +119,7 @@ class TemplateLibraryService {
 	 *
 	 * @return array<int, string> File paths, or an empty list when the directory is missing or unreadable.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function templateFiles(): array {
 		if (is_dir($this->templatesDir) === false) {
@@ -158,7 +158,7 @@ class TemplateLibraryService {
 	 *
 	 * @return array<int, string> The notes, blanks and non-strings left out.
 	 *
-	 * @spec openspec/changes/dialogs-answer-what-the-boards-draw/specs/generate-fills-per-template/spec.md#requirement-a-template-carries-notes-for-the-generate-dialog
+	 * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-a-template-carries-notes-for-the-generate-dialog
 	 */
 	private function notesOf(array $data): array {
 		if (isset($data['notes']) === false || is_array($data['notes']) === false) {
@@ -182,7 +182,7 @@ class TemplateLibraryService {
 	 *
 	 * @return array<string, mixed>|null The full template data or null if not found
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function loadTemplate(string $templateId): ?array {
 		foreach ($this->templateFiles() as $file) {
@@ -224,7 +224,7 @@ class TemplateLibraryService {
 	 *
 	 * @throws \RuntimeException If template not found or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function activateTemplate(string $templateId): array {
 		$template = $this->caseTypeTemplate(templateId: $templateId);
@@ -390,7 +390,7 @@ class TemplateLibraryService {
 	 *
 	 * @return string The workflow uuid, or the empty string when the template declares none.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function createWorkflowTemplate(TemplateActivation $activation, array $template): string {
 		$workflow = ($template['workflowTemplate'] ?? null);

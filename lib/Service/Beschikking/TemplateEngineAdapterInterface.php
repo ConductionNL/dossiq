@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T26
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T26
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Dossiq\Service\Beschikking;
 /**
  * Renders a beschikking template (Docudesk) to PDF/A-3.
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T26
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T26
  */
 interface TemplateEngineAdapterInterface {
 	/**
@@ -43,7 +43,7 @@ interface TemplateEngineAdapterInterface {
 	 *
 	 * @return array{format: string, fileId: string, checksumSha256: string, paginas: int} Composition metadata.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T26
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T26
 	 */
 	public function render(string $templateId, array $context): array;
 
@@ -55,7 +55,7 @@ interface TemplateEngineAdapterInterface {
 	 *
 	 * @return array{templateId: string, version: string, effectiveDate: string} The resolved version.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T26
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T26
 	 */
 	public function resolveVersion(string $templateId, string $effectiveDate): array;
 }//end interface

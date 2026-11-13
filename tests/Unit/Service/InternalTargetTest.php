@@ -39,6 +39,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\Term\CaseTermSources
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\CaseTermBinding
  */
 class InternalTargetTest extends TestCase {
 	use BindsTermFixtures;

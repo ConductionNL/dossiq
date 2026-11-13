@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Service\Money;
 /**
  * The fields of one payout to prepare; it never leaves the service that built it.
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
  */
 final class PayoutRequest {
 

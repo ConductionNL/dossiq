@@ -34,7 +34,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use OCP\IL10N;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 class CaseTypeAcknowledgement {
 
@@ -121,7 +121,7 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return array<string, mixed> The declaration, never empty.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function declarationFor(array $caseType): array {
 		$declared = ($caseType['acknowledgement'] ?? null);
@@ -208,7 +208,7 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return boolean TRUE when the duty applies to this case.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function owesAcknowledgement(array $case, array $caseType): bool {
 		$declaration = $this->declarationFor(caseType: $caseType);
@@ -243,7 +243,7 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return boolean TRUE when the message says one is waiting and carries no case content.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function contentStaysOnPlatform(array $caseType): bool {
 		return ($this->declarationFor(caseType: $caseType)['contentOnPlatform'] === true);
@@ -256,7 +256,7 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return boolean TRUE when the case type declares `emailCopy`.
 	 *
-	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
 	public function sendsEmailCopy(array $caseType): bool {
 		return ($this->declarationFor(caseType: $caseType)['emailCopy'] === true);
@@ -275,7 +275,7 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return string The channel slug.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function channelFor(array $case, array $caseType): string {
 		$chosen = trim((string)($case['communicationChannel'] ?? ''));
@@ -293,7 +293,7 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return string A BCP 47 language tag; `nl` unless the case type declares another.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function languageFor(array $caseType): string {
 		return (string)$this->declarationFor(caseType: $caseType)['language'];
@@ -316,7 +316,7 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return array<int, array<string, mixed>> The moments, statutory entry first.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function momentsFor(array $caseType): array {
 		$declaration = $this->declarationFor(caseType: $caseType);
@@ -373,7 +373,7 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return array<int, string> The warnings, empty when nothing is off.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function publicationWarnings(array $caseType): array {
 		$declaration = $this->declarationFor(caseType: $caseType);

@@ -48,7 +48,7 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 /**
  * Puts a case on hold until a date, and takes it off again.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseHoldActs {
 	use LoadsCaseOrRefuses;
@@ -94,7 +94,7 @@ class CaseHoldActs {
 	 * @throws RefusedException When the reason is empty, the date is unreadable,
 	 *                          or the date is not in the future.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function hold(string $caseId, string $reason, string $until): array {
 		$case = $this->load(caseId: $caseId);
@@ -137,7 +137,7 @@ class CaseHoldActs {
 	 *
 	 * @throws RefusedException When the case is not held.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function release(string $caseId, string $reason): array {
 		$case = $this->load(caseId: $caseId);
@@ -168,7 +168,7 @@ class CaseHoldActs {
 	 *
 	 * @return bool True when the wake date is still ahead.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isHeld(array $case): bool {
 		$wake = $this->dates->tryParse(value: ($case[self::UNTIL_FIELD] ?? ''));
@@ -191,7 +191,7 @@ class CaseHoldActs {
 	 *
 	 * @throws RefusedException When it is missing, unreadable, or not ahead.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function wakeDate(string $named): string {
 		if (trim($named) === '') {

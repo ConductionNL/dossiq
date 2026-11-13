@@ -20,7 +20,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Throwable;
  * and coupling rule in the ruleset passes on this class, which is the control:
  * the raw method count is the only measure that reads it as large.
  *
- * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseDateNormaliser {
 	/**
@@ -142,7 +142,7 @@ class CaseDateNormaliser {
 	 *
 	 * @return DateTimeZone The engine calendar zone, the tenant zone, or the fallback.
 	 *
-	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function timeZone(): DateTimeZone {
 		if ($this->zone !== null) {
@@ -178,7 +178,7 @@ class CaseDateNormaliser {
 	 *
 	 * @throws InvalidArgumentException When the value is empty or not an ISO 8601 date.
 	 *
-	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function parse(mixed $value, string $field): DateTimeImmutable {
 		$parsed = $this->tryParse(value: $value);
@@ -204,7 +204,7 @@ class CaseDateNormaliser {
 	 *
 	 * @return DateTimeImmutable|null The parsed moment, or null.
 	 *
-	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function tryParse(mixed $value): ?DateTimeImmutable {
 		$zone = $this->timeZone();
@@ -248,7 +248,7 @@ class CaseDateNormaliser {
 	 *
 	 * @throws InvalidArgumentException When the value is unreadable.
 	 *
-	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function toCalendarDate(mixed $value, string $field): string {
 		return $this->parse(value: $value, field: $field)->format(format: 'Y-m-d');
@@ -261,7 +261,7 @@ class CaseDateNormaliser {
 	 *
 	 * @return string|null The date as `Y-m-d`, or null.
 	 *
-	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function toCalendarDateOrNull(mixed $value): ?string {
 		return $this->tryParse(value: $value)?->format(format: 'Y-m-d');
@@ -277,7 +277,7 @@ class CaseDateNormaliser {
 	 *
 	 * @throws InvalidArgumentException When the value is unreadable.
 	 *
-	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function toMoment(mixed $value, string $field): string {
 		return $this->parse(value: $value, field: $field)->format(format: DateTimeInterface::ATOM);
@@ -295,7 +295,7 @@ class CaseDateNormaliser {
 	 *
 	 * @return DateTimeImmutable The current moment.
 	 *
-	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function now(): DateTimeImmutable {
 		return $this->time->now()->setTimezone($this->timeZone());
@@ -310,7 +310,7 @@ class CaseDateNormaliser {
 	 *
 	 * @return DateTimeImmutable Midnight in the administered zone.
 	 *
-	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function today(): DateTimeImmutable {
 		return $this->now()->setTime(0, 0, 0);
@@ -321,7 +321,7 @@ class CaseDateNormaliser {
 	 *
 	 * @return string The current moment in ATOM form.
 	 *
-	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function nowAsMoment(): string {
 		return $this->now()->format(DateTimeInterface::ATOM);
@@ -332,7 +332,7 @@ class CaseDateNormaliser {
 	 *
 	 * @return string Today as `Y-m-d` in the administered zone.
 	 *
-	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function todayAsCalendarDate(): string {
 		return $this->now()->format('Y-m-d');
@@ -345,7 +345,7 @@ class CaseDateNormaliser {
 	 *
 	 * @return string The date as `Y-m-d` in the administered zone.
 	 *
-	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function formatCalendarDate(DateTimeInterface $moment): string {
 		return DateTimeImmutable::createFromInterface($moment)
@@ -360,7 +360,7 @@ class CaseDateNormaliser {
 	 *
 	 * @return string The moment in ATOM form, in the administered zone.
 	 *
-	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function formatMoment(DateTimeInterface $moment): string {
 		return DateTimeImmutable::createFromInterface($moment)
@@ -380,7 +380,7 @@ class CaseDateNormaliser {
 	 *
 	 * @return DateTimeImmutable Midnight on that day, in the administered zone.
 	 *
-	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function fromParts(int $year, int $month, int $day): DateTimeImmutable {
 		return $this->now()->setDate($year, $month, $day)->setTime(0, 0, 0);
