@@ -79,4 +79,43 @@ class DocumentCaseWriteGuardTest extends TestCase {
 		);
 		self::assertNull(actual: $this->guard()->firstRefused(user: $user, documentIds: ['on-two', 'on-none']));
 	}//end testNamesTheFirstRefusedDocumentOfABatch()
+
+	/**
+	 * Each row carries whether the caller may change every case of its document; a row without an id may not.
+	 *
+	 * @return void
+	 */
+	public function testEveryRowCarriesTheChangeRight(): void {
+		$user = $this->createMock(originalClassName: IUser::class);
+
+		self::assertSame(
+			expected: [
+				['id' => 'on-two', 'titel' => 'A', 'canChangeAccess' => true],
+				['id' => 'also-on-x', 'canChangeAccess' => false],
+				['id' => 'on-none', 'canChangeAccess' => true],
+				['titel' => 'no id', 'canChangeAccess' => false],
+			],
+			actual: $this->guard()->withChangeRight(
+				user: $user,
+				documents: [['id' => 'on-two', 'titel' => 'A'], ['id' => 'also-on-x'], ['id' => 'on-none'], ['titel' => 'no id']]
+			)
+		);
+	}//end testEveryRowCarriesTheChangeRight()
+
+	/**
+	 * A case shared by many rows is asked about once.
+	 *
+	 * @return void
+	 */
+	public function testACaseIsCheckedOncePerListing(): void {
+		$store = $this->createMock(originalClassName: DocumentCaseIds::class);
+		$store->method('caseIdsOf')->willReturn(['case-a']);
+		$uploads = $this->createMock(originalClassName: DossierUploadHandler::class);
+		$uploads->expects(self::once())->method('hasCaseUploadAccess')->with(self::anything(), 'case-a')->willReturn(true);
+		$guard = new DocumentCaseWriteGuard(caseIds: $store, uploads: $uploads);
+
+		$rows = $guard->withChangeRight(user: $this->createMock(originalClassName: IUser::class), documents: [['id' => 'd1'], ['id' => 'd2']]);
+
+		self::assertSame(expected: [true, true], actual: array_column($rows, 'canChangeAccess'));
+	}//end testACaseIsCheckedOncePerListing()
 }//end class
