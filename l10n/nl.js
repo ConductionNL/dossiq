@@ -7362,7 +7362,7 @@ OC.L10N.register(
         "Reference to the case this advice is requested for": "Verwijzing naar de zaak waarvoor dit advies wordt gevraagd",
         "Reference to the case this location is attached to": "Verwijzing naar de zaak waar deze locatie bij hoort",
         "Reference to the case type": "Verwijzing naar het zaaktype",
-        "Reference to the case type this case model belongs to. That caseType's handlingModel MUST be 'cmmn' for this model to be loadable by CaseModelEngine.": "Verwijzing naar het zaaktype waar dit zaakmodel bij hoort. Het handlingModel van dat zaaktype MOET 'cmmn' zijn, anders kan CaseModelEngine dit model niet laden.",
+        "Reference to the case type this case model belongs to. That caseType's handlingModel MUST be 'cmmn' for this model to be projected onto the case plan in OpenRegister when a case starts.": "Verwijzing naar het zaaktype waar dit zaakmodel bij hoort. Het handlingModel van dat zaaktype MOET 'cmmn' zijn, anders wordt dit model bij de start van een zaak niet op het zaakplan in OpenRegister gezet.",
         "Reference to the case type this checklist belongs to": "Verwijzing naar het zaaktype waar deze checklist bij hoort",
         "Reference to the case type this workflow belongs to": "Verwijzing naar het zaaktype waar deze workflow bij hoort",
         "Reference to the checklist item (slug or ID) being answered.": "Verwijzing naar het checklistitem (slug of id) dat wordt beantwoord.",

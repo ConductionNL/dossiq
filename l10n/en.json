@@ -7481,7 +7481,7 @@
         "Reference to the case this advice is requested for": "Reference to the case this advice is requested for",
         "Reference to the case this location is attached to": "Reference to the case this location is attached to",
         "Reference to the case type": "Reference to the case type",
-        "Reference to the case type this case model belongs to. That caseType's handlingModel MUST be 'cmmn' for this model to be loadable by CaseModelEngine.": "Reference to the case type this case model belongs to. That caseType's handlingModel MUST be 'cmmn' for this model to be loadable by CaseModelEngine.",
+        "Reference to the case type this case model belongs to. That caseType's handlingModel MUST be 'cmmn' for this model to be projected onto the case plan in OpenRegister when a case starts.": "Reference to the case type this case model belongs to. That caseType's handlingModel MUST be 'cmmn' for this model to be projected onto the case plan in OpenRegister when a case starts.",
         "Reference to the case type this checklist belongs to": "Reference to the case type this checklist belongs to",
         "Reference to the case type this workflow belongs to": "Reference to the case type this workflow belongs to",
         "Reference to the checklist item (slug or ID) being answered.": "Reference to the checklist item (slug or ID) being answered.",
