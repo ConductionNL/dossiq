@@ -5761,6 +5761,7 @@ OC.L10N.register(
         "No messages yet. Send a message to your case handler below.": "No messages yet. Send a message to your case handler below.",
         "No next action is planned on this case": "No next action is planned on this case",
         "No notice of default has been received": "No notice of default has been received",
+        "No notice of default has been received on this case": "No notice of default has been received on this case",
         "No notifications to set": "No notifications to set",
         "No number yet": "No number yet",
         "No objection recorded on this case": "No objection recorded on this case",
