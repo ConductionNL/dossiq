@@ -6613,6 +6613,42 @@
 						"target": "CrossDomainLookupDialog"
 					},
 					{
+						"id": "request-information",
+						"type": "open-modal",
+						"target": "AanvullingVragenModal",
+						"label": "Ask for missing information",
+						"icon": "FileQuestionOutline",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								},
+								{
+									"field": "isFinalStatus",
+									"op": "neq",
+									"value": true
+								},
+								{
+									"endpoint": "/apps/dossiq/api/case/@objectId/lifecycle",
+									"field": "suspended",
+									"op": "eq",
+									"value": false
+								},
+								{
+									"endpoint": "/apps/dossiq/api/cases/@objectId/aanvullingsverzoeken",
+									"field": "waiting",
+									"op": "eq",
+									"value": false
+								}
+							]
+						}
+					},
+					{
 						"id": "notice-of-default-register",
 						"type": "open-modal",
 						"label": "Register notice of default",

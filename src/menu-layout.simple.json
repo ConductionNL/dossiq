@@ -2114,6 +2114,9 @@
 					"message-applicant": {
 						"group": "Case"
 					},
+					"request-information": {
+						"group": "Case"
+					},
 					"link-object": {
 						"group": "Case"
 					},
@@ -6624,6 +6627,7 @@
 					"case-version-move",
 					"cross-domain-lookup",
 					"message-applicant",
+					"request-information",
 					"remedy-lodge",
 					"start-enforcement",
 					"advice-request",
