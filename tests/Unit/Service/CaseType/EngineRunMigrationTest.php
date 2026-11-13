@@ -270,4 +270,28 @@ class EngineRunMigrationTest extends TestCase {
 			}
 		}
 	}//end testAnAnswerThatDoesNotSayMigratedIsRefused()
+	/**
+	 * OpenRegister without the migration service asks nothing, and says why.
+	 *
+	 * That reason is distinct from "not installed": an instance that HAS
+	 * openregister and still lacks the class is waiting on a release, and the
+	 * container is never asked for a class that does not exist.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 *
+	 * @return void
+	 */
+	public function testOpenRegisterWithoutTheServiceAsksNothing(): void {
+		$this->assertFalse(class_exists(EngineRunMigration::MIGRATION_SERVICE));
+		$container = $this->createMock(ContainerInterface::class);
+		$container->expects($this->never())->method('get');
+		$migration = $this->migration(available: true, container: $container);
+
+		$this->assertSame(
+			['asked' => false, 'migrated' => false, 'reason' => EngineRunMigration::RUN_NOT_MOVED],
+			$migration->migrate('case-1', 'type-2', 'pieter')
+		);
+		$this->assertSame('openregister has not shipped migrate-run-between-versions yet', $migration->reasonFor());
+	}//end testOpenRegisterWithoutTheServiceAsksNothing()
 }//end class
