@@ -45,6 +45,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Deelzaak\SubCaseDeriver
  * @covers \OCA\Dossiq\Service\Deelzaak\SubCaseStore
  * @covers \OCA\Dossiq\Service\Deelzaak\SubCaseLink
+ * @uses   \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses   \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class SubCaseDeriverGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

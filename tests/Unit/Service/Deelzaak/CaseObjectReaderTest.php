@@ -55,6 +55,8 @@ class CaseObjectReaderObjectService {
  * Cases and case types are read from the configured schemas, normalised to arrays.
  *
  * @covers \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
+ * @uses   \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses   \OCA\Dossiq\Service\Support\SerialisedResult
  *
  * @spec openspec/specs/deelzaak-support/spec.md
  */
