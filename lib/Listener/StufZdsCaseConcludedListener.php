@@ -33,8 +33,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\NeedsInputDispatcherInterface;
 use OCA\Dossiq\Notification\Notifier;
-use OCA\Dossiq\Service\Stuf\NeedsInputDispatcher;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -57,10 +57,10 @@ class StufZdsCaseConcludedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param NeedsInputDispatcher $needsInput Notifies the administrators.
+	 * @param NeedsInputDispatcherInterface $needsInput Notifies the administrators.
 	 */
 	public function __construct(
-		private readonly NeedsInputDispatcher $needsInput,
+		private readonly NeedsInputDispatcherInterface $needsInput,
 	) {
 
 	}//end __construct()

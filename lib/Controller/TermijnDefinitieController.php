@@ -44,7 +44,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
 use OCA\Dossiq\Kernel\Contracts\ConfiguredRegistryServiceInterface;
-use OCA\Dossiq\Service\Termijn\TermEndRoll;
+use OCA\Dossiq\Kernel\Contracts\TermEndRollInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -79,7 +79,7 @@ class TermijnDefinitieController extends Controller {
 	 * @param ConfiguredRegistryServiceInterface $registry Generic configured-schema registry CRUD.
 	 * @param LoggerInterface $logger Logger.
 	 * @param CaseDateNormaliserInterface $dates The one date path, which knows the zone.
-	 * @param TermEndRoll $ends The Algemene termijnenwet roll, which knows whether a calendar answers.
+	 * @param TermEndRollInterface $ends The Algemene termijnenwet roll, which knows whether a calendar answers.
 	 *
 	 * @spec openspec/specs/termijn-verification-admin/spec.md
 	 */
@@ -89,7 +89,7 @@ class TermijnDefinitieController extends Controller {
 		private readonly ConfiguredRegistryServiceInterface $registry,
 		private readonly LoggerInterface $logger,
 		private readonly CaseDateNormaliserInterface $dates,
-		private readonly TermEndRoll $ends,
+		private readonly TermEndRollInterface $ends,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

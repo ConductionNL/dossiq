@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email\Filters;
 
+use OCA\Dossiq\Kernel\Contracts\FilterPipelineInterface;
 use OCA\Dossiq\Service\Email\InboundMessage;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  */
-class FilterPipeline {
+class FilterPipeline implements FilterPipelineInterface {
 
 	/**
 	 * The filters, sorted once at construction.

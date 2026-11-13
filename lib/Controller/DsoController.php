@@ -35,9 +35,9 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\JsonRequestBody;
 use OCA\Dossiq\Kernel\Contracts\BeschikkingGenerationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DsoCaseServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DsoDoorsturenNotifierInterface;
+use OCA\Dossiq\Kernel\Contracts\DsoObjectRepositoryInterface;
 use OCA\Dossiq\Kernel\Contracts\SamenwerkverzoekServiceInterface;
-use OCA\Dossiq\Service\Dso\DsoDoorsturenNotifier;
-use OCA\Dossiq\Service\Dso\DsoObjectRepository;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -69,8 +69,8 @@ class DsoController extends Controller {
 	 * @param DsoCaseServiceInterface $dsoCaseService The DSO case service
 	 * @param BeschikkingGenerationServiceInterface $decisionService The beschikking generation service
 	 * @param SamenwerkverzoekServiceInterface $samenwerkService The samenwerkverzoek service
-	 * @param DsoObjectRepository $repository The OpenRegister read collaborator
-	 * @param DsoDoorsturenNotifier $doorsturenNotifier The doorsturen event dispatcher
+	 * @param DsoObjectRepositoryInterface $repository The OpenRegister read collaborator
+	 * @param DsoDoorsturenNotifierInterface $doorsturenNotifier The doorsturen event dispatcher
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger
 	 */
@@ -80,8 +80,8 @@ class DsoController extends Controller {
 		private readonly DsoCaseServiceInterface $dsoCaseService,
 		private readonly BeschikkingGenerationServiceInterface $decisionService,
 		private readonly SamenwerkverzoekServiceInterface $samenwerkService,
-		private readonly DsoObjectRepository $repository,
-		private readonly DsoDoorsturenNotifier $doorsturenNotifier,
+		private readonly DsoObjectRepositoryInterface $repository,
+		private readonly DsoDoorsturenNotifierInterface $doorsturenNotifier,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

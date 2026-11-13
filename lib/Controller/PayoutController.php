@@ -28,9 +28,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\OwningCaseResolverInterface;
 use OCA\Dossiq\Kernel\Contracts\PayoutServiceInterface;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
-use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -53,7 +53,7 @@ class PayoutController extends Controller {
 	 * @param PayoutServiceInterface $payouts Prepares the payout and hands it to finance.
 	 * @param IUserSession $userSession User session.
 	 * @param CaseAccessGuardInterface $caseAccess Per-case authorization guard.
-	 * @param OwningCaseResolver $owningCase Resolves a calculation's owning case.
+	 * @param OwningCaseResolverInterface $owningCase Resolves a calculation's owning case.
 	 */
 	public function __construct(
 		string $appName,
@@ -61,7 +61,7 @@ class PayoutController extends Controller {
 		private readonly PayoutServiceInterface $payouts,
 		private readonly IUserSession $userSession,
 		private readonly CaseAccessGuardInterface $caseAccess,
-		private readonly OwningCaseResolver $owningCase,
+		private readonly OwningCaseResolverInterface $owningCase,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

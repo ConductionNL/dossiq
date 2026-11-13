@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentRedactionServiceInterface;
-use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
+use OCA\Dossiq\Kernel\Contracts\DossierUploadHandlerInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -55,7 +55,7 @@ class DocumentRedactionController extends Controller {
 	 * @param IRequest                 $request     The request.
 	 * @param DocumentRedactionServiceInterface $redactions  The redaction step.
 	 * @param CaseAccessGuardInterface          $caseAccess  Per-case mutation authorization (fails closed).
-	 * @param DossierUploadHandler     $uploads     Reads an uploaded file and refuses executables.
+	 * @param DossierUploadHandlerInterface     $uploads     Reads an uploaded file and refuses executables.
 	 * @param IUserSession             $userSession The signed-in officer.
 	 * @param IL10N                    $l10n        The refusals this controller writes itself.
 	 */
@@ -64,7 +64,7 @@ class DocumentRedactionController extends Controller {
 		IRequest $request,
 		private readonly DocumentRedactionServiceInterface $redactions,
 		private readonly CaseAccessGuardInterface $caseAccess,
-		private readonly DossierUploadHandler $uploads,
+		private readonly DossierUploadHandlerInterface $uploads,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {

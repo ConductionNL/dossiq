@@ -34,9 +34,9 @@ namespace OCA\Dossiq\Repair;
 
 use DateTimeInterface;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseActivityStampInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Activity\CaseActivityStamp;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -213,7 +213,7 @@ class BackfillCaseLastActivity implements IRepairStep {
 	 * @spec openspec/specs/case-last-activity-at/spec.md
 	 */
 	public function dateFor(array $case, DateTimeInterface $now): string {
-		if (trim((string)($case[CaseActivityStamp::FIELD] ?? '')) !== '') {
+		if (trim((string)($case[CaseActivityStampInterface::FIELD] ?? '')) !== '') {
 			return '';
 		}
 
@@ -313,7 +313,7 @@ class BackfillCaseLastActivity implements IRepairStep {
 				register: $run->register,
 				schema: $run->schema,
 				id: $uuid,
-				changes: [CaseActivityStamp::FIELD => $run->todo[$uuid]]
+				changes: [CaseActivityStampInterface::FIELD => $run->todo[$uuid]]
 			);
 			$run->tally['dated']++;
 		} catch (Throwable $e) {

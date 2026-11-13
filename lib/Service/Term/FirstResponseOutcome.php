@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Term;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\FirstResponseOutcomeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
  */
-class FirstResponseOutcome {
+class FirstResponseOutcome implements FirstResponseOutcomeInterface {
 	use SearchesObjects;
 
 	/**

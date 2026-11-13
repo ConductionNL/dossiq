@@ -52,10 +52,10 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\ArchiveRequesterNoticeInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
-use OCA\Dossiq\Service\Lifecycle\ArchiveRequesterNotice;
-use OCA\Dossiq\Service\Lifecycle\CaseActs;
-use OCA\Dossiq\Service\Lifecycle\CaseActsOverview;
+use OCA\Dossiq\Kernel\Contracts\CaseActsInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseActsOverviewInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -94,22 +94,22 @@ class CaseActsController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The HTTP request.
-	 * @param CaseActs $acts Every act on a case, behind one collaborator.
-	 * @param CaseActsOverview $overview The read the menu is drawn from.
+	 * @param CaseActsInterface $acts Every act on a case, behind one collaborator.
+	 * @param CaseActsOverviewInterface $overview The read the menu is drawn from.
 	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization, failing closed.
 	 * @param IUserSession $userSession The current session.
 	 * @param LoggerInterface $logger The logger.
-	 * @param ArchiveRequesterNotice|null $archiveNotice Tells the requester an archived case is completed.
+	 * @param ArchiveRequesterNoticeInterface|null $archiveNotice Tells the requester an archived case is completed.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseActs $acts,
-		private readonly CaseActsOverview $overview,
+		private readonly CaseActsInterface $acts,
+		private readonly CaseActsOverviewInterface $overview,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly ?ArchiveRequesterNotice $archiveNotice = null,
+		private readonly ?ArchiveRequesterNoticeInterface $archiveNotice = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeVersionWindowInterface;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/specs/zaaktype-versioning/spec.md
  */
-class CaseTypeVersionWindow {
+class CaseTypeVersionWindow implements CaseTypeVersionWindowInterface {
 
 	/**
 	 * Constructor.

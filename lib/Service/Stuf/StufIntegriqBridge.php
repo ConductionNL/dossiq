@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Stuf;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\StufIntegriqBridgeInterface;
 use OCP\AppFramework\Http;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
@@ -40,7 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-outbound-stuf-goes-through-integriq
  */
-class StufIntegriqBridge {
+class StufIntegriqBridge implements StufIntegriqBridgeInterface {
 
 	/**
 	 * Integriq's ZDS case command.

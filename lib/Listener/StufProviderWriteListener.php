@@ -35,7 +35,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\ConnectedSystemCaseWriterInterface;
-use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
+use OCA\Dossiq\Kernel\Contracts\StufRegisterAccessInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -51,11 +51,11 @@ class StufProviderWriteListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param StufRegisterAccess        $register The stufEndpoint rows.
+	 * @param StufRegisterAccessInterface        $register The stufEndpoint rows.
 	 * @param ConnectedSystemCaseWriterInterface $writer   Carries out a write as the service account.
 	 */
 	public function __construct(
-		private readonly StufRegisterAccess $register,
+		private readonly StufRegisterAccessInterface $register,
 		private readonly ConnectedSystemCaseWriterInterface $writer,
 	) {
 
@@ -107,7 +107,7 @@ class StufProviderWriteListener implements IEventListener {
 			return null;
 		}
 
-		return $this->register->findOne(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: ['integriqSource' => $sourceId]);
+		return $this->register->findOne(schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT, filters: ['integriqSource' => $sourceId]);
 	}//end endpointOf()
 
 	/**

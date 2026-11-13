@@ -37,8 +37,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseFlowActionsInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseRelationDetailsInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseRelationServiceInterface;
-use OCA\Dossiq\Service\Relation\CaseRelationDetails;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -76,7 +76,7 @@ class CaseRelationController extends Controller {
 	 * @param CaseRelationServiceInterface $caseRelationService Backend service.
 	 * @param IUserSession $userSession Current user session.
 	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
-	 * @param CaseRelationDetails $caseRelationDetails Number, case type, status and handler per related case.
+	 * @param CaseRelationDetailsInterface $caseRelationDetails Number, case type, status and handler per related case.
 	 * @param CaseFlowActionsInterface $flowActions The case's planned follow-ups, listed with `?planned=1`.
 	 */
 	public function __construct(
@@ -84,7 +84,7 @@ class CaseRelationController extends Controller {
 		private readonly CaseRelationServiceInterface $caseRelationService,
 		private readonly IUserSession $userSession,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
-		private readonly CaseRelationDetails $caseRelationDetails,
+		private readonly CaseRelationDetailsInterface $caseRelationDetails,
 		private readonly CaseFlowActionsInterface $flowActions,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

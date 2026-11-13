@@ -37,7 +37,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CitizenLookupGuardInterface;
-use OCA\Dossiq\Service\SociaalDomein\HouseholdCases;
+use OCA\Dossiq\Kernel\Contracts\HouseholdCasesInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -70,7 +70,7 @@ class HouseholdCasesController extends Controller {
 	 * @param ISession           $session     Where this reader's lookups are kept until they sign out.
 	 * @param CaseAccessGuardInterface    $caseAccess  Whether the reader may read a case.
 	 * @param CitizenLookupGuardInterface $sensitive   Whether the reader may see the social domain's sensitive fields.
-	 * @param HouseholdCases     $household   Builds the rows.
+	 * @param HouseholdCasesInterface     $household   Builds the rows.
 	 * @param LoggerInterface    $logger      The logger.
 	 */
 	public function __construct(
@@ -79,7 +79,7 @@ class HouseholdCasesController extends Controller {
 		private readonly ISession $session,
 		private readonly CaseAccessGuardInterface $caseAccess,
 		private readonly CitizenLookupGuardInterface $sensitive,
-		private readonly HouseholdCases $household,
+		private readonly HouseholdCasesInterface $household,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

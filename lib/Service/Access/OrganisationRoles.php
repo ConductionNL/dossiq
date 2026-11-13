@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Kernel\Contracts\OrganisationRolesInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
@@ -36,7 +37,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
  *
  * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md
  */
-class OrganisationRoles {
+class OrganisationRoles implements OrganisationRolesInterface {
 	use SearchesObjects;
 
 	/**

@@ -38,7 +38,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseCustodyChainInterface;
-use OCA\Dossiq\Service\Custody\CaseCustodyQuery;
+use OCA\Dossiq\Kernel\Contracts\CaseCustodyQueryInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -59,7 +59,7 @@ class CaseCustodyController extends Controller {
 	 *
 	 * @param IRequest         $request     The request.
 	 * @param CaseCustodyChainInterface $chain       The chain of holdings.
-	 * @param CaseCustodyQuery $query       The two questions the chain exists for.
+	 * @param CaseCustodyQueryInterface $query       The two questions the chain exists for.
 	 * @param CaseAccessGuardInterface  $accessGuard Per-case authorization, failing closed.
 	 * @param IGroupManager    $groups      The units a caller belongs to.
 	 * @param IUserSession     $userSession The session.
@@ -71,7 +71,7 @@ class CaseCustodyController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly CaseCustodyChainInterface $chain,
-		private readonly CaseCustodyQuery $query,
+		private readonly CaseCustodyQueryInterface $query,
 		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IGroupManager $groups,
 		private readonly IUserSession $userSession,

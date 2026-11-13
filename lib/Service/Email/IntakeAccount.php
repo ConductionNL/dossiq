@@ -38,6 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Email;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\IntakeAccountInterface;
 use OCP\IAppConfig;
 
 /**
@@ -47,7 +48,7 @@ use OCP\IAppConfig;
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  */
-class IntakeAccount {
+class IntakeAccount implements IntakeAccountInterface {
 
 	/**
 	 * The app-config key holding the picked account id.

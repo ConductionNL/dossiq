@@ -46,10 +46,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\Contracts\CasePlanGoalsInterface;
+use OCA\Dossiq\Kernel\Contracts\CasePlanInterventionsInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SociaalDomeinStoreInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
 use OCA\Dossiq\Service\Support\StoredArray;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -209,7 +209,7 @@ class MigrateCasePlanStrings implements IRepairStep {
 
 		foreach ($this->textsOf(plan: $plan, key: 'deploymentTrajectories') as $text) {
 			$this->store->write(
-				schema: CasePlanInterventions::SCHEMA,
+				schema: CasePlanInterventionsInterface::SCHEMA,
 				object: [
 					'plan' => $planId,
 					'title' => $text,
@@ -240,7 +240,7 @@ class MigrateCasePlanStrings implements IRepairStep {
 	 * @return boolean True when it has been migrated.
 	 */
 	private function alreadyMigrated(string $planId): bool {
-		foreach ([CasePlanGoalsInterface::SCHEMA, CasePlanInterventions::SCHEMA] as $schema) {
+		foreach ([CasePlanGoalsInterface::SCHEMA, CasePlanInterventionsInterface::SCHEMA] as $schema) {
 			foreach ($this->store->rows(schema: $schema, filters: ['plan' => $planId]) as $row) {
 				if (trim((string)($row['migratedFrom'] ?? '')) !== '') {
 					return true;

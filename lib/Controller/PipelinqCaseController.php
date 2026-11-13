@@ -45,10 +45,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CorrespondenceLanguageConsumerInterface;
+use OCA\Dossiq\Kernel\Contracts\MilestoneRepositoryInterface;
 use OCA\Dossiq\Kernel\Contracts\PartyKindConsumerInterface;
 use OCA\Dossiq\Kernel\Contracts\PipelinqGatewayInterface;
-use OCA\Dossiq\Service\Milestone\MilestoneRepository;
-use OCA\Dossiq\Service\Pipelinq\CorrespondenceLanguageConsumer;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -75,8 +75,8 @@ class PipelinqCaseController extends Controller {
 	 * @param IRequest                       $request     The HTTP request.
 	 * @param PipelinqGatewayInterface                $gateway     Whether pipelinq is here at all.
 	 * @param PartyKindConsumerInterface              $kinds       The kinds and the per-case-type acceptance.
-	 * @param CorrespondenceLanguageConsumer $languages   The language to write in, with its reason.
-	 * @param MilestoneRepository            $cases       Reads a case's type without the client supplying it.
+	 * @param CorrespondenceLanguageConsumerInterface $languages   The language to write in, with its reason.
+	 * @param MilestoneRepositoryInterface            $cases       Reads a case's type without the client supplying it.
 	 * @param CaseAccessGuardInterface                $access      Per-case authorization (fails closed).
 	 * @param IUserSession                   $userSession The current session.
 	 * @param IL10N                          $l10n        The translations.
@@ -86,8 +86,8 @@ class PipelinqCaseController extends Controller {
 		IRequest $request,
 		private readonly PipelinqGatewayInterface $gateway,
 		private readonly PartyKindConsumerInterface $kinds,
-		private readonly CorrespondenceLanguageConsumer $languages,
-		private readonly MilestoneRepository $cases,
+		private readonly CorrespondenceLanguageConsumerInterface $languages,
+		private readonly MilestoneRepositoryInterface $cases,
 		private readonly CaseAccessGuardInterface $access,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,

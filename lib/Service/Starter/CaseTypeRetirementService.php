@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeRetirementServiceInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeLifecycleState;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -39,7 +40,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
-class CaseTypeRetirementService {
+class CaseTypeRetirementService implements CaseTypeRetirementServiceInterface {
 
 	/**
 	 * The app config key naming the case type schema.

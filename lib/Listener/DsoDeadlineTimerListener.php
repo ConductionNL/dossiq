@@ -31,10 +31,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\DsoDeadlineActsInterface;
 use OCA\Dossiq\Kernel\Contracts\DsoDeadlineTimerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\Dso\DsoDeadlineActs;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -62,13 +62,13 @@ class DsoDeadlineTimerListener implements IEventListener {
 	 *
 	 * @param SettingsServiceInterface  $settingsService Names the case schema.
 	 * @param DsoDeadlineTimerInterface $timer           Arms and cancels the timer.
-	 * @param DsoDeadlineActs  $acts            Marks a case already overdue.
+	 * @param DsoDeadlineActsInterface  $acts            Marks a case already overdue.
 	 * @param LoggerInterface  $logger          Logs a failed sync.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly DsoDeadlineTimerInterface $timer,
-		private readonly DsoDeadlineActs $acts,
+		private readonly DsoDeadlineActsInterface $acts,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

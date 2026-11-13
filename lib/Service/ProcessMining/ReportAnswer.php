@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\ProcessMining;
 
+use OCA\Dossiq\Kernel\Contracts\ReportAnswerInterface;
 use OCA\Dossiq\Service\Csv\CsvWriter;
 use OCP\IL10N;
 
@@ -29,7 +30,7 @@ use OCP\IL10N;
  *
  * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
  */
-final class ReportAnswer {
+final class ReportAnswer implements ReportAnswerInterface {
 
 	/**
 	 * Constructor.

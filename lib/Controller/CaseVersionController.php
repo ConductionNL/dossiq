@@ -44,9 +44,9 @@ use OCA\Dossiq\Controller\Support\CaseCaller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeVersionChainInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeVersionWindowInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseVersionMoveInterface;
-use OCA\Dossiq\Service\CaseType\CaseTypeVersionChain;
-use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -75,9 +75,9 @@ class CaseVersionController extends Controller {
 	 *
 	 * @param string                 $appName        The app name.
 	 * @param IRequest               $request        The request.
-	 * @param CaseTypeVersionChain   $chain          The versions of one case type.
+	 * @param CaseTypeVersionChainInterface   $chain          The versions of one case type.
 	 * @param CaseVersionMoveInterface        $move           What a move would change, and the move.
-	 * @param CaseTypeVersionWindow  $window         When a version starts and stops being offered.
+	 * @param CaseTypeVersionWindowInterface  $window         When a version starts and stops being offered.
 	 * @param CaseAccessGuardInterface        $accessGuard    Per-case authorization, failing closed.
 	 * @param IUserSession           $userSession    The session.
 	 * @param LoggerInterface        $logger         The logger.
@@ -89,9 +89,9 @@ class CaseVersionController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseTypeVersionChain $chain,
+		private readonly CaseTypeVersionChainInterface $chain,
 		private readonly CaseVersionMoveInterface $move,
-		private readonly CaseTypeVersionWindow $window,
+		private readonly CaseTypeVersionWindowInterface $window,
 		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,

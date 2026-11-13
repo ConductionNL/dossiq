@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Access\RolePermissions;
+use OCA\Dossiq\Kernel\Contracts\RolePermissionsInterface;
 use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
@@ -53,11 +53,11 @@ class RolePermissionsInitialStateListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param IInitialState   $initialState The initial state.
-	 * @param RolePermissions $roles        The user's role permissions.
+	 * @param RolePermissionsInterface $roles        The user's role permissions.
 	 */
 	public function __construct(
 		private readonly IInitialState $initialState,
-		private readonly RolePermissions $roles,
+		private readonly RolePermissionsInterface $roles,
 	) {
 	}//end __construct()
 

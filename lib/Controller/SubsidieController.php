@@ -32,8 +32,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SubsidieServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TussenrapportageServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\VaststellingServiceInterface;
 use OCA\Dossiq\Service\Subsidie\BeschikkingService;
-use OCA\Dossiq\Service\Subsidie\VaststellingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -56,7 +56,7 @@ class SubsidieController extends Controller {
 	 * @param SubsidieServiceInterface $subsidyService Core subsidy service.
 	 * @param BeschikkingService $decisionService Grant-decision service.
 	 * @param TussenrapportageServiceInterface $tussenrapportage Interim-report service.
-	 * @param VaststellingService $determinationService Settlement service.
+	 * @param VaststellingServiceInterface $determinationService Settlement service.
 	 * @param IUserSession $userSession The user session.
 	 */
 	public function __construct(
@@ -64,7 +64,7 @@ class SubsidieController extends Controller {
 		private readonly SubsidieServiceInterface $subsidyService,
 		private readonly BeschikkingService $decisionService,
 		private readonly TussenrapportageServiceInterface $tussenrapportage,
-		private readonly VaststellingService $determinationService,
+		private readonly VaststellingServiceInterface $determinationService,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

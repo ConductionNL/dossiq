@@ -44,9 +44,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\RetiredNodeMapInterface;
 use OCA\Dossiq\Kernel\Contracts\RetiredNodeRewriterInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -93,14 +93,14 @@ class RewriteRetiredFlowNodes implements IRepairStep {
 	 *
 	 * @param ContainerInterface  $container       Resolves OpenRegister's flow classes, which may be absent.
 	 * @param SettingsServiceInterface     $settingsService Register, schema and object service.
-	 * @param RetiredNodeMap      $map             The retired-node table.
+	 * @param RetiredNodeMapInterface      $map             The retired-node table.
 	 * @param RetiredNodeRewriterInterface $rewriter        Applies the table to one graph.
 	 * @param LoggerInterface     $logger          Logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly RetiredNodeMap $map,
+		private readonly RetiredNodeMapInterface $map,
 		private readonly RetiredNodeRewriterInterface $rewriter,
 		private readonly LoggerInterface $logger,
 	) {

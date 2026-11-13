@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service;
 use DateTime;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\QuotaGateInterface;
 use OCA\Dossiq\Notification\Notifier;
 use OCP\IL10N;
 use OCP\Notification\IManager as INotificationManager;
@@ -40,7 +41,7 @@ use Throwable;
  *
  * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-a-tenant-past-its-hard-quota-cannot-create-more-req-tq-enf-01
  */
-class QuotaGate {
+class QuotaGate implements QuotaGateInterface {
 	/**
 	 * The quota each counted schema consumes, by schema slug.
 	 *

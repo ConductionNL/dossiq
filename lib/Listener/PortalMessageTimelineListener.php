@@ -49,9 +49,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -105,11 +105,11 @@ class PortalMessageTimelineListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param CaseTimelineInterface             $timeline     The one seam that writes a timeline entry.
-	 * @param ObjectSchemaSlugResolver $slugResolver Resolves a schema id to its slug.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Resolves a schema id to its slug.
 	 */
 	public function __construct(
 		private readonly CaseTimelineInterface $timeline,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 	) {
 	}//end __construct()
 

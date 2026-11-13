@@ -40,9 +40,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
+use OCA\Dossiq\Kernel\Contracts\CollectionLinkQueueInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Intake\CollectionCaseLinks;
-use OCA\Dossiq\Service\Intake\CollectionLinkQueue;
 use OCA\Dossiq\Service\Intake\SystemCaseStore;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
@@ -139,7 +139,7 @@ class WooRequestIntake {
 	 * @param SystemCaseStore|null $cases Writes the case as the system and announces it; the
 	 *                                    container hands it the announcer. A store that cannot
 	 *                                    announce when null.
-	 * @param CollectionLinkQueue|null $linkQueue Links a dossier to its case after the case is
+	 * @param CollectionLinkQueueInterface|null $linkQueue Links a dossier to its case after the case is
 	 *                                            answered (REQ-PSM-002); linked inline when null.
 	 */
 	public function __construct(
@@ -149,7 +149,7 @@ class WooRequestIntake {
 		private readonly ?WooReceivedTerm $receivedTerm = null,
 		private readonly ?WooReceivedAnswers $receivedAnswers = null,
 		?SystemCaseStore $cases = null,
-		private readonly ?CollectionLinkQueue $linkQueue = null,
+		private readonly ?CollectionLinkQueueInterface $linkQueue = null,
 	) {
 		$this->cases       = ($cases ?? new SystemCaseStore(settingsService: $settingsService, logger: $logger));
 		$this->collections = new CollectionCaseLinks(settingsService: $settingsService, urlGenerator: $urlGenerator, logger: $logger);

@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service\Milestone;
 
 use DateTime;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\MilestoneStallActsInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Notification\IManager as INotificationManager;
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class MilestoneStallActs {
+class MilestoneStallActs implements MilestoneStallActsInterface {
 	use SearchesObjects;
 
 	/**

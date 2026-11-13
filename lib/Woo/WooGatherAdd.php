@@ -44,8 +44,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseFileCollectorInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
-use OCA\Dossiq\Service\Zaakdossier\CaseFileCollector;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
@@ -65,7 +65,7 @@ class WooGatherAdd {
 	 *
 	 * @param IRootFolder               $rootFolder  The caller's own files.
 	 * @param DocumentRecordStoreInterface       $store       Records and joins in OpenRegister.
-	 * @param CaseFileCollector         $collector   Writes copied bytes as a document on the case, with provenance.
+	 * @param CaseFileCollectorInterface         $collector   Writes copied bytes as a document on the case, with provenance.
 	 * @param WooSources                $sources     Fetches an integriq hit.
 	 * @param CaseAccessGuardInterface           $accessGuard Whether the caller may read the case a linked document is on.
 	 * @param IL10N                     $l10n        The refusal sentences.
@@ -75,7 +75,7 @@ class WooGatherAdd {
 	public function __construct(
 		private readonly IRootFolder $rootFolder,
 		private readonly DocumentRecordStoreInterface $store,
-		private readonly CaseFileCollector $collector,
+		private readonly CaseFileCollectorInterface $collector,
 		private readonly WooSources $sources,
 		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IL10N $l10n,

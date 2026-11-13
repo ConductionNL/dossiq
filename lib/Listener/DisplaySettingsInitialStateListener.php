@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Settings\SettingValueRules;
+use OCA\Dossiq\Kernel\Contracts\SettingValueRulesInterface;
 use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
@@ -76,7 +76,7 @@ class DisplaySettingsInitialStateListener implements IEventListener {
 		}
 
 		$format = $this->settings->getConfigValue('date_format', self::DEFAULT_DATE_FORMAT);
-		if (in_array($format, SettingValueRules::CHOICES['date_format'], true) === false) {
+		if (in_array($format, SettingValueRulesInterface::CHOICES['date_format'], true) === false) {
 			$format = self::DEFAULT_DATE_FORMAT;
 		}
 

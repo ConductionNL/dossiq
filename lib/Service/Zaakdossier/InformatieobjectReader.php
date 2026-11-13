@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\InformatieobjectReaderInterface;
 use OCA\Dossiq\Review\DocumentVerdicts;
 use OCA\Dossiq\Service\Documents\ScanVerdictReader;
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
@@ -49,7 +50,7 @@ use OCP\IUser;
  *
  * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
-class InformatieobjectReader {
+class InformatieobjectReader implements InformatieobjectReaderInterface {
 	/**
 	 * Constructor.
 	 *

@@ -34,10 +34,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Kernel\Contracts\ProgrammeConsumerInterface;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\Support\ReferenceId;
-use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
@@ -79,14 +79,14 @@ class CaseCompletedSatisfactionListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ObjectSchemaSlugResolver $slugResolver Tells a case from any other object.
-	 * @param CaseTypeReader           $caseTypes    Whether a status closes the case.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Tells a case from any other object.
+	 * @param CaseTypeReaderInterface           $caseTypes    Whether a status closes the case.
 	 * @param ProgrammeConsumerInterface        $pipelinq     The hand-off through the pipelinq seam.
 	 * @param LoggerInterface          $logger       Structured logger.
 	 */
 	public function __construct(
-		private readonly ObjectSchemaSlugResolver $slugResolver,
-		private readonly CaseTypeReader $caseTypes,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
+		private readonly CaseTypeReaderInterface $caseTypes,
 		private readonly ProgrammeConsumerInterface $pipelinq,
 		private readonly LoggerInterface $logger,
 	) {

@@ -23,8 +23,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\Zaakdossier\DeclaredAccessExceptions;
+use OCA\Dossiq\Kernel\Contracts\DeclaredAccessExceptionsInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
@@ -49,15 +49,15 @@ class DeclaredAccessExceptionListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param DeclaredAccessExceptions $exceptions   Applies an exception that is out of step.
-	 * @param ObjectSchemaSlugResolver $slugResolver Resolves a schema id to its slug.
+	 * @param DeclaredAccessExceptionsInterface $exceptions   Applies an exception that is out of step.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Resolves a schema id to its slug.
 	 * @param LoggerInterface          $logger       Where a failure is reported.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly DeclaredAccessExceptions $exceptions,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly DeclaredAccessExceptionsInterface $exceptions,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

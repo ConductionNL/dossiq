@@ -19,8 +19,8 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\ProcessingTimeReportServiceInterface;
-use OCA\Dossiq\Service\Reporting\ReportingAudience;
-use OCA\Dossiq\Service\Reporting\ReportPeriod;
+use OCA\Dossiq\Kernel\Contracts\ReportingAudienceInterface;
+use OCA\Dossiq\Kernel\Contracts\ReportPeriodInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -42,17 +42,17 @@ class ProcessingTimeReportController extends Controller {
 	 *
 	 * @param IRequest                    $request     Inbound request.
 	 * @param ProcessingTimeReportServiceInterface $reports     Builds the report.
-	 * @param ReportPeriod                $periods     Knows the period presets.
+	 * @param ReportPeriodInterface                $periods     Knows the period presets.
 	 * @param IUserSession                $userSession Current user session.
-	 * @param ReportingAudience           $audience    Who may read a figure about every record.
+	 * @param ReportingAudienceInterface           $audience    Who may read a figure about every record.
 	 * @param LoggerInterface             $logger      Records a failed build.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly ProcessingTimeReportServiceInterface $reports,
-		private readonly ReportPeriod $periods,
+		private readonly ReportPeriodInterface $periods,
 		private readonly IUserSession $userSession,
-		private readonly ReportingAudience $audience,
+		private readonly ReportingAudienceInterface $audience,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -72,7 +72,7 @@ class ProcessingTimeReportController extends Controller {
 			return $denied;
 		}
 
-		$period    = $this->request->getParam('period', ReportPeriod::DEFAULT_PRESET);
+		$period    = $this->request->getParam('period', ReportPeriodInterface::DEFAULT_PRESET);
 		$caseType  = $this->request->getParam('caseType');
 		$view      = $this->request->getParam('view');
 		$threshold = $this->request->getParam('threshold', ProcessingTimeReportServiceInterface::DEFAULT_THRESHOLD);
@@ -115,7 +115,7 @@ class ProcessingTimeReportController extends Controller {
 		}
 
 		if ($this->audience->isInAudience(user: $user) === false) {
-			return new JSONResponse(['message' => ReportingAudience::REFUSAL], Http::STATUS_FORBIDDEN);
+			return new JSONResponse(['message' => ReportingAudienceInterface::REFUSAL], Http::STATUS_FORBIDDEN);
 		}
 
 		return null;
@@ -134,7 +134,7 @@ class ProcessingTimeReportController extends Controller {
 	private function badRequest(mixed $period, mixed $caseType, mixed $view, mixed $threshold): ?JSONResponse {
 		$message = null;
 		if ($this->periods->isPreset(preset: $period) === false) {
-			$message = 'period must be one of '.implode(', ', ReportPeriod::PRESETS);
+			$message = 'period must be one of '.implode(', ', ReportPeriodInterface::PRESETS);
 		} else if ($caseType !== null && is_string($caseType) === false) {
 			$message = 'caseType must be a string';
 		} else if ($this->isKnownView(view: $view) === false) {

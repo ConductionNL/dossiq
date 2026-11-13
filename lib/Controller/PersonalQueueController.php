@@ -33,11 +33,11 @@ namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DigestPreferencesInterface;
 use OCA\Dossiq\Kernel\Contracts\PersonalAgendaItemServiceInterface;
-use OCA\Dossiq\Service\Queue\DigestPreferences;
-use OCA\Dossiq\Service\Queue\PersonalQueueService;
-use OCA\Dossiq\Service\Queue\PersonalStageService;
-use OCA\Dossiq\Service\Queue\QueueViewPreferences;
+use OCA\Dossiq\Kernel\Contracts\PersonalQueueServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\PersonalStageServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\QueueViewPreferencesInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -57,11 +57,11 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @param IRequest                  $request     The request.
 	 * @param IUserSession              $userSession The caller.
-	 * @param PersonalQueueService      $queue       The queue itself.
-	 * @param QueueViewPreferences      $view        What the reader changed about their view.
-	 * @param PersonalStageService      $stages      The reader's private labels.
+	 * @param PersonalQueueServiceInterface      $queue       The queue itself.
+	 * @param QueueViewPreferencesInterface      $view        What the reader changed about their view.
+	 * @param PersonalStageServiceInterface      $stages      The reader's private labels.
 	 * @param PersonalAgendaItemServiceInterface $agenda      The reader's own planned items.
-	 * @param DigestPreferences         $digest      When the reader wants their digest.
+	 * @param DigestPreferencesInterface         $digest      When the reader wants their digest.
 	 *
 	 * @return void
 	 *
@@ -70,11 +70,11 @@ class PersonalQueueController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly PersonalQueueService $queue,
-		private readonly QueueViewPreferences $view,
-		private readonly PersonalStageService $stages,
+		private readonly PersonalQueueServiceInterface $queue,
+		private readonly QueueViewPreferencesInterface $view,
+		private readonly PersonalStageServiceInterface $stages,
 		private readonly PersonalAgendaItemServiceInterface $agenda,
-		private readonly DigestPreferences $digest,
+		private readonly DigestPreferencesInterface $digest,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -279,7 +279,7 @@ class PersonalQueueController extends Controller {
 			$this->digest->save(
 				userId: $userId,
 				enabled: ($this->request->getParam('enabled', true) !== false),
-				hour: (int)$this->request->getParam('hour', DigestPreferences::DEFAULT_HOUR)
+				hour: (int)$this->request->getParam('hour', DigestPreferencesInterface::DEFAULT_HOUR)
 			)
 		);
 	}//end saveDigestSettings()

@@ -30,9 +30,9 @@ namespace OCA\Dossiq\Repair;
 
 use DateTime;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZgwMappingServiceInterface;
 use OCA\Dossiq\Repair\Support\DefaultMappingTables;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\ZgwMappingService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -48,14 +48,14 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	/**
 	 * Constructor for LoadDefaultZgwMappings.
 	 *
-	 * @param ZgwMappingService $zgwMappingService The ZGW mapping service
+	 * @param ZgwMappingServiceInterface $zgwMappingService The ZGW mapping service
 	 * @param SettingsServiceInterface $settingsService The settings service
 	 * @param LoggerInterface $logger The logger interface
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly ZgwMappingService $zgwMappingService,
+		private readonly ZgwMappingServiceInterface $zgwMappingService,
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {

@@ -35,9 +35,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\CaseStageDatesServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypePublishServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseTypeResolverInterface;
-use OCA\Dossiq\Service\CaseStageDatesService;
-use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -62,16 +62,16 @@ class CaseTypeController extends Controller {
 	 * @param string                 $appName        The app name.
 	 * @param IRequest               $request        The request.
 	 * @param CaseTypeResolverInterface       $resolver       The effective blueprint of a case type.
-	 * @param CaseTypePublishService $publishService Validates and publishes a draft.
-	 * @param CaseStageDatesService  $stageDates     When one case reached each status.
+	 * @param CaseTypePublishServiceInterface $publishService Validates and publishes a draft.
+	 * @param CaseStageDatesServiceInterface  $stageDates     When one case reached each status.
 	 * @param LoggerInterface        $logger         The logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly CaseTypeResolverInterface $resolver,
-		private readonly CaseTypePublishService $publishService,
-		private readonly CaseStageDatesService $stageDates,
+		private readonly CaseTypePublishServiceInterface $publishService,
+		private readonly CaseStageDatesServiceInterface $stageDates,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
