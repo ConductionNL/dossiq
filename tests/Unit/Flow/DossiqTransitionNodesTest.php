@@ -46,6 +46,7 @@ use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -62,6 +63,7 @@ use UnexpectedValueException;
 #[CoversClass(DossiqTxBesluitvormingPublishNode::class)]
 #[CoversClass(DossiqTxSetCaseAnswerNode::class)]
 #[CoversClass(DossiqTxSendMessageNode::class)]
+#[UsesClass(ActionResult::class)]
 final class DossiqTransitionNodesTest extends TestCase {
 	/**
 	 * Mock l10n that substitutes its parameters.
