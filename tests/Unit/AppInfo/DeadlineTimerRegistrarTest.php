@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\DeadlineTimerRegistrar;
+use OCA\Dossiq\Listener\Registrar\DeadlineTimerRegistrar;
 use OCA\Dossiq\Listener\AdviceTimerFiredListener;
 use OCA\Dossiq\Listener\MilestoneStallTimerListener;
 use OCA\Dossiq\Listener\OneStatutoryTermPerCaseListener;

@@ -29,9 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\ConfiguredAdapter;
-use OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar;
 use OCA\Dossiq\Service\Beschikking\DecisionTemplateEngine;
+use OCA\Dossiq\Service\Registrar\ConfiguredAdapter;
+use OCA\Dossiq\Service\Registrar\SubstitutableAdapterRegistrar;
 use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
@@ -93,16 +93,16 @@ class NotAnAdapter {
 /**
  * The seam resolves what the admin named, and says so when it cannot.
  *
- * @covers \OCA\Dossiq\AppInfo\Registrar\ConfiguredAdapter
+ * @covers \OCA\Dossiq\Service\Registrar\ConfiguredAdapter
  *
- * @covers \OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar
+ * @covers \OCA\Dossiq\Service\Registrar\SubstitutableAdapterRegistrar
  *
  * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter
  * @uses \OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter
  * @uses \OCA\Dossiq\Support\FleetAppId
  * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter
  * @uses \OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter
- * @uses \OCA\Dossiq\AppInfo\Registrar\ConfiguredAdapter
+ * @uses \OCA\Dossiq\Service\Registrar\ConfiguredAdapter
  * @uses \OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice
  */
 class AdapterHonestyTest extends TestCase {

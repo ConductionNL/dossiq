@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar;
 use OCA\Dossiq\Listener\ApplicantTermNoteListener;
 use OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener;
 use OCA\Dossiq\Service\SettingsService;
@@ -43,7 +43,7 @@ use Psr\Log\LoggerInterface;
  * two real listeners in the order they are registered.
  *
  * @covers \OCA\Dossiq\Listener\ApplicantTermNoteListener
- * @covers \OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar
  * @uses   \OCA\Dossiq\Service\Term\ApplicantTermNote
  * @uses   \OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener
  * @uses   \OCA\Dossiq\Service\Termijn\CaseDeadlineMirror
