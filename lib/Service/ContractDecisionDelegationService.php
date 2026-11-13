@@ -66,6 +66,14 @@ class ContractDecisionDelegationService {
 	public const DECISION_TYPE_ADVICE = 'advice';
 
 	/**
+	 * Decision type for the decision on a request for public information,
+	 * raised from the case once every document is assessed.
+	 *
+	 * @spec openspec/changes/dossiq-decisions-to-decidiq/specs/dossiq-decisions-to-decidiq/spec.md#requirement-req-ddtd-001-no-local-decision-authoring
+	 */
+	public const DECISION_TYPE_WOO_DECISION = 'woo-decision';
+
+	/**
 	 * Every spelling of the decision-request event FQN, newest first.
 	 *
 	 * Guarded by class_exists so dossiq stays installable without the decision
