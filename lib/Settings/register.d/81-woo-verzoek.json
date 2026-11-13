@@ -356,6 +356,14 @@
         "id": "3c0f5a00-0000-4000-a000-00000000a001",
         "uuid": "3c0f5a00-0000-4000-a000-00000000a001",
         "identifier": "woo-verzoek",
+        "portalIntake": {
+          "answersAt": "wooRequest",
+          "origin": "portal",
+          "copy": {"onderwerp": "title", "omschrijving": "description"},
+          "party": true,
+          "properties": true,
+          "dossierAnswer": "collectionId"
+        },
         "category": "Transparantie",
         "initialStatus": "3c0f5a00-0000-4000-a000-00000000b001",
         "workflowDefinition": "cb967581-3962-5b61-8106-9f75248ffd82",
