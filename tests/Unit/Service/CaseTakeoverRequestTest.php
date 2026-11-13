@@ -239,14 +239,15 @@ class CaseTakeoverRequestTest extends TestCase {
 	 * The takeover service under test.
 	 *
 	 * @param EngineTaskGateway|null $engine The engine, or the default one.
+	 * @param LoggerInterface|null   $logger The logger, or a silent one.
 	 *
 	 * @return CaseTakeoverRequest The service.
 	 */
-	private function takeovers(?EngineTaskGateway $engine = null): CaseTakeoverRequest {
+	private function takeovers(?EngineTaskGateway $engine = null, ?LoggerInterface $logger = null): CaseTakeoverRequest {
 		return new CaseTakeoverRequest(
 			custody: $this->chain(),
 			tasks: ($engine ?? $this->engine),
-			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			logger: ($logger ?? $this->createMock(originalClassName: LoggerInterface::class)),
 			// A REAL store over the SAME settings double the assertions read
 			// through. Only the wiring line moved when it was split out.
 			store: new TakeoverStore($this->settings(), $this->createMock(originalClassName: LoggerInterface::class)),
@@ -290,4 +291,41 @@ class CaseTakeoverRequestTest extends TestCase {
 
 		return $settings;
 	}//end settings()
+	/**
+	 * An engine that throws is logged, and the request stays on the record without a task.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	public function testAnEngineThatThrowsIsLoggedAndTheRequestKept(): void {
+		$engine = $this->createMock(originalClassName: EngineTaskGateway::class);
+		$engine->method('mirrorImport')->willThrowException(new \RuntimeException('engine down'));
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects(self::once())->method('warning')->with(
+			'Dossiq takeover: the request was recorded but the engine did not take the task',
+			['caseId' => 'case-1', 'exception' => 'engine down'],
+		);
+
+		$record = $this->takeovers(engine: $engine, logger: $logger)->request(
+			caseId: 'case-1',
+			requestedBy: 'sofie',
+			reason: 'Mijn wijk',
+		);
+
+		self::assertSame(['pending', ''], [$record['status'], $record['taskId']]);
+		self::assertCount(1, $this->store->all(schema: 'caseTakeover'));
+	}//end testAnEngineThatThrowsIsLoggedAndTheRequestKept()
+
+	/**
+	 * A blank case id has no requests and reads nothing.
+	 *
+	 * @return void
+	 */
+	public function testABlankCaseHasNoRequests(): void {
+		$takeovers = $this->takeovers();
+		$takeovers->request(caseId: 'case-1', requestedBy: 'sofie', reason: 'Mijn wijk');
+
+		self::assertSame([], $takeovers->onCase(caseId: '  '));
+	}//end testABlankCaseHasNoRequests()
 }//end class
