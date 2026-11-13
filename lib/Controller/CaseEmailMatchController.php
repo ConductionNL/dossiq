@@ -145,7 +145,10 @@ class CaseEmailMatchController extends Controller {
 	public function getInstanceSettings(): JSONResponse {
 		return new JSONResponse(
 			[
-				CaseEmailMatchServiceInterface::INSTANCE_TOGGLE_KEY => $this->settingsService->getConfigValue(CaseEmailMatchServiceInterface::INSTANCE_TOGGLE_KEY, 'no'),
+				CaseEmailMatchServiceInterface::INSTANCE_TOGGLE_KEY => $this->settingsService->getConfigValue(
+					CaseEmailMatchServiceInterface::INSTANCE_TOGGLE_KEY,
+					'no'
+				),
 				CaseNumberRecognizer::PATTERN_KEY => $this->settingsService->getConfigValue(CaseNumberRecognizer::PATTERN_KEY),
 			]
 		);
