@@ -305,15 +305,11 @@ describe('the work instruction', () => {
 })
 
 describe('the Notes tab', () => {
-	it('is the library notes tab, with mentions and the push wired to dossiq', () => {
+	it('is the library notes tab, with mentions wired to dossiq and no note sent away', () => {
 		const notes = find(fullCase, 'case-notes-panel')
 		expect(notes).toMatchObject({ type: 'integration', integrationId: 'notes' })
 		expect(notes.props.mentionUrl).toBe('/apps/dossiq/api/notes/mention')
-		expect(notes.props.noteActions[0]).toMatchObject({
-			id: 'push-to-neighbouring-register',
-			label: 'Send to the neighbouring register',
-			endpoint: '/apps/dossiq/api/cases/{objectId}/notes/push',
-		})
+		expect(notes.props.noteActions).toBeUndefined()
 	})
 })
 

@@ -4354,24 +4354,11 @@
 						"integrationId": "notes",
 						"title": "Notes",
 						"subtitle": "Internal notes, also visible in the history",
-						"_note": "The Notes tab of the case panels: the library notes tab with @mentions posted to dossiq's notification endpoint and the one act dossiq adds to a note, sending it to the neighbouring register (NotePush). The endpoint answers sent, failed, not-sent or no-register with its own sentence. The sidebar Notes tab stays.",
+						"_note": "The Notes tab of the case panels: the library notes tab with @mentions posted to dossiq's notification endpoint. A note is stored by OpenRegister as a comment on the case and stays in dossiq; there is no sync to an external case register. The sidebar Notes tab stays.",
 						"props": {
 							"composer": "button",
 							"noteRows": "authored",
-							"mentionUrl": "/apps/dossiq/api/notes/mention",
-							"noteActions": [
-								{
-									"id": "push-to-neighbouring-register",
-									"label": "Send to the neighbouring register",
-									"icon": "SendOutline",
-									"endpoint": "/apps/dossiq/api/cases/{objectId}/notes/push",
-									"messages": {
-										"sent": "Note sent to the neighbouring register",
-										"failed": "The note could not be sent",
-										"other": "This note stays here"
-									}
-								}
-							]
+							"mentionUrl": "/apps/dossiq/api/notes/mention"
 						}
 					},
 					{
