@@ -483,7 +483,7 @@ describe('the tabs', () => {
 		const strip = tabsOf(simple)
 		const fees = strip.tabs.find((tab) => tab.label === 'Fees and payments')
 		expect(fees.overflow).toBe(true)
-		expect(fees.widgetIds).toEqual(['case-payment-requests', 'case-contract'])
+		expect(fees.widgetIds).toEqual(['case-payment-requests', 'case-contract', 'case-notices-of-default'])
 		expect(strip.tabs.find((tab) => tab.label === 'Merge into one PDF').widgetId).toBe('case-merge-to-pdf')
 		const overview = strip.tabs.find((tab) => tab.label === 'Overview').widgetIds
 		expect(overview.indexOf('goal-plan')).toBe(overview.indexOf('case-household-cases-card') + 1)
@@ -568,6 +568,8 @@ describe('the tabs', () => {
 		added.push('case-grant-decisions-card')
 		added.push('case-payment-schedule')
 		added.push('case-overview-sections')
+		// notice-of-default-from-the-case: the case's notices of default, a card of the Fees tab.
+		added.push('case-notices-of-default')
 		expect(others(simple)).toEqual(others(original))
 		expect(find(simple, 'case-banner-stack')).toEqual({ ...find(original, 'case-banner-stack'), title: 'Status', _note: expect.any(String) })
 		// Its attention strip asks the reason behind one button, with the board's hint.
