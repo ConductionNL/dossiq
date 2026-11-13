@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentProjectionServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
@@ -39,7 +40,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/document-projection/spec.md
  */
-class DocumentProjectionService {
+class DocumentProjectionService implements DocumentProjectionServiceInterface {
 
 	use SearchesObjects;
 

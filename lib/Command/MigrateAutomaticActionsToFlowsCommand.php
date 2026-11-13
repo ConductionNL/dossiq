@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\Actions\AutomaticActionFlowMigrator;
+use OCA\Dossiq\Kernel\Contracts\AutomaticActionFlowMigratorInterface;
 use OCP\IUser;
 use OCP\IUserManager;
 use Symfony\Component\Console\Command\Command;
@@ -46,11 +46,11 @@ class MigrateAutomaticActionsToFlowsCommand extends Command {
 	/**
 	 * Wire the command against the migrator.
 	 *
-	 * @param AutomaticActionFlowMigrator $migrator The migrator.
+	 * @param AutomaticActionFlowMigratorInterface $migrator The migrator.
 	 * @param IUserManager $userManager Resolves the acting user.
 	 */
 	public function __construct(
-		private readonly AutomaticActionFlowMigrator $migrator,
+		private readonly AutomaticActionFlowMigratorInterface $migrator,
 		private readonly IUserManager $userManager,
 	) {
 		parent::__construct();

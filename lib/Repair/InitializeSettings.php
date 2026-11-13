@@ -26,9 +26,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\Access\CaseTeamAccessProjector;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -42,7 +42,7 @@ class InitializeSettings implements IRepairStep {
 	/**
 	 * Constructor for InitializeSettings.
 	 *
-	 * @param SettingsService         $settingsService The settings service
+	 * @param SettingsServiceInterface         $settingsService The settings service
 	 * @param CaseFieldRoleProjector  $fieldRoles     Puts the per-role field rules back after an import
 	 * @param CaseTeamAccessProjector $teamAccess     Puts the handling team rules back after an import
 	 * @param LoggerInterface         $logger The logger interface
@@ -50,7 +50,7 @@ class InitializeSettings implements IRepairStep {
 	 * @return void
 	 */
 	public function __construct(
-		private SettingsService $settingsService,
+		private SettingsServiceInterface $settingsService,
 		private CaseFieldRoleProjector $fieldRoles,
 		private CaseTeamAccessProjector $teamAccess,
 		private LoggerInterface $logger,

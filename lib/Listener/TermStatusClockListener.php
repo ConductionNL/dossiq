@@ -33,9 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ReferencedUuid;
 use OCA\Dossiq\Service\Term\TermStatusClock;
 use OCP\EventDispatcher\Event;
@@ -54,12 +54,12 @@ class TermStatusClockListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Schema ids.
+	 * @param SettingsServiceInterface $settingsService Schema ids.
 	 * @param TermStatusClock $clock           Suspends and resumes the timer.
 	 * @param LoggerInterface $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly TermStatusClock $clock,
 		private readonly LoggerInterface $logger,
 	) {

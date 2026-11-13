@@ -31,10 +31,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Inspection\InspectionRunCarryOver;
 use OCA\Dossiq\Service\Inspection\InspectionRunService;
 use OCA\Dossiq\Service\Inspection\InspectionTemplateMapper;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineInboxQuery;
 use OCP\Migration\IOutput;
@@ -88,12 +88,12 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService Bridge to OpenRegister and config.
+	 * @param SettingsServiceInterface  $settingsService Bridge to OpenRegister and config.
 	 * @param EngineInboxQuery $inbox           The task inbox read.
 	 * @param LoggerInterface  $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly EngineInboxQuery $inbox,
 		private readonly LoggerInterface $logger,
 	) {

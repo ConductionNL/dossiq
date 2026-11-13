@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\TenantBillingService;
+use OCA\Dossiq\Kernel\Contracts\TenantBillingServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -48,11 +48,11 @@ class TenantBillingController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest             $request        HTTP request.
-	 * @param TenantBillingService $billingService Tenant billing service.
+	 * @param TenantBillingServiceInterface $billingService Tenant billing service.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly TenantBillingService $billingService,
+		private readonly TenantBillingServiceInterface $billingService,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

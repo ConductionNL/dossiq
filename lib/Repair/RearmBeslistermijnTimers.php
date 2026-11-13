@@ -32,12 +32,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
-use OCA\Dossiq\Service\TermijnService;
-use OCA\Dossiq\Service\TermijnTimerService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -66,16 +66,16 @@ class RearmBeslistermijnTimers implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService     $settingsService Settings and ObjectService access.
-	 * @param TermijnService      $termService     Writes the new timer id and the mark.
-	 * @param TermijnTimerService $timerService    Cancels and arms the engine timer.
+	 * @param SettingsServiceInterface     $settingsService Settings and ObjectService access.
+	 * @param TermijnServiceInterface      $termService     Writes the new timer id and the mark.
+	 * @param TermijnTimerServiceInterface $timerService    Cancels and arms the engine timer.
 	 * @param CaseDeadlineMirror  $mirror          Which terms are statutory.
 	 * @param LoggerInterface     $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly TermijnService $termService,
-		private readonly TermijnTimerService $timerService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly TermijnServiceInterface $termService,
+		private readonly TermijnTimerServiceInterface $timerService,
 		private readonly CaseDeadlineMirror $mirror,
 		private readonly LoggerInterface $logger,
 	) {

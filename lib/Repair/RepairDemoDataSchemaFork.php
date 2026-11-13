@@ -68,7 +68,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\Migration\IOutput;
@@ -127,13 +127,13 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 	 *
 	 * @param IAppManager        $appManager Tells whether OpenRegister is installed.
 	 * @param ContainerInterface $container  Resolves OpenRegister's mappers and services.
-	 * @param SettingsService    $settings   Resolves the ObjectService for the system elevation.
+	 * @param SettingsServiceInterface    $settings   Resolves the ObjectService for the system elevation.
 	 * @param LoggerInterface    $logger     Records what was retired and what was spared.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

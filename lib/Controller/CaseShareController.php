@@ -29,9 +29,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseLinkSharesInterface;
 use OCA\Dossiq\Service\Notice\CaseActNotices;
-use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\Sharing\CaseShareList;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -51,9 +51,9 @@ class CaseShareController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest        $request     The request.
-	 * @param CaseAccessGuard $caseAccess  Whether the caller may read the case.
+	 * @param CaseAccessGuardInterface $caseAccess  Whether the caller may read the case.
 	 * @param CaseShareList   $shares      The share rows.
-	 * @param CaseLinkShares  $linkShares  Whether a link is the case's, and revokes it.
+	 * @param CaseLinkSharesInterface  $linkShares  Whether a link is the case's, and revokes it.
 	 * @param IUserSession    $userSession The caller.
 	 * @param CaseActNotices  $notices     The refusal notice.
 	 *
@@ -61,9 +61,9 @@ class CaseShareController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseAccessGuard $caseAccess,
+		private readonly CaseAccessGuardInterface $caseAccess,
 		private readonly CaseShareList $shares,
-		private readonly CaseLinkShares $linkShares,
+		private readonly CaseLinkSharesInterface $linkShares,
 		private readonly IUserSession $userSession,
 		private readonly CaseActNotices $notices,
 	) {

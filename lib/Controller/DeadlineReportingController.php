@@ -29,7 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\ReportingAudienceGuard;
-use OCA\Dossiq\Service\DeadlineReportingService;
+use OCA\Dossiq\Kernel\Contracts\DeadlineReportingServiceInterface;
 use OCA\Dossiq\Service\Reporting\ReportingAudience;
 use OCA\Dossiq\Service\Term\FirstResponseOutcome;
 use OCA\Dossiq\Service\Termijn\PenaltyPaymentRows;
@@ -56,7 +56,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param DeadlineReportingService $service Reporting service.
+	 * @param DeadlineReportingServiceInterface $service Reporting service.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
 	 * @param ReportingAudience $audience Who may read a figure about every case.
@@ -68,7 +68,7 @@ class DeadlineReportingController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DeadlineReportingService $service,
+		private readonly DeadlineReportingServiceInterface $service,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly ReportingAudience $audience,

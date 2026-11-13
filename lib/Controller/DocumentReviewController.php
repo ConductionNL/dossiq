@@ -24,7 +24,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Review\BatchSelection;
 use OCA\Dossiq\Review\ReviewBatches;
 use OCA\Dossiq\Review\ReviewSummary;
@@ -57,7 +57,7 @@ class DocumentReviewController extends Controller {
 	 * @param ReviewSummary $summary The case summary.
 	 * @param ReviewBatches $batches The review batches.
 	 * @param BatchSelection $selection Which documents a batch takes.
-	 * @param CaseAccessGuard $caseAccessGuard The per-case access check.
+	 * @param CaseAccessGuardInterface $caseAccessGuard The per-case access check.
 	 * @param IUserSession $userSession The session.
 	 * @param IL10N $l10n The translations.
 	 *
@@ -69,7 +69,7 @@ class DocumentReviewController extends Controller {
 		private readonly ReviewSummary $summary,
 		private readonly ReviewBatches $batches,
 		private readonly BatchSelection $selection,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {

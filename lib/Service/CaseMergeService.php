@@ -43,6 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseMergeServiceInterface;
 use OCA\Dossiq\Service\Cases\CaseMergeRelink;
 use OCA\Dossiq\Service\Cases\CaseMergeRule;
 use OCA\Dossiq\Service\Cases\CaseMergeStore;
@@ -56,7 +57,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
  */
-class CaseMergeService {
+class CaseMergeService implements CaseMergeServiceInterface {
 
 	/**
 	 * Term statuses that still count as running, and so are the ones a merge

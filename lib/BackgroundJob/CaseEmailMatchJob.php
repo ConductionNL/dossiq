@@ -40,7 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseEmailMatchService;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailMatchServiceInterface;
 use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -65,13 +65,13 @@ class CaseEmailMatchJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory              $time        Time factory.
-	 * @param CaseEmailMatchService     $matcher     The matcher.
+	 * @param CaseEmailMatchServiceInterface     $matcher     The matcher.
 	 * @param CaseEmailMatchPreferences $preferences Who opted in, and where a failure is recorded.
 	 * @param LoggerInterface           $logger      Logger.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly CaseEmailMatchService $matcher,
+		private readonly CaseEmailMatchServiceInterface $matcher,
 		private readonly CaseEmailMatchPreferences $preferences,
 		private readonly LoggerInterface $logger,
 	) {

@@ -32,9 +32,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\PayoutServiceInterface;
 use OCA\Dossiq\Service\Money\PayoutReader;
-use OCA\Dossiq\Service\Money\PayoutService;
 use OCA\Dossiq\Service\Money\SignedPayoutCallback;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -58,18 +58,18 @@ class PayoutCallbackController extends Controller {
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param PayoutService $service Updates the payout row.
+	 * @param PayoutServiceInterface $service Updates the payout row.
 	 * @param SignedPayoutCallback $callback Checks the signature and reads the body.
-	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param CaseDateNormaliserInterface $dates The one date write path.
 	 * @param LoggerInterface $logger Logger.
 	 * @param PayoutReader|null $reader Knows the payouts only finance holds, which have no row to update.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PayoutService $service,
+		private readonly PayoutServiceInterface $service,
 		private readonly SignedPayoutCallback $callback,
-		private readonly CaseDateNormaliser $dates,
+		private readonly CaseDateNormaliserInterface $dates,
 		private readonly LoggerInterface $logger,
 		private readonly ?PayoutReader $reader = null,
 	) {

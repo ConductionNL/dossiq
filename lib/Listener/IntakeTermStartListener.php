@@ -44,10 +44,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Intake\CaseReceiptDates;
 use OCA\Dossiq\Service\Intake\IntakeTermStart;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\EventDispatcher\Event;
@@ -71,7 +71,7 @@ class IntakeTermStartListener implements IEventListener {
 	 *
 	 * @param IntakeTermStart          $intake          The two moments and the flag between them.
 	 * @param ObjectSchemaSlugResolver $slugResolver    Schema id-to-slug resolver.
-	 * @param SettingsService          $settingsService Bridge to OpenRegister.
+	 * @param SettingsServiceInterface          $settingsService Bridge to OpenRegister.
 	 * @param LoggerInterface          $logger          Records a case that went unstamped.
 	 * @param ReceiptClock $clock The receipt dates, the receipt moment and the time factory.
 	 *
@@ -82,7 +82,7 @@ class IntakeTermStartListener implements IEventListener {
 	public function __construct(
 		private readonly IntakeTermStart $intake,
 		private readonly ObjectSchemaSlugResolver $slugResolver,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ReceiptClock $clock,
 	) {

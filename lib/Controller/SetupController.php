@@ -32,12 +32,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
-use OCA\Dossiq\Service\DemoDataService;
+use OCA\Dossiq\Kernel\Contracts\DemoDataServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\PackageInstallerInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Setup\ActiveOrganisationProfile;
 use OCA\Dossiq\Service\Setup\CaseTypePackageChoice;
 use OCA\Dossiq\Service\Setup\FirstRunReadiness;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -77,7 +77,7 @@ class SetupController extends Controller {
 	 *
 	 * @var string
 	 */
-	private const DEMO_DATA_DECIDED_KEY = DemoDataService::DECIDED_KEY;
+	private const DEMO_DATA_DECIDED_KEY = DemoDataServiceInterface::DECIDED_KEY;
 
 	/**
 	 * App-config key holding the dataset the operator picked.
@@ -109,9 +109,9 @@ class SetupController extends Controller {
 	 * @param string $appName The app id.
 	 * @param IRequest $request The request.
 	 * @param IAppConfig $appConfig App-config reader/writer.
-	 * @param DemoDataService $demoDataService Demo dataset import (ADR-111 rule 4).
-	 * @param SettingsService $settingsService OpenRegister availability + config import.
-	 * @param PackageInstaller $packages Installs the case definition package the `seed` action asks for.
+	 * @param DemoDataServiceInterface $demoDataService Demo dataset import (ADR-111 rule 4).
+	 * @param SettingsServiceInterface $settingsService OpenRegister availability + config import.
+	 * @param PackageInstallerInterface $packages Installs the case definition package the `seed` action asks for.
 	 * @param FirstRunReadiness $readiness The minimum an instance needs, read live.
 	 * @param ActiveOrganisationProfile $organisationProfile The active organisation's name and logo (Organisation step).
 	 * @param CaseTypePackageChoice $caseTypes The on-request case type packages (Case types step).
@@ -120,9 +120,9 @@ class SetupController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly IAppConfig $appConfig,
-		private readonly DemoDataService $demoDataService,
-		private readonly SettingsService $settingsService,
-		private readonly PackageInstaller $packages,
+		private readonly DemoDataServiceInterface $demoDataService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly PackageInstallerInterface $packages,
 		private readonly FirstRunReadiness $readiness,
 		private readonly ActiveOrganisationProfile $organisationProfile,
 		private readonly CaseTypePackageChoice $caseTypes,
@@ -469,7 +469,7 @@ class SetupController extends Controller {
 	 */
 	private function installSeedPackage(): DataResponse {
 		$outcome = $this->packages->install(id: self::SEED_PACKAGE);
-		$done = in_array($outcome['status'], [PackageInstaller::INSTALLED, PackageInstaller::CURRENT], true);
+		$done = in_array($outcome['status'], [PackageInstallerInterface::INSTALLED, PackageInstallerInterface::CURRENT], true);
 		if ($done === false) {
 			return new DataResponse(
 				['success' => false, 'message' => $outcome['message'], 'detail' => $outcome],
@@ -512,7 +512,7 @@ class SetupController extends Controller {
 			return new DataResponse(['success' => false, 'message' => 'Pick a dataset first.']);
 		}
 
-		if ($picked === DemoDataService::NONE_DATASET) {
+		if ($picked === DemoDataServiceInterface::NONE_DATASET) {
 			return $this->declineDataset();
 		}
 
@@ -556,7 +556,7 @@ class SetupController extends Controller {
 		}
 
 		if ($actionId === 'install-demo-data' && $picked === '') {
-			return DemoDataService::DEMO_DATASET;
+			return DemoDataServiceInterface::DEMO_DATASET;
 		}
 
 		return $picked;
@@ -570,7 +570,7 @@ class SetupController extends Controller {
 	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function declineDataset(): DataResponse {
-		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, DemoDataService::NONE_DATASET);
+		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, DemoDataServiceInterface::NONE_DATASET);
 		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'skipped');
 
 		return new DataResponse(['success' => true, 'message' => 'No example data was loaded.']);
@@ -604,7 +604,7 @@ class SetupController extends Controller {
 		}
 
 		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, $picked);
-		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, DemoDataService::DECIDED_INSTALLED);
+		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, DemoDataServiceInterface::DECIDED_INSTALLED);
 
 		return $this->importedAnswer(imported: $imported + ['packageExamples' => $this->caseTypes->writeExamplesOfInstalled()]);
 	}//end importDataset()
@@ -687,7 +687,7 @@ class SetupController extends Controller {
 	private function skipDemoData(): DataResponse {
 		// Skipping IS choosing "None", so both keys are written: an older
 		// runbook may read either one.
-		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, DemoDataService::NONE_DATASET);
+		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, DemoDataServiceInterface::NONE_DATASET);
 		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'skipped');
 
 		return new DataResponse(['success' => true, 'message' => 'No example data was loaded.']);

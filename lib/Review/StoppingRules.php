@@ -26,7 +26,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -66,7 +66,7 @@ class StoppingRules {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance $reviews Whether any document is marked yet.
 	 * @param LoggerInterface $logger The logger.
 	 * @param ReviewWrites $writes Grants the case's private records to the people on it once the rule is stored.
@@ -74,7 +74,7 @@ class StoppingRules {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly DocumentRelevance $reviews,
 		private readonly LoggerInterface $logger,
 		private readonly ReviewWrites $writes,

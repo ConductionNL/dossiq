@@ -38,7 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseEmailService;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailServiceInterface;
 use OCA\Dossiq\Service\Support\CaseObjectReference;
 use OCA\OpenRegister\Event\FlowEmailSentEvent;
 use OCP\EventDispatcher\Event;
@@ -68,14 +68,14 @@ class FlowEmailSentListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param CaseObjectReference $cases     Recognises a dossiq case.
-	 * @param CaseEmailService    $emails    Writes the case's record of a sent mail.
+	 * @param CaseEmailServiceInterface    $emails    Writes the case's record of a sent mail.
 	 * @param IUserManager        $users     Reads a user recipient's address.
 	 * @param IAppConfig          $appConfig dossiq's configured sender, for the record.
 	 * @param LoggerInterface     $logger    Logger.
 	 */
 	public function __construct(
 		private readonly CaseObjectReference $cases,
-		private readonly CaseEmailService $emails,
+		private readonly CaseEmailServiceInterface $emails,
 		private readonly IUserManager $users,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,

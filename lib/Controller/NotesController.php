@@ -33,8 +33,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Notes\NotePush;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\NotePushInterface;
 use OCA\Dossiq\Service\MentionNotificationService;
 use OCA\Dossiq\Service\Notes\MentionedNote;
 use OCP\AppFramework\Controller;
@@ -60,8 +60,8 @@ class NotesController extends Controller {
 	 * @param MentionNotificationService $mentionSvc The mention notification service
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger
-	 * @param NotePush $notePush Hands a note to integriq for the neighbouring register, or says why it did not
-	 * @param CaseAccessGuard $caseAccessGuard Decides whether the caller may write notes on this case
+	 * @param NotePushInterface $notePush Hands a note to integriq for the neighbouring register, or says why it did not
+	 * @param CaseAccessGuardInterface $caseAccessGuard Decides whether the caller may write notes on this case
 	 * @param IUserManager $userManager Tells which mentioned user ids have an account
 	 */
 	public function __construct(
@@ -69,8 +69,8 @@ class NotesController extends Controller {
 		private readonly MentionNotificationService $mentionSvc,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly NotePush $notePush,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly NotePushInterface $notePush,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserManager $userManager,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

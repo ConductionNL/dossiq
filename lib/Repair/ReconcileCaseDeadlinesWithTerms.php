@@ -35,8 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
 use OCP\Migration\IOutput;
@@ -61,12 +61,12 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService Settings and ObjectService access.
+	 * @param SettingsServiceInterface    $settingsService Settings and ObjectService access.
 	 * @param CaseDeadlineMirror $mirror          The write the term engine makes.
 	 * @param LoggerInterface    $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly CaseDeadlineMirror $mirror,
 		private readonly LoggerInterface $logger,
 	) {

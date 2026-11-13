@@ -28,10 +28,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Intake\BoundFormsCheck;
 use OCA\Dossiq\Service\Intake\IntakeFormBinding;
 use OCA\Dossiq\Service\Intake\IntakeFormBindings;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Event\FormDestinationDependentsEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -50,14 +50,14 @@ class IntakeFormDependentsListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService   $settingsService The configured case schema.
+	 * @param SettingsServiceInterface   $settingsService The configured case schema.
 	 * @param BoundFormsCheck    $check           Names a case type.
 	 * @param IntakeFormBindings $bindings        Lists the bound case types and takes a binding off.
 	 * @param IntakeFormBinding $binding         Reads a binding as a mapping.
 	 * @param LoggerInterface   $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly BoundFormsCheck $check,
 		private readonly IntakeFormBindings $bindings,
 		private readonly IntakeFormBinding $binding,

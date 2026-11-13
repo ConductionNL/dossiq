@@ -57,10 +57,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Email\MailMatchSources;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailMatchServiceInterface;
 use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
 use OCA\Dossiq\Service\Email\CaseMailLeaf;
 use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
+use OCA\Dossiq\Service\Email\MailMatchSources;
 use OCP\IUser;
 use OCP\IUserManager;
 use Psr\Container\ContainerInterface;
@@ -72,14 +73,7 @@ use Throwable;
  *
  * @spec openspec/specs/email-case-matching/spec.md
  */
-class CaseEmailMatchService {
-
-	/**
-	 * Instance toggle. Anything but an explicit yes means off.
-	 *
-	 * @var string
-	 */
-	public const INSTANCE_TOGGLE_KEY = 'email_case_matching_enabled';
+class CaseEmailMatchService implements CaseEmailMatchServiceInterface {
 
 	/**
 	 * Most messages one run reads for one user.

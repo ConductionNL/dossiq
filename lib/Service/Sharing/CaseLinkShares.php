@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Sharing;
 
+use OCA\Dossiq\Kernel\Contracts\CaseLinkSharesInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -43,18 +44,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/case-share-via-shares-leaf/spec.md
  */
-class CaseLinkShares {
-
-	/**
-	 * The failure is this instance's own configuration, not OpenRegister.
-	 *
-	 * Carried on the error array so {@see \OCA\Dossiq\Controller\CaseSharingController}
-	 * can answer 503 and name the gap, instead of 502 and a bare
-	 * "Service unavailable" that points at an app which did nothing wrong.
-	 *
-	 * @var string
-	 */
-	public const REASON_NOT_CONFIGURED = 'not-configured';
+class CaseLinkShares implements CaseLinkSharesInterface {
 
 	/**
 	 * The share record could not be written, so the minted links were pulled.

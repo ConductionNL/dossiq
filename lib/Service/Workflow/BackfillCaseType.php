@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Workflow;
 
+use OCA\Dossiq\Kernel\Contracts\WorkflowLifecycleGuardInterface;
+
 /**
  * One case type in a workflow backfill: its row, its stored templates and,
  * once written, the template it is pinned to.
@@ -44,13 +46,13 @@ final class BackfillCaseType {
 	 * offered a draft, so a case type holding only drafts (a package may ship
 	 * one for an administrator to finish) would have no flow a case can follow.
 	 *
-	 * @param WorkflowLifecycleGuard $lifecycle Says which lifecycle a stored template is in.
+	 * @param WorkflowLifecycleGuardInterface $lifecycle Says which lifecycle a stored template is in.
 	 *
 	 * @return bool True when the backfill leaves it alone.
 	 *
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
-	public function hasAFlow(WorkflowLifecycleGuard $lifecycle): bool {
+	public function hasAFlow(WorkflowLifecycleGuardInterface $lifecycle): bool {
 		if ((string)($this->row['workflowDefinition'] ?? '') !== '') {
 			return true;
 		}

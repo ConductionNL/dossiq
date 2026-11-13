@@ -31,14 +31,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
-use OCA\Dossiq\Service\CaseTermsService;
+use OCA\Dossiq\Kernel\Contracts\CaseTermsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\Intake\IntakeTermStart;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\Support\ReferencedUuid;
 use OCA\Dossiq\Service\Term\TermResolution;
-use OCA\Dossiq\Service\TermijnService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -54,11 +54,11 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param TermijnService $termService TermijnService.
+	 * @param TermijnServiceInterface $termService TermijnService.
 	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
 	 * @param CaseTypeSlugResolver $caseTypeSlugs Case-type uuid-to-slug resolver.
 	 * @param LoggerInterface $logger Logger.
-	 * @param CaseTermsService|null $caseTerms The clocks beside the statutory one: the
+	 * @param CaseTermsServiceInterface|null $caseTerms The clocks beside the statutory one: the
 	 *        planned end, the internal target, and the fixed closing date when the case
 	 *        type declares one instead of a lead time. Optional so a container that
 	 *        cannot build it leaves the statutory bind exactly as it was.
@@ -75,11 +75,11 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
 	 */
 	public function __construct(
-		private readonly TermijnService $termService,
+		private readonly TermijnServiceInterface $termService,
 		private readonly ObjectSchemaSlugResolver $slugResolver,
 		private readonly CaseTypeSlugResolver $caseTypeSlugs,
 		private readonly LoggerInterface $logger,
-		private readonly ?CaseTermsService $caseTerms = null,
+		private readonly ?CaseTermsServiceInterface $caseTerms = null,
 		private readonly ?TermResolution $resolution = null,
 		private readonly ?IntakeTermStart $intake = null,
 		private readonly ReceiptMoment $receipt = new ReceiptMoment(),

@@ -39,7 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Http\RangeStreamResponse;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\Zaakdossier\DossierZipExporter;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCP\AppFramework\Controller;
@@ -68,7 +68,7 @@ class ZaakdossierDownloadController extends Controller {
 	 * @param DossierZipExporter $zipExporter The ZIP export collaborator.
 	 * @param IUserSession $userSession The user session.
 	 * @param LoggerInterface $logger The logger.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 *
 	 * @return void
 	 */
@@ -79,7 +79,7 @@ class ZaakdossierDownloadController extends Controller {
 		private readonly DossierZipExporter $zipExporter,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

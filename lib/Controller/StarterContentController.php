@@ -33,10 +33,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ShippedConfigurationServiceInterface;
 use OCA\Dossiq\Service\Starter\CaseTypeRetirementService;
 use OCA\Dossiq\Service\Starter\DomainCopyService;
 use OCA\Dossiq\Service\Starter\ReusableProcessStepService;
-use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -80,7 +80,7 @@ class StarterContentController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest                    $request    The HTTP request.
-	 * @param ShippedConfigurationService $shipped    What shipped and what changed.
+	 * @param ShippedConfigurationServiceInterface $shipped    What shipped and what changed.
 	 * @param CaseTypeRetirementService   $retirement Retire and restore.
 	 * @param DomainCopyService           $domains    The domain copy.
 	 * @param ReusableProcessStepService  $steps      The shared process steps.
@@ -88,7 +88,7 @@ class StarterContentController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly ShippedConfigurationService $shipped,
+		private readonly ShippedConfigurationServiceInterface $shipped,
 		private readonly CaseTypeRetirementService $retirement,
 		private readonly DomainCopyService $domains,
 		private readonly ReusableProcessStepService $steps,

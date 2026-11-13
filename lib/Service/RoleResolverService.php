@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\RoleResolverServiceInterface;
 use OCA\Dossiq\Service\Routing\AreaRouting;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
 use OCA\Dossiq\Service\Routing\RoleResolutionCache;
@@ -50,7 +51,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T02
  */
-class RoleResolverService {
+class RoleResolverService implements RoleResolverServiceInterface {
 	use RefusesWhenIndeterminate;
 
 	/**

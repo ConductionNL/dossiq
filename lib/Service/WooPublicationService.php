@@ -36,15 +36,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
-use OCA\Dossiq\Service\Publication\CatalogTransport;
-use OCA\Dossiq\Service\Publication\PublicationSources;
+use OCA\Dossiq\Kernel\Contracts\WooPublicationServiceInterface;
+use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Service\Assessment\NothingToDisclose;
+use OCA\Dossiq\Service\Publication\CatalogTransport;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\Publication\PublicationSources;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCaseLedger;
-use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
@@ -65,7 +66,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
-class WooPublicationService {
+class WooPublicationService implements WooPublicationServiceInterface {
 
 	/**
 	 * The OpenCatalogi app identifier.
@@ -374,9 +375,6 @@ class WooPublicationService {
 			'withheldRecord' => $withheld['record'],
 		];
 	}//end publish()
-
-
-
 
 	/**
 	 * The disclosable documents whose file could not be read.

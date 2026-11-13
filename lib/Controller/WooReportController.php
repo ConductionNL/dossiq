@@ -24,7 +24,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
 use OCA\Dossiq\Woo\WooReportReadLog;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCA\Dossiq\Woo\WooThroughputReport;
@@ -60,7 +60,7 @@ class WooReportController extends Controller {
 	 * @param WooReportReadLog $readLog The read log on the audit trail.
 	 * @param IUserSession $userSession The user session.
 	 * @param IL10N $l10n The translations.
-	 * @param CaseDateNormaliser|null $dates Reads a moment as the tenant's calendar date.
+	 * @param CaseDateNormaliserInterface|null $dates Reads a moment as the tenant's calendar date.
 	 *
 	 * @return void
 	 */
@@ -71,7 +71,7 @@ class WooReportController extends Controller {
 		private readonly WooReportReadLog $readLog,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
-		private readonly ?CaseDateNormaliser $dates = null,
+		private readonly ?CaseDateNormaliserInterface $dates = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Woo\WooCollection;
 use OCA\Dossiq\Woo\WooCollectionQueries;
 use OCA\Dossiq\Woo\WooCorpusRefused;
@@ -58,7 +58,7 @@ class WooCollectionController extends Controller {
 	 * @param WooSearchPlans       $plans       The search plan.
 	 * @param WooCollection        $collection  The report and the exclusions.
 	 * @param WooCollectionQueries $queries     The stored queries.
-	 * @param CaseAccessGuard      $accessGuard Per-case read and change access, failing closed.
+	 * @param CaseAccessGuardInterface      $accessGuard Per-case read and change access, failing closed.
 	 * @param IUserSession         $userSession The caller.
 	 * @param IL10N                $l10n        Refusal sentences.
 	 */
@@ -68,7 +68,7 @@ class WooCollectionController extends Controller {
 		private readonly WooSearchPlans $plans,
 		private readonly WooCollection $collection,
 		private readonly WooCollectionQueries $queries,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {

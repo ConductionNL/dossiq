@@ -17,9 +17,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use JsonSerializable;
-use OCA\Dossiq\Service\Task\EngineTaskGateway;
-use OCP\IUserSession;
+use OCA\Dossiq\Kernel\Contracts\EngineTaskGatewayInterface;
 use OCP\AppFramework\Db\DoesNotExistException;
+use OCP\IUserSession;
 use RuntimeException;
 
 /**
@@ -52,7 +52,7 @@ class AskPersonTaskStore {
     /**
      * Constructor.
      *
-     * @param EngineTaskGateway $engineTasks     The seam onto OpenRegister's task engine.
+     * @param EngineTaskGatewayInterface $engineTasks     The seam onto OpenRegister's task engine.
      * @param IUserSession      $userSession     The acting identity the engine records.
      *
      * @return void
@@ -60,7 +60,7 @@ class AskPersonTaskStore {
      * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function __construct(
-        private readonly EngineTaskGateway $engineTasks,
+        private readonly EngineTaskGatewayInterface $engineTasks,
         private readonly IUserSession $userSession,
     ) {
 

@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Sharing;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessLinkServiceInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -44,7 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/case-share-via-shares-leaf/spec.md
  */
-class CaseAccessLinkService {
+class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 	/**
 	 * The capabilities a case link may declare.
 	 *
@@ -55,17 +56,6 @@ class CaseAccessLinkService {
 	 * @var array<int, string>
 	 */
 	public const CAPABILITIES = ['read', 'comment', 'upload'];
-
-	/**
-	 * What a case share declares when the handler names nothing.
-	 *
-	 * Reading and commenting, because the case a share exists for is nearly
-	 * always one somebody outside is expected to answer. Uploading is opted
-	 * into, never assumed.
-	 *
-	 * @var array<int, string>
-	 */
-	public const DEFAULT_CAPABILITIES = ['read', 'comment'];
 
 	/**
 	 * How long a share lasts when the handler names no end date.

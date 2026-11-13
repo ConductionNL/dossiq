@@ -28,8 +28,8 @@ namespace OCA\Dossiq\Controller;
 
 use DateTime;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\KpiAggregationServiceInterface;
 use OCA\Dossiq\Service\Dashboard\DashboardWidgetScope;
-use OCA\Dossiq\Service\KpiAggregationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -77,7 +77,7 @@ class KpiController extends Controller {
 	 *
 	 * @param IRequest $request The HTTP request
 	 * @param IUserSession $userSession The user session
-	 * @param KpiAggregationService $kpiAggregation The KPI aggregation service
+	 * @param KpiAggregationServiceInterface $kpiAggregation The KPI aggregation service
 	 * @param ICacheFactory $cacheFactory The cache factory
 	 * @param DashboardWidgetScope $widgetScope Narrows the payload to the widgets this reader may see
 	 * @param LoggerInterface $logger Logger
@@ -87,7 +87,7 @@ class KpiController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private IUserSession $userSession,
-		private KpiAggregationService $kpiAggregation,
+		private KpiAggregationServiceInterface $kpiAggregation,
 		ICacheFactory $cacheFactory,
 		private DashboardWidgetScope $widgetScope,
 		private LoggerInterface $logger,

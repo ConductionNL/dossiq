@@ -29,7 +29,7 @@ namespace OCA\Dossiq\Controller;
 use Closure;
 use OCA\Dossiq\Exception\RecipientOptedOutException;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseEmailService;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailServiceInterface;
 use OCA\Dossiq\Service\Email\OutboundState;
 use OCA\Dossiq\Service\OptOutGate;
 use OCP\AppFramework\Controller;
@@ -54,13 +54,13 @@ class EmailController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param CaseEmailService $emailService The email service
+	 * @param CaseEmailServiceInterface $emailService The email service
 	 * @param IUserSession $userSession The user session
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseEmailService $emailService,
+		private readonly CaseEmailServiceInterface $emailService,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);

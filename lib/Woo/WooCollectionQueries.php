@@ -33,8 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -57,18 +57,18 @@ class WooCollectionQueries {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService The register and the schemas.
+	 * @param SettingsServiceInterface    $settingsService The register and the schemas.
 	 * @param IRootFolder        $rootFolder      The caller's own files, for a files re-run.
 	 * @param WooSources         $sources         integriq's search, for a Microsoft 365 re-run.
 	 * @param WooCaseDocuments   $caseDocuments   What is already on the case.
-	 * @param CaseReviewerAccess $access          The grants of a new query.
+	 * @param CaseReviewerAccessInterface $access          The grants of a new query.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IRootFolder $rootFolder,
 		private readonly WooSources $sources,
 		private readonly WooCaseDocuments $caseDocuments,
-		private readonly CaseReviewerAccess $access,
+		private readonly CaseReviewerAccessInterface $access,
 	) {
 	}//end __construct()
 

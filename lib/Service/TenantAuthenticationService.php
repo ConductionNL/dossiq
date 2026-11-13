@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TenantAuthenticationServiceInterface;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/specs/multi-tenancy/spec.md#req-005-tenant-membership-and-status-helpers-for-middleware
  */
-class TenantAuthenticationService {
+class TenantAuthenticationService implements TenantAuthenticationServiceInterface {
 	use RefusesWhenIndeterminate;
 
 	/**
