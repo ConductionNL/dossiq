@@ -91,7 +91,8 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	 *        collaborators and a default built from them is the instance the container wires.
 	 * @param CaseReviewerAccess|null $reviewerAccess Who may change an assessment and who reads it,
 	 *        when the case type keeps its assessments private to the case (case-reviewer-access).
-	 * @param DocumentRelevanceInterface|null $reviews Each document's relevance and pages seen (woo-review-triage); null keeps every document needing a verdict.
+	 * @param DocumentRelevanceInterface|null $reviews Each document's relevance and pages seen (woo-review-triage);
+	 *        null keeps every document needing a verdict.
 	 * @param OutstandingDocuments|null $outstanding The review's outstanding documents, as the container builds them
 	 *        (with the case type's drafted document types left out); null builds one from the collaborators above.
 	 */

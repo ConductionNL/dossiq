@@ -118,7 +118,12 @@ class WooDeliveredSetGuard implements IEventListener {
 			return null;
 		}
 
-		if ($this->isSchema(object: $current, configKey: WooDeliveredSetWriterInterface::CONFIG_KEY, slug: WooDeliveredSetWriterInterface::SCHEMA_SLUG) === true) {
+		if ($this->isSchema(
+			object: $current,
+			configKey: WooDeliveredSetWriterInterface::CONFIG_KEY,
+			slug: WooDeliveredSetWriterInterface::SCHEMA_SLUG
+		) === true
+		) {
 			return $this->frozenSetRefusal(old: ($old ?? []), new: $new);
 		}
 
