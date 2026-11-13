@@ -191,7 +191,7 @@ class BezwaarAdviceRequestControllerTest extends TestCase {
 	 */
 	public function testTheRouteReachesTheAction(): void {
 		$routes = (require __DIR__.'/../../../appinfo/routes.php')['routes'];
-		$found = array_values(array_filter($routes, static fn (array $route): bool => $route['name'] === 'bezwaarAdviceRequest#transition'));
+		$found = array_values(array_filter($routes, static fn (array $route): bool => $route['name'] === 'bezwaarAdviceRequest#transition' && isset($route['postfix']) === false));
 
 		$expected = ['name' => 'bezwaarAdviceRequest#transition', 'url' => '/api/bezwaar/advice-requests/{id}/transition', 'verb' => 'POST'];
 		$this->assertSame(expected: [$expected], actual: $found);

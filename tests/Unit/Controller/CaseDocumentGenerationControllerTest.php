@@ -215,7 +215,7 @@ class CaseDocumentGenerationControllerTest extends TestCase {
 		$match = array_values(
 			array_filter(
 				$routes,
-				static fn (array $route): bool => ($route['name'] ?? '') === 'caseDocumentGeneration#generateDocument'
+				static fn (array $route): bool => ($route['name'] ?? '') === 'caseDocumentGeneration#generateDocument' && isset($route['postfix']) === false
 			)
 		);
 

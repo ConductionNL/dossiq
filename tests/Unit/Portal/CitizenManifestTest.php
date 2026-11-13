@@ -84,7 +84,7 @@ class CitizenManifestTest extends TestCase {
 		$routes = include __DIR__ . '/../../../appinfo/routes.php';
 		$answerRoute = array_values(array_filter(
 			$routes['routes'],
-			static fn (array $route): bool => ($route['name'] ?? '') === 'portalWooAnswer#answer'
+			static fn (array $route): bool => ($route['name'] ?? '') === 'portalWooAnswer#answer' && isset($route['postfix']) === false
 		));
 		$this->assertCount(1, $answerRoute);
 		$this->assertSame('POST', $answerRoute[0]['verb']);
