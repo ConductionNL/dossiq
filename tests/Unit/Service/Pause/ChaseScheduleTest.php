@@ -260,4 +260,89 @@ class ChaseScheduleTest extends TestCase {
 		$this->assertSame('us', $internal['waitingOn']);
 		$this->assertSame(PauseReason::MAX_BUDGET, $wild['chaseBudget']);
 	}//end testAReasonInfersItsPartyAndCapsItsBudget()
+	/**
+	 * No next reminder exists for a reason without a schedule, nor for a
+	 * pause with no date to count from.
+	 *
+	 * @return void
+	 */
+	public function testNoNextReminderWithoutAScheduleOrAStartDate(): void {
+		$instance = ['status' => 'paused', 'pauzeStartDatum' => '2026-09-01', 'chasesSent' => 0];
+
+		$this->assertNull($this->schedule->nextChaseOn(instance: $instance, reason: $this->reason(['chaseText' => ''])));
+		$this->assertNull(
+			$this->schedule->nextChaseOn(instance: ['pauzeStartDatum' => '', 'chasesSent' => 0], reason: $this->reason())
+		);
+		$this->assertSame(
+			'2026-09-06',
+			$this->schedule->nextChaseOn(instance: $instance, reason: $this->reason())?->format('Y-m-d')
+		);
+	}//end testNoNextReminderWithoutAScheduleOrAStartDate()
+
+	/**
+	 * Nobody is escalated to while reminders remain, without a schedule, or
+	 * without a record of when the last reminder went.
+	 *
+	 * @return void
+	 */
+	public function testNoEscalationBeforeTheBudgetIsSpentOrWithoutALastReminder(): void {
+		$now = new DateTimeImmutable('2026-10-30');
+		$spent = ['chasesSent' => 2, 'lastChasedAt' => '2026-09-11T09:00:00+02:00'];
+
+		$this->assertFalse(
+			$this->schedule->escalationDue(instance: $spent, reason: $this->reason(['chaseBudget' => 0]), now: $now)
+		);
+		$this->assertFalse(
+			$this->schedule->escalationDue(instance: ['chasesSent' => 1] + $spent, reason: $this->reason(), now: $now)
+		);
+		$this->assertFalse(
+			$this->schedule->escalationDue(instance: ['chasesSent' => 2], reason: $this->reason(), now: $now)
+		);
+		$this->assertTrue($this->schedule->escalationDue(instance: $spent, reason: $this->reason(), now: $now));
+	}//end testNoEscalationBeforeTheBudgetIsSpentOrWithoutALastReminder()
+
+	/**
+	 * A working-day reason waits working days before escalating: five working
+	 * days after a Friday is the next Friday, not Wednesday.
+	 *
+	 * @return void
+	 */
+	public function testAWorkingDayEscalationSkipsTheWeekend(): void {
+		$instance = ['chasesSent' => 2, 'lastChasedAt' => '2026-09-11T09:00:00+02:00'];
+		$reason = $this->reason(['countsWorkingDays' => true]);
+
+		$this->assertFalse(
+			$this->schedule->escalationDue(instance: $instance, reason: $reason, now: new DateTimeImmutable('2026-09-17T12:00:00+02:00'))
+		);
+		$this->assertTrue(
+			$this->schedule->escalationDue(instance: $instance, reason: $reason, now: new DateTimeImmutable('2026-09-18T12:00:00+02:00'))
+		);
+	}//end testAWorkingDayEscalationSkipsTheWeekend()
+
+	/**
+	 * The pause start is handed to the case as the start of that day in the
+	 * administered zone, and an unreadable one as nothing.
+	 *
+	 * @return void
+	 */
+	public function testThePauseStartBecomesTheStartOfThatDay(): void {
+		$this->assertSame('2026-09-01T00:00:00+02:00', $this->schedule->pauseStartMoment(date: '2026-09-01'));
+		$this->assertSame('2026-12-01T00:00:00+01:00', $this->schedule->pauseStartMoment(date: '2026-12-01'));
+		$this->assertNull($this->schedule->pauseStartMoment(date: ''));
+	}//end testThePauseStartBecomesTheStartOfThatDay()
+
+	/**
+	 * An unknown category is read as the applicant, and a declared waiting
+	 * party wins over the one the category implies.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownCategoryIsTheApplicantAndADeclaredPartyWins(): void {
+		$unknown = PauseReason::normalise(row: ['key' => 'x', 'category' => 'nonsense']);
+		$declared = PauseReason::normalise(row: ['key' => 'y', 'category' => 'applicant', 'waitingOn' => 'us']);
+
+		$this->assertSame(PauseReason::APPLICANT, $unknown['category']);
+		$this->assertSame('applicant', $unknown['waitingOn']);
+		$this->assertSame('us', $declared['waitingOn']);
+	}//end testAnUnknownCategoryIsTheApplicantAndADeclaredPartyWins()
 }//end class
