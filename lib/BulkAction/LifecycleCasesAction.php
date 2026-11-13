@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\CaseLifecycleService;
+use OCA\Dossiq\Kernel\Contracts\CaseLifecycleServiceInterface;
 use OCA\OpenRegister\BulkAction\BulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
 use OCA\OpenRegister\BulkAction\BulkStep;
@@ -84,7 +84,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseLifecycleService $lifecycle The suspend/resume/extend gestures.
+	 * @param CaseLifecycleServiceInterface $lifecycle The suspend/resume/extend gestures.
 	 * @param IL10N                $l10n      Localisation, for the label an operator reads.
 	 *
 	 * @return void
@@ -92,7 +92,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly CaseLifecycleService $lifecycle,
+		private readonly CaseLifecycleServiceInterface $lifecycle,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()

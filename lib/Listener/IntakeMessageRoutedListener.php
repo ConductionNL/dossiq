@@ -49,8 +49,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\ChannelIntakeInterface;
 use OCA\Dossiq\Listener\Support\EventGetters;
-use OCA\Dossiq\Service\Intake\ChannelIntake;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\EventDispatcher\Event;
@@ -79,12 +79,12 @@ class IntakeMessageRoutedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ChannelIntake            $intake         Decides whether a message opens a case.
+	 * @param ChannelIntakeInterface            $intake         Decides whether a message opens a case.
 	 * @param LoggerInterface          $logger         Logger.
 	 * @param BackgroundServiceAccount $serviceAccount Writes for integriq's background work, which has no user.
 	 */
 	public function __construct(
-		private readonly ChannelIntake $intake,
+		private readonly ChannelIntakeInterface $intake,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 	) {

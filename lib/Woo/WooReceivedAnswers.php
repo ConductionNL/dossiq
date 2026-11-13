@@ -31,7 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
 
 /**
  * Maps opencatalogi's Woo answer keys onto the request a Woo case keeps.
@@ -43,10 +43,10 @@ class WooReceivedAnswers {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseDateNormaliser $dates The one reader of a date and the tenant's time zone.
+	 * @param CaseDateNormaliserInterface $dates The one reader of a date and the tenant's time zone.
 	 */
 	public function __construct(
-		private readonly CaseDateNormaliser $dates,
+		private readonly CaseDateNormaliserInterface $dates,
 	) {
 	}//end __construct()
 

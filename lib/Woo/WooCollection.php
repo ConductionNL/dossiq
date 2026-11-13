@@ -31,10 +31,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use RuntimeException;
@@ -61,22 +61,22 @@ class WooCollection {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService              $settingsService The register and the exclusion schema.
+	 * @param SettingsServiceInterface              $settingsService The register and the exclusion schema.
 	 * @param WooCaseDocuments             $caseDocuments   Which documents are on the case.
 	 * @param DocumentRecordStore          $store           A document's record and its join to the case.
-	 * @param WOODocumentAssessmentService $assessments     Whether a document is assessed.
+	 * @param WOODocumentAssessmentServiceInterface $assessments     Whether a document is assessed.
 	 * @param WooSearchPlans               $plans           The plan's custodians and systems.
 	 * @param CaseDocumentProvenance       $provenance      Where each document was found.
-	 * @param CaseReviewerAccess           $access          The read a count makes, and the grants of a new exclusion.
+	 * @param CaseReviewerAccessInterface           $access          The read a count makes, and the grants of a new exclusion.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly WooCaseDocuments $caseDocuments,
 		private readonly DocumentRecordStore $store,
-		private readonly WOODocumentAssessmentService $assessments,
+		private readonly WOODocumentAssessmentServiceInterface $assessments,
 		private readonly WooSearchPlans $plans,
 		private readonly CaseDocumentProvenance $provenance,
-		private readonly CaseReviewerAccess $access,
+		private readonly CaseReviewerAccessInterface $access,
 	) {
 	}//end __construct()
 

@@ -29,10 +29,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\AdvisoryCommitteeServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\InternalWriteMarker;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
@@ -98,14 +98,14 @@ class DeliberationStartGuard implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService          $settingsService   The configured advice request schema.
-	 * @param AdvisoryCommitteeService $advisoryCommittee The panel check.
+	 * @param SettingsServiceInterface          $settingsService   The configured advice request schema.
+	 * @param AdvisoryCommitteeServiceInterface $advisoryCommittee The panel check.
 	 * @param LoggerInterface          $logger            Logger.
 	 * @param InternalWriteMarker      $internalWrites    Whether the app's own advice transition is writing.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly AdvisoryCommitteeService $advisoryCommittee,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly AdvisoryCommitteeServiceInterface $advisoryCommittee,
 		private readonly LoggerInterface $logger,
 		private readonly InternalWriteMarker $internalWrites,
 	) {

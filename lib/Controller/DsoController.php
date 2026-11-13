@@ -33,10 +33,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\JsonRequestBody;
-use OCA\Dossiq\Service\BeschikkingGenerationService;
+use OCA\Dossiq\Kernel\Contracts\BeschikkingGenerationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DsoCaseServiceInterface;
 use OCA\Dossiq\Service\Dso\DsoDoorsturenNotifier;
 use OCA\Dossiq\Service\Dso\DsoObjectRepository;
-use OCA\Dossiq\Service\DsoCaseService;
 use OCA\Dossiq\Service\SamenwerkverzoekService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -66,8 +66,8 @@ class DsoController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The HTTP request
-	 * @param DsoCaseService $dsoCaseService The DSO case service
-	 * @param BeschikkingGenerationService $decisionService The beschikking generation service
+	 * @param DsoCaseServiceInterface $dsoCaseService The DSO case service
+	 * @param BeschikkingGenerationServiceInterface $decisionService The beschikking generation service
 	 * @param SamenwerkverzoekService $samenwerkService The samenwerkverzoek service
 	 * @param DsoObjectRepository $repository The OpenRegister read collaborator
 	 * @param DsoDoorsturenNotifier $doorsturenNotifier The doorsturen event dispatcher
@@ -77,8 +77,8 @@ class DsoController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DsoCaseService $dsoCaseService,
-		private readonly BeschikkingGenerationService $decisionService,
+		private readonly DsoCaseServiceInterface $dsoCaseService,
+		private readonly BeschikkingGenerationServiceInterface $decisionService,
 		private readonly SamenwerkverzoekService $samenwerkService,
 		private readonly DsoObjectRepository $repository,
 		private readonly DsoDoorsturenNotifier $doorsturenNotifier,

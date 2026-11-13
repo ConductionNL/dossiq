@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AdviceServiceInterface;
 use OCA\Dossiq\Service\Advice\AdviceAuthorizationGuard;
 use OCA\Dossiq\Service\Advice\AdviceNotifier;
 use OCA\Dossiq\Service\Advice\AdviceRepository;
@@ -54,7 +55,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class AdviceService {
+class AdviceService implements AdviceServiceInterface {
 
 	/**
 	 * The conclusions a received advice may carry.

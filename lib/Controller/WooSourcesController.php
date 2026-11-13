@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Woo\WooCollectionQueries;
 use OCA\Dossiq\Woo\WooGatherAdd;
 use OCA\Dossiq\Woo\WooSearchPlans;
@@ -57,7 +57,7 @@ class WooSourcesController extends Controller {
 	 * @param IRequest        $request     The request.
 	 * @param WooSources      $sources     The sources, and integriq's search.
 	 * @param WooGatherAdd    $gatherAdd   Adds picks to the case.
-	 * @param CaseAccessGuard $accessGuard Per-case read and change access, failing closed.
+	 * @param CaseAccessGuardInterface $accessGuard Per-case read and change access, failing closed.
 	 * @param IUserSession    $userSession The caller.
 	 * @param IL10N           $l10n        Refusal sentences.
 	 * @param WooSearchPlans  $plans       The recorded search plan collection waits for (woo-request-corpus-collection).
@@ -68,7 +68,7 @@ class WooSourcesController extends Controller {
 		IRequest $request,
 		private readonly WooSources $sources,
 		private readonly WooGatherAdd $gatherAdd,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 		private readonly WooSearchPlans $plans,

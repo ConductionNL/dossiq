@@ -45,7 +45,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -138,7 +138,7 @@ class DeclareTimelineKinds implements IRepairStep {
 		}
 
 		$declared = 0;
-		foreach (TimelineKinds::DECLARATIONS as $declaration) {
+		foreach (TimelineKindsInterface::DECLARATIONS as $declaration) {
 			try {
 				$service->declareKind($declaration);
 				$declared++;
@@ -169,7 +169,7 @@ class DeclareTimelineKinds implements IRepairStep {
 		}
 
 		$seeded = 0;
-		foreach (TimelineKinds::TEXT_BLOCKS as $block) {
+		foreach (TimelineKindsInterface::TEXT_BLOCKS as $block) {
 			try {
 				$service->declareBlock($block);
 				$seeded++;

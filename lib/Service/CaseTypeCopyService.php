@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeCopyServiceInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeChildCopy;
 use OCA\Dossiq\Service\CaseType\CaseTypeCopyTarget;
 use OCA\Dossiq\Service\CaseType\CaseTypeDerivation;
@@ -47,7 +48,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
  */
-class CaseTypeCopyService {
+class CaseTypeCopyService implements CaseTypeCopyServiceInterface {
 
 	/**
 	 * Config keys (resolved via {@see SettingsService::getConfigValue()})
@@ -619,6 +620,5 @@ class CaseTypeCopyService {
 		unset($data['id'], $data['@self']);
 		return $data;
 	}//end stripIdentity()
-
 
 }//end class

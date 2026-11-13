@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\DeadlinePauseServiceInterface;
 use OCA\Dossiq\Service\Pause\ChaseSchedule;
 use OCA\Dossiq\Service\Pause\PauseReasonReader;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -42,7 +43,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
-class DeadlinePauseService {
+class DeadlinePauseService implements DeadlinePauseServiceInterface {
 	/**
 	 * What a resume clears besides the end date. The reason and its counters
 	 * go with the pause. A resumed term that still read "chased twice" would

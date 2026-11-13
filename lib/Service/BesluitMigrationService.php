@@ -45,6 +45,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BesluitMigrationServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -57,7 +58,7 @@ use Throwable;
  *
  * @spec openspec/specs/zgw-brc/spec.md#requirement-besluiten-move-onto-decidiq-only-when-asked-req-brc-021
  */
-class BesluitMigrationService {
+class BesluitMigrationService implements BesluitMigrationServiceInterface {
 	use SearchesObjects;
 
 	/**

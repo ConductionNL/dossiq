@@ -31,9 +31,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\ProcessMiningServiceInterface;
 use OCA\Dossiq\Service\ProcessMining\ReportAnswer;
 use OCA\Dossiq\Service\ProcessMining\ReportRequest;
-use OCA\Dossiq\Service\ProcessMiningService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -67,7 +67,7 @@ class ProcessMiningController extends Controller {
 	 * @param IRequest             $request              Incoming request.
 	 * @param IUserSession         $userSession          Current user session.
 	 * @param IGroupManager        $groupManager         Group manager (for RBAC check).
-	 * @param ProcessMiningService $processMiningService Report aggregation service.
+	 * @param ProcessMiningServiceInterface $processMiningService Report aggregation service.
 	 * @param LoggerInterface      $logger               PSR-3 logger.
 	 * @param ReportRequest        $requests             Checks the query and builds the filters.
 	 * @param ReportAnswer         $answers              Shapes the JSON body and the CSV.
@@ -77,7 +77,7 @@ class ProcessMiningController extends Controller {
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
-		private readonly ProcessMiningService $processMiningService,
+		private readonly ProcessMiningServiceInterface $processMiningService,
 		private readonly LoggerInterface $logger,
 		private readonly ReportRequest $requests,
 		private readonly ReportAnswer $answers,

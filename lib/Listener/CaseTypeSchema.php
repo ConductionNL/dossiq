@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 
 /**
  * Whether a payload is a case type.
@@ -39,10 +39,10 @@ final class CaseTypeSchema {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Holds the configured case type schema.
+	 * @param SettingsServiceInterface $settingsService Holds the configured case type schema.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 	) {
 	}//end __construct()
 

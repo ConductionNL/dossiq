@@ -49,10 +49,10 @@ namespace OCA\Dossiq\Portal;
 
 use DateTime;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Notification\Notifier;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 
@@ -98,14 +98,14 @@ class ApplicantPortalActs {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService      $settings            Resolves the object service, register and case schema.
-	 * @param CaseTimeline         $timeline            The one seam that writes a timeline entry.
+	 * @param SettingsServiceInterface      $settings            Resolves the object service, register and case schema.
+	 * @param CaseTimelineInterface         $timeline            The one seam that writes a timeline entry.
 	 * @param INotificationManager $notificationManager Nextcloud's notification manager.
 	 * @param LoggerInterface      $logger              Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
-		private readonly CaseTimeline $timeline,
+		private readonly SettingsServiceInterface $settings,
+		private readonly CaseTimelineInterface $timeline,
 		private readonly INotificationManager $notificationManager,
 		private readonly LoggerInterface $logger,
 	) {
@@ -148,14 +148,14 @@ class ApplicantPortalActs {
 
 		$this->timeline->record(
 			caseId: $caseId,
-			kind: TimelineKinds::APPLICANT_RESPONSE,
+			kind: TimelineKindsInterface::APPLICANT_RESPONSE,
 			message: $message,
 			fields: [
 				'act' => $act,
 				'fields' => $touched,
 				'occurredAt' => $occurredAt,
 			],
-			visibility: CaseTimeline::INTERNAL,
+			visibility: CaseTimelineInterface::INTERNAL,
 		);
 
 		$this->tellTheRepresented(caseId: $caseId, act: $act, mandate: $mandate, occurredAt: $occurredAt);
@@ -196,10 +196,10 @@ class ApplicantPortalActs {
 
 		$this->timeline->record(
 			caseId: $caseId,
-			kind: TimelineKinds::APPLICANT_RESPONSE,
+			kind: TimelineKindsInterface::APPLICANT_RESPONSE,
 			message: 'Namens ' . $label . ': ' . self::ACTING_FOR_ACTS[$act],
 			fields: ['act' => $act, 'actingFor' => $party, 'occurredAt' => $occurredAt],
-			visibility: CaseTimeline::PUBLIC_ENTRY,
+			visibility: CaseTimelineInterface::PUBLIC_ENTRY,
 		);
 	}//end tellTheRepresented()
 
@@ -223,7 +223,7 @@ class ApplicantPortalActs {
 
 		$this->timeline->record(
 			caseId: $caseId,
-			kind: TimelineKinds::APPLICANT_RESPONSE,
+			kind: TimelineKindsInterface::APPLICANT_RESPONSE,
 			message: 'The applicant withdrew the request in the portal',
 			fields: [
 				'act' => self::ACT_WITHDRAWAL,
@@ -231,7 +231,7 @@ class ApplicantPortalActs {
 				'reason' => $reason,
 				'occurredAt' => $occurredAt,
 			],
-			visibility: CaseTimeline::INTERNAL,
+			visibility: CaseTimelineInterface::INTERNAL,
 		);
 
 		$this->notifyAssignee(

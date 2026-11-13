@@ -44,12 +44,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\AdvisoryCommitteeServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\BesluitMaterialisationService;
-use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\DecisionDocument\ConcludedDecisionRecord;
 use OCA\Dossiq\Service\Flow\WaitingRunResumer;
 use OCA\Dossiq\Service\Product\CaseOutcomeProductIssuer;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\FlowDecisionSubject;
 use OCA\OpenRegister\Db\FlowRunMapper;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
@@ -102,9 +102,9 @@ class DecisionConcludedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Schema/register/ObjectService bridge.
+	 * @param SettingsServiceInterface $settingsService Schema/register/ObjectService bridge.
 	 * @param BesluitMaterialisationService $decisionMaterialiser ZGW Besluit projection from the outcome.
-	 * @param AdvisoryCommitteeService $bacService BAC advice-request audit writer (Awb art. 7:13 lid 7).
+	 * @param AdvisoryCommitteeServiceInterface $bacService BAC advice-request audit writer (Awb art. 7:13 lid 7).
 	 * @param LoggerInterface $logger Logger.
 	 * @param FlowRunMapper|null $runs Finds the run suspended on this decision. Nullable
 	 *                                 so adding it breaks no existing construction site;
@@ -119,9 +119,9 @@ class DecisionConcludedListener implements IEventListener {
 	 *                                                (decision 172); absent, no product is written.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly BesluitMaterialisationService $decisionMaterialiser,
-		AdvisoryCommitteeService $bacService,
+		AdvisoryCommitteeServiceInterface $bacService,
 		private readonly LoggerInterface $logger,
 		?FlowRunMapper $runs = null,
 		?FlowRunService $runner = null,

@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\FileSet\FileSetItemFiles;
 use OCA\Dossiq\Woo\WooDeliveredSetVerifier;
 use OCP\AppFramework\Controller;
@@ -54,7 +54,7 @@ class WooDeliveredSetController extends Controller {
 	 * @param string                  $appName     The app name.
 	 * @param IRequest                $request     The request.
 	 * @param WooDeliveredSetVerifier $verifier    Recomputes the hashes.
-	 * @param CaseAccessGuard         $guard       Case read access.
+	 * @param CaseAccessGuardInterface         $guard       Case read access.
 	 * @param IUserSession            $userSession The caller.
 	 * @param FileSetItemFiles        $files       Reads both files of an item.
 	 */
@@ -62,7 +62,7 @@ class WooDeliveredSetController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly WooDeliveredSetVerifier $verifier,
-		private readonly CaseAccessGuard $guard,
+		private readonly CaseAccessGuardInterface $guard,
 		private readonly IUserSession $userSession,
 		private readonly FileSetItemFiles $files,
 	) {

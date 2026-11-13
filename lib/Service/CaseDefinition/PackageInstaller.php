@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseDefinition;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PackageInstallerInterface;
 use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
@@ -45,28 +46,8 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
  */
-class PackageInstaller {
+class PackageInstaller implements PackageInstallerInterface {
 	use StampsPackageRows;
-
-	/**
-	 * The package was written and recorded.
-	 */
-	public const INSTALLED = 'installed';
-
-	/**
-	 * The package is already at this version here; nothing was written.
-	 */
-	public const CURRENT = 'current';
-
-	/**
-	 * The package was not written, for a reason the package or instance gives.
-	 */
-	public const REFUSED = 'refused';
-
-	/**
-	 * The write failed and was rolled back.
-	 */
-	public const FAILED = 'error';
 
 	/**
 	 * The settings key each case type collection is written to.

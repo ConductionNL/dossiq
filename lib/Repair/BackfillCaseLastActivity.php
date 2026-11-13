@@ -34,9 +34,9 @@ namespace OCA\Dossiq\Repair;
 
 use DateTimeInterface;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Activity\CaseActivityStamp;
-use OCA\Dossiq\Service\CaseDateNormaliser;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -101,15 +101,15 @@ class BackfillCaseLastActivity implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService Names the register and the case schema, and hands out the object service.
+	 * @param SettingsServiceInterface    $settingsService Names the register and the case schema, and hands out the object service.
 	 * @param IAppConfig         $appConfig       Holds the completion key.
-	 * @param CaseDateNormaliser $dates           Reads and writes every date, and is the clock that passes over dates in the future.
+	 * @param CaseDateNormaliserInterface $dates           Reads and writes every date, and is the clock that passes over dates in the future.
 	 * @param LoggerInterface    $logger          Records a case that refused.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
-		private readonly CaseDateNormaliser $dates,
+		private readonly CaseDateNormaliserInterface $dates,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

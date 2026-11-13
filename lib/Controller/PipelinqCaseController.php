@@ -44,7 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\Milestone\MilestoneRepository;
 use OCA\Dossiq\Service\Pipelinq\CorrespondenceLanguageConsumer;
 use OCA\Dossiq\Service\Pipelinq\PartyKindConsumer;
@@ -77,7 +77,7 @@ class PipelinqCaseController extends Controller {
 	 * @param PartyKindConsumer              $kinds       The kinds and the per-case-type acceptance.
 	 * @param CorrespondenceLanguageConsumer $languages   The language to write in, with its reason.
 	 * @param MilestoneRepository            $cases       Reads a case's type without the client supplying it.
-	 * @param CaseAccessGuard                $access      Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface                $access      Per-case authorization (fails closed).
 	 * @param IUserSession                   $userSession The current session.
 	 * @param IL10N                          $l10n        The translations.
 	 */
@@ -88,7 +88,7 @@ class PipelinqCaseController extends Controller {
 		private readonly PartyKindConsumer $kinds,
 		private readonly CorrespondenceLanguageConsumer $languages,
 		private readonly MilestoneRepository $cases,
-		private readonly CaseAccessGuard $access,
+		private readonly CaseAccessGuardInterface $access,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {

@@ -42,7 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\CaseAssignmentService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -80,7 +80,7 @@ class CaseAssignmentController extends Controller {
 	 *
 	 * @param IRequest              $request         The HTTP request.
 	 * @param CaseAssignmentService $assignment      Claim and release.
-	 * @param CaseAccessGuard       $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface       $caseAccessGuard Per-case authorization (fails closed).
 	 * @param IUserSession          $userSession     The current session.
 	 * @param IL10N                 $l10n            The translations.
 	 * @param LoggerInterface       $logger          The logger.
@@ -88,7 +88,7 @@ class CaseAssignmentController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly CaseAssignmentService $assignment,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,

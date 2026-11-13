@@ -32,8 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\ConsultationServiceInterface;
 use OCA\Dossiq\Service\Consultation\ConsultationAccessGuard;
-use OCA\Dossiq\Service\ConsultationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -53,13 +53,13 @@ class ConsultationController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param ConsultationService $consultationService The consultation service
+	 * @param ConsultationServiceInterface $consultationService The consultation service
 	 * @param ConsultationAccessGuard $accessGuard The authorization/body-decoding guard
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ConsultationService $consultationService,
+		private readonly ConsultationServiceInterface $consultationService,
 		private readonly ConsultationAccessGuard $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);

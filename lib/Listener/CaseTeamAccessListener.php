@@ -35,8 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Access\CaseTeamAccessProjector;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -54,11 +54,11 @@ class CaseTeamAccessListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService         $settingsService Knows which schema holds the case types.
+	 * @param SettingsServiceInterface         $settingsService Knows which schema holds the case types.
 	 * @param CaseTeamAccessProjector $projector       Writes the rules onto the case schema.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly CaseTeamAccessProjector $projector,
 	) {
 	}//end __construct()

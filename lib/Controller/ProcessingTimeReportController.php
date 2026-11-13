@@ -18,7 +18,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Reporting\ProcessingTimeReportService;
+use OCA\Dossiq\Kernel\Contracts\ProcessingTimeReportServiceInterface;
 use OCA\Dossiq\Service\Reporting\ReportingAudience;
 use OCA\Dossiq\Service\Reporting\ReportPeriod;
 use OCP\AppFramework\Controller;
@@ -41,7 +41,7 @@ class ProcessingTimeReportController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest                    $request     Inbound request.
-	 * @param ProcessingTimeReportService $reports     Builds the report.
+	 * @param ProcessingTimeReportServiceInterface $reports     Builds the report.
 	 * @param ReportPeriod                $periods     Knows the period presets.
 	 * @param IUserSession                $userSession Current user session.
 	 * @param ReportingAudience           $audience    Who may read a figure about every record.
@@ -49,7 +49,7 @@ class ProcessingTimeReportController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly ProcessingTimeReportService $reports,
+		private readonly ProcessingTimeReportServiceInterface $reports,
 		private readonly ReportPeriod $periods,
 		private readonly IUserSession $userSession,
 		private readonly ReportingAudience $audience,
@@ -75,7 +75,7 @@ class ProcessingTimeReportController extends Controller {
 		$period    = $this->request->getParam('period', ReportPeriod::DEFAULT_PRESET);
 		$caseType  = $this->request->getParam('caseType');
 		$view      = $this->request->getParam('view');
-		$threshold = $this->request->getParam('threshold', ProcessingTimeReportService::DEFAULT_THRESHOLD);
+		$threshold = $this->request->getParam('threshold', ProcessingTimeReportServiceInterface::DEFAULT_THRESHOLD);
 
 		$refusal = $this->badRequest(period: $period, caseType: $caseType, view: $view, threshold: $threshold);
 		if ($refusal !== null) {
@@ -138,7 +138,7 @@ class ProcessingTimeReportController extends Controller {
 		} else if ($caseType !== null && is_string($caseType) === false) {
 			$message = 'caseType must be a string';
 		} else if ($this->isKnownView(view: $view) === false) {
-			$message = 'view must be one of '.implode(', ', ProcessingTimeReportService::VIEWS);
+			$message = 'view must be one of '.implode(', ', ProcessingTimeReportServiceInterface::VIEWS);
 		} else if (is_numeric($threshold) === false || (float)$threshold < 0 || (float)$threshold > 1) {
 			$message = 'threshold must be a number from 0 to 1';
 		}
@@ -159,7 +159,7 @@ class ProcessingTimeReportController extends Controller {
 	 */
 	private function isKnownView(mixed $view): bool {
 		return $this->emptyToNull(value: $view) === null
-			|| in_array($view, ProcessingTimeReportService::VIEWS, true) === true;
+			|| in_array($view, ProcessingTimeReportServiceInterface::VIEWS, true) === true;
 	}//end isKnownView()
 
 	/**

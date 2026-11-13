@@ -29,7 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Subsidie\SubsidieRegisterExporter;
 use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\AppFramework\Controller;
@@ -50,12 +50,12 @@ class SubsidieRegisterController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param SettingsService $settingsService Schema/register bridge.
+	 * @param SettingsServiceInterface $settingsService Schema/register bridge.
 	 * @param SubsidieRegisterExporter $exporter Feed builder.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly SubsidieRegisterExporter $exporter,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

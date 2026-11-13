@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Integration;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
@@ -69,14 +69,14 @@ class CaseLeafProvider {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The register and the object service.
+	 * @param SettingsServiceInterface $settingsService The register and the object service.
 	 * @param IUserManager    $userManager     Names the handler.
 	 * @param IURLGenerator   $urlGenerator    Links a case to its page.
 	 * @param LoggerInterface $logger          PSR logger.
 	 * @param LanguageMapText $text            A translatable title or name as one string.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IUserManager $userManager,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly LoggerInterface $logger,

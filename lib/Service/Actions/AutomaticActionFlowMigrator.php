@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Actions;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AutomaticActionFlowMigratorInterface;
 use OCA\Dossiq\Service\Flow\FlowMigrationSummary;
 use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
@@ -54,7 +55,7 @@ use Throwable;
  *
  * @spec openspec/changes/page-topology-cleanup/tasks.md
  */
-class AutomaticActionFlowMigrator {
+class AutomaticActionFlowMigrator implements AutomaticActionFlowMigratorInterface {
 	use ProjectsOntoFlows;
 
 	/**

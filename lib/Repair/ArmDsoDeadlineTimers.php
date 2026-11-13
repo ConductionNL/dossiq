@@ -29,11 +29,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\CaseTimerSweep;
 use OCA\Dossiq\Repair\Support\CaseTimerSweeper;
 use OCA\Dossiq\Service\Dso\DsoDeadlineActs;
 use OCA\Dossiq\Service\Dso\DsoDeadlineTimer;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -47,13 +47,13 @@ class ArmDsoDeadlineTimers implements IRepairStep {
 	/**
 	 * Build the step.
 	 *
-	 * @param SettingsService  $settingsService Reaches OpenRegister and the case schema.
+	 * @param SettingsServiceInterface  $settingsService Reaches OpenRegister and the case schema.
 	 * @param DsoDeadlineTimer $timer           Arms each case's timer.
 	 * @param DsoDeadlineActs  $acts            Marks the cases already overdue.
 	 * @param LoggerInterface  $logger          Logs the counts.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly DsoDeadlineTimer $timer,
 		private readonly DsoDeadlineActs $acts,
 		private readonly LoggerInterface $logger,

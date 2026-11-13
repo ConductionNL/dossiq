@@ -37,10 +37,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseSharingService;
-use OCA\Dossiq\Service\CaseTransferService;
-use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
-use OCA\Dossiq\Service\Sharing\CaseLinkShares;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessLinkServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseLinkSharesInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseSharingServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTransferServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -58,16 +58,16 @@ class CaseSharingController extends Controller {
 	 * Constructor for the CaseSharingController.
 	 *
 	 * @param IRequest $request The request object
-	 * @param CaseSharingService $caseSharingService The sharing service
-	 * @param CaseTransferService $caseTransferService The transfer service
+	 * @param CaseSharingServiceInterface $caseSharingService The sharing service
+	 * @param CaseTransferServiceInterface $caseTransferService The transfer service
 	 * @param IUserSession $userSession The user session
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
-		private CaseSharingService $caseSharingService,
-		private CaseTransferService $caseTransferService,
+		private CaseSharingServiceInterface $caseSharingService,
+		private CaseTransferServiceInterface $caseTransferService,
 		private IUserSession $userSession,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -151,7 +151,7 @@ class CaseSharingController extends Controller {
 			label: (string)$this->request->getParam('label', ''),
 			createdBy: $user->getUID(),
 			expiresAt: $this->request->getParam('expiresAt'),
-			capabilities: $this->asList(value: $this->request->getParam('capabilities'), fallback: CaseAccessLinkService::DEFAULT_CAPABILITIES),
+			capabilities: $this->asList(value: $this->request->getParam('capabilities'), fallback: CaseAccessLinkServiceInterface::DEFAULT_CAPABILITIES),
 			password: $this->optionalText(value: $this->request->getParam('password')),
 			sharedDocuments: $this->asList(value: $this->request->getParam('sharedDocuments'), fallback: []),
 		);
@@ -258,7 +258,7 @@ class CaseSharingController extends Controller {
 	 */
 	private function refusedMint(array $share): JSONResponse {
 		$status = Http::STATUS_BAD_GATEWAY;
-		if (($share['reason'] ?? '') === CaseLinkShares::REASON_NOT_CONFIGURED) {
+		if (($share['reason'] ?? '') === CaseLinkSharesInterface::REASON_NOT_CONFIGURED) {
 			$status = Http::STATUS_SERVICE_UNAVAILABLE;
 		}
 

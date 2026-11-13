@@ -30,10 +30,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Money\AccruingAmountSettler;
 use OCA\Dossiq\Service\Money\AmountObjectionService;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -60,9 +60,9 @@ class AccruingAmountController extends Controller {
 	 * @param IRequest $request Request.
 	 * @param AccruingAmountSettler $settler Stops the stored accrual and locks the amount.
 	 * @param AmountObjectionService $objection Objection service.
-	 * @param SettingsService $settings Settings.
+	 * @param SettingsServiceInterface $settings Settings.
 	 * @param IUserSession $userSession User session.
-	 * @param CaseAccessGuard $caseAccess Per-case authorization guard.
+	 * @param CaseAccessGuardInterface $caseAccess Per-case authorization guard.
 	 * @param OwningCaseResolver $owningCase Resolves a berekening's owning case.
 	 */
 	public function __construct(
@@ -70,9 +70,9 @@ class AccruingAmountController extends Controller {
 		IRequest $request,
 		private readonly AccruingAmountSettler $settler,
 		private readonly AmountObjectionService $objection,
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccess,
+		private readonly CaseAccessGuardInterface $caseAccess,
 		private readonly OwningCaseResolver $owningCase,
 	) {
 		parent::__construct(appName: $appName, request: $request);

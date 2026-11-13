@@ -34,7 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\PlannedAction\PlannedActionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -58,14 +58,14 @@ class PlannedActionController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param PlannedActionService $plannedActions Reads and writes planned actions.
 	 * @param IUserSession $userSession The user session.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly PlannedActionService $plannedActions,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

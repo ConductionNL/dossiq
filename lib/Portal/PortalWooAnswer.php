@@ -30,9 +30,9 @@ namespace OCA\Dossiq\Portal;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
-use OCA\Dossiq\Service\AanvullingsverzoekService;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use Psr\Log\LoggerInterface;
@@ -65,16 +65,16 @@ class PortalWooAnswer {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService                     $settings   Bridge to OpenRegister.
-	 * @param AanvullingsverzoekService           $requests   The requests themselves.
+	 * @param SettingsServiceInterface                     $settings   Bridge to OpenRegister.
+	 * @param AanvullingsverzoekServiceInterface           $requests   The requests themselves.
 	 * @param AanvullingsverzoekResolutionService $resolution Records the answer on the open request.
 	 * @param ApplicantPortalActs                 $acts       Tells the handler.
 	 * @param LoggerInterface                     $logger     Logger.
 	 * @param DocumentRecordStore|null            $documents  Stores the requester's files on the case.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
-		private readonly AanvullingsverzoekService $requests,
+		private readonly SettingsServiceInterface $settings,
+		private readonly AanvullingsverzoekServiceInterface $requests,
 		private readonly AanvullingsverzoekResolutionService $resolution,
 		private readonly ApplicantPortalActs $acts,
 		private readonly LoggerInterface $logger,
@@ -315,7 +315,7 @@ class PortalWooAnswer {
 		$request = $this->findObjectAsArray(
 			objectService: $run->objectService,
 			register: $run->register,
-			schema: AanvullingsverzoekService::SCHEMA,
+			schema: AanvullingsverzoekServiceInterface::SCHEMA,
 			id: $run->requestId
 		);
 		if ($this->isOpenFor(row: $request, subjectRef: $run->subjectRef, open: true) === false) {

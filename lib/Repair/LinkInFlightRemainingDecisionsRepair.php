@@ -35,9 +35,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
@@ -112,14 +112,14 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	 *
 	 * @param BezwaarDecisionDelegationService $objectionDelegation Bezwaar decision delegation service.
 	 * @param AdviceDelegationService $adviceDelegation Advice delegation service.
-	 * @param SettingsService $settingsService Settings / ObjectService resolver.
+	 * @param SettingsServiceInterface $settingsService Settings / ObjectService resolver.
 	 * @param JsonEncodedStringProperties $jsonProperties Restores the declared string shape of JSON-encoded properties.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly BezwaarDecisionDelegationService $objectionDelegation,
 		private readonly AdviceDelegationService $adviceDelegation,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly JsonEncodedStringProperties $jsonProperties,
 		private readonly LoggerInterface $logger,
 	) {

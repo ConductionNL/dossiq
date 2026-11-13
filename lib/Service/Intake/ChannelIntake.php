@@ -57,6 +57,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Kernel\Contracts\ChannelIntakeInterface;
 use OCA\Dossiq\Service\CommunicationChannel;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\SettingsService;
@@ -69,7 +70,7 @@ use Throwable;
  *
  * @spec openspec/specs/intake-from-a-channel/spec.md
  */
-class ChannelIntake {
+class ChannelIntake implements ChannelIntakeInterface {
 
 	use SearchesObjects;
 
@@ -467,9 +468,6 @@ class ChannelIntake {
 			reason: $reason
 		);
 	}//end refuse()
-
-
-
 
 	/**
 	 * Coerce whatever the object service answered into an array.

@@ -30,9 +30,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Publication\PublicationDateRule;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PublicationServiceInterface;
+use OCA\Dossiq\Service\Publication\PublicationDateRule;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
-class PublicationService {
+class PublicationService implements PublicationServiceInterface {
 	/**
 	 * Supported publication channels.
 	 */

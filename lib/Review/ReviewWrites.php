@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Review;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
 
 /**
  * A person's writes on a review, each followed by the grants a new review needs.
@@ -40,13 +40,13 @@ class ReviewWrites {
 	 * Constructor.
 	 *
 	 * @param DocumentRelevance  $reviews        The reviews.
-	 * @param CaseReviewerAccess $reviewerAccess Shares a review that was just created with the people on its case.
+	 * @param CaseReviewerAccessInterface $reviewerAccess Shares a review that was just created with the people on its case.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly DocumentRelevance $reviews,
-		private readonly CaseReviewerAccess $reviewerAccess,
+		private readonly CaseReviewerAccessInterface $reviewerAccess,
 	) {
 	}//end __construct()
 

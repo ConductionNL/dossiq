@@ -34,7 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use OCP\EventDispatcher\Event;
@@ -92,7 +92,7 @@ class WooSources {
 	 * @param IAppManager      $appManager      Whether integriq is installed and enabled.
 	 * @param IEventDispatcher $dispatcher      Carries the search and fetch to integriq.
 	 * @param IAppConfig       $appConfig       Holds the connection key.
-	 * @param SettingsService  $settingsService The register and the document schema, for the cases source.
+	 * @param SettingsServiceInterface  $settingsService The register and the document schema, for the cases source.
 	 * @param IL10N            $l10n            Source labels.
 	 * @param LoggerInterface  $logger          Logs a search or fetch integriq could not answer.
 	 */
@@ -100,7 +100,7 @@ class WooSources {
 		private readonly IAppManager $appManager,
 		private readonly IEventDispatcher $dispatcher,
 		private readonly IAppConfig $appConfig,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {

@@ -29,11 +29,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\CaseTimerSweep;
 use OCA\Dossiq\Repair\Support\CaseTimerSweeper;
 use OCA\Dossiq\Service\Milestone\MilestoneStallActs;
 use OCA\Dossiq\Service\Milestone\MilestoneStallTimer;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -47,13 +47,13 @@ class ArmMilestoneStallTimers implements IRepairStep {
 	/**
 	 * Build the step.
 	 *
-	 * @param SettingsService  $settingsService Reaches OpenRegister and the case schema.
+	 * @param SettingsServiceInterface  $settingsService Reaches OpenRegister and the case schema.
 	 * @param MilestoneStallTimer $timer           Arms each case's timer.
 	 * @param MilestoneStallActs  $acts            Tells the assignees of cases already stalled.
 	 * @param LoggerInterface  $logger          Logs the counts.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly MilestoneStallTimer $timer,
 		private readonly MilestoneStallActs $acts,
 		private readonly LoggerInterface $logger,

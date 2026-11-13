@@ -52,6 +52,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CreateTaskHandlerInterface;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\WorkingDayCalculator;
@@ -64,7 +65,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T08
  */
-class CreateTaskHandler implements ActionHandlerInterface {
+class CreateTaskHandler implements ActionHandlerInterface, CreateTaskHandlerInterface {
 	/**
 	 * Constructor.
 	 *

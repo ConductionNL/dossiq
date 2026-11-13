@@ -38,10 +38,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseTypeViews;
+use OCA\Dossiq\Kernel\Contracts\MenuCaseTypesServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\MenuCaseTypesService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\CaseTypeViews;
 use OCP\IConfig;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -78,17 +78,17 @@ class PinCaseTypesAsViews implements IRepairStep {
 	 *
 	 * @param IConfig              $config        Per-user values.
 	 * @param IUserManager         $userManager   The users to walk.
-	 * @param MenuCaseTypesService $menuCaseTypes The case types a user pinned.
+	 * @param MenuCaseTypesServiceInterface $menuCaseTypes The case types a user pinned.
 	 * @param CaseTypeViews        $caseTypeViews The view and menu entry per case type.
-	 * @param SettingsService      $settings      OpenRegister, to read the case types as the system.
+	 * @param SettingsServiceInterface      $settings      OpenRegister, to read the case types as the system.
 	 * @param LoggerInterface      $logger        Where a failure is written.
 	 */
 	public function __construct(
 		private readonly IConfig $config,
 		private readonly IUserManager $userManager,
-		private readonly MenuCaseTypesService $menuCaseTypes,
+		private readonly MenuCaseTypesServiceInterface $menuCaseTypes,
 		private readonly CaseTypeViews $caseTypeViews,
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\LhsLookupService;
 use OCA\Dossiq\Service\Vth\LhsRecommendationService;
 use OCP\AppFramework\Controller;
@@ -63,7 +63,7 @@ class LhsController extends Controller {
 	 * @param IUserSession $userSession User session
 	 * @param IGroupManager $groupManager Group manager
 	 * @param LoggerInterface $logger Logger
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
 	 */
 	public function __construct(
 		string $appName,
@@ -73,7 +73,7 @@ class LhsController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

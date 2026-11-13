@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\Vth\LhsMatrixDecisionTableMigrator;
+use OCA\Dossiq\Kernel\Contracts\LhsMatrixDecisionTableMigratorInterface;
 use OCP\IUser;
 use OCP\IUserManager;
 use Symfony\Component\Console\Command\Command;
@@ -46,11 +46,11 @@ class MigrateLhsToDecisionTablesCommand extends Command {
 	/**
 	 * Wire the command against the migrator.
 	 *
-	 * @param LhsMatrixDecisionTableMigrator $migrator The migrator.
+	 * @param LhsMatrixDecisionTableMigratorInterface $migrator The migrator.
 	 * @param IUserManager $userManager Resolves the acting user.
 	 */
 	public function __construct(
-		private readonly LhsMatrixDecisionTableMigrator $migrator,
+		private readonly LhsMatrixDecisionTableMigratorInterface $migrator,
 		private readonly IUserManager $userManager,
 	) {
 		parent::__construct();

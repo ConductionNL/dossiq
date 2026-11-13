@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ContactMomentServiceInterface;
 use OCA\Dossiq\Service\Support\CastArray;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
@@ -42,7 +43,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
  */
-class ContactMomentService {
+class ContactMomentService implements ContactMomentServiceInterface {
 	use SearchesObjects;
 
 	/**

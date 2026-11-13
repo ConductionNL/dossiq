@@ -42,10 +42,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Money\CasePaymentReader;
 use OCA\Dossiq\Service\Money\CasePaymentState;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -80,7 +80,7 @@ class PaymentStateProjectionJob extends TimedJob {
 	 *
 	 * @param ITimeFactory $time The time factory.
 	 * @param CasePaymentReader $payments Reads the state from shillinq.
-	 * @param SettingsService $settingsService Bridge to OpenRegister plus config.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister plus config.
 	 * @param IAppManager $appManager Establishes that the apps are present.
 	 * @param LoggerInterface $logger The logger.
 	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as.
@@ -88,7 +88,7 @@ class PaymentStateProjectionJob extends TimedJob {
 	public function __construct(
 		ITimeFactory $time,
 		private readonly CasePaymentReader $payments,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,

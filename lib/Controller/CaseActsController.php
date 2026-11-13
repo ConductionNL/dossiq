@@ -52,7 +52,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\Lifecycle\ArchiveRequesterNotice;
 use OCA\Dossiq\Service\Lifecycle\CaseActs;
 use OCA\Dossiq\Service\Lifecycle\CaseActsOverview;
@@ -96,7 +96,7 @@ class CaseActsController extends Controller {
 	 * @param IRequest $request The HTTP request.
 	 * @param CaseActs $acts Every act on a case, behind one collaborator.
 	 * @param CaseActsOverview $overview The read the menu is drawn from.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization, failing closed.
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization, failing closed.
 	 * @param IUserSession $userSession The current session.
 	 * @param LoggerInterface $logger The logger.
 	 * @param ArchiveRequesterNotice|null $archiveNotice Tells the requester an archived case is completed.
@@ -106,7 +106,7 @@ class CaseActsController extends Controller {
 		IRequest $request,
 		private readonly CaseActs $acts,
 		private readonly CaseActsOverview $overview,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly ?ArchiveRequesterNotice $archiveNotice = null,

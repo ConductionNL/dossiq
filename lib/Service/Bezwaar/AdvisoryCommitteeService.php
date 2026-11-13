@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AdvisoryCommitteeServiceInterface;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Governance\GovernanceBodyReader;
 use OCA\Dossiq\Service\InternalWriteMarker;
@@ -56,7 +57,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/bezwaar-advisory-committee/spec.md
  */
-class AdvisoryCommitteeService {
+class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 
 	use SearchesObjects;
 	use ReadsPanelMembers;
@@ -104,16 +105,6 @@ class AdvisoryCommitteeService {
 	 * Default deadline in days for advice delivery (12 weeks per Awb 7:24(1)).
 	 */
 	private const DEFAULT_DEADLINE_DAYS = 84;
-
-	/**
-	 * The code of the RuntimeException raised for an advice request that does not exist.
-	 */
-	public const NOT_FOUND = 404;
-
-	/**
-	 * The code of the RuntimeException raised when someone other than the committee chair signs the advice.
-	 */
-	public const NOT_CHAIR = 403;
 
 	/**
 	 * The statuses the committee chair signs.

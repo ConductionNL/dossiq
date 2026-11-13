@@ -31,10 +31,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
 use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTimer;
 use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTrigger;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -60,13 +60,13 @@ class BezwaarArchiveTimerListener implements IEventListener {
 	/**
 	 * Build the listener.
 	 *
-	 * @param SettingsService       $settingsService Names the watched schema.
+	 * @param SettingsServiceInterface       $settingsService Names the watched schema.
 	 * @param BezwaarArchiveTimer   $timer           Arms and cancels the timer.
 	 * @param BezwaarArchiveTrigger $trigger         Acts on a trigger already due.
 	 * @param LoggerInterface       $logger          Logs a failed sync.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly BezwaarArchiveTimer $timer,
 		private readonly BezwaarArchiveTrigger $trigger,
 		private readonly LoggerInterface $logger,
