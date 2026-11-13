@@ -46,6 +46,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Flow\PlannedSeriesLedger
  * @uses \OCA\Dossiq\Service\Flow\PlannedFollowUpDocument
  * @uses \OCA\Dossiq\Service\Flow\PlannedSeriesCalendar
+ * @uses \OCA\Dossiq\Service\Flow\RetirementSweep
  */
 class PlannedFollowUpSweepTest extends TestCase {
 

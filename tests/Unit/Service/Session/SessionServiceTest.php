@@ -46,6 +46,7 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinitionReader
  * @uses   \OCA\Dossiq\Service\Session\SessionRules
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Support\CaseRegisterReads
  */
 class SessionServiceTest extends TestCase {
 

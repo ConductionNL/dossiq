@@ -47,7 +47,6 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCA\Dossiq\Service\Flow\RetiredNodeRewriter;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -60,8 +59,6 @@ use Throwable;
  * @spec openspec/specs/automatic-actions/spec.md
  */
 class RewriteRetiredFlowNodes implements IRepairStep {
-
-	use SearchesObjects;
 
 	/**
 	 * OpenRegister's flow mapper, resolved by name.
@@ -142,95 +139,191 @@ class RewriteRetiredFlowNodes implements IRepairStep {
 	 * @return void
 	 */
 	private function rewriteFlows(IOutput $output): void {
+		$run = $this->flowRewriteRun(output: $output);
+		if ($run === null) {
+			return;
+		}
+
+		$rewritten = $this->rewriteStoredFlows(run: $run);
+		if ($rewritten !== null) {
+			$output->info('Dossiq: rewrote ' . $rewritten . ' flow(s) that used a retired step type.');
+		}
+	}//end rewriteFlows()
+
+	/**
+	 * OpenRegister's flow classes for this run, or null when they are not there.
+	 *
+	 * @param IOutput $output Output sink.
+	 *
+	 * @return FlowRewriteRun|null The run.
+	 */
+	private function flowRewriteRun(IOutput $output): ?FlowRewriteRun {
 		try {
 			$mapper = $this->container->get(self::FLOW_MAPPER);
 			$versions = $this->container->get(self::VERSION_SERVICE);
 		} catch (Throwable $e) {
 			$output->info('Dossiq: OpenRegister flows are not available; no stored flow to rewrite.');
-			return;
+			return null;
 		}
 
+		return new FlowRewriteRun(mapper: $mapper, versions: $versions, output: $output);
+	}//end flowRewriteRun()
+
+	/**
+	 * Rewrite the flows page by page; a page that cannot be read stops the walk.
+	 *
+	 * @param FlowRewriteRun $run The run.
+	 *
+	 * @return int|null How many flows were rewritten, or null when a page could not be read.
+	 */
+	private function rewriteStoredFlows(FlowRewriteRun $run): ?int {
 		$rewritten = 0;
 		$offset = 0;
 		do {
-			try {
-				$page = (array)$mapper->findAllFlows(app: Application::APP_ID, limit: self::PAGE, offset: $offset);
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: could not read the stored flows to rewrite retired steps',
-					['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-				);
-				return;
+			$page = $this->flowPage(run: $run, offset: $offset);
+			if ($page === null) {
+				return null;
 			}
 
-			foreach ($page as $flow) {
-				if (is_object($flow) === true && $this->rewriteFlow(flow: $flow, mapper: $mapper, versions: $versions, output: $output) === true) {
-					$rewritten++;
-				}
-			}
-
+			$rewritten += $this->rewritePage(run: $run, page: $page);
 			$offset += self::PAGE;
 			$full = (count($page) === self::PAGE);
 		} while ($full === true);
 
-		$output->info('Dossiq: rewrote ' . $rewritten . ' flow(s) that used a retired step type.');
-	}//end rewriteFlows()
+		return $rewritten;
+	}//end rewriteStoredFlows()
+
+	/**
+	 * One page of the flows dossiq owns, or null when it cannot be read.
+	 *
+	 * @param FlowRewriteRun $run    The run.
+	 * @param int            $offset Where the page starts.
+	 *
+	 * @return array<int, mixed>|null The page.
+	 */
+	private function flowPage(FlowRewriteRun $run, int $offset): ?array {
+		try {
+			return (array)$run->mapper->findAllFlows(app: Application::APP_ID, limit: self::PAGE, offset: $offset);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not read the stored flows to rewrite retired steps',
+				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end flowPage()
+
+	/**
+	 * Rewrite the flows on one page.
+	 *
+	 * @param FlowRewriteRun    $run  The run.
+	 * @param array<int, mixed> $page The page.
+	 *
+	 * @return int How many of them were rewritten.
+	 */
+	private function rewritePage(FlowRewriteRun $run, array $page): int {
+		$rewritten = 0;
+		foreach ($page as $flow) {
+			if (is_object($flow) === true && $this->rewriteFlow(flow: $flow, run: $run) === true) {
+				$rewritten++;
+			}
+		}
+
+		return $rewritten;
+	}//end rewritePage()
 
 	/**
 	 * Rewrite one flow, when it names a retired type.
 	 *
-	 * @param object  $flow     The stored flow.
-	 * @param object  $mapper   OpenRegister's FlowMapper.
-	 * @param object  $versions OpenRegister's FlowVersionService.
-	 * @param IOutput $output   Output sink.
+	 * @param object         $flow The stored flow.
+	 * @param FlowRewriteRun $run  The run.
 	 *
 	 * @return boolean Whether the flow was rewritten.
 	 */
-	private function rewriteFlow(object $flow, object $mapper, object $versions, IOutput $output): bool {
-		$result = $this->rewriter->rewrite(
-			nodes: (array)($flow->getNodes() ?? []),
-			edges: (array)($flow->getEdges() ?? [])
-		);
-		if ($result['changes'] === []) {
+	private function rewriteFlow(object $flow, FlowRewriteRun $run): bool {
+		$rewrite = $this->rewriteOf(flow: $flow);
+		if ($rewrite === null) {
 			return false;
 		}
 
-		$label = '"' . (string)$flow->getName() . '" (' . (string)$flow->getUuid() . ')';
-		foreach ($result['changes'] as $change) {
-			$this->report(change: $change, label: $label, output: $output);
+		foreach ($rewrite->changes as $change) {
+			$this->report(change: $change, label: $rewrite->label(), output: $run->output);
 		}
 
 		// A flow whose only retired steps could not be carried over has
 		// nothing to save: the graph is what it was, and the warnings above
 		// are the whole outcome. Saving it anyway would mint a version that
 		// differs from the last in nothing but its number.
-		$unmappable = array_filter($result['changes'], static fn (array $change): bool => $change['outcome'] === 'unmappable');
-		if (count($unmappable) === count($result['changes'])) {
+		if ($rewrite->savesNothing() === true) {
 			return false;
 		}
 
+		return $this->saveRewrite(rewrite: $rewrite, run: $run);
+	}//end rewriteFlow()
+
+	/**
+	 * What the rewrite makes of a flow, or null when it names no retired type.
+	 *
+	 * @param object $flow The stored flow.
+	 *
+	 * @return FlowRewrite|null The rewrite.
+	 */
+	private function rewriteOf(object $flow): ?FlowRewrite {
+		$result = $this->rewriter->rewrite(
+			nodes: (array)($flow->getNodes() ?? []),
+			edges: (array)($flow->getEdges() ?? [])
+		);
+		if ($result['changes'] === []) {
+			return null;
+		}
+
+		return new FlowRewrite(flow: $flow, nodes: $result['nodes'], edges: $result['edges'], changes: $result['changes']);
+	}//end rewriteOf()
+
+	/**
+	 * Save a rewritten flow; a save that fails is reported and the walk goes on.
+	 *
+	 * @param FlowRewrite    $rewrite The rewrite.
+	 * @param FlowRewriteRun $run     The run.
+	 *
+	 * @return boolean Whether the flow was saved.
+	 */
+	private function saveRewrite(FlowRewrite $rewrite, FlowRewriteRun $run): bool {
 		try {
-			$published = ((string)$flow->getLifecycleStatus() === self::PUBLISHED);
-			if ($published === true) {
-				$versions->createDraft($flow);
-			}
-
-			$flow->setNodes($result['nodes']);
-			$flow->setEdges($result['edges']);
-			$mapper->update($flow);
-
-			if ($published === true) {
-				$versions->publish($flow);
-			}
+			$this->storeRewrite(rewrite: $rewrite, run: $run);
 		} catch (Throwable $e) {
-			$message = 'Dossiq: could not save the rewritten flow ' . $label . '; edit it in the flow editor. ' . $e->getMessage();
-			$output->warning($message);
-			$this->logger->warning($message, ['app' => Application::APP_ID, 'flow' => (string)$flow->getUuid()]);
+			$message = 'Dossiq: could not save the rewritten flow ' . $rewrite->label() . '; edit it in the flow editor. ' . $e->getMessage();
+			$run->output->warning($message);
+			$this->logger->warning($message, ['app' => Application::APP_ID, 'flow' => (string)$rewrite->flow->getUuid()]);
 			return false;
 		}
 
 		return true;
-	}//end rewriteFlow()
+	}//end saveRewrite()
+
+	/**
+	 * Write the rewritten graph: through a new version for a published flow, in place otherwise.
+	 *
+	 * @param FlowRewrite    $rewrite The rewrite.
+	 * @param FlowRewriteRun $run     The run.
+	 *
+	 * @return void
+	 */
+	private function storeRewrite(FlowRewrite $rewrite, FlowRewriteRun $run): void {
+		$flow = $rewrite->flow;
+		$published = ((string)$flow->getLifecycleStatus() === self::PUBLISHED);
+		if ($published === true) {
+			$run->versions->createDraft($flow);
+		}
+
+		$flow->setNodes($rewrite->nodes);
+		$flow->setEdges($rewrite->edges);
+		$run->mapper->update($flow);
+
+		if ($published === true) {
+			$run->versions->publish($flow);
+		}
+	}//end storeRewrite()
 
 	/**
 	 * Say what happened to one step, in the output and in the log.
@@ -283,39 +376,30 @@ class RewriteRetiredFlowNodes implements IRepairStep {
 			return;
 		}
 
+		$this->retiredActionReport(output: $output)?->report(types: $types);
+	}//end reportRetiredActions()
+
+	/**
+	 * The report over the stored automatic actions, or null when they cannot be read.
+	 *
+	 * @param IOutput $output Output sink.
+	 *
+	 * @return RetiredActionReport|null The report.
+	 */
+	private function retiredActionReport(IOutput $output): ?RetiredActionReport {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'automatic_action_schema');
 		if ($objectService === null || $register === '' || $schema === '') {
-			return;
+			return null;
 		}
 
-		foreach ($types as $type => $reason) {
-			try {
-				$rows = $this->runAsSystemIfAvailable(
-					objectService: $objectService,
-					operation: fn (): array => $this->searchObjectsAsArraysUnscoped(
-						objectService: $objectService,
-						register: $register,
-						schema: $schema,
-						filters: ['type' => $type, '_limit' => 1000]
-					)
-				);
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: could not read the stored automatic actions of a retired type',
-					['app' => Application::APP_ID, 'type' => $type, 'exception' => $e->getMessage()]
-				);
-				continue;
-			}
-
-			foreach ((array)$rows as $row) {
-				$identifier = (string)($row['slug'] ?? ($row['id'] ?? ($row['uuid'] ?? '?')));
-				$message = 'Dossiq: automatic action "' . $identifier . '" has type ' . $type
-					. ', which is retired (' . $reason . '). It is kept, but it will not run.';
-				$output->warning($message);
-				$this->logger->warning($message, ['app' => Application::APP_ID, 'action' => $identifier]);
-			}
-		}//end foreach
-	}//end reportRetiredActions()
+		return new RetiredActionReport(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			output: $output,
+			logger: $this->logger,
+		);
+	}//end retiredActionReport()
 }//end class

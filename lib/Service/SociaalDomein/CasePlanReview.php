@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 
 declare(strict_types=1);
@@ -37,13 +37,14 @@ namespace OCA\Dossiq\Service\SociaalDomein;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Support\StoredArray;
 
 /**
  * Record a plan review, and answer whether a plan is due for one.
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 class CasePlanReview {
 
@@ -77,7 +78,7 @@ class CasePlanReview {
 	 *
 	 * @return boolean True when it is due for review.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
 	 */
 	public function isDue(array $plan, string $today = ''): bool {
 		$due = trim((string)($plan['reviewDate'] ?? ''));
@@ -106,7 +107,7 @@ class CasePlanReview {
 	 *
 	 * @throws RefusedException When the plan cannot be read or nothing was recorded.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
 	 */
 	public function record(
 		string $planId,
@@ -236,18 +237,7 @@ class CasePlanReview {
 	 * @return array<int, array<string, mixed>> The reviews.
 	 */
 	private function reviewsOf(array $plan): array {
-		$raw = ($plan['reviews'] ?? []);
-		if (is_string($raw) === true && trim($raw) !== '') {
-			$decoded = json_decode($raw, true);
-			$raw = [];
-			if (is_array($decoded) === true) {
-				$raw = $decoded;
-			}
-		}
-
-		if (is_array($raw) === false) {
-			return [];
-		}
+		$raw = StoredArray::from(value: ($plan['reviews'] ?? []));
 
 		return array_values(array_filter($raw, static fn ($row): bool => is_array($row) === true));
 	}//end reviewsOf()

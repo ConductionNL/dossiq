@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ namespace OCA\Dossiq\Service\Transitions;
 /**
  * A capped status: its id and its limit.
  *
- * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 final class StatusCapacity {
 	/**

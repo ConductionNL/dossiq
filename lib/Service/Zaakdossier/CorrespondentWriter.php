@@ -39,7 +39,7 @@ use Throwable;
  * the failure is logged rather than thrown, because the act that triggered
  * this was filing a document and that document is already on the case.
  *
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 class CorrespondentWriter {
 	use SearchesObjects;
@@ -84,7 +84,7 @@ class CorrespondentWriter {
 	 *
 	 * @return array<string, mixed> The fields to patch, [] when the edit names neither.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
 	 */
 	public function applyEdit(string $documentId, array $current, array $metadata, string $direction): array {
 		$namesSender = array_key_exists('sender', $metadata);
@@ -123,7 +123,7 @@ class CorrespondentWriter {
 	 *
 	 * @return string The case uuid, or ''.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
 	 */
 	private function caseOf(string $documentId): string {
 		try {
@@ -155,7 +155,7 @@ class CorrespondentWriter {
 	 *
 	 * @return array{sender: string, recipients: array<int, string>} What may be stored.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
 	 */
 	public function resolveFor(string $caseId, mixed $sender, mixed $recipients, string $direction): array {
 		return $this->rules->resolve(
@@ -174,7 +174,7 @@ class CorrespondentWriter {
 	 *
 	 * @return string The party's identifier, or ''.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
 	 */
 	public function partyHolding(string $caseId, string $address): string {
 		if (trim($address) === '') {
@@ -198,7 +198,7 @@ class CorrespondentWriter {
 	 *
 	 * @return array<int, string> The identifiers, [] when no role answered.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
 	 */
 	public function addressedParties(string $caseId, array $roles): array {
 		$parties = $this->partiesOf(caseId: $caseId);
@@ -240,7 +240,7 @@ class CorrespondentWriter {
 	 *
 	 * @return array<int, array<string, mixed>> The documents, named and narrowed.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
 	 * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
 	 */
 	public function describeAll(string $caseId, array $documents, string $correspondent = ''): array {
@@ -278,7 +278,7 @@ class CorrespondentWriter {
 	 *
 	 * @return int How many dispatch rows were created.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-014-a-dispatch-record-is-written-per-correspondent
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-014-a-dispatch-record-is-written-per-correspondent
 	 */
 	public function recordDispatches(string $caseId, string $documentId, array $correspondents): int {
 		if (trim($documentId) === '') {

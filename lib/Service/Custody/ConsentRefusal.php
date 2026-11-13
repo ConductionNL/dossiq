@@ -100,7 +100,7 @@ class ConsentRefusal {
 	 *
 	 * @return Outcome The outcome.
 	 *
-	 * @spec openspec/changes/an-internal-move-whose-case-cannot-be-read-is-refused/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function unchecked(): array {
 		$sentence = $this->l10n->t('Consent could not be checked, so the case was not handed on.');

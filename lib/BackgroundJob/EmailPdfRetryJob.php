@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T09
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Retries failed PDF archival attempts on a 15-minute cadence.
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T09
  */
 class EmailPdfRetryJob extends TimedJob {
 	/**
@@ -78,7 +78,7 @@ class EmailPdfRetryJob extends TimedJob {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T09
 	 */
 	protected function run($argument): void {
 		try {

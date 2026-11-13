@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use RuntimeException;
 /**
  * Files a capture as a case document.
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseCaptureService {
 
@@ -86,7 +86,7 @@ class CaseCaptureService {
 	 *
 	 * @return bool True when it is a capture.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isCapture(string $mimeType): bool {
 		foreach (self::CAPTURE_PREFIXES as $prefix) {
@@ -113,7 +113,7 @@ class CaseCaptureService {
 	 *
 	 * @throws RuntimeException When OpenRegister is not configured for documents.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function attachCapture(
 		string $caseId,
@@ -236,7 +236,7 @@ class CaseCaptureService {
 	 *
 	 * @throws RuntimeException When OpenRegister is absent or not configured for documents.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function documentStore(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -268,7 +268,7 @@ class CaseCaptureService {
 	 *
 	 * @return string The description written onto the document.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function captureDescription(string $mimeType, ?string $taskId): string {
 		$kind = 'Opname';

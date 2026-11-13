@@ -47,6 +47,7 @@ use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Lifecycle\TermExtensionRule;
+use OCA\Dossiq\Service\Support\RowList;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use Psr\Log\LoggerInterface;
@@ -102,7 +103,7 @@ class CaseLifecycleService {
 	 * @throws RuntimeException When the case cannot be read
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
+	 * @spec openspec/specs/template-library/spec.md
 	 */
 	public function state(string $caseId): array {
 		$case = $this->requireCase(caseId: $caseId);
@@ -251,7 +252,7 @@ class CaseLifecycleService {
 	 *                          unreadable or not after the current end date
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 * @spec openspec/specs/case-bulk-status-transition/spec.md
 	 */
 	public function extend(string $caseId, string $reason, string $newEndDate = ''): array {
 		$case = $this->requireCase(caseId: $caseId);
@@ -419,23 +420,11 @@ class CaseLifecycleService {
 	 */
 	private function readJournal(array $case): array {
 		$raw = ($case[self::JOURNAL_FIELD] ?? '');
-		$decoded = $raw;
 		if (is_array($raw) === false) {
-			$decoded = json_decode((string)$raw, true);
+			$raw = (string)$raw;
 		}
 
-		if (is_array($decoded) === false) {
-			return [];
-		}
-
-		$entries = [];
-		foreach ($decoded as $entry) {
-			if (is_array($entry) === true) {
-				$entries[] = $entry;
-			}
-		}
-
-		return $entries;
+		return RowList::from(value: $raw);
 	}//end readJournal()
 
 	/**
@@ -519,7 +508,7 @@ class CaseLifecycleService {
 	 * @throws RuntimeException When the named date is unreadable or not later,
 	 *                          or when no period is configured and none was named
 	 *
-	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 * @spec openspec/specs/case-bulk-status-transition/spec.md
 	 */
 	private function resolveNewEndDate(string $current, string $named, string $period): string {
 		if ($named !== '') {
@@ -544,7 +533,7 @@ class CaseLifecycleService {
 	 *
 	 * @throws RuntimeException When the date is unreadable or not later
 	 *
-	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 * @spec openspec/specs/case-bulk-status-transition/spec.md
 	 */
 	private function requireLaterDate(string $current, string $candidate): string {
 		try {

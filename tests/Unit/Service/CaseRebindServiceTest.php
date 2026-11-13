@@ -68,6 +68,11 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\Transitions\StatusPublicLabels
  * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
+ * @uses \OCA\Dossiq\Service\Cases\RebindAnswer
+ * @uses \OCA\Dossiq\Service\Cases\RebindChoice
+ * @uses \OCA\Dossiq\Service\Cases\RebindImpactRows
+ * @uses \OCA\Dossiq\Service\Cases\RebindImpactRun
+ * @uses \OCA\Dossiq\Service\Cases\RebindLanding
  */
 class CaseRebindServiceTest extends TestCase {
 

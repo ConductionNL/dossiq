@@ -161,7 +161,7 @@ class PublicationSources {
 	 * @return array{documents: array<int, array<string, mixed>>, items: array<int, array<string, mixed>>}
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function collectDelivery(array $assessments, callable $documentLoader): array {
 		$documents = [];

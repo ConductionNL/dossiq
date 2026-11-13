@@ -38,7 +38,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 
 declare(strict_types=1);
@@ -50,6 +50,7 @@ use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
 use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\StoredArray;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -60,7 +61,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 class MigrateCasePlanStrings implements IRepairStep {
 
@@ -113,7 +114,7 @@ class MigrateCasePlanStrings implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 	 */
 	public function getName(): string {
 		return 'Carry each family plan\'s goal and trajectory text into goals and interventions';
@@ -126,7 +127,7 @@ class MigrateCasePlanStrings implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-the-existing-plan-text-is-migrated-not-discarded-req-cpn-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-the-existing-plan-text-is-migrated-not-discarded-req-cpn-02
 	 */
 	public function run(IOutput $output): void {
 		// UNDER A SYSTEM IDENTITY, and the READ is inside it too. An upgrade
@@ -150,7 +151,7 @@ class MigrateCasePlanStrings implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 	 */
 	private function migrate(IOutput $output): void {
 		try {
@@ -181,7 +182,7 @@ class MigrateCasePlanStrings implements IRepairStep {
 	 *
 	 * @return integer How many records were written.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-the-existing-plan-text-is-migrated-not-discarded-req-cpn-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-the-existing-plan-text-is-migrated-not-discarded-req-cpn-02
 	 */
 	private function migrateOne(array $plan, IOutput $output): int {
 		$planId = trim((string)($plan['id'] ?? ($plan['uuid'] ?? '')));
@@ -259,18 +260,7 @@ class MigrateCasePlanStrings implements IRepairStep {
 	 * @return array<int, string> The texts, in the order they were written.
 	 */
 	private function textsOf(array $plan, string $key): array {
-		$raw = ($plan[$key] ?? []);
-		if (is_string($raw) === true && trim($raw) !== '') {
-			$decoded = json_decode($raw, true);
-			$raw = [];
-			if (is_array($decoded) === true) {
-				$raw = $decoded;
-			}
-		}
-
-		if (is_array($raw) === false) {
-			return [];
-		}
+		$raw = StoredArray::from(value: ($plan[$key] ?? []));
 
 		$texts = [];
 		foreach ($raw as $value) {

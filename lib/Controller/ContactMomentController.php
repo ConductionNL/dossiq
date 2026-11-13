@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use RuntimeException;
 /**
  * REST API for KCC contactmomenten and quick-actions.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
  */
 class ContactMomentController extends Controller {
 	/**
@@ -106,7 +106,7 @@ class ContactMomentController extends Controller {
 	 *
 	 * @return JSONResponse The 403.
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	private function refuseLookup(string $uid, string $burgerId): JSONResponse {
 		$this->lookups->recordRefusal(uid: $uid, burgerId: $burgerId);
@@ -124,7 +124,7 @@ class ContactMomentController extends Controller {
 	 *
 	 * @return \OCP\IUser|JSONResponse The caller, or the refusal.
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	private function kccCaller(string $burgerId): \OCP\IUser|JSONResponse {
 		$user = $this->userSession->getUser();
@@ -147,7 +147,7 @@ class ContactMomentController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	private function recordLookup(\OCP\IUser $user, string $burgerId): void {
 		$this->lookups->recordAnswer(user: $user, burgerId: $burgerId);
@@ -160,8 +160,8 @@ class ContactMomentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
 	 */
 	#[UserRateLimit(limit: self::LOOKUP_LIMIT_PER_HOUR, period: 3600)]
 	public function create(): JSONResponse {
@@ -200,7 +200,7 @@ class ContactMomentController extends Controller {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
 	 */
 	private function contactMomentFields(\OCP\IUser $user): array {
 		return [
@@ -223,7 +223,7 @@ class ContactMomentController extends Controller {
 	 *
 	 * @return array{0: string, 1: string} The citizen ('' when unknown) and the identification method.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
 	 */
 	private function identifiedCitizen(string $callerIdentification): array {
 		$burgerId = (string)$this->request->getParam('geidentificeerdeBurgerId', '');
@@ -246,7 +246,7 @@ class ContactMomentController extends Controller {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
 	 */
 	private function citizenOrNull(string $burgerId): ?string {
 		if ($burgerId === '') {
@@ -264,7 +264,7 @@ class ContactMomentController extends Controller {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	private function voorbladFor(\OCP\IUser $user, string $burgerId): ?array {
 		if ($burgerId === '') {
@@ -290,8 +290,8 @@ class ContactMomentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
 	 */
 	#[UserRateLimit(limit: self::LOOKUP_LIMIT_PER_HOUR, period: 3600)]
 	public function index(string $burgerId = '', int $limit = 50): JSONResponse {
@@ -330,8 +330,8 @@ class ContactMomentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
 	 */
 	#[UserRateLimit(limit: self::LOOKUP_LIMIT_PER_HOUR, period: 3600)]
 	public function voorblad(string $burgerId = ''): JSONResponse {
@@ -363,7 +363,7 @@ class ContactMomentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
 	 */
 	public function statusGeven(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -400,8 +400,8 @@ class ContactMomentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
 	 */
 	#[UserRateLimit(limit: self::LOOKUP_LIMIT_PER_HOUR, period: 3600)]
 	public function nieuweZaak(): JSONResponse {
@@ -431,8 +431,8 @@ class ContactMomentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
 	 */
 	#[UserRateLimit(limit: self::LOOKUP_LIMIT_PER_HOUR, period: 3600)]
 	public function klachtRegistreren(): JSONResponse {
@@ -462,7 +462,7 @@ class ContactMomentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
 	 */
 	public function doorverbinden(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -497,7 +497,7 @@ class ContactMomentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
 	 */
 	public function acceptDoorverbinding(string $id): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -521,7 +521,7 @@ class ContactMomentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
 	 */
 	public function rejectDoorverbinding(string $id): JSONResponse {
 		$user = $this->userSession->getUser();

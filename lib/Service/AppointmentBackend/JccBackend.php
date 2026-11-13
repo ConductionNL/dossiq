@@ -33,7 +33,7 @@ use Psr\Log\LoggerInterface;
  * Integrates with the JCC Afspraken REST API used by many Dutch municipalities
  * for balie appointment management.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class JccBackend extends RestAppointmentBackend {
 	/**
@@ -61,7 +61,7 @@ class JccBackend extends RestAppointmentBackend {
 	 *
 	 * @return array<int, array<string, mixed>> List of available timeslots.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getTimeslots(string $productId, string $locationId, string $date): array {
 		return $this->getJson(
@@ -103,7 +103,7 @@ class JccBackend extends RestAppointmentBackend {
 	 *
 	 * @return array<string, mixed> The new booking result.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rescheduleAppointment(string $externalId, string $newDateTime): array {
 		$this->cancelAppointment(externalId: $externalId);

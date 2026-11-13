@@ -122,11 +122,12 @@ describe('DocumentReviewPanel', () => {
 	/**
 	 * Mount the panel on case X.
 	 *
+	 * @param {object} [props] The panel props.
 	 * @return {object} The wrapper.
 	 */
-	function mountPanel() {
+	function mountPanel(props = { objectId: 'case-x' }) {
 		return mount(DocumentReviewPanel, {
-			props: { objectId: 'case-x' },
+			props,
 			global: {
 				stubs: {
 					NcButton: {
@@ -367,4 +368,98 @@ describe('DocumentReviewPanel', () => {
 			{ active: true },
 		)
 	})
+
+	it('builds the four tiles from the summary, zero for what it leaves out', async () => {
+		answer(enabledSummary)
+		const wrapper = mountPanel()
+		await flushPromises()
+
+		expect(wrapper.vm.tiles).toEqual([
+			{ key: 'in-scope', label: 'Relevant', value: 6, note: '4 with a verdict' },
+			{ key: 'out-of-scope', label: 'Not relevant', value: 3, note: 'no verdict needed' },
+			{ key: 'unmarked', label: 'Not marked yet', value: 1, note: 'waiting for a rule or a reviewer' },
+			{ key: 'outstanding', label: 'Still to assess', value: 3, note: 'relevant without a verdict, and unmarked' },
+		])
+
+		wrapper.vm.summary = { enabled: true }
+		expect(wrapper.vm.tiles.map((tile) => [tile.value, tile.note])).toEqual([
+			[0, '0 with a verdict'],
+			[0, 'no verdict needed'],
+			[0, 'waiting for a rule or a reviewer'],
+			[0, 'relevant without a verdict, and unmarked'],
+		])
+		wrapper.vm.summary = null
+		expect(wrapper.vm.tiles.map((tile) => tile.value)).toEqual([0, 0, 0, 0])
+	})
+
+	it('reads nothing without a case', async () => {
+		const wrapper = mountPanel({ objectId: '' })
+		await flushPromises()
+
+		expect(axios.get).not.toHaveBeenCalled()
+		expect(wrapper.vm.loading).toBe(false)
+	})
+
+	it('reads answers without lists or recall fields as empty', async () => {
+		axios.get.mockImplementation((url) => {
+			if (url.endsWith('/review/summary')) {
+				return Promise.resolve({ data: { enabled: true } })
+			}
+			return Promise.resolve({ data: url.endsWith('/review/recall') ? undefined : { results: 'none' } })
+		})
+		const wrapper = mountPanel()
+		await flushPromises()
+
+		expect(wrapper.vm.batches).toEqual([])
+		expect(wrapper.vm.rules).toEqual([])
+		expect(wrapper.vm.rule).toBeNull()
+		expect(wrapper.vm.reviewStarted).toBe(false)
+		expect(wrapper.vm.samples).toEqual([])
+		expect(wrapper.vm.error).toBe('')
+		expect(wrapper.vm.loading).toBe(false)
+		expect(axios.get.mock.calls.map(([url]) => url.split('/review')[1])).toEqual([
+			'/summary', '/batches', '/recall', '/triage/rules',
+		])
+	})
+
+	it('keeps the recall answer and a null summary', async () => {
+		answer(enabledSummary, { rule: { targetRecall: 0.8 }, reviewStarted: true, samples: [{ id: 's-1' }] })
+		const wrapper = mountPanel()
+		await flushPromises()
+
+		expect(wrapper.vm.rule).toEqual({ targetRecall: 0.8 })
+		expect(wrapper.vm.reviewStarted).toBe(true)
+		expect(wrapper.vm.samples).toEqual([{ id: 's-1' }])
+
+		axios.get.mockResolvedValue({ data: null })
+		await wrapper.vm.load()
+		expect(wrapper.vm.summary).toBeNull()
+		expect(axios.get).toHaveBeenCalledTimes(5)
+	})
+
+	it('fails closed with the server message or a plain sentence', async () => {
+		axios.get.mockRejectedValue({ response: { data: { message: 'No access.' } } })
+		const wrapper = mountPanel()
+		await flushPromises()
+		expect(wrapper.vm.error).toBe('No access.')
+		expect(wrapper.vm.loading).toBe(false)
+
+		axios.get.mockRejectedValue(new Error('network'))
+		await wrapper.vm.load()
+		expect(wrapper.vm.error).toBe('The document review could not be read.')
+	})
+
+	it('says where a sample stands', async () => {
+		answer({ enabled: false })
+		const wrapper = mountPanel()
+		await flushPromises()
+
+		expect(wrapper.vm.sampleState({ progress: { judged: 2, total: 5 } })).toBe('2 of 5 judged')
+		expect(wrapper.vm.sampleState({})).toBe('0 of 0 judged')
+		expect(wrapper.vm.sampleState({ recallLowerBound: 0.7, stoppingRuleMetAt: '2026-10-01' })).toBe('Stopping rule met')
+		expect(wrapper.vm.sampleState({ recallLowerBound: 0.7 })).toBe('Estimated')
+		wrapper.vm.rule = { targetRecall: 0.8 }
+		expect(wrapper.vm.sampleState({ recallLowerBound: 0.7 })).toBe('Below the target')
+	})
 })
+

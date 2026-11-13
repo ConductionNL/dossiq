@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use RuntimeException;
 /**
  * Service for complaint disposition (oordeel) management.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
  */
 class DispositionService {
 
@@ -86,7 +86,7 @@ class DispositionService {
 	 *
 	 * @throws \RuntimeException If validation fails or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	public function submitDisposition(string $complaintId, array $data): array {
 		return $this->createDisposition(
@@ -109,7 +109,7 @@ class DispositionService {
 	 *
 	 * @throws \RuntimeException If validation fails or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	public function submitDispositionForApproval(string $complaintId, array $data): array {
 		return $this->createDisposition(
@@ -130,7 +130,7 @@ class DispositionService {
 	 *
 	 * @throws \RuntimeException If validation fails or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	private function createDisposition(string $complaintId, array $data, string $approval): array {
 		$data = array_diff_key($data, CallerIdentity::KEYS);
@@ -179,40 +179,13 @@ class DispositionService {
 	 *
 	 * @throws \RuntimeException If disposition not found or not awaiting approval
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	public function approveDisposition(string $dispositionId, string $approverId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('complaint_disposition_schema');
-
-		$updateData = [
-			'approvalStatus' => 'approved',
-			'goedkeurder' => $approverId,
-		];
-
-		$result = $this->patchObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: (string)$dispositionId,
-			changes: $updateData
+		return $this->decide(
+			dispositionId: $dispositionId,
+			decision: ['approvalStatus' => 'approved', 'goedkeurder' => $approverId]
 		);
-
-		$this->logger->info(
-			'Disposition ' . $dispositionId . ' approved by ' . $approverId,
-			['app' => Application::APP_ID],
-		);
-
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		return array_merge($updateData, ['id' => $dispositionId]);
 	}//end approveDisposition()
 
 	/**
@@ -225,9 +198,51 @@ class DispositionService {
 	 *
 	 * @throws \RuntimeException If OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	public function rejectDisposition(string $dispositionId, string $rejectorId): array {
+		return $this->decide(
+			dispositionId: $dispositionId,
+			decision: ['approvalStatus' => 'rejected', 'goedkeurder' => $rejectorId]
+		);
+	}//end rejectDisposition()
+
+	/**
+	 * Patch a decision onto the stored disposition, log it, and answer the stored disposition.
+	 *
+	 * @param string               $dispositionId The disposition.
+	 * @param array<string, mixed> $decision      `approvalStatus` (approved or rejected) and `goedkeurder` (the deciding user).
+	 *
+	 * @return array<string, mixed> The stored disposition, or the written fields with the id when the store answers no row.
+	 *
+	 * @throws RuntimeException When OpenRegister is not available.
+	 */
+	private function decide(string $dispositionId, array $decision): array {
+		$result = $this->patchDisposition(dispositionId: $dispositionId, changes: $decision);
+
+		$this->logger->info(
+			'Disposition ' . $dispositionId . ' ' . $decision['approvalStatus'] . ' by ' . $decision['goedkeurder'],
+			['app' => Application::APP_ID],
+		);
+
+		if (is_array($result) === true) {
+			return $result;
+		}
+
+		return array_merge($decision, ['id' => $dispositionId]);
+	}//end decide()
+
+	/**
+	 * Patch fields onto the stored disposition in the configured schema.
+	 *
+	 * @param string               $dispositionId The disposition.
+	 * @param array<string, mixed> $changes       The fields to write.
+	 *
+	 * @return array<string, mixed>|null The stored disposition, or null when the store answers no row.
+	 *
+	 * @throws RuntimeException When OpenRegister is not available.
+	 */
+	private function patchDisposition(string $dispositionId, array $changes): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -236,30 +251,14 @@ class DispositionService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('complaint_disposition_schema');
 
-		$updateData = [
-			'approvalStatus' => 'rejected',
-			'goedkeurder' => $rejectorId,
-		];
-
-		$result = $this->patchObjectAsArray(
+		return $this->patchObjectAsArray(
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
 			id: (string)$dispositionId,
-			changes: $updateData
+			changes: $changes
 		);
-
-		$this->logger->info(
-			'Disposition ' . $dispositionId . ' rejected by ' . $rejectorId,
-			['app' => Application::APP_ID],
-		);
-
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		return array_merge($updateData, ['id' => $dispositionId]);
-	}//end rejectDisposition()
+	}//end patchDisposition()
 
 	/**
 	 * Get the disposition for a complaint.
@@ -268,7 +267,7 @@ class DispositionService {
 	 *
 	 * @return array<string, mixed>|null Disposition or null if not yet submitted
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	public function getDispositionForComplaint(string $complaintId): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -307,7 +306,7 @@ class DispositionService {
 	 *
 	 * @throws \RuntimeException If Docudesk is not available
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	public function generateResponseLetter(string $complaintId, string $dispositionId): array {
 		// Docudesk integration: delegate to the template rendering service.
@@ -336,7 +335,7 @@ class DispositionService {
 	 *
 	 * @throws \RuntimeException If validation fails
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	private function validateDisposition(array $data): void {
 		$opinion = $data['opinion'] ?? '';

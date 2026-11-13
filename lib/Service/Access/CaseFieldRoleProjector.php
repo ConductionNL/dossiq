@@ -59,7 +59,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 
 declare(strict_types=1);
@@ -76,7 +76,7 @@ use Throwable;
 /**
  * Projects a case type's per-role field rules onto the live case schema.
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 class CaseFieldRoleProjector {
 
@@ -140,7 +140,7 @@ class CaseFieldRoleProjector {
 	 *
 	 * @return bool True when the schema was rewritten.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function publish(string $caseTypeId): bool {
 		if ($caseTypeId === '') {
@@ -167,7 +167,7 @@ class CaseFieldRoleProjector {
 	 *
 	 * @return bool True when the schema was rewritten.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function reapply(): bool {
 		return $this->write(caseTypeId: '', own: []);
@@ -185,7 +185,7 @@ class CaseFieldRoleProjector {
 	 *
 	 * @return array<string, mixed> The declared blocks, by property name.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function registerBase(): array {
 		$configPath = __DIR__ . '/../../Settings/dossiq_register.json';
@@ -227,7 +227,7 @@ class CaseFieldRoleProjector {
 	 *
 	 * @return bool True when the schema was written.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function write(string $caseTypeId, array $own): bool {
 		// 🔴 ASKED, NOT CAUGHT. An absent OpenRegister is the ordinary state of
@@ -265,7 +265,7 @@ class CaseFieldRoleProjector {
 	 *
 	 * @return bool True when the schema was written.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function writeToSchema(string $caseTypeId, array $own): bool {
 		$schemaMapper = $this->container->get(self::SCHEMA_MAPPER);
@@ -318,7 +318,7 @@ class CaseFieldRoleProjector {
 	 *
 	 * @return array<string, mixed> The value.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function arrayOf(mixed $value): array {
 		if (is_array($value) === false) {

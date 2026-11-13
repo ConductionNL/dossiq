@@ -33,7 +33,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Reads and writes one person's private stages.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class PersonalStageService {
 	/**
@@ -84,7 +84,7 @@ class PersonalStageService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly IUserConfig $userConfig,
@@ -101,7 +101,7 @@ class PersonalStageService {
 	 *
 	 * @return string The stage, or an empty string when they set none.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function get(string $userId, string $caseId): string {
 		return (string)($this->all(userId: $userId)[$caseId] ?? '');
@@ -114,7 +114,7 @@ class PersonalStageService {
 	 *
 	 * @return array<string, string> Case id to stage.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) JsonPreference is a stateless reader shared by the queue preference stores.
 	 */
@@ -151,7 +151,7 @@ class PersonalStageService {
 	 *
 	 * @return string The stage now stored.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function set(string $userId, string $caseId, string $stage): string {
 		$stage = trim($stage);

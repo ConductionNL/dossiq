@@ -152,7 +152,7 @@ final class StepConfigValidator {
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}>
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public static function validate(
 		array $step,

@@ -25,7 +25,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use Throwable;
 /**
  * Plans and reads a person's own agenda items.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class PersonalAgendaItemService {
 	/**
@@ -90,7 +90,7 @@ class PersonalAgendaItemService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly ICalendarManager $calendars,
@@ -107,7 +107,7 @@ class PersonalAgendaItemService {
 	 *
 	 * @return integer The minutes, 30 for a template nobody declared.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function minutesFor(string $template): int {
 		return (int)(self::TEMPLATES[$template] ?? 30);
@@ -125,7 +125,7 @@ class PersonalAgendaItemService {
 	 *
 	 * @throws RuntimeException When the person has no writable calendar, or the moment is unreadable.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function plan(string $userId, string $title, string $startsAt, string $template = ''): array {
 		$title = trim($title);
@@ -170,7 +170,7 @@ class PersonalAgendaItemService {
 	 *
 	 * @throws RuntimeException When the calendars cannot be read.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function upcomingFor(string $userId, ?DateTimeImmutable $now = null): array {
 		$now = ($now ?? new DateTimeImmutable());
@@ -207,7 +207,7 @@ class PersonalAgendaItemService {
 	 *
 	 * @return array{uid: string, title: string, startsAt: string}|null The item, or null when it is unreadable.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function itemOf(array $row): ?array {
 		$uid = trim((string)($row['UID'][0] ?? ($row['uid'] ?? '')));
@@ -235,7 +235,7 @@ class PersonalAgendaItemService {
 	 *
 	 * @return array<int, \OCP\Calendar\ICalendar> The calendars.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function calendarsOf(string $userId): array {
 		if ($this->users->get($userId) === null) {
@@ -254,7 +254,7 @@ class PersonalAgendaItemService {
 	 *
 	 * @return bool TRUE when it was written.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function write(string $userId, string $uid, string $ics): bool {
 		foreach ($this->calendarsOf(userId: $userId) as $calendar) {
@@ -285,7 +285,7 @@ class PersonalAgendaItemService {
 	 *
 	 * @return string The uid, or an empty string.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function uidOf(string $ics): string {
 		if (preg_match('/^UID:(.+)$/m', $ics, $matches) !== 1) {

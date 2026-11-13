@@ -45,7 +45,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Controller for advice request workflow operations.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class AdviceController extends Controller {
 	/**
@@ -89,7 +89,7 @@ class AdviceController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function transitionStatus(string $id): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -132,7 +132,7 @@ class AdviceController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function dispatchReminder(string $id): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -237,7 +237,7 @@ class AdviceController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-7
+	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-7
 	 */
 	#[NoAdminRequired]
 	public function getForCase(string $id): JSONResponse {

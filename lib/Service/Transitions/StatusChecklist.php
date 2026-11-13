@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Service\Support\StoredArray;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Task\TaskDeclaration;
 use OCA\Dossiq\Service\Task\TaskDeclarationReader;
@@ -99,22 +100,10 @@ class StatusChecklist {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function itemsFor(string $statusTypeId): array {
-		$raw = ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['checklist'] ?? []);
-
 		// The property is declared as an array, but a store that round-trips it
 		// through a text column hands back the JSON. Reading only the array
 		// shape is how a checklist silently becomes an empty list.
-		if (is_string($raw) === true) {
-			$decoded = json_decode($raw, true);
-			$raw = [];
-			if (is_array($decoded) === true) {
-				$raw = $decoded;
-			}
-		}
-
-		if (is_array($raw) === false) {
-			return [];
-		}
+		$raw = StoredArray::from(value: ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['checklist'] ?? []));
 
 		$items = [];
 		foreach ($raw as $item) {
@@ -217,7 +206,7 @@ class StatusChecklist {
 	 *
 	 * @return array<string, mixed> The declaration.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private function declarationFor(string $caseId, string $statusTypeId, string $title): array {
 		if ($this->declarations === null || $caseId === '') {

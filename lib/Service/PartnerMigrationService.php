@@ -42,7 +42,7 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+ * @spec openspec/specs/partner-organisations/spec.md
  *
  * @link https://conduction.nl
  */
@@ -61,7 +61,7 @@ use Throwable;
 /**
  * Migrates dossiq `partnerOrganization` objects to OR Organisations.
  *
- * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+ * @spec openspec/specs/partner-organisations/spec.md
  */
 class PartnerMigrationService {
 
@@ -127,7 +127,7 @@ class PartnerMigrationService {
 	 * @return array{migrated:int, skipped:int, failed:int, total:int, mappings:array<int,array{partner:string, organisation:string}>}
 	 *                                                                                                                               The outcome tally.
 	 *
-	 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
 	public function migrate(): array {
 		$summary = self::EMPTY_SUMMARY;
@@ -219,7 +219,7 @@ class PartnerMigrationService {
 	 *
 	 * @return array{created:bool, partnerUuid:string, organisationUuid:string}|null Result, or null on failure.
 	 *
-	 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
 	private function migrateOne(object $mapper, array $row): ?array {
 		$partnerUuid = trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
@@ -244,7 +244,7 @@ class PartnerMigrationService {
 		$slug = trim((string)($row['slug'] ?? ''));
 
 		try {
-			$existing = $this->findOrganisationByUuid(mapper: $mapper, uuid: $partnerUuid);
+			$existing = OrganisationLookup::byUuid(mapper: $mapper, uuid: $partnerUuid);
 			if ($existing !== null) {
 				return [
 					'created' => false,
@@ -288,7 +288,7 @@ class PartnerMigrationService {
 	 *
 	 * @return Organisation The unsaved Organisation.
 	 *
-	 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
 	private function buildOrganisation(array $row, string $slug, string $partnerUuid): Organisation {
 		$organisation = new Organisation();
@@ -347,7 +347,7 @@ class PartnerMigrationService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
 	private function copyOptionalFields(array $row, Organisation $organisation): void {
 		$strings = [
@@ -402,22 +402,6 @@ class PartnerMigrationService {
 		return [];
 	}//end toRow()
 
-	/**
-	 * Find an Organisation by uuid, returning null when absent.
-	 *
-	 * @param object $mapper OR OrganisationMapper.
-	 * @param string $uuid   Uuid to look up.
-	 *
-	 * @return object|null The Organisation, or null when none matches.
-	 */
-	private function findOrganisationByUuid(object $mapper, string $uuid): ?object {
-		try {
-			return $mapper->findByUuid($uuid);
-		} catch (Throwable $e) {
-			// DoesNotExistException (and any other lookup failure) → absent.
-			return null;
-		}
-	}//end findOrganisationByUuid()
 
 	/**
 	 * Resolve OR's OrganisationMapper from the DI container.
@@ -425,18 +409,7 @@ class PartnerMigrationService {
 	 * @return object|null The OrganisationMapper, or null when OR is unavailable.
 	 */
 	private function getOrganisationMapper(): ?object {
-		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Db\\OrganisationMapper');
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: could not get OrganisationMapper for partner migration',
-				['exception' => $e->getMessage()],
-			);
-			return null;
-		}
+		$lookup = new OrganisationLookup(appManager: $this->appManager, container: $this->container);
+		return $lookup->mapper(logger: $this->logger, failureMessage: 'Dossiq: could not get OrganisationMapper for partner migration');
 	}//end getOrganisationMapper()
 }//end class

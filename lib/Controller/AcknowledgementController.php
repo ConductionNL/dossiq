@@ -32,7 +32,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -59,7 +59,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 class AcknowledgementController extends Controller {
 
@@ -91,7 +91,7 @@ class AcknowledgementController extends Controller {
 	 *
 	 * @return JSONResponse `{duty: object}`.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	#[NoAdminRequired]
 	public function duty(string $caseId): JSONResponse {
@@ -129,7 +129,7 @@ class AcknowledgementController extends Controller {
 	 *
 	 * @return JSONResponse `{duty: object}`, or the refusal.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	#[NoAdminRequired]
 	public function recordMet(string $caseId): JSONResponse {

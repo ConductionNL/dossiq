@@ -65,6 +65,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Term\DayCount
  * @uses \OCA\Dossiq\Service\Reporting\PerTypeRows
  * @uses \OCA\Dossiq\Service\Termijn\TermDashboardFigures
+ * @uses \OCA\Dossiq\Service\Termijn\TermLookups
  */
 class DeadlineReportingControllerContractTest extends TestCase {
 

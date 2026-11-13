@@ -232,17 +232,6 @@ class AdviceRepository {
 	 * @spec openspec/specs/advice-management/spec.md
 	 */
 	public function normalize(mixed $result): array {
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		if (is_object($result) === true && method_exists($result, 'jsonSerialize') === true) {
-			$data = $result->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return [];
+		return ($this->objectToArrayOrNull(value: $result) ?? []);
 	}//end normalize()
 }//end class

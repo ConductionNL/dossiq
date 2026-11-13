@@ -37,6 +37,7 @@ use Psr\Log\NullLogger;
  * @uses   \OCA\Dossiq\Service\Term\TermResolution
  * @uses   \OCA\Dossiq\Service\TermKind
  * @uses   \OCA\Dossiq\Service\Intake\ReceiptMoment
+ * @uses \OCA\Dossiq\Service\Term\TermAsk
  */
 class DeadlineCaseCreatedListenerPlannedTest extends TestCase {
 

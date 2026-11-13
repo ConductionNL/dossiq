@@ -105,4 +105,46 @@ class AdviceQueueRowsTest extends TestCase {
 		$this->assertCount(expectedCount: 1, haystack: $items);
 		$this->assertSame(expected: ['name' => 'CaseDetail', 'params' => ['id' => 'case-2']], actual: $items[0]->route);
 	}//end testAConsultationOpensItsCase()
+
+	/**
+	 * Every field of every item both sources answer, over open, closed,
+	 * id-less and case-less rows.
+	 *
+	 * @return void
+	 */
+	public function testEveryFieldOfBothSourcesItems(): void {
+		$settings = $this->settingsAnswering(rows: [
+			'adviesAanvraag' => [
+				['id' => 'adv-1', 'case' => ' case-1 ', 'subject' => 'Welstand', 'status' => 'requested', 'deadline' => '2026-12-01'],
+				['id' => 'adv-2', 'status' => ' Ontvangen '],
+				['id' => 'adv-3', 'case' => '', 'priority' => 'high'],
+				['subject' => 'No id', 'status' => 'requested'],
+			],
+			'consultation' => [
+				['id' => 'con-1', 'parentCase' => 'case-2', 'subject' => 'Brandweer', 'status' => 'open', 'priority' => 'high', 'latestResponseDate' => '2026-12-02'],
+				['id' => 'con-2', 'status' => 'BEANTWOORD'],
+				['id' => 'con-3'],
+				['status' => 'open'],
+			],
+		]);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+
+		$items = array_merge(
+			(new ApprovalSource(settings: $settings, l10n: $l10n))->itemsFor(userId: 'alice'),
+			(new ConsultationSource(settings: $settings, l10n: $l10n))->itemsFor(userId: 'alice')
+		);
+
+		$this->assertSame(
+			expected: [
+				['approvals', 'advice', 'adv-1', 'Welstand', '', '2026-12-01', null, ['name' => 'CaseDetail', 'params' => ['id' => 'case-1'], 'hash' => '#case-decisions-panel']],
+				['approvals', 'advice', 'adv-3', 'adv-3', '', null, null, ['name' => 'Cases']],
+				['consultations', 'consultation', 'con-1', 'Brandweer', 'high', '2026-12-02', null, ['name' => 'CaseDetail', 'params' => ['id' => 'case-2']]],
+				['consultations', 'consultation', 'con-3', 'con-3', '', null, null, ['name' => 'Cases']],
+			],
+			actual: array_map(
+				static fn ($item): array => [$item->source, $item->subjectType, $item->subjectId, $item->title, $item->priority, $item->dueAt, $item->coveredFor, $item->route],
+				$items
+			)
+		);
+	}//end testEveryFieldOfBothSourcesItems()
 }//end class

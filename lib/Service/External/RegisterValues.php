@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Service\External;
  * Coerces raw register values into the typed values of a DTO. A mapper
  * builds one per fragment it maps; it holds no state.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 final class RegisterValues {
 	/**
@@ -40,7 +40,7 @@ final class RegisterValues {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function stringOrNull(mixed $value): ?string {
 		if (is_string($value) === true && $value !== '') {
@@ -61,7 +61,7 @@ final class RegisterValues {
 	 *
 	 * @return int|null
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function intOrNull(mixed $value): ?int {
 		if (is_int($value) === true) {
@@ -88,7 +88,7 @@ final class RegisterValues {
 	 *
 	 * @return array<int,string>
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function toStringArray(mixed $value): array {
 		if (is_string($value) === true && $value !== '') {
@@ -117,7 +117,7 @@ final class RegisterValues {
 	 *
 	 * @return array<int,array<string,mixed>> Normalized DTOs, same order.
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function mapFragments(array $rawList, callable $map): array {
 		$out = [];

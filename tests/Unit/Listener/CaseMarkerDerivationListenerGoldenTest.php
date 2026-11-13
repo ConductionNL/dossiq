@@ -73,6 +73,8 @@ class MarkerDerivationUpdatingEvent extends ObjectUpdatingEvent {
  * Golden test for CaseMarkerDerivationListener::handle.
  *
  * @covers \OCA\Dossiq\Listener\CaseMarkerDerivationListener
+ * @uses \OCA\Dossiq\Listener\Support\PreSaveCheck
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
  */
 class CaseMarkerDerivationListenerGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/deelzaak-support/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -31,17 +31,25 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
 use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
  * Service for parent-child (deelzaak) case relations.
  *
- * @spec openspec/changes/deelzaak-support/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
  */
 class DeelzaakService {
 
 	use SearchesObjects;
+
+	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
 
 	/**
 	 * Constructor.
@@ -57,6 +65,7 @@ class DeelzaakService {
 		private readonly CaseObjectReader $caseReader,
 		private readonly SubCaseDeriver $deriver,
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -102,32 +111,19 @@ class DeelzaakService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
 	 */
 	public function listSubCases(string $parentCaseUuid): array {
 		if ($parentCaseUuid === '') {
 			return [];
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+		return $this->rows->search(
+			schemaKey: 'case_schema',
 			filters: [
 				'parentCase' => $parentCaseUuid,
 				'_limit' => 200,
-			],
+			]
 		);
 	}//end listSubCases()
 
@@ -141,7 +137,7 @@ class DeelzaakService {
 	 *
 	 * @return array<string, int>
 	 *
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T03
 	 */
 	public function getSubCaseCounts(array $parentUuids): array {
 		$counts = $this->initialiseCountBuckets(parentUuids: $parentUuids);
@@ -217,7 +213,7 @@ class DeelzaakService {
 	 *
 	 * @return array<string, mixed>|null The parent case, or null.
 	 *
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T02
 	 */
 	public function getParentCase(string $childCaseUuid): ?array {
 		if ($childCaseUuid === '') {
@@ -254,7 +250,7 @@ class DeelzaakService {
 	 *
 	 * @return array{ok: bool, reason?: string}
 	 *
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T08
 	 */
 	public function validateCreate(string $parentCaseUuid, string $childCaseTypeId): array {
 		// `validateCreate` receives the PARENT's own UUID (the proposed

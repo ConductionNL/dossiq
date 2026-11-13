@@ -102,6 +102,7 @@ class VaststellingFakeObjectService {
  * @covers \OCA\Dossiq\Service\Subsidie\VaststellingService
  *
  * @uses \OCA\Dossiq\Service\Subsidie\TerugvorderingService
+ * @uses \OCA\Dossiq\Service\Subsidie\SubsidieSchemaLookup
  *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-20
  * @spec openspec/specs/subsidie-settlement-case-costs/spec.md#requirement-settling-a-grant-records-the-settled-amount-on-the-vaststelling-and-writes-nothing-to-the-linked-case-req-ssc-005

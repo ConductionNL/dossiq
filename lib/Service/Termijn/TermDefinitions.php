@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 
 declare(strict_types=1);
@@ -87,7 +87,7 @@ class TermDefinitions {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function activeFor(string $caseType): ?array {
@@ -128,7 +128,7 @@ class TermDefinitions {
 	 *
 	 * @return array<int, array<string, mixed>> The active definitions.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function allActiveFor(string $caseType): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -199,7 +199,7 @@ class TermDefinitions {
 	 *
 	 * @return string One of the two modes.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public static function countingModeOf(array $definitie): string {
 		$declared = trim((string)($definitie['countingMode'] ?? ''));
@@ -289,7 +289,7 @@ class TermDefinitions {
 	 *
 	 * @return DateTimeImmutable The end date, after the Awt roll.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function endDateFor(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
 		return $this->rolled(date: $this->countedEndDateFor(start: $start, days: $days, definitie: $definitie), definitie: $definitie);
@@ -355,7 +355,7 @@ class TermDefinitions {
 	 *
 	 * @return DateTimeImmutable The counted date.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	private static function plusDays(DateTimeImmutable $start, int $days): DateTimeImmutable {
 		return $start->add(new DateInterval('P' . abs($days) . 'D'));

@@ -54,7 +54,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 
 declare(strict_types=1);
@@ -73,7 +73,7 @@ use Throwable;
 /**
  * Rolls a date to the next ordinary day, on the engine's calendar.
  *
- * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 class WorkingDayRoll {
 	/*
@@ -181,7 +181,7 @@ class WorkingDayRoll {
 	 *
 	 * @return boolean True when the engine calendar resolved.
 	 *
-	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function isAvailable(): bool {
 		$this->resolve();
@@ -205,7 +205,7 @@ class WorkingDayRoll {
 	 * @return boolean|null True or false from the calendar, or null when no
 	 *                      calendar is answering and the caller must degrade.
 	 *
-	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function worksOn(DateTimeInterface $moment): ?bool {
 		if ($this->isAvailable() === false) {
@@ -235,7 +235,7 @@ class WorkingDayRoll {
 	 * @return array<int, int>|null The ISO weekdays, or null when no calendar
 	 *                              is answering.
 	 *
-	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function workingWeekdays(): ?array {
 		if ($this->isAvailable() === false) {
@@ -288,7 +288,7 @@ class WorkingDayRoll {
 	 * @return DateTimeImmutable|null The end date, or null when working days
 	 *                                were asked for and the calendar is absent.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 *
 	 * @psalm-suppress FalsableReturnStatement `modify()` is falsable in the
 	 * stub because its argument is an arbitrary string. Here the string is
@@ -367,7 +367,7 @@ class WorkingDayRoll {
 	 * @return int|null The span, or null when working days were asked for and
 	 *                  the calendar is absent.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function daysBetween(DateTimeImmutable $from, DateTimeImmutable $to, string $mode): ?int {
 		if ($mode !== self::MODE_WORKING_DAYS) {

@@ -36,7 +36,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use Throwable;
 /**
  * Reads Mail accounts and messages for the case matcher.
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 class MailMessageSource {
 
@@ -74,7 +74,7 @@ class MailMessageSource {
 	 *
 	 * @return array<int, array{id: int, name: string, email: string}> The accounts, by name.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function accountsOf(string $userId): array {
 		if ($userId === '') {
@@ -88,17 +88,7 @@ class MailMessageSource {
 				->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
 				->orderBy('name', 'ASC');
 
-			$result = $qb->executeQuery();
-			$accounts = [];
-			while (($row = $result->fetch()) !== false) {
-				$accounts[] = [
-					'id' => (int)($row['id'] ?? 0),
-					'name' => (string)($row['name'] ?? ''),
-					'email' => (string)($row['email'] ?? ''),
-				];
-			}
-
-			$result->closeCursor();
+			$accounts = $this->accountRows(qb: $qb);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: listing Mail accounts failed: ' . $e->getMessage());
 			return [];
@@ -127,17 +117,7 @@ class MailMessageSource {
 				->from('mail_accounts')
 				->orderBy('name', 'ASC');
 
-			$result = $qb->executeQuery();
-			$accounts = [];
-			while (($row = $result->fetch()) !== false) {
-				$accounts[] = [
-					'id' => (int) ($row['id'] ?? 0),
-					'name' => (string) ($row['name'] ?? ''),
-					'email' => (string) ($row['email'] ?? ''),
-				];
-			}
-
-			$result->closeCursor();
+			$accounts = $this->accountRows(qb: $qb);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: listing every Mail account failed: ' . $e->getMessage());
 			return [];
@@ -157,7 +137,7 @@ class MailMessageSource {
 	 *
 	 * @return bool True only when the account row names this user.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function ownsAccount(int $accountId, string $userId): bool {
 		if ($accountId <= 0 || $userId === '') {
@@ -165,15 +145,7 @@ class MailMessageSource {
 		}
 
 		try {
-			$qb = $this->db->getQueryBuilder();
-			$qb->select('user_id')
-				->from('mail_accounts')
-				->where($qb->expr()->eq('id', $qb->createNamedParameter($accountId, IQueryBuilder::PARAM_INT)))
-				->setMaxResults(1);
-
-			$result = $qb->executeQuery();
-			$row = $result->fetch();
-			$result->closeCursor();
+			$row = $this->ownerRow(accountId: $accountId);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: Mail account ownership lookup failed: ' . $e->getMessage());
 			return false;
@@ -192,7 +164,7 @@ class MailMessageSource {
 	 *
 	 * @return int The highest message id, or 0 when the account holds none.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function maxMessageId(int $accountId): int {
 		try {
@@ -225,7 +197,7 @@ class MailMessageSource {
 	 *
 	 * @return array<int, array{id: int, uid: string, subject: string, preview: string}> The messages.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function listMessagesSince(int $accountId, int $sinceId, int $limit): array {
 		try {
@@ -277,15 +249,7 @@ class MailMessageSource {
 		}
 
 		try {
-			$qb = $this->db->getQueryBuilder();
-			$qb->select('user_id')
-				->from('mail_accounts')
-				->where($qb->expr()->eq('id', $qb->createNamedParameter($accountId, IQueryBuilder::PARAM_INT)))
-				->setMaxResults(1);
-
-			$result = $qb->executeQuery();
-			$row = $result->fetch();
-			$result->closeCursor();
+			$row = $this->ownerRow(accountId: $accountId);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: reading the Mail account owner failed: ' . $e->getMessage());
 			return '';
@@ -297,6 +261,50 @@ class MailMessageSource {
 
 		return (string) ($row['user_id'] ?? '');
 	}//end ownerOf()
+
+	/**
+	 * The id, name and email of every account a prepared account query answers, in its order.
+	 *
+	 * @param IQueryBuilder $qb The query, with its select, filter and order set.
+	 *
+	 * @return array<int, array{id: int, name: string, email: string}> The accounts.
+	 */
+	private function accountRows(IQueryBuilder $qb): array {
+		$result = $qb->executeQuery();
+		$accounts = [];
+		while (($row = $result->fetch()) !== false) {
+			$accounts[] = [
+				'id' => (int)($row['id'] ?? 0),
+				'name' => (string)($row['name'] ?? ''),
+				'email' => (string)($row['email'] ?? ''),
+			];
+		}
+
+		$result->closeCursor();
+
+		return $accounts;
+	}//end accountRows()
+
+	/**
+	 * The stored row holding the owner of one Mail account, or false when there is none.
+	 *
+	 * @param int $accountId The Mail account id.
+	 *
+	 * @return mixed The row with `user_id`, or false.
+	 */
+	private function ownerRow(int $accountId): mixed {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('user_id')
+			->from('mail_accounts')
+			->where($qb->expr()->eq('id', $qb->createNamedParameter($accountId, IQueryBuilder::PARAM_INT)))
+			->setMaxResults(1);
+
+		$result = $qb->executeQuery();
+		$row = $result->fetch();
+		$result->closeCursor();
+
+		return $row;
+	}//end ownerRow()
 
 	/**
 	 * The folders one account holds.

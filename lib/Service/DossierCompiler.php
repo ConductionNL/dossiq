@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\ReferencedUuid;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -208,19 +209,7 @@ class DossierCompiler {
 	 * @return string The UUID, or '' when none could be derived.
 	 */
 	private function extractUuid(mixed $value): string {
-		if (is_string($value) === true) {
-			return trim($value);
-		}
-
-		if (is_array($value) === true) {
-			foreach (['id', 'uuid', '@self.uuid', 'case', 'target'] as $key) {
-				if (isset($value[$key]) === true && is_string($value[$key]) === true) {
-					return trim($value[$key]);
-				}
-			}
-		}
-
-		return '';
+		return ReferencedUuid::inDossierReference(value: $value);
 	}//end extractUuid()
 
 	/**
@@ -363,17 +352,6 @@ class DossierCompiler {
 	 * @return array<string, mixed>|null The array form, or null.
 	 */
 	private function toArray(mixed $value): ?array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return null;
+		return $this->objectToArrayOrNull(value: $value);
 	}//end toArray()
 }//end class

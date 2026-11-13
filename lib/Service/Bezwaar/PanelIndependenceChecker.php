@@ -139,7 +139,7 @@ class PanelIndependenceChecker {
 	 *
 	 * @return array{ok: bool, member: ?string, reason: ?string} The verdict.
 	 *
-	 * @spec openspec/changes/an-unverifiable-panel-does-not-start-deliberating/specs/bezwaar-advisory-committee/spec.md
+	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
 	private function verdictFor(string|false|null $conflicting): array {
 		if ($conflicting === false) {

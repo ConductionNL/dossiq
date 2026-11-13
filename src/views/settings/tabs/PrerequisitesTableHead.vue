@@ -5,7 +5,7 @@
   The header every table of the Prerequisites block shares: what the rows
   are, what each does, and whether it is here.
 
-  @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+  @spec openspec/specs/admin-settings/spec.md
 -->
 <template>
 	<thead>

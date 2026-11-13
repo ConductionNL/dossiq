@@ -61,7 +61,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Finish, abort and archive, each with its own permission and its own record.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseEndingActs {
 	use LoadsCaseOrRefuses;
@@ -121,7 +121,7 @@ class CaseEndingActs {
 	 * @throws RefusedException When the caller may not finish, the case is already
 	 *                          ended, or no result can be named.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function finish(string $caseId, string $reason, string $resultTypeId, string $toStatus = ''): array {
 		return $this->end(
@@ -148,7 +148,7 @@ class CaseEndingActs {
 	 *
 	 * @throws RefusedException When the caller may not abort, or no result can be named.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function abort(string $caseId, string $reason, string $resultTypeId, string $toStatus = ''): array {
 		return $this->end(
@@ -172,29 +172,14 @@ class CaseEndingActs {
 	 *
 	 * @throws RefusedException When the caller may not archive, or the case is still open.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function archive(string $caseId, string $reason): array {
-		$case = $this->load(caseId: $caseId);
-		$this->requireReason(reason: $reason);
-		$this->gate->require(act: 'archive', case: $case);
-		$this->requireEnded(case: $case);
-
-		$future = $this->results->archivalFuture(
-			case: $case,
-			resultTypeId: $this->resultTypeOn(case: $case),
-			endDate: $this->archiveEndDate(case: $case),
-		);
-		$nomination = [
-			'archiveNomination' => ($future['archiveNomination'] ?? null),
-			'archiveActionDate' => ($future['archiveActionDate'] ?? null),
-		];
-
-		$case = $this->journal->append(
-			case: $this->archivedCase(case: $case, future: $future),
-			entry: ['type' => 'archive', 'reason' => $reason] + array_map('strval', $nomination),
-		);
-		$this->store->saveCase(case: $case);
+		$case = $this->archivableCase(caseId: $caseId, reason: $reason);
+		$future = $this->archivalFutureOf(case: $case);
+		$nomination = $this->nominationOf(future: $future);
+		$entry = ['type' => 'archive', 'reason' => $reason] + array_map('strval', $nomination);
+		$case = $this->saveWithEntry(case: $this->archivedCase(case: $case, future: $future), entry: $entry);
 
 		// The ZGW field is written first and the marker goes on last, because
 		// an archived object refuses every write to its data. Reversed, the
@@ -212,6 +197,77 @@ class CaseEndingActs {
 			+ $nomination
 			+ ['archived' => ($marker['archived'] ?? null)];
 	}//end archive()
+
+	/**
+	 * Load a case for the archive act and run its guards: a reason, the role, an ended case.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $reason Why it is being archived.
+	 *
+	 * @return array<string, mixed> The loaded case.
+	 *
+	 * @throws RefusedException When the caller may not archive, or the case is still open.
+	 *
+	 * @spec exclude the guards of archive(), which carries the requirement
+	 */
+	private function archivableCase(string $caseId, string $reason): array {
+		$case = $this->load(caseId: $caseId);
+		$this->requireReason(reason: $reason);
+		$this->gate->require(act: 'archive', case: $case);
+		$this->requireEnded(case: $case);
+
+		return $case;
+	}//end archivableCase()
+
+	/**
+	 * The archival future the case's result type gives it from its end date.
+	 *
+	 * @param array<string, mixed> $case The ended case.
+	 *
+	 * @return array<string, mixed> The nomination and action date from the result type.
+	 *
+	 * @spec exclude one step of archive(), which carries the requirement
+	 */
+	private function archivalFutureOf(array $case): array {
+		return $this->results->archivalFuture(
+			case: $case,
+			resultTypeId: $this->resultTypeOn(case: $case),
+			endDate: $this->archiveEndDate(case: $case),
+		);
+	}//end archivalFutureOf()
+
+	/**
+	 * The nomination and action date the archive act records and answers.
+	 *
+	 * @param array<string, mixed> $future The archival future.
+	 *
+	 * @return array{archiveNomination: mixed, archiveActionDate: mixed} The two fields, null when absent.
+	 *
+	 * @spec exclude one step of archive(), which carries the requirement
+	 */
+	private function nominationOf(array $future): array {
+		return [
+			'archiveNomination' => ($future['archiveNomination'] ?? null),
+			'archiveActionDate' => ($future['archiveActionDate'] ?? null),
+		];
+	}//end nominationOf()
+
+	/**
+	 * Journal an act on the case and save it.
+	 *
+	 * @param array<string, mixed> $case  The case to save.
+	 * @param array<string, mixed> $entry The journal entry.
+	 *
+	 * @return array<string, mixed> The case as saved, journal included.
+	 *
+	 * @spec exclude one step of archive(), which carries the requirement
+	 */
+	private function saveWithEntry(array $case, array $entry): array {
+		$case = $this->journal->append(case: $case, entry: $entry);
+		$this->store->saveCase(case: $case);
+
+		return $case;
+	}//end saveWithEntry()
 
 	/**
 	 * Only an ended case can be archived.
@@ -298,9 +354,36 @@ class CaseEndingActs {
 	 * @throws RefusedException When the caller may not archive, the case is not
 	 *                          archived, or the platform refuses.
 	 *
-	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function unarchive(string $caseId, string $reason): array {
+		$case = $this->restorableCase(caseId: $caseId, reason: $reason);
+		$this->archiveState->clear(caseId: $caseId, reason: $reason);
+		$case = $this->journalRestore(case: $case, reason: $reason);
+
+		$this->logger->info('CaseEndingActs: case restored from the archive', ['caseId' => $caseId]);
+
+		return [
+			'caseId' => $caseId,
+			'act' => 'unarchive',
+			'archiveStatus' => $case['archiveStatus'],
+			'archived' => null,
+		];
+	}//end unarchive()
+
+	/**
+	 * Load a case for the restore act and run its guards: a reason, the role, an archived case.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $reason Why it is coming back.
+	 *
+	 * @return array<string, mixed> The loaded case.
+	 *
+	 * @throws RefusedException When the caller may not archive, or the case is not archived.
+	 *
+	 * @spec exclude the guards of unarchive(), which carries the requirement
+	 */
+	private function restorableCase(string $caseId, string $reason): array {
 		$case = $this->load(caseId: $caseId);
 		$this->requireReason(reason: $reason);
 
@@ -317,8 +400,20 @@ class CaseEndingActs {
 			);
 		}
 
-		$this->archiveState->clear(caseId: $caseId, reason: $reason);
+		return $case;
+	}//end restorableCase()
 
+	/**
+	 * Put the restored case back to "still to be archived", journal the restore and save it.
+	 *
+	 * @param array<string, mixed> $case   The case, its marker already cleared.
+	 * @param string               $reason Why it is coming back.
+	 *
+	 * @return array<string, mixed> The case as saved.
+	 *
+	 * @spec exclude one step of unarchive(), which carries the requirement
+	 */
+	private function journalRestore(array $case, string $reason): array {
 		$case['archiveStatus'] = 'nog_te_archiveren';
 		$case = $this->journal->append(
 			case: $case,
@@ -329,15 +424,8 @@ class CaseEndingActs {
 		);
 		$this->store->saveCase(case: $case);
 
-		$this->logger->info('CaseEndingActs: case restored from the archive', ['caseId' => $caseId]);
-
-		return [
-			'caseId' => $caseId,
-			'act' => 'unarchive',
-			'archiveStatus' => $case['archiveStatus'],
-			'archived' => null,
-		];
-	}//end unarchive()
+		return $case;
+	}//end journalRestore()
 
 	/**
 	 * The ending this case carries, for a reopen that has to keep it.
@@ -347,7 +435,7 @@ class CaseEndingActs {
 	 * @return array<string, mixed> `act`, `at`, `by` and `reason`, empty when the
 	 *                              case was never ended by one of these acts.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function endingOf(array $case): array {
 		$entry = $this->journal->latest(case: $case, types: self::ENDING_TYPES);
@@ -395,9 +483,35 @@ class CaseEndingActs {
 	 *
 	 * @throws RefusedException When refused.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function end(string $act, array $request): array {
+		$case = $this->endableCase(act: $act, request: $request);
+
+		$ending = ['act' => $act] + $request + $this->landing(case: $case, request: $request);
+		$this->writeEnding(case: $this->endedCase(case: $case, ending: $ending), ending: $ending);
+
+		$this->logger->info(
+			'CaseEndingActs: case ended',
+			['caseId' => $request['caseId'], 'act' => $act, 'skipped' => count($ending['skippedPhases'])],
+		);
+
+		return $this->endingAnswer(ending: $ending);
+	}//end end()
+
+	/**
+	 * Load a case for finish or abort and run its guards: a reason, the role, and for finish complete data.
+	 *
+	 * @param string                $act     `finish` or `abort`.
+	 * @param array<string, string> $request caseId, reason, resultTypeId and toStatus.
+	 *
+	 * @return array<string, mixed> The loaded case.
+	 *
+	 * @throws RefusedException When refused.
+	 *
+	 * @spec exclude the guards of end(), which carries the requirement
+	 */
+	private function endableCase(string $act, array $request): array {
 		$case = $this->load(caseId: $request['caseId']);
 		$this->requireReason(reason: $request['reason']);
 		$this->gate->require(act: $act, case: $case);
@@ -411,23 +525,28 @@ class CaseEndingActs {
 			$this->incompleteness->requireComplete(case: $case);
 		}
 
-		$ending = ['act' => $act] + $request + $this->landing(case: $case, request: $request);
-		$this->writeEnding(case: $this->endedCase(case: $case, ending: $ending), ending: $ending);
+		return $case;
+	}//end endableCase()
 
-		$this->logger->info(
-			'CaseEndingActs: case ended',
-			['caseId' => $request['caseId'], 'act' => $act, 'skipped' => count($ending['skippedPhases'])],
-		);
-
+	/**
+	 * What finish and abort answer about the ending they recorded.
+	 *
+	 * @param array<string, mixed> $ending The act, its request and its landing.
+	 *
+	 * @return array<string, mixed> What was recorded.
+	 *
+	 * @spec exclude one step of end(), which carries the requirement
+	 */
+	private function endingAnswer(array $ending): array {
 		return [
-			'caseId' => $request['caseId'],
-			'act' => $act,
+			'caseId' => $ending['caseId'],
+			'act' => $ending['act'],
 			'status' => $ending['status'],
 			'endDate' => $ending['endDate'],
 			'result' => $ending['result'],
 			'skippedPhases' => $ending['skippedPhases'],
 		];
-	}//end end()
+	}//end endingAnswer()
 
 	/**
 	 * Where the case lands: its terminal status, its result, its end date and the phases it skips.
@@ -493,19 +612,33 @@ class CaseEndingActs {
 			$case['skippedPhases'] = json_encode($ending['skippedPhases']);
 		}
 
-		if ($ending['act'] === 'finish' && $ending['resultTypeId'] !== '') {
-			// Only finishing takes the nomination from the result type here.
-			// An abort has a result and no besluit, and its retention is
-			// committed by the archive act, which is where an archivist is.
-			$case = array_merge($case, $this->results->archivalFuture(
-				case: $case,
-				resultTypeId: $ending['resultTypeId'],
-				endDate: $ending['endDate'],
-			));
+		return $this->withFinishNomination(case: $case, ending: $ending);
+	}//end endedCase()
+
+	/**
+	 * The ended case with the nomination its result type gives, when it was finished with a chosen result.
+	 *
+	 * @param array<string, mixed> $case   The ended case.
+	 * @param array<string, mixed> $ending The act, its request and its landing.
+	 *
+	 * @return array<string, mixed> The case to save.
+	 *
+	 * @spec exclude one step of end(), which carries the requirement
+	 */
+	private function withFinishNomination(array $case, array $ending): array {
+		if ($ending['act'] !== 'finish' || $ending['resultTypeId'] === '') {
+			return $case;
 		}
 
-		return $case;
-	}//end endedCase()
+		// Only finishing takes the nomination from the result type here.
+		// An abort has a result and no besluit, and its retention is
+		// committed by the archive act, which is where an archivist is.
+		return array_merge($case, $this->results->archivalFuture(
+			case: $case,
+			resultTypeId: $ending['resultTypeId'],
+			endDate: $ending['endDate'],
+		));
+	}//end withFinishNomination()
 
 	/**
 	 * Journal the ending on the case, save it and write the status record.
@@ -555,26 +688,10 @@ class CaseEndingActs {
 	 *
 	 * @throws RefusedException When the case type declares no terminal status.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function terminalStatus(string $caseTypeId, string $named): string {
-		$terminal = [];
-		foreach ($this->statuses->rowsOf(caseTypeId: $caseTypeId) as $row) {
-			if ($this->isFinalRow(row: $row) === false) {
-				continue;
-			}
-
-			$terminal[] = $row;
-		}
-
-		if ($terminal === []) {
-			throw new RefusedException(
-				rule: 'no-terminal-status',
-				sentence: 'This case type has no status to end on.',
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
-
+		$terminal = $this->terminalRows(caseTypeId: $caseTypeId);
 		foreach ($terminal as $row) {
 			if ($this->idOf(row: $row) === $named && $named !== '') {
 				return $named;
@@ -585,6 +702,33 @@ class CaseEndingActs {
 
 		return $this->idOf(row: $terminal[0]);
 	}//end terminalStatus()
+
+	/**
+	 * The case type's terminal status rows, in the order the case type lists them.
+	 *
+	 * @param string $caseTypeId The case type UUID.
+	 *
+	 * @return list<array<string, mixed>> The terminal rows.
+	 *
+	 * @throws RefusedException When the case type declares no terminal status.
+	 *
+	 * @spec exclude one step of terminalStatus(), which carries the requirement
+	 */
+	private function terminalRows(string $caseTypeId): array {
+		$terminal = array_values(array_filter(
+			$this->statuses->rowsOf(caseTypeId: $caseTypeId),
+			fn (array $row): bool => $this->isFinalRow(row: $row),
+		));
+		if ($terminal === []) {
+			throw new RefusedException(
+				rule: 'no-terminal-status',
+				sentence: 'This case type has no status to end on.',
+				status: RefusedException::STATUS_REFUSED,
+			);
+		}
+
+		return $terminal;
+	}//end terminalRows()
 
 	/**
 	 * The phases the case never reached, by name.
@@ -599,7 +743,7 @@ class CaseEndingActs {
 	 *
 	 * @return list<string> The skipped phase names, in process order.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function skippedPhases(string $caseTypeId, string $fromStatus, string $toStatus): array {
 		$rows = $this->statuses->rowsOf(caseTypeId: $caseTypeId);
@@ -633,7 +777,7 @@ class CaseEndingActs {
 	 *
 	 * @return bool True when the case carries an ending.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isEnded(array $case): bool {
 		return (trim((string)($case[self::ENDING_FIELD] ?? '')) !== '');

@@ -112,7 +112,7 @@ class DossiqTxSetStatusNode extends DossiqTransitionNode {
      *
      * @throws UnexpectedValueException When the step names no status.
      *
-     * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
     public function validateConfig(array $config): void {
         parent::validateConfig(config: $config);

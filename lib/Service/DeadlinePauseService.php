@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use RuntimeException;
 /**
  * AWB 4:5 / 4:15 pause + resume on a TermijnInstance.
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
 class DeadlinePauseService {
 	/**
@@ -112,7 +112,7 @@ class DeadlinePauseService {
 	 * @throws RefusedException When the case type forbids the suspension, forbids it this
 	 *         long, or does not declare the reason named.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function registerPauze(
 		string $termInstanceId,
@@ -353,7 +353,7 @@ class DeadlinePauseService {
 	 *
 	 * @throws RefusedException When the case type forbids it, or forbids it this long.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function assertSuspensionAllowed(array $instance, int $durationDays): void {
 		if ($this->declarations === null) {
@@ -399,7 +399,7 @@ class DeadlinePauseService {
 	 *
 	 * @throws RefusedException When the case type declares reasons but not this one.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function resolveReason(array $instance, string $key): array {
 		$wanted = trim($key);
@@ -435,7 +435,7 @@ class DeadlinePauseService {
 	 *
 	 * @return array<int, int> The offsets, empty when nothing is chased.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function chaseOffsetsFor(array $reason, int $durationDays): array {
 		if ($this->schedule === null || $reason === []) {
@@ -459,7 +459,7 @@ class DeadlinePauseService {
 	 *
 	 * @throws RuntimeException When instance missing or not paused.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
 	 */
 	public function resumeAfterPauze(string $termInstanceId, ?DateTimeImmutable $aanvullingDatum = null): array {
 		$aanvullingDatum = ($aanvullingDatum ?? new DateTimeImmutable());

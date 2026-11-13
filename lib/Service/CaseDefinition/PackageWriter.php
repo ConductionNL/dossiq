@@ -152,7 +152,7 @@ class PackageWriter {
 	 *
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
-	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/case-types/spec.md#requirement-a-case-type-a-package-placed-reads-as-shipped
 	 */
 	public function writePackage(string $package, array $groups): array {
@@ -427,7 +427,7 @@ class PackageWriter {
 	 *
 	 * @return array<int, string> The ids of the rows that were filled.
 	 *
-	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 */
 	public function fillAdopted(array $adopted): array {
 		return $this->fills()->write(adopted: $adopted);

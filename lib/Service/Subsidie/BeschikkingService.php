@@ -44,7 +44,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/specs.md
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
 class BeschikkingService {
 
@@ -85,7 +85,7 @@ class BeschikkingService {
 	 *
 	 * @return DateTimeImmutable The bezwaartermijn end, on a working day.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function computeBezwaartermijn(DateTimeImmutable $publication): DateTimeImmutable {
 		$end = $publication->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
@@ -102,7 +102,7 @@ class BeschikkingService {
 	 *
 	 * @throws OCSBadRequestException When validation fails.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function assertDraftValid(array $payload): void {
 		$granted = (float)($payload['grantedAmount'] ?? 0);

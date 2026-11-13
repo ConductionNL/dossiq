@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T16
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
  */
 
 declare(strict_types=1);
@@ -35,13 +35,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
  * Guards beschikking state transitions and logs them immutably.
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T16
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
  */
 class StateMachineService {
 	/**
@@ -147,7 +148,7 @@ class StateMachineService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T16
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
 	 */
 	public function isImmutable(string $status): bool {
 		return in_array($status, self::IMMUTABLE_STATUSES, true);
@@ -161,7 +162,7 @@ class StateMachineService {
 	 *
 	 * @return bool True when the transition is permitted.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T16
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
 	 */
 	public function validateTransition(string $currentStatus, string $nextStatus): bool {
 		$allowed = (self::TRANSITIONS[$currentStatus] ?? null);
@@ -182,7 +183,7 @@ class StateMachineService {
 	 *
 	 * @return array<string, mixed> The persisted log record (or an empty array when storage is unavailable).
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T16
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
 	 */
 	public function logTransition(string $decisionId, string $from, string $to, array $metadata = []): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -292,17 +293,6 @@ class StateMachineService {
 	 * @return array<string, mixed>
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

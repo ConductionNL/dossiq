@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Cases;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
@@ -42,11 +43,18 @@ use Throwable;
 /**
  * Where a case split reads and writes.
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseSplitStore {
 
 	use SearchesObjects;
+
+	/**
+	 * The register and the configured schemas, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
 
 	/**
 	 * Constructor.
@@ -55,9 +63,10 @@ class CaseSplitStore {
 	 * @param CaseMoveLedger  $ledger          The status engine's write step, for the second case's status.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		SettingsService $settingsService,
 		private readonly CaseMoveLedger $ledger,
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -74,7 +83,7 @@ class CaseSplitStore {
 	 *
 	 * @throws RuntimeException When the case cannot be saved or the move cannot be recorded.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function enterStatus(array $case, array $move): array {
 		$caseId = $this->uuidOf(row: $case);
@@ -107,7 +116,7 @@ class CaseSplitStore {
 	 * @throws RefusedException `result-type-required` when that status closes a case with a result,
 	 *         or `split-unwritable` when the status could not be checked. Nothing is opened either way.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function refuseUnreachableStatus(array $source): void {
 		$status = trim((string)($source['status'] ?? ''));
@@ -147,7 +156,7 @@ class CaseSplitStore {
 	 *
 	 * @return string What the handler is told: what was left behind, and that nothing was moved.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function undoSecondCase(array $newCase): string {
 		$caseId = $this->uuidOf(row: $newCase);
@@ -175,7 +184,7 @@ class CaseSplitStore {
 	 *
 	 * @return bool True when the case is gone.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	private function discardCase(string $caseId): bool {
 		try {
@@ -204,7 +213,7 @@ class CaseSplitStore {
 	 *
 	 * @return bool True when the title was written.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	private function markFailedSplit(array $case): bool {
 		$case['title'] = 'Failed split: ' . (string)($case['title'] ?? '');
@@ -281,17 +290,7 @@ class CaseSplitStore {
 	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
 	 */
 	public function context(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
+		return $this->dossierRegister->context();
 	}//end context()
 
 	/**
@@ -304,11 +303,6 @@ class CaseSplitStore {
 	 * @throws RuntimeException When the key is unset.
 	 */
 	public function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
+		return $this->dossierRegister->schema(key: $key);
 	}//end schema()
 }//end class

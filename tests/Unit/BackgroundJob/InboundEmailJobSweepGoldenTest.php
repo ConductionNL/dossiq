@@ -39,6 +39,7 @@ use RuntimeException;
  * The sweep matches its recording in every world.
  *
  * @covers \OCA\Dossiq\BackgroundJob\InboundEmailJob
+ * @uses \OCA\Dossiq\BackgroundJob\MailIntakeSource
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  */

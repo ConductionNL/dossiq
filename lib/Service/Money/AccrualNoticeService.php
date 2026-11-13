@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use RuntimeException;
 /**
  * AWB 4:17 ingebrekestelling registration + DwangsomBerekening creation.
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
  */
 class AccrualNoticeService {
 	use SearchesObjects;
@@ -173,7 +173,7 @@ class AccrualNoticeService {
 	 *
 	 * @throws RuntimeException When the instance is missing.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
 	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 */
 	public function registerNotice(

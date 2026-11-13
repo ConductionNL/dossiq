@@ -6,7 +6,7 @@
  * implementation behind the live-conversation panel's buttons and the
  * Contact tab's card buttons ("Gesprek starten", "Groot incident melden").
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 import axios from '@nextcloud/axios'

@@ -39,7 +39,7 @@ use Psr\Log\LoggerInterface;
  *  1. `case.roles[]` entries with `{userId, role}`.
  *  2. Membership in a Nextcloud group named after the role (lowercase).
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T05
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T05
  */
 class RoleGuard implements GuardEvaluatorInterface {
 	/**

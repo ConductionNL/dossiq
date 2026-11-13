@@ -44,7 +44,7 @@ use Throwable;
  * cases is a thing a coordinator has to explain. It is a case policy, so it is
  * dossiq's (D-3).
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) `BulkActionResult` is a value object
  * whose constructor is PRIVATE: `applied()`, `skipped()`, `refused()` and
@@ -61,7 +61,7 @@ class ReassignCasesAction implements BulkActionInterface {
 	 *
 	 * @var string
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public const ID = 'dossiq:reassign-cases';
 
@@ -73,7 +73,7 @@ class ReassignCasesAction implements BulkActionInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly CaseAssigneeWriter $writer,
@@ -86,7 +86,7 @@ class ReassignCasesAction implements BulkActionInterface {
 	 *
 	 * @return string The id.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getId(): string {
 		return self::ID;
@@ -97,7 +97,7 @@ class ReassignCasesAction implements BulkActionInterface {
 	 *
 	 * @return string The label.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getLabel(): string {
 		return $this->l10n->t('Give the cases to another handler');
@@ -108,7 +108,7 @@ class ReassignCasesAction implements BulkActionInterface {
 	 *
 	 * @return string The description.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getDescription(): string {
 		return $this->l10n->t('Moves every selected case to one handler, recording on each case who it came from.');
@@ -119,7 +119,7 @@ class ReassignCasesAction implements BulkActionInterface {
 	 *
 	 * @return bool True.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function requiresJustification(): bool {
 		return true;
@@ -131,7 +131,7 @@ class ReassignCasesAction implements BulkActionInterface {
 	 *
 	 * @return array<int, string> No guards.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getGuards(): array {
 		return [];
@@ -146,7 +146,7 @@ class ReassignCasesAction implements BulkActionInterface {
 	 *
 	 * @throws InvalidArgumentException When either is missing.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function validateParameters(array $parameters): void {
 		if (trim((string)($parameters['toUser'] ?? '')) === '') {
@@ -165,7 +165,7 @@ class ReassignCasesAction implements BulkActionInterface {
 	 *
 	 * @return BulkActionResult What happened, or what would.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
 		$object = $step->object;

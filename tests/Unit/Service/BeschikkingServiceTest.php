@@ -830,4 +830,117 @@ class BeschikkingServiceTest extends TestCase {
 		$this->assertSame("PK\x03\x04", substr($zip, 0, 4));
 		$this->assertGreaterThan(100, strlen($zip));
 	}//end testAuditPacketIsZip()
+	/**
+	 * Sending writes the delivered line, the trigger and the transition with
+	 * exactly these fields, after the dispatch the transport answered.
+	 *
+	 * @return void
+	 */
+	public function testTheSentLineTriggerAndTransitionCarryTheseFields(): void {
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->entries = [];
+
+		$sent = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
+
+		$this->assertCount(1, $this->entries);
+		$this->assertSame(
+			[
+				'caseId' => 'zaak-2026-wmo-1',
+				'kind' => 'beschikking-verzonden',
+				'message' => 'Beschikking verzonden',
+				'fields' => [
+					'channel' => 'digital-post',
+					'sentOn' => $sent['announcementDate'],
+					'decisionType' => 'toekenning',
+					'reference' => (string)($sent['reference'] ?? ''),
+					'beschikkingId' => $id,
+				],
+				'visibility' => 'public',
+			],
+			$this->entries[0]
+		);
+		$this->assertSame(['notificationChannel', 'messageId', 'sentAt'], array_keys($sent['dispatch']));
+		$this->assertCount(1, $this->objects->searchObjectsBySlug('dossiq', 'bezwaarTrigger', ['decisionId' => $id]));
+
+		$transitions = array_column($this->objects->searchObjectsBySlug('dossiq', 'stateMachineLog', ['decisionId' => $id]), 'overgang');
+		$last = end($transitions);
+		$this->assertSame(['signed', 'sent', 'afdelingsmanager-wmo-15', 'employee', 'manual'], [$last['van'], $last['to'], $last['actor'], $last['actorType'], $last['trigger']]);
+	}//end testTheSentLineTriggerAndTransitionCarryTheseFields()
+
+	/**
+	 * The not-sent line carries the reason, the channels tried and the reference,
+	 * and the no-address refusal its sentence and status.
+	 *
+	 * @return void
+	 */
+	public function testTheNotSentLineAndTheNoAddressRefusal(): void {
+		$id = $this->composeWmo(['type' => 'burger', 'name' => 'M. Jansen'])['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->entries = [];
+		$decision = $this->service->find($id);
+
+		try {
+			$this->service->verzend($id, 'afdelingsmanager-wmo-15');
+			$this->fail('verzend() must refuse');
+		} catch (RefusedException $e) {
+			$this->assertSame(
+				'This case has no address for the requester, so the beschikking was not sent. Add an address, then send it again.',
+				$e->getSentence()
+			);
+			$this->assertSame(RefusedException::STATUS_UNPROCESSABLE, $e->getStatus());
+		}
+
+		$this->assertCount(1, $this->entries);
+		$fields = $this->entries[0]['fields'];
+		$this->assertSame(['reasonCode', 'reason', 'channelsTried', 'reference', 'beschikkingId'], array_keys($fields));
+		$this->assertSame('no-channel', $fields['reasonCode']);
+		$this->assertIsString($fields['reason']);
+		$this->assertNotSame('', $fields['reason']);
+		$this->assertIsInt($fields['channelsTried']);
+		$this->assertSame((string)($decision['reference'] ?? ''), $fields['reference']);
+		$this->assertSame($id, $fields['beschikkingId']);
+		$this->assertSame('zaak-2026-wmo-1', $this->entries[0]['caseId']);
+	}//end testTheNotSentLineAndTheNoAddressRefusal()
+	/**
+	 * A successor takes the addressee, rationale and decision the handler wrote,
+	 * and the refusals carry their sentences and statuses.
+	 *
+	 * @return void
+	 */
+	public function testASuccessorTakesTheWrittenFieldsAndTheRefusalsTheirSentences(): void {
+		$original = $this->composeWmo();
+		try {
+			$this->service->issueSuccessor($original['id'], 'toekenning');
+			self::fail('An unknown kind must be refused.');
+		} catch (RefusedException $refusal) {
+			self::assertSame('A correction is either a wijzigingsbeschikking or an intrekkingsbeschikking.', $refusal->getSentence());
+			self::assertSame(RefusedException::STATUS_UNPROCESSABLE, $refusal->getStatus());
+		}
+
+		try {
+			$this->service->issueSuccessor($original['id'], 'amendment');
+			self::fail('A draft must be refused.');
+		} catch (RefusedException $refusal) {
+			self::assertSame('This beschikking has not been signed yet. Change the draft instead of issuing a correction.', $refusal->getSentence());
+		}
+
+		$this->objects->store['beschikking'][$original['id']]['currentStatus'] = 'sent';
+		$addressee = ['type' => 'burger', 'bsn' => '987654321', 'name' => 'P. de Vries', 'messageBoxConfirmed' => true];
+		$successor = $this->service->issueSuccessor(
+			$original['id'],
+			'amendment',
+			['addressee' => $addressee, 'rationale' => 'Herzien na bezwaar.', 'decision' => 'Gedeeltelijk toegekend.'],
+			'tpl-wmo-v1'
+		);
+
+		self::assertSame('amendment', $successor['decisionType']);
+		self::assertSame($original['id'], $successor['supersedes']);
+		self::assertSame($addressee, $successor['addressee']);
+		self::assertSame('Herzien na bezwaar.', $successor['rationale']);
+		self::assertSame(['Gedeeltelijk toegekend.'], $successor['decision']);
+		self::assertSame($original['caseId'], $successor['caseId']);
+	}//end testASuccessorTakesTheWrittenFieldsAndTheRefusalsTheirSentences()
 }//end class

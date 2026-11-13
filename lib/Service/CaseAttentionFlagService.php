@@ -38,7 +38,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -53,7 +53,7 @@ use RuntimeException;
 /**
  * Raise and clear the attention flag, and keep every reason.
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseAttentionFlagService {
 
@@ -110,7 +110,7 @@ class CaseAttentionFlagService {
 	 *
 	 * @throws RuntimeException With code `case_not_found`.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function state(string $caseId): array {
 		return $this->describe(caseId: $caseId, case: $this->read(caseId: $caseId));
@@ -129,7 +129,7 @@ class CaseAttentionFlagService {
 	 *
 	 * @throws RuntimeException With code `case_not_found`, `reason_required` or `already_raised`.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function raise(string $caseId, string $userId, string $reason): array {
 		$reason = $this->requireReason(reason: $reason);
@@ -180,7 +180,7 @@ class CaseAttentionFlagService {
 	 *
 	 * @throws RuntimeException With code `case_not_found`, `reason_required` or `not_raised`.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function clear(string $caseId, string $userId, string $reason): array {
 		$reason = $this->requireReason(reason: $reason);
@@ -218,7 +218,7 @@ class CaseAttentionFlagService {
 	 *
 	 * @throws RuntimeException With code `reason_required`.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function requireReason(string $reason): string {
 		$reason = trim($reason);
@@ -242,7 +242,7 @@ class CaseAttentionFlagService {
 	 *               history: array<int, array<string, mixed>>, raisings: int,
 	 *               clearings: int} The flag, its history and the two counts.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function describe(string $caseId, array $case): array {
 		$history = $this->history(case: $case);
@@ -270,7 +270,7 @@ class CaseAttentionFlagService {
 	 *
 	 * @return boolean True when the flag is raised.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isRaised(array $case): bool {
 		$history = $this->history(case: $case);
@@ -292,7 +292,7 @@ class CaseAttentionFlagService {
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function history(array $case): array {
 		$rows = ($case['attentionFlagHistory'] ?? []);

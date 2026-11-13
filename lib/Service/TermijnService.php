@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
  */
 
 declare(strict_types=1);
@@ -132,8 +132,8 @@ class TermijnService {
 	 * @throws NoTermijnDefinitieException When no TermijnDefinitie matches the zaaktype.
 	 * @throws RuntimeException When the instance cannot be persisted.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
 	 */
 	public function createTermijnInstance(
@@ -295,7 +295,7 @@ class TermijnService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function getTermijnInstance(string $termInstanceId): ?array {
 		return $this->store->read(termInstanceId: $termInstanceId);
@@ -308,7 +308,7 @@ class TermijnService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function getTermijnInstanceForZaak(string $caseId): ?array {
 		return $this->store->latestForCase(caseId: $caseId);
@@ -329,7 +329,7 @@ class TermijnService {
 	 *
 	 * @throws RefusedException When the store could not be asked.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function instancesForCase(string $caseId): array {
 		return $this->store->allForCase(caseId: $caseId);
@@ -348,7 +348,7 @@ class TermijnService {
 	 *
 	 * @return array<string, mixed>|null The stored instance, or null when the store refused.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
 	 */
 	public function saveTermInstance(array $instance): ?array {
@@ -374,7 +374,7 @@ class TermijnService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
 	 */
 	public function updateTermijnInstance(string $termInstanceId, array $patch): ?array {
@@ -421,7 +421,7 @@ class TermijnService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function getTermijnDefinitie(string $caseType): ?array {
 		return $this->definitions->activeFor(caseType: $caseType);
@@ -441,7 +441,7 @@ class TermijnService {
 	 *
 	 * @return array<int, array<string, mixed>> The active definitions.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function definitionsFor(string $caseType): array {
 		return $this->definitions->allActiveFor(caseType: $caseType);
@@ -461,7 +461,7 @@ class TermijnService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
 	 */
 	public function markTermijnCompleted(
 		string $termInstanceId,
@@ -539,7 +539,7 @@ class TermijnService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function recordEvent(
 		string $termInstanceId,

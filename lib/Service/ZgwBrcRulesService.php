@@ -74,7 +74,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwBrcRulesService extends ZgwRulesBase {
 	use ReadsLinkedObjects;
@@ -137,7 +137,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	 *
 	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesBesluitenCreate(array $body): array {
 		$decisionTypeUrl = $body['besluittype'] ?? '';
@@ -167,7 +167,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	 *
 	 * @see BrcImmutabilityRules::rulesBesluitenUpdate()
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesBesluitenUpdate(array $body, ?array $existingObject = null): array {
 		return $this->immutability->rulesBesluitenUpdate(body: $body, existingObject: $existingObject);
@@ -183,7 +183,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	 *
 	 * @see BrcImmutabilityRules::rulesBesluitenPatch()
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesBesluitenPatch(array $body, ?array $existingObject = null): array {
 		return $this->immutability->rulesBesluitenPatch(body: $body, existingObject: $existingObject);
@@ -198,7 +198,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	 *
 	 * @see BrcDocumentLinkRules::rulesBesluitinformatieobjectenCreate()
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesBesluitinformatieobjectenCreate(array $body): array {
 		return $this->documentLinks->rulesBesluitinformatieobjectenCreate(body: $body);

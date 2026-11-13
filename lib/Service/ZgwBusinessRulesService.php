@@ -110,7 +110,7 @@ class ZgwBusinessRulesService {
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList)
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag)    — ZGW scope flag from middleware
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function validate(
 		string $zgwApi,

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Suggests the open case a message refers to, read through the caller's own permissions.
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 class CaseMatchSuggestion {
 	use SearchesObjects;
@@ -76,7 +76,7 @@ class CaseMatchSuggestion {
 	 *
 	 * @return array<int, array<string, mixed>> The items, each with `suggestion`.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function annotate(array $items): array {
 		$found = [];
@@ -95,7 +95,7 @@ class CaseMatchSuggestion {
 	 *
 	 * @return array<int, array<string, mixed>> The items kept.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function narrow(array $items, string $suggestion): array {
 		$wanted = strtoupper(trim($suggestion));

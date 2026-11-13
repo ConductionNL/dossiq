@@ -22,13 +22,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Money\AccruingAmountSettler;
 use OCA\Dossiq\Service\Money\AmountObjectionService;
@@ -50,6 +51,8 @@ use Throwable;
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class AccruingAmountController extends Controller {
+	use ReadsJsonRequests;
+
 	/**
 	 * Constructor.
 	 *
@@ -158,7 +161,7 @@ class AccruingAmountController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function show(string $id): JSONResponse {
 		$denied = $this->denyUnlessMayAccess(calculationId: $id, mutation: false);
@@ -231,7 +234,7 @@ class AccruingAmountController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function settle(string $id): JSONResponse {
 		$denied = $this->denyUnlessMayAccess(calculationId: $id, mutation: true);
@@ -256,7 +259,7 @@ class AccruingAmountController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function objection(string $id): JSONResponse {
 		$denied = $this->denyUnlessMayAccess(calculationId: $id, mutation: true);
@@ -285,7 +288,7 @@ class AccruingAmountController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function reconsider(string $id): JSONResponse {
 		$denied = $this->denyUnlessMayAccess(calculationId: $id, mutation: true);
@@ -375,21 +378,4 @@ class AccruingAmountController extends Controller {
 	public function reconsiderLegacyPath(string $id): JSONResponse {
 		return $this->reconsider(id: $id);
 	}//end reconsiderLegacyPath()
-
-	/**
-	 * Decode the JSON request body into an associative array.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function jsonBody(): array {
-		// OCP\IRequest::getContent() is protected on the concrete OC
-		// request; read raw payload from php://input instead.
-		$raw = (string)file_get_contents('php://input');
-		$body = json_decode($raw, true);
-		if (is_array($body) === true) {
-			return $body;
-		}
-
-		return [];
-	}//end jsonBody()
 }//end class

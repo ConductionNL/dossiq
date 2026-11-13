@@ -43,7 +43,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -57,7 +57,7 @@ use Throwable;
 /**
  * What a case's assessed risk level is, and what it feeds.
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseRiskAssessmentService {
 
@@ -137,7 +137,7 @@ class CaseRiskAssessmentService {
 	 *               assessedAt: string, reviewDate: string, dueForReview: bool}
 	 *               The assessment, as far as this reader may see it.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function describe(array $case, ?DateTimeImmutable $now = null): array {
 		$assessment = ($case['riskAssessment'] ?? []);
@@ -166,7 +166,7 @@ class CaseRiskAssessmentService {
 	 *
 	 * @return string One of LEVELS, or the empty string.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function levelOf(array $assessment): string {
 		$level = trim((string)($assessment['level'] ?? ''));
@@ -189,7 +189,7 @@ class CaseRiskAssessmentService {
 	 *
 	 * @return boolean True when the review date has passed.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isDueForReview(string $reviewDate, ?DateTimeImmutable $now = null): bool {
 		$reviewDate = trim($reviewDate);
@@ -224,7 +224,7 @@ class CaseRiskAssessmentService {
 	 *
 	 * @return string One of the impact values, or the empty string.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function impactFor(array $case): string {
 		$assessment = ($case['riskAssessment'] ?? []);
@@ -254,7 +254,7 @@ class CaseRiskAssessmentService {
 	 *
 	 * @return array{riskLevel: string|null} The field to write back.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function resolve(array $case): array {
 		$assessment = ($case['riskAssessment'] ?? []);
@@ -300,7 +300,7 @@ class CaseRiskAssessmentService {
 	 *
 	 * @return string One of the impact values, or the empty string.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function impactFromRisk(array $case, string $caseTypeId): string {
 		$assessment = ($case['riskAssessment'] ?? []);

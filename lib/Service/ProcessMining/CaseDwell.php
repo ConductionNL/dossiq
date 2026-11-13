@@ -15,7 +15,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -27,7 +27,7 @@ use DateTimeImmutable;
 /**
  * A case in a dwell-time report.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 final class CaseDwell {
 
@@ -55,7 +55,7 @@ final class CaseDwell {
 	 * @phpstan-assert-if-true DateTimeImmutable $moment
 	 * @psalm-assert-if-true DateTimeImmutable $moment
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function admits(?DateTimeImmutable $moment): bool {
 		return $moment !== null && $moment >= $this->window->start && $moment <= $this->window->end;
@@ -66,7 +66,7 @@ final class CaseDwell {
 	 *
 	 * @return DateTimeImmutable The moment.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function lastExit(): DateTimeImmutable {
 		return ($this->closedAt ?? $this->window->now);
@@ -79,7 +79,7 @@ final class CaseDwell {
 	 *
 	 * @return bool True for the last visit of an open case.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function isOpenAt(StatusVisit $visit): bool {
 		return $visit->next === null && $this->closedAt === null;

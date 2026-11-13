@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use OCA\Dossiq\Exception\RefusedException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 class CasePlanGoals {
 
@@ -84,7 +84,7 @@ class CasePlanGoals {
 	 *
 	 * @throws RefusedException When the store cannot be read.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	public function ofPlan(string $planId): array {
 		if (trim($planId) === '') {
@@ -122,7 +122,7 @@ class CasePlanGoals {
 	 *
 	 * @throws RefusedException When the goal is not evaluable, or the write fails.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 * @spec openspec/changes/case-goals/specs/case-goals/spec.md#requirement-a-case-can-hold-goals-that-say-what-counts-as-met
 	 */
 	public function save(array $goal): array {
@@ -179,7 +179,7 @@ class CasePlanGoals {
 	 *
 	 * @throws RefusedException When the goal cannot be read, the state is not a closing one, or nothing was observed.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	public function close(string $goalId, string $state, string $observation, string $onDate = ''): array {
 		$goal = self::found(goal: $this->store->read(schema: self::SCHEMA, id: $goalId));

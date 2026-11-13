@@ -127,9 +127,8 @@ class BezwaarLegalHoldListener implements IEventListener {
 		}
 
 		$schemaSlug = $this->resolveSchemaSlug(payload: $payload);
-		$opens = in_array($schemaSlug, self::PROCEEDING_OPENED_SCHEMAS, true);
-		$closes = in_array($schemaSlug, self::PROCEEDING_CLOSED_SCHEMAS, true);
-		if ($opens === false && $closes === false) {
+		$place = $this->holdDirection(schemaSlug: $schemaSlug);
+		if ($place === null) {
 			return;
 		}
 
@@ -138,21 +137,43 @@ class BezwaarLegalHoldListener implements IEventListener {
 			return;
 		}
 
-		if ($opens === true) {
-			$this->applyHold(
-				caseId: $caseId,
-				place: true,
-				reason: 'Awb-procedure (' . $schemaSlug . ') geregistreerd — archivering opgeschort'
-			);
-			return;
+		$this->applyHold(caseId: $caseId, place: $place, reason: $this->holdReason(schemaSlug: $schemaSlug, place: $place));
+	}//end handle()
+
+	/**
+	 * Whether a proceeding of this schema places a hold (true), releases one (false), or concerns no hold (null).
+	 *
+	 * @param string $schemaSlug The proceeding schema slug.
+	 *
+	 * @return bool|null
+	 */
+	private function holdDirection(string $schemaSlug): ?bool {
+		if (in_array($schemaSlug, self::PROCEEDING_OPENED_SCHEMAS, true) === true) {
+			return true;
 		}
 
-		$this->applyHold(
-			caseId: $caseId,
-			place: false,
-			reason: 'Awb-procedure (' . $schemaSlug . ') afgehandeld — archivering hervat'
-		);
-	}//end handle()
+		if (in_array($schemaSlug, self::PROCEEDING_CLOSED_SCHEMAS, true) === true) {
+			return false;
+		}
+
+		return null;
+	}//end holdDirection()
+
+	/**
+	 * The reason recorded on the hold: archiving suspended while a procedure runs, resumed once it is decided.
+	 *
+	 * @param string $schemaSlug The proceeding schema slug.
+	 * @param bool   $place      Whether the hold is placed.
+	 *
+	 * @return string
+	 */
+	private function holdReason(string $schemaSlug, bool $place): string {
+		if ($place === true) {
+			return 'Awb-procedure (' . $schemaSlug . ') geregistreerd — archivering opgeschort';
+		}
+
+		return 'Awb-procedure (' . $schemaSlug . ') afgehandeld — archivering hervat';
+	}//end holdReason()
 
 	/**
 	 * Place or release a legal hold on the case via OpenRegister.
@@ -168,6 +189,39 @@ class BezwaarLegalHoldListener implements IEventListener {
 	 * @return void
 	 */
 	private function applyHold(string $caseId, bool $place, string $reason): void {
+		$target = $this->holdTarget(caseId: $caseId, place: $place);
+		if ($target === []) {
+			return;
+		}
+
+		try {
+			$hasHold = (bool)$target['service']->hasActiveHold($target['case']);
+			// Only a change is applied: a hold is placed when none is active, released when one is.
+			if ($place !== $hasHold) {
+				$this->changeHold(target: $target, reason: $reason);
+			}
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq legal-hold: could not apply hold',
+				[
+					'app' => Application::APP_ID,
+					'caseId' => $caseId,
+					'place' => $place,
+					'error' => $e->getMessage(),
+				]
+			);
+		}//end try
+	}//end applyHold()
+
+	/**
+	 * The hold service, the case object and the direction to apply, or nothing (logged) when either cannot be resolved.
+	 *
+	 * @param string $caseId The case UUID to hold/release.
+	 * @param bool   $place  True to place a hold, false to release.
+	 *
+	 * @return array{service: object, case: object, place: bool}|array{}
+	 */
+	private function holdTarget(string $caseId, bool $place): array {
 		$legalHoldService = $this->resolveOr(fqn: self::LEGAL_HOLD_SERVICE);
 		$caseObject = $this->resolveCaseObject(caseId: $caseId);
 		if ($legalHoldService === null || $caseObject === null) {
@@ -183,28 +237,28 @@ class BezwaarLegalHoldListener implements IEventListener {
 					'haveCaseObject' => ($caseObject !== null),
 				]
 			);
+			return [];
+		}
+
+		return ['service' => $legalHoldService, 'case' => $caseObject, 'place' => $place];
+	}//end holdTarget()
+
+	/**
+	 * Place or release the hold on the target's case, with the reason recorded on it.
+	 *
+	 * @param array{service: object, case: object, place: bool} $target The resolved hold target.
+	 * @param string                                             $reason Human-readable reason recorded on the hold.
+	 *
+	 * @return void
+	 */
+	private function changeHold(array $target, string $reason): void {
+		if ($target['place'] === true) {
+			$target['service']->placeHold(object: $target['case'], order: new HoldOrder(reason: $reason));
 			return;
 		}
 
-		try {
-			$hasHold = (bool)$legalHoldService->hasActiveHold($caseObject);
-			if ($place === true && $hasHold === false) {
-				$legalHoldService->placeHold(object: $caseObject, order: new HoldOrder(reason: $reason));
-			} elseif ($place === false && $hasHold === true) {
-				$legalHoldService->releaseHold(object: $caseObject, order: new HoldOrder(reason: $reason));
-			}
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Dossiq legal-hold: could not apply hold',
-				[
-					'app' => Application::APP_ID,
-					'caseId' => $caseId,
-					'place' => $place,
-					'error' => $e->getMessage(),
-				]
-			);
-		}//end try
-	}//end applyHold()
+		$target['service']->releaseHold(object: $target['case'], order: new HoldOrder(reason: $reason));
+	}//end changeHold()
 
 	/**
 	 * Resolve the case ObjectEntity for a UUID via the OR object mapper.
@@ -320,16 +374,8 @@ class BezwaarLegalHoldListener implements IEventListener {
 				_rbac: false,
 				_multitenancy: false
 			);
-			if ($objection === null || method_exists($objection, 'getObject') === false) {
-				return '';
-			}
 
-			$data = $objection->getObject();
-			if (is_array($data) === false) {
-				return '';
-			}
-
-			return (string)($data['case'] ?? '');
+			return $this->caseIdIn(objection: $objection);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq legal-hold: could not resolve objection for case linkage',
@@ -342,6 +388,26 @@ class BezwaarLegalHoldListener implements IEventListener {
 			return '';
 		}//end try
 	}//end caseIdOfObjection()
+
+	/**
+	 * The case UUID an objection object carries, '' when it carries none.
+	 *
+	 * @param mixed $objection The objection as the object mapper found it.
+	 *
+	 * @return string
+	 */
+	private function caseIdIn(mixed $objection): string {
+		if ($objection === null || method_exists($objection, 'getObject') === false) {
+			return '';
+		}
+
+		$data = $objection->getObject();
+		if (is_array($data) === false) {
+			return '';
+		}
+
+		return (string)($data['case'] ?? '');
+	}//end caseIdIn()
 
 	/**
 	 * Extract the OR object array from an event.

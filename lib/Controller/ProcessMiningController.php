@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Throwable;
 /**
  * Process-mining bottleneck REST surface.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
  *
  * @psalm-suppress UnusedClass
  */
@@ -100,7 +100,7 @@ class ProcessMiningController extends Controller {
 	 *                                          controller/beheerder/admin role, or 400 on
 	 *                                          invalid parameters.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
 	 * @spec openspec/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
 	 */
 	#[NoAdminRequired]

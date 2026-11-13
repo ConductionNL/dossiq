@@ -243,7 +243,7 @@ class WorkingDayCalculator {
 	 * @return bool True when the organisation's administered calendar is
 	 *              answering, false when the built-in Dutch list is.
 	 *
-	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function readsAdministeredCalendar(): bool {
 		return ($this->administered?->isAvailable() === true);
@@ -308,7 +308,7 @@ class WorkingDayCalculator {
 	 *
 	 * @throws RuntimeException When the calendar has no working day in a year.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function nextWorkingDay(DateTimeImmutable $date): DateTimeImmutable {
 		$cursor = $date;

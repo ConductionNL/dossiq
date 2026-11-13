@@ -87,13 +87,9 @@ class DocumentReviewController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function summary(string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
-			return $this->noAccess();
+		$user = $this->caseReader(id: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return new JSONResponse($this->summary->forCase(caseId: $id));
@@ -111,13 +107,9 @@ class DocumentReviewController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function relevance(string $id, string $documentRef): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $id, user: $user) === false) {
-			return $this->noAccess();
+		$user = $this->caseWriter(id: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		try {
@@ -145,13 +137,9 @@ class DocumentReviewController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function batches(string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
-			return $this->noAccess();
+		$user = $this->caseReader(id: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return new JSONResponse(['results' => $this->batches->forCase(caseId: $id, assessed: $this->summary->assessed(caseId: $id))]);
@@ -168,13 +156,9 @@ class DocumentReviewController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function createBatch(string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $id, user: $user) === false) {
-			return $this->noAccess();
+		$user = $this->caseWriter(id: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		try {
@@ -259,13 +243,9 @@ class DocumentReviewController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function pagesSeen(string $id, string $documentRef): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
-			return $this->noAccess();
+		$user = $this->caseReader(id: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$pages = array_values(array_map('intval', array_filter((array)$this->request->getParam('pages', []), 'is_numeric')));
@@ -283,6 +263,46 @@ class DocumentReviewController extends Controller {
 
 		return new JSONResponse($review);
 	}//end pagesSeen()
+
+	/**
+	 * The signed-in user when they may read the case, else the refusal.
+	 *
+	 * @param string $id The case.
+	 *
+	 * @return IUser|JSONResponse The user, or 401 without a session user, or 403 without read access.
+	 */
+	private function caseReader(string $id): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
+			return $this->noAccess();
+		}
+
+		return $user;
+	}//end caseReader()
+
+	/**
+	 * The signed-in user when they may change the case, else the refusal.
+	 *
+	 * @param string $id The case.
+	 *
+	 * @return IUser|JSONResponse The user, or 401 without a session user, or 403 without mutation access.
+	 */
+	private function caseWriter(string $id): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $id, user: $user) === false) {
+			return $this->noAccess();
+		}
+
+		return $user;
+	}//end caseWriter()
 
 	/**
 	 * The refusal of a user without access to the case.

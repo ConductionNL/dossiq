@@ -47,7 +47,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -62,7 +62,7 @@ use RuntimeException;
 /**
  * Compiles KCC routing rules into a shared-evaluator decision table and runs it.
  *
- * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 class RoutingTableEvaluator {
 
@@ -113,7 +113,7 @@ class RoutingTableEvaluator {
 	 *                                     must surface loudly rather than
 	 *                                     read as "route to nobody".
 	 *
-	 * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function route(array $rules, array $contactMoment, ?DateTimeImmutable $now = null): ?array {
 		$now = ($now ?? new DateTimeImmutable());
@@ -326,18 +326,18 @@ class RoutingTableEvaluator {
 	private function cellsOf(RuleConditions $gathered, array &$columns): array {
 		$cells = [];
 		foreach ($gathered->equalities as $column => $value) {
-			$this->ensureColumn(columns: $columns, name: $column, type: 'string', kind: $column);
+			$this->ensureColumn(columns: $columns, column: ['name' => $column, 'type' => 'string', 'kind' => $column, 'payload' => []]);
 			$cells[$column] = $this->quote(value: $value);
 		}
 
 		foreach ($gathered->booleans as $name => $spec) {
-			$this->ensureColumn(columns: $columns, name: $name, type: 'boolean', kind: $spec['kind'], payload: $spec);
+			$this->ensureColumn(columns: $columns, column: ['name' => $name, 'type' => 'boolean', 'kind' => $spec['kind'], 'payload' => $spec]);
 			$cells[$name] = 'true';
 		}
 
 		$timeCell = $this->timeCell(lowerBound: $gathered->lowerBound, upperBound: $gathered->upperBound);
 		if ($timeCell !== null) {
-			$this->ensureColumn(columns: $columns, name: 'minutesOfDay', type: 'number', kind: 'minutesOfDay');
+			$this->ensureColumn(columns: $columns, column: ['name' => 'minutesOfDay', 'type' => 'number', 'kind' => 'minutesOfDay', 'payload' => []]);
 			$cells['minutesOfDay'] = $timeCell;
 		}
 
@@ -476,21 +476,19 @@ class RoutingTableEvaluator {
 	 * Declare a column once, keeping its derivation spec.
 	 *
 	 * @param array<int, array<string, mixed>> $columns The column list.
-	 * @param string $name The column name.
-	 * @param string $type The column's DMN type.
-	 * @param string $kind The derivation kind.
-	 * @param array<string, mixed> $payload Extra derivation data (needle/pattern).
+	 * @param array{name: string, type: string, kind: string, payload: array<string, mixed>} $column The column: its name,
+	 *        DMN type, derivation kind and extra derivation data (needle/pattern).
 	 *
 	 * @return void
 	 */
-	private function ensureColumn(array &$columns, string $name, string $type, string $kind, array $payload = []): void {
-		foreach ($columns as $column) {
-			if ($column['name'] === $name) {
+	private function ensureColumn(array &$columns, array $column): void {
+		foreach ($columns as $declared) {
+			if ($declared['name'] === $column['name']) {
 				return;
 			}
 		}
 
-		$columns[] = ['name' => $name, 'type' => $type, 'kind' => $kind, 'payload' => $payload];
+		$columns[] = $column;
 	}//end ensureColumn()
 
 	/**

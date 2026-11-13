@@ -39,6 +39,7 @@ use ReflectionClass;
 
 /**
  * @covers \OCA\Dossiq\Service\Queue\PersonalStageService
+ * @uses \OCA\Dossiq\Service\Queue\JsonPreference
  */
 class PersonalStageTest extends TestCase {
 	/**

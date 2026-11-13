@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T04
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Service that generates beschikking documents for DSO vergunningaanvragen.
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T04
  */
 class BeschikkingGenerationService {
 	use NormalisesObjectRows;
@@ -94,7 +94,7 @@ class BeschikkingGenerationService {
 	 * @return array<string,mixed> Result with keys: success, bijlageId, message. `success` is false
 	 *                             when no bijlage could be saved, and `bijlageId` is then ''.
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T04
 	 */
 	public function generateBeschikking(string $caseId, string $outcome, string $motivation): array {
 		$ask = ['caseId' => $caseId, 'outcome' => $outcome, 'motivation' => $motivation];

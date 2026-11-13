@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 
 /**
  * Reads a case type's lifecycle rules and its statuses.
@@ -120,7 +121,7 @@ class CaseTypeReader {
 	 *
 	 * @return array{paymentRequiredBeforeHandling: bool}|null The rule, or null.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
 	 */
 	public function paymentRule(string $caseTypeId): ?array {
 		if ($caseTypeId === '') {
@@ -231,17 +232,6 @@ class CaseTypeReader {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

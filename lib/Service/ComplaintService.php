@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use RuntimeException;
 /**
  * Service for complaint (klacht) management per Awb chapter 9.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
 class ComplaintService {
 
@@ -127,7 +127,7 @@ class ComplaintService {
 	 *
 	 * @return int The working days.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
 	 */
 	private function acknowledgementDays(): int {
 		$resolved = $this->resolution?->resolve(
@@ -154,7 +154,7 @@ class ComplaintService {
 	 *
 	 * @throws \RuntimeException If validation fails or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function createComplaint(array $data): array {
 		$data = array_diff_key($data, CallerIdentity::KEYS);
@@ -215,7 +215,7 @@ class ComplaintService {
 	 *
 	 * @return array<string, mixed>|null Complaint or null if not found
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function getComplaint(string $id): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -245,7 +245,7 @@ class ComplaintService {
 	 *
 	 * @return array<int, array<string, mixed>> List of complaints
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function listComplaints(array $filters = []): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -280,7 +280,7 @@ class ComplaintService {
 	 *
 	 * @throws \RuntimeException If OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function updateComplaint(string $id, array $data): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -310,7 +310,7 @@ class ComplaintService {
 	 *
 	 * @throws \RuntimeException If transition not allowed
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function transitionStatus(string $id, string $newStatus): array {
 		$complaint = $this->getComplaint(id: $id);
@@ -344,7 +344,7 @@ class ComplaintService {
 	 *
 	 * @throws \RuntimeException If extension not available or invalid
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function requestVerdaging(string $id, string $justification): array {
 		$complaint = $this->getComplaint(id: $id);
@@ -388,7 +388,7 @@ class ComplaintService {
 	 *
 	 * @throws \RuntimeException If complaint not found
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function linkEscalatedCase(string $complaintId, string $caseId): array {
 		$complaint = $this->getComplaint(id: $complaintId);
@@ -412,7 +412,7 @@ class ComplaintService {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> Grouped overdue/warning complaints
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function getDeadlineAlerts(int $warningDays = 3): array {
 		$activeStatuses = ['received', 'receipt_confirmed', 'in_handling', 'hoorgesprek_planned', 'hoorgesprek_completed'];
@@ -510,7 +510,7 @@ class ComplaintService {
 	 *
 	 * @return string Resulting ISO date string (Y-m-d)
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function addWorkingDays(string $startDate, int $days): string {
 		$start = $this->dates->parse($startDate, 'receiptDate');
@@ -525,7 +525,7 @@ class ComplaintService {
 	 *
 	 * @return string Resulting ISO date string (Y-m-d)
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function addCalendarWeeks(string $startDate, int $weeks): string {
 		$date = $this->dates->parse($startDate, 'receiptDate')->modify('+' . $weeks . ' weeks');
@@ -539,7 +539,7 @@ class ComplaintService {
 	 *
 	 * @return bool True if the date is a working day
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function isWorkingDay(\DateTimeImmutable $date): bool {
 		return $this->workingDays->isWorkingDay(date: $date);
@@ -555,7 +555,7 @@ class ComplaintService {
 	 *
 	 * @throws \RuntimeException If any required field is missing
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	private function validateRequired(array $data, array $required): void {
 		$missing = [];

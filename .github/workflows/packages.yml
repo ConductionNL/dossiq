@@ -58,7 +58,7 @@ jobs:
           --health-retries 10
     steps:
       - name: Checkout Nextcloud server
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
           repository: nextcloud/server
@@ -69,13 +69,13 @@ jobs:
         run: cd server && git submodule update --init 3rdparty
 
       - name: Checkout app
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
           path: server/apps/dossiq
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: "8.3"
           extensions: mbstring, intl, pdo_pgsql, pgsql, zip, gd, curl, xml, json
@@ -144,7 +144,7 @@ jobs:
           curl -sf http://localhost:8080/status.php
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "20"
 

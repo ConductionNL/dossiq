@@ -830,7 +830,7 @@ The system SHOULD support parent/child case hierarchies. A sub-case MUST be a fu
 
 ---
 
-### REQ-CM-19: Confidentiality Levels
+### Requirement: REQ-CM-19: Confidentiality Levels
 
 The system SHOULD support confidentiality levels on cases, defaulting from the case type. Cases MUST default their confidentiality from the case type.
 
@@ -3506,6 +3506,105 @@ lists and the Followers section on the People tab SHALL stay.
 - **WHEN** you press the bell beside the Follow control and reload
 - **THEN** the case SHALL still be followed
 - **AND** the bell SHALL read notifications off
+
+### Requirement: An action on the case page answers with a card notice
+
+An action endpoint a case page card calls SHALL answer its result as a `notice` `{ variant, role, title, text }`
+the card shows in place of a toast: `role` is `alert` for an error and `status` otherwise, and the texts are in the
+reader's language. A task is cancelled through the task engine only, behind the write guard on the task's own case.
+
+#### Scenario: Task completed
+
+- **WHEN** a handler completes the task "Documenten beoordelen"
+- **THEN** the answer carries a success notice titled "Taak Documenten beoordelen afgerond."
+
+#### Scenario: Cancel refused by the engine
+
+- **WHEN** a handler cancels a task the engine will not cancel
+- **THEN** the answer is 409 with an error notice titled "Annuleren geweigerd voor <task>:" and the engine's reason as
+  its text
+- **AND** the task stays open
+
+#### Scenario: Cancel without write access
+
+- **WHEN** a signed-in user without write access on the task's case cancels it
+- **THEN** the answer is 403 and the engine is not asked
+
+### Requirement: A reader who is not the handler can claim the case to edit it
+
+The case page SHALL read the record rights, so its edit controls are off while `@self.can.update` is false. While
+`@self.can.update` is false and `@self.can["claim-as-handler"]` is true, the banner row SHALL show "Voeg jezelf toe als
+behandelaar om te kunnen bewerken" with one button that runs the declared action `claim-as-handler` on the case and
+reads the page again.
+
+#### Scenario: A group member opens a case they do not handle
+
+- **GIVEN** a case whose `@self.can` is `{ update: false, "claim-as-handler": true }` for the reader
+- **WHEN** the reader opens the case
+- **THEN** the edit controls are off and the banner offers "Voeg mij toe als behandelaar"
+- **AND** pressing it runs `claim-as-handler` on the case, after which the page follows the new rights
+
+#### Scenario: The handler opens the case
+
+- **GIVEN** a case whose `@self.can.update` is true for the reader
+- **THEN** the banner does not show and every edit control is there
+
+### Requirement: Objects is reached from the Cases menu
+
+The simple profile SHALL list Objects in the Cases part of the menu, at `/objects`. Each row SHALL be one case on an object: the object first, then its type, the case and the status of that case.
+
+#### Scenario: A handler starts at the object
+@e2e exclude a menu entry and columns declared in the manifest; objectsIndexLook reads them
+
+- **GIVEN** a building linked to two cases
+- **WHEN** a handler opens Objecten under Zaken
+- **THEN** the list shows two rows for that building, each with its case, the case number and the status
+- **AND** View case opens that row's case
+
+### Requirement: The custody chain reads as rows with the current holder marked
+
+The Archiving tab SHALL draw each holding as a row with the unit's initials, the unit, its period (both ends for a closed holding) and a pill saying whether the unit holds the case now or handed it over.
+
+#### Scenario: a case handed from the KCC to the Woo team
+@e2e exclude covered by tests/vitest/caseCustodyPanel.spec.js; the live chain needs example holdings
+
+- **GIVEN** a case held by the KCC from 3 okt 14:10 to 14:18 and since then by Team Woo en informatie
+- **WHEN** the handler opens the Archiving tab
+- **THEN** the KCC row SHALL read "Van 3 okt 14:10 tot 3 okt 14:18" with the pill "Overgedragen"
+- **AND** the Woo row SHALL read "In handen sinds 3 okt" with the pill "Houder nu"
+- **AND** the "Overgedragen" pill and the initials SHALL use the soft ink, and a request's "Overdragen" SHALL be a secondary button next to "Houden, met reden"
+
+### Requirement: Drafts stay out of the staff lists until a handler asks for them (REQ-CM-79)
+
+No staff list SHALL show a colleague's draft by default; a reader's own drafts stay in their lists, as OpenRegister keeps them. The exclusion is OpenRegister's: a list, a count and a search leave out every object in the status draft unless the query carries `_drafts`. dossiq SHALL spell that exclusion out on no page and in no lens, so that a list and the count beside it cannot disagree.
+
+The Cases page SHALL carry exactly one chip that asks for drafts, With drafts. Its filter SHALL be the open cases (`isFinalStatus: false`, `statusHiddenInLists: false`) with `_drafts: "any"`, which shows drafts beside the rest. It SHALL NOT be the default chip and SHALL sit behind the overflow chip, beside My drafts.
+
+The chip SHALL change what the list shows and never what the reader may read: a draft the reader has no access to stays out of the list with the chip on.
+
+#### Scenario: A colleague's draft is not in the work list
+- **GIVEN** a case in the status draft that a colleague saved and the handler may read
+- **WHEN** the handler opens Cases under All
+- **THEN** the draft is not in the list and not in its count
+- e2e: `tests/e2e/cases-with-drafts.spec.ts` "a draft shows under With drafts only"
+
+#### Scenario: The handler asks for drafts
+<!-- @e2e exclude Second half of the e2e above, which picks the chip and reads the same list; the query parameter itself is asserted by caseListLenses.spec.js. -->
+- **GIVEN** the same draft
+- **WHEN** the handler picks With drafts
+- **THEN** the list shows the open cases and the draft among them
+
+#### Scenario: The handler's own draft
+<!-- @e2e exclude OpenRegister keeps the caller's own drafts in every list (form-destination, "The owner still sees their own drafts"); proven there. dossiq adds no condition to it. -->
+- **GIVEN** a draft the handler saved themselves
+- **WHEN** the handler opens Cases under All
+- **THEN** their own draft is in the list, with or without the chip
+
+#### Scenario: Somebody else's private draft
+<!-- @e2e exclude Access rule of OpenRegister (DraftStatusPolicy), not of this chip; proven there. The chip sends one query parameter, asserted by caseListLenses.spec.js. -->
+- **GIVEN** a draft the handler may not read
+- **WHEN** the handler picks With drafts
+- **THEN** that draft is not in the list
 
 ## Sharing, Transfer, Email & Public Access (retrofit)
 

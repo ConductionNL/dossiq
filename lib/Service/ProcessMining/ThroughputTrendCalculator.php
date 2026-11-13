@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 /**
  * Computes the weekly closed-case throughput trend.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 class ThroughputTrendCalculator {
 	/**
@@ -64,7 +64,7 @@ class ThroughputTrendCalculator {
 	 *
 	 * @return array<int, array{week: string, count: int}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeThroughputTrend(array $cases, DateTimeImmutable $from, DateTimeImmutable $to): array {
 		// Seed every ISO week in range so gaps render as zero, not "missing".
@@ -110,7 +110,7 @@ class ThroughputTrendCalculator {
 	 *
 	 * @return array<string, int> Zero-valued buckets, keyed by ISO week ("o-\WW").
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	private function seedWeekBuckets(DateTimeImmutable $from, DateTimeImmutable $to): array {
 		$buckets = [];

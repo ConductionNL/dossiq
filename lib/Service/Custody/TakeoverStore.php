@@ -49,15 +49,23 @@ class TakeoverStore {
 	use SearchesObjects;
 
 	/**
+	 * The register and the configured schemas, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param LoggerInterface $logger          Records what could not be read or written.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -148,17 +156,7 @@ class TakeoverStore {
 	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
 	 */
 	public function context(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
+		return $this->dossierRegister->context();
 	}//end context()
 
 	/**
@@ -171,12 +169,7 @@ class TakeoverStore {
 	 * @throws RuntimeException When the key is unset.
 	 */
 	public function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
+		return $this->dossierRegister->schema(key: $key);
 	}//end schema()
 
 	/**

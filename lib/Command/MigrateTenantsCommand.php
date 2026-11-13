@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+ * @spec openspec/changes/archive/2026-06-14-migrate-tenant-to-or-tenant/tasks.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Migrate legacy dossiq `tenant` objects to OR Organisations.
  *
- * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+ * @spec openspec/changes/archive/2026-06-14-migrate-tenant-to-or-tenant/tasks.md
  */
 class MigrateTenantsCommand extends Command {
 	/**
@@ -65,7 +65,7 @@ class MigrateTenantsCommand extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+	 * @spec openspec/changes/archive/2026-06-14-migrate-tenant-to-or-tenant/tasks.md
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:migrate-tenants')
@@ -85,7 +85,7 @@ class MigrateTenantsCommand extends Command {
 	 *
 	 * @return int Symfony command exit code.
 	 *
-	 * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+	 * @spec openspec/changes/archive/2026-06-14-migrate-tenant-to-or-tenant/tasks.md
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */

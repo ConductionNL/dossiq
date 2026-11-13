@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
  */
 
 declare(strict_types=1);
@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
 use OCA\Dossiq\Service\Support\CallerIdentity;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -33,11 +34,18 @@ use RuntimeException;
 /**
  * Service for hearing (hoorgesprek) management within the complaint workflow.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
  */
 class HearingService {
 
 	use SearchesObjects;
+
+	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
 
 	/**
 	 * Constructor.
@@ -53,6 +61,7 @@ class HearingService {
 		private readonly HearingCalendarService $calendarService,
 		private readonly TalkConversationBroker $talkBroker,
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -65,7 +74,7 @@ class HearingService {
 	 *
 	 * @throws \RuntimeException If required fields missing or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function scheduleHearing(string $complaintId, array $data): array {
 		$data = array_diff_key($data, CallerIdentity::KEYS);
@@ -125,7 +134,7 @@ class HearingService {
 	 *
 	 * @return array<string, mixed>|null Hearing data or null
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function getHearing(string $id): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -155,25 +164,11 @@ class HearingService {
 	 *
 	 * @return array<int, array<string, mixed>> List of hearings
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function getHearingsForComplaint(string $complaintId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('hearing_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+		return $this->rows->search(
+			schemaKey: 'hearing_schema',
 			filters: ['complaint' => $complaintId]
 		);
 	}//end getHearingsForComplaint()
@@ -188,7 +183,7 @@ class HearingService {
 	 *
 	 * @throws \RuntimeException If verslag is missing or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function recordOutcome(string $id, array $outcome): array {
 		if (empty($outcome['minutes']) === true) {
@@ -237,7 +232,7 @@ class HearingService {
 	 *
 	 * @return string Talk room URL or empty string if Talk not available
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function createTalkRoom(string $complaintId): string {
 		$roomName = 'Hoorgesprek klacht ' . $complaintId;

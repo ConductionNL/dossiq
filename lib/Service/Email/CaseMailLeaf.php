@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ use OCA\OpenRegister\Service\LinkTarget;
 /**
  * Links Mail messages of one account to cases through OpenRegister's EmailLinkService.
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 final class CaseMailLeaf {
 	/**
@@ -53,7 +53,7 @@ final class CaseMailLeaf {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function link(array $case, array $message): void {
 		$this->linkService->linkEmail(

@@ -59,13 +59,6 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	use SearchesObjects;
 
 	/**
-	 * Location of the case-flow seed, relative to this file.
-	 *
-	 * @var string
-	 */
-	private const SEED_PATH = __DIR__ . '/../Settings/case_flow_seed_data.json';
-
-	/**
 	 * App-config key holding the seed version whose demo cases were planted.
 	 *
 	 * @var string
@@ -121,62 +114,79 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->settingsService->isOpenRegisterAvailable() === false) {
-			$output->warning('OpenRegister is not available. Skipping case-flow seed.');
-			return;
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			$output->warning('ObjectService unavailable. Skipping case-flow seed.');
-			return;
-		}
-
-		$schemas = $this->schemas();
-		if ($schemas === null) {
-			$output->warning('Register or schemas not configured. Skipping case-flow seed.');
-			return;
-		}
-
-		$data = $this->loadSeed(output: $output);
-		if ($data === null) {
+		$run = $this->prepare(output: $output);
+		if ($run === null) {
 			return;
 		}
 
 		// A repair step runs with no user session, and OpenRegister RBAC is
 		// fail-closed for anonymous callers, so every read and write goes
 		// through runAsSystem().
-		$summary = $this->runAsSystemIfAvailable(
-			objectService: $objectService,
-			operation: function () use ($objectService, $schemas, $data, $output): array {
-				return $this->seed(
-					objectService: $objectService,
-					schemas: $schemas,
-					data: $data,
-					output: $output
-				);
-			}
+		$this->runAsSystemIfAvailable(
+			objectService: $run->objectService,
+			operation: fn (): array => $this->seed(run: $run)
 		);
 
-		$output->info(
-			sprintf(
-				'Case-flow seed: %d case type(s), %d status(es), %d case(s) created; %d already present.',
-				$summary['caseTypes'],
-				$summary['statuses'],
-				$summary['cases'],
-				$summary['skipped']
-			)
-		);
+		$output->info($run->summary());
 	}//end run()
 
 	/**
-	 * The register and the three schemas this seed writes to.
+	 * The run, once OpenRegister, the register and schemas and the seed are all there.
+	 *
+	 * @param IOutput $output Output sink, told why a run is skipped.
+	 *
+	 * @return CaseFlowSeedRun|null The run, or null when it is skipped.
+	 */
+	private function prepare(IOutput $output): ?CaseFlowSeedRun {
+		$objectService = $this->objectServiceOrSkip(output: $output);
+		if ($objectService === null) {
+			return null;
+		}
+
+		$schemas = $this->schemasOrSkip(output: $output);
+		if ($schemas === null) {
+			return null;
+		}
+
+		$data = (new CaseFlowSeedFile())->load(output: $output);
+		if ($data === null) {
+			return null;
+		}
+
+		return new CaseFlowSeedRun(objectService: $objectService, schemas: $schemas, data: $data, output: $output);
+	}//end prepare()
+
+	/**
+	 * OpenRegister's object service, or null after saying why there is none.
+	 *
+	 * @param IOutput $output Output sink.
+	 *
+	 * @return object|null
+	 */
+	private function objectServiceOrSkip(IOutput $output): ?object {
+		if ($this->settingsService->isOpenRegisterAvailable() === false) {
+			$output->warning('OpenRegister is not available. Skipping case-flow seed.');
+			return null;
+		}
+
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			$output->warning('ObjectService unavailable. Skipping case-flow seed.');
+		}
+
+		return $objectService;
+	}//end objectServiceOrSkip()
+
+	/**
+	 * The register and the three schemas this seed writes to, or null after saying they are not configured.
+	 *
+	 * @param IOutput $output Output sink.
 	 *
 	 * @return array<string, string>|null The names, or null when unconfigured.
 	 *
 	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
-	private function schemas(): ?array {
+	private function schemasOrSkip(IOutput $output): ?array {
 		$resolved = [
 			'register' => (string)$this->settingsService->getConfigValue(key: 'register'),
 			'caseType' => (string)$this->settingsService->getConfigValue(key: 'case_type_schema'),
@@ -184,97 +194,112 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 			'case' => (string)$this->settingsService->getConfigValue(key: 'case_schema'),
 		];
 
-		foreach ($resolved as $value) {
-			if ($value === '') {
-				return null;
-			}
+		if (in_array('', $resolved, true) === true) {
+			$output->warning('Register or schemas not configured. Skipping case-flow seed.');
+			return null;
 		}
 
 		return $resolved;
-	}//end schemas()
-
-	/**
-	 * Read and decode the seed file.
-	 *
-	 * @param IOutput $output Output sink.
-	 *
-	 * @return array<string, mixed>|null The seed, or null when unreadable.
-	 *
-	 * @spec openspec/specs/case-flow-human-steps/spec.md
-	 */
-	private function loadSeed(IOutput $output): ?array {
-		if (is_readable(self::SEED_PATH) === false) {
-			$output->warning('Case-flow seed file not found at ' . self::SEED_PATH);
-			return null;
-		}
-
-		$decoded = json_decode((string)file_get_contents(self::SEED_PATH), true);
-		if (is_array($decoded) === false) {
-			$output->warning('Case-flow seed file is not valid JSON.');
-			return null;
-		}
-
-		return $decoded;
-	}//end loadSeed()
+	}//end schemasOrSkip()
 
 	/**
 	 * Create the case type, its statuses and the demo cases.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param array<string,string> $schemas       Register and schema names.
-	 * @param array<string,mixed>  $data          The decoded seed.
-	 * @param IOutput              $output        Output sink.
+	 * @param CaseFlowSeedRun $run The run.
 	 *
-	 * @return array<string,int> Counts of what was created.
+	 * @return array{caseTypes: int, statuses: int, cases: int, skipped: int} The tally.
 	 *
 	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
-	private function seed(object $objectService, array $schemas, array $data, IOutput $output): array {
-		$counts = ['caseTypes' => 0, 'statuses' => 0, 'cases' => 0, 'skipped' => 0];
-		$withCases = $this->index->casesDue(data: $data);
-		$complete = true;
+	private function seed(CaseFlowSeedRun $run): array {
+		$run->withCases = $this->index->casesDue(data: $run->data);
 
-		foreach (($data['caseTypes'] ?? []) as $caseType) {
-			if (is_array($caseType) === false || $this->text->textOf(value: ($caseType['title'] ?? null)) === '') {
-				continue;
+		foreach (($run->data['caseTypes'] ?? []) as $caseType) {
+			if ($this->isSeedable(caseType: $caseType) === true) {
+				$this->seedCaseTypeOrReport(run: $run, caseType: $caseType);
 			}
-
-			try {
-				$caseTypeId = $this->seedOne(
-					objectService: $objectService,
-					schemas: $schemas,
-					caseType: $caseType,
-					counts: $counts,
-					output: $output
-				);
-				if ($withCases === true && $caseTypeId !== '') {
-					$counts['cases'] += $this->seedCases(
-						objectService: $objectService,
-						schemas: $schemas,
-						data: $data,
-						caseTypeId: $caseTypeId,
-						statusesByName: array_flip($this->statuses->statusesOf(caseTypeId: $caseTypeId)),
-						output: $output
-					);
-				}
-			} catch (Throwable $e) {
-				$complete = false;
-				$title = $this->text->textOf(value: ($caseType['title'] ?? null));
-				$output->warning('Case-flow seed failed for "' . $title . '": ' . $e->getMessage());
-				$this->logger->warning(
-					'Dossiq case-flow seed failed',
-					['caseType' => $title, 'exception' => $e->getMessage()]
-				);
-			}
-		}//end foreach
-
-		// A run that failed part-way is not recorded, so the next run finishes it.
-		if ($withCases === true && $complete === true) {
-			$this->settingsService->setConfigValue(key: self::CASES_SEEDED_KEY, value: $this->index->seedVersion(data: $data));
 		}
 
-		return $counts;
+		// A run that failed part-way is not recorded, so the next run finishes it.
+		if ($run->casesSeeded() === true) {
+			$this->settingsService->setConfigValue(key: self::CASES_SEEDED_KEY, value: $this->index->seedVersion(data: $run->data));
+		}
+
+		return $run->counts;
 	}//end seed()
+
+	/**
+	 * Whether a seed entry is a case type with a title.
+	 *
+	 * @param mixed $caseType The seed entry.
+	 *
+	 * @return boolean
+	 */
+	private function isSeedable(mixed $caseType): bool {
+		return is_array($caseType) === true && $this->text->textOf(value: ($caseType['title'] ?? null)) !== '';
+	}//end isSeedable()
+
+	/**
+	 * Seed one case type; a failure is reported and logged, and marks the run incomplete.
+	 *
+	 * @param CaseFlowSeedRun      $run      The run.
+	 * @param array<string, mixed> $caseType The case type from the seed.
+	 *
+	 * @return void
+	 */
+	private function seedCaseTypeOrReport(CaseFlowSeedRun $run, array $caseType): void {
+		try {
+			$this->seedCaseType(run: $run, caseType: $caseType);
+		} catch (Throwable $e) {
+			$run->complete = false;
+			$title = $this->text->textOf(value: ($caseType['title'] ?? null));
+			$run->output->warning('Case-flow seed failed for "' . $title . '": ' . $e->getMessage());
+			$this->logger->warning(
+				'Dossiq case-flow seed failed',
+				['caseType' => $title, 'exception' => $e->getMessage()]
+			);
+		}
+	}//end seedCaseTypeOrReport()
+
+	/**
+	 * Seed one case type and its statuses, then its demo cases when they are due.
+	 *
+	 * @param CaseFlowSeedRun      $run      The run.
+	 * @param array<string, mixed> $caseType The case type from the seed.
+	 *
+	 * @return void
+	 */
+	private function seedCaseType(CaseFlowSeedRun $run, array $caseType): void {
+		$caseTypeId = $this->seedOne(
+			objectService: $run->objectService,
+			schemas: $run->schemas,
+			caseType: $caseType,
+			counts: $run->counts,
+			output: $run->output
+		);
+		if ($run->withCases === true && $caseTypeId !== '') {
+			$run->counts['cases'] += $this->seedCasesOf(run: $run, caseTypeId: $caseTypeId);
+		}
+	}//end seedCaseType()
+
+	/**
+	 * Seed the demo cases of one case type.
+	 *
+	 * @param CaseFlowSeedRun $run        The run.
+	 * @param string          $caseTypeId The case type.
+	 *
+	 * @return integer The cases created.
+	 */
+	private function seedCasesOf(CaseFlowSeedRun $run, string $caseTypeId): int {
+		return $this->seedCases(
+			objectService: $run->objectService,
+			schemas: $run->schemas,
+			data: $run->data,
+			caseTypeId: $caseTypeId,
+			statusesByName: array_flip($this->statuses->statusesOf(caseTypeId: $caseTypeId)),
+			output: $run->output
+		);
+	}//end seedCasesOf()
 
 	/**
 	 * Seed one case type and its statuses; {@see seed()} plants its cases.

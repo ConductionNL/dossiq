@@ -19,6 +19,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\BulkAction\SetCaseAttributeAction;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CaseAssigneeWriter;
+use OCA\OpenRegister\BulkAction\BulkStep;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCA\OpenRegister\Db\BulkJobMember;
@@ -37,6 +38,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\BulkAction\SetCaseAttributeAction
  * @covers \OCA\Dossiq\Service\Support\CaseAssigneeWriter
+ * @uses \OCA\Dossiq\Service\Support\ReassignmentBatch
  */
 final class UpdateObjectCallShapeTest extends TestCase {
 
@@ -91,9 +93,12 @@ final class UpdateObjectCallShapeTest extends TestCase {
 		$object->setObject(['confidentiality' => 'vertrouwelijk']);
 
 		$result = (new SetCaseAttributeAction(settingsService: $this->settings(), l10n: $l10n))->apply(
-			object: $object,
-			parameters: ['property' => 'confidentiality', 'value' => 'openbaar'],
-			commit: true,
+			step: new BulkStep(
+				object: $object,
+				parameters: ['property' => 'confidentiality', 'value' => 'openbaar'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_APPLIED, actual: $result->getOutcome());

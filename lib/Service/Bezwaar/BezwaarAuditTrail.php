@@ -324,8 +324,55 @@ class BezwaarAuditTrail {
 		string $tag,
 		callable $apply,
 	): mixed {
+		$command = new BezwaarEntryCommand(
+			register: $register, schema: $schema, objectUuid: $objectUuid, event: $event, payload: $payload, tag: $tag
+		);
+
+		return $this->applyAfterEntry(command: $command, apply: $apply);
+	}//end recordThenApply()
+
+	/**
+	 * Write the entry first, then make the change, as recordThenApply() describes.
+	 *
+	 * @param BezwaarEntryCommand $command The entry.
+	 * @param callable            $apply   Makes the change; its return value is returned.
+	 *
+	 * @return mixed What $apply returned.
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the entry could not be written; nothing is changed.
+	 * @throws Throwable The change's own failure, after the not-applied entry.
+	 */
+	private function applyAfterEntry(BezwaarEntryCommand $command, callable $apply): mixed {
+		$this->recordOrRefuseTheChange(command: $command);
+
 		try {
-			$this->record(register: $register, schema: $schema, objectUuid: $objectUuid, event: $event, payload: $payload, tag: $tag);
+			return $apply();
+		} catch (Throwable $failure) {
+			$this->recordNotApplied(command: $command, failure: $failure);
+
+			throw $failure;
+		}
+	}//end applyAfterEntry()
+
+	/**
+	 * Write the entry of a change; a failed entry is logged and refuses the change.
+	 *
+	 * @param BezwaarEntryCommand $command The entry.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the entry could not be written.
+	 */
+	private function recordOrRefuseTheChange(BezwaarEntryCommand $command): void {
+		try {
+			$this->record(
+				register: $command->register,
+				schema: $command->schema,
+				objectUuid: $command->objectUuid,
+				event: $command->event,
+				payload: $command->payload,
+				tag: $command->tag
+			);
 		} catch (BezwaarEntryNotWrittenException $notWritten) {
 			$this->logger->error(
 				'Dossiq bezwaar: entry not written, so the change it records is not made',
@@ -334,22 +381,26 @@ class BezwaarAuditTrail {
 
 			throw $notWritten;
 		}
+	}//end recordOrRefuseTheChange()
 
-		try {
-			return $apply();
-		} catch (Throwable $failure) {
-			$this->recordRefusal(
-				register: $register,
-				schema: $schema,
-				objectUuid: $objectUuid,
-				event: $event.'-not-applied',
-				payload: $payload + ['error' => $failure->getMessage()],
-				tag: $tag,
-			);
-
-			throw $failure;
-		}
-	}//end recordThenApply()
+	/**
+	 * Record that a change whose entry was written did not happen.
+	 *
+	 * @param BezwaarEntryCommand $command The entry of the change.
+	 * @param Throwable           $failure Why the change failed.
+	 *
+	 * @return void
+	 */
+	private function recordNotApplied(BezwaarEntryCommand $command, Throwable $failure): void {
+		$this->recordRefusal(
+			register: $command->register,
+			schema: $command->schema,
+			objectUuid: $command->objectUuid,
+			event: $command->event.'-not-applied',
+			payload: $command->payload + ['error' => $failure->getMessage()],
+			tag: $command->tag,
+		);
+	}//end recordNotApplied()
 
 	/**
 	 * Record a refusal, whether or not the entry can be written.

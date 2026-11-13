@@ -31,6 +31,8 @@ use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCA\OpenRegister\Db\FlowTimer;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
+use OCA\OpenRegister\Service\Flow\Timer\EscalationNotice;
+use OCA\OpenRegister\Service\Flow\Timer\TimerFiring;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -46,6 +48,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Listener\MilestoneStallTimerFiredListener
  * @covers \OCA\Dossiq\Listener\TakeBackTimerFiredListener
  * @covers \OCA\Dossiq\Listener\TermijnTimerFiredListener
+ * @uses \OCA\Dossiq\Listener\Support\TimerFire
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
@@ -134,12 +137,8 @@ class TimerFiredListenersGoldenTest extends TestCase {
 
 		return new FlowTimerFiredEvent(
 			timer: $timer,
-			kind: FlowTimerFiredEvent::KIND_RUNG,
-			transition: 'escalation:' . (string)$rung,
-			rungKey: $rung,
-			recipients: [],
-			priority: null,
-			message: 'Reminder'
+			firing: new TimerFiring(kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:' . (string)$rung, rungKey: $rung),
+			notice: new EscalationNotice(recipients: [], priority: null, message: 'Reminder')
 		);
 	}//end event()
 

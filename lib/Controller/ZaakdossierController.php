@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -49,7 +49,7 @@ use OCP\IUserSession;
 /**
  * Controller for the ZGW DRC zaakdossier.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 class ZaakdossierController extends Controller {
 	/**
@@ -89,7 +89,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function listDossier(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -201,23 +201,12 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function linkExisting(string $caseId, string $infoObjectId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		// The CASE first, before the document is read: the document guard below
-		// says nothing about whether this caller may change the case it links into.
-		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-		}
-
-		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
-		if ($authError !== null) {
-			return $authError;
+		$refusal = $this->linkRefusal(caseId: $caseId, infoObjectId: $infoObjectId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
@@ -239,23 +228,12 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function unlinkDocument(string $caseId, string $infoObjectId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		// The CASE first, before the document is read: the document guard below
-		// says nothing about whether this caller may change the case it links into.
-		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-		}
-
-		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
-		if ($authError !== null) {
-			return $authError;
+		$refusal = $this->linkRefusal(caseId: $caseId, infoObjectId: $infoObjectId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
@@ -268,6 +246,32 @@ class ZaakdossierController extends Controller {
 	}//end unlinkDocument()
 
 	/**
+	 * The refusal for linking a document into, or unlinking it from, a case file; null when the caller may.
+	 *
+	 * No session user is 401. The CASE is checked first, before the document
+	 * is read: the document guard says nothing about whether this caller may
+	 * change the case it links into. Then a document the caller may not read
+	 * answers the reader's refusal.
+	 *
+	 * @param string $caseId       The case.
+	 * @param string $infoObjectId The document.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the change may go ahead.
+	 */
+	private function linkRefusal(string $caseId, string $infoObjectId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
+		return $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
+	}//end linkRefusal()
+
+	/**
 	 * Update editable metadata on an informatieobject.
 	 *
 	 * @param string $infoObjectId The informatieobject UUID.
@@ -276,7 +280,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function updateMetadata(string $infoObjectId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -390,7 +394,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function transitionStatus(string $infoObjectId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -428,7 +432,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function bulkTransitionStatus(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -457,7 +461,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function bulkUpdateMetadata(): JSONResponse {
 		$user = $this->userSession->getUser();

@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/dialogs-answer-what-the-boards-draw/specs/remedy-lodging/spec.md#requirement-the-lifecycle-menu-offers-the-remedies-the-case-type-declares
+ * @spec openspec/specs/remedy-lodging/spec.md#requirement-the-lifecycle-menu-offers-the-remedies-the-case-type-declares
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use OCP\IL10N;
 /**
  * Lists the remedies of a case for its lifecycle menu.
  *
- * @spec openspec/changes/dialogs-answer-what-the-boards-draw/specs/remedy-lodging/spec.md#requirement-the-lifecycle-menu-offers-the-remedies-the-case-type-declares
+ * @spec openspec/specs/remedy-lodging/spec.md#requirement-the-lifecycle-menu-offers-the-remedies-the-case-type-declares
  */
 class CaseRemedyChoices {
 
@@ -61,7 +61,7 @@ class CaseRemedyChoices {
 	 *
 	 * @return array<int, array{id: string, label: string, description: string, available: bool, reason: string|null}>
 	 *
-	 * @spec openspec/changes/dialogs-answer-what-the-boards-draw/specs/remedy-lodging/spec.md#requirement-the-lifecycle-menu-offers-the-remedies-the-case-type-declares
+	 * @spec openspec/specs/remedy-lodging/spec.md#requirement-the-lifecycle-menu-offers-the-remedies-the-case-type-declares
 	 */
 	public function forCase(string $caseId, array $case): array {
 		$declared = $this->remedy->declarationOf(caseId: $caseId);

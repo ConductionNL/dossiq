@@ -972,7 +972,7 @@ function aiConnectionTestFields(t, on) {
  *
  * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
  * @return {Array<object>} The fields.
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 export function workDigestFields(t) {
 	return [

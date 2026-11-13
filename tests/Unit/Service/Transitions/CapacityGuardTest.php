@@ -48,6 +48,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Transitions\CaseTypeReader
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
  * @uses \OCA\Dossiq\Service\Transitions\GuardResult
+ * @uses \OCA\Dossiq\Service\Transitions\StatusCapacity
  */
 class CapacityGuardTest extends TestCase {
 

@@ -48,7 +48,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 
 declare(strict_types=1);
@@ -67,7 +67,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 class DuplicatePolicy {
 
@@ -144,7 +144,7 @@ class DuplicatePolicy {
 	 *
 	 * @return string Either {@see self::POLICY_WARN} or {@see self::POLICY_BLOCK}.
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function policyFor(array $caseType): string {
 		$declared = trim((string)($caseType[self::PROPERTY] ?? ''));
@@ -165,7 +165,7 @@ class DuplicatePolicy {
 	 *
 	 * @return array<int, string> The group ids, possibly empty.
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function overrideGroups(): array {
 		$annotation = $this->dedupAnnotation();
@@ -196,7 +196,7 @@ class DuplicatePolicy {
 	 *
 	 * @return boolean True when the account is in a declared override group.
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function mayOverride(?IUser $user): bool {
 		if ($user === null) {
@@ -220,7 +220,7 @@ class DuplicatePolicy {
 	 *
 	 * @return array{policy: string, mayOverride: bool, overrideGroups: array<int, string>}
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function declarationFor(array $caseType, ?IUser $user): array {
 		return [
@@ -237,7 +237,7 @@ class DuplicatePolicy {
 	 *
 	 * @return array<int, array<string, mixed>> Matches, strongest first.
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function matchesFor(array $case): array {
 		$candidate = $this->candidateFrom(case: $case);
@@ -266,7 +266,7 @@ class DuplicatePolicy {
 	 *
 	 * @throws RefusedException When the case type blocks and the account may not override.
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function assertCreatable(array $case, array $caseType, ?IUser $user): void {
 		if ($this->policyFor(caseType: $caseType) !== self::POLICY_BLOCK) {
@@ -305,7 +305,7 @@ class DuplicatePolicy {
 	 *
 	 * @return array<int, string> The uuids, in the order they were scored.
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function uuidsOf(array $matches): array {
 		$uuids = [];

@@ -27,7 +27,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
  */
 class AiAuditLog {
 
@@ -84,7 +84,7 @@ class AiAuditLog {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
 	 */
 	public function record(array $entry): void {
 		try {
@@ -119,7 +119,7 @@ class AiAuditLog {
 	 *
 	 * @return array{entries: array<int, array<string, mixed>>, total: int|null, limit: int, offset: int}
 	 *
-	 * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
 	 */
 	public function list(array $filters = [], int $limit = self::DEFAULT_LIMIT, int $offset = 0): array {
 		$limit = $this->clampLimit(limit: $limit);

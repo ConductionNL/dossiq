@@ -131,7 +131,7 @@ class TermijnDefinitieController extends Controller {
 	 *
 	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
-	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function calendar(): JSONResponse {
@@ -237,7 +237,7 @@ class TermijnDefinitieController extends Controller {
 	 *
 	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
-	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function calendarLegacyPath(): JSONResponse {

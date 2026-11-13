@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Dispatches automatic actions after a successful transition.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T09
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T09
  */
 class SideEffectDispatcher {
 	/**

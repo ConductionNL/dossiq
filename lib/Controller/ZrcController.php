@@ -60,7 +60,7 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ZrcController extends ZgwController {
 	/**
@@ -120,7 +120,7 @@ class ZrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
@@ -156,7 +156,7 @@ class ZrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function create(string $resource): JSONResponse {
@@ -253,11 +253,7 @@ class ZrcController extends ZgwController {
 			return $authError;
 		}
 
-		$requiredScope = 'zaken.bijwerken';
-		if ($resource === 'zaken') {
-			$requiredScope = 'zaken.aanmaken';
-		}
-
+		$requiredScope = $this->createScope(resource: $resource);
 		if ($this->zgwService->consumerHasScope($this->request, 'zrc', $requiredScope) === false) {
 			return $this->permissionDeniedResponse();
 		}
@@ -268,6 +264,21 @@ class ZrcController extends ZgwController {
 
 		return null;
 	}//end createRefusal()
+
+	/**
+	 * The scope a create of this resource needs: zaken.aanmaken for a zaak, zaken.bijwerken otherwise.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 *
+	 * @return string
+	 */
+	private function createScope(string $resource): string {
+		if ($resource === 'zaken') {
+			return 'zaken.aanmaken';
+		}
+
+		return 'zaken.bijwerken';
+	}//end createScope()
 
 	/**
 	 * Run the ZGW business rules for a create, knowing whether the zaak is closed.
@@ -317,29 +328,58 @@ class ZrcController extends ZgwController {
 	 */
 	private function beforeCreateSave(string $resource, array $originalBody, array $body): ?JSONResponse {
 		if ($resource === 'statussen') {
-			if ($this->statusEffects->isReopenAttempt(body: $originalBody) === true
-				&& $this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.heropenen') === false
-			) {
-				return $this->permissionDeniedResponse();
-			}
-
-			$gebruiksrechtError = $this->statusEffects->unsetUsageRightsRefusal(body: $originalBody);
-			if ($gebruiksrechtError !== null) {
-				return new JSONResponse(data: $gebruiksrechtError, statusCode: Http::STATUS_BAD_REQUEST);
-			}
+			return $this->statusSaveRefusal(originalBody: $originalBody);
 		}
 
-		// Documents live on the case: a join names the case whose folder the
-		// document's file moves into, so a case without a folder refuses it.
 		if ($resource === 'zaakinformatieobjecten') {
-			$refusal = $this->joinHoming->refusal(caseUrl: $this->joinCaseUrl(originalBody: $originalBody, body: $body));
-			if ($refusal !== null) {
-				return new JSONResponse(data: ['detail' => $refusal], statusCode: Http::STATUS_UNPROCESSABLE_ENTITY);
-			}
+			return $this->joinSaveRefusal(originalBody: $originalBody, body: $body);
 		}
 
 		return null;
 	}//end beforeCreateSave()
+
+	/**
+	 * Why a status may not be saved: a reopen without zaken.heropenen (zrc-008c), or an
+	 * eindstatus over documents without indicatieGebruiksrecht (zrc-007q); else null.
+	 *
+	 * @param array $originalBody The body as received.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function statusSaveRefusal(array $originalBody): ?JSONResponse {
+		if ($this->statusEffects->isReopenAttempt(body: $originalBody) === true
+			&& $this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.heropenen') === false
+		) {
+			return $this->permissionDeniedResponse();
+		}
+
+		$gebruiksrechtError = $this->statusEffects->unsetUsageRightsRefusal(body: $originalBody);
+		if ($gebruiksrechtError !== null) {
+			return new JSONResponse(data: $gebruiksrechtError, statusCode: Http::STATUS_BAD_REQUEST);
+		}
+
+		return null;
+	}//end statusSaveRefusal()
+
+	/**
+	 * Why a join may not be saved, or null.
+	 *
+	 * Documents live on the case: a join names the case whose folder the
+	 * document's file moves into, so a case without a folder refuses it.
+	 *
+	 * @param array $originalBody The body as received.
+	 * @param array $body         The body after the rules ran.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function joinSaveRefusal(array $originalBody, array $body): ?JSONResponse {
+		$refusal = $this->joinHoming->refusal(caseUrl: $this->joinCaseUrl(originalBody: $originalBody, body: $body));
+		if ($refusal !== null) {
+			return new JSONResponse(data: ['detail' => $refusal], statusCode: Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		return null;
+	}//end joinSaveRefusal()
 
 	/**
 	 * The side effects of a saved create: related zaken, status and result effects.
@@ -418,21 +458,13 @@ class ZrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// Zrc-006b: Check zaken.lezen scope and vertrouwelijkheidaanduiding.
-		if ($resource === 'zaken') {
-			$scopeError = $this->checkCaseReadAccess(uuid: $uuid);
-			if ($scopeError !== null) {
-				return $scopeError;
-			}
+		$refusal = $this->showRefusal(resource: $resource, uuid: $uuid);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$response = $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
@@ -444,6 +476,30 @@ class ZrcController extends ZgwController {
 
 		return $response;
 	}//end show()
+
+	/**
+	 * Why this consumer may not read this resource, or null.
+	 *
+	 * The token comes first; a zaak also needs zaken.lezen and a
+	 * vertrouwelijkheidaanduiding the consumer may read (zrc-006b).
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param string $uuid     The resource UUID
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function showRefusal(string $resource, string $uuid): ?JSONResponse {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
+
+		if ($resource !== 'zaken') {
+			return null;
+		}
+
+		return $this->checkCaseReadAccess(uuid: $uuid);
+	}//end showRefusal()
 
 	/**
 	 * Full update a resource.
@@ -459,7 +515,7 @@ class ZrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
@@ -516,7 +572,7 @@ class ZrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
@@ -611,7 +667,7 @@ class ZrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
@@ -630,11 +686,21 @@ class ZrcController extends ZgwController {
 			return $this->permissionDeniedResponse();
 		}
 
+		return $this->destroySubResource(resource: $resource, uuid: $uuid);
+	}//end destroy()
+
+	/**
+	 * Delete a sub-resource of a zaak the consumer may delete, and for a
+	 * ZaakInformatieObject also its ObjectInformatieObject in DRC (zrc-005b).
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param string $uuid     The resource UUID
+	 *
+	 * @return JSONResponse
+	 */
+	private function destroySubResource(string $resource, string $uuid): JSONResponse {
 		// Zrc-005b: Before deleting, capture ZIO data for OIO cleanup.
-		$zioData = null;
-		if ($resource === 'zaakinformatieobjecten') {
-			$zioData = $this->getZioDataForOioSync(uuid: $uuid);
-		}
+		$zioData = $this->zioDataBeforeDestroy(resource: $resource, uuid: $uuid);
 
 		[$caseClosed, $hasGeforceerd] = $this->resolveCaseClosedForExisting(resource: $resource, uuid: $uuid);
 
@@ -649,18 +715,43 @@ class ZrcController extends ZgwController {
 		);
 
 		// Zrc-005b: If ZIO deletion succeeded, also delete the OIO in DRC.
-		if ($resource === 'zaakinformatieobjecten'
-			&& $response->getStatus() === Http::STATUS_NO_CONTENT
-			&& $zioData !== null
-		) {
+		$this->syncOioAfterDestroy(response: $response, zioData: $zioData);
+
+		return $response;
+	}//end destroySubResource()
+
+	/**
+	 * The ZIO data an OIO cleanup needs, read before a ZaakInformatieObject is deleted; null for any other resource.
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param string $uuid     The resource UUID
+	 *
+	 * @return array|null The zaakUrl and ioUrl, or null
+	 */
+	private function zioDataBeforeDestroy(string $resource, string $uuid): ?array {
+		if ($resource !== 'zaakinformatieobjecten') {
+			return null;
+		}
+
+		return $this->getZioDataForOioSync(uuid: $uuid);
+	}//end zioDataBeforeDestroy()
+
+	/**
+	 * Delete the OIO in DRC once its ZaakInformatieObject was deleted (zrc-005b).
+	 *
+	 * @param JSONResponse $response The destroy response
+	 * @param array|null   $zioData  The ZIO data read before the delete, null when there is nothing to clean up
+	 *
+	 * @return void
+	 */
+	private function syncOioAfterDestroy(JSONResponse $response, ?array $zioData): void {
+		if ($response->getStatus() === Http::STATUS_NO_CONTENT && $zioData !== null) {
 			$this->syncDeleteObjectInformatieObject(
 				caseUrl: $zioData['zaakUrl'],
 				ioUrl: $zioData['ioUrl']
 			);
 		}
-
-		return $response;
-	}//end destroy()
+	}//end syncOioAfterDestroy()
 
 	/**
 	 * List zaakeigenschappen for a zaak.
@@ -675,7 +766,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function zaakeigenschappenIndex(string $zaakUuid): JSONResponse {
@@ -695,7 +786,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function zaakeigenschappenCreate(string $zaakUuid): JSONResponse {
@@ -716,7 +807,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function zaakeigenschappenShow(string $zaakUuid, string $uuid): JSONResponse {
@@ -737,7 +828,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function zaakeigenschappenUpdate(string $zaakUuid, string $uuid): JSONResponse {
@@ -758,7 +849,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function zaakeigenschappenPatch(string $zaakUuid, string $uuid): JSONResponse {
@@ -779,7 +870,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function zaakeigenschappenDestroy(string $zaakUuid, string $uuid): JSONResponse {
@@ -797,7 +888,7 @@ class ZrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function zaakbesluitenIndex(string $zaakUuid): JSONResponse {
@@ -819,28 +910,9 @@ class ZrcController extends ZgwController {
 		}
 
 		try {
-			$query = $this->zgwService->getObjectService()->buildSearchQuery(
-				requestParams: ['case' => $zaakUuid],
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
+			$rows = $this->decisionRowsOfCase(zaakUuid: $zaakUuid, mappingConfig: $mappingConfig);
 
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, 'besluiten', 'besluiten');
-			$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-			$mapped = [];
-			foreach (($result['results'] ?? []) as $object) {
-				$objectData = $this->objectToArray(row: $object);
-
-				$mapped[] = $this->zgwService->applyOutboundMapping(
-					objectData: $objectData,
-					mapping: $outboundMapping,
-					mappingConfig: $mappingConfig,
-					baseUrl: $baseUrl
-				);
-			}
-
-			return new JSONResponse(data: $mapped);
+			return new JSONResponse(data: $this->mapDecisionRows(rows: $rows, mappingConfig: $mappingConfig));
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'ZRC zaakbesluiten error: ' . $e->getMessage(),
@@ -852,6 +924,49 @@ class ZrcController extends ZgwController {
 			);
 		}//end try
 	}//end zaakbesluitenIndex()
+
+	/**
+	 * The stored besluiten of a zaak.
+	 *
+	 * @param string $zaakUuid      The zaak UUID
+	 * @param array  $mappingConfig The besluiten mapping
+	 *
+	 * @return array The hits, arrays or entities
+	 */
+	private function decisionRowsOfCase(string $zaakUuid, array $mappingConfig): array {
+		$query = $this->zgwService->getObjectService()->buildSearchQuery(
+			requestParams: ['case' => $zaakUuid],
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema']
+		);
+		$result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
+
+		return ($result['results'] ?? []);
+	}//end decisionRowsOfCase()
+
+	/**
+	 * The stored besluiten as BRC besluiten, each with its URL.
+	 *
+	 * @param array $rows          The hits, arrays or entities
+	 * @param array $mappingConfig The besluiten mapping
+	 *
+	 * @return array The mapped besluiten
+	 */
+	private function mapDecisionRows(array $rows, array $mappingConfig): array {
+		$baseUrl = $this->zgwService->buildBaseUrl($this->request, 'besluiten', 'besluiten');
+		$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
+		$mapped = [];
+		foreach ($rows as $object) {
+			$mapped[] = $this->zgwService->applyOutboundMapping(
+				objectData: $this->objectToArray(row: $object),
+				mapping: $outboundMapping,
+				mappingConfig: $mappingConfig,
+				baseUrl: $baseUrl
+			);
+		}
+
+		return $mapped;
+	}//end mapDecisionRows()
 
 	/**
 	 * Search zaken (POST /zaken/v1/zaken/_zoek).
@@ -867,7 +982,7 @@ class ZrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function zoek(): JSONResponse {
@@ -892,7 +1007,7 @@ class ZrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
@@ -917,7 +1032,7 @@ class ZrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
@@ -1000,18 +1115,12 @@ class ZrcController extends ZgwController {
 		}
 
 		$lezenAuths = $this->readAuthorisations(autorisaties: $autorisaties);
-		$data = $response->getData();
 		if ($lezenAuths === []) {
 			// No zaken.lezen scope at all — return empty.
-			if (is_array($data) === true) {
-				$data['count'] = 0;
-				$data['results'] = [];
-				$response->setData($data);
-			}
-
-			return $response;
+			return $this->emptiedList(response: $response);
 		}
 
+		$data = $response->getData();
 		if (is_array($data) === false || isset($data['results']) === false) {
 			return $response;
 		}
@@ -1029,6 +1138,24 @@ class ZrcController extends ZgwController {
 
 		return $response;
 	}//end filterCasesByAuthorisation()
+
+	/**
+	 * A list response emptied: no results and a count of zero; anything that is not a list object is left alone.
+	 *
+	 * @param JSONResponse $response The zaken list response.
+	 *
+	 * @return JSONResponse
+	 */
+	private function emptiedList(JSONResponse $response): JSONResponse {
+		$data = $response->getData();
+		if (is_array($data) === true) {
+			$data['count'] = 0;
+			$data['results'] = [];
+			$response->setData($data);
+		}
+
+		return $response;
+	}//end emptiedList()
 
 	/**
 	 * The consumer's autorisaties that grant zaken.lezen.
@@ -1116,15 +1243,7 @@ class ZrcController extends ZgwController {
 			}
 
 			// Zrc-015: Validate productenOfDiensten.
-			$producten = $body['productenOfDiensten'] ?? null;
-			$caseTypeUrl = $body['caseType'] ?? '';
-			if (is_array($producten) === true
-				&& empty($producten) === false
-				&& $this->zgwService->getObjectService() !== null
-				&& empty($caseTypeUrl) === false
-			) {
-				return $this->preValidateProductenOfDiensten(producten: $producten, caseTypeUrl: $caseTypeUrl);
-			}
+			return $this->productsRefusal(body: $body);
 		} catch (\Throwable $e) {
 			// Pre-validation is best-effort; fall through to handleUpdate.
 			$this->zgwService->getLogger()->debug(
@@ -1134,6 +1253,38 @@ class ZrcController extends ZgwController {
 
 		return null;
 	}//end preValidateCaseBody()
+
+	/**
+	 * The zrc-015 refusal of the productenOfDiensten in a body, or null when there is nothing to check.
+	 *
+	 * @param array $body The request body.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function productsRefusal(array $body): ?JSONResponse {
+		if ($this->hasProductsToCheck(body: $body) === false) {
+			return null;
+		}
+
+		return $this->preValidateProductenOfDiensten(producten: $body['productenOfDiensten'], caseTypeUrl: $body['caseType']);
+	}//end productsRefusal()
+
+	/**
+	 * Whether a body names products and a case type to check them against, with a store to read it from.
+	 *
+	 * @param array $body The request body.
+	 *
+	 * @return bool
+	 */
+	private function hasProductsToCheck(array $body): bool {
+		$producten = $body['productenOfDiensten'] ?? null;
+		$caseTypeUrl = $body['caseType'] ?? '';
+
+		return is_array($producten) === true
+			&& empty($producten) === false
+			&& $this->zgwService->getObjectService() !== null
+			&& empty($caseTypeUrl) === false;
+	}//end hasProductsToCheck()
 
 	/**
 	 * The zrc-010 refusal of a communicatiekanaal that is not a resource URL, or null.
@@ -1146,15 +1297,7 @@ class ZrcController extends ZgwController {
 	 * @return JSONResponse|null
 	 */
 	private function communicationChannelRefusal(mixed $channel): ?JSONResponse {
-		if ($channel === null || $channel === '') {
-			return null;
-		}
-
-		$code = 'bad-url';
-		if (filter_var($channel, FILTER_VALIDATE_URL) !== false) {
-			$code = $this->resourceUrlProblem(path: (string)parse_url($channel, PHP_URL_PATH));
-		}
-
+		$code = $this->communicationChannelProblem(channel: $channel);
 		if ($code === null) {
 			return null;
 		}
@@ -1173,6 +1316,28 @@ class ZrcController extends ZgwController {
 			statusCode: Http::STATUS_BAD_REQUEST
 		);
 	}//end communicationChannelRefusal()
+
+	/**
+	 * What is wrong with a communicatiekanaal: `bad-url`, `invalid-resource`, or null when nothing is.
+	 *
+	 * An absent or empty channel is not checked.
+	 *
+	 * @param mixed $channel The communicatiekanaal as received.
+	 *
+	 * @return string|null
+	 */
+	private function communicationChannelProblem(mixed $channel): ?string {
+		if ($channel === null || $channel === '') {
+			return null;
+		}
+
+		$code = 'bad-url';
+		if (filter_var($channel, FILTER_VALIDATE_URL) !== false) {
+			$code = $this->resourceUrlProblem(path: (string)parse_url($channel, PHP_URL_PATH));
+		}
+
+		return $code;
+	}//end communicationChannelProblem()
 
 	/**
 	 * What is wrong with a URL path that should end in a resource UUID, or null.
@@ -1278,29 +1443,13 @@ class ZrcController extends ZgwController {
 		$objectService = $this->zgwService->getObjectService();
 
 		// Zrc-005b: Before deleting the zaak, sync-delete OIOs in DRC
-		// for any linked ZaakInformatieObjecten. This cross-component
-		// side-effect cannot be handled by OpenRegister's cascade delete.
-		$zioConfig = $this->zgwService->getZgwMappingService()->getMapping('zaakinformatieobject');
-		$zioScope = ZgwSearchScope::fromMapping(mappingConfig: $zioConfig);
-		if ($zioConfig !== null && $zioScope === null) {
-			return $this->unsearchableZioRefusal(uuid: $uuid);
+		// for any linked ZaakInformatieObjecten.
+		$oioRefusal = $this->syncDeleteOiosBeforeCaseDelete(uuid: $uuid);
+		if ($oioRefusal !== null) {
+			return $oioRefusal;
 		}
 
-		if ($zioScope !== null) {
-			$this->syncDeleteOiosOfCase(uuid: $uuid, zioScope: $zioScope);
-		}
-
-		// Related-case-linking: strip this case's entries from every counterpart
-		// case's relatedCases BEFORE deletion so no dangling peer references
-		// survive (mirrors the deelzaak orphan cleanup). Run while the case is
-		// still readable so its own relation list can be dereferenced.
-		try {
-			$this->caseRelationService->cleanupForDeletedCase(caseId: $uuid);
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'related-case-linking: relation cleanup failed for deleted zaak ' . $uuid . ': ' . $e->getMessage()
-			);
-		}
+		$this->cleanupRelationsOfDeletedCase(uuid: $uuid);
 
 		// Cascade delete of sub-resources (rol, status, resultaat, etc.)
 		// is handled by OpenRegister via onDelete: CASCADE in schema definitions.
@@ -1323,6 +1472,53 @@ class ZrcController extends ZgwController {
 
 		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 	}//end destroyCase()
+
+	/**
+	 * Delete the OIOs in DRC of a zaak's ZaakInformatieObjecten before the zaak goes (zrc-005b).
+	 *
+	 * This cross-component side-effect cannot be handled by OpenRegister's
+	 * cascade delete. A ZIO mapping that is configured but cannot be searched
+	 * refuses the delete instead of leaving the OIOs behind.
+	 *
+	 * @param string $uuid The zaak UUID
+	 *
+	 * @return JSONResponse|null The refusal, or null when the delete may go on
+	 */
+	private function syncDeleteOiosBeforeCaseDelete(string $uuid): ?JSONResponse {
+		$zioConfig = $this->zgwService->getZgwMappingService()->getMapping('zaakinformatieobject');
+		$zioScope = ZgwSearchScope::fromMapping(mappingConfig: $zioConfig);
+		if ($zioConfig !== null && $zioScope === null) {
+			return $this->unsearchableZioRefusal(uuid: $uuid);
+		}
+
+		if ($zioScope !== null) {
+			$this->syncDeleteOiosOfCase(uuid: $uuid, zioScope: $zioScope);
+		}
+
+		return null;
+	}//end syncDeleteOiosBeforeCaseDelete()
+
+	/**
+	 * Strip a zaak's entries from the relatedCases of every counterpart before the zaak is deleted.
+	 *
+	 * Related-case-linking: no dangling peer references survive (mirrors the
+	 * deelzaak orphan cleanup). Runs while the case is still readable so its own
+	 * relation list can be dereferenced. A failed cleanup is logged and does not
+	 * stop the delete.
+	 *
+	 * @param string $uuid The zaak UUID
+	 *
+	 * @return void
+	 */
+	private function cleanupRelationsOfDeletedCase(string $uuid): void {
+		try {
+			$this->caseRelationService->cleanupForDeletedCase(caseId: $uuid);
+		} catch (\Throwable $e) {
+			$this->zgwService->getLogger()->warning(
+				'related-case-linking: relation cleanup failed for deleted zaak ' . $uuid . ': ' . $e->getMessage()
+			);
+		}
+	}//end cleanupRelationsOfDeletedCase()
 
 	/**
 	 * Why this zaak may not be deleted by this consumer, or null (C4).
@@ -1614,18 +1810,7 @@ class ZrcController extends ZgwController {
 	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	private function buildRelevanteAndereCases(array $caseData): array {
-		$uuid = (string)($caseData['uuid'] ?? ($caseData['identificatie'] ?? ''));
-		$pattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
-
-		// Prefer a UUID embedded in the id field, else fall back to the self URL.
-		// When neither yields one the original id is kept verbatim.
-		foreach ([$uuid, (string)($caseData['url'] ?? '')] as $candidate) {
-			if ($candidate !== '' && preg_match($pattern, $candidate, $matches) === 1) {
-				$uuid = $matches[1];
-				break;
-			}
-		}
-
+		$uuid = $this->relatedCasesOwnerId(caseData: $caseData);
 		if ($uuid === '') {
 			return [];
 		}
@@ -1635,23 +1820,55 @@ class ZrcController extends ZgwController {
 			return [];
 		}
 
+		return $this->relationLinks(relations: $relations);
+	}//end buildRelevanteAndereZaken()
+
+	/**
+	 * The id a zaak's relations are listed under.
+	 *
+	 * Prefer a UUID embedded in the id field, else fall back to the self URL.
+	 * When neither yields one the original id is kept verbatim.
+	 *
+	 * @param array<string, mixed> $caseData The mapped zaak response data.
+	 *
+	 * @return string The id, or '' when the zaak carries none.
+	 */
+	private function relatedCasesOwnerId(array $caseData): string {
+		$uuid = (string)($caseData['uuid'] ?? ($caseData['identificatie'] ?? ''));
+		$pattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
+
+		foreach ([$uuid, (string)($caseData['url'] ?? '')] as $candidate) {
+			if ($candidate !== '' && preg_match($pattern, $candidate, $matches) === 1) {
+				return $matches[1];
+			}
+		}
+
+		return $uuid;
+	}//end relatedCasesOwnerId()
+
+	/**
+	 * The relations as ZRC entries: absolute zaak URL and aardRelatie, incomplete ones left out.
+	 *
+	 * @param array<int, array<string, mixed>> $relations The case's relations.
+	 *
+	 * @return array<int, array{url: string, aardRelatie: string}>
+	 */
+	private function relationLinks(array $relations): array {
 		$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, 'zaken');
 		$out = [];
 		foreach ($relations as $relation) {
 			$targetId = (string)($relation['caseId'] ?? '');
 			$nature = (string)($relation['aardRelatie'] ?? '');
-			if ($targetId === '' || $nature === '') {
-				continue;
+			if ($targetId !== '' && $nature !== '') {
+				$out[] = [
+					'url' => $baseUrl . '/' . $targetId,
+					'aardRelatie' => $nature,
+				];
 			}
-
-			$out[] = [
-				'url' => $baseUrl . '/' . $targetId,
-				'aardRelatie' => $nature,
-			];
 		}
 
 		return $out;
-	}//end buildRelevanteAndereZaken()
+	}//end relationLinks()
 
 	/**
 	 * Set relevanteAndereZaken on a single-zaak (show/update/patch) response.
@@ -1683,7 +1900,7 @@ class ZrcController extends ZgwController {
 	 */
 	private function enrichCasesListRelevanteAndereCases(JSONResponse $response): JSONResponse {
 		$data = $response->getData();
-		if (is_array($data) === false || isset($data['results']) === false || is_array($data['results']) === false) {
+		if ($this->hasResultList(data: $data) === false) {
 			return $response;
 		}
 
@@ -1698,6 +1915,20 @@ class ZrcController extends ZgwController {
 
 		return $response;
 	}//end enrichZakenListRelevanteAndereZaken()
+
+	/**
+	 * Whether response data is a list response: an object whose `results` is a list.
+	 *
+	 * @param mixed $data The response data.
+	 *
+	 * @return bool
+	 *
+	 * @psalm-assert-if-true array{results: array<int|string, mixed>} $data
+	 * @phpstan-assert-if-true array{results: array<int|string, mixed>} $data
+	 */
+	private function hasResultList(mixed $data): bool {
+		return is_array($data) === true && isset($data['results']) === true && is_array($data['results']) === true;
+	}//end hasResultList()
 
 	/**
 	 * Resolve an inbound relevanteAndereZaken array on a zaak write into local
@@ -1718,6 +1949,18 @@ class ZrcController extends ZgwController {
 			return null;
 		}
 
+		return $this->addInboundRelations(caseUuid: $caseUuid, relevanteCases: $relevanteCases);
+	}//end applyInboundRelevanteAndereCases()
+
+	/**
+	 * Add the inbound relations in order, stopping at the first that names no usable local zaak.
+	 *
+	 * @param string                  $caseUuid       The zaak being written.
+	 * @param array<int|string, mixed> $relevanteCases The relevanteAndereZaken entries.
+	 *
+	 * @return JSONResponse|null The 400 validation error for that entry, or null when all were usable.
+	 */
+	private function addInboundRelations(string $caseUuid, array $relevanteCases): ?JSONResponse {
 		foreach ($relevanteCases as $idx => $relCase) {
 			if ($this->addInboundRelation(caseUuid: $caseUuid, relCase: $relCase) === false) {
 				return $this->unknownRelatedCaseRefusal(idx: $idx);
@@ -1725,7 +1968,7 @@ class ZrcController extends ZgwController {
 		}
 
 		return null;
-	}//end applyInboundRelevanteAndereCases()
+	}//end addInboundRelations()
 
 	/**
 	 * Add one inbound relation; false when its URL names no usable local zaak.

@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use RuntimeException;
  * aangevraagd → geaccepteerd / geweigerd transitions. Authorization
  * is admin-only per VTH policy.
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
  */
 class SamenwerkverzoekService {
 
@@ -81,7 +81,7 @@ class SamenwerkverzoekService {
 	 *
 	 * @throws \RuntimeException When the zaak cannot be found
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
 	 */
 	public function initiateSamenwerking(
 		string $caseId,
@@ -177,7 +177,7 @@ class SamenwerkverzoekService {
 	 *
 	 * @throws \RuntimeException When the verzoek cannot be found or is not in 'requested' status
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
 	 */
 	public function respondToSamenwerking(string $samenwerkId, bool $accept, string $advies): array {
 		$objectService = $this->getObjectService();
@@ -252,7 +252,7 @@ class SamenwerkverzoekService {
 	 *
 	 * @throws \Exception When the user is not an administrator
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $samenwerk reserved for future ACL
 	 */

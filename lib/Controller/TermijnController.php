@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 
 declare(strict_types=1);
@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\DeadlineExtensionService;
@@ -58,6 +59,8 @@ use Throwable;
  * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 class TermijnController extends Controller {
+	use ReadsJsonRequests;
+
 	/**
 	 * Constructor.
 	 *
@@ -114,7 +117,7 @@ class TermijnController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function create(): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -154,7 +157,7 @@ class TermijnController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function show(string $id): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -179,7 +182,7 @@ class TermijnController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function pauze(string $id): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -219,7 +222,7 @@ class TermijnController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function hervat(string $id): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -255,7 +258,7 @@ class TermijnController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function verleng(string $id): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -289,7 +292,7 @@ class TermijnController extends Controller {
 	 *
 	 * @return string|JSONResponse
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	private function newEndDate(string $value): string|JSONResponse {
 		if ($value === '') {
@@ -311,7 +314,7 @@ class TermijnController extends Controller {
 	 *
 	 * @return array<string, mixed> The updated instance.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	private function extend(string $id, array $body): array {
 		$rationale = (string)($body['rationale'] ?? '');
@@ -333,7 +336,7 @@ class TermijnController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function voltooi(string $id): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -368,34 +371,6 @@ class TermijnController extends Controller {
 			return $this->error(e: $e, log: 'Voltooi failed');
 		}
 	}//end voltooi()
-
-	/**
-	 * Decode the JSON request body into an array.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function jsonBody(): array {
-		// OCP\IRequest::getContent() is protected on the concrete OC
-		// request; read raw payload from php://input instead.
-		$raw = (string)file_get_contents('php://input');
-		$body = json_decode($raw, true);
-		if (is_array($body) === true) {
-			return $body;
-		}
-
-		return [];
-	}//end jsonBody()
-
-	/**
-	 * Build a 400 Bad Request response.
-	 *
-	 * @param string $msg Message.
-	 *
-	 * @return JSONResponse
-	 */
-	private function badRequest(string $msg): JSONResponse {
-		return new JSONResponse(['message' => $msg], Http::STATUS_BAD_REQUEST);
-	}//end badRequest()
 
 	/**
 	 * Build a 404 Not Found response.

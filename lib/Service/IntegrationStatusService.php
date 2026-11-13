@@ -126,7 +126,7 @@ class IntegrationStatusService {
 		'zgw' => ['register', 'case_schema'],
 		'kcc' => ['identification_method'],
 		'dmn' => ['decision_table_schema'],
-		'financial' => [MoneyConfigKeys::PAYOUT_CALLBACK_SECRET],
+		'financial' => [MoneyConfigKeys::PAYOUT_CALLBACK_SECRET_KEY],
 		'kadaster' => ['integration.brk.mode'],
 		'berichtenbox' => ['digital_post_source', 'berichtenbox_adapter'],
 		'templates' => ['beschikking_template_adapter'],

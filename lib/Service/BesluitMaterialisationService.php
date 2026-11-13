@@ -134,7 +134,7 @@ class BesluitMaterialisationService {
 	 *
 	 * @throws RuntimeException When the case cannot be loaded or the Besluit cannot be persisted.
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	public function materialiseFromConcludedEvent(string $caseId, string $decisionId, array $event): array {
 		$result = (string)($event['outcome'] ?? '');

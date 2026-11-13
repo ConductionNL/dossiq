@@ -41,7 +41,7 @@ use OCP\IUserSession;
 /**
  * Controller for case email operations.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class EmailController extends Controller {
 
@@ -75,7 +75,7 @@ class EmailController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function send(string $caseId): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -92,7 +92,7 @@ class EmailController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function sendComposed(string $caseId): JSONResponse {
 		$data = $this->readJsonBody();
@@ -122,7 +122,7 @@ class EmailController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function guarded(Closure $send): JSONResponse {
 		try {
@@ -145,7 +145,7 @@ class EmailController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function sendFromTemplate(string $caseId): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -191,7 +191,7 @@ class EmailController extends Controller {
 	 * STUB IS FILLED IN: loading the case here makes it a per-object read and
 	 * it must then take the same CaseAccessGuard check as its siblings.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function preview(string $caseId): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -222,7 +222,7 @@ class EmailController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function templates(string $caseTypeId): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -240,7 +240,7 @@ class EmailController extends Controller {
 	 *
 	 * @return JSONResponse The 409.
 	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
 	 */
 	private function refused(RecipientOptedOutException $exception): JSONResponse {
 		return new JSONResponse(

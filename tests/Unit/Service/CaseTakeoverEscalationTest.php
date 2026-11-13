@@ -52,6 +52,9 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\Task\EngineTaskGateway
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Custody\TakeoverStore
+ * @uses \OCA\Dossiq\Service\Custody\CustodyRows
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
+ * @uses \OCA\Dossiq\Service\Custody\StoredInstant
  *
  * @spec openspec/specs/case-management/spec.md
  */
@@ -186,6 +189,31 @@ class CaseTakeoverEscalationTest extends TestCase {
 	private function inDays(int $days): string {
 		return (new \DateTimeImmutable())->add(new \DateInterval('P' . $days . 'D'))->format('c');
 	}//end inDays()
+
+	/**
+	 * A request without an engine task escalates without a reassignment, and one with an unreadable date never does.
+	 *
+	 * @return void
+	 */
+	public function testAnEscalationWithoutATaskOrADate(): void {
+		$engine = $this->createMock(originalClassName: EngineTaskGateway::class);
+		$engine->method('mirrorImport')->willReturn('');
+		$engine->expects(self::never())->method('reassign');
+
+		$takeovers = $this->takeovers(engine: $engine);
+		$takeovers->request(caseId: 'case-1', requestedBy: 'sofie', reason: 'Mijn wijk');
+		$this->store->seed(
+			schema: 'caseTakeover',
+			uuid: 'takeover-undated',
+			row: ['caseId' => 'case-1', 'status' => 'pending', 'requestedAt' => 'gisteren', 'taskId' => 't', 'holdingUnit' => 'u'],
+		);
+
+		$escalated = $takeovers->escalateOverdue(now: $this->inDays(days: 3));
+
+		self::assertCount(1, $escalated);
+		self::assertSame('sofie', $escalated[0]['requestedBy']);
+		self::assertSame('pending', $this->store->row(schema: 'caseTakeover', uuid: 'takeover-undated')['status']);
+	}//end testAnEscalationWithoutATaskOrADate()
 
 	/**
 	 * The takeover service under test.

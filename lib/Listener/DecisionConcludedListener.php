@@ -37,7 +37,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md
+ * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
@@ -63,7 +63,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+ * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
  */
 class DecisionConcludedListener implements IEventListener {
 
@@ -139,7 +139,7 @@ class DecisionConcludedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	public function handle(Event $event): void {
 		// Defensive duck-typing: the event class is decidesk's and is optional
@@ -167,7 +167,7 @@ class DecisionConcludedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	private function projectConcluded(Event $event): void {
 		$run = $this->terminalRun(event: $event);
@@ -195,7 +195,7 @@ class DecisionConcludedListener implements IEventListener {
 	 *
 	 * @return DecisionConcludedRun|null
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	private function terminalRun(Event $event): ?DecisionConcludedRun {
 		// REQ-PDCD-003: only project events this app raised, or that
@@ -235,7 +235,7 @@ class DecisionConcludedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	private function resolveCase(DecisionConcludedRun $run): void {
 		$run->decisionId = $this->readString(event: $run->event, getter: 'getDecisionId');
@@ -262,7 +262,7 @@ class DecisionConcludedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	private function materialise(DecisionConcludedRun $run): void {
 		$this->decisionMaterialiser->materialiseFromConcludedEvent(
@@ -284,7 +284,7 @@ class DecisionConcludedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	private function recordConsequences(DecisionConcludedRun $run): void {
 		// Awb art. 7:13 lid 7: a besluit op bezwaar that departs from the
@@ -327,7 +327,7 @@ class DecisionConcludedListener implements IEventListener {
 	 *
 	 * @return string The reference.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	private function referenceOf(Event $event, string $flowCase): string {
 		if ($flowCase !== '') {

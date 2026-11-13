@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
  */
 class EmailTemplateRepository {
 
@@ -67,7 +67,7 @@ class EmailTemplateRepository {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function findActiveByCaseType(string $caseTypeId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -110,7 +110,7 @@ class EmailTemplateRepository {
 	 * @throws RuntimeException When OpenRegister is unavailable or the
 	 *                          emailTemplate schema is not configured.
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function saveTemplate(array $payload): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -145,7 +145,7 @@ class EmailTemplateRepository {
 	 *
 	 * @return array<string, mixed>|null Null when unconfigured, unavailable or unknown.
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function findTemplate(string $templateId): ?array {
 		return $this->findIn(configKey: 'email_template_schema', id: $templateId);
@@ -158,7 +158,7 @@ class EmailTemplateRepository {
 	 *
 	 * @return array<string, mixed>|null Null when unconfigured, unavailable or unknown.
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function findCase(string $caseId): ?array {
 		$case = $this->findIn(configKey: 'case_schema', id: $caseId);

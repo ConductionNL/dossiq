@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Service\Kcc;
 /**
  * The gathered conditions of one rule; it never leaves the evaluator that built it.
  *
- * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 final class RuleConditions {
 

@@ -30,7 +30,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -57,7 +57,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseRebindController extends Controller {
 
@@ -75,7 +75,7 @@ class CaseRebindController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
 		string $appName,
@@ -98,7 +98,7 @@ class CaseRebindController extends Controller {
 	 *
 	 * @return JSONResponse Whether they may.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
+	 * @spec openspec/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
 	 */
 	#[NoAdminRequired]
 	public function permission(): JSONResponse {
@@ -126,7 +126,7 @@ class CaseRebindController extends Controller {
 	 *
 	 * @return JSONResponse The options, with the preview when a target is named.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
+	 * @spec openspec/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	#[NoAdminRequired]
@@ -169,7 +169,7 @@ class CaseRebindController extends Controller {
 	 *
 	 * @return JSONResponse What was applied, or the refusal naming the rule.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
+	 * @spec openspec/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	#[NoAdminRequired]
@@ -224,7 +224,7 @@ class CaseRebindController extends Controller {
 	 *
 	 * @return IUser|null The caller, or null when they may not.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function writerOf(string $caseId): ?IUser {
 		return (new CaseCaller(userSession: $this->userSession, accessGuard: $this->accessGuard))->writer(caseId: $caseId);
@@ -235,7 +235,7 @@ class CaseRebindController extends Controller {
 	 *
 	 * @return JSONResponse The 403.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function notYours(): JSONResponse {
 		return new JSONResponse(
@@ -254,7 +254,7 @@ class CaseRebindController extends Controller {
 	 *
 	 * @return JSONResponse The 403.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
+	 * @spec openspec/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
 	 */
 	private function notACoordinator(): JSONResponse {
 		return new JSONResponse(
@@ -274,7 +274,7 @@ class CaseRebindController extends Controller {
 	 *
 	 * @return JSONResponse The answer.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function broke(string $op, Throwable $e): JSONResponse {
 		$this->logger->error('CaseRebindController: ' . $op . ' failed', ['exception' => $e->getMessage()]);

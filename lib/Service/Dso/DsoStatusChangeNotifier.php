@@ -24,7 +24,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T03
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCP\EventDispatcher\IEventDispatcher;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T03
  */
 class DsoStatusChangeNotifier {
 	/**
@@ -64,7 +64,7 @@ class DsoStatusChangeNotifier {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T03
 	 */
 	public function dispatchStatusChanged(
 		string $requestRef,

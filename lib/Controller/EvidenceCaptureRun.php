@@ -19,7 +19,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+ * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Controller;
  *
  * Built by {@see FieldEvidenceController} only; it never leaves it.
  *
- * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+ * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
  */
 final class EvidenceCaptureRun {
 

@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 
 declare(strict_types=1);
@@ -41,6 +41,7 @@ use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 class UnmatchedMailIntake {
 
@@ -85,7 +86,7 @@ class UnmatchedMailIntake {
 	 *
 	 * @return boolean True when a fallback case type is configured.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function isConfigured(): bool {
 		return ($this->fallbackCaseTypeId() !== '');
@@ -96,7 +97,7 @@ class UnmatchedMailIntake {
 	 *
 	 * @return string The case type id, or '' when the instance names none.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function fallbackCaseTypeId(): string {
 		return trim(
@@ -111,7 +112,7 @@ class UnmatchedMailIntake {
 	 *
 	 * @return string|null The new case's id, or `null` when nothing was created.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function caseFor(array $message): ?string {
 		$caseTypeId = $this->fallbackCaseTypeId();
@@ -238,7 +239,7 @@ class UnmatchedMailIntake {
 	 *
 	 * @return string The lowercased address, or '' when the row names none.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	private function senderAddress(array $message): string {
 		$from = trim((string)($message['from'] ?? ''));
@@ -354,14 +355,6 @@ class UnmatchedMailIntake {
 	 * @return array<string, mixed> The row.
 	 */
 	private function normaliseObjectRow(mixed $row): array {
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$row = $row->jsonSerialize();
-		}
-
-		if (is_array($row) === false) {
-			return [];
-		}
-
-		return $row;
+		return SerialisedResult::arrayOf(value: $row);
 	}//end normaliseObjectRow()
 }//end class

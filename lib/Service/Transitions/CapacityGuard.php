@@ -34,7 +34,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -42,13 +42,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\IL10N;
 use Throwable;
 
 /**
  * Guard: the status being entered is not already at its capacity.
  *
- * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class CapacityGuard implements GuardEvaluatorInterface {
 
@@ -78,7 +79,7 @@ class CapacityGuard implements GuardEvaluatorInterface {
 	 *
 	 * @return GuardResult The verdict, naming the status, the limit and the count.
 	 *
-	 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {
 		$targetId = trim((string)($guardConfig['toStatus'] ?? ''));
@@ -118,7 +119,7 @@ class CapacityGuard implements GuardEvaluatorInterface {
 	 *
 	 * @return GuardResult The verdict.
 	 *
-	 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function cappedVerdict(StatusCapacity $capacity, string $caseId): GuardResult {
 		if ($this->caseTypes->isFinalStatus(statusTypeId: $capacity->statusTypeId) === true) {
@@ -136,7 +137,7 @@ class CapacityGuard implements GuardEvaluatorInterface {
 	 *
 	 * @return GuardResult The verdict.
 	 *
-	 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function countVerdict(StatusCapacity $capacity, string $caseId): GuardResult {
 		$count = $this->countIn(statusTypeId: $capacity->statusTypeId, excluding: $caseId);
@@ -168,7 +169,7 @@ class CapacityGuard implements GuardEvaluatorInterface {
 	 *
 	 * @return GuardResult The refusal, naming the status, the limit and the count.
 	 *
-	 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function full(StatusCapacity $capacity, int $count): GuardResult {
 		return new GuardResult(
@@ -192,7 +193,7 @@ class CapacityGuard implements GuardEvaluatorInterface {
 	 *
 	 * @return int The capacity, or 0 for no limit.
 	 *
-	 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function capacityOf(string $statusTypeId): int {
 		$row = $this->statuses->rowFor(statusTypeId: $statusTypeId);
@@ -225,7 +226,7 @@ class CapacityGuard implements GuardEvaluatorInterface {
 	 *
 	 * @return int|null The count, or null when the store could not answer.
 	 *
-	 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function countIn(string $statusTypeId, string $excluding = ''): ?int {
 		$rows = $this->casesIn(statusTypeId: $statusTypeId);
@@ -370,17 +371,6 @@ class CapacityGuard implements GuardEvaluatorInterface {
 	 * @return array<string, mixed> The row.
 	 */
 	private function arrayOf(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$serialised = $row->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $row);
 	}//end arrayOf()
 }//end class

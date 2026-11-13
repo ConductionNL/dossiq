@@ -24,7 +24,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use Throwable;
 /**
  * The caller's own queue, planned items and private stages; the end of day is EndOfDayController's.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class PersonalQueueController extends Controller {
 	/**
@@ -65,7 +65,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		IRequest $request,
@@ -84,7 +84,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse The queue.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
@@ -107,7 +107,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse What is hidden now.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function hideGroup(string $group): JSONResponse {
@@ -132,7 +132,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse What is hidden now.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function showGroup(string $group): JSONResponse {
@@ -155,7 +155,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse The grouping now stored.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function setGrouping(): JSONResponse {
@@ -177,7 +177,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse What was planned.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function planItem(): JSONResponse {
@@ -207,7 +207,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse The stage.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function stage(string $caseId): JSONResponse {
@@ -226,7 +226,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse The stage now stored.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function setStage(string $caseId): JSONResponse {
@@ -249,7 +249,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse The settings.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function digestSettings(): JSONResponse {
@@ -266,7 +266,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse The settings now stored.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function saveDigestSettings(): JSONResponse {
@@ -289,7 +289,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return string The caller's uid, or an empty string when nobody is signed in.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function caller(): string {
 		return (string)($this->userSession->getUser()?->getUID() ?? '');
@@ -300,7 +300,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse The refusal.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function unauthenticated(): JSONResponse {
 		return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);

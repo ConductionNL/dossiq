@@ -46,6 +46,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Relation\RoleLinkDefinition
  * @covers \OCA\Dossiq\Service\Relation\RoleLinkDefinitionReader
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Support\CaseRegisterReads
  */
 class RoleLinkServiceTest extends TestCase {
 

@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
 
 namespace OCA\Dossiq\Service\Support;
@@ -46,7 +46,7 @@ use RuntimeException;
 /**
  * Trait providing the canonical OpenRegister object-search bridge.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
 trait SearchesObjects {
 	/**
@@ -66,7 +66,7 @@ trait SearchesObjects {
 	 * @throws \OCP\AppFramework\Db\DoesNotExistException When a slug cannot be resolved
 	 *                                                    in the caller's organisation.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function searchObjectsAsArrays(
 		object $objectService,
@@ -100,7 +100,7 @@ trait SearchesObjects {
 	 *
 	 * @throws \OCP\AppFramework\Db\DoesNotExistException When a slug cannot be resolved.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function searchObjectsAsArraysUnscoped(
 		object $objectService,
@@ -134,7 +134,7 @@ trait SearchesObjects {
 	 *
 	 * @throws \OCP\AppFramework\Db\DoesNotExistException When a slug cannot be resolved.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	private function searchObjectsWithin(
 		object $objectService,
@@ -189,7 +189,7 @@ trait SearchesObjects {
 	 * @return array<string, mixed>|null The object as an associative array, or
 	 *                                   null when it does not exist.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function findObjectAsArray(
 		object $objectService,
@@ -239,7 +239,7 @@ trait SearchesObjects {
 	 *
 	 * @return array<string,mixed>|null The stored object, or null if it cannot be represented as one.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function saveObjectAsArray(
 		object $objectService,
@@ -298,7 +298,7 @@ trait SearchesObjects {
 	 * @throws RuntimeException When the object cannot be read on the fallback path,
 	 *                           or the service offers no seam that writes partially.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function patchObjectAsArray(
 		object $objectService,
@@ -393,7 +393,7 @@ trait SearchesObjects {
 	 *      Without the tag PHPStan carries the pre-call state across, and
 	 *      reported a counter incremented inside the closure as "always 0".
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function runAsSystemIfAvailable(object $objectService, callable $operation): mixed {
 		if (method_exists($objectService, 'runAsSystem') === true) {
@@ -439,7 +439,7 @@ trait SearchesObjects {
 	 *
 	 * @return array<int, array<string, mixed>> Normalised list of object arrays.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	private function normaliseObjectRows(mixed $rows): array {
 		if (is_array($rows) === false) {

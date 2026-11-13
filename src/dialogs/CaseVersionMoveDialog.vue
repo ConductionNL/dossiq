@@ -22,7 +22,7 @@
   ids, because "the case type changed" with nothing next to it sends the next
   person digging through the store.
 
-  @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+  @spec openspec/specs/zaaktype-versioning/spec.md
 -->
 <template>
 	<CnDialog
@@ -208,7 +208,7 @@ export default {
 		 *
 		 * @return {string} The id.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
@@ -219,7 +219,7 @@ export default {
 		 *
 		 * @return {Array<object>} The options.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		targetOptions() {
 			return this.targets.map((version) => ({
@@ -235,7 +235,7 @@ export default {
 		 *
 		 * @return {string} The sentence.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		statusLine() {
 			if (!this.preview?.status?.mapped) {
@@ -255,7 +255,7 @@ export default {
 		 *
 		 * @return {boolean} True when it may.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		canConfirm() {
 			return (
@@ -283,7 +283,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async loadOptions() {
 			this.loading = true
@@ -303,7 +303,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async loadPreview() {
 			this.preview = null
@@ -325,7 +325,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async confirm() {
 			if (!this.canConfirm) {
@@ -354,7 +354,7 @@ export default {
 		 *
 		 * @return {string} The url.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		endpoint() {
 			return generateUrl(
@@ -373,7 +373,7 @@ export default {
 		 * @param {object} e The axios error.
 		 * @return {string} The sentence.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		refusalOf(e) {
 			return (

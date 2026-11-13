@@ -41,8 +41,11 @@ class ReadableDay {
 
 	/**
 	 * The Dutch month names, January first.
+	 *
+	 * Public, because a Dutch sentence that spells a day reads its month
+	 * names from here.
 	 */
-	private const MONTHS_NL = [
+	public const MONTHS_NL = [
 		'januari',
 		'februari',
 		'maart',

@@ -114,7 +114,7 @@ class CaseSharingService {
 	 *
 	 * @return bool True when the user may proceed
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function canUserAccessCase(string $caseId, string $userId): bool {
 		return $this->accessPolicy->canUserAccessCase(caseId: $caseId, userId: $userId);
@@ -336,7 +336,7 @@ class CaseSharingService {
 	 *
 	 * @return array The created share data, or an error array
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function createPartnerShare(
 		string $caseId,
@@ -477,7 +477,7 @@ class CaseSharingService {
 	 *
 	 * @return string|null The caseId, or null when unavailable
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getCaseIdForShare(string $shareId): ?string {
 		$store = $this->configuredStore();
@@ -528,7 +528,7 @@ class CaseSharingService {
 	 *
 	 * @return array The updated share data
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function revokeShare(string $shareId, string $userId): array {
 		$objectService = $this->gateway->objectService();

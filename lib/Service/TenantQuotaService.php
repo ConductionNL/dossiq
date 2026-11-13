@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
 /**
  * Quota service.
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
 class TenantQuotaService {
 	/**
@@ -75,6 +75,17 @@ class TenantQuotaService {
 	public const DECISION_THROTTLE = 'throttle';
 	public const DECISION_BLOCK = 'block';
 	public const DECISION_WARN = 'warn';
+
+	/**
+	 * What each enforcement decides once the hard limit is reached.
+	 *
+	 * @var array<string, array{decision:string, soft:bool, reason:string}>
+	 */
+	private const EXCEEDED_DECISIONS = [
+		self::DECISION_BLOCK => ['decision' => self::DECISION_BLOCK, 'soft' => true, 'reason' => 'block_limit_exceeded'],
+		self::DECISION_THROTTLE => ['decision' => self::DECISION_THROTTLE, 'soft' => true, 'reason' => 'throttle_limit_exceeded'],
+		self::DECISION_WARN => ['decision' => self::DECISION_WARN, 'soft' => true, 'reason' => 'warn_limit_exceeded'],
+	];
 
 	/**
 	 * Constructor.
@@ -183,36 +194,56 @@ class TenantQuotaService {
 		}
 
 		try {
-			// ObjectService::findAll() takes a single $config array — the previous
-			// named-argument form threw "Unknown named parameter $register" and
-			// was swallowed by the catch below. Register/schema live inside
-			// `filters`; limit/offset are top-level config keys.
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => Application::REGISTER_SLUG,
-						'schema' => 'tenantQuota',
-						'tenantRef' => $tenantId,
-						'quotaType' => $quotaType,
-					],
-					'limit' => 1,
-					'offset' => 0,
-				]
-			);
-			if (is_array($rows) === true && count($rows) > 0) {
-				$quota = $this->quotaRowAsArray(row: $rows[0]);
-				if ($quota === null) {
-					return null;
-				}
-
-				return $this->withOrganisationLimit(quota: $quota, tenantId: $tenantId, quotaType: $quotaType);
+			$quota = $this->firstQuotaRow(rows: $objectService->findAll($this->quotaQuery(tenantId: $tenantId, quotaType: $quotaType)));
+			if ($quota === null) {
+				return null;
 			}
 
-			return null;
+			return $this->withOrganisationLimit(quota: $quota, tenantId: $tenantId, quotaType: $quotaType);
 		} catch (Throwable $e) {
 			return null;
 		}//end try
 	}//end getQuota()
+
+	/**
+	 * The findAll() config for one tenant's row of one quota type.
+	 *
+	 * @param string $tenantId  Tenant UUID.
+	 * @param string $quotaType Type.
+	 *
+	 * @return array<string, mixed> The config.
+	 */
+	private function quotaQuery(string $tenantId, string $quotaType): array {
+		// ObjectService::findAll() takes a single $config array — the previous
+		// named-argument form threw "Unknown named parameter $register" and
+		// was swallowed by the catch in getQuota(). Register/schema live inside
+		// `filters`; limit/offset are top-level config keys.
+		return [
+			'filters' => [
+				'register' => Application::REGISTER_SLUG,
+				'schema' => 'tenantQuota',
+				'tenantRef' => $tenantId,
+				'quotaType' => $quotaType,
+			],
+			'limit' => 1,
+			'offset' => 0,
+		];
+	}//end quotaQuery()
+
+	/**
+	 * The first quota row found, as an array.
+	 *
+	 * @param mixed $rows The rows as findAll() answers them.
+	 *
+	 * @return array<string,mixed>|null The row, or null when there is none or it carries nothing.
+	 */
+	private function firstQuotaRow(mixed $rows): ?array {
+		if (is_array($rows) === false || count($rows) === 0) {
+			return null;
+		}
+
+		return $this->quotaRowAsArray(row: $rows[0]);
+	}//end firstQuotaRow()
 
 	/**
 	 * Overlay the limit the Organisation carries, for the two types that map.
@@ -278,37 +309,44 @@ class TenantQuotaService {
 		$current = (int)($quota['currentUsage'] ?? 0);
 		$enforcement = (string)($quota['enforcement'] ?? self::DECISION_WARN);
 		$warningPct = (int)($quota['softLimitWarningPercent'] ?? 80);
-
 		if ($limit === null) {
 			return ['decision' => self::DECISION_ALLOW, 'soft' => false, 'reason' => 'unlimited'];
 		}
 
-		$limitInt = (int)$limit;
 		$next = ($current + $increment);
-		$softLimit = (int)floor($limitInt * ($warningPct / 100));
-		$softHit = $next >= $softLimit;
-		$hardHit = $next > $limitInt;
-
-		if ($hardHit === false) {
-			$reason = 'within_limit';
-			if ($softHit === true) {
-				$reason = 'soft_limit';
-			}
-
-			return ['decision' => self::DECISION_ALLOW, 'soft' => $softHit, 'reason' => $reason];
+		if ($next > (int)$limit) {
+			return $this->exceededDecision(enforcement: $enforcement);
 		}
 
-		// Hard limit reached.
-		if ($enforcement === self::DECISION_BLOCK) {
-			return ['decision' => self::DECISION_BLOCK, 'soft' => true, 'reason' => 'block_limit_exceeded'];
-		}
-
-		if ($enforcement === self::DECISION_THROTTLE) {
-			return ['decision' => self::DECISION_THROTTLE, 'soft' => true, 'reason' => 'throttle_limit_exceeded'];
-		}
-
-		return ['decision' => self::DECISION_WARN, 'soft' => true, 'reason' => 'warn_limit_exceeded'];
+		return $this->allowDecision(softHit: $next >= (int)floor((int)$limit * ($warningPct / 100)));
 	}//end decide()
+
+	/**
+	 * The decision once the hard limit is reached: what the row's enforcement says, else warn.
+	 *
+	 * @param string $enforcement The row's enforcement.
+	 *
+	 * @return array{decision:string, soft:bool, reason:string}
+	 */
+	private function exceededDecision(string $enforcement): array {
+		return (self::EXCEEDED_DECISIONS[$enforcement] ?? self::EXCEEDED_DECISIONS[self::DECISION_WARN]);
+	}//end exceededDecision()
+
+	/**
+	 * The decision below the hard limit, flagged soft once the warning threshold is reached.
+	 *
+	 * @param bool $softHit Whether the next usage reaches the warning threshold.
+	 *
+	 * @return array{decision:string, soft:bool, reason:string}
+	 */
+	private function allowDecision(bool $softHit): array {
+		$reason = 'within_limit';
+		if ($softHit === true) {
+			$reason = 'soft_limit';
+		}
+
+		return ['decision' => self::DECISION_ALLOW, 'soft' => $softHit, 'reason' => $reason];
+	}//end allowDecision()
 
 	/**
 	 * Atomic check + increment.

@@ -263,19 +263,32 @@ class CaseAccessLinkService {
 			return 'paused';
 		}
 
-		$expiresAt = trim((string)($link['expiresAt'] ?? ''));
-		if ($expiresAt !== '') {
-			try {
-				if (new DateTimeImmutable($expiresAt) <= new DateTimeImmutable()) {
-					return 'expired';
-				}
-			} catch (\Exception $unreadable) {
-				unset($unreadable);
-			}
+		if ($this->hasExpired(expiresAt: trim((string)($link['expiresAt'] ?? ''))) === true) {
+			return 'expired';
 		}
 
 		return 'live';
 	}//end stateOf()
+
+	/**
+	 * Whether an expiry moment has passed; a blank or unreadable one never has.
+	 *
+	 * @param string $expiresAt The trimmed expiry.
+	 *
+	 * @return bool
+	 */
+	private function hasExpired(string $expiresAt): bool {
+		if ($expiresAt === '') {
+			return false;
+		}
+
+		try {
+			return new DateTimeImmutable($expiresAt) <= new DateTimeImmutable();
+		} catch (\Exception $unreadable) {
+			unset($unreadable);
+			return false;
+		}
+	}//end hasExpired()
 
 	/**
 	 * What the holder of this link reads, as the handler should see it before
@@ -288,19 +301,18 @@ class CaseAccessLinkService {
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	public function holderPreview(string $anchor): ?array {
-		$service = $this->gateway->accessLinkService();
-		$reader = $this->gateway->accessLinkReader();
-		if ($service === null || $reader === null) {
+		$tools = $this->previewTools();
+		if ($tools === []) {
 			return null;
 		}
 
 		try {
-			$link = $service->resolve(trim($anchor));
+			$link = $tools['service']->resolve(trim($anchor));
 			if ($link === null) {
 				return null;
 			}
 
-			$body = $reader->read($link);
+			$body = $tools['reader']->read($link);
 		} catch (\Throwable $failure) {
 			$this->logger->error(
 				'CaseAccessLinkService: could not read a link preview',
@@ -309,12 +321,38 @@ class CaseAccessLinkService {
 			return null;
 		}
 
+		return $this->strippedPreview(body: $body);
+	}//end holderPreview()
+
+	/**
+	 * OpenRegister's link service and link reader, empty when either is not there.
+	 *
+	 * @return array{service: object, reader: object}|array{}
+	 */
+	private function previewTools(): array {
+		$service = $this->gateway->accessLinkService();
+		$reader = $this->gateway->accessLinkReader();
+		if ($service === null || $reader === null) {
+			return [];
+		}
+
+		return ['service' => $service, 'reader' => $reader];
+	}//end previewTools()
+
+	/**
+	 * What a holder reads, stripped of the internals OpenRegister does not publish; null when the link read nothing.
+	 *
+	 * @param mixed $body What the link reader answered.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function strippedPreview(mixed $body): ?array {
 		if (is_array($body) === false) {
 			return null;
 		}
 
 		return $this->projection->strip(body: $body);
-	}//end holderPreview()
+	}//end strippedPreview()
 
 	/**
 	 * Mint one link, whatever its subject.
@@ -386,24 +424,32 @@ class CaseAccessLinkService {
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	private function declaredCapabilities(array $capabilities): ?array {
-		$declared = ['read'];
+		$names = $this->capabilityNames(capabilities: $capabilities);
+		if (array_diff($names, self::CAPABILITIES) !== []) {
+			return null;
+		}
+
+		return array_values(array_unique(array_merge(['read'], $names)));
+	}//end declaredCapabilities()
+
+	/**
+	 * The asked-for capabilities trimmed and lowercased, blanks left out, in the order asked.
+	 *
+	 * @param array<int, string> $capabilities What the caller asked for.
+	 *
+	 * @return array<int, string>
+	 */
+	private function capabilityNames(array $capabilities): array {
+		$names = [];
 		foreach ($capabilities as $candidate) {
 			$name = strtolower(trim((string)$candidate));
-			if ($name === '') {
-				continue;
-			}
-
-			if (in_array($name, self::CAPABILITIES, true) === false) {
-				return null;
-			}
-
-			if (in_array($name, $declared, true) === false) {
-				$declared[] = $name;
+			if ($name !== '') {
+				$names[] = $name;
 			}
 		}
 
-		return $declared;
-	}//end declaredCapabilities()
+		return $names;
+	}//end capabilityNames()
 
 	/**
 	 * The expiry to mint with.

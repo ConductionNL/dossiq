@@ -348,6 +348,7 @@ final class PackageTestSchemaEntity {
  * @uses \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageInstallRun
+ * @uses \OCA\Dossiq\Service\CaseDefinition\RowMatchRun
  */
 class PackageInstallerTest extends TestCase {
 

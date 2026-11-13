@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -50,7 +50,7 @@ use Throwable;
 /**
  * Tells the resident that the decision on their Woo request is published.
  *
- * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
  */
 class WooDecisionNotice {
 
@@ -112,7 +112,7 @@ class WooDecisionNotice {
 	 *
 	 * @return bool Whether a message was written; false when no resident follows the case.
 	 *
-	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
 	 */
 	public function tell(array $case, string $caseId, string $publicationId): bool {
 		$subjectRef = trim((string)($case['portalSubject'] ?? ''));

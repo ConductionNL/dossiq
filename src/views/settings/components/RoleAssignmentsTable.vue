@@ -134,7 +134,7 @@ export default {
 		t,
 		/**
 		 * @param {object} a The item to compare.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		isWaarnemer(a) {
 			const tt = (a.allocationType || a.type || '').toLowerCase()
@@ -143,7 +143,7 @@ export default {
 
 		/**
 		 * @param {object} a The item to compare.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		typeClass(a) {
 			return this.isWaarnemer(a)
@@ -153,7 +153,7 @@ export default {
 
 		/**
 		 * @param {object} a The item to compare.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		roleLabel(a) {
 			const opt = this.roleOptions.find((o) => o.id === (a.roleId || a.role))
@@ -162,7 +162,7 @@ export default {
 
 		/**
 		 * @param {object} a The item to compare.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		openEnd(a) {
 			this.ending = a
@@ -170,7 +170,7 @@ export default {
 
 		/**
 		 * @param {object} payload The payload.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		async onAdd(payload) {
 			try {

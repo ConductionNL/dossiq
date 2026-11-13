@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T16
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T16
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Throwable;
  * It runs as the background service account, because cron has no user and
  * OpenRegister refuses a write from nobody.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T16
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T16
  */
 class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 	use SearchesObjects;

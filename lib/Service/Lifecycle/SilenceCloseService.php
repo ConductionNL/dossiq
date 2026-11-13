@@ -59,7 +59,7 @@ use Throwable;
 /**
  * Warns about, and then performs, the close a case type declared.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+ * @spec openspec/specs/case-status-machinery/spec.md
  */
 class SilenceCloseService {
 
@@ -111,7 +111,7 @@ class SilenceCloseService {
 	 * @return array{action: string, silentDays: int, period: int, closesOn: string}
 	 *         `action` is `none`, `warn` or `close`.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function decide(array $case, DateTimeImmutable $today): array {
 		$caseTypeId = (string)($case['caseType'] ?? '');
@@ -151,7 +151,7 @@ class SilenceCloseService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function warn(string $caseId, array $case, string $closesOn): void {
 		$case = $this->steps->journal->append(
@@ -189,7 +189,7 @@ class SilenceCloseService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function close(string $caseId, array $decision): void {
 		if ($this->abortSilent(caseId: $caseId, reason: self::reasonFor(decision: $decision)) === false) {
@@ -280,7 +280,7 @@ class SilenceCloseService {
 	 *
 	 * @return DateTimeImmutable|null The moment, or null when none can be read.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function lastActivity(array $case): ?DateTimeImmutable {
 		foreach (array_reverse($this->steps->journal->entries(case: $case)) as $entry) {
@@ -306,7 +306,7 @@ class SilenceCloseService {
 	 *
 	 * @return bool True when a warning stands.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	private function alreadyWarned(array $case): bool {
 		return ($this->steps->journal->latest(case: $case, types: [self::WARNING_TYPE]) !== []);

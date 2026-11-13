@@ -24,6 +24,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Kcc\RoutingTableEvaluator
+ * @uses \OCA\Dossiq\Service\Kcc\RoutingRuleOrder
  */
 class RoutingTableEvaluatorTest extends TestCase {
 
@@ -212,6 +213,37 @@ class RoutingTableEvaluatorTest extends TestCase {
 		self::assertSame('Burgers', $this->evaluator->route(rules: $rules, contactMoment: ['customerRef' => 'bsn-999'])['rule']);
 		self::assertSame('Anoniem', $this->evaluator->route(rules: $rules, contactMoment: [])['rule']);
 	}//end testCustomerTypeIsDerivedFromTheReference()
+
+	/**
+	 * Every column is declared once, in first-use order, with its type, kind and derivation data.
+	 *
+	 * @return void
+	 */
+	public function testEachColumnIsDeclaredOnceInFirstUseOrder(): void {
+		$rules = [
+			$this->rule(['matchConditions' => [['type' => 'channel', 'value' => 'telefoon'], ['type' => 'keyword', 'value' => 'paspoort']]]),
+			$this->rule(
+				[
+					'name' => 'Tweede',
+					'priority' => 2,
+					'matchConditions' => [
+						['type' => 'channel', 'value' => 'balie'],
+						['type' => 'time_of_day', 'value' => 'after_09:00'],
+					],
+				]
+			),
+		];
+
+		$compile = new \ReflectionMethod(RoutingTableEvaluator::class, 'compile');
+		$columns = $compile->invoke($this->evaluator, $rules)['columns'];
+
+		self::assertSame(['channel', 'keyword:paspoort', 'minutesOfDay'], array_column($columns, 'name'));
+		self::assertSame(['string', 'boolean', 'number'], array_column($columns, 'type'));
+		self::assertSame(['channel', 'keyword', 'minutesOfDay'], array_column($columns, 'kind'));
+		self::assertSame([], $columns[0]['payload']);
+		self::assertSame([], $columns[2]['payload']);
+		self::assertSame('keyword', $columns[1]['payload']['kind']);
+	}//end testEachColumnIsDeclaredOnceInFirstUseOrder()
 
 	public function testNoRulesAnswersNull(): void {
 		self::assertNull($this->evaluator->route(rules: [], contactMoment: ['subject' => 'wat dan ook']));

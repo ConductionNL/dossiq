@@ -65,7 +65,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 
 	/**
 	 * Per-case outcomes reported by linkCase(); each value doubles as the
-	 * tally key in the run() counter map.
+	 * tally key in the run's counter map.
 	 */
 	private const RESULT_LINKED = 'linked';
 	private const RESULT_SKIPPED = 'skipped';
@@ -117,67 +117,95 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 			return;
 		}
 
-		$counts = [
-			self::RESULT_LINKED => 0,
-			self::RESULT_SKIPPED => 0,
-			self::RESULT_ERROR => 0,
-			self::RESULT_NONE => 0,
-		];
-
 		// This repair step runs without a Nextcloud user session — anonymous
 		// callers are fail-closed by OpenRegister RBAC (#1955) on every
-		// boot, so the list/save calls below run inside runAsSystem().
-		$this->runAsSystemIfAvailable(
-			objectService: $objectService,
-			operation: function () use ($objectService, $output, &$counts): void {
-				foreach (self::CONTRACT_DECISION_CASE_TYPES as $caseTypeSlug) {
-					try {
-						// ObjectService::findAll() takes a single $config array — the
-						// previous named-argument call (register:/schema:/limit:) threw
-						// "Unknown named parameter" on every run. Use the shared
-						// slug-aware search bridge, which also normalises the rows to
-						// the associative arrays this loop expects.
-						$cases = $this->searchObjectsAsArrays(
-							objectService: $objectService,
-							register: Application::REGISTER_SLUG,
-							schema: 'case',
-							filters: [
-								'caseTypeSlug' => $caseTypeSlug,
-								'_limit' => 500,
-							],
-						);
-					} catch (Throwable $e) {
-						$output->warning('Could not list cases for type ' . $caseTypeSlug . ': ' . $e->getMessage());
-						$this->logger->warning(
-							'LinkInFlightContractDecisionsRepair: list failed',
-							['caseTypeSlug' => $caseTypeSlug, 'error' => $e->getMessage()]
-						);
-						continue;
-					}//end try
+		// boot, so the list/save calls run inside runAsSystem().
+		$run = new InFlightDecisionLinkRun(objectService: $objectService, output: $output, logger: $this->logger);
+		$this->runAsSystemIfAvailable(objectService: $objectService, operation: fn (): array => $this->linkCaseTypes(run: $run));
 
-					foreach ($cases as $case) {
-						$outcome = $this->linkCase(
-							objectService: $objectService,
-							case: $case,
-							caseTypeSlug: $caseTypeSlug,
-							output: $output,
-						);
-
-						$counts[$outcome]++;
-					}//end foreach
-				}//end foreach
-			}
-		);
-
-		$output->info(
-			sprintf(
-				'Contract decision link complete: %d linked, %d skipped (already decided/historical), %d errors (leaf unavailable).',
-				$counts[self::RESULT_LINKED],
-				$counts[self::RESULT_SKIPPED],
-				$counts[self::RESULT_ERROR]
-			)
-		);
+		$output->info($this->summaryOf(counts: $run->counts));
 	}//end run()
+
+	/**
+	 * Link the cases of every contract decision case type, counting each outcome.
+	 *
+	 * @param InFlightDecisionLinkRun $run The run.
+	 *
+	 * @return array<string, int> The counts so far.
+	 */
+	private function linkCaseTypes(InFlightDecisionLinkRun $run): array {
+		foreach (self::CONTRACT_DECISION_CASE_TYPES as $caseTypeSlug) {
+			foreach ($this->casesOfType(run: $run, caseTypeSlug: $caseTypeSlug) as $case) {
+				$run->count(
+					outcome: $this->linkCase(
+						objectService: $run->objectService,
+						case: $case,
+						caseTypeSlug: $caseTypeSlug,
+						output: $run->output,
+					)
+				);
+			}
+		}
+
+		return $run->counts;
+	}//end linkCaseTypes()
+
+	/**
+	 * The cases of one case type; a list that fails is reported and reads as none.
+	 *
+	 * @param InFlightDecisionLinkRun $run          The run.
+	 * @param string                  $caseTypeSlug The case type slug.
+	 *
+	 * @return array<int, array<string, mixed>> The case rows.
+	 */
+	private function casesOfType(InFlightDecisionLinkRun $run, string $caseTypeSlug): array {
+		try {
+			// ObjectService::findAll() takes a single $config array — the
+			// previous named-argument call (register:/schema:/limit:) threw
+			// "Unknown named parameter" on every run. Use the shared
+			// slug-aware search bridge, which also normalises the rows to
+			// the associative arrays this loop expects.
+			return $this->searchObjectsAsArrays(
+				objectService: $run->objectService,
+				register: Application::REGISTER_SLUG,
+				schema: 'case',
+				filters: $this->caseTypeFilters(caseTypeSlug: $caseTypeSlug),
+			);
+		} catch (Throwable $e) {
+			$run->listFailed(caseTypeSlug: $caseTypeSlug, error: $e);
+			return [];
+		}
+	}//end casesOfType()
+
+	/**
+	 * The search filters for one case type's cases.
+	 *
+	 * @param string $caseTypeSlug The case type slug.
+	 *
+	 * @return array<string, mixed> The filters.
+	 */
+	private function caseTypeFilters(string $caseTypeSlug): array {
+		return [
+			'caseTypeSlug' => $caseTypeSlug,
+			'_limit' => 500,
+		];
+	}//end caseTypeFilters()
+
+	/**
+	 * The closing line of a run.
+	 *
+	 * @param array<string, int> $counts How many cases ended in each outcome.
+	 *
+	 * @return string The line.
+	 */
+	private function summaryOf(array $counts): string {
+		return sprintf(
+			'Contract decision link complete: %d linked, %d skipped (already decided/historical), %d errors (leaf unavailable).',
+			($counts[self::RESULT_LINKED] ?? 0),
+			($counts[self::RESULT_SKIPPED] ?? 0),
+			($counts[self::RESULT_ERROR] ?? 0)
+		);
+	}//end summaryOf()
 
 	/**
 	 * Link a single in-flight case forward to a decidesk Decision.

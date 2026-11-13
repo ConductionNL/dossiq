@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use RuntimeException;
 /**
  * Objection lifecycle for an accruing amount.
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 class AmountObjectionService {
 	use SearchesObjects;
@@ -79,7 +79,7 @@ class AmountObjectionService {
 	 *
 	 * @throws RuntimeException When the berekening is missing.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function registerObjection(string $calculationId, string $basis, string $rationale): array {
 		$run = $this->openCalculation(calculationId: $calculationId);
@@ -119,7 +119,7 @@ class AmountObjectionService {
 	 *
 	 * @throws RuntimeException When berekening missing or amount invalid.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function resolveObjection(string $calculationId, int $newAmountCents, string $basis): array {
 		if ($newAmountCents < 0) {

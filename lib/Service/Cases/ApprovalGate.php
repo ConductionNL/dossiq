@@ -41,7 +41,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 
 declare(strict_types=1);
@@ -59,7 +59,7 @@ use Throwable;
 /**
  * Says whether a gated act may be performed, and what the case is waiting on.
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) {@see ApprovalGateDeclaration} is a
  * reader over two arrays with no state and nothing to inject. Making it an
@@ -132,7 +132,7 @@ class ApprovalGate {
 	 * @return array{gated: bool, allowed: bool, rule: string, sentence: string, status: int,
 	 *               label: string, decisionRef: string, approvers: array<int, string>} The verdict.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
 	 */
 	public function verdictFor(array $case, string $act, string $userId): array {
 		$caseType = $this->caseTypeOf(case: $case);
@@ -178,7 +178,7 @@ class ApprovalGate {
 	 * @return array<int, array{act: string, label: string, sentence: string,
 	 *               approvers: array<int, string>, decisionRef: string}> What is outstanding.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
 	 */
 	public function awaiting(array $case, string $userId): array {
 		$caseType = $this->caseTypeOf(case: $case);

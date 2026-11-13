@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Throwable;
 /**
  * Per-user matching preferences.
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 class CaseEmailMatchPreferences {
 
@@ -103,7 +103,7 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @return iterable<string> Their user ids.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function optedInUsers(): iterable {
 		return $this->userConfig->searchUsersByValueBool(Application::APP_ID, self::PREF_ENABLED, true);
@@ -119,7 +119,7 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @return array{enabled: bool, account: int} The settings.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function getUserSettings(string $userId): array {
 		try {
@@ -148,7 +148,7 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @throws InvalidArgumentException When the account is not the user's.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function saveUserSettings(string $userId, bool $enabled, int $account): array {
 		if ($account > 0 && $this->messages->ownsAccount(accountId: $account, userId: $userId) === false) {
@@ -177,7 +177,7 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @return int The cursor.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function readCursor(string $userId): int {
 		try {
@@ -195,7 +195,7 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function writeCursor(string $userId, int $cursor): void {
 		$this->userConfig->setValueInt($userId, Application::APP_ID, self::PREF_CURSOR, max(0, $cursor));
@@ -208,7 +208,7 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @return array{lastRunAt: ?string, linked: int, scanned: int, error: ?string} The status.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function getStatus(string $userId): array {
 		$empty = ['lastRunAt' => null, 'linked' => 0, 'scanned' => 0, 'error' => null];
@@ -254,7 +254,7 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function writeStatus(string $userId, int $linked, int $scanned, ?string $error): void {
 		$payload = json_encode(

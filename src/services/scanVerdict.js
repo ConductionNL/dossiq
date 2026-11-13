@@ -44,7 +44,7 @@ export const STATE_NOT_SCANNED = 'not-scanned'
  *
  * @param {object|string} verdict The verdict, or the bare state.
  * @return {string} One of the three states.
- * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export function stateOf(verdict) {
 	const raw = typeof verdict === 'string' ? verdict : verdict?.state
@@ -59,7 +59,7 @@ export function stateOf(verdict) {
  *
  * @param {object|string} verdict The verdict.
  * @return {string} The time, or an empty string when none was recorded.
- * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export function scannedAtOf(verdict) {
 	const raw = typeof verdict === 'string' ? '' : verdict?.scannedAt
@@ -81,7 +81,7 @@ export function scannedAtOf(verdict) {
  *
  * @param {object|string} verdict The verdict.
  * @return {string} The sentence.
- * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export function scanVerdictLabel(verdict) {
 	const state = stateOf(verdict)
