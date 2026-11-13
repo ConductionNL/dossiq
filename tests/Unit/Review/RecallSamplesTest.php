@@ -120,7 +120,12 @@ class RecallSamplesTest extends TestCase {
 			caseDocuments: $caseDocuments,
 			batches: $this->batches,
 			depth: new ReviewDepth(),
-			rules: new StoppingRules(settingsService: $settings, reviews: $reviews, logger: $logger),
+			rules: new StoppingRules(
+				settingsService: $settings,
+				reviews: $reviews,
+				logger: $logger,
+				writes: $this->createMock(originalClassName: \OCA\Dossiq\Review\ReviewWrites::class)
+			),
 			estimator: new RecallEstimator(),
 			met: $this->met,
 			logger: $logger,

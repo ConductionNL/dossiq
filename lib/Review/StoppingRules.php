@@ -38,6 +38,10 @@ use Throwable;
  * so it can be declared or replaced only while every document of the case is
  * still unmarked.
  *
+ * The rule is private to its case (REQ-WRT-006): a declared rule reconciles
+ * the case's reviewer access in the same request, so the assignee the case
+ * type grants it to can read and update it.
+ *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
  */
 class StoppingRules {
@@ -65,6 +69,7 @@ class StoppingRules {
 	 * @param SettingsService $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance $reviews Whether any document is marked yet.
 	 * @param LoggerInterface $logger The logger.
+	 * @param ReviewWrites $writes Grants the case's private records to the people on it once the rule is stored.
 	 *
 	 * @return void
 	 */
@@ -72,6 +77,7 @@ class StoppingRules {
 		private readonly SettingsService $settingsService,
 		private readonly DocumentRelevance $reviews,
 		private readonly LoggerInterface $logger,
+		private readonly ReviewWrites $writes,
 	) {
 	}//end __construct()
 
@@ -165,8 +171,35 @@ class StoppingRules {
 			'declaredAt' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
 		];
 
-		return $this->save(rule: $rule, uuid: $uuid);
+		$saved = $this->save(rule: $rule, uuid: $uuid);
+		$this->reconcile(caseId: $caseId);
+
+		return $saved;
 	}//end declare()
+
+	/**
+	 * Reconcile the case's reviewer access after the rule was stored.
+	 *
+	 * The rule is already stored, so a reconcile that fails is logged rather
+	 * than undoing it; the administrator's reconcile route repairs the grants
+	 * (case-reviewer-access REQ-CRA-004).
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-recall-and-stopping/tasks.md#1-the-stopping-rule
+	 */
+	private function reconcile(string $caseId): void {
+		try {
+			$this->writes->ruleStored(caseId: $caseId);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: a stopping rule was stored but the reviewer access of its case could not be reconciled',
+				['app' => Application::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
+			);
+		}
+	}//end reconcile()
 
 	/**
 	 * Store the rule.
