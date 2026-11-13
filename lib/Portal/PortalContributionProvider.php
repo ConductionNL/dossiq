@@ -96,6 +96,30 @@ class PortalContributionProvider {
 	public const REGISTER = 'dossiq';
 
 	/**
+	 * The action a supplier answers a message in their inbox with.
+	 *
+	 * @var string
+	 *
+	 * @spec openspec/changes/supplier-portal-reads-its-collections/specs/supplier-portal/spec.md
+	 */
+	public const SUPPLIER_REPLY_ACTION = 'replyToSupplierMessage';
+
+	/**
+	 * What a supplier may attach: what a resident may ({@see PortalConversation::ATTACHMENTS_FIELD}).
+	 *
+	 * @var array<string, mixed>
+	 *
+	 * @spec openspec/changes/supplier-portal-reads-its-collections/specs/supplier-portal/spec.md
+	 */
+	private const SUPPLIER_ATTACHMENTS_FIELD = [
+		'label' => 'Bijlagen',
+		'type' => 'file',
+		'multiple' => true,
+		'accept' => ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.odt'],
+		'maxSizeMb' => 20,
+	];
+
+	/**
 	 * What the citizen inbox projects, and where it keeps what portaliq's
 	 * inbox shows.
 	 *
@@ -721,7 +745,7 @@ class PortalContributionProvider {
 		$contribution = [
 			'label' => self::SUPPLIER_GROUP,
 			'collections' => $this->supplierCollections(),
-			'actions' => [],
+			'actions' => [$this->supplierReplyAction()],
 			'notifications' => ['tenderPublished', 'contractExpiring', 'invoiceDue'],
 		];
 		// A COMPANY THAT SIGNS IN WITH eHERKENNING GETS `supplier` from
@@ -730,7 +754,11 @@ class PortalContributionProvider {
 		// `portalSubject`, so a company reads only what it filed itself
 		// (portal-case-list-declarations D1).
 		$contribution['collections'][] = (new CitizenManifest())->caseCollection();
-		$contribution['pages'] = $this->pages->forCollections(collections: $contribution['collections'], actions: [], group: self::SUPPLIER_GROUP);
+		$contribution['pages'] = $this->pages->forCollections(
+			collections: $contribution['collections'],
+			actions: $contribution['actions'],
+			group: self::SUPPLIER_GROUP
+		);
 
 		return $contribution;
 
@@ -786,9 +814,46 @@ class PortalContributionProvider {
 				'readAt' => 'readByRecipientAt',
 				'attachments' => 'attachmentRefs',
 			],
+			// A supplier answers a message as a resident does in the berichtenbox.
+			'reply' => [
+				'action' => self::SUPPLIER_REPLY_ACTION,
+				'subjectFrom' => 'subject',
+			],
 		];
 
 	}//end supplierInbox()
+
+	/**
+	 * The supplier's reply: a `supplierMessage` from the supplier to the buyer.
+	 *
+	 * Scoped by `supplierRef`, so portaliq stamps the signed-in supplier and
+	 * no supplier writes as another. The `direction` is the server's, so a
+	 * reply never arrives dressed as the buyer's message. `caseRef` is not
+	 * whitelisted: no supplier collection can guard the case it names.
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/supplier-portal-reads-its-collections/specs/supplier-portal/spec.md
+	 */
+	private function supplierReplyAction(): array {
+		return [
+			'id' => self::SUPPLIER_REPLY_ACTION,
+			'type' => 'create',
+			'label' => 'Antwoorden',
+			'register' => self::REGISTER,
+			'schema' => 'supplierMessage',
+			'scopeField' => 'supplierRef',
+			'fields' => ['subject', 'body', 'attachmentRefs'],
+			'defaults' => ['direction' => 'inbound'],
+			'requiredFields' => ['body'],
+			'fieldConfigs' => [
+				'subject' => ['label' => 'Onderwerp'],
+				'body' => ['label' => 'Uw bericht', 'size' => 'large'],
+				'attachmentRefs' => self::SUPPLIER_ATTACHMENTS_FIELD,
+			],
+		];
+
+	}//end supplierReplyAction()
 
 	/**
 	 * Manifest for the `citizen` audience (the 'Mijn gemeente' portal).
