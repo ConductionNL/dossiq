@@ -161,6 +161,7 @@ class ConfigKeys {
 		'lhsMatrix',
 		'lhs_matrix_schema',
 		'lhs_recommendation_schema',
+		'decision_advice_schema',
 		// AI-Assisted Processing settings.
 		'ai_audit_entry_schema',
 		'ai_enabled',

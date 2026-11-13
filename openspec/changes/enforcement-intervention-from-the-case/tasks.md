@@ -7,9 +7,9 @@
 
 ## 2. Backend
 
-- [ ] 2.1 Generic routes `POST /api/decision-advice/recommend` and `POST /api/decision-advice/override` in `appinfo/routes.php` on a controller named for what it does (`DecisionAdviceController`), reading the inputs from the table's declared inputs instead of the fixed `severity`/`behaviour`/`actorType` params.
+- [x] 2.1 Generic routes `POST /api/decision-advice/recommend` and `POST /api/decision-advice/override` in `appinfo/routes.php` on a controller named for what it does (`DecisionAdviceController`), reading the inputs from the table's declared inputs instead of the fixed `severity`/`behaviour`/`actorType` params.
 - [ ] 2.2 `/api/lhs/recommend` and `/api/lhs/override` forward to the generic routes for one release; note the removal in the changelog.
-- [ ] 2.3 `tests/Unit/Controller/DecisionAdviceControllerTest.php`: recommend, accept, override without reason refused (400), case type without table refused (409).
+- [x] 2.3 `tests/Unit/Controller/DecisionAdviceControllerTest.php`: recommend, accept, override without reason refused (400), case type without table refused (409).
 
 ## 3. Case page
 
