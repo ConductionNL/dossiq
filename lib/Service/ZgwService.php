@@ -31,6 +31,7 @@ use OCA\OpenRegister\Db\Mapping;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Dossiq\Service\Zgw\ApiCredentialResolver;
 use OCA\Dossiq\Service\Zgw\ZgwParentStateResolver;
 use OCA\Dossiq\Service\Zgw\StoreFailureAnswer;
 use OCA\Dossiq\Service\Zgw\ZgwPatchMerger;
@@ -252,7 +253,7 @@ class ZgwService {
 	 * @param ZgwDocumentService $documentService The document storage service
 	 * @param NotificatieService $notificationService The notification service
 	 * @param ZgwBusinessRulesService $businessRulesService The business rules service
-	 * @param ZgwJwtValidator $jwtValidator The ZGW JWT validator
+	 * @param ApiCredentialResolver $credentials Resolves a JWT, API key or certificate to a consumer
 	 * @param LoggerInterface $logger The logger
 	 * @param CommunicationChannel|null $channels Maps a zaak's communicatiekanaal onto a channel slug (decision 171)
 	 *
@@ -264,7 +265,7 @@ class ZgwService {
 		private readonly ZgwDocumentService $documentService,
 		private readonly NotificatieService $notificationService,
 		private readonly ZgwBusinessRulesService $businessRulesService,
-		private readonly ZgwJwtValidator $jwtValidator,
+		private readonly ApiCredentialResolver $credentials,
 		private readonly LoggerInterface $logger,
 		private readonly ?CommunicationChannel $channels = null,
 	) {
@@ -822,7 +823,10 @@ class ZgwService {
 	}//end buildBaseUrl()
 
 	/**
-	 * Validate JWT-ZGW authentication from the Authorization header.
+	 * Authenticate a ZGW request: a bearer JWT, an API key or a certificate
+	 * forwarded by a trusted proxy, resolved to an OpenRegister consumer.
+	 *
+	 * Kept under its old name because every ZGW controller calls it.
 	 *
 	 * @param IRequest $request The request object
 	 *
@@ -831,45 +835,59 @@ class ZgwService {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function validateJwtAuth(IRequest $request): ?JSONResponse {
-		$authHeader = $request->getHeader('Authorization');
+		return $this->credentialRefusal(request: $request);
+	}//end validateJwtAuth()
 
-		if ($authHeader === '') {
-			return new JSONResponse(
-				data: [
-					'type' => 'NotAuthenticated',
-					'code' => 'not_authenticated',
-					'title' => 'Authenticatiegegevens zijn niet opgegeven.',
-					'status' => 401,
-					'detail' => 'Authenticatiegegevens zijn niet opgegeven.',
-				],
-				statusCode: Http::STATUS_UNAUTHORIZED
-			);
+	/**
+	 * The 401 answer for a request whose caller does not resolve, or null when
+	 * it resolves.
+	 *
+	 * Asks the same resolver the ZGW middleware asks, so a caller the
+	 * middleware let through with an API key or certificate is accepted here
+	 * too; within one request the consumer is resolved and bound once.
+	 *
+	 * @param IRequest $request The request object
+	 *
+	 * @return JSONResponse|null 401 response on failure, null on success
+	 *
+	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-the-caller-may-present-a-jwt-an-api-key-or-a-client-certificate-req-paa-02
+	 */
+	private function credentialRefusal(IRequest $request): ?JSONResponse {
+		try {
+			$consumer = $this->credentials->resolve(request: $request);
+		} catch (\Throwable $e) {
+			$this->logger->warning('ZGW authentication failed: ' . $e->getMessage(), ['app' => 'dossiq']);
+			return self::notAuthenticated(detail: ApiCredentialResolver::refusalMessage(failure: $e));
 		}
 
-		try {
-			$this->jwtValidator->validate(authorization: $authHeader);
-		} catch (\Throwable $e) {
-			// M3: Log detail server-side but never surface internal JWT validation
-			// messages in the HTTP response — they aid algorithm/issuer enumeration.
-			$this->logger->warning(
-				'ZGW JWT validation failed: ' . $e->getMessage(),
-				['app' => 'dossiq']
-			);
-
-			return new JSONResponse(
-				data: [
-					'type' => 'NotAuthenticated',
-					'code' => 'not_authenticated',
-					'title' => 'Authenticatiegegevens zijn niet geldig.',
-					'status' => 403,
-					'detail' => 'Authenticatiegegevens zijn niet geldig.',
-				],
-				statusCode: Http::STATUS_FORBIDDEN
-			);
-		}//end try
+		if ($consumer === null) {
+			return self::notAuthenticated(detail: 'Authenticatiegegevens zijn niet opgegeven.');
+		}
 
 		return null;
-	}//end validateJwtAuth()
+	}//end credentialRefusal()
+
+	/**
+	 * A 401 answer in the ZGW error shape.
+	 *
+	 * @param string $detail What the caller is told.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-a-calling-system-is-an-openregister-consumer-req-paa-01
+	 */
+	private static function notAuthenticated(string $detail): JSONResponse {
+		return new JSONResponse(
+			data: [
+				'type' => 'NotAuthenticated',
+				'code' => 'not_authenticated',
+				'title' => 'Authenticatiegegevens zijn niet geldig.',
+				'status' => 401,
+				'detail' => $detail,
+			],
+			statusCode: Http::STATUS_UNAUTHORIZED
+		);
+	}//end notAuthenticated()
 
 	/**
 	 * Check if the current JWT consumer has a specific scope.

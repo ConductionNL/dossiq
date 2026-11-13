@@ -3,7 +3,7 @@
 /**
  * ZGW Authentication Middleware
  *
- * Validates JWT tokens and enforces scopes on all ZGW API endpoints.
+ * Resolves the caller's credential and enforces scopes on all ZGW API endpoints.
  *
  * @category Middleware
  * @package  OCA\Dossiq\Middleware
@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Middleware;
 
 use OCA\Dossiq\Controller\ZgwController;
-use OCA\Dossiq\Service\ZgwJwtValidator;
+use OCA\Dossiq\Service\Zgw\ApiCredentialResolver;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
@@ -35,12 +35,16 @@ use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 
 /**
- * Middleware that validates JWT tokens and enforces ZGW scopes.
+ * Middleware that resolves the caller and enforces ZGW scopes.
  *
- * Applied to all ZgwController requests. Validates the Authorization header,
- * checks JWT signature via OpenRegister's AuthorizationService, and verifies
- * the authenticated applicatie has the required scope for the request.
+ * Applied to all ZgwController requests. The caller presents a bearer JWT, an
+ * API key or a certificate forwarded by a trusted proxy; ApiCredentialResolver
+ * turns it into an OpenRegister consumer and binds that consumer's user. A
+ * request without a credential, or whose credential does not resolve, answers
+ * 401 before any controller runs. The consumer's applicatie then decides the
+ * scope, whatever credential it used (403 when it does not cover the request).
  *
+ * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-a-calling-system-is-an-openregister-consumer-req-paa-01
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class ZgwAuthMiddleware extends Middleware {
@@ -106,78 +110,42 @@ class ZgwAuthMiddleware extends Middleware {
 	];
 
 	/**
-	 * The ZGW JWT validator.
-	 *
-	 * @var ZgwJwtValidator
-	 */
-	private ZgwJwtValidator $jwtValidator;
-
-	/**
-	 * The OpenRegister ConsumerMapper (loaded dynamically).
-	 *
-	 * @var object|null
-	 */
-	private $consumerMapper = null;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The incoming request
-	 * @param ZgwJwtValidator $jwtValidator The ZGW JWT validator
+	 * @param ApiCredentialResolver $credentials Resolves the caller's credential to a consumer
 	 * @param LoggerInterface $logger The logger
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly IRequest $request,
-		ZgwJwtValidator $jwtValidator,
+		private readonly ApiCredentialResolver $credentials,
 		private readonly LoggerInterface $logger,
 	) {
-		$this->jwtValidator = $jwtValidator;
-		$this->loadOpenRegisterServices();
 	}//end __construct()
 
 	/**
-	 * Load OpenRegister services dynamically.
-	 *
-	 * @return void
-	 */
-	private function loadOpenRegisterServices(): void {
-		try {
-			$container = \OC::$server;
-			$this->consumerMapper = $container->get(
-				'OCA\OpenRegister\Db\ConsumerMapper'
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'ZgwAuthMiddleware: OpenRegister auth services not available',
-				['exception' => $e->getMessage()]
-			);
-		}
-	}//end loadOpenRegisterServices()
-
-	/**
-	 * Validate JWT and enforce scopes before controller execution.
+	 * Resolve the caller and enforce scopes before controller execution.
 	 *
 	 * @param \OCP\AppFramework\Controller $controller The controller instance
 	 * @param string $methodName The method being called
 	 *
 	 * @return void
 	 *
-	 * @throws \OCA\Dossiq\Middleware\ZgwAuthException If authorization fails.
+	 * @throws \OCA\Dossiq\Middleware\ZgwAuthException If authentication or authorization fails.
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $methodName required by Middleware interface
 	 *
 	 * @spec openspec/specs/zgw-api-mapping/spec.md
+	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-every-credential-is-scoped-by-the-consumers-applicatie-req-paa-03
 	 */
 	public function beforeController($controller, $methodName): void {
 		if (($controller instanceof ZgwController) === false) {
 			return;
 		}
 
-		$authorization = $this->request->getHeader(name: 'Authorization');
-		$issuer = $this->verifiedIssuer(authorization: $authorization);
-		$authConfig = $this->consumerConfiguration(issuer: $issuer);
+		$authConfig = $this->consumerConfiguration();
 
 		// Superuser bypasses all scope checks.
 		if (($authConfig['superuser'] ?? false) === true) {
@@ -189,86 +157,49 @@ class ZgwAuthMiddleware extends Middleware {
 	}//end beforeController()
 
 	/**
-	 * The issuer of a present, well-formed token whose signature validates.
+	 * The authorization configuration of the consumer behind the request.
 	 *
-	 * @param string $authorization The Authorization header.
+	 * @return array The consumer's authorization configuration.
 	 *
-	 * @return mixed The `iss` claim.
+	 * @throws ZgwAuthException 401 when the request carries no credential or one that does not resolve.
 	 *
-	 * @throws ZgwAuthException When the header is missing, the payload unreadable or the signature invalid.
-	 *
-	 * @spec openspec/specs/zgw-api-mapping/spec.md
+	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-a-calling-system-is-an-openregister-consumer-req-paa-01
 	 */
-	private function verifiedIssuer(string $authorization): mixed {
-		$payload = $this->tokenPayload(authorization: $authorization);
-		$this->validateSignature(authorization: $authorization);
-		return $payload['iss'];
-	}//end verifiedIssuer()
-
-	/**
-	 * The token's payload, when the header carries one with an issuer.
-	 *
-	 * @param string $authorization The Authorization header.
-	 *
-	 * @return array<string, mixed>
-	 *
-	 * @throws ZgwAuthException When the header is missing or the payload has no issuer.
-	 */
-	private function tokenPayload(string $authorization): array {
-		if ($authorization === '') {
-			throw $this->forbidden(message: 'Authorization header is required');
-		}
-
-		// Extract and validate JWT payload.
-		$payload = $this->decodeJwtPayload(token: substr(string: $authorization, offset: strlen(string: 'Bearer ')));
-		if ($payload === null || isset($payload['iss']) === false) {
-			throw $this->forbidden(message: 'Invalid token payload');
-		}
-
-		return $payload;
-	}//end tokenPayload()
-
-	/**
-	 * Validate the JWT signature via the dossiq-owned ZgwJwtValidator.
-	 *
-	 * M3: Log detailed message server-side; surface only a generic message to caller.
-	 * Catch \Throwable: a misconfigured dependency raises \Error (not \Exception),
-	 * which previously escaped as a 500 instead of a clean 403.
-	 *
-	 * @param string $authorization The Authorization header.
-	 *
-	 * @return void
-	 *
-	 * @throws ZgwAuthException When the signature does not validate.
-	 */
-	private function validateSignature(string $authorization): void {
+	private function consumerConfiguration(): array {
 		try {
-			$this->jwtValidator->validate(authorization: $authorization);
+			$consumer = $this->credentials->resolve(request: $this->request);
 		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'ZGW auth failed: ' . $e->getMessage()
-			);
-			throw $this->forbidden(message: 'Authenticatiegegevens zijn niet geldig.');
+			$this->logger->warning('ZGW auth failed: ' . $e->getMessage());
+			throw $this->unauthenticated(message: ApiCredentialResolver::refusalMessage(failure: $e));
 		}
-	}//end validateSignature()
+
+		if ($consumer === null) {
+			throw $this->unauthenticated(message: 'Authenticatiegegevens zijn niet opgegeven.');
+		}
+
+		$authConfig = $consumer->getAuthorizationConfiguration();
+		if (is_array($authConfig) === false) {
+			return [];
+		}
+
+		return $authConfig;
+	}//end consumerConfiguration()
 
 	/**
-	 * The authorization configuration of the consumer the issuer names.
+	 * A 401 refusal: the caller is not known.
 	 *
-	 * @param mixed $issuer The token's issuer.
+	 * @param string $message What the caller is told.
 	 *
-	 * @return array<string, mixed>
+	 * @return ZgwAuthException
 	 *
-	 * @throws ZgwAuthException When no consumer answers to the issuer.
+	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-a-calling-system-is-an-openregister-consumer-req-paa-01
 	 */
-	private function consumerConfiguration(mixed $issuer): array {
-		$consumer = $this->findConsumerByIssuer(issuer: $issuer);
-		if ($consumer === null) {
-			throw $this->forbidden(message: 'Unknown issuer');
-		}
-
-		return $consumer->getAuthorizationConfiguration();
-	}//end consumerConfiguration()
+	private function unauthenticated(string $message): ZgwAuthException {
+		return new ZgwAuthException(
+			message: $message,
+			statusCode: Http::STATUS_UNAUTHORIZED
+		);
+	}//end unauthenticated()
 
 	/**
 	 * The 403 the gate refuses with.
@@ -300,6 +231,19 @@ class ZgwAuthMiddleware extends Middleware {
 	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function afterException($controller, $methodName, \Exception $exception): JSONResponse {
+		if ($exception instanceof ZgwAuthException && $exception->getStatusCode() === Http::STATUS_UNAUTHORIZED) {
+			return new JSONResponse(
+				data: [
+					'type' => 'https://datatracker.ietf.org/doc/html/rfc7235#section-3.1',
+					'code' => 'not_authenticated',
+					'title' => 'Authenticatiegegevens zijn niet geldig.',
+					'status' => Http::STATUS_UNAUTHORIZED,
+					'detail' => $exception->getMessage(),
+				],
+				statusCode: Http::STATUS_UNAUTHORIZED
+			);
+		}
+
 		if ($exception instanceof ZgwAuthException) {
 			return new JSONResponse(
 				data: [
@@ -440,57 +384,6 @@ class ZgwAuthMiddleware extends Middleware {
 		$apiGroup = $matches[1];
 		return self::API_TO_COMPONENT[$apiGroup] ?? null;
 	}//end deriveComponentFromUrl()
-
-	/**
-	 * Decode the JWT payload without verification (already verified by authorizeJwt).
-	 *
-	 * @param string $token The JWT token string
-	 *
-	 * @return array|null The decoded payload or null on failure
-	 */
-	private function decodeJwtPayload(string $token): ?array {
-		$parts = explode(separator: '.', string: $token);
-		if (count(value: $parts) !== 3) {
-			return null;
-		}
-
-		$payload = base64_decode(string: $parts[1], strict: true);
-		if ($payload === false) {
-			return null;
-		}
-
-		$decoded = json_decode(json: $payload, associative: true);
-		if (is_array(value: $decoded) === false) {
-			return null;
-		}
-
-		return $decoded;
-	}//end decodeJwtPayload()
-
-	/**
-	 * Find a Consumer entity by its issuer name.
-	 *
-	 * @param string $issuer The JWT issuer (maps to Consumer name)
-	 *
-	 * @return object|null The Consumer entity or null
-	 */
-	private function findConsumerByIssuer(string $issuer): ?object {
-		try {
-			$consumers = $this->consumerMapper->findAll(
-				filters: ['name' => $issuer]
-			);
-			if (count(value: $consumers) > 0) {
-				return $consumers[0];
-			}
-		} catch (\Exception $e) {
-			$this->logger->warning(
-				'Failed to find consumer for issuer: ' . $issuer,
-				['exception' => $e->getMessage()]
-			);
-		}
-
-		return null;
-	}//end findConsumerByIssuer()
 
 	/**
 	 * Compare confidentiality levels.

@@ -3,8 +3,9 @@
 /**
  * Characterisation tests for ZgwJwtValidator.
  *
- * Pins every refusal of validate(), in order, and the user binding on success, so its
- * decomposition (method-decomposition) can be proven to change no outcome.
+ * Pins every refusal of consumerFor(), in order, and the consumer it answers on
+ * success. Binding the consumer's user is ApiCredentialResolver's, once per
+ * request whatever the credential, so the validator binds nobody.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service
@@ -27,9 +28,6 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\ZgwAuthValidationException;
 use OCA\Dossiq\Service\ZgwJwtValidator;
-use OCP\IUser;
-use OCP\IUserManager;
-use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -50,13 +48,6 @@ class ZgwJwtValidatorTest extends TestCase {
 	private const SECRET = 'gedeeld-geheim';
 
 	/**
-	 * The user the session was bound to, if any.
-	 *
-	 * @var IUser|null
-	 */
-	private ?IUser $bound = null;
-
-	/**
 	 * Build a validator without its container-reading constructor.
 	 *
 	 * @param object|null $consumer The consumer the mapper knows, or null for none
@@ -75,21 +66,11 @@ class ZgwJwtValidatorTest extends TestCase {
 			);
 		}
 
-		$session = $this->createMock(IUserSession::class);
-		$session->method('setUser')->willReturnCallback(function (?IUser $user): void {
-			$this->bound = $user;
-		});
-		$users = $this->createMock(IUserManager::class);
-		$users->method('get')->willReturnCallback(
-			fn (string $uid): ?IUser => $uid === 'alice' ? $this->createMock(IUser::class) : null
-		);
 		$logger = $this->createMock(LoggerInterface::class);
 
 		\Closure::bind(
-			static function () use ($validator, $consumerMapper, $session, $users, $logger): void {
+			static function () use ($validator, $consumerMapper, $logger): void {
 				$validator->logger = $logger;
-				$validator->userSession = $session;
-				$validator->userManager = $users;
 				$validator->consumerMapper = $consumerMapper;
 				$validator->authorizationService = null;
 			},
@@ -178,7 +159,7 @@ class ZgwJwtValidatorTest extends TestCase {
 	}//end token()
 
 	/**
-	 * Assert validate() refuses with exactly this message.
+	 * Assert consumerFor() refuses with exactly this message.
 	 *
 	 * @param ZgwJwtValidator $validator     The validator
 	 * @param string          $authorization The header
@@ -188,7 +169,7 @@ class ZgwJwtValidatorTest extends TestCase {
 	 */
 	private function assertRefused(ZgwJwtValidator $validator, string $authorization, string $message): void {
 		try {
-			$validator->validate($authorization);
+			$validator->consumerFor($authorization);
 			$this->fail('expected a refusal: '.$message);
 		} catch (ZgwAuthValidationException $e) {
 			$this->assertSame($message, $e->getMessage());
@@ -197,7 +178,7 @@ class ZgwJwtValidatorTest extends TestCase {
 	}//end assertRefused()
 
 	/**
-	 * Every refusal, in the order validate() checks them.
+	 * Every refusal, in the order consumerFor() checks them.
 	 *
 	 * @return void
 	 */
@@ -218,22 +199,20 @@ class ZgwJwtValidatorTest extends TestCase {
 		$this->assertRefused($v, $this->token(['iss' => 'client-a']), 'The token has no time of creation');
 		$this->assertRefused($v, $this->token(['iss' => 'client-a', 'iat' => $now - 7200]), 'The token has expired');
 		$this->assertRefused($v, $this->token(['iss' => 'client-a', 'iat' => $now, 'exp' => $now - 1]), 'The token has expired');
-		$this->assertNull($this->bound);
 
 	}//end testEveryRefusal()
 
 	/**
-	 * A valid token binds the consumer's user; the consumer's algorithm overrides the header's.
+	 * A valid token answers its consumer; the consumer's algorithm overrides the header's.
 	 *
 	 * @return void
 	 */
-	public function testValidTokenBindsTheConsumersUser(): void {
-		$this->validator(consumer: $this->consumer())->validate($this->token(['iss' => 'client-a', 'iat' => time()], alg: 'HS512'));
-		$this->assertNotNull($this->bound);
+	public function testValidTokenAnswersItsConsumer(): void {
+		$consumer = $this->consumer();
+		$this->assertSame($consumer, $this->validator(consumer: $consumer)->consumerFor($this->token(['iss' => 'client-a', 'iat' => time()], alg: 'HS512')));
 
-		$this->bound = null;
-		$this->validator(consumer: $this->consumer(algorithm: 'HS256'))->validate($this->token(['iss' => 'client-a', 'iat' => time()]));
-		$this->assertNotNull($this->bound);
+		$hs256 = $this->consumer(algorithm: 'HS256');
+		$this->assertSame($hs256, $this->validator(consumer: $hs256)->consumerFor($this->token(['iss' => 'client-a', 'iat' => time()])));
 
 		$this->assertRefused(
 			$this->validator(consumer: $this->consumer(algorithm: 'HS384')),
@@ -241,26 +220,12 @@ class ZgwJwtValidatorTest extends TestCase {
 			'The token does not match the shared secret'
 		);
 
-	}//end testValidTokenBindsTheConsumersUser()
-
-	/**
-	 * A consumer without a user, or with an unknown user, binds nobody and still passes.
-	 *
-	 * @return void
-	 */
-	public function testConsumerWithoutAKnownUserBindsNobody(): void {
-		$this->validator(consumer: $this->consumer(userId: ''))->validate($this->token(['iss' => 'client-a', 'iat' => time()]));
-		$this->validator(consumer: $this->consumer(userId: 'bob'))->validate($this->token(['iss' => 'client-a', 'iat' => time()]));
-
-		$this->assertNull($this->bound);
-
-	}//end testConsumerWithoutAKnownUserBindsNobody()
+	}//end testValidTokenAnswersItsConsumer()
 
 	public function testConsumerForAnswersTheVerifiedConsumerAndBindsNobody(): void {
 		$consumer = $this->consumer();
 
 		$this->assertSame($consumer, $this->validator(consumer: $consumer)->consumerFor($this->token(['iss' => 'client-a', 'iat' => time()])));
-		$this->assertNull($this->bound, 'binding is the resolver\'s, once, whatever the credential');
 
 		$this->assertRefused($this->validator(consumer: $consumer), $this->token(['iss' => 'client-a', 'iat' => time() - 7200]), 'The token has expired');
 	}//end testConsumerForAnswersTheVerifiedConsumerAndBindsNobody()

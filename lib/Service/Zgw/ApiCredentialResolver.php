@@ -77,6 +77,31 @@ class ApiCredentialResolver {
 	private ?object $consumerMapper;
 
 	/**
+	 * The consumer already resolved for a request, so a second caller in the
+	 * same request (the middleware, then a controller) neither resolves nor
+	 * binds again.
+	 *
+	 * @var \WeakMap<IRequest, object>|null
+	 */
+	private ?\WeakMap $resolved = null;
+
+	/**
+	 * What a refusal says, per resolver or validator message: the kind of
+	 * credential that failed and why, never the credential itself. A token
+	 * refusal other than expiry says only that the token is not valid, so the
+	 * answer cannot be used to find out which issuers exist.
+	 *
+	 * @var array<string, string>
+	 */
+	private const REFUSALS = [
+		'Unknown API key' => 'The API key is not known.',
+		'Untrusted certificate header' => 'The certificate header does not come from a trusted proxy.',
+		'Unknown certificate' => 'The certificate is not known.',
+		'Unsupported authorization scheme' => 'The authorization scheme is not supported.',
+		'Authorization service is unavailable' => 'The authorization service is unavailable.',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ZgwJwtValidator $jwtValidator   Decodes and verifies a bearer JWT.
@@ -115,13 +140,42 @@ class ApiCredentialResolver {
 	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-the-caller-may-present-a-jwt-an-api-key-or-a-client-certificate-req-paa-02
 	 */
 	public function resolve(IRequest $request): ?object {
+		$this->resolved ??= new \WeakMap();
+		if (isset($this->resolved[$request]) === true) {
+			return $this->resolved[$request];
+		}
+
 		$consumer = $this->consumerOf(request: $request);
 		if ($consumer !== null) {
 			$this->bindConsumerUser(userId: $consumer->getUserId());
+			$this->resolved[$request] = $consumer;
 		}
 
 		return $consumer;
 	}//end resolve()
+
+	/**
+	 * The message a refused request answers with, for the failure the
+	 * resolver or the token validator raised.
+	 *
+	 * @param \Throwable $failure The refusal.
+	 *
+	 * @return string The kind of credential that failed and why, without its value.
+	 *
+	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/tasks.md#2.2
+	 */
+	public static function refusalMessage(\Throwable $failure): string {
+		$message = $failure->getMessage();
+		if (isset(self::REFUSALS[$message]) === true) {
+			return self::REFUSALS[$message];
+		}
+
+		if (stripos($message, 'expired') !== false) {
+			return 'The token has expired.';
+		}
+
+		return 'The token is not valid.';
+	}//end refusalMessage()
 
 	/**
 	 * The consumer of the first credential the request carries.

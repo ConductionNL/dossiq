@@ -277,7 +277,6 @@ class ApiCredentialResolverTest extends TestCase {
 	public function testAValidJwtResolvesItsConsumerAndBindsItsUserOnce(): void {
 		$this->headers['Authorization'] = 'Bearer a.b.c';
 		$this->jwt->expects($this->once())->method('consumerFor')->with('Bearer a.b.c')->willReturn($this->consumers[0]);
-		$this->jwt->expects($this->never())->method('validate');
 
 		$this->assertSame($this->consumers[0], $this->resolver()->resolve($this->request()));
 		$this->assertSame(['portaal'], $this->bound);
@@ -397,5 +396,59 @@ class ApiCredentialResolverTest extends TestCase {
 
 		$this->assertSame('Archief', $this->resolver()->resolve($this->request())->name);
 		$this->assertSame([], $this->bound);
+	}
+
+	public function testASecondCallInTheSameRequestNeitherResolvesNorBindsAgain(): void {
+		$this->headers['Authorization'] = 'Bearer a.b.c';
+		$this->jwt->expects($this->exactly(2))->method('consumerFor')->willReturn($this->consumers[0]);
+		$resolver = $this->resolver();
+		$request = $this->request();
+
+		$this->assertSame($this->consumers[0], $resolver->resolve($request));
+		$this->assertSame($this->consumers[0], $resolver->resolve($request));
+		$this->assertSame(['portaal'], $this->bound, 'the same request is resolved and bound once');
+
+		$this->assertSame($this->consumers[0], $resolver->resolve($this->request()), 'another request resolves anew');
+		$this->assertSame(['portaal', 'portaal'], $this->bound);
+	}
+
+	public function testARefusalIsNotRemembered(): void {
+		$this->headers['X-Api-Key'] = 'k-999';
+		$resolver = $this->resolver();
+		$request = $this->request();
+
+		foreach ([1, 2] as $attempt) {
+			try {
+				$resolver->resolve($request);
+				$this->fail('attempt ' . $attempt . ' should be refused');
+			} catch (ZgwAuthValidationException $refused) {
+				$this->assertSame('Unknown API key', $refused->getMessage());
+			}
+		}
+	}
+
+	/**
+	 * @return array<string, array{0: string, 1: string}>
+	 */
+	public static function refusals(): array {
+		return [
+			'expired token' => ['The token has expired', 'The token has expired.'],
+			'expired, in OpenRegister\'s words' => ['Token expired at 12:00', 'The token has expired.'],
+			'bad signature' => ['The token does not match the shared secret', 'The token is not valid.'],
+			'unknown issuer' => ['Unknown issuer', 'The token is not valid.'],
+			'no issuer' => ['No issuer mentioned', 'The token is not valid.'],
+			'unknown key' => ['Unknown API key', 'The API key is not known.'],
+			'untrusted proxy' => ['Untrusted certificate header', 'The certificate header does not come from a trusted proxy.'],
+			'unknown certificate' => ['Unknown certificate', 'The certificate is not known.'],
+			'other scheme' => ['Unsupported authorization scheme', 'The authorization scheme is not supported.'],
+			'no consumers' => ['Authorization service is unavailable', 'The authorization service is unavailable.'],
+		];
+	}
+
+	/**
+	 * @dataProvider refusals
+	 */
+	public function testARefusalNamesTheCredentialKindAndNeverWhichIssuersExist(string $raised, string $answered): void {
+		$this->assertSame($answered, ApiCredentialResolver::refusalMessage(new ZgwAuthValidationException($raised)));
 	}
 }
