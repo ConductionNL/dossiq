@@ -22,8 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
@@ -279,7 +279,7 @@ class ReviewBatches {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: a Review batch was stored but the reviewer access of its case could not be reconciled',
-				['app' => Application::APP_ID, 'case' => $caseId, 'batch' => $batchId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'batch' => $batchId, 'exception' => $e->getMessage()]
 			);
 		}
 
@@ -315,7 +315,7 @@ class ReviewBatches {
 		if ($taskId === '') {
 			$this->logger->warning(
 				'Dossiq: a Review batch was created but the engine did not take its task',
-				['app' => Application::APP_ID, 'case' => $caseId, 'batch' => $batchId]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'batch' => $batchId]
 			);
 		}
 
@@ -476,7 +476,7 @@ class ReviewBatches {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: a Review batch could not be written',
-				['app' => Application::APP_ID, 'case' => ($batch['case'] ?? ''), 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => ($batch['case'] ?? ''), 'exception' => $e->getMessage()]
 			);
 			throw $this->refusal(
 				rule: 'review-batch-unavailable',

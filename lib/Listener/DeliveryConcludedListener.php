@@ -31,7 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Listener\Support\ConcludedDelivery;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
@@ -116,7 +116,7 @@ class DeliveryConcludedListener implements IEventListener {
 		}
 
 		try {
-			if ((string)$event->getSourceApp() !== Application::APP_ID) {
+			if ((string)$event->getSourceApp() !== AppIdentity::APP_ID) {
 				return;
 			}
 
@@ -131,7 +131,7 @@ class DeliveryConcludedListener implements IEventListener {
 			// bookkeeping — its message record stays the source of truth.
 			$this->logger->error(
 				'Dossiq DeliveryConcludedListener failed to project delivery outcome',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 			);
 		}//end try
 	}//end answer()

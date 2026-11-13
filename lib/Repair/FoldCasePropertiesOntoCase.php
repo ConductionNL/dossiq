@@ -37,7 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -96,10 +96,10 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 			return;
 		}
 
-		$register = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		$caseSchema = $this->appConfig->getValueString(Application::APP_ID, 'case_schema', '');
-		$valueSchema = $this->appConfig->getValueString(Application::APP_ID, 'case_property_schema', '');
-		$defSchema = $this->appConfig->getValueString(Application::APP_ID, 'property_definition_schema', '');
+		$register = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
+		$caseSchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_schema', '');
+		$valueSchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_property_schema', '');
+		$defSchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'property_definition_schema', '');
 		if ($register === '' || $caseSchema === '' || $valueSchema === '' || $defSchema === '') {
 			$output->info('Case-property schemas not configured, skipping backfill.');
 			return;

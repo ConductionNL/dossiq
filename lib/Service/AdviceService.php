@@ -34,7 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Advice\AdviceAuthorizationGuard;
 use OCA\Dossiq\Service\Advice\AdviceNotifier;
 use OCA\Dossiq\Service\Advice\AdviceRepository;
@@ -393,7 +393,7 @@ class AdviceService {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to expire advice: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return [];
 		}
@@ -499,7 +499,7 @@ class AdviceService {
 
 		$this->logger->info(
 			'Advice request created for case ' . $caseId . ' by ' . $requestedBy,
-			['app' => Application::APP_ID]
+			['app' => AppIdentity::APP_ID]
 		);
 
 		return $savedRecord;
@@ -544,7 +544,7 @@ class AdviceService {
 		} catch (RuntimeException $e) {
 			$this->logger->error(
 				'Dossiq: requestAdvice: decidesk advice Decision raise failed — failing closed: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			// REQ-PDRD-002: fail closed; surface the error.
 			throw new RuntimeException('Decision service unavailable: ' . $e->getMessage(), 0, $e);

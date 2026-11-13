@@ -34,7 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\ServiceAccount;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Notification\Notifier;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -136,7 +136,7 @@ class BackgroundServiceAccount extends ServiceAccount {
 	protected function refuse(string $userId, string $reason): never {
 		$this->logger->error(
 			'Dossiq: no usable background service account, the background jobs write nothing and send nothing',
-			['app' => Application::APP_ID, 'userId' => $userId, 'reason' => $reason, 'group' => self::GROUP]
+			['app' => AppIdentity::APP_ID, 'userId' => $userId, 'reason' => $reason, 'group' => self::GROUP]
 		);
 		$this->notifyAdmins(reason: $reason);
 
@@ -161,7 +161,7 @@ class BackgroundServiceAccount extends ServiceAccount {
 
 			foreach ($admins->getUsers() as $admin) {
 				$notification = $this->notifications->createNotification();
-				$notification->setApp(Application::APP_ID)
+				$notification->setApp(AppIdentity::APP_ID)
 					->setUser($admin->getUID())
 					->setObject(self::NOTIFICATION_OBJECT, self::CONFIG_KEY);
 				$this->notifications->markProcessed($notification);
@@ -173,7 +173,7 @@ class BackgroundServiceAccount extends ServiceAccount {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the admins could not be told that the background service account is missing',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 		}//end try
 	}//end notifyAdmins()

@@ -24,8 +24,8 @@ namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
@@ -172,7 +172,7 @@ class StoppingRuleMet {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: a met stopping rule could not be recorded on the audit trail',
-				['app' => Application::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
 			);
 			throw $this->notRecorded(previous: $e);
 		}

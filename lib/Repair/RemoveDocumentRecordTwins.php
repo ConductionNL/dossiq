@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -77,7 +77,7 @@ class RemoveDocumentRecordTwins implements IRepairStep {
 	 * @spec openspec/specs/document-projection/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
 			return;
 		}
 
@@ -122,7 +122,7 @@ class RemoveDocumentRecordTwins implements IRepairStep {
 			$kept++;
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::DONE_VERSION);
 		$output->info(
 			'Dossiq documents: removed ' . $removed . ' second record(s) of a file, kept ' . $kept . ' named in the log.'
 		);
@@ -200,7 +200,7 @@ class RemoveDocumentRecordTwins implements IRepairStep {
 			$this->logger->warning(
 				'Dossiq documents: ' . $recordId . ' names file ' . (string)($row['fileId'] ?? '')
 				. ' as an earlier record does, but has a folder of its own; it stays',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 
 			return false;
@@ -212,7 +212,7 @@ class RemoveDocumentRecordTwins implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq documents: second record ' . $recordId . ' of file ' . (string)($row['fileId'] ?? '') . ' could not go: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'exception' => $e],
+				['app' => AppIdentity::APP_ID, 'exception' => $e],
 			);
 
 			return false;

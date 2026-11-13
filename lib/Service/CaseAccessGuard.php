@@ -49,7 +49,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Service\Rbac\GrantLookup;
@@ -194,7 +194,7 @@ class CaseAccessGuard {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq CaseAccessGuard: admin check failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return false;
 		}
@@ -318,7 +318,7 @@ class CaseAccessGuard {
 			// An unreadable case type is not a team: deny, as every other branch of this guard does.
 			$this->logger->warning(
 				'Dossiq CaseAccessGuard: case type lookup failed, no team read: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return false;
 		}
@@ -406,7 +406,7 @@ class CaseAccessGuard {
 			$this->logger->warning(
 				'Dossiq CaseAccessGuard: the platform grant lookup failed, treating the caller as holding none: '
 				. $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return false;
 		}
@@ -426,7 +426,7 @@ class CaseAccessGuard {
 		if ($objectService === null) {
 			$this->logger->warning(
 				'Dossiq CaseAccessGuard: OpenRegister unavailable — denying case mutation',
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}
@@ -436,7 +436,7 @@ class CaseAccessGuard {
 		if (empty($register) === true || empty($caseSchema) === true) {
 			$this->logger->warning(
 				'Dossiq CaseAccessGuard: case schema not configured — denying case mutation',
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}
@@ -451,7 +451,7 @@ class CaseAccessGuard {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq CaseAccessGuard: case lookup failed — denying case mutation: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}

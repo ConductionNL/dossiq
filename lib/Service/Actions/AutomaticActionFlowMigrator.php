@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Actions;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Flow\FlowMigrationSummary;
 use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
@@ -139,7 +139,7 @@ class AutomaticActionFlowMigrator {
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'Dossiq: FlowService could not be resolved',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -361,7 +361,7 @@ class AutomaticActionFlowMigrator {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not migrate an automaticAction to a flow',
-				['app' => Application::APP_ID, 'marker' => $marker, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'marker' => $marker, 'exception' => $e->getMessage()]
 			);
 			return ['outcome' => 'failed', 'marker' => $marker, 'detail' => $e->getMessage()];
 		}
@@ -392,7 +392,7 @@ class AutomaticActionFlowMigrator {
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'Dossiq: no flow node answers to this id',
-				['app' => Application::APP_ID, 'node' => $nodeType, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'node' => $nodeType, 'exception' => $e->getMessage()]
 			);
 			return false;
 		}
@@ -501,8 +501,8 @@ class AutomaticActionFlowMigrator {
 	 * @return array{register: string, schema: string}|null The filters.
 	 */
 	private function actionFilters(): ?array {
-		$register = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		$schema = $this->appConfig->getValueString(Application::APP_ID, 'automatic_action_schema', '');
+		$register = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
+		$schema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'automatic_action_schema', '');
 		if ($register === '' || $schema === '') {
 			return null;
 		}

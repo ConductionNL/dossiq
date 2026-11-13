@@ -44,7 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Flow\ShippedFlowAdoption;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -148,7 +148,7 @@ class ReportShippedFlowAdoption implements IRepairStep {
 		$this->logger->warning(
 			'Dossiq: shipped flows await adoption',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'pending' => count($pending),
 				'total' => count($census['flows']),
 				'command' => 'occ dossiq:flows:adopt --user <admin> --enable',

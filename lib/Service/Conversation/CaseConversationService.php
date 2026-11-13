@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Conversation;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -164,7 +164,7 @@ class CaseConversationService {
 
 		$this->logger->info(
 			'Conversation started on case ' . $caseId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return ['ok' => true, 'conversation' => $record];

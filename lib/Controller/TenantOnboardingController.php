@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Tenant\OnboardingStepGuide;
 use OCA\Dossiq\Service\TenantOnboardingService;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -54,7 +54,7 @@ class TenantOnboardingController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly OnboardingStepGuide $guide,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

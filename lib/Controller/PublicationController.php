@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\PublicationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -59,7 +59,7 @@ class PublicationController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -87,7 +87,7 @@ class PublicationController extends Controller {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'PublicationController::publish failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'caseId' => $id]
+				['app' => AppIdentity::APP_ID, 'caseId' => $id]
 			);
 			return new JSONResponse(
 				['error' => $e->getMessage()],

@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Notification\Notifier;
 use OCA\Dossiq\Service\Stuf\NeedsInputDispatcher;
 use OCP\EventDispatcher\Event;
@@ -77,7 +77,7 @@ class StufZdsCaseConcludedListener implements IEventListener {
 	public function handle(Event $event): void {
 		// Integriq's class, optional at runtime: instanceof on an absent class is
 		// simply false, as in DeliveryConcludedListener.
-		if (($event instanceof \OCA\Integriq\Event\StufZdsCaseConcludedEvent) === false || $event->getSourceApp() !== Application::APP_ID) {
+		if (($event instanceof \OCA\Integriq\Event\StufZdsCaseConcludedEvent) === false || $event->getSourceApp() !== AppIdentity::APP_ID) {
 			return;
 		}
 

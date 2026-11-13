@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use Psr\Log\LoggerInterface;
@@ -88,7 +88,7 @@ final class RetiredActionReport {
 			$message = 'Dossiq: automatic action "' . $identifier . '" has type ' . $type
 				. ', which is retired (' . $reason . '). It is kept, but it will not run.';
 			$this->output->warning($message);
-			$this->logger->warning($message, ['app' => Application::APP_ID, 'action' => $identifier]);
+			$this->logger->warning($message, ['app' => AppIdentity::APP_ID, 'action' => $identifier]);
 		}
 	}//end reportType()
 
@@ -108,7 +108,7 @@ final class RetiredActionReport {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not read the stored automatic actions of a retired type',
-				['app' => Application::APP_ID, 'type' => $type, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'type' => $type, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}

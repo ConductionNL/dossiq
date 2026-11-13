@@ -24,8 +24,8 @@ namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -196,7 +196,7 @@ class StoppingRules {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: a stopping rule was stored but the reviewer access of its case could not be reconciled',
-				['app' => Application::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
 			);
 		}
 	}//end reconcile()
@@ -226,7 +226,7 @@ class StoppingRules {
 				uuid: $uuid,
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: a Stopping rule could not be stored', ['app' => Application::APP_ID, 'exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: a Stopping rule could not be stored', ['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]);
 			throw $this->unstored(previous: $e);
 		}
 

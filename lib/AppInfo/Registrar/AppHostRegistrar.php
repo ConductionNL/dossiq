@@ -30,8 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\AppInfo\OpenRegisterAutoloader;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Mcp\DossiqScannableServices;
 use OCA\OpenRegister\AppHost\Bootstrap;
 use OCA\OpenRegister\AppHost\LeafAdoption;
@@ -116,7 +116,7 @@ class AppHostRegistrar {
 		Bootstrap::register(
 			context: $context,
 			adoption: new LeafAdoption(
-				appId: Application::APP_ID,
+				appId: AppIdentity::APP_ID,
 				options: [
 					'namespace' => 'OCA\\Dossiq',
 					'sectionName' => 'Dossiq',

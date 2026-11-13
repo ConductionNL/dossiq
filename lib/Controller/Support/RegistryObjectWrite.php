@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller\Support;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Mandaat\MandaatRegistryService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -118,7 +118,7 @@ final class RegistryObjectWrite {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Failed to save mandate registry object (' . $schemaConfigKey . '): ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['message' => 'Failed to save: ' . $e->getMessage()],

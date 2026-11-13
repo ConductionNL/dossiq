@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer;
 use OCA\Dossiq\Service\DecisionDocument\PublicationReadiness;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
@@ -193,7 +193,7 @@ class WOODecisionService {
 
 		$this->logger->info(
 			'WOO besluit assembled for case ' . $caseId . ': decision ' . $decision->getUuid(),
-			['app' => Application::APP_ID, 'decisionRef' => $decisionRef],
+			['app' => AppIdentity::APP_ID, 'decisionRef' => $decisionRef],
 		);
 
 		$draft = null;
@@ -312,7 +312,7 @@ class WOODecisionService {
 		} catch (RuntimeException $exception) {
 			$this->logger->error(
 				'WOO besluit for case ' . $caseId . ' not raised in decidiq; failing closed: ' . $exception->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			throw new RuntimeException('Decision service unavailable: ' . $exception->getMessage(), 0, $exception);
 		}

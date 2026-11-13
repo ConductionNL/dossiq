@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 
 /**
@@ -277,7 +277,7 @@ class CommunicationChannel {
 			return $this->map;
 		}
 
-		$decoded = json_decode($this->appConfig->getValueString(Application::APP_ID, self::MAP_KEY, ''), true);
+		$decoded = json_decode($this->appConfig->getValueString(AppIdentity::APP_ID, self::MAP_KEY, ''), true);
 		if (is_array($decoded) === false) {
 			return $this->map;
 		}

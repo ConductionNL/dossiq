@@ -28,8 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Email\OutboundMailRules;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RecipientOptedOutException;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
@@ -191,7 +191,7 @@ class CaseEmailService {
 
 		$this->logger->info(
 			'Case mail not sent: integriq said this person may not be sent it',
-			['app' => Application::APP_ID, 'caseId' => $send->caseId, 'category' => $send->category, 'code' => $send->decision['code']]
+			['app' => AppIdentity::APP_ID, 'caseId' => $send->caseId, 'category' => $send->category, 'code' => $send->decision['code']]
 		);
 		throw new RecipientOptedOutException(reasonCode: $send->decision['code'], reason: $send->decision['reason']);
 	}//end assertNotOptedOut()
@@ -249,7 +249,7 @@ class CaseEmailService {
 	private function sentResult(CaseMailSend $send, string $messageId): array {
 		$this->logger->info(
 			'Email for case {caseId} handed to the Mail account: {state}',
-			['app' => Application::APP_ID, 'caseId' => $send->caseId, 'state' => $send->state],
+			['app' => AppIdentity::APP_ID, 'caseId' => $send->caseId, 'state' => $send->state],
 		);
 
 		return [
@@ -401,7 +401,7 @@ class CaseEmailService {
 		$this->logger->warning(
 			'Blocked email to a recipient outside the allow-list',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'to' => $send->recipient,
 				'caseId' => $send->caseId,
 				'allowlistEntries' => count($send->allowlistEntries),
@@ -690,7 +690,7 @@ class CaseEmailService {
 
 		$this->logger->info(
 			'Inbound email auto-linked to case ' . $caseId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return ['linked' => true, 'caseId' => $caseId, 'messageId' => $messageId, 'method' => 'auto'];

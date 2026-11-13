@@ -35,7 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -157,7 +157,7 @@ class TranscriptionService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'TranscriptionService::process transcription failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'evidenceId' => (string)($evidence['id'] ?? '')]
+				['app' => AppIdentity::APP_ID, 'evidenceId' => (string)($evidence['id'] ?? '')]
 			);
 			if ($evidence['transcriptionAttempts'] >= self::MAX_RETRIES) {
 				$evidence['transcriptionStatus'] = self::STATUS_FALLBACK;
@@ -242,7 +242,7 @@ class TranscriptionService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'TranscriptionService::persist failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 		}
 

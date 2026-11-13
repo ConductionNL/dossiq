@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Money;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Shillinq\Event\PayablesRequestedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 
@@ -78,7 +78,7 @@ class PayoutReader {
 		}
 
 		$event = new PayablesRequestedEvent(
-			sourceApp: Application::APP_ID,
+			sourceApp: AppIdentity::APP_ID,
 			correlationIds: $correlationIds,
 			category: PayoutService::CATEGORY,
 			paidInYear: $paidInYear,

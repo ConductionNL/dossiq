@@ -43,7 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Notification\Notifier;
 use OCA\Dossiq\Service\Support\CaseReadAndPatch;
 use OCP\Notification\IManager;
@@ -192,7 +192,7 @@ class CaseAssignmentService {
 
 		$this->logger->info(
 			'Dossiq CaseAssignmentService: case reassigned',
-			['app' => Application::APP_ID, 'caseId' => $caseId, 'from' => $previous, 'to' => $toUser, 'actor' => $actorId]
+			['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'from' => $previous, 'to' => $toUser, 'actor' => $actorId]
 		);
 
 		return (['previousAssignee' => $previous] + $this->describe(caseId: $caseId, userId: $actorId, assignee: $toUser));
@@ -217,7 +217,7 @@ class CaseAssignmentService {
 
 		try {
 			$notification = $this->notificationManager->createNotification();
-			$notification->setApp(Application::APP_ID)
+			$notification->setApp(AppIdentity::APP_ID)
 				->setUser($toUser)
 				->setDateTime(new DateTime())
 				->setObject('case', $caseId)
@@ -226,7 +226,7 @@ class CaseAssignmentService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq CaseAssignmentService: reassignment notification failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'toUser' => $toUser]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'toUser' => $toUser]
 			);
 		}
 	}//end notifyReceiver()

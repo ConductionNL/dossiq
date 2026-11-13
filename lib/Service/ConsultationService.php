@@ -26,8 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Consultation\ConsultationRecords;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Consultation\ConsultationTerms;
 use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
@@ -199,7 +199,7 @@ class ConsultationService {
 		$this->logger->info(
 			'Consultation created: ' . $consultationId
 			. ' (' . $data['consultationNumber'] . ') for case ' . $data['parentCase'],
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return [
@@ -288,7 +288,7 @@ class ConsultationService {
 
 		$this->logger->info(
 			'Consultation ' . $consultationId . ' status updated to ' . $newStatus,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return [
@@ -338,7 +338,7 @@ class ConsultationService {
 
 		$this->logger->info(
 			'Consultation ' . $consultationId . ' advice submitted: ' . $advies,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return [
@@ -562,7 +562,7 @@ class ConsultationService {
 
 		$this->logger->info(
 			'Extension requested for consultation ' . $consultationId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return [
@@ -606,7 +606,7 @@ class ConsultationService {
 
 		$this->logger->info(
 			'Extension approved for consultation ' . $consultationId . ', new deadline: ' . $newDeadline,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return [
@@ -689,7 +689,7 @@ class ConsultationService {
 		} catch (\RuntimeException $e) {
 			$this->logger->error(
 				'Dossiq: createConsultation: decidesk advice Decision raise failed — failing closed: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			// REQ-PDRD-002: fail closed; surface the error.
 			throw new RuntimeException('Decision service unavailable: ' . $e->getMessage(), 0, $e);

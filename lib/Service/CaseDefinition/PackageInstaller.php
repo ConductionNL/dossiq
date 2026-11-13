@@ -35,7 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseDefinition;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
@@ -462,13 +462,13 @@ class PackageInstaller {
 	 * @return void
 	 */
 	private function applySettings(array $settings): void {
-		$present = $this->appConfig->getKeys(Application::APP_ID);
+		$present = $this->appConfig->getKeys(AppIdentity::APP_ID);
 		foreach ($settings as $key => $value) {
 			if (in_array((string)$key, $present, true) === true) {
 				continue;
 			}
 
-			$this->appConfig->setValueString(Application::APP_ID, (string)$key, $this->settingValue(value: $value));
+			$this->appConfig->setValueString(AppIdentity::APP_ID, (string)$key, $this->settingValue(value: $value));
 		}
 	}//end applySettings()
 

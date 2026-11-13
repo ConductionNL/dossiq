@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
@@ -158,7 +158,7 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the basis flow rebind could not list case types',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}
@@ -183,7 +183,7 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the basis flow rebind could not list cases',
-				['app' => Application::APP_ID, 'caseType' => $binding['caseTypeId'], 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseType' => $binding['caseTypeId'], 'exception' => $e->getMessage()]
 			);
 			return [];
 		}
@@ -256,7 +256,7 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the basis flow rebind could not move a case',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'exception' => $e->getMessage()]
 			);
 			return false;
 		}

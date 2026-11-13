@@ -33,7 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Activity\CaseActivityStamp;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
@@ -133,7 +133,7 @@ class BackfillCaseLastActivity implements IRepairStep {
 	 * @spec openspec/specs/case-last-activity-at/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, '') === self::DONE) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, '') === self::DONE) {
 			return;
 		}
 
@@ -155,7 +155,7 @@ class BackfillCaseLastActivity implements IRepairStep {
 		);
 
 		if ((int)($tally['failed'] ?? 0) === 0) {
-			$this->appConfig->setValueString(Application::APP_ID, self::CONFIG_KEY, self::DONE);
+			$this->appConfig->setValueString(AppIdentity::APP_ID, self::CONFIG_KEY, self::DONE);
 		}
 	}//end run()
 
@@ -195,7 +195,7 @@ class BackfillCaseLastActivity implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the lastActivityAt backfill could not read the cases',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 			);
 			$output->info('lastActivityAt backfill: the cases could not be read, skipped.');
 			return null;
@@ -319,7 +319,7 @@ class BackfillCaseLastActivity implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the lastActivityAt backfill failed for one case',
-				['app' => Application::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
 			);
 			$run->tally['failed']++;
 		}

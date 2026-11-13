@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -159,7 +159,7 @@ class DispositionService {
 
 		$this->logger->info(
 			'Disposition submitted for complaint ' . $complaintId . ' with oordeel: ' . $data['opinion'],
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		if (is_array($disposition) === true) {
@@ -222,7 +222,7 @@ class DispositionService {
 
 		$this->logger->info(
 			'Disposition ' . $dispositionId . ' ' . $decision['approvalStatus'] . ' by ' . $decision['goedkeurder'],
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		if (is_array($result) === true) {
@@ -315,7 +315,7 @@ class DispositionService {
 		$this->logger->info(
 			'Response letter generation requested for complaint ' . $complaintId
 			. ' disposition ' . $dispositionId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return [

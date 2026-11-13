@@ -46,7 +46,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Notification\NotificationRouting;
 use InvalidArgumentException;
 use Throwable;
@@ -132,11 +132,11 @@ class DigestPreferences {
 		// silently flip every reader back to the local mirror. Here it is a
 		// caught fault with a named fallback instead, and the job keeps running.
 		try {
-			$enabled = $this->userConfig->getValueBool($userId, Application::APP_ID, self::PREF_ENABLED, true);
+			$enabled = $this->userConfig->getValueBool($userId, AppIdentity::APP_ID, self::PREF_ENABLED, true);
 			$hour = $this->hourInRange(
 				hour: $this->userConfig->getValueInt(
 					$userId,
-					Application::APP_ID,
+					AppIdentity::APP_ID,
 					self::PREF_HOUR,
 					self::DEFAULT_HOUR
 				)
@@ -180,8 +180,8 @@ class DigestPreferences {
 	public function save(string $userId, bool $enabled, int $hour): array {
 		$hour = $this->hourInRange(hour: $hour);
 		$this->routing->setDigestEnabled(userId: $userId, enabled: $enabled);
-		$this->userConfig->setValueBool($userId, Application::APP_ID, self::PREF_ENABLED, $enabled);
-		$this->userConfig->setValueInt($userId, Application::APP_ID, self::PREF_HOUR, $hour);
+		$this->userConfig->setValueBool($userId, AppIdentity::APP_ID, self::PREF_ENABLED, $enabled);
+		$this->userConfig->setValueInt($userId, AppIdentity::APP_ID, self::PREF_HOUR, $hour);
 
 		$settings = $this->forUser(userId: $userId);
 		$settings['hour'] = $hour;
@@ -220,7 +220,7 @@ class DigestPreferences {
 	 */
 	public function lastSentOn(string $userId): string {
 		try {
-			return $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_LAST_SENT, '');
+			return $this->userConfig->getValueString($userId, AppIdentity::APP_ID, self::PREF_LAST_SENT, '');
 		} catch (InvalidArgumentException $e) {
 			$this->logger->warning('Dossiq: the last digest day could not be read: ' . $e->getMessage());
 
@@ -239,7 +239,7 @@ class DigestPreferences {
 	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function markSent(string $userId, string $today): void {
-		$this->userConfig->setValueString($userId, Application::APP_ID, self::PREF_LAST_SENT, $today);
+		$this->userConfig->setValueString($userId, AppIdentity::APP_ID, self::PREF_LAST_SENT, $today);
 	}//end markSent()
 
 	/**

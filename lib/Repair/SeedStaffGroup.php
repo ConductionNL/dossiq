@@ -42,7 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Access\CaseTeamAccessProjector;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -126,7 +126,7 @@ class SeedStaffGroup implements IRepairStep {
 	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueBool(Application::APP_ID, self::MARKER, false) === true) {
+		if ($this->appConfig->getValueBool(AppIdentity::APP_ID, self::MARKER, false) === true) {
 			return;
 		}
 
@@ -153,14 +153,14 @@ class SeedStaffGroup implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the staff group could not be seeded',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 			);
 			$output->warning('Staff group: the case types or cases could not be read, seeding left for the next upgrade.');
 			return;
 		}
 
 		$added = $this->addAll(group: $group, userIds: $userIds);
-		$this->appConfig->setValueBool(Application::APP_ID, self::MARKER, true);
+		$this->appConfig->setValueBool(AppIdentity::APP_ID, self::MARKER, true);
 		$output->info('Staff group: ' . $added . ' people added to "' . self::STAFF_GROUP . '".');
 	}//end run()
 

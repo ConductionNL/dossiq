@@ -30,8 +30,8 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\People\CaseRoleHolder;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use Psr\Log\LoggerInterface;
@@ -198,7 +198,7 @@ class CaseAccessPurposeService {
 			// The purpose is recorded and the case opens; only the binding is missing.
 			$this->logger->warning(
 				'Dossiq: the roles on the case could not be read, so the reader is not bound to the role their purpose names',
-				['app' => Application::APP_ID, 'role' => $role, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'role' => $role, 'exception' => $e->getMessage()]
 			);
 			$bound = false;
 		}
@@ -217,7 +217,7 @@ class CaseAccessPurposeService {
 			);
 		} catch (RefusedException $e) {
 			// The binding stands; the trail misses only the line that says why.
-			$this->logger->warning('Dossiq: the role an access purpose added could not be written to the trail', ['app' => Application::APP_ID]);
+			$this->logger->warning('Dossiq: the role an access purpose added could not be written to the trail', ['app' => AppIdentity::APP_ID]);
 		}
 
 		return true;
@@ -242,7 +242,7 @@ class CaseAccessPurposeService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the roles on the case could not be read, so the reader is asked for a purpose',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return false;
 		}
@@ -284,7 +284,7 @@ class CaseAccessPurposeService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: an access purpose could not be recorded, so the case stays closed',
-				['app' => Application::APP_ID, 'action' => $action, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'action' => $action, 'exception' => $e->getMessage()]
 			);
 			throw $this->notRecorded(previous: $e);
 		}

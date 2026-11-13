@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Intake\CaseCompleteness;
 use OCP\AppFramework\Controller;
@@ -65,7 +65,7 @@ class CaseCompletenessController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -98,7 +98,7 @@ class CaseCompletenessController extends Controller {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: completeness of case ' . $caseId . ' could not be read: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 
 			return new JSONResponse(['message' => 'The completeness could not be read.'], Http::STATUS_SERVICE_UNAVAILABLE);

@@ -27,8 +27,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Notification\Notifier;
 use OCP\IL10N;
 use OCP\Notification\IManager as INotificationManager;
@@ -193,7 +193,7 @@ class QuotaGate {
 		foreach ($admins as $userId) {
 			try {
 				$notification = $this->notifications->createNotification();
-				$notification->setApp(Application::APP_ID)
+				$notification->setApp(AppIdentity::APP_ID)
 					->setUser($userId)
 					->setDateTime(new DateTime())
 					->setObject('tenant', $tenantId)
@@ -227,7 +227,7 @@ class QuotaGate {
 		$rows = $objectService->findAll(
 			[
 				'filters' => [
-					'register' => Application::REGISTER_SLUG,
+					'register' => AppIdentity::REGISTER_SLUG,
 					'schema' => 'tenantUser',
 					'tenantRef' => $tenantId,
 					'role' => self::ADMIN_ROLE,

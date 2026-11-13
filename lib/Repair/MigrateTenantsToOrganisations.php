@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantMigrationService;
@@ -175,7 +175,7 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 		do {
 			$rows = (array) $objectService->findAll(
 				[
-					'filters' => ['register' => Application::REGISTER_SLUG, 'schema' => 'tenantUser'],
+					'filters' => ['register' => AppIdentity::REGISTER_SLUG, 'schema' => 'tenantUser'],
 					'limit' => self::PAGE,
 					'offset' => $offset,
 				]

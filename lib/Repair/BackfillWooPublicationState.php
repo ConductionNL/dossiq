@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooResultLink;
@@ -106,7 +106,7 @@ class BackfillWooPublicationState implements IRepairStep {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, '') === self::VERSION) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, '') === self::VERSION) {
 			return;
 		}
 
@@ -136,7 +136,7 @@ class BackfillWooPublicationState implements IRepairStep {
 		);
 
 		if ($tally['failed'] === 0 && $tally['readable'] === true) {
-			$this->appConfig->setValueString(Application::APP_ID, self::CONFIG_KEY, self::VERSION);
+			$this->appConfig->setValueString(AppIdentity::APP_ID, self::CONFIG_KEY, self::VERSION);
 		}
 	}//end run()
 
@@ -196,7 +196,7 @@ class BackfillWooPublicationState implements IRepairStep {
 			} catch (Throwable $e) {
 				$this->logger->warning(
 					'Dossiq: the Woo publication state backfill could not read the decisions',
-					['app' => Application::APP_ID, 'error' => $e->getMessage()]
+					['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 				);
 				$tally['readable'] = false;
 				break;
@@ -249,7 +249,7 @@ class BackfillWooPublicationState implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the Woo publication state backfill could not write a case',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
 			);
 			return 'failed';
 		}

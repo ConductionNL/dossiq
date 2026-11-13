@@ -34,7 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Conversation;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -141,7 +141,7 @@ class MajorCaseDeclaration {
 
 		$this->logger->info(
 			'Case ' . $run->caseId . ' declared major, ' . count($run->responders) . ' responders pulled in',
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return ['ok' => true, 'alreadyMajor' => false, 'channel' => $channel];

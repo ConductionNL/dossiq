@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Notification;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\QuotaLimitLabel;
 use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
@@ -224,7 +224,7 @@ class Notifier implements INotifier {
 	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 	 */
 	public function getID(): string {
-		return Application::APP_ID;
+		return AppIdentity::APP_ID;
 	}//end getID()
 
 	/**
@@ -251,7 +251,7 @@ class Notifier implements INotifier {
 	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 	 */
 	public function prepare(INotification $notification, string $languageCode): INotification {
-		if ($notification->getApp() !== Application::APP_ID) {
+		if ($notification->getApp() !== AppIdentity::APP_ID) {
 			throw new UnknownNotificationException('Notification not handled by Dossiq');
 		}
 
@@ -262,7 +262,7 @@ class Notifier implements INotifier {
 
 		$text = new NotificationText();
 		$text->subjectKey = $subjectKey;
-		$text->l = $this->l10nFactory->get(Application::APP_ID, $languageCode);
+		$text->l = $this->l10nFactory->get(AppIdentity::APP_ID, $languageCode);
 		$text->parameters = $notification->getSubjectParameters();
 
 		[$subject, $message] = $this->wording(text: $text);
@@ -270,7 +270,7 @@ class Notifier implements INotifier {
 		$notification->setParsedSubject($subject);
 		$notification->setParsedMessage($message);
 		$notification->setIcon(
-			$this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath(Application::APP_ID, 'app-dark.svg'))
+			$this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath(AppIdentity::APP_ID, 'app-dark.svg'))
 		);
 
 		return $notification;

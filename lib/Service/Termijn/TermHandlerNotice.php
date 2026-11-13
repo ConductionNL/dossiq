@@ -36,7 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Notification\Notifier;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -162,7 +162,7 @@ class TermHandlerNotice {
 
 		$notification = $this->notifications->createNotification();
 		$notification
-			->setApp(Application::APP_ID)
+			->setApp(AppIdentity::APP_ID)
 			->setUser($assignee)
 			->setDateTime(new DateTime())
 			->setObject('case', $params['caseId'])

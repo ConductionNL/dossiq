@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Settings;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Prerequisites;
 use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
@@ -79,7 +79,7 @@ class AdminSettings implements IDelegatedSettings {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getForm(): TemplateResponse {
-		$version = $this->appManager->getAppVersion(appId: Application::APP_ID);
+		$version = $this->appManager->getAppVersion(appId: AppIdentity::APP_ID);
 
 		$this->initialState->provideInitialState('version', $version);
 		// What this instance actually has, read at page load and never cached.
@@ -137,7 +137,7 @@ class AdminSettings implements IDelegatedSettings {
 		);
 
 		return new TemplateResponse(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'settings/admin',
 			[]
 		);

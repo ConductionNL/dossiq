@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Support\CastArray;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -104,7 +104,7 @@ class DoorverbindingService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to initiate doorverbinding: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			throw new RuntimeException('Could not initiate doorverbinding');
 		}
@@ -247,7 +247,7 @@ class DoorverbindingService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to update doorverbinding: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			throw new RuntimeException('Could not update doorverbinding');
 		}

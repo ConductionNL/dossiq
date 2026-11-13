@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -69,7 +69,7 @@ class CaseReplyDraftController extends Controller {
 		private readonly IConfig $config,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -89,7 +89,7 @@ class CaseReplyDraftController extends Controller {
 		}
 
 		$stored = json_decode(
-			json: $this->config->getUserValue(userId: $user->getUID(), appName: Application::APP_ID, key: $this->keyOf(caseId: $id), default: ''),
+			json: $this->config->getUserValue(userId: $user->getUID(), appName: AppIdentity::APP_ID, key: $this->keyOf(caseId: $id), default: ''),
 			associative: true
 		);
 		if (is_array($stored) === false) {
@@ -125,14 +125,14 @@ class CaseReplyDraftController extends Controller {
 
 		$key = $this->keyOf(caseId: $id);
 		if (trim(string: $text) === '') {
-			$this->config->deleteUserValue(userId: $user->getUID(), appName: Application::APP_ID, key: $key);
+			$this->config->deleteUserValue(userId: $user->getUID(), appName: AppIdentity::APP_ID, key: $key);
 			return new JSONResponse(['text' => '', 'savedAt' => '']);
 		}
 
 		$savedAt = (new DateTimeImmutable())->format(format: DATE_ATOM);
 		$this->config->setUserValue(
 			userId: $user->getUID(),
-			appName: Application::APP_ID,
+			appName: AppIdentity::APP_ID,
 			key: $key,
 			value: (string)json_encode(value: ['text' => $text, 'savedAt' => $savedAt])
 		);
