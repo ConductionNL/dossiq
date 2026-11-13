@@ -212,8 +212,8 @@
         "digest": "19c4aefae8b73c710df4be1b07850a503dd462550ec7c48479b9bbdcc4d18144"
     },
     "lib/Settings/dossiq_mock_register.json::dwangsomUitbetaling": {
-        "version": "1.1.0",
-        "digest": "d5a67ebb01e2387720984895afa8084f75e4c312152ef5458d298164c2fb7807"
+        "version": "1.2.0",
+        "digest": "ff811eed285e8ba39a023c5c61a6954fd7080c27cd5ba5eb0728ce49770ac1ff"
     },
     "lib/Settings/dossiq_mock_register.json::emailTemplate": {
         "version": "1.0.0",
@@ -352,8 +352,8 @@
         "digest": "76f3c06318d477deaa916d4d5e235b3f4ad3fd3f10c9f07977d4e329697fe34d"
     },
     "lib/Settings/dossiq_mock_register.json::noticeOfDefault": {
-        "version": "1.1.0",
-        "digest": "01ef037db6330ca2fc624c6d0e6b4719511c1f1ec72f1320c48a4204b5eb1998"
+        "version": "1.2.0",
+        "digest": "96e4d2ebb9dc61c5ae2fdf2694c2df2c595a896eec2f0ba7984594fb5d25abc1"
     },
     "lib/Settings/dossiq_mock_register.json::notificationChannel": {
         "version": "1.0.0",
@@ -380,8 +380,8 @@
         "digest": "534086a61ec06bd26b058b529829a422fd14face6bc64a70d084c27bac137498"
     },
     "lib/Settings/dossiq_mock_register.json::penaltyPaymentCalculation": {
-        "version": "1.1.0",
-        "digest": "0cc249c6a7984584e891c79af604b9a18114668eae59c22ab27e692fd58d88bc"
+        "version": "1.2.0",
+        "digest": "c31a43fd4a12768785e0be5a76e180b7a0edefa1b92acfb2355628b839ec6950"
     },
     "lib/Settings/dossiq_mock_register.json::portaalBericht": {
         "version": "1.0.0",
@@ -1232,16 +1232,16 @@
         "digest": "425910e0859b4adc65eab5ad4c8975e09c15a806b9992831b8d4d5671e2ae24a"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::dwangsomUitbetaling": {
-        "version": "1.1.0",
-        "digest": "07eefb766e6f75a558f5d26fca5c4d2c344de6f6de84e8a71aebb3f8d6028068"
+        "version": "1.2.0",
+        "digest": "b4eca65ce45e2c5b330c62f962b1bd17aac727d1f89eda65ea7139a7767c7729"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::noticeOfDefault": {
-        "version": "1.2.0",
-        "digest": "59e7a80ed4c1e91ce6b9691df689397d59f6751cad2a09b9dc64abb787656d8d"
+        "version": "1.3.0",
+        "digest": "fbc145b8f5ef5f0454d79ce5be79e9941f0b5d2189be2821bd77995660654dd9"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::penaltyPaymentCalculation": {
-        "version": "1.1.0",
-        "digest": "6c0fd83571a1c52b55bb1f7a0d4fd079c9215d85d08be801c47b97d583574476"
+        "version": "1.2.0",
+        "digest": "78185a62cb4923b125468417acd03408527faea2ed31fa0c1949a21521e8e15b"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::termijnGebeurtenis": {
         "version": "1.2.1",
