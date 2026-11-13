@@ -26,6 +26,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Queue\Source\ConsultationSource
  * @uses \OCA\Dossiq\Service\Queue\Source\RegisterBackedSource
  * @uses \OCA\Dossiq\Service\Queue\QueueItem
+ * @uses \OCA\Dossiq\Service\Queue\Source\WaitingRequestRows
  */
 class AdviceQueueRowsTest extends TestCase {
 

@@ -38,6 +38,7 @@ use Psr\Log\LoggerInterface;
  * Golden tests for CaseEmailService::recordSentEmail().
  *
  * @covers \OCA\Dossiq\Service\CaseEmailService
+ * @uses \OCA\Dossiq\Service\Email\SentCaseMail
  */
 class CaseEmailSentRecordGoldenTest extends TestCase {
 

@@ -57,6 +57,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\Custody\StoredInstant
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseTakeoverEscalationTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -81,6 +81,7 @@ class LhsStoreObjectService {
  * @covers \OCA\Dossiq\Service\Vth\LhsRecommendationStore
  *
  * @spec openspec/specs/enforcement-lhs/spec.md
+ * @uses \OCA\Dossiq\Service\Support\ObjectArray
  */
 class LhsRecommendationStoreTest extends TestCase {
 

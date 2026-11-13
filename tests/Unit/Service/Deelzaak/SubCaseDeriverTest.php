@@ -48,6 +48,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Deelzaak\SubCaseDeriver
  * @uses \OCA\Dossiq\Service\Deelzaak\SubCaseStore
  * @uses \OCA\Dossiq\Service\Deelzaak\SubCaseLink
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class SubCaseDeriverTest extends TestCase {
 

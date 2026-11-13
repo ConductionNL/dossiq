@@ -47,6 +47,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
  * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class OutstandingDocumentsTest extends TestCase {
 

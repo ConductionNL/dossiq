@@ -44,6 +44,9 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\CaseType\InheritedRowValues
  * @uses \OCA\Dossiq\Listener\Support\PreSaveCheck
  * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
+ * @uses \OCA\Dossiq\Listener\BezwaarDecisionListener
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseInheritedDeadlineListenerTest extends TestCase {
 

@@ -36,6 +36,7 @@ use Psr\Log\NullLogger;
  * @uses   \OCA\Dossiq\Service\Subsidie\SubsidieSchemaLookup
  * @uses   \OCA\Dossiq\Service\Subsidie\CofinancieringValidator
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class SubsidieServicePersistenceTest extends TestCase {
 

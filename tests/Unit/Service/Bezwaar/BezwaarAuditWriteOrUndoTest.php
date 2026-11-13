@@ -27,6 +27,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
  * @uses   \OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException
  * @uses   \OCA\Dossiq\Service\Support\ObjectAuditEvents
+ * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarEntryCommand
  */
 class BezwaarAuditWriteOrUndoTest extends TestCase {
 	use MakesBezwaarAuditTrail;

@@ -46,6 +46,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\Workflow\WorkflowTemplateFlowMigrator
  *
  * @spec openspec/changes/page-topology-cleanup/tasks.md
+ * @uses \OCA\Dossiq\Service\Flow\FlowMigrationSummary
  */
 class FlowMigrationSummaryCopiesTest extends TestCase {
 	/**

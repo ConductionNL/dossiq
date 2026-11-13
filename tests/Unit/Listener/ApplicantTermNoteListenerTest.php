@@ -54,6 +54,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses   \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class ApplicantTermNoteListenerTest extends TestCase {
 

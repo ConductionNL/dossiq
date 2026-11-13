@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\Lifecycle\DossierDocumentStore;
 use OCA\Dossiq\Service\Lifecycle\LifecycleCaseTypeRules;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -40,6 +41,7 @@ use stdClass;
  */
 #[CoversClass(LifecycleCaseTypeRules::class)]
 #[CoversClass(DossierDocumentStore::class)]
+#[UsesClass(\OCA\Dossiq\Service\Import\RecordImportStore::class)]
 final class LifecycleCaseTypeRulesTest extends TestCase {
 	/**
 	 * Rules over an object service holding the given case type rows.
