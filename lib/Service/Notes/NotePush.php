@@ -67,7 +67,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Notes;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -289,7 +289,7 @@ class NotePush {
 		$eventClass = '\\' . self::DELIVERY_EVENT;
 
 		return new $eventClass(
-			sourceApp: Application::APP_ID,
+			sourceApp: AppIdentity::APP_ID,
 			subjectRegister: '',
 			subjectSchema: '',
 			subjectId: $attempt->caseId,

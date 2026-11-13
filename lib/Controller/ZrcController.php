@@ -32,8 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\CaseHeldException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentJoinHoming;
@@ -104,7 +104,7 @@ class ZrcController extends ZgwController {
 		private readonly ZrcStatusEffects $statusEffects,
 		private readonly DocumentJoinHoming $joinHoming,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

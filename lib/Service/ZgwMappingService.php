@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
@@ -112,7 +112,7 @@ class ZgwMappingService {
 	 */
 	public function getMapping(string $resourceKey): ?array {
 		$json = $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::CONFIG_PREFIX . $resourceKey,
 			''
 		);
@@ -143,7 +143,7 @@ class ZgwMappingService {
 		$json = json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
 		$this->appConfig->setValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::CONFIG_PREFIX . $resourceKey,
 			$json
 		);
@@ -185,7 +185,7 @@ class ZgwMappingService {
 	 */
 	public function deleteMapping(string $resourceKey): void {
 		$configKey = self::CONFIG_PREFIX . $resourceKey;
-		$this->appConfig->deleteKey(app: Application::APP_ID, key: $configKey);
+		$this->appConfig->deleteKey(app: AppIdentity::APP_ID, key: $configKey);
 
 		$this->logger->info(
 			'ZGW mapping deleted',

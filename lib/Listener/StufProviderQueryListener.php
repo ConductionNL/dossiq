@@ -39,7 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
@@ -112,7 +112,7 @@ class StufProviderQueryListener implements IEventListener {
 		}
 
 		$event->refuse(
-			appId: Application::APP_ID,
+			appId: AppIdentity::APP_ID,
 			reason: 'Dossiq neemt geen zaak- of documentwijzigingen aan via StUF; gebruik de API van dossiq.'
 		);
 	}//end handle()
@@ -128,7 +128,7 @@ class StufProviderQueryListener implements IEventListener {
 	private function answerCaseQuery(\OCA\Integriq\Event\StufCaseQueryEvent $event, array $endpoint): void {
 		$identificatie = trim((string)($event->getCriteria()['identificatie'] ?? ''));
 		if ($identificatie === '') {
-			$event->refuse(appId: Application::APP_ID, reason: 'Dossiq beantwoordt een zakLv01 alleen op identificatie.');
+			$event->refuse(appId: AppIdentity::APP_ID, reason: 'Dossiq beantwoordt een zakLv01 alleen op identificatie.');
 			return;
 		}
 
@@ -152,7 +152,7 @@ class StufProviderQueryListener implements IEventListener {
 			);
 		}
 
-		$event->answerCases(appId: Application::APP_ID, cases: $answer);
+		$event->answerCases(appId: AppIdentity::APP_ID, cases: $answer);
 	}//end answerCaseQuery()
 
 	/**
@@ -165,7 +165,7 @@ class StufProviderQueryListener implements IEventListener {
 	private function answerPersonQuery(\OCA\Integriq\Event\StufPersonQueryEvent $event): void {
 		$bsn = trim($event->getBsn());
 		if (preg_match('/^\d{9}$/', $bsn) !== 1) {
-			$event->refuse(appId: Application::APP_ID, reason: 'Een npsLv01 vraagt naar een BSN van negen cijfers.');
+			$event->refuse(appId: AppIdentity::APP_ID, reason: 'Een npsLv01 vraagt naar een BSN van negen cijfers.');
 			return;
 		}
 
@@ -182,7 +182,7 @@ class StufProviderQueryListener implements IEventListener {
 			);
 		}
 
-		$event->answerPersons(appId: Application::APP_ID, persons: $persons);
+		$event->answerPersons(appId: AppIdentity::APP_ID, persons: $persons);
 	}//end answerPersonQuery()
 
 	/**

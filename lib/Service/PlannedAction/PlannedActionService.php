@@ -36,7 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\PlannedAction;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -327,7 +327,7 @@ class PlannedActionService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq PlannedActionService: could not read ' . $slug . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return [];
 		}
@@ -364,7 +364,7 @@ class PlannedActionService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq PlannedActionService: could not write a planned action: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}

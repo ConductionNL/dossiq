@@ -34,7 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
@@ -279,7 +279,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 			// slugs: see SURFACE_SCHEMA_SLUGS for what mixing them cost.
 			$objects = $this->searchObjectsAsArrays(
 				objectService: $objectService,
-				register: Application::REGISTER_SLUG,
+				register: AppIdentity::REGISTER_SLUG,
 				schema: $schemaSlug,
 				filters: ['_limit' => 500],
 			);
@@ -356,7 +356,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 					updates: ['decisionRef' => $newRef],
 					schemaSlug: $schemaSlug,
 				),
-				register: Application::REGISTER_SLUG,
+				register: AppIdentity::REGISTER_SLUG,
 				schema: $schemaSlug,
 				uuid: $objUuid,
 			);

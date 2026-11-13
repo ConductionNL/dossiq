@@ -35,8 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Controller\Support\IntakeRoleGate;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Email\BounceAction;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Email\Filters\FilterPipeline;
@@ -115,7 +115,7 @@ class MailIntakeController extends Controller {
 		private readonly ITimeFactory $time,
 		private readonly CaseAccessGuard $caseAccessGuard,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

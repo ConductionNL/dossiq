@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Stuf;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\App\IAppManager;
 use OCP\AppFramework\IAppContainer;
 use OCP\IAppConfig;
@@ -201,7 +201,7 @@ class StufRegisterAccess {
 	 * @return string The register id.
 	 */
 	private function getRegisterId(): string {
-		return $this->appConfig->getValueString(app: Application::APP_ID, key: 'register', default: '');
+		return $this->appConfig->getValueString(app: AppIdentity::APP_ID, key: 'register', default: '');
 	}//end getRegisterId()
 
 	/**

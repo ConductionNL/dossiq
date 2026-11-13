@@ -31,7 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
@@ -167,7 +167,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 			// the associative arrays this loop expects.
 			return $this->searchObjectsAsArrays(
 				objectService: $run->objectService,
-				register: Application::REGISTER_SLUG,
+				register: AppIdentity::REGISTER_SLUG,
 				schema: 'case',
 				filters: $this->caseTypeFilters(caseTypeSlug: $caseTypeSlug),
 			);
@@ -257,7 +257,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 				contractRef: (string)($case['contractRef'] ?? ''),
 				decisionType: $this->mapCaseTypeToDecisionType(caseTypeSlug: $caseTypeSlug),
 				subject: [
-					'subjectRegister' => Application::REGISTER_SLUG,
+					'subjectRegister' => AppIdentity::REGISTER_SLUG,
 					'subjectSchema' => 'case',
 					'subjectId' => $caseUuid,
 					'subjectLabel' => (string)($case['title'] ?? $caseTypeSlug),
@@ -276,7 +276,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 					updates: ['decisionRef' => $newDecisionRef],
 					schemaSlug: 'case',
 				),
-				register: Application::REGISTER_SLUG,
+				register: AppIdentity::REGISTER_SLUG,
 				schema: 'case',
 				uuid: $caseUuid,
 			);

@@ -34,7 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Drafts;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Access\CaseRecordLookup;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
@@ -239,7 +239,7 @@ class CaseDocumentDrafts {
 				],
 				'metadata' => $this->metadata(declaration: $declaration),
 			],
-			requestingApp: Application::APP_ID
+			requestingApp: AppIdentity::APP_ID
 		);
 	}//end requestEvent()
 

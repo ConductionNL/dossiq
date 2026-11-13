@@ -39,7 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseEmailMatchService;
 use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -111,14 +111,14 @@ class CaseEmailMatchJob extends TimedJob {
 				$this->preferences->writeStatus(userId: (string)$userId, linked: 0, scanned: 0, error: 'run_failed');
 				$this->logger->warning(
 					'Dossiq: email case matching failed for one user, continuing with the next: ' . $e->getMessage(),
-					['app' => Application::APP_ID, 'userId' => (string)$userId]
+					['app' => AppIdentity::APP_ID, 'userId' => (string)$userId]
 				);
 			}
 		}
 
 		$this->logger->info(
 			'Dossiq: email case matching complete',
-			['app' => Application::APP_ID, 'linked' => $linked, 'scanned' => $scanned, 'failures' => $failures]
+			['app' => AppIdentity::APP_ID, 'linked' => $linked, 'scanned' => $scanned, 'failures' => $failures]
 		);
 	}//end run()
 }//end class

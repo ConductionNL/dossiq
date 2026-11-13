@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseCollaborationService;
 use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\CaseTransferService;
@@ -121,7 +121,7 @@ class CaseFederationController extends Controller {
 		private IThrottler $throttler,
 		private LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\SentimentService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
@@ -174,7 +174,7 @@ class SentimentAnalysisJob extends TimedJob {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: sentiment job could not load contactmomenten: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			return null;
 		}
@@ -196,7 +196,7 @@ class SentimentAnalysisJob extends TimedJob {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: sentiment scoring failed for a contactmoment: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 		}
 	}//end scoreContact()

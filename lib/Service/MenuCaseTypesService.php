@@ -34,7 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\CaseType\SupersededCaseTypes;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -340,7 +340,7 @@ class MenuCaseTypesService {
 	public function chosen(string $userId, array $visible): array {
 		$stored = $this->config->getUserValue(
 			userId: $userId,
-			appName: Application::APP_ID,
+			appName: AppIdentity::APP_ID,
 			key: self::USER_KEY,
 			default: ''
 		);

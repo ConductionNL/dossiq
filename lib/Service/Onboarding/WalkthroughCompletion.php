@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Onboarding;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IConfig;
 use OCP\IUserSession;
 
@@ -91,7 +91,7 @@ class WalkthroughCompletion {
 
 		$value = $this->config->getUserValue(
 			userId: $user->getUID(),
-			appName: Application::APP_ID,
+			appName: AppIdentity::APP_ID,
 			key: 'pref_'.self::PREFERENCE_KEY,
 			default: ''
 		);

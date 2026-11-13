@@ -37,7 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\EmailArchivalService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -109,7 +109,7 @@ class EmailPdfRetryJob extends TimedJob {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'EmailPdfRetryJob failed',
-				['error' => $e->getMessage(), 'app' => Application::APP_ID]
+				['error' => $e->getMessage(), 'app' => AppIdentity::APP_ID]
 			);
 		}//end try
 	}//end run()

@@ -33,7 +33,7 @@ namespace OCA\Dossiq\Service;
 
 use DomainException;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
@@ -228,7 +228,7 @@ class ZaakdossierService {
 
 		$this->logger->info(
 			'Dossiq dossier: uploaded informatieobject ' . $infoId . ' for case ' . $caseId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return [

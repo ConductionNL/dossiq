@@ -37,7 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Assistant;
 
 use Exception;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IConfig;
@@ -116,7 +116,7 @@ class CaseAssistantService {
 		$summary = $this->buildCaseSummary(caseData: $caseData);
 
 		$sessionKey = self::SESSION_CONFIG_PREFIX . $caseId;
-		$sessionId = $this->config->getUserValue($userId, Application::APP_ID, $sessionKey, '');
+		$sessionId = $this->config->getUserValue($userId, AppIdentity::APP_ID, $sessionKey, '');
 		if ($sessionId === '') {
 			$sessionId = null;
 		}
@@ -142,7 +142,7 @@ class CaseAssistantService {
 		$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
 
 		if ($result['sessionId'] !== '') {
-			$this->config->setUserValue($userId, Application::APP_ID, $sessionKey, $result['sessionId']);
+			$this->config->setUserValue($userId, AppIdentity::APP_ID, $sessionKey, $result['sessionId']);
 		}
 
 		$this->auditService->recordAssistantAuditEntry(
@@ -215,7 +215,7 @@ class CaseAssistantService {
 		} catch (Throwable $e) {
 			$this->logger->info(
 				'CaseAssistantService: case load failed',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
 			);
 			throw new Exception('Case not found: ' . $caseId, 404);
 		}

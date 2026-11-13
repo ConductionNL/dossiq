@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
@@ -238,7 +238,7 @@ class ComplaintAnalyticsService {
 		if (empty($systemicIssues) === false) {
 			$this->logger->warning(
 				'Systemic complaint issues detected: ' . count($systemicIssues) . ' categories flagged',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 		}
 
@@ -291,7 +291,7 @@ class ComplaintAnalyticsService {
 
 			$this->logger->warning(
 				'Employee complaint threshold exceeded: ' . $count . ' complaints in 6 months',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 		}//end foreach
 

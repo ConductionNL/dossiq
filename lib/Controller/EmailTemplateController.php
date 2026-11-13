@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
@@ -109,7 +109,7 @@ class EmailTemplateController extends Controller {
 		private readonly MailGatewayInterface $mailGateway,
 		private readonly SenderBlocklist $blocklist,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -282,7 +282,7 @@ class EmailTemplateController extends Controller {
 
 		$values = [];
 		foreach (self::IMAP_KEYS as $key) {
-			$values[$key] = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+			$values[$key] = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 		}
 
 		return new JSONResponse($values);
@@ -338,7 +338,7 @@ class EmailTemplateController extends Controller {
 			// placeholder that meant "unchanged" went with it: a form that still
 			// understood it would accept three asterisks as a value for a key
 			// that is no longer a credential.
-			$this->appConfig->setValueString(Application::APP_ID, $key, (string)$value);
+			$this->appConfig->setValueString(AppIdentity::APP_ID, $key, (string)$value);
 		}//end foreach
 
 		return new JSONResponse(['saved' => true]);

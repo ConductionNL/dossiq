@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -115,7 +115,7 @@ class BezwaarLifecycleListener implements IEventListener {
 		$this->logger->debug(
 			'Dossiq bezwaar-lifecycle: observed ' . $schemaSlug . ' ' . $event::class,
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'schema' => $schemaSlug,
 				'objectId' => (string)($payload['id'] ?? ''),
 				'caseId' => (string)($payload['case'] ?? ''),

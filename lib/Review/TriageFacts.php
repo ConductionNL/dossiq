@@ -23,8 +23,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use Psr\Log\LoggerInterface;
@@ -100,7 +100,7 @@ class TriageFacts {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the provenance of a document could not be read, so the triage rules were not applied',
-				['app' => Application::APP_ID, 'case' => $caseId, 'document' => $documentId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'document' => $documentId, 'exception' => $e->getMessage()]
 			);
 			throw new RefusedException(
 				rule: 'triage-rule-unavailable',

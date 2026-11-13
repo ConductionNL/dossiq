@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Publication;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IL10N;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -109,7 +109,7 @@ class WithheldListRecorder {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'The withheld list could not be recorded in opencatalogi; the publication stands',
-				['app' => Application::APP_ID, 'publicationId' => $publicationId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'publicationId' => $publicationId, 'error' => $e->getMessage()],
 			);
 			return ['status' => 'not-recorded', 'reason' => self::REASON_FAILED];
 		}

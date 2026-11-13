@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Repair\Support\RepairSchema;
 use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
@@ -98,7 +98,7 @@ class RecolourShippedStatusTypes implements IRepairStep {
 	 * @spec openspec/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
 			return;
 		}
 
@@ -131,7 +131,7 @@ class RecolourShippedStatusTypes implements IRepairStep {
 		}
 
 		if ($tally['failed'] === 0) {
-			$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
+			$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::DONE_VERSION);
 		}
 
 		$output->info('Dossiq status colours: ' . $tally['changed'] . ' shipped status(es) took their board colour, '
@@ -163,14 +163,14 @@ class RecolourShippedStatusTypes implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq status colours: status ' . $rowId . ' could not be recoloured and keeps its colour until the next run',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()],
 			);
 			return 'failed';
 		}
 
 		$this->logger->info(
 			sprintf('Dossiq status colours: status %s (%s) is now %s', $rowId, (string)($row['name'] ?? ''), $colour),
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return 'changed';

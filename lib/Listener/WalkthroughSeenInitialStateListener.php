@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Onboarding\WalkthroughCompletion;
 use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
 use OCP\AppFramework\Services\IInitialState;
@@ -70,7 +70,7 @@ class WalkthroughSeenInitialStateListener implements IEventListener {
 	public function handle(Event $event): void {
 		if ($event instanceof BeforeTemplateRenderedEvent === false
 			|| $event->isLoggedIn() === false
-			|| $event->getResponse()->getApp() !== Application::APP_ID
+			|| $event->getResponse()->getApp() !== AppIdentity::APP_ID
 		) {
 			return;
 		}

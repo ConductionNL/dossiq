@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Settings\SettingValueRules;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
@@ -70,7 +70,7 @@ class DisplaySettingsInitialStateListener implements IEventListener {
 	public function handle(Event $event): void {
 		if ($event instanceof BeforeTemplateRenderedEvent === false
 			|| $event->isLoggedIn() === false
-			|| $event->getResponse()->getApp() !== Application::APP_ID
+			|| $event->getResponse()->getApp() !== AppIdentity::APP_ID
 		) {
 			return;
 		}

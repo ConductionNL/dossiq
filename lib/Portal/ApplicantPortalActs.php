@@ -48,7 +48,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Notification\Notifier;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
@@ -129,7 +129,7 @@ class ApplicantPortalActs {
 		if (isset(self::WRITE_ACTS[$act]) === false) {
 			$this->logger->warning(
 				'Dossiq: a portal write on case {case} names an act this app does not know, {act}',
-				['app' => Application::APP_ID, 'case' => $caseId, 'act' => $act],
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'act' => $act],
 			);
 			return false;
 		}
@@ -296,7 +296,7 @@ class ApplicantPortalActs {
 		}
 
 		$notification = $this->notificationManager->createNotification();
-		$notification->setApp(Application::APP_ID)
+		$notification->setApp(AppIdentity::APP_ID)
 			->setUser($assignee)
 			->setDateTime(new DateTime())
 			->setObject('case', $caseId)

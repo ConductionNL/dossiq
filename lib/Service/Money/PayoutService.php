@@ -35,7 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
@@ -76,7 +76,7 @@ class PayoutService {
 	 * @var array<string, string>
 	 */
 	private const CASE_LINK = [
-		'app' => Application::APP_ID,
+		'app' => AppIdentity::APP_ID,
 		'type' => 'case',
 		'register' => CasePaymentReader::CASE_REGISTER,
 		'schema' => CasePaymentReader::CASE_SCHEMA,

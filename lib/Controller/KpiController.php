@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Dashboard\DashboardWidgetScope;
 use OCA\Dossiq\Service\KpiAggregationService;
 use OCP\AppFramework\Controller;
@@ -92,8 +92,8 @@ class KpiController extends Controller {
 		private DashboardWidgetScope $widgetScope,
 		private LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
-		$this->cache = $cacheFactory->createLocal(Application::APP_ID);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
+		$this->cache = $cacheFactory->createLocal(AppIdentity::APP_ID);
 	}//end __construct()
 
 	/**

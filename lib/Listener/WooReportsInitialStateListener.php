@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
 use OCP\AppFramework\Services\IInitialState;
@@ -72,7 +72,7 @@ class WooReportsInitialStateListener implements IEventListener {
 	public function handle(Event $event): void {
 		if ($event instanceof BeforeTemplateRenderedEvent === false
 			|| $event->isLoggedIn() === false
-			|| $event->getResponse()->getApp() !== Application::APP_ID
+			|| $event->getResponse()->getApp() !== AppIdentity::APP_ID
 		) {
 			return;
 		}

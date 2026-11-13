@@ -29,8 +29,8 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -156,7 +156,7 @@ class TenantQuotaService {
 			try {
 				$row = $objectService->saveObject(
 					object: $object,
-					register: Application::REGISTER_SLUG,
+					register: AppIdentity::REGISTER_SLUG,
 					schema: 'tenantQuota',
 					uuid: null,
 				);
@@ -220,7 +220,7 @@ class TenantQuotaService {
 		// `filters`; limit/offset are top-level config keys.
 		return [
 			'filters' => [
-				'register' => Application::REGISTER_SLUG,
+				'register' => AppIdentity::REGISTER_SLUG,
 				'schema' => 'tenantQuota',
 				'tenantRef' => $tenantId,
 				'quotaType' => $quotaType,
@@ -482,7 +482,7 @@ class TenantQuotaService {
 
 			$objectService->saveObject(
 				object: $quota,
-				register: Application::REGISTER_SLUG,
+				register: AppIdentity::REGISTER_SLUG,
 				schema: 'tenantQuota',
 				uuid: $uuidArg
 			);

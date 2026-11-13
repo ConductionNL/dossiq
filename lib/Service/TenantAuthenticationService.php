@@ -29,9 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -248,7 +248,7 @@ class TenantAuthenticationService {
 		// `filters`; limit/offset are top-level config keys.
 		return [
 			'filters' => [
-				'register' => Application::REGISTER_SLUG,
+				'register' => AppIdentity::REGISTER_SLUG,
 				'schema' => 'tenantMandate',
 				'tenantRef' => $tenantId,
 			],
@@ -366,7 +366,7 @@ class TenantAuthenticationService {
 		// above; register/schema live inside `filters`.
 		return [
 			'filters' => [
-				'register' => Application::REGISTER_SLUG,
+				'register' => AppIdentity::REGISTER_SLUG,
 				'schema' => 'tenantUser',
 				'tenantRef' => $tenantId,
 				'userRef' => $userId,
@@ -468,7 +468,7 @@ class TenantAuthenticationService {
 	private function membershipQuery(string $userId): array {
 		return [
 			'filters' => [
-				'register' => Application::REGISTER_SLUG,
+				'register' => AppIdentity::REGISTER_SLUG,
 				'schema' => 'tenantUser',
 				'userRef' => $userId,
 			],

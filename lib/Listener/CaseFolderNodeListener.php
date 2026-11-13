@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -97,7 +97,7 @@ class CaseFolderNodeListener implements IEventListener {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq documents: the projection of a file event failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'exception' => $e],
+				['app' => AppIdentity::APP_ID, 'exception' => $e],
 			);
 		}
 	}//end handle()

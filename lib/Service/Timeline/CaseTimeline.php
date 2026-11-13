@@ -46,7 +46,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Timeline;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
@@ -441,7 +441,7 @@ class CaseTimeline {
 			if ($object === null) {
 				$this->logger->warning(
 					'Dossiq timeline: related case {case} could not be read, so the entry was not written on it',
-					['app' => Application::APP_ID, 'case' => $relatedId],
+					['app' => AppIdentity::APP_ID, 'case' => $relatedId],
 				);
 				continue;
 			}
@@ -505,7 +505,7 @@ class CaseTimeline {
 		$this->logger->warning(
 			'Dossiq timeline: no {kind} entry was written on case {case}, {reason}',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'kind' => $kind,
 				'case' => $caseId,
 				'reason' => $reason,

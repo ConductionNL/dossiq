@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Money;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Shillinq\Event\PayableCancelRequestedEvent;
 use OCA\Shillinq\Event\PayableRaisedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -84,7 +84,7 @@ class PayoutRequester {
 		}
 
 		$arguments = [
-			'sourceApp' => Application::APP_ID,
+			'sourceApp' => AppIdentity::APP_ID,
 			'amount' => ((int)$payout['amountCents']) / 100,
 			'payeeName' => (string)$payout['payeeName'],
 			'payeeIban' => (string)$payout['iban'],
@@ -144,7 +144,7 @@ class PayoutRequester {
 		}
 
 		$event = new PayableCancelRequestedEvent(
-			sourceApp: Application::APP_ID,
+			sourceApp: AppIdentity::APP_ID,
 			reference: $reference,
 			reason: $reason,
 		);

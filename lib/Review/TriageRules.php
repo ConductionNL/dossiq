@@ -24,8 +24,8 @@ namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -190,7 +190,7 @@ class TriageRules {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: a triage rule was stored but the reviewer access of its case could not be reconciled',
-				['app' => Application::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
 			);
 		}
 
@@ -546,7 +546,7 @@ class TriageRules {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: a triage rule could not be written',
-				['app' => Application::APP_ID, 'case' => ($rule['case'] ?? ''), 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => ($rule['case'] ?? ''), 'exception' => $e->getMessage()]
 			);
 			throw $this->unavailable(previous: $e);
 		}

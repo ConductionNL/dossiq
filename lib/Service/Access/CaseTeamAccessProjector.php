@@ -45,7 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
@@ -245,7 +245,7 @@ class CaseTeamAccessProjector {
 	 */
 	private function managedTeams(array $current): array {
 		$teams = array_column($this->rules->teamEntries(caseTypes: $current), 'group');
-		$stored = json_decode($this->appConfig()->getValueString(app: Application::APP_ID, key: self::MANAGED_TEAMS_KEY, default: '[]'), true);
+		$stored = json_decode($this->appConfig()->getValueString(app: AppIdentity::APP_ID, key: self::MANAGED_TEAMS_KEY, default: '[]'), true);
 		if (is_array($stored) === true) {
 			$teams = array_merge($teams, array_filter($stored, 'is_string'));
 		}
@@ -264,7 +264,7 @@ class CaseTeamAccessProjector {
 	 * @return void
 	 */
 	private function rememberManagedTeams(array $teams): void {
-		$this->appConfig()->setValueString(app: Application::APP_ID, key: self::MANAGED_TEAMS_KEY, value: (string)json_encode($teams));
+		$this->appConfig()->setValueString(app: AppIdentity::APP_ID, key: self::MANAGED_TEAMS_KEY, value: (string)json_encode($teams));
 	}//end rememberManagedTeams()
 
 	/**

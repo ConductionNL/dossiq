@@ -67,7 +67,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
@@ -195,7 +195,7 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 			$output->warning('Demo-fork repair could not complete: ' . $e->getMessage());
 			$this->logger->warning(
 				'Dossiq: demo-fork repair failed',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 		}//end try
 	}//end run()
@@ -218,7 +218,7 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 			return;
 		}
 
-		$register->setApplication(Application::APP_ID);
+		$register->setApplication(AppIdentity::APP_ID);
 		$restoredTitle = $this->restoreShippedTitle(register: $register);
 		$registerMapper->update($register);
 
@@ -226,7 +226,7 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 		$this->logger->warning(
 			'Dossiq: restored the register identity a demo import overwrote',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'title' => $register->getTitle(),
 				'titleRestored' => $restoredTitle,
 			]
@@ -245,7 +245,7 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 	private function forkedRegister(object $registerMapper, IOutput $output): ?object {
 		try {
 			$register = $registerMapper->find(
-				id: Application::APP_ID,
+				id: AppIdentity::APP_ID,
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -376,7 +376,7 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 		$this->logger->warning(
 			'Dossiq: retired the dossiq.demo schema fork',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'retired' => $run->retired,
 				'objects' => $run->objects,
 				'spared' => $run->spared,
@@ -453,7 +453,7 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 			// claiming every id is linked.
 			$this->logger->warning(
 				'Dossiq: demo-fork repair could not read the registers; sparing every schema',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return [-1];
 		}
@@ -514,7 +514,7 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 			$identity['description'] = (string)($info['description'] ?? '');
 		}
 
-		$register = ($data['components']['registers'][Application::APP_ID] ?? []);
+		$register = ($data['components']['registers'][AppIdentity::APP_ID] ?? []);
 		if (is_array($register) === true) {
 			$identity['version'] = (string)($register['version'] ?? '');
 		}

@@ -46,7 +46,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Flow\CaseFlowActions;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\App\IAppManager;
@@ -124,7 +124,7 @@ class PlannedFollowUpSweepJob extends TimedJob {
 		// hour is an hourly job nobody reads.
 		$this->logger->info(
 			'Dossiq: retired ' . $retired . ' planned follow-up(s) that were spent',
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 	}//end work()
 }//end class

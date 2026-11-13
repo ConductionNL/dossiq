@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Workflow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Flow\FlowMigrationSummary;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
@@ -345,7 +345,7 @@ class WorkflowTemplateFlowMigrator {
 		return [
 			'name' => (string)($template['title'] ?? 'Workflow'),
 			'description' => $this->description(template: $template),
-			'app' => Application::APP_ID,
+			'app' => AppIdentity::APP_ID,
 			// DISABLED. The template still drives cases through
 			// StatusTransitionService; an enabled projection would move the
 			// same case a second time on every status change.
@@ -438,7 +438,7 @@ class WorkflowTemplateFlowMigrator {
 		try {
 			$rows = $this->batchOf(store: $store);
 		} catch (Throwable $e) {
-			$context = ['app' => Application::APP_ID, 'exception' => $e->getMessage()];
+			$context = ['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()];
 			$this->logger->warning('Dossiq: could not list status types for the flow projection', $context);
 
 			return [];
@@ -481,7 +481,7 @@ class WorkflowTemplateFlowMigrator {
 		try {
 			return $this->batchOf(store: $store);
 		} catch (Throwable $e) {
-			$context = ['app' => Application::APP_ID, 'exception' => $e->getMessage()];
+			$context = ['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()];
 			$this->logger->warning('Dossiq: could not list workflow templates', $context);
 
 			return [];

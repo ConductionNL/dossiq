@@ -43,7 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
@@ -211,7 +211,7 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 		$field = $this->field();
 		$this->logger->warning(
 			'Dossiq: the ' . $field . ' backfill could not read the cases',
-			['app' => Application::APP_ID, 'error' => $error->getMessage()]
+			['app' => AppIdentity::APP_ID, 'error' => $error->getMessage()]
 		);
 		$output->info($field . ' backfill: the cases could not be read, skipped.');
 	}//end reportUnreadableCases()
@@ -391,7 +391,7 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 	private function reportFailedWrite(string $uuid, Throwable $error): void {
 		$this->logger->error(
 			'Dossiq: the ' . $this->field() . ' backfill failed for one case',
-			['app' => Application::APP_ID, 'uuid' => $uuid, 'exception' => $error->getMessage()]
+			['app' => AppIdentity::APP_ID, 'uuid' => $uuid, 'exception' => $error->getMessage()]
 		);
 	}//end reportFailedWrite()
 

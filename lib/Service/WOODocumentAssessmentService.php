@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooCaseDocuments;
@@ -219,7 +219,7 @@ class WOODocumentAssessmentService {
 
 		$this->logger->info(
 			'WOO bulk-upsert: ' . count($saved) . ' saved, ' . $outstanding['count'] . ' outstanding for case ' . $caseId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return [
@@ -253,7 +253,7 @@ class WOODocumentAssessmentService {
 		} catch (RefusedException $e) {
 			$this->logger->warning(
 				'WOO bulk-upsert: the judged documents could not be marked in scope for case ' . $caseId,
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()],
 			);
 		}
 	}//end markJudgedInScope()
@@ -536,7 +536,7 @@ class WOODocumentAssessmentService {
 		$this->logger->info(
 			'WOO redaction proposal saved for document ' . $documentRef . ' in case ' . $caseId
 			. ' (status: ' . ($proposal['status'] ?? 'unknown') . ')',
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return $savedObject;

@@ -24,7 +24,7 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -245,7 +245,7 @@ class DocumentAccessExceptionWriter {
 
 		$this->logger->info(
 			'Dossiq: access exception of a document changed',
-			['app' => Application::APP_ID, 'documentId' => (string)($record['id'] ?? ''), 'fileId' => $fileId]
+			['app' => AppIdentity::APP_ID, 'documentId' => (string)($record['id'] ?? ''), 'fileId' => $fileId]
 		);
 	}//end saveOrRestore()
 
@@ -277,7 +277,7 @@ class DocumentAccessExceptionWriter {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the file restriction could not be put back after a failed save',
-				['app' => Application::APP_ID, 'fileId' => $fileId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'fileId' => $fileId, 'exception' => $e->getMessage()]
 			);
 		}
 	}//end restoreFile()

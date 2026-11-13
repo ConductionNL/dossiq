@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Support\FleetAppId;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 use OCP\IAppConfig;
@@ -139,7 +139,7 @@ class BeschikkingGenerationService {
 		}
 
 		return $this->appConfig->getValueString(
-			app: Application::APP_ID,
+			app: AppIdentity::APP_ID,
 			key: $templateKey,
 			default: ''
 		);
@@ -180,7 +180,7 @@ class BeschikkingGenerationService {
 	private function unavailableAnswer(array $ask, array $found): array {
 		$this->logger->warning(
 			'Dossiq BeschikkingGenerationService: filinq unavailable, template unconfigured or no session; creating stub bijlage.',
-			['app' => Application::APP_ID, 'caseId' => $ask['caseId'], 'outcome' => $ask['outcome']] + $found
+			['app' => AppIdentity::APP_ID, 'caseId' => $ask['caseId'], 'outcome' => $ask['outcome']] + $found
 		);
 
 		return $this->stubAnswer(
@@ -203,7 +203,7 @@ class BeschikkingGenerationService {
 	private function failedAnswer(array $ask, \Throwable $error): array {
 		$this->logger->error(
 			'Dossiq BeschikkingGenerationService: document generation failed: ' . $error->getMessage(),
-			['app' => Application::APP_ID, 'caseId' => $ask['caseId']]
+			['app' => AppIdentity::APP_ID, 'caseId' => $ask['caseId']]
 		);
 
 		return $this->stubAnswer(
@@ -283,7 +283,7 @@ class BeschikkingGenerationService {
 		if ($service === null) {
 			$this->logger->debug(
 				'Dossiq BeschikkingGenerationService: no DocumentService under any name filinq has shipped under.',
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}
@@ -292,7 +292,7 @@ class BeschikkingGenerationService {
 			$this->logger->warning(
 				'Dossiq BeschikkingGenerationService: the resolved DocumentService has no generateDocument(); '
 				. 'filinq has changed its contract.',
-				['app' => Application::APP_ID, 'class' => get_class($service)]
+				['app' => AppIdentity::APP_ID, 'class' => get_class($service)]
 			);
 			return null;
 		}
@@ -394,7 +394,7 @@ class BeschikkingGenerationService {
 		try {
 			$objectService = $this->container->get('OCA\OpenRegister\Service\ObjectService');
 			$register = $this->appConfig->getValueString(
-				app: Application::APP_ID,
+				app: AppIdentity::APP_ID,
 				key: 'register',
 				default: ''
 			);
@@ -423,10 +423,10 @@ class BeschikkingGenerationService {
 	private function logBijlageNotSaved(string $failure, \Throwable $error): void {
 		$message = 'Dossiq BeschikkingGenerationService: ' . $failure . ': ' . $error->getMessage();
 		if ($failure === self::ATTACH_NOT_SAVED) {
-			$this->logger->error($message, ['app' => Application::APP_ID]);
+			$this->logger->error($message, ['app' => AppIdentity::APP_ID]);
 			return;
 		}
 
-		$this->logger->warning($message, ['app' => Application::APP_ID]);
+		$this->logger->warning($message, ['app' => AppIdentity::APP_ID]);
 	}//end logBijlageNotSaved()
 }//end class

@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\Zaakdossier\DeclaredAccessExceptions;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -92,7 +92,7 @@ class DeclaredAccessExceptionListener implements IEventListener {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the access exception stored on a document could not be applied',
-				['app' => Application::APP_ID, 'documentId' => (string)($record['id'] ?? ''), 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'documentId' => (string)($record['id'] ?? ''), 'exception' => $e->getMessage()]
 			);
 		}
 	}//end handle()

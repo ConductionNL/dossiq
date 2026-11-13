@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Subsidie\SubsidieRegisterExporter;
 use OCA\Dossiq\Service\Support\SerialisedResult;
@@ -58,7 +58,7 @@ class SubsidieRegisterController extends Controller {
 		private readonly SettingsService $settingsService,
 		private readonly SubsidieRegisterExporter $exporter,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

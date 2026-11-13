@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Listener\BezwaarLegalHoldListener;
 use OCA\Dossiq\Listener\BezwaarLifecycleListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -185,7 +185,7 @@ class BezwaarSubscriptionRegistrar {
 			'OpenRegister ObjectEventSubscription unavailable: ' . $listener
 			. ' fell back to an UNFILTERED registration for ' . $event
 			. ' and will be invoked on every object write instance-wide.',
-			['app' => Application::APP_ID]
+			['app' => AppIdentity::APP_ID]
 		);
 
 		$dispatcher->addServiceListener($event, $listener);

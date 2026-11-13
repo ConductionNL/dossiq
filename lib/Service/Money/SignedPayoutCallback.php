@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use OCP\IRequest;
 
@@ -180,9 +180,9 @@ class SignedPayoutCallback {
 	 * @return string The secret, or empty.
 	 */
 	private function secret(): string {
-		$secret = trim($this->appConfig->getValueString(Application::APP_ID, self::SECRET_KEY, ''));
-		if ($secret === '' && $this->appConfig->hasKey(Application::APP_ID, self::SECRET_KEY) === false) {
-			$secret = trim($this->appConfig->getValueString(Application::APP_ID, MoneyConfigKeys::LEGACY_KEYS[self::SECRET_KEY], ''));
+		$secret = trim($this->appConfig->getValueString(AppIdentity::APP_ID, self::SECRET_KEY, ''));
+		if ($secret === '' && $this->appConfig->hasKey(AppIdentity::APP_ID, self::SECRET_KEY) === false) {
+			$secret = trim($this->appConfig->getValueString(AppIdentity::APP_ID, MoneyConfigKeys::LEGACY_KEYS[self::SECRET_KEY], ''));
 		}
 
 		return $secret;

@@ -28,8 +28,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\SettingsService;
@@ -200,7 +200,7 @@ class PortalWooAnswer {
 		} catch (RefusedException $e) {
 			$this->logger->warning(
 				'Dossiq: a portal answer could not be recorded',
-				['app' => Application::APP_ID, 'case' => $caseId, 'rule' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'rule' => $e->getMessage()]
 			);
 			return ['status' => 503, 'body' => ['error' => 'unavailable']];
 		}
@@ -254,7 +254,7 @@ class PortalWooAnswer {
 			} catch (Throwable $e) {
 				$this->logger->warning(
 					'Dossiq: a file sent with a portal answer could not be stored on the case',
-					['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+					['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 				);
 			}
 		}
@@ -286,7 +286,7 @@ class PortalWooAnswer {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: a portal answer could not check its request',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 			);
 			return null;
 		}//end try

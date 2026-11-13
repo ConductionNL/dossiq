@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Custody\CaseCustodyChain;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
@@ -111,9 +111,9 @@ class BackfillCaseCustody implements IRepairStep {
 			return;
 		}
 
-		$register = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		$caseSchema = $this->appConfig->getValueString(Application::APP_ID, 'case_schema', '');
-		$custodySchema = $this->appConfig->getValueString(Application::APP_ID, 'case_custody_schema', '');
+		$register = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
+		$caseSchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_schema', '');
+		$custodySchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_custody_schema', '');
 		if ($register === '' || $caseSchema === '' || $custodySchema === '') {
 			$output->info('The case or custody schema is not configured, so the custody backfill was skipped.');
 			return;

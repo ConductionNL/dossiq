@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Intake\BoundFormsCheck;
 use OCA\Dossiq\Service\Intake\IntakeFormBinding;
 use OCA\Dossiq\Service\Intake\IntakeFormBindings;
@@ -130,7 +130,7 @@ class IntakeFormDependentsListener implements IEventListener {
 		$caseTypeId = $names[0];
 		return new $formClass(
 			id: $caseTypeId,
-			app: Application::APP_ID,
+			app: AppIdentity::APP_ID,
 			title: $this->titleOf(caseType: $caseType),
 			author: $this->ownerOf(caseType: $caseType),
 			mapping: $this->binding->mappingFor(caseType: $caseType),

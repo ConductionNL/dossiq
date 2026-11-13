@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 
 /**
@@ -78,7 +78,7 @@ class SenderBlocklist {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function entries(): array {
-		$raw = $this->appConfig->getValueString(Application::APP_ID, self::BLOCKLIST_KEY, '');
+		$raw = $this->appConfig->getValueString(AppIdentity::APP_ID, self::BLOCKLIST_KEY, '');
 		$parts = preg_split('/[\s,;]+/', strtolower(trim($raw)));
 		if ($parts === false) {
 			return [];
@@ -108,7 +108,7 @@ class SenderBlocklist {
 		}
 
 		$this->appConfig->setValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::BLOCKLIST_KEY,
 			implode(',', array_values(array_unique($cleaned)))
 		);

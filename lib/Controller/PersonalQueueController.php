@@ -32,7 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Queue\DigestPreferences;
 use OCA\Dossiq\Service\Queue\PersonalAgendaItemService;
 use OCA\Dossiq\Service\Queue\PersonalQueueService;
@@ -76,7 +76,7 @@ class PersonalQueueController extends Controller {
 		private readonly PersonalAgendaItemService $agenda,
 		private readonly DigestPreferences $digest,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

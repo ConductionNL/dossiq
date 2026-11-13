@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Publication\WithheldEntries;
 use OCA\Dossiq\Service\Publication\WithheldListRecorder;
 use OCA\Dossiq\Service\SettingsService;
@@ -141,7 +141,7 @@ class WooCaseLedger {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'WooPublicationService: the delivered set could not record the withdraw',
-				['app' => Application::APP_ID, 'publicationId' => $publicationId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'publicationId' => $publicationId, 'error' => $e->getMessage()]
 			);
 		}
 	}//end markWithdrawn()
@@ -235,7 +235,7 @@ class WooCaseLedger {
 			// The decision holds the truth; the case mirror is corrected by the next write.
 			$this->logger->warning(
 				'WooPublicationService: the case could not show its publication state',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 		}
 	}//end writeCaseState()

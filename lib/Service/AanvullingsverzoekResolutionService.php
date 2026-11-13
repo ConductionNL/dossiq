@@ -52,8 +52,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -184,7 +184,7 @@ class AanvullingsverzoekResolutionService {
 		$this->logger->info(
 			'Dossiq: part of an aanvullingsverzoek arrived; the term stays suspended',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'case' => $run->caseId,
 				'outstanding' => count($run->outstanding),
 			]
@@ -216,7 +216,7 @@ class AanvullingsverzoekResolutionService {
 
 		$this->logger->info(
 			'Dossiq: an aanvullingsverzoek was answered in full and the term resumed',
-			['app' => Application::APP_ID, 'case' => $run->caseId]
+			['app' => AppIdentity::APP_ID, 'case' => $run->caseId]
 		);
 
 		return array_merge($run->request, $changes);
@@ -295,7 +295,7 @@ class AanvullingsverzoekResolutionService {
 
 		$this->logger->info(
 			'Dossiq: an aanvullingsverzoek expired unanswered and stays on the file',
-			['app' => Application::APP_ID, 'case' => $caseId]
+			['app' => AppIdentity::APP_ID, 'case' => $caseId]
 		);
 
 		return array_merge($request, ['state' => 'expired']);

@@ -33,7 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\Files\File;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -119,7 +119,7 @@ class MailHeaderReader {
 			// The parser's message can carry header fragments; log only its class.
 			$this->logger->info(
 				'Dossiq: the headers of a collected mail could not be read, so it is marked unreadable',
-				['app' => Application::APP_ID, 'fileId' => $file->getId(), 'error' => get_class($e)]
+				['app' => AppIdentity::APP_ID, 'fileId' => $file->getId(), 'error' => get_class($e)]
 			);
 			return $unreadable;
 		}

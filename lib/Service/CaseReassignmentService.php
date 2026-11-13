@@ -36,8 +36,8 @@ namespace OCA\Dossiq\Service;
 
 use DateTime;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\BulkAction\ReassignCasesAction;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Bulk\BulkJobHandoff;
 use OCA\Dossiq\Service\Support\WritesReassignments;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -459,7 +459,7 @@ class CaseReassignmentService {
 	 */
 	private function sendDigest(CaseloadReleaseRun $run, int $count): void {
 		$notification = $this->notificationManager->createNotification();
-		$notification->setApp(Application::APP_ID)
+		$notification->setApp(AppIdentity::APP_ID)
 			->setUser($run->toUser)
 			->setDateTime(new DateTime())
 			->setObject('reassignment', $run->batchId)

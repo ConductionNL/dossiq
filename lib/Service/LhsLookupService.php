@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -179,7 +179,7 @@ class LhsLookupService {
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'LHS lookup: the stored decision table did not answer: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'table' => self::DECISION_TABLE]
+				['app' => AppIdentity::APP_ID, 'table' => self::DECISION_TABLE]
 			);
 		}
 
@@ -234,7 +234,7 @@ class LhsLookupService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'LHS matrix lookup from register failed, using fallback: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}

@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Ai;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -177,7 +177,7 @@ class AiOversightDelegationService {
 	 */
 	private function oversightRecord(array $entry, array $subject): array {
 		$record = [
-			'originApp' => Application::APP_ID,
+			'originApp' => AppIdentity::APP_ID,
 			'subjectType' => $subject[0],
 			'subjectId' => $subject[1],
 			'humanAction' => self::ACTION_MAP[(string)($entry['userAction'] ?? '')],

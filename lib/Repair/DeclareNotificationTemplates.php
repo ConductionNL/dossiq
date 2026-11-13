@@ -43,7 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Notification\PlatformEventTemplates;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -143,7 +143,7 @@ class DeclareNotificationTemplates implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq notifications: the template gap list was not read, {reason}',
-				['app' => Application::APP_ID, 'reason' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'reason' => $e->getMessage()]
 			);
 			return [];
 		}
@@ -191,7 +191,7 @@ class DeclareNotificationTemplates implements IRepairStep {
 				$this->logger->warning(
 					'Dossiq notifications: template {event} was not written, {reason}',
 					[
-						'app' => Application::APP_ID,
+						'app' => AppIdentity::APP_ID,
 						'event' => $event,
 						'reason' => $e->getMessage(),
 					]

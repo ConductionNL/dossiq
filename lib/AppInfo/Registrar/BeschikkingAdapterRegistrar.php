@@ -35,7 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\LibresignApiClient;
 use OCA\Dossiq\Service\Beschikking\LibresignSigningAdapter;
@@ -106,7 +106,7 @@ class BeschikkingAdapterRegistrar {
 						. 'the built-in stub adapter — install and enable the LibreSign app to '
 						. 'sign beschikkingen with a real eIDAS-aligned signature.'
 					),
-					['app' => Application::APP_ID]
+					['app' => AppIdentity::APP_ID]
 				);
 
 				return $c->get(MockSigningAdapter::class);

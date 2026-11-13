@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -88,7 +88,7 @@ class DocumentJoinHoming {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq documents: could not move document ' . $recordId . ' into case ' . $caseId . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'exception' => $e],
+				['app' => AppIdentity::APP_ID, 'exception' => $e],
 			);
 
 			return false;

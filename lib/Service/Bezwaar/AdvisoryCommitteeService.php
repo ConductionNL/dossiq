@@ -41,7 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Governance\GovernanceBodyReader;
 use OCA\Dossiq\Service\InternalWriteMarker;
@@ -842,7 +842,7 @@ class AdvisoryCommitteeService {
 		if ($legacy !== '') {
 			$this->logger->warning(
 				'Dossiq BAC: advice request still carries the legacy objection key; run the backfill repair step',
-				['app' => Application::APP_ID, 'requestId' => ($request['id'] ?? null)]
+				['app' => AppIdentity::APP_ID, 'requestId' => ($request['id'] ?? null)]
 			);
 		}
 
