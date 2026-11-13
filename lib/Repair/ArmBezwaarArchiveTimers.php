@@ -30,9 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTimerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTimer;
 use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTrigger;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
@@ -53,13 +53,13 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 	 * Build the step.
 	 *
 	 * @param SettingsServiceInterface       $settingsService Reaches OpenRegister and the schema.
-	 * @param BezwaarArchiveTimer   $timer           Arms each trigger's timer.
+	 * @param BezwaarArchiveTimerInterface   $timer           Arms each trigger's timer.
 	 * @param BezwaarArchiveTrigger $trigger         Acts on the triggers already due.
 	 * @param LoggerInterface       $logger          Logs the counts.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly BezwaarArchiveTimer $timer,
+		private readonly BezwaarArchiveTimerInterface $timer,
 		private readonly BezwaarArchiveTrigger $trigger,
 		private readonly LoggerInterface $logger,
 	) {
@@ -140,18 +140,18 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 	 */
 	private function syncOne(array $trigger, array &$counts): void {
 		$outcome = $this->timer->sync(trigger: $trigger);
-		if ($outcome === BezwaarArchiveTimer::ARMED) {
+		if ($outcome === BezwaarArchiveTimerInterface::ARMED) {
 			$counts['armed']++;
 			return;
 		}
 
-		if ($outcome === BezwaarArchiveTimer::DUE) {
+		if ($outcome === BezwaarArchiveTimerInterface::DUE) {
 			$this->trigger->process(trigger: $trigger);
 			$counts['due']++;
 			return;
 		}
 
-		if ($outcome === BezwaarArchiveTimer::UNAVAILABLE) {
+		if ($outcome === BezwaarArchiveTimerInterface::UNAVAILABLE) {
 			$counts['failed']++;
 		}
 	}//end syncOne()

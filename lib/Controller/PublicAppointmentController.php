@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\AppointmentService;
+use OCA\Dossiq\Kernel\Contracts\AppointmentServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -41,11 +41,11 @@ class PublicAppointmentController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param AppointmentService $appointmentService The appointment service.
+	 * @param AppointmentServiceInterface $appointmentService The appointment service.
 	 */
 	public function __construct(
 		IRequest $request,
-		private AppointmentService $appointmentService,
+		private AppointmentServiceInterface $appointmentService,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

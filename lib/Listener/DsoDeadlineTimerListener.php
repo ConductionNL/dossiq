@@ -31,10 +31,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\DsoDeadlineTimerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
 use OCA\Dossiq\Service\Dso\DsoDeadlineActs;
-use OCA\Dossiq\Service\Dso\DsoDeadlineTimer;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -61,13 +61,13 @@ class DsoDeadlineTimerListener implements IEventListener {
 	 * Build the listener.
 	 *
 	 * @param SettingsServiceInterface  $settingsService Names the case schema.
-	 * @param DsoDeadlineTimer $timer           Arms and cancels the timer.
+	 * @param DsoDeadlineTimerInterface $timer           Arms and cancels the timer.
 	 * @param DsoDeadlineActs  $acts            Marks a case already overdue.
 	 * @param LoggerInterface  $logger          Logs a failed sync.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly DsoDeadlineTimer $timer,
+		private readonly DsoDeadlineTimerInterface $timer,
 		private readonly DsoDeadlineActs $acts,
 		private readonly LoggerInterface $logger,
 	) {
@@ -99,7 +99,7 @@ class DsoDeadlineTimerListener implements IEventListener {
 				return;
 			}
 
-			if ($this->timer->sync(case: $saved) === DsoDeadlineTimer::DUE) {
+			if ($this->timer->sync(case: $saved) === DsoDeadlineTimerInterface::DUE) {
 				$this->acts->markOverdue(case: $saved);
 			}
 		} catch (Throwable $e) {

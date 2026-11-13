@@ -52,9 +52,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\MilestoneScheduleInterface;
+use OCA\Dossiq\Kernel\Contracts\SchemaScopeResolverInterface;
 use OCA\Dossiq\Listener\Support\PreSaveCheck;
 use OCA\Dossiq\Service\Milestone\MilestoneRepository;
-use OCA\Dossiq\Service\Settings\SchemaScopeResolver;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -97,14 +97,14 @@ class MilestoneDependencyCycleListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SchemaScopeResolver $schemaScope Decides whether a write is ours.
+	 * @param SchemaScopeResolverInterface $schemaScope Decides whether a write is ours.
 	 * @param MilestoneRepository $repository Reads the case type's other definitions.
 	 * @param MilestoneScheduleInterface $schedule Owns the cycle rule.
 	 * @param IL10N $l10n Translation service.
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
-		private readonly SchemaScopeResolver $schemaScope,
+		private readonly SchemaScopeResolverInterface $schemaScope,
 		private readonly MilestoneRepository $repository,
 		private readonly MilestoneScheduleInterface $schedule,
 		private readonly IL10N $l10n,
@@ -270,11 +270,11 @@ class MilestoneDependencyCycleListener implements IEventListener {
 			slug: self::SCHEMA_SLUG
 		);
 
-		if ($scope === SchemaScopeResolver::IN_SCOPE) {
+		if ($scope === SchemaScopeResolverInterface::IN_SCOPE) {
 			return true;
 		}
 
-		if ($scope === SchemaScopeResolver::OUT_OF_SCOPE) {
+		if ($scope === SchemaScopeResolverInterface::OUT_OF_SCOPE) {
 			return false;
 		}
 

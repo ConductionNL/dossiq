@@ -43,8 +43,8 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTaskActionsInterface;
 use OCA\Dossiq\Kernel\Contracts\TaskAttachmentServiceInterface;
-use OCA\Dossiq\Service\Task\CaseTaskActions;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -77,7 +77,7 @@ class CaseTaskController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest              $request     The HTTP request.
-	 * @param CaseTaskActions       $tasks       Completes and claims a task, with dossiq's refusals in front.
+	 * @param CaseTaskActionsInterface       $tasks       Completes and claims a task, with dossiq's refusals in front.
 	 * @param TaskAttachmentServiceInterface $attachments Holds a file against an open task.
 	 * @param CaseAccessGuardInterface       $caseAccess  Per-case authorization, fails closed.
 	 * @param IUserSession          $userSession The current session.
@@ -85,7 +85,7 @@ class CaseTaskController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseTaskActions $tasks,
+		private readonly CaseTaskActionsInterface $tasks,
 		private readonly TaskAttachmentServiceInterface $attachments,
 		private readonly CaseAccessGuardInterface $caseAccess,
 		private readonly IUserSession $userSession,

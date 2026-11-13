@@ -31,9 +31,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\DsoDeadlineTimerInterface;
 use OCA\Dossiq\Listener\Support\TimerFire;
 use OCA\Dossiq\Service\Dso\DsoDeadlineActs;
-use OCA\Dossiq\Service\Dso\DsoDeadlineTimer;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
@@ -77,7 +77,7 @@ class DsoDeadlineTimerFiredListener implements IEventListener {
 			return;
 		}
 
-		$metadata = TimerFire::metadataFrom(event: $event, source: DsoDeadlineTimer::METADATA_SOURCE);
+		$metadata = TimerFire::metadataFrom(event: $event, source: DsoDeadlineTimerInterface::METADATA_SOURCE);
 		$caseId   = (string) ($metadata['caseId'] ?? '');
 		if ($metadata === null || $caseId === '') {
 			return;
@@ -131,12 +131,12 @@ class DsoDeadlineTimerFiredListener implements IEventListener {
 		}
 
 		$message = (string) $event->getMessage();
-		if ($message === DsoDeadlineTimer::MESSAGE_CRITICAL) {
+		if ($message === DsoDeadlineTimerInterface::MESSAGE_CRITICAL) {
 			$this->acts->notify(case: $case, subject: 'dso_deadline_critical');
 			return;
 		}
 
-		if ($message === DsoDeadlineTimer::MESSAGE_WARNING) {
+		if ($message === DsoDeadlineTimerInterface::MESSAGE_WARNING) {
 			$this->acts->notify(case: $case, subject: 'dso_deadline_warning');
 		}
 	}//end act()

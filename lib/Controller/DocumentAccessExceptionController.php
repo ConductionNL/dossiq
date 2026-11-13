@@ -26,7 +26,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionWriter;
+use OCA\Dossiq\Kernel\Contracts\DocumentAccessExceptionWriterInterface;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCP\AppFramework\Controller;
@@ -56,7 +56,7 @@ class DocumentAccessExceptionController extends Controller {
 	 * @param IUserSession                  $userSession The caller.
 	 * @param DocumentCaseWriteGuard        $caseWrites  The change right on every case of the document.
 	 * @param InformatieobjectReader        $reader      The read rule on the document.
-	 * @param DocumentAccessExceptionWriter $writer      Writes the exception and restricts the file.
+	 * @param DocumentAccessExceptionWriterInterface $writer      Writes the exception and restricts the file.
 	 *
 	 * @return void
 	 */
@@ -66,7 +66,7 @@ class DocumentAccessExceptionController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly DocumentCaseWriteGuard $caseWrites,
 		private readonly InformatieobjectReader $reader,
-		private readonly DocumentAccessExceptionWriter $writer,
+		private readonly DocumentAccessExceptionWriterInterface $writer,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

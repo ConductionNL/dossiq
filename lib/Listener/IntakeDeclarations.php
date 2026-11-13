@@ -25,10 +25,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
+use OCA\Dossiq\Kernel\Contracts\AssigneeNarrowingInterface;
+use OCA\Dossiq\Kernel\Contracts\DuplicatePolicyInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeRequirementsInterface;
 use OCA\Dossiq\Service\Intake\CaseClassification;
-use OCA\Dossiq\Service\Intake\DuplicatePolicy;
-use OCA\Dossiq\Service\Intake\IntakeRequirements;
 
 /**
  * What a case type declares about intake: its requirements, classification, assignee narrowing and duplicate policy.
@@ -40,16 +40,16 @@ final class IntakeDeclarations {
 	/**
 	 * Constructor.
 	 *
-	 * @param IntakeRequirements $requirements   What must be answered, and when.
+	 * @param IntakeRequirementsInterface $requirements   What must be answered, and when.
 	 * @param CaseClassification $classification The facets and the access rule.
-	 * @param AssigneeNarrowing  $narrowing      Who may hold the case.
-	 * @param DuplicatePolicy    $duplicates     What this case type does about a case that already exists.
+	 * @param AssigneeNarrowingInterface  $narrowing      Who may hold the case.
+	 * @param DuplicatePolicyInterface    $duplicates     What this case type does about a case that already exists.
 	 */
 	public function __construct(
-		public readonly IntakeRequirements $requirements,
+		public readonly IntakeRequirementsInterface $requirements,
 		public readonly CaseClassification $classification,
-		public readonly AssigneeNarrowing $narrowing,
-		public readonly DuplicatePolicy $duplicates,
+		public readonly AssigneeNarrowingInterface $narrowing,
+		public readonly DuplicatePolicyInterface $duplicates,
 	) {
 	}//end __construct()
 }//end class

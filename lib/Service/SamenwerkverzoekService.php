@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Service;
 
 use Exception;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SamenwerkverzoekServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\EventDispatcher\GenericEvent;
@@ -45,7 +46,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
  */
-class SamenwerkverzoekService {
+class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 
 	use SearchesObjects;
 

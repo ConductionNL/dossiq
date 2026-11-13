@@ -31,8 +31,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\LhsRecommendationServiceInterface;
 use OCA\Dossiq\Service\LhsLookupService;
-use OCA\Dossiq\Service\Vth\LhsRecommendationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -58,7 +58,7 @@ class LhsController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param LhsRecommendationService $lhsService LHS engine
+	 * @param LhsRecommendationServiceInterface $lhsService LHS engine
 	 * @param LhsLookupService $lhsLookupService LHS simple lookup service
 	 * @param IUserSession $userSession User session
 	 * @param IGroupManager $groupManager Group manager
@@ -68,7 +68,7 @@ class LhsController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly LhsRecommendationService $lhsService,
+		private readonly LhsRecommendationServiceInterface $lhsService,
 		private readonly LhsLookupService $lhsLookupService,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,

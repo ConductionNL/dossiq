@@ -30,11 +30,11 @@ namespace OCA\Dossiq\Portal;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekResolutionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -67,18 +67,18 @@ class PortalWooAnswer {
 	 *
 	 * @param SettingsServiceInterface                     $settings   Bridge to OpenRegister.
 	 * @param AanvullingsverzoekServiceInterface           $requests   The requests themselves.
-	 * @param AanvullingsverzoekResolutionService $resolution Records the answer on the open request.
+	 * @param AanvullingsverzoekResolutionServiceInterface $resolution Records the answer on the open request.
 	 * @param ApplicantPortalActs                 $acts       Tells the handler.
 	 * @param LoggerInterface                     $logger     Logger.
-	 * @param DocumentRecordStore|null            $documents  Stores the requester's files on the case.
+	 * @param DocumentRecordStoreInterface|null            $documents  Stores the requester's files on the case.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settings,
 		private readonly AanvullingsverzoekServiceInterface $requests,
-		private readonly AanvullingsverzoekResolutionService $resolution,
+		private readonly AanvullingsverzoekResolutionServiceInterface $resolution,
 		private readonly ApplicantPortalActs $acts,
 		private readonly LoggerInterface $logger,
-		private readonly ?DocumentRecordStore $documents = null,
+		private readonly ?DocumentRecordStoreInterface $documents = null,
 	) {
 	}//end __construct()
 

@@ -30,11 +30,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\ContactMomentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DoorverbindingServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\QuickActionServiceInterface;
 use OCA\Dossiq\Service\BurgerIdentificationService;
 use OCA\Dossiq\Service\CaseVoorbladService;
-use OCA\Dossiq\Service\DoorverbindingService;
 use OCA\Dossiq\Service\Kcc\GuardedCitizenLookup;
-use OCA\Dossiq\Service\QuickActionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\UserRateLimit;
@@ -56,8 +56,8 @@ class ContactMomentController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param ContactMomentServiceInterface $contactMomentService The contactmoment service.
 	 * @param CaseVoorbladService $caseVoorbladService The case-voorblad service.
-	 * @param QuickActionService $quickActionService The quick-action service.
-	 * @param DoorverbindingService $transferService The doorverbinding service.
+	 * @param QuickActionServiceInterface $quickActionService The quick-action service.
+	 * @param DoorverbindingServiceInterface $transferService The doorverbinding service.
 	 * @param BurgerIdentificationService $burgerService The burger identification service.
 	 * @param IUserSession $userSession The user session.
 	 * @param GuardedCitizenLookup $lookups Who may look a citizen up, and the audit
@@ -70,8 +70,8 @@ class ContactMomentController extends Controller {
 		IRequest $request,
 		private readonly ContactMomentServiceInterface $contactMomentService,
 		private readonly CaseVoorbladService $caseVoorbladService,
-		private readonly QuickActionService $quickActionService,
-		private readonly DoorverbindingService $transferService,
+		private readonly QuickActionServiceInterface $quickActionService,
+		private readonly DoorverbindingServiceInterface $transferService,
 		private readonly BurgerIdentificationService $burgerService,
 		private readonly IUserSession $userSession,
 		private readonly GuardedCitizenLookup $lookups,

@@ -38,12 +38,12 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
+use OCA\Dossiq\Kernel\Contracts\CasePlanGoalsInterface;
+use OCA\Dossiq\Kernel\Contracts\CrossDomainExistenceInterface;
+use OCA\Dossiq\Kernel\Contracts\SociaalDomeinStoreInterface;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanReview;
-use OCA\Dossiq\Service\SociaalDomein\CrossDomainExistence;
 use OCA\Dossiq\Service\SociaalDomein\FamilyPlanAccess;
-use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -68,11 +68,11 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @param string                $appName       The app name.
 	 * @param IRequest              $request       The request.
-	 * @param SociaalDomeinStore    $store         The one reader of these schemas.
-	 * @param CasePlanGoals         $goals         The plan's goals.
+	 * @param SociaalDomeinStoreInterface    $store         The one reader of these schemas.
+	 * @param CasePlanGoalsInterface         $goals         The plan's goals.
 	 * @param CasePlanInterventions $interventions The plan's interventions.
 	 * @param CasePlanReview        $review        The plan's reviews.
-	 * @param CrossDomainExistence  $existence     The cross-domain lookup.
+	 * @param CrossDomainExistenceInterface  $existence     The cross-domain lookup.
 	 * @param FamilyPlanAccess $planAccess    The case check every plan write runs first.
 	 * @param LoggerInterface       $logger        The logger.
 	 *
@@ -83,11 +83,11 @@ class SociaalDomeinPlanController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly SociaalDomeinStore $store,
-		private readonly CasePlanGoals $goals,
+		private readonly SociaalDomeinStoreInterface $store,
+		private readonly CasePlanGoalsInterface $goals,
 		private readonly CasePlanInterventions $interventions,
 		private readonly CasePlanReview $review,
-		private readonly CrossDomainExistence $existence,
+		private readonly CrossDomainExistenceInterface $existence,
 		private readonly FamilyPlanAccess $planAccess,
 		private readonly LoggerInterface $logger,
 	) {
@@ -202,7 +202,7 @@ class SociaalDomeinPlanController extends Controller {
 		try {
 			$status = $this->planAccess->planWrite(
 				planId: $planId,
-				recordSchema: CasePlanGoals::SCHEMA,
+				recordSchema: CasePlanGoalsInterface::SCHEMA,
 				recordId: trim((string)$this->request->getParam('id', ''))
 			);
 			if ($status !== Http::STATUS_OK) {
@@ -377,7 +377,7 @@ class SociaalDomeinPlanController extends Controller {
 	#[NoAdminRequired]
 	public function grounds(): JSONResponse {
 		$grounds = [];
-		foreach (CrossDomainExistence::GROUNDS as $id => $label) {
+		foreach (CrossDomainExistenceInterface::GROUNDS as $id => $label) {
 			$grounds[] = ['id' => $id, 'label' => $label];
 		}
 

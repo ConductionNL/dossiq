@@ -42,9 +42,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
+use OCA\Dossiq\Kernel\Contracts\CasePaymentStateInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Money\CasePaymentReader;
-use OCA\Dossiq\Service\Money\CasePaymentState;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -203,7 +203,7 @@ class PaymentStateProjectionJob extends TimedJob {
 		// replace the last state anybody knew with the news that the sweep had a
 		// bad hour, and the list would empty out every time shillinq restarted.
 		// The gate reads live, so nothing depends on this row being fresh.
-		if ($projection['paymentState'] === CasePaymentState::STALE) {
+		if ($projection['paymentState'] === CasePaymentStateInterface::STALE) {
 			return false;
 		}
 

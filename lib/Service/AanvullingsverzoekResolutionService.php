@@ -54,6 +54,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekResolutionServiceInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -62,7 +63,7 @@ use Throwable;
  *
  * @spec openspec/specs/termijn-pause-extension/spec.md
  */
-class AanvullingsverzoekResolutionService {
+class AanvullingsverzoekResolutionService implements AanvullingsverzoekResolutionServiceInterface {
 
 	/**
 	 * Constructor.

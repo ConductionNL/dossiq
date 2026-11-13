@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Kernel\Contracts\ContentTemplateServiceInterface;
 use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use Psr\Log\LoggerInterface;
@@ -48,7 +49,7 @@ use Throwable;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
  */
-class ContentTemplateService {
+class ContentTemplateService implements ContentTemplateServiceInterface {
 
 	/**
 	 * The app config key naming the content template schema.

@@ -43,12 +43,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Lifecycle;
 
+use OCA\Dossiq\Kernel\Contracts\CaseResultWriterInterface;
 use OCA\Dossiq\Service\Cases\ExternalHome;
 use OCA\Dossiq\Service\Money\CasePaymentReader;
 use OCA\Dossiq\Service\Money\UnpaidCaseGate;
-use OCA\Dossiq\Service\Transitions\CaseResultWriter;
-use OCP\IL10N;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
+use OCP\IL10N;
 
 /**
  * The acts a case offers, and what blocks them.
@@ -76,7 +76,7 @@ class CaseActionList {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseResultWriter  $resultWriter Decides whether a target status closes the case.
+	 * @param CaseResultWriterInterface  $resultWriter Decides whether a target status closes the case.
 	 * @param ExternalHome      $externalHome Whether the work on this case lives in another app.
 	 * @param CaseTypeReader    $caseTypes    What the case type declares about paying first.
 	 * @param UnpaidCaseGate    $unpaidCases  Whether an unpaid case proceeds.
@@ -84,7 +84,7 @@ class CaseActionList {
 	 * @param IL10N|null        $l10n         Names the closing input; without it the input carries no label.
 	 */
 	public function __construct(
-		private readonly CaseResultWriter $resultWriter,
+		private readonly CaseResultWriterInterface $resultWriter,
 		private readonly ExternalHome $externalHome,
 		private readonly CaseTypeReader $caseTypes,
 		private readonly UnpaidCaseGate $unpaidCases,

@@ -34,7 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Cases\ConnectedSystemCaseWriter;
+use OCA\Dossiq\Kernel\Contracts\ConnectedSystemCaseWriterInterface;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -52,11 +52,11 @@ class StufProviderWriteListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param StufRegisterAccess        $register The stufEndpoint rows.
-	 * @param ConnectedSystemCaseWriter $writer   Carries out a write as the service account.
+	 * @param ConnectedSystemCaseWriterInterface $writer   Carries out a write as the service account.
 	 */
 	public function __construct(
 		private readonly StufRegisterAccess $register,
-		private readonly ConnectedSystemCaseWriter $writer,
+		private readonly ConnectedSystemCaseWriterInterface $writer,
 	) {
 
 	}//end __construct()
@@ -132,7 +132,7 @@ class StufProviderWriteListener implements IEventListener {
 			$event->refuse(
 				appId: AppIdentity::APP_ID,
 				reason: (string)$outcome['refusal'],
-				kind: (string)($outcome['kind'] ?? ConnectedSystemCaseWriter::REFUSED)
+				kind: (string)($outcome['kind'] ?? ConnectedSystemCaseWriterInterface::REFUSED)
 			);
 			return;
 		}

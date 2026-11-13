@@ -36,9 +36,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\AdviceServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\AdviceTimerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\Advice\AdviceTimer;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -65,13 +65,13 @@ class AdviceTimerListener implements IEventListener {
 	 * Build the listener.
 	 *
 	 * @param SettingsServiceInterface $settingsService Names the watched schema.
-	 * @param AdviceTimer     $timer           Arms and cancels the timer.
+	 * @param AdviceTimerInterface     $timer           Arms and cancels the timer.
 	 * @param AdviceServiceInterface   $adviceService   Expires a request already overdue.
 	 * @param LoggerInterface $logger          Logs a failed sync.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly AdviceTimer $timer,
+		private readonly AdviceTimerInterface $timer,
 		private readonly AdviceServiceInterface $adviceService,
 		private readonly LoggerInterface $logger,
 	) {
@@ -96,7 +96,7 @@ class AdviceTimerListener implements IEventListener {
 				return;
 			}
 
-			if ($this->timer->sync(advice: $advice) === AdviceTimer::OVERDUE) {
+			if ($this->timer->sync(advice: $advice) === AdviceTimerInterface::OVERDUE) {
 				$this->adviceService->expireAdvice((string) $advice['id']);
 			}
 		} catch (Throwable $e) {

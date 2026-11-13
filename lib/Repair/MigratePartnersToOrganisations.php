@@ -40,9 +40,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\PartnerMigrationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\PartnerMigrationService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -59,14 +59,14 @@ class MigratePartnersToOrganisations implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param PartnerMigrationService $migration The partner migration.
+	 * @param PartnerMigrationServiceInterface $migration The partner migration.
 	 * @param SettingsServiceInterface $settingsService Resolves OpenRegister's ObjectService.
 	 * @param LoggerInterface $logger Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private PartnerMigrationService $migration,
+		private PartnerMigrationServiceInterface $migration,
 		private SettingsServiceInterface $settingsService,
 		private LoggerInterface $logger,
 	) {

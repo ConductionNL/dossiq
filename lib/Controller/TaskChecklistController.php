@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
-use OCA\Dossiq\Service\Inspection\InspectionRunService;
+use OCA\Dossiq\Kernel\Contracts\InspectionRunServiceInterface;
 use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
 use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
 use OCP\AppFramework\Controller;
@@ -64,7 +64,7 @@ class TaskChecklistController extends Controller {
 	 * @param IUserSession $userSession User session
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
-	 * @param InspectionRunService $runs Checklist runs as OpenRegister tasks
+	 * @param InspectionRunServiceInterface $runs Checklist runs as OpenRegister tasks
 	 *
 	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
@@ -74,7 +74,7 @@ class TaskChecklistController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
-		private readonly InspectionRunService $runs,
+		private readonly InspectionRunServiceInterface $runs,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

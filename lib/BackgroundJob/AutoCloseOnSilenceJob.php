@@ -40,7 +40,7 @@ namespace OCA\Dossiq\BackgroundJob;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Lifecycle\SilenceCloseService;
+use OCA\Dossiq\Kernel\Contracts\SilenceCloseServiceInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -73,7 +73,7 @@ class AutoCloseOnSilenceJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time The time factory.
-	 * @param SilenceCloseService $silence Decides and performs.
+	 * @param SilenceCloseServiceInterface $silence Decides and performs.
 	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister plus config.
 	 * @param IAppManager $appManager Establishes that OpenRegister is present.
 	 * @param LoggerInterface $logger The logger.
@@ -81,7 +81,7 @@ class AutoCloseOnSilenceJob extends TimedJob {
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly SilenceCloseService $silence,
+		private readonly SilenceCloseServiceInterface $silence,
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,

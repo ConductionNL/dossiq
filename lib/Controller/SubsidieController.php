@@ -31,8 +31,8 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SubsidieServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TussenrapportageServiceInterface;
 use OCA\Dossiq\Service\Subsidie\BeschikkingService;
-use OCA\Dossiq\Service\Subsidie\TussenrapportageService;
 use OCA\Dossiq\Service\Subsidie\VaststellingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -55,7 +55,7 @@ class SubsidieController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param SubsidieServiceInterface $subsidyService Core subsidy service.
 	 * @param BeschikkingService $decisionService Grant-decision service.
-	 * @param TussenrapportageService $tussenrapportage Interim-report service.
+	 * @param TussenrapportageServiceInterface $tussenrapportage Interim-report service.
 	 * @param VaststellingService $determinationService Settlement service.
 	 * @param IUserSession $userSession The user session.
 	 */
@@ -63,7 +63,7 @@ class SubsidieController extends Controller {
 		IRequest $request,
 		private readonly SubsidieServiceInterface $subsidyService,
 		private readonly BeschikkingService $decisionService,
-		private readonly TussenrapportageService $tussenrapportage,
+		private readonly TussenrapportageServiceInterface $tussenrapportage,
 		private readonly VaststellingService $determinationService,
 		private readonly IUserSession $userSession,
 	) {

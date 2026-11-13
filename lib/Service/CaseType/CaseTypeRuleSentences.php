@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeRuleSentencesInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCP\IL10N;
@@ -39,7 +40,7 @@ use OCP\IL10N;
  *
  * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
  */
-class CaseTypeRuleSentences {
+class CaseTypeRuleSentences implements CaseTypeRuleSentencesInterface {
 
 	/**
 	 * Constructor.

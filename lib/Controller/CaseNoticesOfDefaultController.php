@@ -26,8 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\NoticeOfDefaultRowsInterface;
 use OCA\Dossiq\Service\Access\ReadableObjects;
-use OCA\Dossiq\Service\Termijn\NoticeOfDefaultRows;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -47,7 +47,7 @@ class CaseNoticesOfDefaultController extends Controller {
 	 *
 	 * @param string              $appName  The app name.
 	 * @param IRequest            $request  The request.
-	 * @param NoticeOfDefaultRows $notices  The notice rows.
+	 * @param NoticeOfDefaultRowsInterface $notices  The notice rows.
 	 * @param ReadableObjects     $readable Whether a caller is signed in and may read the case.
 	 *
 	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
@@ -55,7 +55,7 @@ class CaseNoticesOfDefaultController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly NoticeOfDefaultRows $notices,
+		private readonly NoticeOfDefaultRowsInterface $notices,
 		private readonly ReadableObjects $readable,
 	) {
 		parent::__construct(appName: $appName, request: $request);

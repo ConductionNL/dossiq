@@ -33,8 +33,8 @@ namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PersonalAgendaItemServiceInterface;
 use OCA\Dossiq\Service\Queue\DigestPreferences;
-use OCA\Dossiq\Service\Queue\PersonalAgendaItemService;
 use OCA\Dossiq\Service\Queue\PersonalQueueService;
 use OCA\Dossiq\Service\Queue\PersonalStageService;
 use OCA\Dossiq\Service\Queue\QueueViewPreferences;
@@ -60,7 +60,7 @@ class PersonalQueueController extends Controller {
 	 * @param PersonalQueueService      $queue       The queue itself.
 	 * @param QueueViewPreferences      $view        What the reader changed about their view.
 	 * @param PersonalStageService      $stages      The reader's private labels.
-	 * @param PersonalAgendaItemService $agenda      The reader's own planned items.
+	 * @param PersonalAgendaItemServiceInterface $agenda      The reader's own planned items.
 	 * @param DigestPreferences         $digest      When the reader wants their digest.
 	 *
 	 * @return void
@@ -73,7 +73,7 @@ class PersonalQueueController extends Controller {
 		private readonly PersonalQueueService $queue,
 		private readonly QueueViewPreferences $view,
 		private readonly PersonalStageService $stages,
-		private readonly PersonalAgendaItemService $agenda,
+		private readonly PersonalAgendaItemServiceInterface $agenda,
 		private readonly DigestPreferences $digest,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

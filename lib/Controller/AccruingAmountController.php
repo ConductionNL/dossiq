@@ -30,10 +30,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
+use OCA\Dossiq\Kernel\Contracts\AmountObjectionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Money\AccruingAmountSettler;
-use OCA\Dossiq\Service\Money\AmountObjectionService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -59,7 +59,7 @@ class AccruingAmountController extends Controller {
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
 	 * @param AccruingAmountSettler $settler Stops the stored accrual and locks the amount.
-	 * @param AmountObjectionService $objection Objection service.
+	 * @param AmountObjectionServiceInterface $objection Objection service.
 	 * @param SettingsServiceInterface $settings Settings.
 	 * @param IUserSession $userSession User session.
 	 * @param CaseAccessGuardInterface $caseAccess Per-case authorization guard.
@@ -69,7 +69,7 @@ class AccruingAmountController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly AccruingAmountSettler $settler,
-		private readonly AmountObjectionService $objection,
+		private readonly AmountObjectionServiceInterface $objection,
 		private readonly SettingsServiceInterface $settings,
 		private readonly IUserSession $userSession,
 		private readonly CaseAccessGuardInterface $caseAccess,
