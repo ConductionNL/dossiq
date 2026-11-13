@@ -109,6 +109,8 @@ class Application extends App implements IBootstrap {
 		$context->registerSetupCheck(\OCA\Dossiq\SetupCheck\BackgroundServiceAccountCheck::class);
 		// Says when no DSO verzoek becomes a case.
 		$context->registerSetupCheck(\OCA\Dossiq\SetupCheck\DsoIntakeCheck::class);
+		// Tells the sync frame's conflict card that the resolve endpoint is there.
+		$context->registerCapability(\OCA\Dossiq\Capabilities::class);
 
 		// ADR-063: the classes OpenRegister scans for dossiq's curated
 		// #[McpTool] methods, under the alias it resolves in THIS app's own
