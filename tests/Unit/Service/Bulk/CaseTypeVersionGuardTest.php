@@ -38,6 +38,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Bulk\MixedCaseTypeVersionsException
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseTypeVersionGuardTest extends TestCase {
 
@@ -301,4 +302,98 @@ class CaseTypeVersionGuardTest extends TestCase {
 
 		self::assertNull($this->refusal(guard: $guard, caseIds: ['c-1', 'c-2']));
 	}//end testAnUnconfiguredCaseSchemaRefusesNothing()
+
+	/**
+	 * Versions whose shared previous version cannot be read are still one family.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadablePreviousVersionStillNamesTheFamily(): void {
+		$guard = $this->guard(
+			cases: ['c-1' => ['caseType' => 'ct-v2'], 'c-2' => ['caseType' => 'ct-v3']],
+			caseTypes: [
+				'ct-v2' => ['version' => 2, 'title' => 'Melding', 'previousVersion' => 'ct-gone'],
+				'ct-v3' => ['version' => 3, 'title' => 'Melding', 'previousVersion' => 'ct-gone'],
+			]
+		);
+
+		$refusal = $this->refusal(guard: $guard, caseIds: ['c-1', 'c-2']);
+
+		self::assertNotNull($refusal);
+		self::assertSame(expected: 'Melding', actual: $refusal->getCaseTypeTitle());
+		self::assertSame(expected: [2, 3], actual: $refusal->getVersions());
+	}//end testAnUnreadablePreviousVersionStillNamesTheFamily()
+
+	/**
+	 * Cases on a case type that cannot be read are not counted as a version.
+	 *
+	 * @return void
+	 */
+	public function testCasesOnAnUnreadableCaseTypeAreNotCounted(): void {
+		$guard = $this->guard(
+			cases: ['c-1' => ['caseType' => 'ct-gone'], 'c-2' => ['caseType' => 'ct-v2']],
+			caseTypes: ['ct-v2' => ['version' => 2, 'previousVersion' => 'ct-gone']]
+		);
+
+		self::assertNull($this->refusal(guard: $guard, caseIds: ['c-1', 'c-2']));
+	}//end testCasesOnAnUnreadableCaseTypeAreNotCounted()
+
+	/**
+	 * An entity whose getObject answers no array is skipped, not serialised instead.
+	 *
+	 * @return void
+	 */
+	public function testAnEntityWithoutObjectDataIsSkipped(): void {
+		$empty = new class {
+			/**
+			 * The object data, absent.
+			 *
+			 * @return null
+			 */
+			public function getObject(): mixed {
+				return null;
+			}
+
+			/**
+			 * Serialise.
+			 *
+			 * @return array<string, string> The row.
+			 */
+			public function jsonSerialize(): array {
+				return ['caseType' => 'ct-v1'];
+			}
+		};
+
+		$guard = $this->guard(
+			cases: ['c-1' => $empty, 'c-2' => ['caseType' => 'ct-v2']],
+			caseTypes: [
+				'ct-v1' => ['version' => 1],
+				'ct-v2' => ['version' => 2, 'previousVersion' => 'ct-v1'],
+			]
+		);
+
+		self::assertNull($this->refusal(guard: $guard, caseIds: ['c-1', 'c-2']));
+	}//end testAnEntityWithoutObjectDataIsSkipped()
+
+	/**
+	 * A chain longer than the hop cap stops at the version the cap reached.
+	 *
+	 * @return void
+	 */
+	public function testALongVersionChainStopsAtTheHopCap(): void {
+		$caseTypes = ['ct-1' => ['version' => 1, 'title' => 'Omgeving']];
+		for ($version = 2; $version <= 33; $version++) {
+			$caseTypes['ct-' . $version] = ['version' => $version, 'previousVersion' => 'ct-' . ($version - 1)];
+		}
+
+		$guard = $this->guard(
+			cases: ['c-1' => ['caseType' => 'ct-1'], 'c-2' => ['caseType' => 'ct-33']],
+			caseTypes: $caseTypes
+		);
+
+		$refusal = $this->refusal(guard: $guard, caseIds: ['c-1', 'c-2']);
+
+		self::assertNotNull($refusal);
+		self::assertSame(expected: [1, 33], actual: $refusal->getVersions());
+	}//end testALongVersionChainStopsAtTheHopCap()
 }//end class
