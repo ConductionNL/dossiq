@@ -178,7 +178,7 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			if ($vendor !== null) {
 				$this->logger->error(
 					'A document vendor refused a beschikking render',
-					['app' => Application::APP_ID, 'templateId' => $templateId, 'source' => $vendor, 'exception' => $e->getMessage()]
+					['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'source' => $vendor, 'exception' => $e->getMessage()]
 				);
 				throw new RuntimeException(DecisionTemplateEngine::vendorName(slug: $vendor) . ' is niet bereikbaar', 0, $e);
 			}
