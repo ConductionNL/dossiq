@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\WorkflowListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\WorkflowListenerRegistrar;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;

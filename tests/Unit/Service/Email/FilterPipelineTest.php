@@ -6,7 +6,7 @@
  * 🔴 THE EMPTY PIPELINE IS THE FAILURE THIS FILE EXISTS TO CATCH. Nextcloud
  * cannot autowire a constructor that takes a list of implementations, so a
  * pipeline assembled by the container rather than by
- * {@see \OCA\Dossiq\AppInfo\Registrar\MailIntakeRegistrar} would be EMPTY, and
+ * {@see \OCA\Dossiq\Service\Registrar\MailIntakeRegistrar} would be EMPTY, and
  * an empty pipeline accepts every message and reports the same success as one
  * that ran every filter. `testTheAssembledPipelineRunsEveryShippedFilter` is
  * the one that would redden.

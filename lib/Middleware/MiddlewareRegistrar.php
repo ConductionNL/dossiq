@@ -1,0 +1,72 @@
+<?php
+
+/**
+ * Dossiq middleware-chain registrar.
+ *
+ * Owns the ordered SaaS middleware chain. Order is behaviour here, not style:
+ * ZGW authentication runs before the mandate check. TenantContext resolves the
+ * tenant itself, from OpenRegister's active organisation, and the mandate
+ * check refuses an organisation that is not active. Keeping the whole chain
+ * in one class makes that ordering reviewable in a single screen. Tenant
+ * isolation is OpenRegister's organisation row filter; no middleware here
+ * scopes the database.
+ *
+ * @category AppInfo
+ * @package  OCA\Dossiq\Middleware
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @spec openspec/specs/beschikking-generatie/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Middleware;
+
+use OCA\Dossiq\Middleware\MandateValidationMiddleware;
+use OCA\Dossiq\Middleware\ZgwAuthMiddleware;
+use OCP\AppFramework\Bootstrap\IRegistrationContext;
+
+/**
+ * Registers the ordered SaaS middleware chain.
+ *
+ * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/specs/beschikking-generatie/spec.md
+ */
+class MiddlewareRegistrar {
+	/**
+	 * Register the SaaS middleware chain in dependency order.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function register(IRegistrationContext $context): void {
+		$context->registerMiddleware(class: ZgwAuthMiddleware::class);
+		// SaaS chain (member 06): mandate-matrix authorisation gate. Maps the
+		// HTTP verb (and URL hints like /transition) to a matrix action key
+		// and blocks the request on deny.
+		$context->registerMiddleware(class: MandateValidationMiddleware::class);
+		// SaaS chain member 09, per-request quota enforcement, is deliberately
+		// absent. OpenRegister's TenantQuotaMiddleware counts requests against
+		// Organisation.requestQuota on OpenRegister's routes, and dossiq's
+		// frontend reads and writes through those routes. Counting the same
+		// limit again here let a tenant spend the whole allowance twice, once
+		// on each app's routes, and neither response said so. One limit, one
+		// counter. What dossiq gives up with it is named in the retirement
+		// commit: its own routes now carry no request quota, and nothing
+		// increments cases_per_month or active_users either.
+	}//end register()
+}//end class
