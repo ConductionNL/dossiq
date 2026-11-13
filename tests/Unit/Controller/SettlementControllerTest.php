@@ -18,7 +18,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\SettlementController;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\Money\SettlementOverview;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -38,15 +38,15 @@ class SettlementControllerTest extends TestCase {
 	/** @var SettlementOverview&MockObject */
 	private SettlementOverview $overview;
 
-	/** @var CaseAccessGuard&MockObject */
-	private CaseAccessGuard $caseAccess;
+	/** @var CaseAccessGuardInterface&MockObject */
+	private CaseAccessGuardInterface $caseAccess;
 
 	/** @var IUserSession&MockObject */
 	private IUserSession $session;
 
 	protected function setUp(): void {
 		$this->overview   = $this->createMock(SettlementOverview::class);
-		$this->caseAccess = $this->createMock(CaseAccessGuard::class);
+		$this->caseAccess = $this->createMock(CaseAccessGuardInterface::class);
 		$this->session    = $this->createMock(IUserSession::class);
 		$this->session->method('getUser')->willReturn($this->createMock(IUser::class));
 	}//end setUp()

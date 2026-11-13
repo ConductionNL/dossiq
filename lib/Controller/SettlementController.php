@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\Money\SettlementOverview;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -50,14 +50,14 @@ class SettlementController extends Controller {
 	 * @param IRequest           $request     The request.
 	 * @param SettlementOverview $overview    Reads the settlements.
 	 * @param IUserSession       $userSession The user session.
-	 * @param CaseAccessGuard    $caseAccess  Per-case authorization guard.
+	 * @param CaseAccessGuardInterface    $caseAccess  Per-case authorization guard.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly SettlementOverview $overview,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccess,
+		private readonly CaseAccessGuardInterface $caseAccess,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
