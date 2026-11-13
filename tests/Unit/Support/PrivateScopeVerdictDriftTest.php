@@ -67,6 +67,10 @@ final class PrivateScopeVerdictDriftTest extends TestCase {
 
 	private const ENTITY = 'OCA\\OpenRegister\\Db\\ObjectEntity';
 
+	private const CHECK = 'OCA\\OpenRegister\\Service\\Object\\PermissionCheck';
+
+	private const SCHEMA = 'OCA\\OpenRegister\\Db\\Schema';
+
 	private const RECORD = '11111111-1111-4111-8111-111111111111';
 
 	/**
@@ -224,7 +228,15 @@ final class PrivateScopeVerdictDriftTest extends TestCase {
 			$object->setAuthorization($case['record']['authorization']);
 		}
 
-		$answer = $handler->getMethod('privateScopeVerdict')->invoke($instance, $case['authorization'], $object, $case['user'], null, $case['action']);
+		// The five inputs travel in one PermissionCheck. The schema is not read
+		// by this rule; the check only requires one.
+		$check = new (self::CHECK)(schema: new (self::SCHEMA)(), action: $case['action']);
+		$check->authorization = $case['authorization'];
+		$check->userId = $case['user'];
+		$check->objectOwner = null;
+		$check->object = $object;
+
+		$answer = $handler->getMethod('privateScopeVerdict')->invoke($instance, $check);
 
 		return match ($answer) {
 			true => ShippedPrivateRecords::ADMIT,
@@ -246,14 +258,23 @@ final class PrivateScopeVerdictDriftTest extends TestCase {
 		}
 
 		self::assertTrue(method_exists(self::HANDLER, 'privateScopeVerdict'), 'PermissionHandler::privateScopeVerdict() is gone: the model has no rule to follow.');
+		$parameters = (new ReflectionClass(self::HANDLER))->getMethod('privateScopeVerdict')->getParameters();
 		self::assertSame(
-			['authorization', 'object', 'userId', 'objectOwner', 'action'],
-			array_map(
-				static fn (ReflectionParameter $parameter): string => $parameter->getName(),
-				(new ReflectionClass(self::HANDLER))->getMethod('privateScopeVerdict')->getParameters()
+			expected: [self::CHECK],
+			actual: array_map(
+				static fn (ReflectionParameter $parameter): string => (string)$parameter->getType(),
+				$parameters
 			),
-			'privateScopeVerdict() reads other inputs than the model does.'
+			message: 'privateScopeVerdict() no longer takes one PermissionCheck: re-read the rule and this test.'
 		);
+
+		// The check must still carry exactly the inputs the model reads.
+		foreach (['authorization', 'object', 'userId', 'objectOwner', 'action'] as $input) {
+			self::assertTrue(
+				condition: property_exists(self::CHECK, $input),
+				message: 'PermissionCheck no longer carries $' . $input . ': privateScopeVerdict() reads other inputs than the model does.'
+			);
+		}
 	}//end testTheRuleIsReadFromOpenRegistersOwnSource()
 
 	/**
