@@ -22,7 +22,6 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar;
 use OCA\Dossiq\Listener\StoppingRuleGuard;
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Review\DocumentRelevance;
@@ -80,7 +79,7 @@ class StoppingRuleGuardTest extends TestCase {
 			settingsService: $settings,
 			reviews: new DocumentRelevance(settingsService: $settings, logger: $logger),
 			logger: $logger,
-			reviewerAccess: $this->createMock(originalClassName: CaseReviewerAccess::class)
+			writes: $this->createMock(originalClassName: \OCA\Dossiq\Review\ReviewWrites::class)
 		);
 
 		return new StoppingRuleGuard(settingsService: $settings, rules: $rules, logger: $logger);

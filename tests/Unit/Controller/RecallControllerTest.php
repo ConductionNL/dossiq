@@ -129,7 +129,7 @@ class RecallControllerTest extends TestCase {
 			settingsService: $settings,
 			reviews: $reviews,
 			logger: $logger,
-			reviewerAccess: $this->createMock(originalClassName: CaseReviewerAccess::class)
+			writes: $this->createMock(originalClassName: \OCA\Dossiq\Review\ReviewWrites::class)
 		);
 		$batches = new ReviewBatches(
 			settingsService: $settings,

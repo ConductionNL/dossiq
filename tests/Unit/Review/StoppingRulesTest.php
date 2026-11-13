@@ -25,6 +25,7 @@ use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Review\DocumentRelevance;
+use OCA\Dossiq\Review\ReviewWrites;
 use OCA\Dossiq\Review\StoppingRules;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -38,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/woo-review-recall-and-stopping/tasks.md#1-the-stopping-rule
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Review\DocumentRelevance
+ * @uses \OCA\Dossiq\Review\ReviewWrites
  */
 class StoppingRulesTest extends TestCase {
 
@@ -75,11 +77,13 @@ class StoppingRulesTest extends TestCase {
 		$logger = ($logger ?? $this->createMock(originalClassName: LoggerInterface::class));
 		$access = ($access ?? $this->createMock(originalClassName: CaseReviewerAccess::class));
 
+		$reviews = new DocumentRelevance(settingsService: $settings, logger: $logger);
+
 		return new StoppingRules(
 			settingsService: $settings,
-			reviews: new DocumentRelevance(settingsService: $settings, logger: $logger),
+			reviews: $reviews,
 			logger: $logger,
-			reviewerAccess: $access
+			writes: new ReviewWrites(reviews: $reviews, reviewerAccess: $access)
 		);
 	}//end rules()
 

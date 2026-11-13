@@ -23,7 +23,6 @@ namespace OCA\Dossiq\Tests\Unit\Review;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Review\StoppingRules;
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -99,7 +98,7 @@ class StoppingRulesStorageTest extends TestCase {
 			settingsService: $settings,
 			reviews: new DocumentRelevance(settingsService: $settings, logger: $this->logger),
 			logger: $this->logger,
-			reviewerAccess: $this->createMock(originalClassName: CaseReviewerAccess::class)
+			writes: $this->createMock(originalClassName: \OCA\Dossiq\Review\ReviewWrites::class)
 		);
 	}//end rules()
 

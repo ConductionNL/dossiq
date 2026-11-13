@@ -97,6 +97,23 @@ class ReviewWrites {
 	}//end pagesSeen()
 
 	/**
+	 * Share every private record of a case with the people on it, after a rule of the case was stored.
+	 *
+	 * A stopping rule is private to its case (REQ-WRT-006); reconciling right
+	 * after it is stored lets the assignee the case type grants it to read and
+	 * update it in the same request.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array{status: string, granted: int, revoked: int, refused: int} What the reconcile did.
+	 *
+	 * @spec openspec/changes/woo-review-recall-and-stopping/tasks.md#1-the-stopping-rule
+	 */
+	public function ruleStored(string $caseId): array {
+		return $this->reviewerAccess->reconcile(caseId: $caseId);
+	}//end ruleStored()
+
+	/**
 	 * Whether the document has no review yet, so the write about to happen creates one.
 	 *
 	 * Asked of the whole case: a review the person cannot read is still a review.

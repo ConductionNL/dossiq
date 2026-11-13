@@ -26,7 +26,6 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -70,7 +69,7 @@ class StoppingRules {
 	 * @param SettingsService $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance $reviews Whether any document is marked yet.
 	 * @param LoggerInterface $logger The logger.
-	 * @param CaseReviewerAccess $reviewerAccess Grants the case's private records to the people on it.
+	 * @param ReviewWrites $writes Grants the case's private records to the people on it once the rule is stored.
 	 *
 	 * @return void
 	 */
@@ -78,7 +77,7 @@ class StoppingRules {
 		private readonly SettingsService $settingsService,
 		private readonly DocumentRelevance $reviews,
 		private readonly LoggerInterface $logger,
-		private readonly CaseReviewerAccess $reviewerAccess,
+		private readonly ReviewWrites $writes,
 	) {
 	}//end __construct()
 
@@ -193,7 +192,7 @@ class StoppingRules {
 	 */
 	private function reconcile(string $caseId): void {
 		try {
-			$this->reviewerAccess->reconcile(caseId: $caseId);
+			$this->writes->ruleStored(caseId: $caseId);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: a stopping rule was stored but the reviewer access of its case could not be reconciled',
