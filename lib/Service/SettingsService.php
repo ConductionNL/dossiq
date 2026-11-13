@@ -182,7 +182,7 @@ class SettingsService {
 	 * The three collaborators are constructed here rather than injected so the
 	 * container-facing signature stays `(appConfig, appManager, container,
 	 * logger)` — the shape the bespoke factory in
-	 * {@see \OCA\Dossiq\AppInfo\Registrar\BespokeServiceRegistrar} and ~180
+	 * {@see \OCA\Dossiq\Service\Registrar\BespokeServiceRegistrar} and ~180
 	 * injection sites already use.
 	 *
 	 * @param IAppConfig $appConfig The app configuration service
