@@ -26,6 +26,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentRelevanceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -41,13 +42,11 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
-class DocumentRelevance {
+class DocumentRelevance implements DocumentRelevanceInterface {
 
 	use SearchesObjects;
 
 	public const UNMARKED = 'unmarked';
-
-	public const IN_SCOPE = 'in-scope';
 
 	public const OUT_OF_SCOPE = 'out-of-scope';
 

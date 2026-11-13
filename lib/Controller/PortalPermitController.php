@@ -15,7 +15,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\PermitChangeRefusedInterface;
 use OCA\Dossiq\Kernel\Contracts\PermitPlateChangeInterface;
-use OCA\Dossiq\Portal\PortalAssertionVerifier;
+use OCA\Dossiq\Kernel\Contracts\PortalAssertionVerifierInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -62,7 +62,7 @@ class PortalPermitController extends Controller {
 	/**
 	 * @param string                  $appName   The app name.
 	 * @param IRequest                $request   The request.
-	 * @param PortalAssertionVerifier $verifier  Verifies portaliq's assertion.
+	 * @param PortalAssertionVerifierInterface $verifier  Verifies portaliq's assertion.
 	 * @param PermitPlateChangeInterface       $change    Opens the change case.
 	 * @param IThrottler              $throttler Counts rejected assertions.
 	 * @param LoggerInterface         $logger    Logger.
@@ -70,7 +70,7 @@ class PortalPermitController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalAssertionVerifier $verifier,
+		private readonly PortalAssertionVerifierInterface $verifier,
 		private readonly PermitPlateChangeInterface $change,
 		private readonly IThrottler $throttler,
 		private readonly LoggerInterface $logger,
@@ -90,7 +90,7 @@ class PortalPermitController extends Controller {
 	#[AnonRateLimit(limit: 20, period: 60)]
 	#[BruteForceProtection(action: self::THROTTLE_ACTION)]
 	public function changePlate(): JSONResponse {
-		$claims = $this->verifier->verify((string)$this->request->getHeader(PortalAssertionVerifier::HEADER));
+		$claims = $this->verifier->verify((string)$this->request->getHeader(PortalAssertionVerifierInterface::HEADER));
 		if ($claims === null) {
 			$this->registerRejectedAssertion();
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);

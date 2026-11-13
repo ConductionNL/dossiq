@@ -31,7 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\FileSet;
 
 use OCA\Dossiq\Kernel\Contracts\FileSetItemFilesInterface;
-use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 
 /**
  * Reads the original and the delivered file of one item of a frozen file set.
@@ -63,10 +63,10 @@ class FileSetItemFiles implements FileSetItemFilesInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param WooCaseDocuments $documents Reads a case document with its file bytes (Woo-named, generic in behaviour; refactor programme).
+	 * @param WooCaseDocumentsInterface $documents Reads a case document with its file bytes (Woo-named, generic in behaviour; refactor programme).
 	 */
 	public function __construct(
-		private readonly WooCaseDocuments $documents,
+		private readonly WooCaseDocumentsInterface $documents,
 	) {
 	}//end __construct()
 

@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Integration;
 
+use OCA\Dossiq\Kernel\Contracts\CaseLeafProviderInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCP\IURLGenerator;
@@ -43,14 +44,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/case-leaf/spec.md
  */
-class CaseLeafProvider {
-
-	/**
-	 * The party schemas a master entity can resolve to.
-	 *
-	 * @var array<int, string>
-	 */
-	public const PARTY_SCHEMAS = ['brpPerson', 'kvkCompany'];
+class CaseLeafProvider implements CaseLeafProviderInterface {
 
 	/**
 	 * The status filters a read may ask for.

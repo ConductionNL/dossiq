@@ -64,9 +64,9 @@ namespace OCA\Dossiq\Portal;
 use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeCaseTypesInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooReceivedAnswersInterface;
+use OCA\Dossiq\Kernel\Contracts\WooRequestIntakeInterface;
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
-use OCA\Dossiq\Woo\WooReceivedAnswers;
-use OCA\Dossiq\Woo\WooRequestIntake;
 use Throwable;
 
 /**
@@ -483,7 +483,7 @@ class PortalContributionProvider {
 	 * @param PortalMessageBoxRecipient|null $messageBox Who a portal letter goes to in the message box, or null.
 	 * @param PortalCaseSteps|null           $steps      Where a case stands in its type's public steps, or null.
 	 * @param PortalCaseMessages|null        $messages   The resident's messages on a case, or null.
-	 * @param WooRequestIntake|null          $wooRequests Opens the case for a Woo request a portal form sent, or null.
+	 * @param WooRequestIntakeInterface|null          $wooRequests Opens the case for a Woo request a portal form sent, or null.
 	 * @param IntakeCaseTypesInterface|null           $caseTypes  The case type each case-opening action opens, or
 	 *                                                   null, which leaves those actions out.
 	 * @param SettingsServiceInterface|null           $settings   Reads the text shown above Mijn zaken.
@@ -494,7 +494,7 @@ class PortalContributionProvider {
 		private readonly ?PortalMessageBoxRecipient $messageBox = null,
 		private readonly ?PortalCaseSteps $steps = null,
 		private readonly ?PortalCaseMessages $messages = null,
-		private readonly ?WooRequestIntake $wooRequests = null,
+		private readonly ?WooRequestIntakeInterface $wooRequests = null,
 		private readonly ?IntakeCaseTypesInterface $caseTypes = null,
 		private readonly ?SettingsServiceInterface $settings = null,
 	) {
@@ -520,7 +520,7 @@ class PortalContributionProvider {
 	public function receiveWooRequest(array $answers, string $receivedAt = ''): array {
 		if ($this->wooRequests === null) {
 			return array_merge(
-				WooReceivedAnswers::EMPTY_ANSWER,
+				WooReceivedAnswersInterface::EMPTY_ANSWER,
 				['outcome' => 'unavailable', 'message' => 'The Woo request intake is not available.']
 			);
 		}

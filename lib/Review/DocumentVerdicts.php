@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentVerdictsInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Service\Assessment\OutstandingDocuments as DocumentTitles;
@@ -38,7 +39,7 @@ use Throwable;
  *
  * @spec openspec/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
  */
-class DocumentVerdicts {
+class DocumentVerdicts implements DocumentVerdictsInterface {
 
 	/**
 	 * Constructor.

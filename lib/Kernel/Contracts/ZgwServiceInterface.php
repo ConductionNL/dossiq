@@ -22,8 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Kernel\Contracts;
 
-use OCA\Dossiq\Service\ZgwBusinessRulesService;
-use OCA\Dossiq\Service\ZgwDocumentService;
+use OCA\Dossiq\Kernel\Contracts\ZgwBusinessRulesServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZgwDocumentServiceInterface;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\OpenRegister\Db\Mapping;
 use OCP\AppFramework\Http\JSONResponse;
@@ -189,11 +189,11 @@ interface ZgwServiceInterface {
 	/**
 	 * Get the business rules service.
 	 *
-	 * @return ZgwBusinessRulesService
+	 * @return ZgwBusinessRulesServiceInterface
 	 *
 	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
-	public function getBusinessRulesService(): ZgwBusinessRulesService;
+	public function getBusinessRulesService(): ZgwBusinessRulesServiceInterface;
 
 	/**
 	 * Get the consumer's authorization details for a component (for zrc-006).
@@ -222,11 +222,11 @@ interface ZgwServiceInterface {
 	/**
 	 * Get the document service.
 	 *
-	 * @return ZgwDocumentService
+	 * @return ZgwDocumentServiceInterface
 	 *
 	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
-	public function getDocumentService(): ZgwDocumentService;
+	public function getDocumentService(): ZgwDocumentServiceInterface;
 
 	/**
 	 * Get the logger.

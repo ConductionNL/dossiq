@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooSourcesInterface;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use OCP\EventDispatcher\Event;
@@ -49,7 +50,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
  */
-class WooSources {
+class WooSources implements WooSourcesInterface {
 
 	/**
 	 * Nextcloud files, searched through the unified search provider `files`.
@@ -60,11 +61,6 @@ class WooSources {
 	 * Documents on other cases, searched through OpenRegister's unified search provider.
 	 */
 	public const SOURCE_CASES = 'cases';
-
-	/**
-	 * The Microsoft 365 connection integriq holds: SharePoint, Teams and mail.
-	 */
-	public const SOURCE_MICROSOFT365 = 'microsoft365';
 
 	/**
 	 * The most rows one source answers per search (design risks: narrow, do not page).

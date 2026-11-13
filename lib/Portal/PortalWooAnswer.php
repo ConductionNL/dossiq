@@ -33,6 +33,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekResolutionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
+use OCA\Dossiq\Kernel\Contracts\PortalWooAnswerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
  */
-class PortalWooAnswer {
+class PortalWooAnswer implements PortalWooAnswerInterface {
 
 	use SearchesObjects;
 
