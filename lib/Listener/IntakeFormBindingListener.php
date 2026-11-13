@@ -28,9 +28,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Service\Intake\IntakeFormBindingCheck;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -51,12 +51,12 @@ class IntakeFormBindingListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService        $settingsService Schema slug bridge.
+	 * @param SettingsServiceInterface        $settingsService Schema slug bridge.
 	 * @param IntakeFormBindingCheck $check           Judges the binding.
 	 * @param LoggerInterface        $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IntakeFormBindingCheck $check,
 		private readonly LoggerInterface $logger,
 	) {

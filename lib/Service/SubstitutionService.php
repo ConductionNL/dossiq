@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use JsonSerializable;
+use OCA\Dossiq\Kernel\Contracts\SubstitutionServiceInterface;
 use OCA\Dossiq\Service\Substitution\HumaniqLeaveReader;
 use OCA\Dossiq\Service\Substitution\SubstitutedWorkResolver;
 use OCA\Dossiq\Service\Substitution\SubstitutionValidator;
@@ -50,7 +51,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
-class SubstitutionService {
+class SubstitutionService implements SubstitutionServiceInterface {
 	use SearchesObjects;
 
 	/**

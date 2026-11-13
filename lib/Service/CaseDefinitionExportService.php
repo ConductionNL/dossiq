@@ -32,6 +32,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseDefinitionExportServiceInterface;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
@@ -48,7 +49,7 @@ use ZipArchive;
  *
  * @spec openspec/changes/archive/retrofit-2026-05-24-annotate-procest/tasks.md#task-3
  */
-class CaseDefinitionExportService {
+class CaseDefinitionExportService implements CaseDefinitionExportServiceInterface {
 	/**
 	 * Version format for manifest.
 	 */
@@ -386,7 +387,6 @@ class CaseDefinitionExportService {
 			'title' => $this->text->textOf(value: ($export->caseType['title'] ?? null)),
 		];
 	}//end manifestCaseType()
-
 
 	/**
 	 * The slug a package is named after.

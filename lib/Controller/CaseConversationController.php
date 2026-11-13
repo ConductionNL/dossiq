@@ -36,7 +36,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\Conversation\CaseCaptureService;
 use OCA\Dossiq\Service\Conversation\CaseConversationService;
 use OCA\Dossiq\Service\Conversation\MajorCaseDeclaration;
@@ -79,7 +79,7 @@ class CaseConversationController extends Controller {
 	 * @param CaseConversationService  $conversations   Conversations and the record they leave.
 	 * @param MajorCaseDeclaration     $major           Declaring a case major, and closing its channel.
 	 * @param CaseCaptureService       $captures        Voice notes and screen captures.
-	 * @param CaseAccessGuard          $caseAccessGuard Per-case authorization, failing closed.
+	 * @param CaseAccessGuardInterface          $caseAccessGuard Per-case authorization, failing closed.
 	 * @param IUserSession             $userSession     Current user session.
 	 * @param LoggerInterface          $logger          Logger, used by the refusal translator.
 	 */
@@ -88,7 +88,7 @@ class CaseConversationController extends Controller {
 		private readonly CaseConversationService $conversations,
 		private readonly MajorCaseDeclaration $major,
 		private readonly CaseCaptureService $captures,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

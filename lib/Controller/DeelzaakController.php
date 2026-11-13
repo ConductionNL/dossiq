@@ -28,8 +28,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\DeelzaakService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DeelzaakServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -47,15 +47,15 @@ class DeelzaakController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request Inbound request.
-	 * @param DeelzaakService $deelzaakService Backend service.
+	 * @param DeelzaakServiceInterface $deelzaakService Backend service.
 	 * @param IUserSession $userSession Current user session.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly DeelzaakService $deelzaakService,
+		private readonly DeelzaakServiceInterface $deelzaakService,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

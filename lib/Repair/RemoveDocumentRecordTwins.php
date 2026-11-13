@@ -14,8 +14,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCP\IAppConfig;
@@ -49,13 +49,13 @@ class RemoveDocumentRecordTwins implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The register and schema configuration.
+	 * @param SettingsServiceInterface $settingsService The register and schema configuration.
 	 * @param DocumentRecordStore $store The record store.
 	 * @param IAppConfig $appConfig Where the step records that it ran.
 	 * @param LoggerInterface $logger Where a record that could not go is named.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly DocumentRecordStore $store,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,

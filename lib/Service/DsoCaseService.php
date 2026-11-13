@@ -24,10 +24,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Dso\DsoCaseSteps;
 use DateTimeImmutable;
 use Exception;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DsoCaseServiceInterface;
+use OCA\Dossiq\Service\Dso\DsoCaseSteps;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
@@ -53,7 +54,7 @@ use RuntimeException;
  * container stays because IGroupManager is still resolved through it.
  * 29 classes in this app already carry this suppression.
  */
-class DsoCaseService {
+class DsoCaseService implements DsoCaseServiceInterface {
 
 	use SearchesObjects;
 

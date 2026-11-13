@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TemplateLibraryServiceInterface;
 use OCA\Dossiq\Service\TemplateLibrary\TemplateActivation;
 use OCA\Dossiq\Service\TemplateLibrary\TemplateRows;
 use Psr\Log\LoggerInterface;
@@ -38,7 +39,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/template-library/spec.md
  */
-class TemplateLibraryService {
+class TemplateLibraryService implements TemplateLibraryServiceInterface {
 
 	/**
 	 * Path to the templates directory.

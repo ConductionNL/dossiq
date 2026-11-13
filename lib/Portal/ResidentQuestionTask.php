@@ -35,7 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -67,12 +67,12 @@ class ResidentQuestionTask {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container The container OpenRegister's task service is resolved from.
-	 * @param CaseDateNormaliser $dates     Reads a due date as a day in the administrator's time zone.
+	 * @param CaseDateNormaliserInterface $dates     Reads a due date as a day in the administrator's time zone.
 	 * @param LoggerInterface    $logger    Structured logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly CaseDateNormaliser $dates,
+		private readonly CaseDateNormaliserInterface $dates,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

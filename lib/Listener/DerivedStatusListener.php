@@ -47,8 +47,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Status\DerivedStatusJournal;
 use OCA\Dossiq\Service\Status\DerivedStatusService;
 use OCA\Dossiq\Service\Status\StatusDeclarations;
@@ -89,14 +89,14 @@ class DerivedStatusListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService      $settingsService Schema slug bridge.
+	 * @param SettingsServiceInterface      $settingsService Schema slug bridge.
 	 * @param DerivedStatusService $derived         Which status the case type derives.
 	 * @param StatusDeclarations   $declarations    The dwell bookkeeping a move carries.
 	 * @param LoggerInterface      $logger          Structured logger.
 	 * @param DerivedStatusJournal|null $journal    Where a decided move waits for the save to land.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly DerivedStatusService $derived,
 		private readonly StatusDeclarations $declarations,
 		private readonly LoggerInterface $logger,

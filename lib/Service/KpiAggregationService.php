@@ -46,6 +46,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\KpiAggregationServiceInterface;
 use OCA\Dossiq\Service\Queue\QueueOldestNote;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -58,7 +59,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
  */
-class KpiAggregationService {
+class KpiAggregationService implements KpiAggregationServiceInterface {
 	/**
 	 * Upper bound on rows pulled for the metrics that must fold rows rather than
 	 * count them (the two breakdowns, and the processing-time average).
@@ -339,7 +340,6 @@ class KpiAggregationService {
 	private function countCases(array $ids, array $filters): int {
 		return $this->countObjects(ids: $ids, schema: $ids['case'], filters: $filters);
 	}//end countCases()
-
 
 	/**
 	 * Count objects of one schema, server-side.

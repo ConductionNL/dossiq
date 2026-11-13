@@ -29,9 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\ContactMomentServiceInterface;
 use OCA\Dossiq\Service\BurgerIdentificationService;
 use OCA\Dossiq\Service\CaseVoorbladService;
-use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\DoorverbindingService;
 use OCA\Dossiq\Service\Kcc\GuardedCitizenLookup;
 use OCA\Dossiq\Service\QuickActionService;
@@ -54,7 +54,7 @@ class ContactMomentController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param ContactMomentService $contactMomentService The contactmoment service.
+	 * @param ContactMomentServiceInterface $contactMomentService The contactmoment service.
 	 * @param CaseVoorbladService $caseVoorbladService The case-voorblad service.
 	 * @param QuickActionService $quickActionService The quick-action service.
 	 * @param DoorverbindingService $transferService The doorverbinding service.
@@ -68,7 +68,7 @@ class ContactMomentController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ContactMomentService $contactMomentService,
+		private readonly ContactMomentServiceInterface $contactMomentService,
 		private readonly CaseVoorbladService $caseVoorbladService,
 		private readonly QuickActionService $quickActionService,
 		private readonly DoorverbindingService $transferService,

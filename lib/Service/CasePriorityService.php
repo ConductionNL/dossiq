@@ -44,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CasePriorityServiceInterface;
 use OCA\Dossiq\Service\Support\ReferenceId;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -53,7 +54,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-priority/spec.md
  */
-class CasePriorityService {
+class CasePriorityService implements CasePriorityServiceInterface {
 	/**
 	 * How much it matters if this case goes wrong, lowest first.
 	 *

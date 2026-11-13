@@ -35,8 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseCustodyChainInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
-use OCA\Dossiq\Service\Custody\CaseCustodyChain;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
@@ -63,14 +63,14 @@ class CustodyCaseCreatedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseCustodyChain         $custody      The chain the holding is written into.
+	 * @param CaseCustodyChainInterface         $custody      The chain the holding is written into.
 	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
 	 * @param LoggerInterface          $logger       Records a chain that could not be started.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly CaseCustodyChain $custody,
+		private readonly CaseCustodyChainInterface $custody,
 		private readonly ObjectSchemaSlugResolver $slugResolver,
 		private readonly LoggerInterface $logger,
 	) {

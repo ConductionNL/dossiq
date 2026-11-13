@@ -22,9 +22,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Service\Assessment\OutstandingDocuments as DocumentTitles;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IL10N;
 use Throwable;
@@ -43,8 +43,8 @@ class DocumentVerdicts {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService              $settingsService The settings and OpenRegister access.
-	 * @param WOODocumentAssessmentService $assessments     The documents of a case under review.
+	 * @param SettingsServiceInterface              $settingsService The settings and OpenRegister access.
+	 * @param WOODocumentAssessmentServiceInterface $assessments     The documents of a case under review.
 	 * @param DocumentTitles               $titles          The title of a document.
 	 * @param WooRefusalGrounds            $grounds         The label of a cited ground.
 	 * @param IL10N                        $l10n            The translations.
@@ -52,8 +52,8 @@ class DocumentVerdicts {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly WOODocumentAssessmentService $assessments,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly WOODocumentAssessmentServiceInterface $assessments,
 		private readonly DocumentTitles $titles,
 		private readonly WooRefusalGrounds $grounds,
 		private readonly IL10N $l10n,

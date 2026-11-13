@@ -30,10 +30,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTimer;
 use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTrigger;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -52,13 +52,13 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 	/**
 	 * Build the step.
 	 *
-	 * @param SettingsService       $settingsService Reaches OpenRegister and the schema.
+	 * @param SettingsServiceInterface       $settingsService Reaches OpenRegister and the schema.
 	 * @param BezwaarArchiveTimer   $timer           Arms each trigger's timer.
 	 * @param BezwaarArchiveTrigger $trigger         Acts on the triggers already due.
 	 * @param LoggerInterface       $logger          Logs the counts.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly BezwaarArchiveTimer $timer,
 		private readonly BezwaarArchiveTrigger $trigger,
 		private readonly LoggerInterface $logger,

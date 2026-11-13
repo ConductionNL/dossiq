@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use OCP\IURLGenerator;
@@ -70,13 +70,13 @@ class CollectionCaseLinks {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService           $settingsService Schemas, and the collection and publication configuration.
+	 * @param SettingsServiceInterface           $settingsService Schemas, and the collection and publication configuration.
 	 * @param IURLGenerator             $urlGenerator    Makes the publication links absolute.
 	 * @param LoggerInterface           $logger          Logger.
 	 * @param UnscopedObjectReader|null $reader          Reads unscoped; a fresh one when null.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly LoggerInterface $logger,
 		?UnscopedObjectReader $reader = null,

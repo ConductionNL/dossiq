@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\TenantMigrationServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TenantMigration\LegacyTenant;
 use OCA\Dossiq\Service\TenantMigration\TenantMigrationRun;
@@ -54,19 +55,9 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-14-migrate-tenant-to-or-tenant/tasks.md
  */
-class TenantMigrationService {
+class TenantMigrationService implements TenantMigrationServiceInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * The migration writes.
-	 */
-	public const MODE_APPLY = 'apply';
-
-	/**
-	 * The migration decides and reports, and writes nothing.
-	 */
-	public const MODE_PREVIEW = 'preview';
 
 	/**
 	 * Register slug holding this app's schemas.
@@ -87,7 +78,6 @@ class TenantMigrationService {
 	 * NC group-id prefix used for tenant routing (mirrors TenantService).
 	 */
 	private const TENANT_GROUP_PREFIX = 'tenant_';
-
 
 	/**
 	 * Map of legacy procest tenant status → OR Organisation lifecycle status.
@@ -619,7 +609,6 @@ class TenantMigrationService {
 			'slug' => $tenant->slug,
 		];
 	}//end refuseCollision()
-
 
 	/**
 	 * Repair an Organisation this migration previously wrote a superseded status onto.

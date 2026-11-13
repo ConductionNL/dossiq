@@ -48,6 +48,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DemoDataServiceInterface;
 use OCA\Dossiq\Service\Setup\ExampleDataFragments;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -60,7 +61,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/first-time-setup/spec.md
  */
-class DemoDataService {
+class DemoDataService implements DemoDataServiceInterface {
 	/**
 	 * App-relative path to the generated mock descriptor.
 	 *
@@ -140,40 +141,6 @@ class DemoDataService {
 	public function isAvailable(): bool {
 		return is_file($this->descriptorPath()) === true;
 	}//end isAvailable()
-
-	/**
-	 * App-config key recording the setup wizard's example data decision:
-	 * `installed` when the operator loaded example data, `skipped` when they
-	 * chose none. Anything that plants example rows reads this switch.
-	 *
-	 * @var string
-	 */
-	public const DECIDED_KEY = 'demo_data_decided';
-
-	/**
-	 * The decision that opts this instance into example data.
-	 *
-	 * @var string
-	 */
-	public const DECIDED_INSTALLED = 'installed';
-
-	/**
-	 * The answer that means "plant nothing".
-	 *
-	 * 🔴 NOT THE ABSENCE OF AN ANSWER. An operator who declines has FINISHED the
-	 * step; a step that can never be marked done reopens the wizard over every
-	 * page (nextcloud-vue#806).
-	 *
-	 * @var string
-	 */
-	public const NONE_DATASET = 'none';
-
-	/**
-	 * The id of the dataset this app ships.
-	 *
-	 * @var string
-	 */
-	public const DEMO_DATASET = 'demo';
 
 	/**
 	 * Every answer the wizard's choice step may offer, declining included.

@@ -34,11 +34,12 @@ namespace OCA\Dossiq\Service;
 use DomainException;
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ZaakdossierServiceInterface;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
-use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -52,7 +53,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  */
-class ZaakdossierService {
+class ZaakdossierService implements ZaakdossierServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -602,7 +603,6 @@ class ZaakdossierService {
 
 		return array_merge(['id' => $infoObjectId, 'updated' => true], $updateData);
 	}//end updateMetadata()
-
 
 	/**
 	 * Fetch a single informatieobject as an array.

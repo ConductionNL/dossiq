@@ -45,6 +45,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Routing;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\RefusalOutcomeInterface;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
@@ -65,7 +66,7 @@ use Throwable;
  *
  * @spec openspec/specs/kcc-routing/spec.md
  */
-class RefusalOutcome {
+class RefusalOutcome implements RefusalOutcomeInterface {
 
 	use RefusesWhenIndeterminate;
 	use SearchesObjects;

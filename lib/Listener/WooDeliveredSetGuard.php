@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Woo\WooDeliveredSetWriter;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -62,13 +62,13 @@ class WooDeliveredSetGuard implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService       $settings The configured schemas.
+	 * @param SettingsServiceInterface       $settings The configured schemas.
 	 * @param WooDeliveredSetWriter $sets     Reads the frozen sets of a case.
 	 * @param IL10N                 $l10n     The refusal sentence.
 	 * @param LoggerInterface       $logger   Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 		private readonly WooDeliveredSetWriter $sets,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,

@@ -35,10 +35,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\ComplaintServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
-use OCA\Dossiq\Service\ComplaintService;
 use OCA\Dossiq\Service\DispositionService;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -57,9 +57,9 @@ class ComplaintDispositionController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param ComplaintService $complaintService Complaint service
+	 * @param ComplaintServiceInterface $complaintService Complaint service
 	 * @param DispositionService $dispositionService Disposition service
-	 * @param SettingsService $settingsService Settings service
+	 * @param SettingsServiceInterface $settingsService Settings service
 	 * @param ComplaintAccessGuard $accessGuard Shared complaint authorization guard
 	 *
 	 * @return void
@@ -67,9 +67,9 @@ class ComplaintDispositionController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ComplaintService $complaintService,
+		private readonly ComplaintServiceInterface $complaintService,
 		private readonly DispositionService $dispositionService,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly ComplaintAccessGuard $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);

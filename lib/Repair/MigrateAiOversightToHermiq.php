@@ -16,10 +16,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Ai\AiAuditLog;
 use OCA\Dossiq\Service\Ai\AiOversightDelegationService;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Throwable;
@@ -74,14 +74,14 @@ class MigrateAiOversightToHermiq implements IRepairStep {
 	 *
 	 * @param AiAuditLog $audit Reads procest's own oversight log.
 	 * @param AiOversightDelegationService $oversight Sends a decision to hermiq.
-	 * @param SettingsService|null $settings Resolves OpenRegister for the system identity.
+	 * @param SettingsServiceInterface|null $settings Resolves OpenRegister for the system identity.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly AiAuditLog $audit,
 		private readonly AiOversightDelegationService $oversight,
-		private readonly ?SettingsService $settings=null,
+		private readonly ?SettingsServiceInterface $settings=null,
 	) {
 
 	}//end __construct()

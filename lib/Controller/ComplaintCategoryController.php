@@ -32,8 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -55,7 +55,7 @@ class ComplaintCategoryController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param SettingsService $settingsService Settings service
+	 * @param SettingsServiceInterface $settingsService Settings service
 	 * @param ComplaintAccessGuard $accessGuard Shared complaint authorization guard
 	 *
 	 * @return void
@@ -63,7 +63,7 @@ class ComplaintCategoryController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly ComplaintAccessGuard $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);

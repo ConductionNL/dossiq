@@ -17,8 +17,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\EngineTaskGatewayInterface;
 use OCA\Dossiq\Service\AssigneeResolver;
-use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunContext;
@@ -167,7 +167,7 @@ class DossiqAskPersonNode implements IFlowNode {
      * @param AssigneeResolver    $assignees   The app's one answer to who work goes to.
      * @param IL10N               $l10n        The localisation service.
      * @param LoggerInterface     $logger      The logger.
-     * @param EngineTaskGateway   $engineTasks The seam onto OpenRegister's task engine.
+     * @param EngineTaskGatewayInterface   $engineTasks The seam onto OpenRegister's task engine.
      * @param IUserSession        $userSession The acting identity the engine records.
      * @param TaskFormReader|null $forms       The engine's own form reader, which
      *                                         is what refuses a declaration nobody
@@ -186,7 +186,7 @@ class DossiqAskPersonNode implements IFlowNode {
         private readonly AssigneeResolver $assignees,
         private readonly IL10N $l10n,
         private readonly LoggerInterface $logger,
-        EngineTaskGateway $engineTasks,
+        EngineTaskGatewayInterface $engineTasks,
         IUserSession $userSession,
         private readonly ?TaskFormReader $forms = null,
     ) {

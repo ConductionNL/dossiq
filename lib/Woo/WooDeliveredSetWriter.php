@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Service\Object\ObjectStateRequest;
 use OCP\IUserSession;
@@ -85,12 +85,12 @@ class WooDeliveredSetWriter {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService      $settings    Bridge to OpenRegister.
+	 * @param SettingsServiceInterface      $settings    Bridge to OpenRegister.
 	 * @param IUserSession|null    $userSession Who delivers.
 	 * @param LoggerInterface|null $logger      Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 		private readonly ?IUserSession $userSession = null,
 		private readonly ?LoggerInterface $logger = null,
 	) {

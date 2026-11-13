@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ConsultationServiceInterface;
 use OCA\Dossiq\Service\Consultation\ConsultationRecords;
 use OCA\Dossiq\Service\Consultation\ConsultationTerms;
 use OCA\Dossiq\Service\Obligations\ObligationService;
@@ -44,7 +45,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  */
-class ConsultationService {
+class ConsultationService implements ConsultationServiceInterface {
 
 	use SearchesObjects;
 

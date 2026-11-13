@@ -52,8 +52,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Contribution\CaseTypeContributionRegistry;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -91,7 +91,7 @@ class SeedContributedCaseTypes implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param CaseTypeContributionRegistry $registry        What the installed apps contribute.
-	 * @param SettingsService              $settingsService Register and schema resolution, and the object service.
+	 * @param SettingsServiceInterface              $settingsService Register and schema resolution, and the object service.
 	 * @param LoggerInterface              $logger          The logger.
 	 *
 	 * @return void
@@ -100,7 +100,7 @@ class SeedContributedCaseTypes implements IRepairStep {
 	 */
 	public function __construct(
 		private readonly CaseTypeContributionRegistry $registry,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

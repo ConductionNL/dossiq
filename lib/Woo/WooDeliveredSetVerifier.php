@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -42,12 +42,12 @@ class WooDeliveredSetVerifier {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService       $settings  Bridge to OpenRegister.
+	 * @param SettingsServiceInterface       $settings  Bridge to OpenRegister.
 	 * @param WooDeliveredSetWriter $sets      The hash rule and the set schema.
 	 * @param WooCaseDocuments      $documents Reads a document with its file bytes.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 		private readonly WooDeliveredSetWriter $sets,
 		private readonly WooCaseDocuments $documents,
 	) {

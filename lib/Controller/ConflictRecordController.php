@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Sync\ConflictResolutionService;
+use OCA\Dossiq\Kernel\Contracts\ConflictResolutionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -50,7 +50,7 @@ class ConflictRecordController extends Controller {
 	 *
 	 * @param string                    $appName     App id.
 	 * @param IRequest                  $request     The request.
-	 * @param ConflictResolutionService $resolution  Checks access and writes the choice.
+	 * @param ConflictResolutionServiceInterface $resolution  Checks access and writes the choice.
 	 * @param IUserSession              $userSession The signed-in user.
 	 *
 	 * @spec openspec/changes/inspection-conflict-card/tasks.md
@@ -58,7 +58,7 @@ class ConflictRecordController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ConflictResolutionService $resolution,
+		private readonly ConflictResolutionServiceInterface $resolution,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -83,7 +83,7 @@ class ConflictRecordController extends Controller {
 		}
 
 		$resolution = $this->request->getParam('resolution');
-		$allowed = [ConflictResolutionService::CLIENT_WINS, ConflictResolutionService::SERVER_WINS];
+		$allowed = [ConflictResolutionServiceInterface::CLIENT_WINS, ConflictResolutionServiceInterface::SERVER_WINS];
 		if (is_string($resolution) === false || in_array($resolution, $allowed, true) === false) {
 			return new JSONResponse(
 				['message' => 'Kies client_wins of server_wins.'],

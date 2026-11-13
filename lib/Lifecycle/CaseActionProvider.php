@@ -34,9 +34,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Lifecycle;
 
+use OCA\Dossiq\Kernel\Contracts\StatusTransitionServiceInterface;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\Cases\ExternalHome;
-use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCA\OpenRegister\Exception\LifecycleProviderException;
 use OCA\OpenRegister\Exception\LifecycleSubjectNotFoundException;
@@ -118,7 +118,7 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param StatusTransitionService $transitionEngine The single reader of a case's available moves.
+	 * @param StatusTransitionServiceInterface $transitionEngine The single reader of a case's available moves.
 	 * @param OpenRegisterGrantsGateway $grants The reader of OpenRegister's effective grants.
 	 * @param ExternalHome $externalHome Whether the work on this case happens in another application.
 	 * @param CaseActionList $actions The acts a case offers, and what blocks them.
@@ -128,7 +128,7 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly StatusTransitionService $transitionEngine,
+		private readonly StatusTransitionServiceInterface $transitionEngine,
 		private readonly OpenRegisterGrantsGateway $grants,
 		private readonly ExternalHome $externalHome,
 		private readonly CaseActionList $actions,

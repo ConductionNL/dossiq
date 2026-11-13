@@ -31,8 +31,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
-use OCA\Dossiq\Service\Support\FilledValue;
+use OCA\Dossiq\Kernel\Contracts\CaseCompletenessInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\Support\FilledValue;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -43,7 +44,7 @@ use OCP\IUser;
  *
  * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
  */
-class CaseCompleteness {
+class CaseCompleteness implements CaseCompletenessInterface {
 
 	/**
 	 * Constructor.

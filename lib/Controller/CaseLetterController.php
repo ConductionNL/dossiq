@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\DecisionDocument\DecisionLetter;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCP\AppFramework\Controller;
@@ -49,7 +49,7 @@ class CaseLetterController extends Controller {
 	 * @param IRequest        $request         The request.
 	 * @param DecisionLetter  $letters         Finds the letter on the case.
 	 * @param IUserSession    $userSession     The current user.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 * @param CaseDocumentDrafts $drafts       Drafts the declared letter through filinq.
 	 */
 	public function __construct(
@@ -57,7 +57,7 @@ class CaseLetterController extends Controller {
 		IRequest $request,
 		private readonly DecisionLetter $letters,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly CaseDocumentDrafts $drafts,
 	) {
 		parent::__construct(appName: $appName, request: $request);

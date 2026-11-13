@@ -24,9 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\CaseTypeResolver;
-use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeResolverInterface;
 use OCA\Dossiq\Service\CaseType\PortalWithdrawalTarget;
+use OCA\Dossiq\Service\CaseTypeStore;
 
 /**
  * Where a case type and its portal withdrawal target are read: the resolver, the store and the target.
@@ -37,12 +37,12 @@ final class CaseTypeLookup {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTypeResolver       $resolver The type's statuses, inherited ones included.
+	 * @param CaseTypeResolverInterface       $resolver The type's statuses, inherited ones included.
 	 * @param CaseTypeStore          $store    The type's active workflow template.
 	 * @param PortalWithdrawalTarget $target   Owns the rule.
 	 */
 	public function __construct(
-		public readonly CaseTypeResolver $resolver,
+		public readonly CaseTypeResolverInterface $resolver,
 		public readonly CaseTypeStore $store,
 		public readonly PortalWithdrawalTarget $target,
 	) {

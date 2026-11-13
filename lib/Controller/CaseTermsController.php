@@ -39,10 +39,10 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTermsServiceInterface;
 use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
-use OCA\Dossiq\Service\AanvullingsverzoekService;
-use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\OpenWorkloadAgeService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -71,23 +71,23 @@ class CaseTermsController extends Controller {
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param CaseTermsService $terms The four clocks on a case.
+	 * @param CaseTermsServiceInterface $terms The four clocks on a case.
 	 * @param OpenWorkloadAgeService $workload The age of what is still standing.
-	 * @param CaseAccessGuard $guard The per-case check, asked of every endpoint below.
+	 * @param CaseAccessGuardInterface $guard The per-case check, asked of every endpoint below.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
-	 * @param AanvullingsverzoekService $aanvullingen The request as a record.
+	 * @param AanvullingsverzoekServiceInterface $aanvullingen The request as a record.
 	 * @param AanvullingsverzoekResolutionService $resolution The answer, item by item.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseTermsService $terms,
+		private readonly CaseTermsServiceInterface $terms,
 		private readonly OpenWorkloadAgeService $workload,
-		private readonly CaseAccessGuard $guard,
+		private readonly CaseAccessGuardInterface $guard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly AanvullingsverzoekService $aanvullingen,
+		private readonly AanvullingsverzoekServiceInterface $aanvullingen,
 		private readonly AanvullingsverzoekResolutionService $resolution,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -225,7 +225,7 @@ class CaseTermsController extends Controller {
 	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
 	 */
 	private function clarificationOf(array $body): ?string {
-		if ((string)($body['kind'] ?? '') !== AanvullingsverzoekService::KIND_CLARIFICATION) {
+		if ((string)($body['kind'] ?? '') !== AanvullingsverzoekServiceInterface::KIND_CLARIFICATION) {
 			return null;
 		}
 

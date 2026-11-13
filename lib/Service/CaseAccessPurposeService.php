@@ -32,6 +32,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessPurposeServiceInterface;
 use OCA\Dossiq\Service\People\CaseRoleHolder;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use Psr\Log\LoggerInterface;
@@ -42,7 +43,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-access-purpose/spec.md
  */
-class CaseAccessPurposeService {
+class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 
 	/**
 	 * The audit trail action of a recorded purpose.

@@ -40,8 +40,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\ContactMomentService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ContactMomentServiceInterface;
 use OCA\Dossiq\Service\Pipelinq\ContactMomentBridge;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -66,16 +66,16 @@ class PipelinqContactMomentController extends Controller {
 	 *
 	 * @param IRequest             $request     The HTTP request.
 	 * @param ContactMomentBridge  $moments     Contact moments by membership, and the two filing acts.
-	 * @param ContactMomentService $log         Writes the dossiq contact moment and appends it to pipelinq.
-	 * @param CaseAccessGuard      $access      Per-case authorization (fails closed).
+	 * @param ContactMomentServiceInterface $log         Writes the dossiq contact moment and appends it to pipelinq.
+	 * @param CaseAccessGuardInterface      $access      Per-case authorization (fails closed).
 	 * @param IUserSession         $userSession The current session.
 	 * @param IL10N                $l10n        The translations.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly ContactMomentBridge $moments,
-		private readonly ContactMomentService $log,
-		private readonly CaseAccessGuard $access,
+		private readonly ContactMomentServiceInterface $log,
+		private readonly CaseAccessGuardInterface $access,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {

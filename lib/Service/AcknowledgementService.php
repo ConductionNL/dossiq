@@ -46,6 +46,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\AcknowledgementServiceInterface;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -67,7 +68,7 @@ use Throwable;
  *
  * @spec openspec/specs/burger-notifications/spec.md
  */
-class AcknowledgementService {
+class AcknowledgementService implements AcknowledgementServiceInterface {
 
 	use RefusesWhenIndeterminate;
 	use SearchesObjects;

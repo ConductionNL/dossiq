@@ -28,8 +28,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DeadlineComplianceCalculatorInterface;
 use OCA\Dossiq\Service\Csv\CsvWriter;
-use OCA\Dossiq\Service\Doorlooptijd\DeadlineComplianceCalculator;
 use OCA\Dossiq\Service\DoorlooptijdService;
 use OCA\Dossiq\Service\Reporting\ReportingAudience;
 use OCP\AppFramework\Controller;
@@ -150,7 +150,7 @@ class DoorlooptijdController extends Controller {
 			return new JSONResponse(['message' => 'format must be json or csv'], Http::STATUS_BAD_REQUEST);
 		}
 
-		if (in_array($granularity, DeadlineComplianceCalculator::GRANULARITIES, true) === false) {
+		if (in_array($granularity, DeadlineComplianceCalculatorInterface::GRANULARITIES, true) === false) {
 			return new JSONResponse(['message' => 'granularity must be week, month, quarter or year'], Http::STATUS_BAD_REQUEST);
 		}
 
