@@ -120,6 +120,30 @@ class ZgwJwtValidator {
 	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function validate(string $authorization): void {
+		$consumer = $this->consumerFor(authorization: $authorization);
+
+		// Mirror OpenRegister: bind the request to the Consumer's user.
+		$this->bindConsumerUser(userId: $consumer->getUserId());
+	}//end validate()
+
+	/**
+	 * The consumer a JWT bearer token belongs to, verified, without binding its user.
+	 *
+	 * Decodes the token, finds the consumer named by its issuer, checks the
+	 * signature against that consumer's shared secret and checks `iat`/`exp`.
+	 * The caller decides what to do with the consumer; ApiCredentialResolver
+	 * binds its user once, whatever the credential.
+	 *
+	 * @param string $authorization The full Authorization header value
+	 *
+	 * @return object The OpenRegister consumer
+	 *
+	 * @throws ZgwAuthValidationException If the token is missing, malformed,
+	 *                                    or the signature/payload is invalid.
+	 *
+	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-the-caller-may-present-a-jwt-an-api-key-or-a-client-certificate-req-paa-02
+	 */
+	public function consumerFor(string $authorization): object {
 		if ($this->consumerMapper === null) {
 			throw new ZgwAuthValidationException(message: 'Authorization service is unavailable');
 		}
@@ -141,9 +165,8 @@ class ZgwJwtValidator {
 		// otherwise fall back to a local check.
 		$this->validatePayloadTiming(payload: $token['payload']);
 
-		// Mirror OpenRegister: bind the request to the Consumer's user.
-		$this->bindConsumerUser(userId: $consumer->getUserId());
-	}//end validate()
+		return $consumer;
+	}//end consumerFor()
 
 	/**
 	 * Split and decode a bearer JWT.

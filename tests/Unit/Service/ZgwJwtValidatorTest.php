@@ -255,4 +255,13 @@ class ZgwJwtValidatorTest extends TestCase {
 		$this->assertNull($this->bound);
 
 	}//end testConsumerWithoutAKnownUserBindsNobody()
+
+	public function testConsumerForAnswersTheVerifiedConsumerAndBindsNobody(): void {
+		$consumer = $this->consumer();
+
+		$this->assertSame($consumer, $this->validator(consumer: $consumer)->consumerFor($this->token(['iss' => 'client-a', 'iat' => time()])));
+		$this->assertNull($this->bound, 'binding is the resolver\'s, once, whatever the credential');
+
+		$this->assertRefused($this->validator(consumer: $consumer), $this->token(['iss' => 'client-a', 'iat' => time() - 7200]), 'The token has expired');
+	}//end testConsumerForAnswersTheVerifiedConsumerAndBindsNobody()
 }//end class
