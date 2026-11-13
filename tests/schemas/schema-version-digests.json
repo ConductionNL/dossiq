@@ -1512,11 +1512,11 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/85-woo-gather-provenance.json::informatieobject": {
-        "version": "1.4.2",
+        "version": "1.4.3",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/85-woo-gather-provenance.json::zaakinformatieobject": {
-        "version": "1.2.1",
+        "version": "1.2.2",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/86-case-type-relation-roles.json::caseType": {

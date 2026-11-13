@@ -254,6 +254,58 @@ class CaseDocumentProvenance {
 	}//end mailForCase()
 
 	/**
+	 * The conversation a collected mail belongs to, as its provenance records it.
+	 *
+	 * @param string                    $caseId     The case uuid.
+	 * @param string                    $documentId The document uuid.
+	 * @param array<string, mixed>|null $record     The document's record when the caller already has it.
+	 *
+	 * @return array{threadId: string, messageId: string, parentIds: list<string>, sentAt: string}
+	 *         Every field empty for a document that is no collected mail.
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
+	 */
+	public function threadOf(string $caseId, string $documentId, ?array $record = null): array {
+		$stored = $this->stored(caseId: $caseId, documentId: $documentId, record: $record);
+		$parentIds = [];
+		foreach ((array)($stored['parentIds'] ?? []) as $parentId) {
+			$parentId = trim($this->scalar(value: $parentId));
+			if ($parentId !== '') {
+				$parentIds[] = $parentId;
+			}
+		}
+
+		return [
+			'threadId' => trim($this->scalar(value: ($stored['threadId'] ?? ''))),
+			'messageId' => trim($this->scalar(value: ($stored['messageId'] ?? ''))),
+			'parentIds' => $parentIds,
+			'sentAt' => trim($this->scalar(value: ($stored['sentAt'] ?? ''))),
+		];
+	}//end threadOf()
+
+	/**
+	 * The conversation of every collected mail on the case.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array<string, array{threadId: string, messageId: string, parentIds: list<string>, sentAt: string}>
+	 *         threadOf() per document uuid, only documents that carry a thread.
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
+	 */
+	public function threadsForCase(string $caseId): array {
+		$threads = [];
+		foreach ($this->caseDocuments->idsFor(caseId: $caseId) as $documentId) {
+			$thread = $this->threadOf(caseId: $caseId, documentId: (string)$documentId);
+			if ($thread['threadId'] !== '') {
+				$threads[(string)$documentId] = $thread;
+			}
+		}
+
+		return $threads;
+	}//end threadsForCase()
+
+	/**
 	 * A list of addresses, lower-cased, from a list or a single address.
 	 *
 	 * @param mixed $value The stored value.
