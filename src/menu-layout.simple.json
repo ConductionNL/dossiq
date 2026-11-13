@@ -3437,6 +3437,64 @@
 							"title": "{title}",
 							"meta": "{metWhen}",
 							"emptyText": "",
+							"rowActions": [
+								{
+									"id": "close-goal",
+									"label": "Close",
+									"icon": "CheckCircleOutline",
+									"type": "open-modal",
+									"target": "RowRecordActionDialog",
+									"visibleWhen": {
+										"field": "closedDate",
+										"op": "empty"
+									},
+									"props": {
+										"objectId": "@objectId",
+										"config": {
+											"title": "Close goal",
+											"summary": {
+												"title": "{title}",
+												"meta": "{metWhen}"
+											},
+											"fields": [
+												{
+													"field": "state",
+													"type": "select",
+													"label": "Outcome",
+													"options": [
+														{
+															"value": "met",
+															"label": "Met"
+														},
+														{
+															"value": "not-met",
+															"label": "Not met"
+														},
+														{
+															"value": "withdrawn",
+															"label": "Withdrawn"
+														}
+													]
+												}
+											],
+											"reason": {
+												"label": "What was observed",
+												"field": "observation",
+												"rows": 3
+											},
+											"confirm": {
+												"label": "Close goal",
+												"icon": "CheckCircleOutline",
+												"request": {
+													"method": "POST",
+													"url": "/apps/dossiq/api/cases/@objectId/goals/@object.id/close"
+												}
+											},
+											"doneText": "The goal is closed."
+										}
+									}
+								}
+							],
 							"footerAction": {
 								"label": "Add goal",
 								"icon": "Plus",

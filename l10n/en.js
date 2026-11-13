@@ -12544,7 +12544,10 @@ OC.L10N.register(
         "{weeks} weeks": "{weeks} weeks",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "Close goal": "Close goal",
+        "What was observed": "What was observed",
+        "The goal is closed.": "The goal is closed."
     },
     "nplurals=2; plural=(n != 1);"
 )
