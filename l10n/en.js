@@ -6514,6 +6514,7 @@ OC.L10N.register(
         "Overzicht van beroepsprocedures bij de bestuursrechter.": "Overzicht van beroepsprocedures bij de bestuursrechter.",
         "Overzicht van beslissingen op ingediende bezwaarschriften.": "Overzicht van beslissingen op ingediende bezwaarschriften.",
         "Owed": "Owed",
+        "Own": "Own",
         "Own case type": "Own case type",
         "Own field": "Own field",
         "Own team": "Own team",
