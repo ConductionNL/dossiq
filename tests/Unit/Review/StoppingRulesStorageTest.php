@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Review;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Review\StoppingRules;
+use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -94,7 +95,12 @@ class StoppingRulesStorageTest extends TestCase {
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default=''): string => ($config[$key] ?? $default));
 
-		return new StoppingRules(settingsService: $settings, reviews: new DocumentRelevance(settingsService: $settings, logger: $this->logger), logger: $this->logger);
+		return new StoppingRules(
+			settingsService: $settings,
+			reviews: new DocumentRelevance(settingsService: $settings, logger: $this->logger),
+			logger: $this->logger,
+			reviewerAccess: $this->createMock(originalClassName: CaseReviewerAccess::class)
+		);
 	}//end rules()
 
 	/**

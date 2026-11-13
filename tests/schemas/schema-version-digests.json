@@ -1576,7 +1576,7 @@
         "digest": "7a4e5f81f4b008d8940851c2e3aa6258f0a7871361ed690d46206126d9289148"
     },
     "lib/Settings/register.d/88-review-recall.json::stoppingRule": {
-        "version": "1.0.1",
+        "version": "1.0.2",
         "digest": "c125afbf43c582848d7e4d4f1866ad2025851b6825a8825a44da54bd6976e7d8"
     },
     "lib/Settings/register.d/89-case-document-drafts.json::caseType": {

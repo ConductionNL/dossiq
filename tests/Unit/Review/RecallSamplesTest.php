@@ -27,6 +27,7 @@ use OCA\Dossiq\Review\ReviewBatches;
 use OCA\Dossiq\Review\ReviewDepth;
 use OCA\Dossiq\Review\StoppingRuleMet;
 use OCA\Dossiq\Review\StoppingRules;
+use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Review\RecallEstimator;
@@ -120,7 +121,12 @@ class RecallSamplesTest extends TestCase {
 			caseDocuments: $caseDocuments,
 			batches: $this->batches,
 			depth: new ReviewDepth(),
-			rules: new StoppingRules(settingsService: $settings, reviews: $reviews, logger: $logger),
+			rules: new StoppingRules(
+				settingsService: $settings,
+				reviews: $reviews,
+				logger: $logger,
+				reviewerAccess: $this->createMock(originalClassName: CaseReviewerAccess::class)
+			),
 			estimator: new RecallEstimator(),
 			met: $this->met,
 			logger: $logger,
