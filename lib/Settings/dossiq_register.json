@@ -694,7 +694,7 @@
                     },
                     "iv3TaskField": {
                         "type": "string",
-                        "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type for the quarterly CBS cost report (e.g. \"8.1\" Ruimtelijke ordening). Validated against the shipped taakveld list (Iv3TaakveldList); unset = cases of this type are reported as uncategorized.",
+                        "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type (e.g. \"8.1\" Ruimtelijke ordening, or a 2023 refinement code such as \"6.71a\", stored as given). The code list is Shillinq's BbvTaakveld catalogue; without Shillinq the code is typed. Dossiq reports nothing from this field: costs per taakveld are Shillinq's Iv3 report.",
                         "title": "IV3 Task Field"
                     },
                     "obligationKinds": {
