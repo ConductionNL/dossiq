@@ -110,14 +110,8 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function handle(Event $event): void {
-		// The create of a case that is not a draft, or the moment a draft is
-		// sent. A draft binds no statutory term (decision 180).
-		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
+		$payload = $this->receivedCase(event: $event);
 		if ($payload === null) {
-			return;
-		}
-
-		if ($this->resolveSchemaSlug(payload: $payload) !== 'case') {
 			return;
 		}
 
@@ -148,17 +142,62 @@ class DeadlineCaseCreatedListener implements IEventListener {
 		// for five municipalities with five agreed norms. The resolution is
 		// made here, where the case's own values are in hand, and is recorded
 		// on the instance so a disputed date can be explained a year later.
-		$context = [
+		$context = $this->termContext(payload: $payload);
+
+		$this->bindTerms(
+			case: ['id' => $caseId, 'caseType' => $caseType, 'caseTypeRef' => $caseTypeRef, 'payload' => $payload],
+			resolution: $this->resolution?->resolve(caseType: $caseType, context: $context),
+			// The service norm, resolved by the same rule. A case type with no
+			// statutory term (a melding, a demo type) still has a clock the team
+			// works to, and it is bound beside the statutory term rather than as it.
+			plannedDefinition: $this->resolution?->plannedDefinitionFor(caseType: $caseType, context: $context),
+		);
+	}//end handle()
+
+	/**
+	 * The payload of a received case: the create of a case that is not a draft, or the moment a draft is sent.
+	 *
+	 * A draft binds no statutory term (decision 180), and an object of another schema binds none either.
+	 *
+	 * @param Event $event The event.
+	 *
+	 * @return array<string, mixed>|null The case payload, or null when this event starts no term.
+	 */
+	private function receivedCase(Event $event): ?array {
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
+		if ($payload === null || $this->resolveSchemaSlug(payload: $payload) !== 'case') {
+			return null;
+		}
+
+		return $payload;
+	}//end receivedCase()
+
+	/**
+	 * The case's own values a term is resolved by: its organisation, service and priority.
+	 *
+	 * @param array<string, mixed> $payload The case payload.
+	 *
+	 * @return array<string, string>
+	 */
+	private function termContext(array $payload): array {
+		return [
 			'organisation' => $this->referenced(value: ($payload['competentAuthority'] ?? null)),
 			'service' => $this->referenced(value: ($payload['procedureType'] ?? null)),
 			'priority' => $this->referenced(value: ($payload['priority'] ?? null)),
 		];
-		$resolution = $this->resolution?->resolve(caseType: $caseType, context: $context);
+	}//end termContext()
 
-		// The service norm, resolved by the same rule. A case type with no
-		// statutory term (a melding, a demo type) still has a clock the team
-		// works to, and it is bound beside the statutory term rather than as it.
-		$plannedDefinition = $this->resolution?->plannedDefinitionFor(caseType: $caseType, context: $context);
+	/**
+	 * Bind the statutory term and the other clocks, logging what could not be bound.
+	 *
+	 * @param array<string, mixed>      $case              The case: its id, case type slug and reference, and payload.
+	 * @param array<string, mixed>|null $resolution        The term resolution, null when none is wired.
+	 * @param array<string, mixed>|null $plannedDefinition The planned (service norm) definition.
+	 *
+	 * @return void
+	 */
+	private function bindTerms(array $case, ?array $resolution, ?array $plannedDefinition): void {
+		[$caseId, $caseType, $caseTypeRef, $payload] = [$case['id'], $case['caseType'], $case['caseTypeRef'], $case['payload']];
 
 		try {
 			// The term counts from receipt, not from the moment this row was
@@ -194,7 +233,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 				['case' => $caseId, 'caseType' => $caseType, 'exception' => $e->getMessage()]
 			);
 		}//end try
-	}//end handle()
+	}//end bindTerms()
 
 	/**
 	 * Bind the planned end, the internal target and the fixed closing date.
