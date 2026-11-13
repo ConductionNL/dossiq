@@ -144,4 +144,64 @@ class NoteEnvelopeTest extends TestCase {
 			informatieobjecttype: '',
 		);
 	}//end testWithNoReservedTypeNothingIsSentAndTheKeyIsNamed()
+
+	/**
+	 * A note with no case is refused before the push, whatever its text.
+	 *
+	 * @return void
+	 */
+	public function testANoteWithNoCaseIsRefusedBeforeItIsSent(): void {
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('A note with no case is not sent.');
+
+		(new NoteEnvelope())->build(
+			note: ['id' => 1, 'message' => 'Kort'],
+			caseId: '   ',
+			informatieobjecttype: 'iot',
+		);
+	}//end testANoteWithNoCaseIsRefusedBeforeItIsSent()
+
+	/**
+	 * A note whose first line is blank takes its whole text as the title,
+	 * rather than an empty one. A form feed survives the trim but breaks the
+	 * line, which is how such a note arrives.
+	 *
+	 * @return void
+	 */
+	public function testABlankFirstLineTakesTheWholeTextAsTheTitle(): void {
+		$envelope = (new NoteEnvelope())->build(
+			note: ['id' => 7, 'message' => "\fTweede regel"],
+			caseId: 'case-1',
+			informatieobjecttype: 'iot',
+		);
+
+		$this->assertSame("\fTweede regel", $envelope['titel']);
+		$this->assertSame('dossiq-note-7', $envelope['identificatie']);
+		$this->assertSame('text/plain', $envelope['formaat']);
+	}//end testABlankFirstLineTakesTheWholeTextAsTheTitle()
+
+	/**
+	 * A note whose moment cannot be read is dated today, as is one with no
+	 * moment: the field is required, so it is never sent empty.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableOrMissingMomentIsDatedToday(): void {
+		$before = (new \DateTimeImmutable())->format('Y-m-d');
+		$unreadable = (new NoteEnvelope())->build(
+			note: ['id' => 1, 'message' => 'Kort', 'createdAt' => 'not a date'],
+			caseId: 'case-1',
+			informatieobjecttype: 'iot',
+		);
+		$missing = (new NoteEnvelope())->build(
+			note: ['id' => 1, 'message' => 'Kort'],
+			caseId: 'case-1',
+			informatieobjecttype: 'iot',
+		);
+		$after = (new \DateTimeImmutable())->format('Y-m-d');
+
+		// Read around the call, so a run that crosses midnight still passes.
+		$this->assertContains($unreadable['creatiedatum'], [$before, $after]);
+		$this->assertContains($missing['creatiedatum'], [$before, $after]);
+	}//end testAnUnreadableOrMissingMomentIsDatedToday()
 }//end class
