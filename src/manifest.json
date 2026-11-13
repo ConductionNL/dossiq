@@ -12010,6 +12010,7 @@
 						"pill": "Shillinq",
 						"href": "/index.php/apps/shillinq/",
 						"linkLabel": "Open in Shillinq",
+						"category": "costs",
 						"requiresApp": "shillinq",
 						"missingText": "This report is in Shillinq. Shillinq is not installed."
 					},
@@ -12065,7 +12066,8 @@
 				],
 				"categories": {
 					"throughput": "Throughput and deadlines",
-					"process": "Process analysis"
+					"process": "Process analysis",
+					"costs": "Costs"
 				}
 			}
 		},
