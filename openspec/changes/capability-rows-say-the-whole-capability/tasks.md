@@ -52,4 +52,4 @@
 
 - [ ] 3.1 `@spec` tags and an e2e test or a reason-bearing `@e2e exclude` per scenario.
 - [ ] 3.2 Rows `8.7` and `3.1` go back to Ruben: the main spec contradicts the capability, so no requirement was written. Row `2.13` is narrowed to a version move, as REQ-ZV-09 says.
-- [ ] 3.3 Row `3.7`: the task page assigns a task to another user or to a team (REQ-TASK-003). Today `TaskDetail` offers only Pick up and Hand back, and `candidateGroups` is read-only; add the assign action to the task page in `src/manifest.json`.
+- [x] 3.3 Row `3.7`: the task page assigns a task to another user or to a team (REQ-TASK-003). Today `TaskDetail` offers only Pick up and Hand back, and `candidateGroups` is read-only; add the assign action to the task page in `src/manifest.json`. Done: `task-assign` header action on TaskDetail opens src/dialogs/TaskAssignDialog.vue (engine `assign` for a colleague, `offer` with the group as candidate pool for a team).

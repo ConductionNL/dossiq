@@ -7809,6 +7809,27 @@
 					"complete": "/apps/dossiq/api/case-tasks/{id}/complete",
 					"cancel": "/apps/dossiq/api/case-tasks/{id}/cancel"
 				},
+				"headerActions": [
+					{
+						"id": "task-assign",
+						"type": "open-modal",
+						"label": "Assign",
+						"icon": "AccountArrowRight",
+						"target": "TaskAssignDialog",
+						"props": {
+							"taskId": "@objectId"
+						},
+						"visibleWhen": {
+							"field": "state",
+							"op": "in",
+							"value": [
+								"available",
+								"enabled",
+								"active"
+							]
+						}
+					}
+				],
 				"widgets": [
 					{
 						"id": "task-panels",

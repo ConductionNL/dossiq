@@ -116,6 +116,7 @@ import RecordStepsDialog from './dialogs/RecordStepsDialog.vue'
 import RemedyLodgeDialog from './dialogs/RemedyLodgeDialog.vue'
 import RemindDialog from './dialogs/RemindDialog.vue'
 import SearchPlanDialog from './dialogs/SearchPlanDialog.vue'
+import TaskAssignDialog from './dialogs/TaskAssignDialog.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 import DeelzaakCreateModal from './modals/DeelzaakCreateModal.vue'
 // The Documents tab's upload dialog and bulk-action dialog
@@ -603,6 +604,13 @@ const registry = {
 		component: ContactMomentDetailDialog,
 		propsSchema: {},
 		_note: 'The contact and organisation pages\' Contact moments panels: opens the moment a row names, read-only. Opened by the open-moment row action with the moment as `row`. No contact-moment page exists, and a modal over the list keeps the agent on the contact. A field the reader may not see arrives empty from OpenRegister and is left out rather than shown blank.',
+	},
+	// @spec openspec/changes/capability-rows-say-the-whole-capability/tasks.md
+	TaskAssignDialog: {
+		kind: 'modal',
+		component: TaskAssignDialog,
+		propsSchema: {},
+		_note: 'TaskDetail `task-assign` header action (REQ-TASK-003): assign the task to a colleague (engine `assign`) or to a team (engine `offer`, the group as candidate pool). The engine decides who may and offers a pool only to a task nobody holds; its refusal is shown as-is. Shown while the task is open (available, enabled, active). Reads the task from the route, because open-modal forwards `@objectId` verbatim.',
 	},
 	LinkProgrammeDialog: {
 		kind: 'modal',
