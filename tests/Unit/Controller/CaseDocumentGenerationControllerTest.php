@@ -216,6 +216,7 @@ class CaseDocumentGenerationControllerTest extends TestCase {
 			array_filter(
 				$routes,
 				static fn (array $route): bool => ($route['name'] ?? '') === 'caseDocumentGeneration#generateDocument'
+					&& str_starts_with($route['url'], '/api/v1/') === false
 			)
 		);
 

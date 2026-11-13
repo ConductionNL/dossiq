@@ -35,11 +35,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\ZaakdossierServiceInterface;
 use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
 use OCA\Dossiq\Service\Zaakdossier\DocumentWriteGate;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
-use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -57,7 +57,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param ZaakdossierService $fileService The dossier orchestrator.
+	 * @param ZaakdossierServiceInterface $fileService The dossier orchestrator.
 	 * @param InformatieobjectReader $reader The clearance-gated document reader.
 	 * @param DossierUploadHandler $uploadHandler The upload decoding/screening collaborator.
 	 * @param IUserSession $userSession The user session.
@@ -70,7 +70,7 @@ class ZaakdossierController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ZaakdossierService $fileService,
+		private readonly ZaakdossierServiceInterface $fileService,
 		private readonly InformatieobjectReader $reader,
 		private readonly DossierUploadHandler $uploadHandler,
 		private readonly IUserSession $userSession,

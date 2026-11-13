@@ -40,7 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\Email\SavedMailImport;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -78,7 +78,7 @@ class SavedMailController extends Controller {
 	 *
 	 * @param IRequest        $request         Inbound request.
 	 * @param SavedMailImport $import          Hands the bytes to integriq's reader.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization.
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization.
 	 * @param IRootFolder     $rootFolder      Resolves the node as the caller.
 	 * @param IUserSession    $userSession     The caller.
 	 * @param LoggerInterface $logger          Logger.
@@ -86,7 +86,7 @@ class SavedMailController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly SavedMailImport $import,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IRootFolder $rootFolder,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,

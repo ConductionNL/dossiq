@@ -34,7 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\FindsFilesById;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\IRootFolder;
@@ -54,12 +54,12 @@ class WooCaseDocuments {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register, schemas and OpenRegister.
+	 * @param SettingsServiceInterface $settingsService Register, schemas and OpenRegister.
 	 * @param IRootFolder     $rootFolder      Reads a document's file by its id.
 	 * @param LoggerInterface $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IRootFolder $rootFolder,
 		private readonly LoggerInterface $logger,
 	) {

@@ -30,11 +30,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\EmailTemplateService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
 use OCA\Dossiq\Service\Email\SenderBlocklist;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -90,22 +90,22 @@ class EmailTemplateController extends Controller {
 	 *
 	 * @param IRequest $request Inbound request.
 	 * @param EmailTemplateService $templateService Backend templating service.
-	 * @param SettingsService $settingsService Settings resolver (registers).
+	 * @param SettingsServiceInterface $settingsService Settings resolver (registers).
 	 * @param IAppConfig $appConfig App config (IMAP settings).
 	 * @param IUserSession $userSession Current user session.
 	 * @param IGroupManager $groupManager Group manager (admin check on config writes).
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 * @param MailGatewayInterface $mailGateway The mail gateway (the accounts intake can read).
 	 * @param SenderBlocklist $blocklist Who may not open a case by mail, normalised as it is stored.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly EmailTemplateService $templateService,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly MailGatewayInterface $mailGateway,
 		private readonly SenderBlocklist $blocklist,
 	) {

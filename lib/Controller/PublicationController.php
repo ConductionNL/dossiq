@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\PublicationService;
+use OCA\Dossiq\Kernel\Contracts\PublicationServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -49,13 +49,13 @@ class PublicationController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PublicationService $publicationService Publication service.
+	 * @param PublicationServiceInterface $publicationService Publication service.
 	 * @param IUserSession $userSession User session for guard.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PublicationService $publicationService,
+		private readonly PublicationServiceInterface $publicationService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

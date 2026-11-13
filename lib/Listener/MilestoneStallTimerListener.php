@@ -30,10 +30,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
 use OCA\Dossiq\Service\Milestone\MilestoneStallActs;
 use OCA\Dossiq\Service\Milestone\MilestoneStallTimer;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -59,13 +59,13 @@ class MilestoneStallTimerListener implements IEventListener {
 	/**
 	 * Build the listener.
 	 *
-	 * @param SettingsService     $settingsService Names the case and milestone record schemas.
+	 * @param SettingsServiceInterface     $settingsService Names the case and milestone record schemas.
 	 * @param MilestoneStallTimer $timer           Arms and cancels the timer.
 	 * @param MilestoneStallActs  $acts            Reads a case and tells a stalled one.
 	 * @param LoggerInterface     $logger          Logs a failed sync.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly MilestoneStallTimer $timer,
 		private readonly MilestoneStallActs $acts,
 		private readonly LoggerInterface $logger,

@@ -61,9 +61,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
 use OCA\Dossiq\Woo\WooReceivedAnswers;
 use OCA\Dossiq\Woo\WooRequestIntake;
@@ -478,7 +478,7 @@ class PortalContributionProvider {
 	 * {@see self::caseMessages()} needs the messages reader, optional for the
 	 * same reason.
 	 *
-	 * @param CaseTimeline|null              $timeline   The one reader of the public feed, or null.
+	 * @param CaseTimelineInterface|null              $timeline   The one reader of the public feed, or null.
 	 * @param PortalCaseDocuments|null       $documents  The documents a resident may see on a case, or null.
 	 * @param PortalMessageBoxRecipient|null $messageBox Who a portal letter goes to in the message box, or null.
 	 * @param PortalCaseSteps|null           $steps      Where a case stands in its type's public steps, or null.
@@ -486,17 +486,17 @@ class PortalContributionProvider {
 	 * @param WooRequestIntake|null          $wooRequests Opens the case for a Woo request a portal form sent, or null.
 	 * @param IntakeCaseTypes|null           $caseTypes  The case type each case-opening action opens, or
 	 *                                                   null, which leaves those actions out.
-	 * @param SettingsService|null           $settings   Reads the text shown above Mijn zaken.
+	 * @param SettingsServiceInterface|null           $settings   Reads the text shown above Mijn zaken.
 	 */
 	public function __construct(
-		private readonly ?CaseTimeline $timeline = null,
+		private readonly ?CaseTimelineInterface $timeline = null,
 		private readonly ?PortalCaseDocuments $documents = null,
 		private readonly ?PortalMessageBoxRecipient $messageBox = null,
 		private readonly ?PortalCaseSteps $steps = null,
 		private readonly ?PortalCaseMessages $messages = null,
 		private readonly ?WooRequestIntake $wooRequests = null,
 		private readonly ?IntakeCaseTypes $caseTypes = null,
-		private readonly ?SettingsService $settings = null,
+		private readonly ?SettingsServiceInterface $settings = null,
 	) {
 		$this->pages = new PortalPages();
 	}//end __construct()

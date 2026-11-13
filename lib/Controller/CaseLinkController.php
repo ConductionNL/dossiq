@@ -31,8 +31,8 @@ namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Relation\OutcomeCascade;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\OutcomeCascadeInterface;
 use OCA\Dossiq\Service\Relation\RoleLinkService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -56,8 +56,8 @@ class CaseLinkController extends Controller {
 	 * @param string          $appName     The app name.
 	 * @param IRequest        $request     The request.
 	 * @param RoleLinkService $links       Links a case with a role.
-	 * @param OutcomeCascade  $cascades    Runs a configured cascade.
-	 * @param CaseAccessGuard $accessGuard Per-case authorization, failing closed.
+	 * @param OutcomeCascadeInterface  $cascades    Runs a configured cascade.
+	 * @param CaseAccessGuardInterface $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession    $userSession The session.
 	 *
 	 * @return void
@@ -66,8 +66,8 @@ class CaseLinkController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly RoleLinkService $links,
-		private readonly OutcomeCascade $cascades,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly OutcomeCascadeInterface $cascades,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);

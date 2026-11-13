@@ -51,6 +51,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseRebindServiceInterface;
 use OCA\Dossiq\Service\Cases\CaseRebindGate;
 use OCA\Dossiq\Service\Cases\CaseRebindImpact;
 use OCA\Dossiq\Service\Cases\CaseRebindTerms;
@@ -69,7 +70,7 @@ use Throwable;
  *
  * @spec openspec/specs/zaaktype-versioning/spec.md
  */
-class CaseRebindService {
+class CaseRebindService implements CaseRebindServiceInterface {
 
 	use RefusesWhenIndeterminate;
 

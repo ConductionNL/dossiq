@@ -22,9 +22,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\WOODocumentAssessmentService;
 
 /**
  * Reports a case's documents by relevance and by verdict, and what is still outstanding.
@@ -36,18 +36,18 @@ class ReviewSummary {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance $reviews The relevance store.
-	 * @param WOODocumentAssessmentService $assessments The verdicts and the outstanding list.
+	 * @param WOODocumentAssessmentServiceInterface $assessments The verdicts and the outstanding list.
 	 * @param WooCaseDocuments $caseDocuments Where a case's documents are.
 	 * @param ReviewConfiguration $configuration Whether the case type switches document review on.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly DocumentRelevance $reviews,
-		private readonly WOODocumentAssessmentService $assessments,
+		private readonly WOODocumentAssessmentServiceInterface $assessments,
 		private readonly WooCaseDocuments $caseDocuments,
 		private readonly ReviewConfiguration $configuration,
 	) {

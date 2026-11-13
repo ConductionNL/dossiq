@@ -45,12 +45,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\StatusTransitionServiceInterface;
 use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 use OCA\Dossiq\Service\Transitions\CaseDeclarations;
 use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
-use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCA\Dossiq\Service\Transitions\TransitionAsk;
+use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCA\Dossiq\Service\Transitions\TransitionStep;
 use OCP\IUserSession;
@@ -62,7 +63,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T10
  */
-class StatusTransitionService {
+class StatusTransitionService implements StatusTransitionServiceInterface {
 
 	/**
 	 * Group ID used to gate admin-only free-form transitions. Matches the

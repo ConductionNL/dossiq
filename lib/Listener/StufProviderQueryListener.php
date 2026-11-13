@@ -40,8 +40,8 @@ namespace OCA\Dossiq\Listener;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -68,13 +68,13 @@ class StufProviderQueryListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param StufRegisterAccess $register  The stufEndpoint rows.
-	 * @param SettingsService    $settings  The register and case schema.
+	 * @param SettingsServiceInterface    $settings  The register and case schema.
 	 * @param CaseObjectReader   $caseTypes Reads a case type for its catalogue identifier.
 	 * @param LoggerInterface    $logger    The logger.
 	 */
 	public function __construct(
 		private readonly StufRegisterAccess $register,
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 		private readonly CaseObjectReader $caseTypes,
 		private readonly LoggerInterface $logger,
 	) {

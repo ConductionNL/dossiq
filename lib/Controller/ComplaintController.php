@@ -32,8 +32,8 @@ namespace OCA\Dossiq\Controller;
 
 use Closure;
 use OCA\Dossiq\Controller\Support\ComplaintMutationGate;
+use OCA\Dossiq\Kernel\Contracts\ComplaintServiceInterface;
 use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
-use OCA\Dossiq\Service\ComplaintService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -50,7 +50,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param ComplaintService $complaintService Complaint service
+	 * @param ComplaintServiceInterface $complaintService Complaint service
 	 * @param ComplaintAccessGuard $accessGuard Shared complaint authorization guard
 	 *
 	 * @return void
@@ -58,7 +58,7 @@ class ComplaintController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ComplaintService $complaintService,
+		private readonly ComplaintServiceInterface $complaintService,
 		private readonly ComplaintAccessGuard $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);

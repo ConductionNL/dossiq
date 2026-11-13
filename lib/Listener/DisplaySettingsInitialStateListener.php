@@ -29,8 +29,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Settings\SettingValueRules;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
@@ -50,11 +50,11 @@ class DisplaySettingsInitialStateListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param IInitialState   $initialState The initial state of the page.
-	 * @param SettingsService $settings     The app config reader.
+	 * @param SettingsServiceInterface $settings     The app config reader.
 	 */
 	public function __construct(
 		private readonly IInitialState $initialState,
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 	) {
 	}//end __construct()
 

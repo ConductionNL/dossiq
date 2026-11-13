@@ -39,8 +39,8 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\StatusTransitionServiceInterface;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -64,19 +64,19 @@ class StatusTransitionController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The HTTP request
-	 * @param StatusTransitionService $transitionEngine The engine service
+	 * @param StatusTransitionServiceInterface $transitionEngine The engine service
 	 * @param IUserSession $userSession The current session
 	 * @param LoggerInterface $logger The logger
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
 	 * @param IL10N|null $l10n The translator a refusal's sentence is written in; the app's own when left out
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly StatusTransitionService $transitionEngine,
+		private readonly StatusTransitionServiceInterface $transitionEngine,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly ?IL10N $l10n = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);

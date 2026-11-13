@@ -48,9 +48,9 @@ namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\EvidenceMetadataService;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TranscriptionService;
 use OCP\AppFramework\Controller;
@@ -77,8 +77,8 @@ class FieldEvidenceController extends Controller {
 	 * @param IRequest                $request       The request.
 	 * @param EvidenceMetadataService $metadata      Validates the capture and builds the record.
 	 * @param TranscriptionService    $transcription Queues a voice memo to be transcribed.
-	 * @param SettingsService         $settings      Register and schema resolution.
-	 * @param CaseAccessGuard         $accessGuard   Per-case authorization, failing closed.
+	 * @param SettingsServiceInterface         $settings      Register and schema resolution.
+	 * @param CaseAccessGuardInterface         $accessGuard   Per-case authorization, failing closed.
 	 * @param IUserSession            $userSession   The session.
 	 *
 	 * @return void
@@ -89,8 +89,8 @@ class FieldEvidenceController extends Controller {
 		IRequest $request,
 		private readonly EvidenceMetadataService $metadata,
 		private readonly TranscriptionService $transcription,
-		private readonly SettingsService $settings,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly SettingsServiceInterface $settings,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

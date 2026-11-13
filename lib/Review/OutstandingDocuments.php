@@ -29,8 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 
@@ -46,13 +46,13 @@ class OutstandingDocuments {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService        $settingsService The register and the document, assessment and exclusion schemas.
+	 * @param SettingsServiceInterface        $settingsService The register and the document, assessment and exclusion schemas.
 	 * @param WooCaseDocuments|null  $caseDocuments   Where a case's documents are: its informatieobjecten.
 	 * @param DocumentRelevance|null $reviews         Each document's relevance; null keeps every document needing a verdict.
 	 * @param CaseDocumentDrafts|null $drafts         The document types the case type drafts itself; null reviews every document.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly ?WooCaseDocuments $caseDocuments = null,
 		private readonly ?DocumentRelevance $reviews = null,
 		private readonly ?CaseDocumentDrafts $drafts = null,

@@ -41,9 +41,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TaskAttachmentServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Task\TaskAttachmentService;
 use OCA\Dossiq\Service\Task\TaskEffects;
 use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCP\EventDispatcher\Event;
@@ -78,15 +78,15 @@ class TaskCompletionEffectsListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param TaskEffects           $effects     Reads and runs what the task declared.
-	 * @param TaskAttachmentService $attachments Publishes the files it was holding.
-	 * @param SettingsService       $settings    Reads the case the task is on.
+	 * @param TaskAttachmentServiceInterface $attachments Publishes the files it was holding.
+	 * @param SettingsServiceInterface       $settings    Reads the case the task is on.
 	 * @param IUserSession          $userSession Names who completed it.
 	 * @param LoggerInterface       $logger      The logger.
 	 */
 	public function __construct(
 		private readonly TaskEffects $effects,
-		private readonly TaskAttachmentService $attachments,
-		private readonly SettingsService $settings,
+		private readonly TaskAttachmentServiceInterface $attachments,
+		private readonly SettingsServiceInterface $settings,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\ContractDecisionDelegationServiceInterface;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -50,12 +51,7 @@ use Throwable;
  *
  * @spec openspec/specs/contract-decision-delegation/spec.md
  */
-class ContractDecisionDelegationService {
-	/**
-	 * Decision types supported by the contract delegation surface.
-	 */
-	public const DECISION_TYPE_CONTRACT_RENEWAL = 'contract-renewal';
-	public const DECISION_TYPE_REPORT_ADOPTION = 'report-adoption';
+class ContractDecisionDelegationService implements ContractDecisionDelegationServiceInterface {
 	public const DECISION_TYPE_BEZWAAR = 'bezwaar-beslissing';
 
 	/**

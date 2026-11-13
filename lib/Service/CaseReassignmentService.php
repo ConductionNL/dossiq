@@ -38,9 +38,10 @@ use DateTime;
 use InvalidArgumentException;
 use OCA\Dossiq\BulkAction\ReassignCasesAction;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseReassignmentServiceInterface;
 use OCA\Dossiq\Service\Bulk\BulkJobHandoff;
-use OCA\Dossiq\Service\Support\WritesReassignments;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\WritesReassignments;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\Notification\IManager;
@@ -55,7 +56,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
-class CaseReassignmentService {
+class CaseReassignmentService implements CaseReassignmentServiceInterface {
 
 	use WritesReassignments;
 	use SearchesObjects;
@@ -426,10 +427,6 @@ class CaseReassignmentService {
 		return $results;
 	}//end releaseTasks()
 
-
-
-
-
 	/**
 	 * Send a single digest notification to the receiving handler.
 	 *
@@ -500,6 +497,5 @@ class CaseReassignmentService {
 
 		return array_values(array_filter($ids));
 	}//end finalStatusIds()
-
 
 }//end class

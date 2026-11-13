@@ -28,8 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\BelplanRoutingService;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CastArray;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -60,7 +60,7 @@ class BelplanController extends Controller {
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
 	 * @param BelplanRoutingService $routingService The belplan routing service.
-	 * @param SettingsService $settingsService The settings service.
+	 * @param SettingsServiceInterface $settingsService The settings service.
 	 * @param IUserSession $userSession The user session.
 	 * @param IGroupManager $groupManager The group manager.
 	 */
@@ -68,7 +68,7 @@ class BelplanController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly BelplanRoutingService $routingService,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 	) {

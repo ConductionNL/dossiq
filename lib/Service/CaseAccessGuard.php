@@ -50,6 +50,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Service\Rbac\GrantLookup;
@@ -65,7 +66,7 @@ use Throwable;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class CaseAccessGuard {
+class CaseAccessGuard implements CaseAccessGuardInterface {
 
 	use SearchesObjects;
 

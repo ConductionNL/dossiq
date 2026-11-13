@@ -29,8 +29,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Redaction\DocumentRedactionService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRedactionServiceInterface;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -53,8 +53,8 @@ class DocumentRedactionController extends Controller {
 	 *
 	 * @param string                   $appName     The app name.
 	 * @param IRequest                 $request     The request.
-	 * @param DocumentRedactionService $redactions  The redaction step.
-	 * @param CaseAccessGuard          $caseAccess  Per-case mutation authorization (fails closed).
+	 * @param DocumentRedactionServiceInterface $redactions  The redaction step.
+	 * @param CaseAccessGuardInterface          $caseAccess  Per-case mutation authorization (fails closed).
 	 * @param DossierUploadHandler     $uploads     Reads an uploaded file and refuses executables.
 	 * @param IUserSession             $userSession The signed-in officer.
 	 * @param IL10N                    $l10n        The refusals this controller writes itself.
@@ -62,8 +62,8 @@ class DocumentRedactionController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DocumentRedactionService $redactions,
-		private readonly CaseAccessGuard $caseAccess,
+		private readonly DocumentRedactionServiceInterface $redactions,
+		private readonly CaseAccessGuardInterface $caseAccess,
 		private readonly DossierUploadHandler $uploads,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,

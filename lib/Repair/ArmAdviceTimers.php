@@ -31,10 +31,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\AdviceServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Advice\AdviceTimer;
-use OCA\Dossiq\Service\AdviceService;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -50,14 +50,14 @@ class ArmAdviceTimers implements IRepairStep {
 	/**
 	 * Build the step.
 	 *
-	 * @param SettingsService $settingsService Reports OpenRegister and its object service.
-	 * @param AdviceService   $adviceService   Lists the open requests and expires overdue ones.
+	 * @param SettingsServiceInterface $settingsService Reports OpenRegister and its object service.
+	 * @param AdviceServiceInterface   $adviceService   Lists the open requests and expires overdue ones.
 	 * @param AdviceTimer     $timer           Arms each request's timer.
 	 * @param LoggerInterface $logger          Logs the counts.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly AdviceService $adviceService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly AdviceServiceInterface $adviceService,
 		private readonly AdviceTimer $timer,
 		private readonly LoggerInterface $logger,
 	) {

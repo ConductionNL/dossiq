@@ -42,8 +42,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Intake\IntakeObjectDrain;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -110,14 +110,14 @@ class DrainIntakeObjectsCommand extends Command {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container       Resolves OpenRegister's form submit.
-	 * @param SettingsService    $settingsService Register, schemas and the object service.
+	 * @param SettingsServiceInterface    $settingsService Register, schemas and the object service.
 	 * @param IntakeObjectDrain  $drain           The generic drain.
 	 * @param IUserSession       $userSession     The session the drain runs under.
 	 * @param IGroupManager      $groupManager    Finds an administrator to run as.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IntakeObjectDrain $drain,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,

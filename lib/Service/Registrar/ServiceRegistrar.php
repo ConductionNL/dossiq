@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Service\Registrar;
 use OCA\Dossiq\Listener\Registrar\SaasServiceRegistrar;
 use OCA\Dossiq\Middleware\MiddlewareRegistrar;
 use OCA\Dossiq\Repair\RepairPortRegistrar;
+use OCA\Dossiq\Service\ContractBindings;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -57,6 +58,8 @@ class ServiceRegistrar {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
+		(new ContractBindings())->register(context: $context);
+
 		(new AppHostRegistrar())->register(context: $context);
 		(new BespokeServiceRegistrar())->register(context: $context);
 

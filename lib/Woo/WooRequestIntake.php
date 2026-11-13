@@ -40,10 +40,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Intake\CollectionCaseLinks;
 use OCA\Dossiq\Service\Intake\CollectionLinkQueue;
 use OCA\Dossiq\Service\Intake\SystemCaseStore;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
 
@@ -128,7 +128,7 @@ class WooRequestIntake {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register, schemas and OpenRegister.
+	 * @param SettingsServiceInterface $settingsService Register, schemas and OpenRegister.
 	 * @param IURLGenerator   $urlGenerator    Makes the publication and case links absolute.
 	 * @param LoggerInterface $logger          Logger.
 	 * @param WooReceivedTerm|null $receivedTerm Reads back the term a received case got. Null
@@ -143,7 +143,7 @@ class WooRequestIntake {
 	 *                                            answered (REQ-PSM-002); linked inline when null.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly LoggerInterface $logger,
 		private readonly ?WooReceivedTerm $receivedTerm = null,

@@ -14,10 +14,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RepairSchema;
 use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTypePalette;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -64,13 +64,13 @@ class RecolourShippedStatusTypes implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService   $settingsService OpenRegister access and the configured register.
+	 * @param SettingsServiceInterface   $settingsService OpenRegister access and the configured register.
 	 * @param IAppConfig        $appConfig       The version gate.
 	 * @param StatusTypePalette $palette         The board colour per status.
 	 * @param LoggerInterface   $logger          Where each row is named.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
 		private readonly StatusTypePalette $palette,
 		private readonly LoggerInterface $logger,

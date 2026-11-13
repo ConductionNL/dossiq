@@ -29,9 +29,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Publication\WithheldEntries;
 use OCA\Dossiq\Service\Publication\WithheldListRecorder;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
@@ -54,14 +54,14 @@ class WooCaseLedger {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register, schemas and OpenRegister.
+	 * @param SettingsServiceInterface $settingsService Register, schemas and OpenRegister.
 	 * @param LoggerInterface $logger          Logger.
 	 * @param IURLGenerator|null $urlGenerator Makes the publication link absolute.
 	 * @param WooDeliveredSetWriter|null $deliveredSets Records what each delivery sent out (woo-delivered-set-is-a-record).
 	 * @param WithheldListRecorder|null $withheldRecorder Records what a publication withheld in opencatalogi.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ?IURLGenerator $urlGenerator = null,
 		private readonly ?WooDeliveredSetWriter $deliveredSets = null,

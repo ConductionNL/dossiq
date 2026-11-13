@@ -40,8 +40,8 @@ use OCA\Dossiq\Controller\Support\CaseCaller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseTransferService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTransferServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -66,8 +66,8 @@ class CaseHandoverController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest            $request     The request.
-	 * @param CaseTransferService $transfers   The one door to every case move.
-	 * @param CaseAccessGuard     $accessGuard Per-case authorization, failing closed.
+	 * @param CaseTransferServiceInterface $transfers   The one door to every case move.
+	 * @param CaseAccessGuardInterface     $accessGuard Per-case authorization, failing closed.
 	 * @param IGroupManager       $groups      The teams a caller belongs to.
 	 * @param IUserSession        $userSession The session.
 	 * @param LoggerInterface     $logger      The logger.
@@ -78,8 +78,8 @@ class CaseHandoverController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseTransferService $transfers,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseTransferServiceInterface $transfers,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IGroupManager $groups,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
