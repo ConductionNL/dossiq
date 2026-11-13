@@ -183,6 +183,51 @@ class CasePlanGoals {
 	 */
 	public function close(string $goalId, string $state, string $observation, string $onDate = ''): array {
 		$goal = self::found(goal: $this->store->read(schema: self::SCHEMA, id: $goalId));
+
+		return $this->closeRead(goal: $goal, state: $state, observation: $observation, onDate: $onDate);
+	}//end close()
+
+	/**
+	 * Close a goal of one case, as close() does.
+	 *
+	 * A goal that belongs to another case, or to a family plan only, is
+	 * answered as not found: the caller's case access says nothing about it.
+	 *
+	 * @param string $caseId      The case the goal must belong to.
+	 * @param string $goalId      The goal uuid.
+	 * @param string $state       `met`, `not-met` or `withdrawn`.
+	 * @param string $observation What was seen.
+	 *
+	 * @return array<string, mixed> The closed goal.
+	 *
+	 * @throws RefusedException When the goal is not this case's, the state is not a closing one, or nothing was observed.
+	 *
+	 * @spec openspec/changes/case-goals/tasks.md#2.1
+	 */
+	public function closeOfCase(string $caseId, string $goalId, string $state, string $observation): array {
+		$goal = $this->store->read(schema: self::SCHEMA, id: $goalId);
+		if ($goal !== null && (trim($caseId) === '' || trim((string)($goal['case'] ?? '')) !== trim($caseId))) {
+			$goal = null;
+		}
+
+		return $this->closeRead(goal: self::found(goal: $goal), state: $state, observation: $observation, onDate: '');
+	}//end closeOfCase()
+
+	/**
+	 * Close a goal already read.
+	 *
+	 * @param array<string, mixed> $goal        The goal.
+	 * @param string               $state       `met`, `not-met` or `withdrawn`.
+	 * @param string               $observation What was seen.
+	 * @param string               $onDate      The day, `Y-m-d`, or '' for today.
+	 *
+	 * @return array<string, mixed> The closed goal.
+	 *
+	 * @throws RefusedException When the state is not a closing one, or nothing was observed.
+	 *
+	 * @spec openspec/changes/case-goals/tasks.md#2.1
+	 */
+	private function closeRead(array $goal, string $state, string $observation, string $onDate): array {
 		self::refuseUnlessClosing(state: $state);
 		$observation = trim($observation);
 		self::refuseWithoutObservation(goal: $goal, observation: $observation);
@@ -192,7 +237,7 @@ class CasePlanGoals {
 		$goal['closedDate'] = self::dayOrToday(onDate: $onDate);
 
 		return $this->store->write(schema: self::SCHEMA, object: $goal);
-	}//end close()
+	}//end closeRead()
 
 	/**
 	 * The goal that was read; refused when there is none.
