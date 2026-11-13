@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Review;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use Psr\Log\LoggerInterface;
@@ -53,7 +53,7 @@ class RecallSamples {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance $reviews The relevance of each document.
 	 * @param WooCaseDocuments $caseDocuments The documents on a case.
 	 * @param ReviewBatches $batches The batch the sample is judged in.
@@ -66,7 +66,7 @@ class RecallSamples {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly DocumentRelevance $reviews,
 		private readonly WooCaseDocuments $caseDocuments,
 		private readonly ReviewBatches $batches,

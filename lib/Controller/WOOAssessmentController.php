@@ -27,15 +27,15 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\DecisionDocument\DecisionLetter;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\WOOAnonymisationAssistServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooPublicationServiceInterface;
 use OCA\Dossiq\Service\Cases\HandlerActsAsSystem;
+use OCA\Dossiq\Service\DecisionDocument\DecisionLetter;
 use OCA\Dossiq\Service\Termijn\ExtensionNotice;
-use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WOODecisionService;
-use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\WooPublicationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -70,14 +70,14 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param WOODocumentAssessmentService $assessmentService Document assessment service
+	 * @param WOODocumentAssessmentServiceInterface $assessmentService Document assessment service
 	 * @param WOODeadlineService $deadlineService Deadline service
 	 * @param WOODecisionService $decisionService Decision service
-	 * @param WooPublicationService $publicationService WOO publication (via OpenCatalogi) service
-	 * @param WOOAnonymisationAssistService $anonymisationAssist LLM-assisted redaction-span proposal
+	 * @param WooPublicationServiceInterface $publicationService WOO publication (via OpenCatalogi) service
+	 * @param WOOAnonymisationAssistServiceInterface $anonymisationAssist LLM-assisted redaction-span proposal
 	 *                                                           service (woo-llm-anonymisation)
 	 * @param IUserSession $userSession Current user session
-	 * @param CaseAccessGuard $caseAccessGuard Per-case mutation authorization (fails closed)
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case mutation authorization (fails closed)
 	 * @param LoggerInterface $logger Logger
 	 * @param IL10N $l10n Translations for the refusal a header action shows
 	 * @param HandlerActsAsSystem $handlerActs Runs a publish or withdraw as the system, for the
@@ -90,13 +90,13 @@ class WOOAssessmentController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly WOODocumentAssessmentService $assessmentService,
+		private readonly WOODocumentAssessmentServiceInterface $assessmentService,
 		private readonly WOODeadlineService $deadlineService,
 		private readonly WOODecisionService $decisionService,
-		private readonly WooPublicationService $publicationService,
-		private readonly WOOAnonymisationAssistService $anonymisationAssist,
+		private readonly WooPublicationServiceInterface $publicationService,
+		private readonly WOOAnonymisationAssistServiceInterface $anonymisationAssist,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly LoggerInterface $logger,
 		private readonly IL10N $l10n,
 		private readonly HandlerActsAsSystem $handlerActs,

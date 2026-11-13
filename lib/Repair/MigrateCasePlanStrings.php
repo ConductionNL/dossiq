@@ -45,11 +45,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
 use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\StoredArray;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -99,12 +99,12 @@ class MigrateCasePlanStrings implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param SociaalDomeinStore $store           The one reader and writer of these schemas.
-	 * @param SettingsService    $settingsService The object service the elevation runs on.
+	 * @param SettingsServiceInterface    $settingsService The object service the elevation runs on.
 	 * @param LoggerInterface    $logger          The logger.
 	 */
 	public function __construct(
 		private readonly SociaalDomeinStore $store,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

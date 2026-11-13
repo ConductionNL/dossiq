@@ -52,6 +52,7 @@ namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WOOAnonymisationAssistServiceInterface;
 use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCA\Dossiq\Service\Assistant\HermiqAnonymisationClient;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
@@ -63,7 +64,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
  */
-class WOOAnonymisationAssistService {
+class WOOAnonymisationAssistService implements WOOAnonymisationAssistServiceInterface {
 	/**
 	 * Maximum accepted document text length (characters) — bounded to keep
 	 * latency/cost predictable and mirrors the cap Hermiq's endpoint itself

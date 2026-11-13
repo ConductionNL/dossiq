@@ -54,6 +54,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Bezwaar;
 
+use OCA\Dossiq\Kernel\Contracts\DecisionServiceInterface;
 use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
@@ -70,7 +71,7 @@ use Throwable;
  *
  * @spec openspec/specs/bezwaar-decision/spec.md
  */
-class DecisionService {
+class DecisionService implements DecisionServiceInterface {
 
 	use SearchesObjects;
 

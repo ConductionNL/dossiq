@@ -43,7 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\Zaakdossier\CaseFileCollector;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCP\Files\File;
@@ -67,7 +67,7 @@ class WooGatherAdd {
 	 * @param DocumentRecordStore       $store       Records and joins in OpenRegister.
 	 * @param CaseFileCollector         $collector   Writes copied bytes as a document on the case, with provenance.
 	 * @param WooSources                $sources     Fetches an integriq hit.
-	 * @param CaseAccessGuard           $accessGuard Whether the caller may read the case a linked document is on.
+	 * @param CaseAccessGuardInterface           $accessGuard Whether the caller may read the case a linked document is on.
 	 * @param IL10N                     $l10n        The refusal sentences.
 	 * @param LoggerInterface           $logger      Logs a pick that failed for a reason the caller cannot fix.
 	 * @param WooCollection             $collection  Records a duplicate or unreadable pick as an exclusion.
@@ -77,7 +77,7 @@ class WooGatherAdd {
 		private readonly DocumentRecordStore $store,
 		private readonly CaseFileCollector $collector,
 		private readonly WooSources $sources,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly WooCollection $collection,

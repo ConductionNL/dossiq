@@ -51,6 +51,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Gdpr;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\DataSubjectRequestCaseInterface;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
@@ -63,7 +64,7 @@ use OCA\Dossiq\Service\Transitions\FourEyesRule;
  *
  * @spec openspec/specs/avg-processing-surface/spec.md
  */
-class DataSubjectRequestCase {
+class DataSubjectRequestCase implements DataSubjectRequestCaseInterface {
 
 	/**
 	 * The label of the transition that prepares an erasure.

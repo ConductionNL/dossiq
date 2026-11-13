@@ -32,8 +32,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\ContractDecisionDelegationService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\ContractDecisionDelegationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
@@ -75,14 +75,14 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param ContractDecisionDelegationService $delegationService Decision delegation service.
-	 * @param SettingsService $settingsService Settings / ObjectService resolver.
+	 * @param ContractDecisionDelegationServiceInterface $delegationService Decision delegation service.
+	 * @param SettingsServiceInterface $settingsService Settings / ObjectService resolver.
 	 * @param JsonEncodedStringProperties $jsonProperties Restores the declared string shape of JSON-encoded properties.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly ContractDecisionDelegationService $delegationService,
-		private readonly SettingsService $settingsService,
+		private readonly ContractDecisionDelegationServiceInterface $delegationService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly JsonEncodedStringProperties $jsonProperties,
 		private readonly LoggerInterface $logger,
 	) {
@@ -303,8 +303,8 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	 */
 	private function mapCaseTypeToDecisionType(string $caseTypeSlug): string {
 		return match ($caseTypeSlug) {
-			'leverancier-contractverlenging-verzoek' => ContractDecisionDelegationService::DECISION_TYPE_CONTRACT_RENEWAL,
-			default => ContractDecisionDelegationService::DECISION_TYPE_REPORT_ADOPTION,
+			'leverancier-contractverlenging-verzoek' => ContractDecisionDelegationServiceInterface::DECISION_TYPE_CONTRACT_RENEWAL,
+			default => ContractDecisionDelegationServiceInterface::DECISION_TYPE_REPORT_ADOPTION,
 		};
 	}//end mapCaseTypeToDecisionType()
 }//end class

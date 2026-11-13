@@ -35,7 +35,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\CitizenLookupGuard;
 use OCA\Dossiq\Service\SociaalDomein\HouseholdCases;
 use OCP\AppFramework\Controller;
@@ -68,7 +68,7 @@ class HouseholdCasesController extends Controller {
 	 * @param IRequest           $request     The request.
 	 * @param IUserSession       $userSession Who is asking.
 	 * @param ISession           $session     Where this reader's lookups are kept until they sign out.
-	 * @param CaseAccessGuard    $caseAccess  Whether the reader may read a case.
+	 * @param CaseAccessGuardInterface    $caseAccess  Whether the reader may read a case.
 	 * @param CitizenLookupGuard $sensitive   Whether the reader may see the social domain's sensitive fields.
 	 * @param HouseholdCases     $household   Builds the rows.
 	 * @param LoggerInterface    $logger      The logger.
@@ -77,7 +77,7 @@ class HouseholdCasesController extends Controller {
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly ISession $session,
-		private readonly CaseAccessGuard $caseAccess,
+		private readonly CaseAccessGuardInterface $caseAccess,
 		private readonly CitizenLookupGuard $sensitive,
 		private readonly HouseholdCases $household,
 		private readonly LoggerInterface $logger,

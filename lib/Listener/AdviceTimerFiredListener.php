@@ -34,9 +34,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\AdviceServiceInterface;
 use OCA\Dossiq\Listener\Support\TimerFire;
 use OCA\Dossiq\Service\Advice\AdviceTimer;
-use OCA\Dossiq\Service\AdviceService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
@@ -55,12 +55,12 @@ class AdviceTimerFiredListener implements IEventListener {
 	/**
 	 * Build the listener.
 	 *
-	 * @param AdviceService            $adviceService  Sends the reminder and expires the request.
+	 * @param AdviceServiceInterface            $adviceService  Sends the reminder and expires the request.
 	 * @param BackgroundServiceAccount $serviceAccount The identity a cron-driven fire writes as.
 	 * @param LoggerInterface          $logger         Logs a failed fire.
 	 */
 	public function __construct(
-		private readonly AdviceService $adviceService,
+		private readonly AdviceServiceInterface $adviceService,
 		private readonly BackgroundServiceAccount $serviceAccount,
 		private readonly LoggerInterface $logger,
 	) {

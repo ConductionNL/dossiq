@@ -30,14 +30,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WorkflowDefinitionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WorkflowLifecycleGuardInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Workflow\BackfillCaseType;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateShape;
 use OCA\Dossiq\Service\Workflow\BackfillTarget;
-use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
-use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -61,18 +61,18 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings service
-	 * @param WorkflowDefinitionService $workflowService The workflow definition service
+	 * @param SettingsServiceInterface $settingsService The settings service
+	 * @param WorkflowDefinitionServiceInterface $workflowService The workflow definition service
 	 * @param LoggerInterface $logger The logger interface
-	 * @param WorkflowLifecycleGuard $lifecycle Says whether a stored definition is a draft.
+	 * @param WorkflowLifecycleGuardInterface $lifecycle Says whether a stored definition is a draft.
 	 * @param BackfilledTemplateShape $shape Builds the steps and transitions of a basis template from the ordered status types.
 	 * @param BackfilledTemplateLabels $labels Names a basis template, and heals one stored as "Array".
 	 */
 	public function __construct(
-		private SettingsService $settingsService,
-		private WorkflowDefinitionService $workflowService,
+		private SettingsServiceInterface $settingsService,
+		private WorkflowDefinitionServiceInterface $workflowService,
 		private LoggerInterface $logger,
-		private readonly WorkflowLifecycleGuard $lifecycle,
+		private readonly WorkflowLifecycleGuardInterface $lifecycle,
 		private readonly BackfilledTemplateShape $shape = new BackfilledTemplateShape(),
 		private readonly BackfilledTemplateLabels $labels = new BackfilledTemplateLabels(),
 	) {
@@ -368,7 +368,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			'version' => 1,
 			'isActive' => true,
 			'isDraft' => false,
-			'lifecycleStatus' => WorkflowDefinitionService::STATUS_PUBLISHED,
+			'lifecycleStatus' => WorkflowDefinitionServiceInterface::STATUS_PUBLISHED,
 			'steps' => json_encode($steps, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
 			'transitions' => json_encode($transitions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
 			'nodePositions' => '',

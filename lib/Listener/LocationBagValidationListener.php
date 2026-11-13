@@ -40,10 +40,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\PreSaveCheck;
 use OCA\Dossiq\Service\External\IntegrationMode;
 use OCA\Dossiq\Service\Registry\BagObjectReader;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -104,14 +104,14 @@ class LocationBagValidationListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Schema slug bridge.
+	 * @param SettingsServiceInterface $settingsService Schema slug bridge.
 	 * @param IntegrationMode $integrationMode Reads `integration.bag.check`.
 	 * @param BagObjectReader $bagReader Asks integriq whether the BAG holds an object.
 	 * @param IL10N $l10n Translation service.
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IntegrationMode $integrationMode,
 		private readonly BagObjectReader $bagReader,
 		private readonly IL10N $l10n,

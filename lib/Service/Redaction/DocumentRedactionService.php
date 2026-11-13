@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Redaction;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\DocumentRedactionServiceInterface;
 use OCA\Dossiq\Review\DocumentText;
 use OCA\Dossiq\Service\FilinqRedactionClient;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
@@ -54,7 +55,7 @@ use Throwable;
  *
  * @spec openspec/specs/document-redaction/spec.md
  */
-class DocumentRedactionService {
+class DocumentRedactionService implements DocumentRedactionServiceInterface {
 
 	/**
 	 * The filinq calls, see {@see filinqSteps()}.

@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\FilinqMergeClient;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -48,7 +48,7 @@ class CaseDocumentMergeController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest          $request         The request.
-	 * @param CaseAccessGuard   $caseAccessGuard The per-case access check.
+	 * @param CaseAccessGuardInterface   $caseAccessGuard The per-case access check.
 	 * @param IUserSession      $userSession     The session.
 	 * @param FilinqMergeClient $merges          Filinq's merge.
 	 * @param IL10N             $l10n            The translations.
@@ -57,7 +57,7 @@ class CaseDocumentMergeController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly FilinqMergeClient $merges,
 		private readonly IL10N $l10n,

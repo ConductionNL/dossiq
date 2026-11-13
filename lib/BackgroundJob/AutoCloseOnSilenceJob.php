@@ -39,9 +39,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Lifecycle\SilenceCloseService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -74,7 +74,7 @@ class AutoCloseOnSilenceJob extends TimedJob {
 	 *
 	 * @param ITimeFactory $time The time factory.
 	 * @param SilenceCloseService $silence Decides and performs.
-	 * @param SettingsService $settingsService Bridge to OpenRegister plus config.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister plus config.
 	 * @param IAppManager $appManager Establishes that OpenRegister is present.
 	 * @param LoggerInterface $logger The logger.
 	 * @param BackgroundServiceAccount $serviceAccount The account the sweep acts as.
@@ -82,7 +82,7 @@ class AutoCloseOnSilenceJob extends TimedJob {
 	public function __construct(
 		ITimeFactory $time,
 		private readonly SilenceCloseService $silence,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,

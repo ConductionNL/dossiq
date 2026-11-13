@@ -58,6 +58,7 @@ namespace OCA\Dossiq\Service\Pause;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PauseChaseServiceInterface;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\SettingsService;
@@ -78,7 +79,7 @@ use Throwable;
  * schedule and the case timeline. Splitting it would put the count that keeps
  * two triggers apart in one class and the send that increments it in another.
  */
-class PauseChaseService {
+class PauseChaseService implements PauseChaseServiceInterface {
 	use SearchesObjects;
 
 	/**

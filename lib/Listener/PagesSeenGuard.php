@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Review\PagesSeen;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -54,14 +54,14 @@ class PagesSeenGuard implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings, for the assessment schema.
+	 * @param SettingsServiceInterface $settingsService The settings, for the assessment schema.
 	 * @param PagesSeen $pagesSeen The required and seen pages of each document.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly PagesSeen $pagesSeen,
 		private readonly LoggerInterface $logger,
 	) {

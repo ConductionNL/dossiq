@@ -48,10 +48,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -104,11 +104,11 @@ class PortalMessageTimelineListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTimeline             $timeline     The one seam that writes a timeline entry.
+	 * @param CaseTimelineInterface             $timeline     The one seam that writes a timeline entry.
 	 * @param ObjectSchemaSlugResolver $slugResolver Resolves a schema id to its slug.
 	 */
 	public function __construct(
-		private readonly CaseTimeline $timeline,
+		private readonly CaseTimelineInterface $timeline,
 		private readonly ObjectSchemaSlugResolver $slugResolver,
 	) {
 	}//end __construct()
@@ -163,14 +163,14 @@ class PortalMessageTimelineListener implements IEventListener {
 
 		$this->timeline->record(
 			caseId: $caseId,
-			kind: TimelineKinds::PORTAL_MESSAGE,
+			kind: TimelineKindsInterface::PORTAL_MESSAGE,
 			message: $subject,
 			fields: [
 				'subject' => $subject,
 				'messageId' => $this->identifier(payload: $payload),
 				'status' => 'sent',
 			],
-			visibility: CaseTimeline::PUBLIC_ENTRY,
+			visibility: CaseTimelineInterface::PUBLIC_ENTRY,
 		);
 	}//end recordAnswer()
 
@@ -187,7 +187,7 @@ class PortalMessageTimelineListener implements IEventListener {
 
 		$this->timeline->record(
 			caseId: $caseId,
-			kind: TimelineKinds::PORTAL_MESSAGE_IN,
+			kind: TimelineKindsInterface::PORTAL_MESSAGE_IN,
 			message: $subject,
 			fields: [
 				'subject' => $subject,
@@ -195,7 +195,7 @@ class PortalMessageTimelineListener implements IEventListener {
 				'sender' => (string)($payload['senderName'] ?? ''),
 				'sentAt' => (string)($payload['sentAt'] ?? ''),
 			],
-			visibility: CaseTimeline::INTERNAL,
+			visibility: CaseTimelineInterface::INTERNAL,
 		);
 	}//end recordQuestion()
 

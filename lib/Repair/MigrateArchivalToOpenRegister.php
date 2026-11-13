@@ -43,8 +43,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Service\HoldOrder;
 use OCP\IAppConfig;
@@ -104,13 +104,13 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settings Shared OR/settings resolver.
+	 * @param SettingsServiceInterface $settings Shared OR/settings resolver.
 	 * @param ContainerInterface $container DI container (OR collaborators resolved lazily).
 	 * @param IAppConfig $appConfig App config for the completion marker.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 		private readonly ContainerInterface $container,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,

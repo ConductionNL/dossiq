@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooResultLink;
 use OCP\IAppConfig;
@@ -72,13 +72,13 @@ class BackfillWooPublicationState implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService Bridge to OpenRegister and the configured schemas.
+	 * @param SettingsServiceInterface    $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param IAppConfig         $appConfig       Holds the persisted completion key.
 	 * @param LoggerInterface    $logger          Logger.
 	 * @param IURLGenerator|null $urlGenerator    Makes the publication link absolute, as publish() does.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 		private readonly ?IURLGenerator $urlGenerator = null,

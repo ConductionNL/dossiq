@@ -67,6 +67,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WorkflowDefinitionServiceInterface;
 use OCA\Dossiq\Service\Workflow\TransitionAuthorizationStamper;
 use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
 use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
@@ -78,7 +79,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
  */
-class WorkflowDefinitionService {
+class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 
 	/**
 	 * Lifecycle states. Mirrors the enum on the workflowTemplate schema.
@@ -88,7 +89,6 @@ class WorkflowDefinitionService {
 	 * keep reading the single source of truth.
 	 */
 	public const STATUS_DRAFT = WorkflowLifecycleGuard::STATUS_DRAFT;
-	public const STATUS_PUBLISHED = WorkflowLifecycleGuard::STATUS_PUBLISHED;
 	public const STATUS_DEPRECATED = WorkflowLifecycleGuard::STATUS_DEPRECATED;
 
 	/**

@@ -25,10 +25,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Settings;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Prerequisites;
-use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
@@ -50,14 +50,14 @@ class AdminSettings implements IDelegatedSettings {
 	 *
 	 * @param IAppManager $appManager The app manager.
 	 * @param IInitialState $initialState The initial state service.
-	 * @param SettingsService $settingsService Reads the stored config values.
+	 * @param SettingsServiceInterface $settingsService Reads the stored config values.
 	 * @param QueueUrgencySettings $queueUrgency The queue thresholds and weights.
 	 * @param ServerVersion        $serverVersion The Nextcloud this instance runs.
 	 */
 	public function __construct(
 		private IAppManager $appManager,
 		private IInitialState $initialState,
-		private SettingsService $settingsService,
+		private SettingsServiceInterface $settingsService,
 		private QueueUrgencySettings $queueUrgency,
 		private ServerVersion $serverVersion,
 	) {

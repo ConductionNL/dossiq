@@ -30,9 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -57,12 +57,12 @@ class MoveDecisionTablesToOpenRegister implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The register and the old schema.
+	 * @param SettingsServiceInterface $settingsService The register and the old schema.
 	 * @param StoredDecisionTables $tables OpenRegister's register.
 	 * @param LoggerInterface $logger Names every table that did not move.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly StoredDecisionTables $tables,
 		private readonly LoggerInterface $logger,
 	) {

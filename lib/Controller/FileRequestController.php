@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\People\FileRequestService;
 use OCA\Dossiq\Service\People\PartyIndicatorReader;
 use OCA\Dossiq\Service\People\PersonLinkReader;
@@ -37,7 +37,7 @@ class FileRequestController extends Controller {
 	 * @param PersonLinkReader $people The people on the case.
 	 * @param FileRequestService $fileRequests Sends the request.
 	 * @param PartyIndicatorReader $indicators What the parties' indicators refuse.
-	 * @param CaseAccessGuard $access Whether this handler may see this case at all.
+	 * @param CaseAccessGuardInterface $access Whether this handler may see this case at all.
 	 * @param IUserSession $userSession The signed-in handler.
 	 */
 	public function __construct(
@@ -45,7 +45,7 @@ class FileRequestController extends Controller {
 		private readonly PersonLinkReader $people,
 		private readonly FileRequestService $fileRequests,
 		private readonly PartyIndicatorReader $indicators,
-		private readonly CaseAccessGuard $access,
+		private readonly CaseAccessGuardInterface $access,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

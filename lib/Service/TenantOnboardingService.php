@@ -29,6 +29,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TenantOnboardingServiceInterface;
 use OCA\Dossiq\Service\Task\OnboardingSteps;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
  */
-class TenantOnboardingService {
+class TenantOnboardingService implements TenantOnboardingServiceInterface {
 	/**
 	 * The seven canonical onboarding steps.
 	 */

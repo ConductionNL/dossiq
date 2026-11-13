@@ -29,12 +29,13 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
-use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Review\DisclosureAssessmentValidator;
 use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Review\OutstandingDocuments;
+use OCA\Dossiq\Service\Access\CaseReviewerAccess;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -47,7 +48,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
  */
-class WOODocumentAssessmentService {
+class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterface {
 
 	use SearchesObjects;
 

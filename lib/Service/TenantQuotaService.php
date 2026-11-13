@@ -31,6 +31,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TenantQuotaServiceInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
-class TenantQuotaService {
+class TenantQuotaService implements TenantQuotaServiceInterface {
 	/**
 	 * Tier defaults: tier => quotaType => [limit, enforcement].
 	 *

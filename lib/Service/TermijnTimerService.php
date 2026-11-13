@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
 use OCA\Dossiq\Service\Term\ThresholdShares;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Termijn\TermEndRoll;
@@ -51,13 +52,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
  */
-class TermijnTimerService {
-	/**
-	 * The engine service class, resolved lazily.
-	 *
-	 * @var string
-	 */
-	public const ENGINE_CLASS = 'OCA\OpenRegister\Service\Flow\Timer\FlowTimerService';
+class TermijnTimerService implements TermijnTimerServiceInterface {
 
 	/**
 	 * The engine's working-calendar resolver, resolved lazily.
@@ -91,20 +86,10 @@ class TermijnTimerService {
 	 */
 	public const LADDER_DEFAULT = 'nl-termijn-default';
 
-
-	/**
-	 * Metadata marker the listener filters on.
-	 *
-	 * @var string
-	 */
-	public const METADATA_SOURCE = 'dossiq-termijn';
-
 	/**
 	 * Metadata kinds.
 	 */
 	public const KIND_BESLISTERMIJN = 'beslistermijn';
-
-	public const KIND_HERSTELTERMIJN = 'hersteltermijn';
 
 	/**
 	 * Constructor.
@@ -205,8 +190,6 @@ class TermijnTimerService {
 			organisation: $organisation,
 		);
 	}//end rollTermEndFor()
-
-
 
 	/**
 	 * Resolves a declared ladder's rungs to offsets. Built here when it was
@@ -567,12 +550,6 @@ class TermijnTimerService {
 		}
 	}//end cancelForInstance()
 
-
-
-
-
-
-
 	/**
 	 * Arm one timer, returning the persisted uuid.
 	 *
@@ -650,7 +627,6 @@ class TermijnTimerService {
 
 		return $this->roll?->daysBetween(from: $from, to: $to, mode: $mode);
 	}//end spanFor()
-
 
 	/**
 	 * Resolve the engine, or null when OpenRegister (or the timer stack) is absent.

@@ -43,7 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\AcknowledgementService;
+use OCA\Dossiq\Kernel\Contracts\AcknowledgementServiceInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -65,14 +65,14 @@ class AcknowledgementDispatchJob extends QueuedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory             $time            The time factory.
-	 * @param AcknowledgementService   $acknowledgement The acknowledgement of receipt.
+	 * @param AcknowledgementServiceInterface   $acknowledgement The acknowledgement of receipt.
 	 * @param IJobList                 $jobList         The job list, for the next attempt.
 	 * @param LoggerInterface          $logger          The logger.
 	 * @param BackgroundServiceAccount $serviceAccount  The account the run writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly AcknowledgementService $acknowledgement,
+		private readonly AcknowledgementServiceInterface $acknowledgement,
 		private readonly IJobList $jobList,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
