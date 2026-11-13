@@ -40,9 +40,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeStoreInterface;
 use OCA\Dossiq\Service\Access\CaseRightsRowSources;
 use OCA\Dossiq\Service\Access\OrganisationRoles;
-use OCA\Dossiq\Service\CaseTypeStore;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -69,13 +69,13 @@ class CaseTypeRightsRowsListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTypeStore            $store     Reads every case type.
+	 * @param CaseTypeStoreInterface            $store     Reads every case type.
 	 * @param OrganisationRoles        $roles     Reads the organisation roles.
 	 * @param CaseRightsRowSources     $sources   The case type rights rows and the assigned group's read rows.
 	 * @param LoggerInterface          $logger    The logger.
 	 */
 	public function __construct(
-		private readonly CaseTypeStore $store,
+		private readonly CaseTypeStoreInterface $store,
 		private readonly OrganisationRoles $roles,
 		private readonly CaseRightsRowSources $sources,
 		private readonly LoggerInterface $logger,

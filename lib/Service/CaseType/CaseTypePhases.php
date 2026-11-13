@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypePhasesInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Support\TranslatedText;
@@ -43,7 +44,7 @@ use OCA\Dossiq\Service\WorkflowTemplateLoader;
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseTypePhases {
+class CaseTypePhases implements CaseTypePhasesInterface {
 
 	/**
 	 * Constructor.

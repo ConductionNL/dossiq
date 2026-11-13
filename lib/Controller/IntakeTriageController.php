@@ -44,20 +44,20 @@ use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AdmissibilityJudgementInterface;
+use OCA\Dossiq\Kernel\Contracts\AssigneeNarrowingInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseTypeResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\DuplicatePolicyInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeFanOutInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeRequirementsInterface;
 use OCA\Dossiq\Kernel\Contracts\RefusalOutcomeInterface;
+use OCA\Dossiq\Kernel\Contracts\TriageSleepInterface;
 use OCA\Dossiq\Service\Email\IntakePolicy;
-use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
 use OCA\Dossiq\Service\Intake\CaseClassification;
 use OCA\Dossiq\Service\Intake\CaseMatchSuggestion;
 use OCA\Dossiq\Service\Intake\ClassificationSchemes;
-use OCA\Dossiq\Service\Intake\DuplicatePolicy;
-use OCA\Dossiq\Service\Intake\IntakeFanOut;
-use OCA\Dossiq\Service\Intake\IntakeRequirements;
 use OCA\Dossiq\Service\Intake\TriageChannel;
-use OCA\Dossiq\Service\Intake\TriageSleep;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -99,15 +99,15 @@ class IntakeTriageController extends Controller {
 	 *
 	 * @param IRequest              $request          Inbound request.
 	 * @param CaseTypeResolverInterface      $caseTypeResolver The effective case type.
-	 * @param IntakeRequirements    $requirements     What must be answered, and when.
+	 * @param IntakeRequirementsInterface    $requirements     What must be answered, and when.
 	 * @param CaseClassification    $classification   The facets and the access rule.
 	 * @param ClassificationSchemes $schemes          The schemes this instance knows.
-	 * @param AssigneeNarrowing     $narrowing        Who may hold the case.
-	 * @param DuplicatePolicy       $duplicates       What this case type does about a case that already exists.
+	 * @param AssigneeNarrowingInterface     $narrowing        Who may hold the case.
+	 * @param DuplicatePolicyInterface       $duplicates       What this case type does about a case that already exists.
 	 * @param RefusalOutcomeInterface        $refusal          Refusal as an outcome of routing.
 	 * @param AdmissibilityJudgementInterface $admissibility   The ontvankelijkheid verdict at intake.
-	 * @param TriageSleep           $sleep            The triage sleep.
-	 * @param IntakeFanOut          $fanOut           One submission, several cases.
+	 * @param TriageSleepInterface           $sleep            The triage sleep.
+	 * @param IntakeFanOutInterface          $fanOut           One submission, several cases.
 	 * @param IntakeLogInterface             $log              The triage queue.
 	 * @param IntakePolicy          $policy           Who may run intake.
 	 * @param CaseAccessGuardInterface       $caseAccessGuard  Per-case authorization.
@@ -119,15 +119,15 @@ class IntakeTriageController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly CaseTypeResolverInterface $caseTypeResolver,
-		private readonly IntakeRequirements $requirements,
+		private readonly IntakeRequirementsInterface $requirements,
 		private readonly CaseClassification $classification,
 		private readonly ClassificationSchemes $schemes,
-		private readonly AssigneeNarrowing $narrowing,
-		private readonly DuplicatePolicy $duplicates,
+		private readonly AssigneeNarrowingInterface $narrowing,
+		private readonly DuplicatePolicyInterface $duplicates,
 		private readonly RefusalOutcomeInterface $refusal,
 		private readonly AdmissibilityJudgementInterface $admissibility,
-		private readonly TriageSleep $sleep,
-		private readonly IntakeFanOut $fanOut,
+		private readonly TriageSleepInterface $sleep,
+		private readonly IntakeFanOutInterface $fanOut,
 		private readonly IntakeLogInterface $log,
 		private readonly IntakePolicy $policy,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
@@ -351,7 +351,7 @@ class IntakeTriageController extends Controller {
 	 */
 	private function sleepableItems(): array {
 		$items = [];
-		foreach (TriageSleep::SLEEPABLE_OUTCOMES as $outcome) {
+		foreach (TriageSleepInterface::SLEEPABLE_OUTCOMES as $outcome) {
 			$items = array_merge(
 				$items,
 				$this->log->search(filters: ['outcome' => $outcome, '_limit' => self::PAGE_SIZE])

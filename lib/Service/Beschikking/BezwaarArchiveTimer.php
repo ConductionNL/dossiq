@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Beschikking;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTimerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -52,7 +53,7 @@ use Throwable;
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class BezwaarArchiveTimer {
+class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 
 	/**
 	 * The engine class, resolved lazily so dossiq runs without OpenRegister.
@@ -62,20 +63,6 @@ class BezwaarArchiveTimer {
 	public const ENGINE_CLASS = 'OCA\\OpenRegister\\Service\\Flow\\Timer\\FlowTimerService';
 
 	/**
-	 * The metadata source the fired listener recognises the timer by.
-	 *
-	 * @var string
-	 */
-	public const METADATA_SOURCE = 'dossiq-bezwaartermijn';
-
-	/**
-	 * Outcome: a timer is armed.
-	 *
-	 * @var string
-	 */
-	public const ARMED = 'armed';
-
-	/**
 	 * Outcome: the trigger is switched off and its timers are cancelled.
 	 *
 	 * @var string
@@ -83,25 +70,11 @@ class BezwaarArchiveTimer {
 	public const CANCELLED = 'cancelled';
 
 	/**
-	 * Outcome: the archive date is today or past; the caller acts now.
-	 *
-	 * @var string
-	 */
-	public const DUE = 'due';
-
-	/**
 	 * Outcome: nothing to time (no id, no archive date).
 	 *
 	 * @var string
 	 */
 	public const SKIPPED = 'skipped';
-
-	/**
-	 * Outcome: the engine is absent or refused.
-	 *
-	 * @var string
-	 */
-	public const UNAVAILABLE = 'unavailable';
 
 	/**
 	 * Build the service.

@@ -32,8 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTimerInterface;
 use OCA\Dossiq\Listener\Support\TimerFire;
-use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTimer;
 use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTrigger;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
@@ -78,7 +78,7 @@ class BezwaarArchiveTimerFiredListener implements IEventListener {
 			return;
 		}
 
-		$metadata  = TimerFire::metadataFrom(event: $event, source: BezwaarArchiveTimer::METADATA_SOURCE);
+		$metadata  = TimerFire::metadataFrom(event: $event, source: BezwaarArchiveTimerInterface::METADATA_SOURCE);
 		$triggerId = (string) ($metadata['triggerId'] ?? '');
 		if ($metadata === null || $triggerId === '' || TimerFire::isBreach(event: $event) === false) {
 			return;

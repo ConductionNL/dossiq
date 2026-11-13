@@ -31,10 +31,10 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\EmailTemplateServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
 use OCA\Dossiq\Service\Email\SenderBlocklist;
-use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -89,7 +89,7 @@ class EmailTemplateController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request Inbound request.
-	 * @param EmailTemplateService $templateService Backend templating service.
+	 * @param EmailTemplateServiceInterface $templateService Backend templating service.
 	 * @param SettingsServiceInterface $settingsService Settings resolver (registers).
 	 * @param IAppConfig $appConfig App config (IMAP settings).
 	 * @param IUserSession $userSession Current user session.
@@ -100,7 +100,7 @@ class EmailTemplateController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly EmailTemplateService $templateService,
+		private readonly EmailTemplateServiceInterface $templateService,
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
 		private readonly IUserSession $userSession,

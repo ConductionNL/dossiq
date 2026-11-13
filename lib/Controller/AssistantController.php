@@ -30,9 +30,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use Exception;
-use OCA\Dossiq\Service\Assistant\CaseAssistantService;
+use OCA\Dossiq\Kernel\Contracts\HermiqAiFeatureClientInterface;
 use OCA\Dossiq\Service\Ai\CaseTypeAiFeatures;
-use OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient;
+use OCA\Dossiq\Service\Assistant\CaseAssistantService;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantClient;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use OCP\AppFramework\Controller;
@@ -67,7 +67,7 @@ class AssistantController extends Controller {
 	 * @param IL10N $l10n Localization service for translations.
 	 * @param LoggerInterface $logger Structured logger.
 	 * @param CaseTypeAiFeatures|null $aiFeatures Reads what a case type declared.
-	 * @param HermiqAiFeatureClient|null $aiFeatureClient Reads where each declared feature runs.
+	 * @param HermiqAiFeatureClientInterface|null $aiFeatureClient Reads where each declared feature runs.
 	 */
 	public function __construct(
 		string $appName,
@@ -80,7 +80,7 @@ class AssistantController extends Controller {
 		// Nullable and last, so every existing construction of this controller
 		// keeps working; the container supplies both.
 		private readonly ?CaseTypeAiFeatures $aiFeatures = null,
-		private readonly ?HermiqAiFeatureClient $aiFeatureClient = null,
+		private readonly ?HermiqAiFeatureClientInterface $aiFeatureClient = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

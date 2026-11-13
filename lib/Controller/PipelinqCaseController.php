@@ -45,10 +45,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\PartyKindConsumerInterface;
+use OCA\Dossiq\Kernel\Contracts\PipelinqGatewayInterface;
 use OCA\Dossiq\Service\Milestone\MilestoneRepository;
 use OCA\Dossiq\Service\Pipelinq\CorrespondenceLanguageConsumer;
-use OCA\Dossiq\Service\Pipelinq\PartyKindConsumer;
-use OCA\Dossiq\Service\Pipelinq\PipelinqGateway;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -73,8 +73,8 @@ class PipelinqCaseController extends Controller {
 	 *
 	 * @param string                         $appName     The app name.
 	 * @param IRequest                       $request     The HTTP request.
-	 * @param PipelinqGateway                $gateway     Whether pipelinq is here at all.
-	 * @param PartyKindConsumer              $kinds       The kinds and the per-case-type acceptance.
+	 * @param PipelinqGatewayInterface                $gateway     Whether pipelinq is here at all.
+	 * @param PartyKindConsumerInterface              $kinds       The kinds and the per-case-type acceptance.
 	 * @param CorrespondenceLanguageConsumer $languages   The language to write in, with its reason.
 	 * @param MilestoneRepository            $cases       Reads a case's type without the client supplying it.
 	 * @param CaseAccessGuardInterface                $access      Per-case authorization (fails closed).
@@ -84,8 +84,8 @@ class PipelinqCaseController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PipelinqGateway $gateway,
-		private readonly PartyKindConsumer $kinds,
+		private readonly PipelinqGatewayInterface $gateway,
+		private readonly PartyKindConsumerInterface $kinds,
 		private readonly CorrespondenceLanguageConsumer $languages,
 		private readonly MilestoneRepository $cases,
 		private readonly CaseAccessGuardInterface $access,

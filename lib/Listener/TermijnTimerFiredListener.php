@@ -37,12 +37,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekResolutionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DeadlinePauseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\PauseChaseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
 use OCA\Dossiq\Listener\Support\TimerFire;
-use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
@@ -81,7 +81,7 @@ class TermijnTimerFiredListener implements IEventListener {
 	 * @param BackgroundServiceAccount $serviceAccount Who writes when the fire comes
 	 *        from cron with nobody signed in. OpenRegister's FlowTimerWorker is a
 	 *        background job, and OpenRegister refuses a write from nobody.
-	 * @param AanvullingsverzoekResolutionService|null $aanvullingen The request
+	 * @param AanvullingsverzoekResolutionServiceInterface|null $aanvullingen The request
 	 *        the hersteltermijn belonged to, so the day it runs out is recorded
 	 *        on the request and not only on the timer. Optional, so an instance
 	 *        without the schema fires exactly as it did before.
@@ -101,7 +101,7 @@ class TermijnTimerFiredListener implements IEventListener {
 		private readonly DeadlineEscalationService $escalationService,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
-		private readonly ?AanvullingsverzoekResolutionService $aanvullingen = null,
+		private readonly ?AanvullingsverzoekResolutionServiceInterface $aanvullingen = null,
 		private readonly ?PauseChaseServiceInterface $chases = null,
 		private readonly ?DeadlinePauseServiceInterface $pauses = null,
 		private readonly ?CaseObjectReader $cases = null,

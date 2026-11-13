@@ -39,11 +39,11 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekResolutionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseTermsServiceInterface;
-use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
-use OCA\Dossiq\Service\OpenWorkloadAgeService;
+use OCA\Dossiq\Kernel\Contracts\OpenWorkloadAgeServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -72,23 +72,23 @@ class CaseTermsController extends Controller {
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
 	 * @param CaseTermsServiceInterface $terms The four clocks on a case.
-	 * @param OpenWorkloadAgeService $workload The age of what is still standing.
+	 * @param OpenWorkloadAgeServiceInterface $workload The age of what is still standing.
 	 * @param CaseAccessGuardInterface $guard The per-case check, asked of every endpoint below.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
 	 * @param AanvullingsverzoekServiceInterface $aanvullingen The request as a record.
-	 * @param AanvullingsverzoekResolutionService $resolution The answer, item by item.
+	 * @param AanvullingsverzoekResolutionServiceInterface $resolution The answer, item by item.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly CaseTermsServiceInterface $terms,
-		private readonly OpenWorkloadAgeService $workload,
+		private readonly OpenWorkloadAgeServiceInterface $workload,
 		private readonly CaseAccessGuardInterface $guard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly AanvullingsverzoekServiceInterface $aanvullingen,
-		private readonly AanvullingsverzoekResolutionService $resolution,
+		private readonly AanvullingsverzoekResolutionServiceInterface $resolution,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

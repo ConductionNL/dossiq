@@ -32,8 +32,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\CaseDefinitionExportServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseDefinitionImportServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseTypeCopyServiceInterface;
-use OCA\Dossiq\Service\CaseDefinitionImportService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -57,7 +57,7 @@ class CaseDefinitionController extends Controller {
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request object.
 	 * @param CaseDefinitionExportServiceInterface $exportService The export service.
-	 * @param CaseDefinitionImportService $importService The import service.
+	 * @param CaseDefinitionImportServiceInterface $importService The import service.
 	 * @param CaseTypeCopyServiceInterface $copyService The copy/guarded-delete service.
 	 * @param LoggerInterface $logger The logger.
 	 */
@@ -65,7 +65,7 @@ class CaseDefinitionController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly CaseDefinitionExportServiceInterface $exportService,
-		private readonly CaseDefinitionImportService $importService,
+		private readonly CaseDefinitionImportServiceInterface $importService,
 		private readonly CaseTypeCopyServiceInterface $copyService,
 		private readonly LoggerInterface $logger,
 	) {

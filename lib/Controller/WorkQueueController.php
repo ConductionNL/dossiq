@@ -29,9 +29,9 @@ namespace OCA\Dossiq\Controller;
 
 use DateTime;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PrimaryTeamServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WorkQueueServiceInterface;
 use OCA\Dossiq\Service\Substitution\CoveredWork;
-use OCA\Dossiq\Service\Team\PrimaryTeamService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -63,7 +63,7 @@ class WorkQueueController extends Controller {
 	 * @param LoggerInterface $logger Logger.
 	 * @param IUserManager $userManager Resolves a handler's display name.
 	 * @param CoveredWork $coveredWork The cases the caller covers for an absent colleague.
-	 * @param PrimaryTeamService $teams The reader's teams, which scope the workload.
+	 * @param PrimaryTeamServiceInterface $teams The reader's teams, which scope the workload.
 	 *
 	 * @return void
 	 */
@@ -75,7 +75,7 @@ class WorkQueueController extends Controller {
 		private LoggerInterface $logger,
 		private IUserManager $userManager,
 		private CoveredWork $coveredWork,
-		private PrimaryTeamService $teams,
+		private PrimaryTeamServiceInterface $teams,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

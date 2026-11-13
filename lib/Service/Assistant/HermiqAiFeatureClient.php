@@ -38,6 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Assistant;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\HermiqAiFeatureClientInterface;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md
  */
-class HermiqAiFeatureClient {
+class HermiqAiFeatureClient implements HermiqAiFeatureClientInterface {
 
 	/**
 	 * Which provider each registered feature will use, and where that provider

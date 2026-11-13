@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeStoreInterface;
 use OCA\Dossiq\Service\Support\SerialisedResult;
 use Throwable;
 
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseTypeStore {
+class CaseTypeStore implements CaseTypeStoreInterface {
 	/**
 	 * Constructor.
 	 *

@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Review;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
+use OCA\Dossiq\Kernel\Contracts\CaseDocumentProvenanceInterface;
 use Throwable;
 
 /**
@@ -48,13 +48,13 @@ class BatchSelection {
 	 * Constructor.
 	 *
 	 * @param DocumentRelevance      $reviews    The reviews of the case's documents.
-	 * @param CaseDocumentProvenance $provenance The provenance of the case's documents.
+	 * @param CaseDocumentProvenanceInterface $provenance The provenance of the case's documents.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly DocumentRelevance $reviews,
-		private readonly CaseDocumentProvenance $provenance,
+		private readonly CaseDocumentProvenanceInterface $provenance,
 	) {
 	}//end __construct()
 
@@ -66,7 +66,7 @@ class BatchSelection {
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
 	 */
 	public static function fields(): array {
-		return array_merge(self::REVIEW_FIELDS, CaseDocumentProvenance::FILTER_FIELDS);
+		return array_merge(self::REVIEW_FIELDS, CaseDocumentProvenanceInterface::FILTER_FIELDS);
 	}//end fields()
 
 	/**

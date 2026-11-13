@@ -15,10 +15,10 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\DocumentProjectionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -65,14 +65,14 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 
 	/**
 	 * @param SettingsServiceInterface $settingsService OpenRegister access and the configured register.
-	 * @param DocumentRecordStore $store Records and joins.
+	 * @param DocumentRecordStoreInterface $store Records and joins.
 	 * @param DocumentProjectionServiceInterface $projection The move itself.
 	 * @param IAppConfig $appConfig The version gate.
 	 * @param LoggerInterface $logger Where each skipped record is named.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly DocumentRecordStore $store,
+		private readonly DocumentRecordStoreInterface $store,
 		private readonly DocumentProjectionServiceInterface $projection,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,

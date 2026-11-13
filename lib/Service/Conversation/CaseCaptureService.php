@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Conversation;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseCaptureServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
@@ -44,23 +45,9 @@ use RuntimeException;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseCaptureService {
+class CaseCaptureService implements CaseCaptureServiceInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * Refusal reason: the file offered is not a capture.
-	 *
-	 * @var string
-	 */
-	public const REASON_NOT_A_CAPTURE = 'not_a_capture';
-
-	/**
-	 * Refusal reason: the capture carries no name or no content.
-	 *
-	 * @var string
-	 */
-	public const REASON_EMPTY = 'capture_empty';
 
 	/**
 	 * The media a capture can be: what a recorder or a camera produces.

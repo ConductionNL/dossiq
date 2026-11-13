@@ -31,9 +31,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTimerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTimer;
 use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTrigger;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -61,13 +61,13 @@ class BezwaarArchiveTimerListener implements IEventListener {
 	 * Build the listener.
 	 *
 	 * @param SettingsServiceInterface       $settingsService Names the watched schema.
-	 * @param BezwaarArchiveTimer   $timer           Arms and cancels the timer.
+	 * @param BezwaarArchiveTimerInterface   $timer           Arms and cancels the timer.
 	 * @param BezwaarArchiveTrigger $trigger         Acts on a trigger already due.
 	 * @param LoggerInterface       $logger          Logs a failed sync.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly BezwaarArchiveTimer $timer,
+		private readonly BezwaarArchiveTimerInterface $timer,
 		private readonly BezwaarArchiveTrigger $trigger,
 		private readonly LoggerInterface $logger,
 	) {
@@ -93,7 +93,7 @@ class BezwaarArchiveTimerListener implements IEventListener {
 				return;
 			}
 
-			if ($this->timer->sync(trigger: $saved) === BezwaarArchiveTimer::DUE) {
+			if ($this->timer->sync(trigger: $saved) === BezwaarArchiveTimerInterface::DUE) {
 				$this->trigger->process(trigger: $saved);
 			}
 		} catch (Throwable $e) {

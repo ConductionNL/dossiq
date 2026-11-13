@@ -50,7 +50,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\IntegrationStatusService;
+use OCA\Dossiq\Kernel\Contracts\IntegrationStatusServiceInterface;
 use OCA\Dossiq\Service\Stuf\StufException;
 use OCA\Dossiq\Service\Stuf\StufIntegriqBridge;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
@@ -106,7 +106,7 @@ class StufController extends Controller {
 	 * @param StufIntegriqBridge $bridge Asks integriq to send and to record confirmations.
 	 * @param IL10N $l10n The localization service.
 	 * @param LoggerInterface $logger The logger.
-	 * @param IntegrationStatusService $integrationStatus Records the StUF card's health.
+	 * @param IntegrationStatusServiceInterface $integrationStatus Records the StUF card's health.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -114,7 +114,7 @@ class StufController extends Controller {
 		private readonly StufIntegriqBridge $bridge,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
-		private readonly IntegrationStatusService $integrationStatus,
+		private readonly IntegrationStatusServiceInterface $integrationStatus,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

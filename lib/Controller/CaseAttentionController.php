@@ -47,7 +47,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
-use OCA\Dossiq\Service\CaseAttentionFlagService;
+use OCA\Dossiq\Kernel\Contracts\CaseAttentionFlagServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -82,7 +82,7 @@ class CaseAttentionController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest                 $request         The HTTP request.
-	 * @param CaseAttentionFlagService $flags           Raise and clear.
+	 * @param CaseAttentionFlagServiceInterface $flags           Raise and clear.
 	 * @param CaseAccessGuardInterface          $caseAccessGuard Per-case authorization (fails closed).
 	 * @param IUserSession             $userSession     The current session.
 	 * @param IL10N                    $l10n            The translations.
@@ -90,7 +90,7 @@ class CaseAttentionController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseAttentionFlagService $flags,
+		private readonly CaseAttentionFlagServiceInterface $flags,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,

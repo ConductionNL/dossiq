@@ -42,8 +42,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\BezwaarCreationHookInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
-use OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -66,7 +66,7 @@ class BezwaarObjectionController extends Controller {
 	 *
 	 * @param string              $appName     The app name.
 	 * @param IRequest            $request     The request.
-	 * @param BezwaarCreationHook $hook        Links the bezwaar to its primair besluit.
+	 * @param BezwaarCreationHookInterface $hook        Links the bezwaar to its primair besluit.
 	 * @param CaseAccessGuardInterface     $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession        $userSession The session.
 	 *
@@ -77,7 +77,7 @@ class BezwaarObjectionController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly BezwaarCreationHook $hook,
+		private readonly BezwaarCreationHookInterface $hook,
 		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 	) {

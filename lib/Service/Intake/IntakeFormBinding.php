@@ -37,12 +37,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Kernel\Contracts\IntakeFormBindingInterface;
+
 /**
  * Reads a case type's intake form binding as a form mapping.
  *
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
  */
-class IntakeFormBinding {
+class IntakeFormBinding implements IntakeFormBindingInterface {
 
 	/**
 	 * The case type property that names the bound form.

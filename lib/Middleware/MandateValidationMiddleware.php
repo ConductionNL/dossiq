@@ -26,8 +26,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Middleware;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\TenantAuditTrailServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TenantAuthenticationServiceInterface;
-use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCA\Dossiq\Service\TenantContext;
 use OCA\Dossiq\Service\TenantService;
 use OCP\AppFramework\Http\JSONResponse;
@@ -91,7 +91,7 @@ class MandateValidationMiddleware extends Middleware {
 	 * @param TenantContext $context Tenant context.
 	 * @param TenantAuthenticationServiceInterface $authService Auth service.
 	 * @param TenantService $tenantService Platform admin check.
-	 * @param TenantAuditTrailService $auditTrail Writes each decision to the tenant's audit trail.
+	 * @param TenantAuditTrailServiceInterface $auditTrail Writes each decision to the tenant's audit trail.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
@@ -99,7 +99,7 @@ class MandateValidationMiddleware extends Middleware {
 		private readonly TenantContext $context,
 		private readonly TenantAuthenticationServiceInterface $authService,
 		private readonly TenantService $tenantService,
-		private readonly TenantAuditTrailService $auditTrail,
+		private readonly TenantAuditTrailServiceInterface $auditTrail,
 	) {
 	}//end __construct()
 

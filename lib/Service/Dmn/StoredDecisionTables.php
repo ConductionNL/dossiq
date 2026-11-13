@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Dmn;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\StoredDecisionTablesInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Container\ContainerInterface;
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
  */
-class StoredDecisionTables {
+class StoredDecisionTables implements StoredDecisionTablesInterface {
 	use SearchesObjects;
 
 	/**
@@ -61,13 +62,6 @@ class StoredDecisionTables {
 	 */
 	public const REGISTER = 'decision-tables';
 	public const SCHEMA = 'decision-table';
-
-	/**
-	 * Every table dossiq ships or moved carries this key prefix and owner.
-	 *
-	 * @var string
-	 */
-	public const KEY_PREFIX = 'dossiq.';
 
 	/**
 	 * Constructor.

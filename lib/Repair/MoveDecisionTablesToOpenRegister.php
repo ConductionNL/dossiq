@@ -31,8 +31,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StoredDecisionTablesInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -58,12 +58,12 @@ class MoveDecisionTablesToOpenRegister implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface $settingsService The register and the old schema.
-	 * @param StoredDecisionTables $tables OpenRegister's register.
+	 * @param StoredDecisionTablesInterface $tables OpenRegister's register.
 	 * @param LoggerInterface $logger Names every table that did not move.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly StoredDecisionTables $tables,
+		private readonly StoredDecisionTablesInterface $tables,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -116,7 +116,7 @@ class MoveDecisionTablesToOpenRegister implements IRepairStep {
 		try {
 			// Probe before writing: an OpenRegister that has not imported the
 			// register yet answers a throw here, and the next upgrade retries.
-			$this->tables->idOf(storedKey: StoredDecisionTables::KEY_PREFIX . 'probe');
+			$this->tables->idOf(storedKey: StoredDecisionTablesInterface::KEY_PREFIX . 'probe');
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'MoveDecisionTablesToOpenRegister: OpenRegister\'s decision-tables register is not readable; the tables stay in dossiq until the next upgrade.',

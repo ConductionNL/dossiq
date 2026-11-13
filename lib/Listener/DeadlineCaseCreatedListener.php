@@ -32,9 +32,9 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Kernel\Contracts\CaseTermsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeTermStartInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
-use OCA\Dossiq\Service\Intake\IntakeTermStart;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\Support\ReferencedUuid;
@@ -65,7 +65,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @param TermResolution|null $resolution The case type's own first-response term,
 	 *        which wins over the Awb default when one is declared. Optional for the
 	 *        same reason as the parameter above it.
-	 * @param IntakeTermStart|null $intake When the request arrived and when its clock
+	 * @param IntakeTermStartInterface|null $intake When the request arrived and when its clock
 	 *        starts, on the calendar the term counts on. The term starts there, not at
 	 *        the moment the case row was written (REQ-OTE-02). Optional so a build
 	 *        without it starts the term at creation exactly as before.
@@ -81,7 +81,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 		private readonly LoggerInterface $logger,
 		private readonly ?CaseTermsServiceInterface $caseTerms = null,
 		private readonly ?TermResolution $resolution = null,
-		private readonly ?IntakeTermStart $intake = null,
+		private readonly ?IntakeTermStartInterface $intake = null,
 		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {
 	}//end __construct()

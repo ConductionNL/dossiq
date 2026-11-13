@@ -39,8 +39,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\IntakeSourceSeederInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Intake\IntakeSourceSeeder;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -56,14 +56,14 @@ class SeedIntakeSources implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface     $settingsService OpenRegister availability check.
-	 * @param IntakeSourceSeeder  $seeder          The upsert itself.
+	 * @param IntakeSourceSeederInterface  $seeder          The upsert itself.
 	 * @param LoggerInterface     $logger          Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly IntakeSourceSeeder $seeder,
+		private readonly IntakeSourceSeederInterface $seeder,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

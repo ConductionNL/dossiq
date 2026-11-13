@@ -32,9 +32,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\Contracts\AdviceServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\AdviceTimerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\Advice\AdviceTimer;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -52,13 +52,13 @@ class ArmAdviceTimers implements IRepairStep {
 	 *
 	 * @param SettingsServiceInterface $settingsService Reports OpenRegister and its object service.
 	 * @param AdviceServiceInterface   $adviceService   Lists the open requests and expires overdue ones.
-	 * @param AdviceTimer     $timer           Arms each request's timer.
+	 * @param AdviceTimerInterface     $timer           Arms each request's timer.
 	 * @param LoggerInterface $logger          Logs the counts.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly AdviceServiceInterface $adviceService,
-		private readonly AdviceTimer $timer,
+		private readonly AdviceTimerInterface $timer,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -123,18 +123,18 @@ class ArmAdviceTimers implements IRepairStep {
 	 */
 	private function syncOne(array $advice, array &$counts): void {
 		$outcome = $this->timer->sync(advice: $advice);
-		if ($outcome === AdviceTimer::ARMED) {
+		if ($outcome === AdviceTimerInterface::ARMED) {
 			$counts['armed']++;
 			return;
 		}
 
-		if ($outcome === AdviceTimer::OVERDUE) {
+		if ($outcome === AdviceTimerInterface::OVERDUE) {
 			$this->adviceService->expireAdvice((string) ($advice['id'] ?? ($advice['uuid'] ?? '')));
 			$counts['expired']++;
 			return;
 		}
 
-		if ($outcome === AdviceTimer::UNAVAILABLE) {
+		if ($outcome === AdviceTimerInterface::UNAVAILABLE) {
 			$counts['failed']++;
 		}
 	}//end syncOne()

@@ -32,8 +32,8 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTaskActionsInterface;
 use OCA\Dossiq\Service\Notice\CaseActNotices;
-use OCA\Dossiq\Service\Task\CaseTaskActions;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -55,7 +55,7 @@ class CaseTaskCancelController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest        $request     The request.
-	 * @param CaseTaskActions $tasks       Reads and cancels the task through the engine.
+	 * @param CaseTaskActionsInterface $tasks       Reads and cancels the task through the engine.
 	 * @param CaseAccessGuardInterface $caseAccess  Write access on the task's case, failing closed.
 	 * @param CaseActNotices  $notices     The refusal notice.
 	 * @param IUserSession    $userSession The caller.
@@ -64,7 +64,7 @@ class CaseTaskCancelController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseTaskActions $tasks,
+		private readonly CaseTaskActionsInterface $tasks,
 		private readonly CaseAccessGuardInterface $caseAccess,
 		private readonly CaseActNotices $notices,
 		private readonly IUserSession $userSession,

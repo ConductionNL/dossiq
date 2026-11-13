@@ -32,9 +32,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\ComplaintAnalyticsServiceInterface;
 use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
 use OCA\Dossiq\Service\Complaint\EmployeeAlertAudience;
-use OCA\Dossiq\Service\ComplaintAnalyticsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -63,7 +63,7 @@ class ComplaintAnalyticsController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param ComplaintAnalyticsService $analyticsService Analytics service
+	 * @param ComplaintAnalyticsServiceInterface $analyticsService Analytics service
 	 * @param ComplaintAccessGuard $accessGuard Shared complaint authorization guard
 	 * @param EmployeeAlertAudience $alertAudience Who may read the employee threshold alerts
 	 *
@@ -72,7 +72,7 @@ class ComplaintAnalyticsController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ComplaintAnalyticsService $analyticsService,
+		private readonly ComplaintAnalyticsServiceInterface $analyticsService,
 		private readonly ComplaintAccessGuard $accessGuard,
 		private readonly EmployeeAlertAudience $alertAudience,
 	) {

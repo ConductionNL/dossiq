@@ -32,8 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseDeadlineMirrorInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -52,11 +52,11 @@ class TermInstanceMovesCaseDeadlineListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface    $settingsService Names the term instance schema.
-	 * @param CaseDeadlineMirror $mirror          Follows a statutory term onto its case.
+	 * @param CaseDeadlineMirrorInterface $mirror          Follows a statutory term onto its case.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly CaseDeadlineMirror $mirror,
+		private readonly CaseDeadlineMirrorInterface $mirror,
 	) {
 	}//end __construct()
 

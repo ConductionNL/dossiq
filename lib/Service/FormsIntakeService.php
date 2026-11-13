@@ -44,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\FormsIntakeServiceInterface;
 use OCA\Dossiq\Service\Intake\IntakeFormBinding;
 use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCA\OpenRegister\Service\Form\FormSubmission;
@@ -71,7 +72,7 @@ use Throwable;
  *
  * @spec openspec/specs/leaf-integrations/spec.md
  */
-class FormsIntakeService {
+class FormsIntakeService implements FormsIntakeServiceInterface {
 
 	/**
 	 * The channel a case opened this way records.

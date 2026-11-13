@@ -15,10 +15,10 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\DocumentProjectionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -66,7 +66,7 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 
 	/**
 	 * @param SettingsServiceInterface $settingsService OpenRegister access and the configured register.
-	 * @param DocumentRecordStore $store Document records, to resolve a record id to its file.
+	 * @param DocumentRecordStoreInterface $store Document records, to resolve a record id to its file.
 	 * @param DocumentProjectionServiceInterface $projection Object folders.
 	 * @param IRootFolder $rootFolder Files by id.
 	 * @param IAppConfig $appConfig The version gate.
@@ -74,7 +74,7 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly DocumentRecordStore $store,
+		private readonly DocumentRecordStoreInterface $store,
 		private readonly DocumentProjectionServiceInterface $projection,
 		private readonly IRootFolder $rootFolder,
 		private readonly IAppConfig $appConfig,

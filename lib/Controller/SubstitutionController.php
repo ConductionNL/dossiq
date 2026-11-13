@@ -36,9 +36,9 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseReassignmentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SubstitutionAuditServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SubstitutionServiceInterface;
 use OCA\Dossiq\Service\Substitution\SubstitutionAccessGuard;
-use OCA\Dossiq\Service\SubstitutionAuditService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -57,7 +57,7 @@ class SubstitutionController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param SubstitutionServiceInterface $substitutionService Substitution domain logic.
-	 * @param SubstitutionAuditService $auditService Capacity audit.
+	 * @param SubstitutionAuditServiceInterface $auditService Capacity audit.
 	 * @param SubstitutionAccessGuard $accessGuard Authorization + lookups.
 	 * @param CaseReassignmentServiceInterface $reassignmentService Builds the caseload selection.
 	 * @param LoggerInterface $logger The logger.
@@ -67,7 +67,7 @@ class SubstitutionController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly SubstitutionServiceInterface $substitutionService,
-		private readonly SubstitutionAuditService $auditService,
+		private readonly SubstitutionAuditServiceInterface $auditService,
 		private readonly SubstitutionAccessGuard $accessGuard,
 		private readonly CaseReassignmentServiceInterface $reassignmentService,
 		private readonly LoggerInterface $logger,

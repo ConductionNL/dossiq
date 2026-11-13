@@ -25,8 +25,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeHandlingInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -64,12 +64,12 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface  $settingsService The settings service.
-	 * @param CaseTypeHandling $handling        The one reader of a case type's handling block.
+	 * @param CaseTypeHandlingInterface $handling        The one reader of a case type's handling block.
 	 * @param LoggerInterface  $logger          The logger.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly CaseTypeHandling $handling,
+		private readonly CaseTypeHandlingInterface $handling,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

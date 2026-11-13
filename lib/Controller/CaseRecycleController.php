@@ -43,7 +43,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseDestructionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseRecycleServiceInterface;
-use OCA\Dossiq\Service\Recycle\RetentionClocks;
+use OCA\Dossiq\Kernel\Contracts\RetentionClocksInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -89,7 +89,7 @@ class CaseRecycleController extends Controller {
 	 * @param IRequest $request The HTTP request
 	 * @param CaseRecycleServiceInterface $recycle The window, the lens and the restore
 	 * @param CaseDestructionServiceInterface $destruction The destroying role and the act
-	 * @param RetentionClocks $clocks The two clocks, read apart
+	 * @param RetentionClocksInterface $clocks The two clocks, read apart
 	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization for the clocks read
 	 * @param IGroupManager $groupManager Reads whether the caller is an administrator
 	 * @param IUserSession $userSession The current session
@@ -101,7 +101,7 @@ class CaseRecycleController extends Controller {
 		IRequest $request,
 		private readonly CaseRecycleServiceInterface $recycle,
 		private readonly CaseDestructionServiceInterface $destruction,
-		private readonly RetentionClocks $clocks,
+		private readonly RetentionClocksInterface $clocks,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IGroupManager $groupManager,
 		private readonly IUserSession $userSession,

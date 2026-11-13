@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Conversation;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\MajorCaseDeclarationInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -42,7 +43,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class MajorCaseDeclaration {
+class MajorCaseDeclaration implements MajorCaseDeclarationInterface {
 
 	/**
 	 * What a major case's working channel is called when the case names itself
