@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use OCA\Dossiq\AppInfo\Registrar\ConfiguredAdapter;
 use OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar;
+use OCA\Dossiq\Service\Beschikking\DecisionTemplateEngine;
 use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
@@ -156,16 +157,18 @@ class AdapterHonestyTest extends TestCase {
 		$userSession = $this->createMock(IUserSession::class);
 
 		$settings = $this->createMock(SettingsService::class);
+		$engines = $this->createMock(DecisionTemplateEngine::class);
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
-			static function (string $id) use (&$container, $appConfig, $appManager, $dispatcher, $l10n, $logger, $settings, $userSession): object {
+			static function (string $id) use (&$container, $appConfig, $appManager, $dispatcher, $engines, $l10n, $logger, $settings, $userSession): object {
 				return match ($id) {
 					FilinqTemplateEngineAdapter::class => new FilinqTemplateEngineAdapter(
 						container: $container,
 						settings: $settings,
 						userSession: $userSession,
 						logger: $logger,
+						engines: $engines,
 					),
 					IAppConfig::class => $appConfig,
 					IAppManager::class => $appManager,

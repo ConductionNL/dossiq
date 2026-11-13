@@ -150,7 +150,7 @@ class ConnectionsDeclarationTest extends TestCase {
 		$keys = array_column($this->declaration()['connections'], 'key');
 
 		$this->assertSame(expected: IntegrationStatusService::KEYS, actual: $keys);
-		$this->assertCount(expectedCount: 13, haystack: $keys);
+		$this->assertCount(expectedCount: 15, haystack: $keys);
 	}//end testTheTwelveKeysAreTheOnesTheServiceAccepts()
 
 	/**
@@ -324,6 +324,31 @@ class ConnectionsDeclarationTest extends TestCase {
 		$this->assertArrayNotHasKey(key: 'settingsUrl', array: $brp);
 		$this->assertArrayNotHasKey(key: 'available', array: $brp);
 	}//end testBrpNamesTheKeyThatWakesIt()
+
+	/**
+	 * Each document vendor's card probes integriq's source of the engine's slug.
+	 *
+	 * A decision template on `vendor:<slug>` renders through integriq's source
+	 * of that slug, so the card that says whether the vendor is reachable has
+	 * to watch that same source, and tell an administrator where to switch it on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.4
+	 */
+	public function testEachVendorCardProbesTheSourceItsEngineNames(): void {
+		$connections = $this->connectionsByKey();
+
+		foreach (['smartdocuments' => 'SmartDocuments', 'xential' => 'Xential'] as $slug => $name) {
+			$card = $connections[$slug];
+
+			$this->assertSame(expected: $slug, actual: $card['sourceTemplate']);
+			$this->assertSame(expected: $name, actual: $card['title']);
+			$this->assertStringContainsString(needle: 'vendor:' . $slug, haystack: (string)$card['description']);
+			$this->assertMatchesRegularExpression(pattern: '/Integriq/', string: (string)$card['unconfiguredMessage']);
+			$this->assertArrayNotHasKey(key: 'settingsUrl', array: $card);
+		}
+	}//end testEachVendorCardProbesTheSourceItsEngineNames()
 
 	/**
 	 * An adapter block uses only D2 fields, and `simulatedValues` is a list of strings.
