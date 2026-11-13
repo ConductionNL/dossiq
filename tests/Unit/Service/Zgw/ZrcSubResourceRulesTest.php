@@ -109,4 +109,38 @@ class ZrcSubResourceRulesTest extends TestCase {
 		$noContext = $this->ruleGroup(ZrcSubResourceRules::class, null);
 		$this->assertTrue($noContext->{$rule}(['case' => 'http://example.com/zaken/' . self::ZAAK, $field => 'http://example.com/types/' . self::TYPE])['valid']);
 	}//end testAnIncompleteBodyIsNotChecked()
+	/**
+	 * When the zaak, its zaaktype or the type cannot be identified the create is let through,
+	 * and the type is not looked up for a zaak that names no zaaktype.
+	 *
+	 * @param string $rule The rule method.
+	 * @param string $field The body field naming the type.
+	 * @param string $schemaKey The config key of the type's schema.
+	 *
+	 * @return void
+	 */
+	#[DataProvider('rules')]
+	public function testAnUnidentifiableZaakOrTypeIsLetThrough(string $rule, string $field, string $schemaKey): void {
+		$type = [self::TYPE . '@schema:' . $schemaKey => ['caseType' => self::OTHER]];
+		$body = ['case' => 'http://example.com/zaken/' . self::ZAAK, $field => 'http://example.com/types/' . self::TYPE];
+
+		$unknownZaak = $this->ruleGroup(ZrcSubResourceRules::class, $type);
+		$this->assertTrue($unknownZaak->{$rule}($body)['valid']);
+		$this->assertSame(1, $this->finds, 'only the zaak is looked up');
+
+		$this->finds = 0;
+		$noZaaktype = $this->ruleGroup(ZrcSubResourceRules::class, $type + [self::ZAAK . '@schema:case_schema' => ['caseType' => '']]);
+		$this->assertTrue($noZaaktype->{$rule}($body)['valid']);
+		$this->assertSame(1, $this->finds, 'a zaak without zaaktype stops before the type');
+
+		$zaak = [self::ZAAK . '@schema:case_schema' => ['caseType' => 'http://example.com/zaaktypen/' . self::ZAAKTYPE]];
+		$this->finds = 0;
+		$known = $this->ruleGroup(ZrcSubResourceRules::class, $zaak + $type);
+		$this->assertTrue($known->{$rule}(['case' => $body['case'], $field => 'http://example.com/types/no-uuid'])['valid']);
+		$this->assertSame(1, $this->finds, 'a type URL without uuid is not looked up');
+
+		$this->finds = 0;
+		$this->assertTrue($known->{$rule}(['case' => 'http://example.com/zaken/no-uuid', $field => $body[$field]])['valid']);
+		$this->assertSame(0, $this->finds, 'a zaak URL without uuid is not looked up');
+	}//end testAnUnidentifiableZaakOrTypeIsLetThrough()
 }//end class
