@@ -80,17 +80,18 @@ class OutstandingDocumentsTest extends TestCase {
 	 *
 	 * @return OutstandingDocuments
 	 */
-	private function service(?CaseDocumentDrafts $drafts = null): OutstandingDocuments {
+	private function service(?CaseDocumentDrafts $drafts = null, array $config = []): OutstandingDocuments {
+		$config = array_merge([
+			'register' => 'dossiq',
+			'document_schema' => 'document',
+			'woo_assessment_schema' => 'assessment',
+			'dossier_informatieobject_schema' => 'informatieobject',
+			'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject',
+		], $config);
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key, string $default = ''): string => ([
-				'register' => 'dossiq',
-				'document_schema' => 'document',
-				'woo_assessment_schema' => 'assessment',
-				'dossier_informatieobject_schema' => 'informatieobject',
-				'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject',
-			][$key] ?? $default)
+			static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
 		);
 
 		$caseDocuments = new WooCaseDocuments(
@@ -175,6 +176,12 @@ class OutstandingDocumentsTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	public function testAnEarlierDocumentHasNoTitleWithoutItsSchemaConfigured(): void {
+		$this->assertSame('Brief van 3 maart', $this->service()->titleOf(documentId: 'doc-1'));
+		$this->assertSame('', $this->service(config: ['document_schema' => ''])->titleOf(documentId: 'doc-1'));
+		$this->assertSame('Mail aannemer', $this->service(config: ['document_schema' => ''])->titleOf(documentId: 'io-3'));
+	}//end testAnEarlierDocumentHasNoTitleWithoutItsSchemaConfigured()
+
 	public function testNothingOutstandingAnswersAnEmptyList(): void {
 		$this->assertSame(['count' => 0, 'documents' => []], $this->service()->forCase(caseId: 'case-none'));
 	}//end testNothingOutstandingAnswersAnEmptyList()
