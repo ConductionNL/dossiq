@@ -42,6 +42,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Listener\DerivedStatusTimelineListener
  * @covers \OCA\Dossiq\Service\Timeline\StatusMoveEntry
+ * @uses \OCA\Dossiq\Service\Timeline\StatusDisplayName
  *
  * @spec openspec/specs/case-management/spec.md
  */
