@@ -85,6 +85,8 @@ class IntegrationStatusService {
 		'pdok',
 		'berichtenbox',
 		'templates',
+		'smartdocuments',
+		'xential',
 	];
 
 	/**
