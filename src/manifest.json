@@ -12987,9 +12987,19 @@
 					"processingDeadline",
 					"confidentiality",
 					"isDraft",
+					{
+						"key": "shipped",
+						"label": "Origin",
+						"widgetProps": {
+							"trueLabel": "Shipped",
+							"falseLabel": "Own",
+							"pill": true
+						}
+					},
 					"validFrom",
 					"validUntil"
 				],
+				"_shippedNote": "admin-tabs-carry-the-settings-board-blocks 2.4 (board DqZaaktypen): a case type a case definition package placed carries `shipped: true` and its `package` (2.3); a copy, or one the organisation made, carries `shipped: false`. The Origin column reads Shipped (as a pill) or Own, and the Shipped chip lists the current version of every shipped case type. Not counted: the board counts All, Published and Draft only.",
 				"showViewAction": false,
 				"_headerActionsNote": "Reload the shipped case type templates (POST /api/packages/reload): admin-only on the server, `adminOnly` hides the entry from others. The simple profile lists it in the Actions menu (DqZaaktypen).",
 				"headerActions": [
@@ -13074,7 +13084,7 @@
 					"filterField": "category",
 					"allLabel": "All case types"
 				},
-				"_quickFiltersNote": "The index used to list every version of every case type, so a catalogue of forty types read as a list of ninety rows carrying the same nine names three times over, and the row you wanted was whichever one had no successor. All is the DEFAULT chip (board DqZaaktypen \"Alles\", beside Published and Draft, each counted) and carries `supersededBy: \"IS NULL\"`, the literal sentinel every OpenRegister condition builder matches by value, which the Queue page's `assignee: \"IS NULL\"` already relies on. It is a CHIP and not a base `filter` on the page, deliberately: a base filter cannot be cleared by the person reading the list, and the older versions are exactly what an auditor asking which rules governed a case last March came here for. All versions drops the condition and shows the whole chain. A draft has no successor either, so it sits under All and Draft, which is right: a draft is the version you are about to publish.",
+				"_quickFiltersNote": "The index used to list every version of every case type, so a catalogue of forty types read as a list of ninety rows carrying the same nine names three times over, and the row you wanted was whichever one had no successor. All is the DEFAULT chip (board DqZaaktypen \"Alles\", beside Published and Draft, each counted) and carries `supersededBy: \"IS NULL\"`, the literal sentinel every OpenRegister condition builder matches by value, which the Queue page's `assignee: \"IS NULL\"` already relies on. It is a CHIP and not a base `filter` on the page, deliberately: a base filter cannot be cleared by the person reading the list, and the older versions are exactly what an auditor asking which rules governed a case last March came here for. All versions drops the condition and shows the whole chain. A draft has no successor either, so it sits under All and Draft, which is right: a draft is the version you are about to publish. Shipped narrows the current versions to the case types a package placed (`shipped: true`).",
 				"quickFilters": [
 					{
 						"label": "All",
@@ -13099,6 +13109,13 @@
 							"isDraft": true
 						},
 						"showCount": true
+					},
+					{
+						"label": "Shipped",
+						"filter": {
+							"supersededBy": "IS NULL",
+							"shipped": true
+						}
 					},
 					{
 						"label": "All versions",
