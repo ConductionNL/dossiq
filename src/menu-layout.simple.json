@@ -8833,6 +8833,7 @@
 									"id": "rules",
 									"label": "Rules",
 									"widgetIds": [
+										"case-type-rule-rows",
 										"case-type-rules"
 									],
 									"countField": "rules"
@@ -9826,6 +9827,43 @@
 							"footnote": "Anyone who opted out of messages only receives what the law requires. Every e-mail carries an unsubscribe link.",
 							"footnoteVariant": "info",
 							"emptyText": "This case type sends no messages yet"
+						}
+					},
+					{
+						"id": "case-type-rule-rows",
+						"type": "record-list",
+						"title": "Rules of this case type",
+						"subtitle": "What happens when a case of this type meets a condition, in order",
+						"_note": "case-type-conditional-rules Task 3, board DqZaaktypeRegels: the case type's own rules (caseType.rules) as 'If ... / then ...' rows with an On or Off pill, written by GET /api/case-types/{id}/rules because a rule is stored as kinds and operands and a status as a uuid. Above the OpenRegister rules of the case schema (case-type-rules). Adding and editing a rule through a form is not built yet.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case-types/@objectId/rules",
+								"responsePath": "rules"
+							},
+							"presentation": "rows",
+							"limit": 100,
+							"title": [
+								"{title}"
+							],
+							"meta": "{moment}",
+							"text": "{line}",
+							"pill": {
+								"cases": [
+									{
+										"when": {
+											"field": "enabled",
+											"op": "eq",
+											"value": false
+										},
+										"label": "Off",
+										"variant": "default"
+									}
+								],
+								"label": "On",
+								"variant": "success"
+							},
+							"emptyText": "This case type has no rules yet",
+							"errorText": "The rules of this case type could not be read"
 						}
 					},
 					{

@@ -28,8 +28,14 @@ the engine task carries as its `key`.
 ### Task 3: The Rules tab reads and writes rules
 - **spec_ref**: `openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules`
 - **files**: `src/menu-layout.simple.json`, nc-vue condition editor
-- [ ] Implement
-- [ ] Test
+- [x] Implement the rows: `GET /api/case-types/{id}/rules` (`CaseTypeRuleSentences`, `CaseTypeRulesController`) writes
+      each rule as "If ... / then ..." with its moment and an On or Off pill; the `case-type-rule-rows` record list
+      shows them on the Rules tab above the case schema's OpenRegister rules
+- [x] Test the rows (unit: every condition kind, operator, action kind and moment in words, a status by its name,
+      the read check before the answer)
+- [ ] Implement "Regel toevoegen" and the row menu (Edit, Turn off, Delete): the form over this type's own fields,
+      tasks, variants, document types and templates, on the library's `CnConditionListEditor`
+- [ ] Test the form (vitest: the form writes the model)
 
 ### Task 0: OpenRegister, a scoped rule inventory (built first, in OpenRegister)
 - **spec_ref**: `openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rule-inventory-can-be-asked-for-one-case-types-rules`
