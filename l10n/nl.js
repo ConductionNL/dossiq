@@ -12544,7 +12544,13 @@ OC.L10N.register(
         "{weeks} weeks": "{weeks} weken",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Settlement": "Vaststelling",
+        "Actual costs": "Werkelijke kosten",
+        "Settled amount": "Vastgesteld bedrag",
+        "Settled": "Vastgesteld",
+        "No settlement on this case yet": "Nog geen vaststelling op deze zaak",
+        "The settlement could not be read.": "De vaststelling kon niet worden gelezen."
     },
     "nplurals=2; plural=(n != 1);"
 )

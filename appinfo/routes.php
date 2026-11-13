@@ -154,6 +154,8 @@ $extra = [
     ['name' => 'caseNextStatus#show',          'url' => '/api/cases/{caseId}/next-status', 'verb' => 'GET'],
     // The instalments of the payment schedules on a case's decisions, with their states and totals (grant-cases-from-application-to-settlement).
     ['name' => 'paymentSchedule#forCase', 'url' => '/api/cases/{caseId}/payment-schedule', 'verb' => 'GET'],
+    // The settlements of a case, reached through its applications and their executions (overview-cards-per-case-type).
+    ['name' => 'settlement#forCase', 'url' => '/api/cases/{caseId}/settlements', 'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#contactMoments',      'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#logContactMoment',    'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'POST'],
     ['name' => 'pipelinqContactMoment#fileContactMoment',   'url' => '/api/cases/{caseId}/pipelinq/contact-moments/{momentId}/file',   'verb' => 'POST'],

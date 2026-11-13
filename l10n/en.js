@@ -12544,7 +12544,13 @@ OC.L10N.register(
         "{weeks} weeks": "{weeks} weeks",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "Settlement": "Settlement",
+        "Actual costs": "Actual costs",
+        "Settled amount": "Settled amount",
+        "Settled": "Settled",
+        "No settlement on this case yet": "No settlement on this case yet",
+        "The settlement could not be read.": "The settlement could not be read."
     },
     "nplurals=2; plural=(n != 1);"
 )
