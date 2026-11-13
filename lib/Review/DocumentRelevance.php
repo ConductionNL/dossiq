@@ -24,8 +24,8 @@ namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -344,7 +344,7 @@ class DocumentRelevance {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: a Document review could not be written',
-				['app' => Application::APP_ID, 'document' => ($review['documentRef'] ?? ''), 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'document' => ($review['documentRef'] ?? ''), 'exception' => $e->getMessage()]
 			);
 			throw $this->unstored(previous: $e);
 		}

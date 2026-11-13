@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Workflow\BackfillCaseType;
@@ -152,7 +152,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: workflow backfill failed to list caseTypes',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			$output->warning('Could not list caseTypes — skipping workflow backfill.');
 			return $counts;
@@ -222,7 +222,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: workflow backfill failed to save template',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -271,7 +271,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			} catch (\Throwable $e) {
 				$this->logger->warning(
 					'Dossiq: workflow backfill could not heal the labels of a basis template',
-					['app' => Application::APP_ID, 'template' => $id, 'exception' => $e->getMessage()]
+					['app' => AppIdentity::APP_ID, 'template' => $id, 'exception' => $e->getMessage()]
 				);
 			}
 		}//end foreach
@@ -296,7 +296,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: workflow backfill could not read the statuses to heal a basis template',
-				['app' => Application::APP_ID, 'caseType' => $caseTypeId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseType' => $caseTypeId, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}
@@ -332,7 +332,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: workflow backfill failed to pin caseType',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 		}
 
@@ -394,7 +394,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: workflow backfill failed to list statusTypes',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}
@@ -443,7 +443,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			} catch (\Throwable $e) {
 				$this->logger->error(
 					'Dossiq: workflow backfill failed to pin case',
-					['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+					['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 				);
 			}
 		}//end foreach
@@ -468,7 +468,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: workflow backfill failed to list cases',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}

@@ -54,6 +54,8 @@ interface DrcObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  *
  * @uses \OCA\Dossiq\Service\FieldValidator
+ * @uses \OCA\Dossiq\Service\Zgw\DocumentLink
+ * @uses \OCA\Dossiq\Service\Zgw\RelationSearch
  */
 class ZgwDrcRulesServiceTest extends TestCase {
 

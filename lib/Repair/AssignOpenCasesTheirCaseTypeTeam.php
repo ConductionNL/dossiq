@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -161,7 +161,7 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the case team fill could not list case types',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}
@@ -211,7 +211,7 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the case team fill could not list cases',
-				['app' => Application::APP_ID, 'caseType' => $run->caseTypeId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseType' => $run->caseTypeId, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}
@@ -258,7 +258,7 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the case team fill could not write a case',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'exception' => $e->getMessage()]
 			);
 			return false;
 		}

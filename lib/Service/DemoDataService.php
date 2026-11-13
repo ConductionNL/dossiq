@@ -47,7 +47,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Setup\ExampleDataFragments;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -99,7 +99,7 @@ class DemoDataService {
 	 *
 	 * @var string
 	 */
-	private const CONFIG_APP_ID = Application::APP_ID . '.demo';
+	private const CONFIG_APP_ID = AppIdentity::APP_ID . '.demo';
 
 	/**
 	 * App-config key listing the slugs of the curated example objects an
@@ -299,7 +299,7 @@ class DemoDataService {
 		$result = $this->configurationService()->importFromApp(
 			appId: self::CONFIG_APP_ID,
 			data: $this->objectsOnly(data: $data),
-			version: $this->appManager->getAppVersion(Application::APP_ID),
+			version: $this->appManager->getAppVersion(AppIdentity::APP_ID),
 			force: true
 		);
 
@@ -446,7 +446,7 @@ class DemoDataService {
 			. $imported['refused'] . ' refused, '
 			. $imported['registers'] . ' register(s), '
 			. $imported['schemas'] . ' schema(s).',
-			['app' => Application::APP_ID]
+			['app' => AppIdentity::APP_ID]
 		);
 
 		if ($imported['objects'] >= $requested) {
@@ -460,7 +460,7 @@ class DemoDataService {
 			'[DemoDataService] the demo import lost ' . ($requested - $imported['objects'])
 			. ' of ' . $requested . ' object(s) — ' . $imported['refused'] . ' refused, the rest were '
 			. 'left unchanged because an object of the same version already exists.',
-			['app' => Application::APP_ID]
+			['app' => AppIdentity::APP_ID]
 		);
 	}//end reportLanding()
 
@@ -546,7 +546,7 @@ class DemoDataService {
 			return [];
 		}
 
-		$loaded = json_decode($this->appConfig->getValueString(Application::APP_ID, self::FRAGMENTS_LOADED_KEY, '[]'), true);
+		$loaded = json_decode($this->appConfig->getValueString(AppIdentity::APP_ID, self::FRAGMENTS_LOADED_KEY, '[]'), true);
 
 		return array_values(array_filter((array)$loaded, 'is_string'));
 	}//end loadedFragments()
@@ -562,7 +562,7 @@ class DemoDataService {
 		}
 
 		$slugs = array_values(array_unique(array_merge($this->loadedFragments(), $this->fragments->slugs())));
-		$this->appConfig->setValueString(Application::APP_ID, self::FRAGMENTS_LOADED_KEY, (string)json_encode($slugs));
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::FRAGMENTS_LOADED_KEY, (string)json_encode($slugs));
 	}//end recordFragments()
 
 	/**
@@ -571,7 +571,7 @@ class DemoDataService {
 	 * @return string The path.
 	 */
 	private function descriptorPath(): string {
-		return $this->appManager->getAppPath(Application::APP_ID) . self::DESCRIPTOR;
+		return $this->appManager->getAppPath(AppIdentity::APP_ID) . self::DESCRIPTOR;
 	}//end descriptorPath()
 
 	/**

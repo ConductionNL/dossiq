@@ -47,7 +47,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use OCP\IL10N;
 use Psr\Container\ContainerInterface;
@@ -104,13 +104,13 @@ final class ConfiguredAdapter {
 		$named = self::named(container: $container, configKey: $configKey, mockClass: $mockClass, defaultClass: $defaultClass);
 
 		if ($named === '') {
-			$logger->warning($fallbackReason, ['app' => Application::APP_ID, 'configKey' => $configKey]);
+			$logger->warning($fallbackReason, ['app' => AppIdentity::APP_ID, 'configKey' => $configKey]);
 
 			return $container->get($mockClass);
 		}
 
 		if ($named === $mockClass && $chosenMockReason !== null) {
-			$logger->warning($chosenMockReason, ['app' => Application::APP_ID, 'configKey' => $configKey]);
+			$logger->warning($chosenMockReason, ['app' => AppIdentity::APP_ID, 'configKey' => $configKey]);
 
 			return $container->get($mockClass);
 		}
@@ -127,7 +127,7 @@ final class ConfiguredAdapter {
 					. 'implement the seam. A mock adapter is running in its place.',
 					[$configKey, $named]
 				),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 
 			return $container->get($mockClass);
@@ -142,7 +142,7 @@ final class ConfiguredAdapter {
 					. 'in its place.',
 					[$configKey]
 				),
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 
 			return $container->get($mockClass);
@@ -165,7 +165,7 @@ final class ConfiguredAdapter {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	private static function named(ContainerInterface $container, string $configKey, string $mockClass, ?string $defaultClass): string {
-		$named = trim($container->get(IAppConfig::class)->getValueString(Application::APP_ID, $configKey, ''));
+		$named = trim($container->get(IAppConfig::class)->getValueString(AppIdentity::APP_ID, $configKey, ''));
 		if ($named === '' && $defaultClass !== null && $defaultClass !== $mockClass) {
 			return $defaultClass;
 		}

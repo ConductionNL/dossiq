@@ -72,6 +72,35 @@ class NoticeOfDefaultRows {
 	}//end __construct()
 
 	/**
+	 * The notices of default on one case, newest receipt first.
+	 *
+	 * The same rows as the deadlines report, kept to the case the notice's
+	 * term belongs to, so the case page and the report never disagree about a
+	 * notice's assessment, penalty or payout.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array{notices: list<array<string, mixed>>}
+	 *
+	 * @throws Throwable When the notices or the penalty calculations cannot be read.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
+	 */
+	public function forCase(string $caseId): array {
+		$caseId = trim($caseId);
+		if ($caseId === '') {
+			return ['notices' => []];
+		}
+
+		$rows = array_filter(
+			$this->list()['notices'],
+			static fn (array $row): bool => ($row['caseId'] ?? '') === $caseId
+		);
+
+		return ['notices' => array_values($rows)];
+	}//end forCase()
+
+	/**
 	 * The notices of default, newest receipt first.
 	 *
 	 * @return array{notices: list<array<string, mixed>>}

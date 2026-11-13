@@ -39,9 +39,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Controller\Support\IntakeRoleGate;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Email\IntakeLog;
@@ -135,7 +136,7 @@ class IntakeTriageController extends Controller {
 		private readonly CaseMatchSuggestion $suggestions,
 		private readonly TriageChannel $channels,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -454,16 +455,7 @@ class IntakeTriageController extends Controller {
 	 * @return JSONResponse|null A refusal, or null when the caller may proceed.
 	 */
 	private function requireIntakeRole(): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->policy->mayRunIntake(userId: $user->getUID()) === false) {
-			return new JSONResponse(['message' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-		}
-
-		return null;
+		return (new IntakeRoleGate(userSession: $this->userSession, policy: $this->policy))->refusal();
 	}//end requireIntakeRole()
 
 	/**
@@ -475,11 +467,6 @@ class IntakeTriageController extends Controller {
 	 * @return string The uid, or '' when there is no session.
 	 */
 	private function callerId(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return '';
-		}
-
-		return $user->getUID();
+		return (new IntakeRoleGate(userSession: $this->userSession, policy: $this->policy))->callerId();
 	}//end callerId()
 }//end class

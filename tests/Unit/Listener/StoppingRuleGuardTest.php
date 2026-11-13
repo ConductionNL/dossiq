@@ -75,7 +75,12 @@ class StoppingRuleGuardTest extends TestCase {
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
 		$logger = $this->createMock(LoggerInterface::class);
-		$rules = new StoppingRules(settingsService: $settings, reviews: new DocumentRelevance(settingsService: $settings, logger: $logger), logger: $logger);
+		$rules = new StoppingRules(
+			settingsService: $settings,
+			reviews: new DocumentRelevance(settingsService: $settings, logger: $logger),
+			logger: $logger,
+			writes: $this->createMock(originalClassName: \OCA\Dossiq\Review\ReviewWrites::class)
+		);
 
 		return new StoppingRuleGuard(settingsService: $settings, rules: $rules, logger: $logger);
 	}//end guard()

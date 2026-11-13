@@ -42,6 +42,8 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Listener\CaseNumberListener
  * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
+ * @uses \OCA\Dossiq\Listener\BezwaarDecisionListener
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseNumberListenerTest extends TestCase {
 

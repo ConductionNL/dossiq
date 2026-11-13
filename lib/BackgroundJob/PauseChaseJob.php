@@ -47,7 +47,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Pause\PauseChaseService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
@@ -113,7 +113,7 @@ class PauseChaseJob extends TimedJob {
 			// could not.
 			$this->logger->error(
 				'Dossiq pause: the reminder sweep failed',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 			);
 			return;
 		}
@@ -125,7 +125,7 @@ class PauseChaseJob extends TimedJob {
 		$this->logger->info(
 			'Dossiq pause: reminders went out on suspended terms',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'chased' => $done['chased'],
 				'escalated' => $done['escalated'],
 			]

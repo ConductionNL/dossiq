@@ -49,7 +49,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\Stuf\StufException;
 use OCA\Dossiq\Service\Stuf\StufIntegriqBridge;
@@ -116,7 +116,7 @@ class StufController extends Controller {
 		private readonly LoggerInterface $logger,
 		private readonly IntegrationStatusService $integrationStatus,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

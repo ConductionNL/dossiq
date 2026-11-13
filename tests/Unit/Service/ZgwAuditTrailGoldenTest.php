@@ -35,6 +35,8 @@ use RuntimeException;
  * Golden tests for ZgwService::handleAudittrailIndex() and handleAudittrailShow().
  *
  * @covers \OCA\Dossiq\Service\ZgwService
+ * @uses \OCA\Dossiq\Service\Zgw\ResourceRoute
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwAuditedResource
  */
 class ZgwAuditTrailGoldenTest extends TestCase {
 

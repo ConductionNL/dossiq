@@ -34,7 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 
 /**
@@ -155,7 +155,7 @@ class JunkRules {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	private function administeredRules(): array {
-		$raw = $this->appConfig->getValueString(Application::APP_ID, self::RULES_KEY, '');
+		$raw = $this->appConfig->getValueString(AppIdentity::APP_ID, self::RULES_KEY, '');
 		$lines = preg_split('/\R/', trim($raw));
 		if ($lines === false) {
 			return [];

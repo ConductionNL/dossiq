@@ -34,6 +34,7 @@ use OCA\Dossiq\AppInfo\Registrar\BootRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\LifecycleRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\ListenerRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\ServiceRegistrar;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Mcp\DossiqScannableServices;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\AppFramework\App;
@@ -55,7 +56,7 @@ class Application extends App implements IBootstrap {
 	 * across. The OpenRegister register SLUG deliberately did NOT move and is
 	 * still 'procest' — see the note in appinfo/info.xml.
 	 */
-	public const APP_ID = 'dossiq';
+	public const APP_ID = AppIdentity::APP_ID;
 
 	/**
 	 * The OpenRegister register SLUG dossiq's schemas live in.
@@ -66,7 +67,7 @@ class Application extends App implements IBootstrap {
 	 * It used to be read off the tenant admin store's constant, which retired with
 	 * the tenant admin store (tenancy-onto-openregister-organisation 6.7).
 	 */
-	public const REGISTER_SLUG = 'dossiq';
+	public const REGISTER_SLUG = AppIdentity::REGISTER_SLUG;
 
 	/**
 	 * Constructor for the Application class.
@@ -109,6 +110,8 @@ class Application extends App implements IBootstrap {
 		$context->registerSetupCheck(\OCA\Dossiq\SetupCheck\BackgroundServiceAccountCheck::class);
 		// Says when no DSO verzoek becomes a case.
 		$context->registerSetupCheck(\OCA\Dossiq\SetupCheck\DsoIntakeCheck::class);
+		// Tells the sync frame's conflict card that the resolve endpoint is there.
+		$context->registerCapability(\OCA\Dossiq\Capabilities::class);
 
 		// ADR-063: the classes OpenRegister scans for dossiq's curated
 		// #[McpTool] methods, under the alias it resolves in THIS app's own

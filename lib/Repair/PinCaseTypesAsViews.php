@@ -37,7 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseTypeViews;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\MenuCaseTypesService;
@@ -157,7 +157,7 @@ class PinCaseTypesAsViews implements IRepairStep {
 	 * @spec openspec/changes/case-type-pins-are-views/specs/case-type-navigation/spec.md
 	 */
 	public function carryOver(string $userId, array $caseTypes): void {
-		if ($this->config->getUserValue($userId, Application::APP_ID, self::DONE_KEY, '') !== '') {
+		if ($this->config->getUserValue($userId, AppIdentity::APP_ID, self::DONE_KEY, '') !== '') {
 			return;
 		}
 
@@ -171,11 +171,11 @@ class PinCaseTypesAsViews implements IRepairStep {
 		}
 
 		if ($pinned !== []) {
-			$this->config->setUserValue($userId, Application::APP_ID, CaseTypeViews::MENU_PREFERENCE, (string)json_encode(array_values($entries)));
+			$this->config->setUserValue($userId, AppIdentity::APP_ID, CaseTypeViews::MENU_PREFERENCE, (string)json_encode(array_values($entries)));
 			$this->written++;
 		}
 
-		$this->config->setUserValue($userId, Application::APP_ID, self::DONE_KEY, '1');
+		$this->config->setUserValue($userId, AppIdentity::APP_ID, self::DONE_KEY, '1');
 	}//end carryOver()
 
 	/**
@@ -186,7 +186,7 @@ class PinCaseTypesAsViews implements IRepairStep {
 	 * @return array<int, array<string, mixed>> The entries.
 	 */
 	private function existingEntries(string $userId): array {
-		$stored = json_decode($this->config->getUserValue($userId, Application::APP_ID, CaseTypeViews::MENU_PREFERENCE, ''), true);
+		$stored = json_decode($this->config->getUserValue($userId, AppIdentity::APP_ID, CaseTypeViews::MENU_PREFERENCE, ''), true);
 		if (is_array($stored) === false) {
 			return [];
 		}

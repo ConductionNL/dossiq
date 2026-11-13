@@ -31,7 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\Contacts\IManager as IContactsManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -143,7 +143,7 @@ class BurgerIdentificationService {
 		$this->logger->info(
 			'Dossiq: DigiD identification processed (BSN masked)',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'bsn' => $this->maskBsn(bsn: $bsn),
 			],
 		);
@@ -184,7 +184,7 @@ class BurgerIdentificationService {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: contacts lookup failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			return '';
 		}

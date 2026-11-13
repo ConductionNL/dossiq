@@ -91,28 +91,40 @@ class BerichtenboxService {
 		?string $attachmentFileId = null,
 		string $category = 'case-update',
 	): array {
-		// A send with nobody signed in (a flow, an occ run) records the letter
-		// as the background service account, or OpenRegister refuses the
-		// record after the letter already left. Without a usable account it
-		// stops before the adapter is asked, so no letter leaves unrecorded.
+		return $this->sendAsServiceAccountWhenNobodyIsSignedIn(
+			letter: [
+				'caseId' => $caseId,
+				'bsn' => $bsn,
+				'subject' => $subject,
+				'body' => $body,
+				'typeCode' => $typeCode,
+				'attachmentFileId' => $attachmentFileId,
+				'category' => $category,
+			]
+		);
+	}//end sendMessage()
+
+	/**
+	 * Send one letter, recording it as the background service account when nobody is signed in.
+	 *
+	 * A send with nobody signed in (a flow, an occ run) records the letter
+	 * as the background service account, or OpenRegister refuses the
+	 * record after the letter already left. Without a usable account it
+	 * stops before the adapter is asked, so no letter leaves unrecorded.
+	 *
+	 * @param array<string, mixed> $letter The letter, as {@see self::send()} takes it.
+	 *
+	 * @return array<string, mixed> The stored message record or an error payload.
+	 */
+	private function sendAsServiceAccountWhenNobodyIsSignedIn(array $letter): array {
 		try {
 			return $this->serviceAccount->runAsWhenNobodyIsSignedIn(
-				operation: fn (): array => $this->send(
-					letter: [
-						'caseId' => $caseId,
-						'bsn' => $bsn,
-						'subject' => $subject,
-						'body' => $body,
-						'typeCode' => $typeCode,
-						'attachmentFileId' => $attachmentFileId,
-						'category' => $category,
-					]
-				)
+				operation: fn (): array => $this->send(letter: $letter)
 			);
 		} catch (ServiceAccountUnavailableException $e) {
 			return ['error' => 'No background service account is set, so the letter was not sent.'];
 		}
-	}//end sendMessage()
+	}//end sendAsServiceAccountWhenNobodyIsSignedIn()
 
 	/**
 	 * Send one letter and record it, as whoever is acting.
@@ -124,7 +136,7 @@ class BerichtenboxService {
 	 */
 	private function send(array $letter): array {
 		// Validate inputs.
-		$errors = $this->validateMessage(bsn: $letter['bsn'], subject: $letter['subject'], body: $letter['body']);
+		$errors = $this->validateMessage(letter: $letter);
 		if (empty($errors) === false) {
 			return ['error' => implode('; ', $errors), 'errors' => $errors];
 		}
@@ -134,6 +146,19 @@ class BerichtenboxService {
 			return ['error' => 'OpenRegister is not available'];
 		}
 
+		$result = $this->sendThroughAdapter(letter: $letter);
+
+		return $this->storedSend(letter: $letter, sent: ['objectService' => $objectService, 'result' => $result]);
+	}//end send()
+
+	/**
+	 * Hand one letter to the adapter this instance has, with its attachment.
+	 *
+	 * @param array<string, mixed> $letter The letter, as {@see self::send()} takes it.
+	 *
+	 * @return array<string, mixed> What the adapter answered.
+	 */
+	private function sendThroughAdapter(array $letter): array {
 		// Get attachment content if provided.
 		$attachmentContent = null;
 		if ($letter['attachmentFileId'] !== null) {
@@ -150,7 +175,7 @@ class BerichtenboxService {
 		// The category travels to integriq, which decides on it (the category
 		// decides, not the channel; hydra decision 4). dossiq does not ask a
 		// second time here: integriq's digital post listener is the one check.
-		$result = $this->adapter->sendMessage(
+		return $this->adapter->sendMessage(
 			$letter['bsn'],
 			$letter['subject'],
 			$letter['body'],
@@ -159,9 +184,7 @@ class BerichtenboxService {
 			$letter['category'],
 			$letter['caseId']
 		);
-
-		return $this->storedSend(letter: $letter, sent: ['objectService' => $objectService, 'result' => $result]);
-	}//end send()
+	}//end sendThroughAdapter()
 
 	/**
 	 * Store the message record of a send, journal it and log it, and answer what was stored.
@@ -444,36 +467,47 @@ class BerichtenboxService {
 	/**
 	 * Validate message inputs.
 	 *
-	 * @param string $bsn Citizen BSN.
-	 * @param string $subject Message subject.
-	 * @param string $body Plain text message body.
+	 * @param array<string, mixed> $letter The letter: its `bsn`, `subject` and plain text `body` are checked.
 	 *
 	 * @return array<int, string> List of validation error messages, empty when valid.
 	 */
-	private function validateMessage(string $bsn, string $subject, string $body): array {
-		$errors = [];
+	private function validateMessage(array $letter): array {
+		$errors = $this->bsnErrors(bsn: $letter['bsn']);
 
-		if (empty($bsn) === true) {
-			$errors[] = 'BSN is verplicht voor berichten via Mijn Overheid';
-		} elseif ($this->validateBsn(bsn: $bsn) === false) {
-			$errors[] = 'Ongeldig BSN-nummer';
-		}
-
-		if (empty($subject) === true) {
+		if (empty($letter['subject']) === true) {
 			$errors[] = 'Onderwerp is verplicht';
 		}
 
-		if (empty($body) === true) {
+		if (empty($letter['body']) === true) {
 			$errors[] = 'Berichttekst is verplicht';
 		}
 
 		// Strip HTML from body (plain text only).
-		if ($body !== strip_tags($body)) {
+		if ($letter['body'] !== strip_tags($letter['body'])) {
 			$errors[] = 'Berichttekst mag alleen platte tekst bevatten';
 		}
 
 		return $errors;
 	}//end validateMessage()
+
+	/**
+	 * What is wrong with a letter's BSN, if anything.
+	 *
+	 * @param string $bsn Citizen BSN.
+	 *
+	 * @return array<int, string> The error, or none.
+	 */
+	private function bsnErrors(string $bsn): array {
+		if (empty($bsn) === true) {
+			return ['BSN is verplicht voor berichten via Mijn Overheid'];
+		}
+
+		if ($this->validateBsn(bsn: $bsn) === false) {
+			return ['Ongeldig BSN-nummer'];
+		}
+
+		return [];
+	}//end bsnErrors()
 
 	/**
 	 * Resolve the OpenRegister ObjectService if OpenRegister is installed.

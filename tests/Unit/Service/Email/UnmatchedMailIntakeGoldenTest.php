@@ -43,6 +43,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Email\UnmatchedMailIntake
  * @uses \OCA\Dossiq\Service\AssigneeResolver
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  */
 class UnmatchedMailIntakeGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

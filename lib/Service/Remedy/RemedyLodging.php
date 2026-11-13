@@ -36,8 +36,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Remedy;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook;
@@ -272,7 +272,7 @@ class RemedyLodging {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'A remedy case whose objection failed could not be deleted again',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 		}
 	}//end withdrawOpened()

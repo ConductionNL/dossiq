@@ -48,8 +48,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Portal\ResidentQuestionTask;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -162,7 +162,7 @@ class AanvullingsverzoekService {
 
 		$this->logger->info(
 			'Dossiq: an aanvullingsverzoek was sent and written down',
-			['app' => Application::APP_ID, 'case' => $caseId, 'items' => count($request['missingItems'])]
+			['app' => AppIdentity::APP_ID, 'case' => $caseId, 'items' => count($request['missingItems'])]
 		);
 
 		return $written;
@@ -373,7 +373,7 @@ class AanvullingsverzoekService {
 		} catch (RefusedException $e) {
 			$this->logger->warning(
 				'Dossiq: the portal task was raised, but the request could not remember it',
-				['app' => Application::APP_ID, 'request' => $id, 'task' => $task]
+				['app' => AppIdentity::APP_ID, 'request' => $id, 'task' => $task]
 			);
 			return $written;
 		}
@@ -401,7 +401,7 @@ class AanvullingsverzoekService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the case type could not be read for a request',
-				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 			);
 			return '';
 		}
@@ -452,7 +452,7 @@ class AanvullingsverzoekService {
 			// the safe half of the choice.
 			$this->logger->warning(
 				'Dossiq: the case portal subject could not be read, so the request is not shown in the portal',
-				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 			);
 			return '';
 		}
@@ -541,7 +541,7 @@ class AanvullingsverzoekService {
 	private function unreadable(string $caseId, Throwable $e): RefusedException {
 		$this->logger->warning(
 			'Dossiq: the aanvullingsverzoeken on a case could not be read',
-			['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+			['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 		);
 
 		return new RefusedException(
@@ -618,7 +618,7 @@ class AanvullingsverzoekService {
 			// stands. The list is briefly stale; the requests are not.
 			$this->logger->warning(
 				'Dossiq: the waiting-on-applicant flag could not be written; the requests themselves are correct',
-				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 			);
 		}
 	}//end markCaseWaiting()
@@ -716,7 +716,7 @@ class AanvullingsverzoekService {
 	private function notWritten(Throwable $e): RefusedException {
 		$this->logger->error(
 			'Dossiq: an aanvullingsverzoek could not be written',
-			['app' => Application::APP_ID, 'error' => $e->getMessage()]
+			['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 		);
 
 		return new RefusedException(

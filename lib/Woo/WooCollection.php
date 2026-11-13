@@ -85,9 +85,11 @@ class WooCollection {
 	 *
 	 * @param string $caseId The case uuid.
 	 *
-	 * @return array<string, mixed> `{custodians, systems, exclusions, arrived, assessed, excluded, outstanding}`.
+	 * @return array<string, mixed> `{custodians, systems, exclusions, arrived, assessed, excluded, outstanding,
+	 *         documents, conversations, threads}`.
 	 *
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-collection-is-reported-per-custodian-and-system-req-wrc-002
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-every-exclusion-before-review-is-kept-with-its-reason-req-wrc-003
 	 */
 	public function report(string $caseId): array {
@@ -130,6 +132,8 @@ class WooCollection {
 		$excludedOnCase = count(array_intersect_key($excludedDocs, array_flip($documentIds)));
 		$arrived = (count($documentIds) + $neverArrived);
 
+		$conversations = $this->conversations(caseId: $caseId);
+
 		return [
 			'custodians' => $this->listed(groups: $custodians, key: 'custodian'),
 			'systems' => $this->listed(groups: $systems, key: 'system'),
@@ -138,8 +142,46 @@ class WooCollection {
 			'assessed' => $assessed,
 			'excluded' => ($excludedOnCase + $neverArrived),
 			'outstanding' => (count($documentIds) - $excludedOnCase - $assessed),
+			'documents' => count($documentIds),
+			'conversations' => count($conversations),
+			'threads' => $conversations,
 		];
 	}//end report()
+
+	/**
+	 * The collected mails grouped by conversation, each conversation's messages in date order.
+	 *
+	 * A message without a date sorts after the dated ones; ties keep the document id order.
+	 * Conversations are listed by their first message.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return list<array{threadId: string, messages: list<array{documentId: string, sentAt: string}>}>
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
+	 */
+	private function conversations(string $caseId): array {
+		$grouped = [];
+		foreach ($this->provenance->threadsForCase(caseId: $caseId) as $documentId => $thread) {
+			$grouped[$thread['threadId']][] = ['documentId' => (string)$documentId, 'sentAt' => $thread['sentAt']];
+		}
+
+		$byDate = static fn (array $one, array $other): int => [($one['sentAt'] === ''), $one['sentAt'], $one['documentId']]
+			<=> [($other['sentAt'] === ''), $other['sentAt'], $other['documentId']];
+
+		$conversations = [];
+		foreach ($grouped as $threadId => $messages) {
+			usort($messages, $byDate);
+			$conversations[] = ['threadId' => (string)$threadId, 'messages' => $messages];
+		}
+
+		usort(
+			$conversations,
+			static fn (array $one, array $other): int => $byDate($one['messages'][0], $other['messages'][0])
+		);
+
+		return $conversations;
+	}//end conversations()
 
 	/**
 	 * Set a document on the case aside before review.

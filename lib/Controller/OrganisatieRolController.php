@@ -40,8 +40,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Controller\Support\RegistryObjectWrite;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Mandaat\MandaatRegistryService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
@@ -155,7 +155,7 @@ class OrganisatieRolController extends Controller {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Failed to delete OrganisatieRol ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['message' => 'Failed to delete role: ' . $e->getMessage()],

@@ -62,6 +62,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Listener\ReportGroupingOnCreateListener
  * @uses   \OCA\Dossiq\Service\Intake\ReceiptMoment
  * @uses   \OCA\Dossiq\AppInfo\Registrar\TaskListenerRegistrar
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class DraftIsNotReceivedRegistrationTest extends TestCase {
 

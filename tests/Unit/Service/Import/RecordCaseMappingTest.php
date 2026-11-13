@@ -30,6 +30,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Import\RecordCaseMapping
  * @covers \OCA\Dossiq\Service\Import\RecordValues
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Import\RecordMappingRun
  */
 class RecordCaseMappingTest extends TestCase {
 

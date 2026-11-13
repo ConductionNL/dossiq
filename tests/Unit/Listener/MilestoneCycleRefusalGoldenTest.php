@@ -44,6 +44,9 @@ use RuntimeException;
  * Golden test for MilestoneDependencyCycleListener::refuseCycle.
  *
  * @covers \OCA\Dossiq\Listener\MilestoneDependencyCycleListener
+ * @uses \OCA\Dossiq\Service\Milestone\CycleSearch
+ * @uses \OCA\Dossiq\Service\Milestone\MilestoneSchedule
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class MilestoneCycleRefusalGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -219,7 +219,7 @@ class OptOutGate {
 		$this->logger->warning(
 			'Dossiq: integriq could not say whether this person may be messaged; ' . $outcome,
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'caseRef' => $caseRef,
 				'category' => $category,
 				'why' => $why,
@@ -240,7 +240,7 @@ class OptOutGate {
 	 */
 	private function isSwitchedOn(): bool {
 		try {
-			$value = $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, 'true');
+			$value = $this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, 'true');
 		} catch (Throwable $e) {
 			return true;
 		}

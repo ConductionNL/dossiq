@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\ApplicatieDirectory;
 use OCA\Dossiq\Controller\Support\ApplicatieRepresentation;
 use OCA\Dossiq\Controller\Support\ApplicatieRules;
 use OCA\Dossiq\Service\ZgwService;
@@ -49,10 +50,6 @@ use OCP\IRequest;
  * @spec openspec/specs/zgw-autorisaties-api/spec.md
  *
  * @psalm-suppress UnusedClass
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.CyclomaticComplexity)
- * @SuppressWarnings(PHPMD.NPathComplexity)
  */
 class AcController extends ZgwController {
 	/**
@@ -130,51 +127,13 @@ class AcController extends ZgwController {
 				'status' => Http::STATUS_FORBIDDEN,
 				'detail' => sprintf(
 					'Consumer %s heeft scope %s niet.',
-					$this->clientIdOf(presentedToken: $presentedToken),
+					$this->directory()->clientIdOf(presentedToken: $presentedToken),
 					$scope
 				),
 			],
 			statusCode: Http::STATUS_FORBIDDEN
 		);
 	}//end requireAcScope()
-
-	/**
-	 * Read the client_id out of the token the caller presented.
-	 *
-	 * Only for the refusal message. A 403 that says nothing but "scope X is
-	 * required" leaves an integrator guessing which of their consumers made the
-	 * call, and `consumerHasScope()` answers false for four different reasons
-	 * without distinguishing them.
-	 *
-	 * Nothing here is trusted: the signature was already verified by
-	 * {@see ZgwService::validateJwtAuth()} before this runs, and a token this
-	 * cannot read yields "onbekend" rather than an error.
-	 *
-	 * @param string $presentedToken The bearer token, without its scheme
-	 *
-	 * @return string The client_id, or 'onbekend' when it cannot be read
-	 *
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 */
-	private function clientIdOf(string $presentedToken): string {
-		$parts = explode('.', $presentedToken);
-		if (count($parts) !== 3) {
-			return 'onbekend';
-		}
-
-		$payload = json_decode((string)base64_decode($parts[1], true), true);
-		if (is_array($payload) === false) {
-			return 'onbekend';
-		}
-
-		$clientId = ($payload['client_id'] ?? ($payload['iss'] ?? null));
-
-		if (is_string($clientId) === false || $clientId === '') {
-			return 'onbekend';
-		}
-
-		return $clientId;
-	}//end clientIdOf()
 
 	/**
 	 * List all applicaties, optionally filtered by clientId.
@@ -203,7 +162,12 @@ class AcController extends ZgwController {
 		}
 
 		try {
-			$consumers = $this->listConsumers(filterClientId: $this->requestedClientId());
+			$directory = $this->directory();
+			$filterClientId = $directory->requestedClientId(
+				clientId: $this->request->getParam('clientId'),
+				clientIds: $this->request->getParam('clientIds')
+			);
+			$consumers = $directory->listConsumers(filterClientId: $filterClientId);
 
 			return $this->applicatieList(consumers: $consumers);
 		} catch (\Throwable $e) {
@@ -241,86 +205,6 @@ class AcController extends ZgwController {
 			]
 		);
 	}//end applicatieList()
-
-	/**
-	 * Read the clientId the list is filtered on.
-	 *
-	 * Both query parameters are read; 'clientId' wins over 'clientIds' and an
-	 * empty value counts as absent.
-	 *
-	 * @return mixed The requested clientId, or null when the list is unfiltered
-	 *
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 */
-	private function requestedClientId(): mixed {
-		$clientId = $this->request->getParam('clientId');
-		$clientIds = $this->request->getParam('clientIds');
-
-		if ($clientId !== null && $clientId !== '') {
-			return $clientId;
-		}
-
-		if ($clientIds !== null && $clientIds !== '') {
-			return $clientIds;
-		}
-
-		return null;
-	}//end requestedClientId()
-
-	/**
-	 * Find the consumers the list shows.
-	 *
-	 * Without a filter every consumer is listed. With one, the primary clientId
-	 * (the consumer name) is searched first, and only when nothing matches are
-	 * the extra clientIds stored in the authorization configuration searched.
-	 *
-	 * @param mixed $filterClientId The requested clientId, or null
-	 *
-	 * @return array The matching consumers
-	 *
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 */
-	private function listConsumers(mixed $filterClientId): array {
-		$consumers = $this->zgwService->getConsumerMapper()->findAll();
-
-		if ($filterClientId === null) {
-			return $consumers;
-		}
-
-		// Search by name (primary clientId) first.
-		$consumers = $this->zgwService->getConsumerMapper()->findAll(
-			filters: ['name' => $filterClientId]
-		);
-
-		if (count($consumers) > 0) {
-			return $consumers;
-		}
-
-		return $this->consumersWithExtraClientId(clientId: $filterClientId);
-	}//end listConsumers()
-
-	/**
-	 * Find the consumers holding a clientId among their extra clientIds.
-	 *
-	 * @param mixed $clientId The clientId searched for
-	 *
-	 * @return array The consumers that carry it in their authorization configuration
-	 *
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 */
-	private function consumersWithExtraClientId(mixed $clientId): array {
-		$consumers = [];
-		$allConsumers = $this->zgwService->getConsumerMapper()->findAll();
-		foreach ($allConsumers as $consumer) {
-			$authConfig = $consumer->getAuthorizationConfiguration() ?? [];
-			$extraClientIds = $authConfig['clientIds'] ?? [];
-			if (in_array($clientId, $extraClientIds, true) === true) {
-				$consumers[] = $consumer;
-			}
-		}
-
-		return $consumers;
-	}//end consumersWithExtraClientId()
 
 	/**
 	 * Create a new applicatie.
@@ -683,6 +567,17 @@ class AcController extends ZgwController {
 	private function rules(): ApplicatieRules {
 		return new ApplicatieRules(zgwService: $this->zgwService, l10n: $this->l10n);
 	}//end rules()
+
+	/**
+	 * The consumer lookups the applicatie list and refusals read.
+	 *
+	 * @return ApplicatieDirectory
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	private function directory(): ApplicatieDirectory {
+		return new ApplicatieDirectory(consumerMapper: $this->zgwService->getConsumerMapper());
+	}//end directory()
 
 	/**
 	 * The mapping between OpenRegister consumers and ZGW applicaties.

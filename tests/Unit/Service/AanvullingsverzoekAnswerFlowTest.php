@@ -33,6 +33,8 @@ use Stringable;
  *
  * @covers \OCA\Dossiq\Service\AanvullingsverzoekResolutionService
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\AanvullingAnswerRun
+ * @uses \OCA\Dossiq\Service\ItemArrivalMarker
  */
 class AanvullingsverzoekAnswerFlowTest extends TestCase {
 

@@ -121,10 +121,18 @@ class ZrcStatusEffectsTest extends TestCase {
 	/** @var array<int, string> mapping keys that answer null */
 	protected array $unmapped = [];
 
+	/** The logger the ZGW service hands out, shared across one test. */
+	protected ?LoggerInterface $logger = null;
+
+	/** The result type the deriver finds for the case, null for none. */
+	protected ?string $resultType = 'rt-1';
+
 	protected function setUp(): void {
 		parent::setUp();
 		$this->store = new ZrcEffectsObjectStore();
 		$this->unmapped = [];
+		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->resultType = 'rt-1';
 		$this->store->rows['12'] = [
 			self::ST_FIRST => ['id' => self::ST_FIRST, 'caseType' => 'https://nc/catalogi/zaaktypen/' . self::ZT, 'order' => 1, 'isFinal' => false],
 			self::ST_FINAL => ['id' => self::ST_FINAL, 'caseType' => self::ZT, 'order' => 3],
@@ -144,7 +152,7 @@ class ZrcStatusEffectsTest extends TestCase {
 		$zgw = $this->createMock(ZgwService::class);
 		$zgw->method('getZgwMappingService')->willReturn($mappings);
 		$zgw->method('getObjectService')->willReturn($this->store);
-		$zgw->method('getLogger')->willReturn($this->createMock(LoggerInterface::class));
+		$zgw->method('getLogger')->willReturn($this->logger);
 		return $zgw;
 	}
 
@@ -158,7 +166,7 @@ class ZrcStatusEffectsTest extends TestCase {
 
 	protected function deriver(): ArchivalNominationDeriver {
 		$deriver = $this->createMock(ArchivalNominationDeriver::class);
-		$deriver->method('resultTypeForCase')->willReturn('rt-1');
+		$deriver->method('resultTypeForCase')->willReturnCallback(fn (): ?string => $this->resultType);
 		$deriver->method('derive')->willReturnCallback(
 			static fn (array $case, string $resultTypeId, string $endDate): array => ['archiveNomination' => 'vernietigen', 'archiveActionDate' => 'from:' . $endDate]
 		);
@@ -371,5 +379,53 @@ class ZrcStatusEffectsTest extends TestCase {
 		$this->store->findThrows['11'] = true;
 
 		$this->assertTrue($this->effects()->isReopenAttempt($this->body(self::ST_FIRST)));
+	}
+	public function testAFinalStatusOnAnUnknownCaseWritesNothing(): void {
+		$this->effects()->applyStatusEffect(['case' => 'c0000000-0000-0000-0000-0000000000ff', 'statustype' => 'https://nc/catalogi/statustypen/' . self::ST_FINAL], []);
+
+		$this->assertSame([], $this->store->saved);
+	}
+
+	public function testAFailingCaseReadDuringAStatusEffectIsLoggedAndWritesNothing(): void {
+		$this->store->findThrows['11'] = true;
+		$this->logger->expects($this->once())->method('error')->with(
+			'handleEindstatusEffect failed: find failed',
+			$this->callback(static fn (array $context): bool => $context['exception'] instanceof \RuntimeException)
+		);
+
+		$this->effects()->applyStatusEffect($this->body(self::ST_FINAL), []);
+
+		$this->assertSame([], $this->store->saved);
+	}
+
+	public function testAFailingCaseReadDuringAResultEffectIsLoggedAndWritesNothing(): void {
+		$this->store->findThrows['11'] = true;
+		$this->logger->expects($this->once())->method('error')->with(
+			'zrc-021: handleResultaatCreated failed: find failed',
+			$this->callback(static fn (array $context): bool => $context['exception'] instanceof \RuntimeException)
+		);
+
+		$this->effects()->applyResultEffect(['case' => self::CASE]);
+
+		$this->assertSame([], $this->store->saved);
+	}
+
+	public function testACaseWithoutAResultTypeClosesWithoutArchiveParameters(): void {
+		$this->resultType = null;
+
+		$this->effects()->applyStatusEffect($this->body(self::ST_FINAL), []);
+
+		$case = $this->savedCase();
+		$this->assertSame('2026-03-04', $case['endDate']);
+		$this->assertArrayNotHasKey('archiveNomination', $case);
+		$this->assertArrayNotHasKey('archiveActionDate', $case);
+	}
+
+	public function testAnUnknownOrUnmappedCaseIsNeverAReopenAttempt(): void {
+		$this->assertFalse($this->effects()->isReopenAttempt(['case' => 'c0000000-0000-0000-0000-0000000000ff', 'statustype' => 'https://nc/catalogi/statustypen/' . self::ST_FIRST]));
+
+		$this->store->rows['11'][self::CASE]['endDate'] = '2026-01-01';
+		$this->unmapped = ['case'];
+		$this->assertFalse($this->effects()->isReopenAttempt($this->body(self::ST_FIRST)));
 	}
 }//end class

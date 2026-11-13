@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -103,7 +103,7 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
 			return;
 		}
 
@@ -157,7 +157,7 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 			$page++;
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::DONE_VERSION);
 		$output->info(
 			'Dossiq portal messages: copied ' . $tally['copied'] . ' file(s) into their message, left '
 			. $tally['skipped'] . ' already there, ' . $tally['missing'] . ' named in the log.'
@@ -187,7 +187,7 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 		if ($folder === null) {
 			$this->logger->warning(
 				'Dossiq portal messages: ' . $messageId . ' has no folder; its ' . count($ids) . ' attachment(s) were not copied',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 
 			return array_fill(0, count($ids), 'missing');
@@ -215,7 +215,7 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 		if ($file === null) {
 			$this->logger->warning(
 				'Dossiq portal messages: attachment ' . $attachmentId . ' of ' . $messageId . ' has no file; it was not copied',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 
 			return 'missing';
@@ -231,7 +231,7 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq portal messages: ' . $name . ' could not be copied into ' . $messageId . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'exception' => $e],
+				['app' => AppIdentity::APP_ID, 'exception' => $e],
 			);
 
 			return 'missing';

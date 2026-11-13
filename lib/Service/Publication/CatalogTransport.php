@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Publication;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Woo\WooCaseLedger;
 use Psr\Log\LoggerInterface;
@@ -86,7 +86,7 @@ class CatalogTransport {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'WooPublicationService::publish failed',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
 			);
 			$reason = 'opencatalogi_api_error';
 			if ($e->getMessage() === WooCaseLedger::SET_NOT_WRITTEN) {
@@ -98,7 +98,7 @@ class CatalogTransport {
 
 		$this->logger->info(
 			'WOO decision published to OpenCatalogi: ' . $delivered['publicationId'] . ' for case ' . $caseId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return $delivered;
@@ -126,14 +126,14 @@ class CatalogTransport {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'WooPublicationService::withdraw failed',
-				['app' => Application::APP_ID, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
 			);
 			return 'opencatalogi_api_error';
 		}
 
 		$this->logger->info(
 			'WOO publication withdrawn: ' . $publicationId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return '';

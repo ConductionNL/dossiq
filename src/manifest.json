@@ -3431,6 +3431,9 @@
 				"_editFormNote": "The same form the index pages open, so editing a case asks what filing one asks wherever it is done. It was the raw schema-driven default here \u2014 one column, normal width, every property the schema declares \u2014 because CnDetailPage took `formSize` and `formColumns` and forwarded neither `includeFields`, `excludeFields` nor `fieldOverrides` to its dialogs. nextcloud-vue now does. `excludeFields` keeps `status` off for the reason the Cases page gives: a status is the OUTPUT of a transition, and a raw dropdown writes it through without a statusRecord, a guard or the transition's automaticActions. The priority trio goes with it, being derived from impact and urgency.",
 				"formSize": "large",
 				"formColumns": 2,
+				"_draftNote": "task-forms-keep-a-draft (row 3.14, REQ-TM-DRAFT-01): the case edit form keeps what the handler typed and did not save, under dossiq's key and the signed-in user, and offers it back when the same form opens again. `isDraft` is the case's own draft marker.",
+				"draftField": "isDraft",
+				"draftAppId": "dossiq",
 				"editTitle": "Edit case",
 				"editSubtitle": "The case's fields. You change the status and the term through Next step.",
 				"includeFields": [
@@ -6613,6 +6616,42 @@
 						"target": "CrossDomainLookupDialog"
 					},
 					{
+						"id": "request-information",
+						"type": "open-modal",
+						"target": "AanvullingVragenModal",
+						"label": "Ask for missing information",
+						"icon": "FileQuestionOutline",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								},
+								{
+									"field": "isFinalStatus",
+									"op": "neq",
+									"value": true
+								},
+								{
+									"endpoint": "/apps/dossiq/api/case/@objectId/lifecycle",
+									"field": "suspended",
+									"op": "eq",
+									"value": false
+								},
+								{
+									"endpoint": "/apps/dossiq/api/cases/@objectId/aanvullingsverzoeken",
+									"field": "waiting",
+									"op": "eq",
+									"value": false
+								}
+							]
+						}
+					},
+					{
 						"id": "notice-of-default-register",
 						"type": "open-modal",
 						"label": "Register notice of default",
@@ -7768,6 +7807,9 @@
 			"config": {
 				"entitySource": "tasks",
 				"documentationUrl": "https://dossiq.conduction.nl",
+				"_draftNote": "task-forms-keep-a-draft (row 3.14, REQ-TM-DRAFT-01): the task's Edit form keeps what the handler typed and did not save, under dossiq's key and the signed-in user, and offers it back when the same form opens again. `draftField` names the draft marker; an engine task carries none, so on this page the field is inert and Save as provisional stays away until the engine has a draft route, as the task-question widget says.",
+				"draftField": "isDraft",
+				"draftAppId": "dossiq",
 				"showTypeEyebrow": false,
 				"breadcrumb": {
 					"label": "Tasks",
@@ -12010,6 +12052,7 @@
 						"pill": "Shillinq",
 						"href": "/index.php/apps/shillinq/",
 						"linkLabel": "Open in Shillinq",
+						"category": "costs",
 						"requiresApp": "shillinq",
 						"missingText": "This report is in Shillinq. Shillinq is not installed."
 					},
@@ -12065,7 +12108,8 @@
 				],
 				"categories": {
 					"throughput": "Throughput and deadlines",
-					"process": "Process analysis"
+					"process": "Process analysis",
+					"costs": "Costs"
 				}
 			}
 		},
@@ -12987,9 +13031,19 @@
 					"processingDeadline",
 					"confidentiality",
 					"isDraft",
+					{
+						"key": "shipped",
+						"label": "Origin",
+						"widgetProps": {
+							"trueLabel": "Shipped",
+							"falseLabel": "Own",
+							"pill": true
+						}
+					},
 					"validFrom",
 					"validUntil"
 				],
+				"_shippedNote": "admin-tabs-carry-the-settings-board-blocks 2.4 (board DqZaaktypen): a case type a case definition package placed carries `shipped: true` and its `package` (2.3); a copy, or one the organisation made, carries `shipped: false`. The Origin column reads Shipped (as a pill) or Own, and the Shipped chip lists the current version of every shipped case type. Not counted: the board counts All, Published and Draft only.",
 				"showViewAction": false,
 				"_headerActionsNote": "Reload the shipped case type templates (POST /api/packages/reload): admin-only on the server, `adminOnly` hides the entry from others. The simple profile lists it in the Actions menu (DqZaaktypen).",
 				"headerActions": [
@@ -13074,7 +13128,7 @@
 					"filterField": "category",
 					"allLabel": "All case types"
 				},
-				"_quickFiltersNote": "The index used to list every version of every case type, so a catalogue of forty types read as a list of ninety rows carrying the same nine names three times over, and the row you wanted was whichever one had no successor. All is the DEFAULT chip (board DqZaaktypen \"Alles\", beside Published and Draft, each counted) and carries `supersededBy: \"IS NULL\"`, the literal sentinel every OpenRegister condition builder matches by value, which the Queue page's `assignee: \"IS NULL\"` already relies on. It is a CHIP and not a base `filter` on the page, deliberately: a base filter cannot be cleared by the person reading the list, and the older versions are exactly what an auditor asking which rules governed a case last March came here for. All versions drops the condition and shows the whole chain. A draft has no successor either, so it sits under All and Draft, which is right: a draft is the version you are about to publish.",
+				"_quickFiltersNote": "The index used to list every version of every case type, so a catalogue of forty types read as a list of ninety rows carrying the same nine names three times over, and the row you wanted was whichever one had no successor. All is the DEFAULT chip (board DqZaaktypen \"Alles\", beside Published and Draft, each counted) and carries `supersededBy: \"IS NULL\"`, the literal sentinel every OpenRegister condition builder matches by value, which the Queue page's `assignee: \"IS NULL\"` already relies on. It is a CHIP and not a base `filter` on the page, deliberately: a base filter cannot be cleared by the person reading the list, and the older versions are exactly what an auditor asking which rules governed a case last March came here for. All versions drops the condition and shows the whole chain. A draft has no successor either, so it sits under All and Draft, which is right: a draft is the version you are about to publish. Shipped narrows the current versions to the case types a package placed (`shipped: true`).",
 				"quickFilters": [
 					{
 						"label": "All",
@@ -13099,6 +13153,13 @@
 							"isDraft": true
 						},
 						"showCount": true
+					},
+					{
+						"label": "Shipped",
+						"filter": {
+							"supersededBy": "IS NULL",
+							"shipped": true
+						}
 					},
 					{
 						"label": "All versions",

@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
@@ -230,8 +230,8 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 		// beside `filters` is ignored, and the query then returns every object
 		// in the register — measured, it produced a run of "no schemeName"
 		// warnings over objects of entirely different schemas.
-		$register = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		$schemaId = $this->appConfig->getValueString(Application::APP_ID, 'subsidie_regeling_schema', '');
+		$register = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
+		$schemaId = $this->appConfig->getValueString(AppIdentity::APP_ID, 'subsidie_regeling_schema', '');
 		if ($register === '' || $schemaId === '') {
 			$output->warning(
 				'Register or subsidieregeling schema id is not configured — '
@@ -311,8 +311,8 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	 * @return bool True when already migrated.
 	 */
 	private function caseTypeExists(string $name): bool {
-		$register = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		$caseTypeSchema = $this->appConfig->getValueString(Application::APP_ID, 'case_type_schema', '');
+		$register = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
+		$caseTypeSchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_type_schema', '');
 		if ($register === '' || $caseTypeSchema === '') {
 			// Unscoped, this would match a title anywhere and report every
 			// scheme as already migrated. Refusing is the safe answer.
@@ -336,8 +336,8 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	 * @return void
 	 */
 	private function createCaseTypeFor(array $scheme, string $name, IOutput $output): void {
-		$register = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		$caseTypeSchema = $this->appConfig->getValueString(Application::APP_ID, 'case_type_schema', '');
+		$register = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
+		$caseTypeSchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_type_schema', '');
 
 		$caseTypeId = $this->saveCaseType(
 			payload: $this->buildCaseTypePayload(scheme: $scheme, name: $name),
@@ -505,7 +505,7 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 		string $register,
 		IOutput $output,
 	): void {
-		$propertySchema = $this->appConfig->getValueString(Application::APP_ID, 'property_definition_schema', '');
+		$propertySchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'property_definition_schema', '');
 		if ($propertySchema === '') {
 			$output->warning(
 				sprintf('propertyDefinition schema id is not configured — "%s" keeps its case type but loses its properties.', $name)

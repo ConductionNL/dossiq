@@ -33,7 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Cases\ConnectedSystemCaseWriter;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
 use OCP\EventDispatcher\Event;
@@ -87,7 +87,7 @@ class StufProviderWriteListener implements IEventListener {
 		// An integriq from before decision 206 has no getOperation(): that call fails, integriq catches
 		// it and answers a server fault, so no write is confirmed there either.
 		if ($event->getOperation() === []) {
-			$event->refuse(appId: Application::APP_ID, reason: 'Dossiq neemt wijzigingen alleen aan als bewerking van integriq.');
+			$event->refuse(appId: AppIdentity::APP_ID, reason: 'Dossiq neemt wijzigingen alleen aan als bewerking van integriq.');
 			return;
 		}
 
@@ -130,13 +130,13 @@ class StufProviderWriteListener implements IEventListener {
 		);
 		if (isset($outcome['refusal']) === true) {
 			$event->refuse(
-				appId: Application::APP_ID,
+				appId: AppIdentity::APP_ID,
 				reason: (string)$outcome['refusal'],
 				kind: (string)($outcome['kind'] ?? ConnectedSystemCaseWriter::REFUSED)
 			);
 			return;
 		}
 
-		$event->accept(appId: Application::APP_ID, identification: (string)($outcome['identifier'] ?? ''));
+		$event->accept(appId: AppIdentity::APP_ID, identification: (string)($outcome['identifier'] ?? ''));
 	}//end carryOut()
 }//end class

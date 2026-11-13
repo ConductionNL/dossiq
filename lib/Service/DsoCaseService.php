@@ -24,10 +24,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Dso\DsoCaseSteps;
 use DateTimeImmutable;
 use Exception;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
@@ -175,7 +175,7 @@ class DsoCaseService {
 		$this->logger->info(
 			'Dossiq DsoCaseService: zaak created',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'vergunningaanvraagId' => $permitApplicationId,
 				'caseType' => $case['caseType'],
 				'procedureType' => $case['procedureType'],
@@ -330,7 +330,7 @@ class DsoCaseService {
 	 * @return string The value, or '' when unset
 	 */
 	private function config(string $key): string {
-		return $this->appConfig->getValueString(app: Application::APP_ID, key: $key, default: '');
+		return $this->appConfig->getValueString(app: AppIdentity::APP_ID, key: $key, default: '');
 	}//end config()
 
 	/**
@@ -400,7 +400,7 @@ class DsoCaseService {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq DsoCaseService: could not resolve IGroupManager for auth check: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 		}
 
@@ -437,18 +437,7 @@ class DsoCaseService {
 	 * @return array<string, mixed> The normalised array (empty when not coercible).
 	 */
 	private function normalizeToArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
+		return ($this->objectToArrayOrNull(value: $value) ?? []);
 	}//end normalizeToArray()
 
 	/**
@@ -501,7 +490,7 @@ class DsoCaseService {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq DsoCaseService: could not sync vergunningaanvraag status: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'permitApplicationRef' => $change['requestRef']]
+				['app' => AppIdentity::APP_ID, 'permitApplicationRef' => $change['requestRef']]
 			);
 		}//end try
 	}//end syncPermitApplicationStatus()

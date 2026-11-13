@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\TenantQuotaService;
@@ -61,7 +61,7 @@ class ResetMonthlyQuotasJob extends TimedJob {
 	 */
 	private const QUOTA_QUERY = [
 		'filters' => [
-			'register' => Application::REGISTER_SLUG,
+			'register' => AppIdentity::REGISTER_SLUG,
 			'schema' => 'tenantQuota',
 		],
 		'limit' => 1000,

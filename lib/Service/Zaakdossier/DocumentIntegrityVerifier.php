@@ -33,7 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
@@ -123,7 +123,7 @@ class DocumentIntegrityVerifier {
 	 * @return array<int, array<string, mixed>> The documents.
 	 */
 	private function nextBatch(array $store, int $batch): array {
-		$offset = $this->appConfig->getValueInt(Application::APP_ID, self::CURSOR_KEY, 0);
+		$offset = $this->appConfig->getValueInt(AppIdentity::APP_ID, self::CURSOR_KEY, 0);
 		$rows   = $this->searchObjectsAsArraysUnscoped(
 			objectService: $store['objectService'],
 			register: $store['register'],
@@ -136,7 +136,7 @@ class DocumentIntegrityVerifier {
 			$next = 0;
 		}
 
-		$this->appConfig->setValueInt(Application::APP_ID, self::CURSOR_KEY, $next);
+		$this->appConfig->setValueInt(AppIdentity::APP_ID, self::CURSOR_KEY, $next);
 
 		return $rows;
 	}//end nextBatch()

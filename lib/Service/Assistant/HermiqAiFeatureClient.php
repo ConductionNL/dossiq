@@ -37,7 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Assistant;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -143,7 +143,7 @@ class HermiqAiFeatureClient {
 		} catch (HermiqAssistantException $e) {
 			$this->logger->warning(
 				'HermiqAiFeatureClient: could not read the AI feature residency',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 			);
 
 			return [];
@@ -189,7 +189,7 @@ class HermiqAiFeatureClient {
 		} catch (HermiqAssistantException $e) {
 			$this->logger->warning(
 				'HermiqAiFeatureClient: could not read the prompt library',
-				['app' => Application::APP_ID, 'scope' => $scope, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'scope' => $scope, 'error' => $e->getMessage()]
 			);
 
 			return [];

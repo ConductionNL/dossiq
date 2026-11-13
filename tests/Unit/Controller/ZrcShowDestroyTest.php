@@ -60,6 +60,7 @@ class ZrcShowDestroyStore {
 
 /**
  * @covers \OCA\Dossiq\Controller\ZrcController
+ * @uses \OCA\Dossiq\Service\BeschikkingGenerationService
  */
 class ZrcShowDestroyTest extends TestCase {
 

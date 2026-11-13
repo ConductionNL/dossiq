@@ -65,7 +65,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -145,18 +145,18 @@ class ShippedFlowAdoption {
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'Dossiq: no OpenRegister flow store to inspect: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 
 			return ['available' => false, 'note' => 'OpenRegister exposes no flow store on this instance.', 'flows' => []];
 		}
 
 		try {
-			$flows = $mapper->findAllFlows(app: Application::APP_ID, limit: self::PAGE);
+			$flows = $mapper->findAllFlows(app: AppIdentity::APP_ID, limit: self::PAGE);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not read the shipped flows: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 
 			return ['available' => false, 'note' => 'The flow store could not be read: ' . $e->getMessage(), 'flows' => []];
@@ -281,7 +281,7 @@ class ShippedFlowAdoption {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not resolve FlowService for adoption: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 
 			return 'OpenRegister exposes no FlowService on this instance.';
@@ -354,7 +354,7 @@ class ShippedFlowAdoption {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not adopt a shipped flow',
-				['app' => Application::APP_ID, 'flow' => $row['uuid'], 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'flow' => $row['uuid'], 'exception' => $e->getMessage()]
 			);
 
 			return ['name' => $row['name'], 'uuid' => $row['uuid'], 'outcome' => 'failed', 'detail' => $e->getMessage()];

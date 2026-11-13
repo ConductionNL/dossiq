@@ -29,6 +29,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for RoutingEngine.
  *
  * @covers \OCA\Dossiq\Service\Kcc\RoutingEngine
+ * @uses \OCA\Dossiq\Service\Kcc\RoutingRuleOrder
  */
 class RoutingEngineTest extends TestCase {
 

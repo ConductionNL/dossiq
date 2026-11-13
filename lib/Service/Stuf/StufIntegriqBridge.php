@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Stuf;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\AppFramework\Http;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
@@ -101,7 +101,7 @@ class StufIntegriqBridge {
 		}
 
 		$event = new $eventClass(
-			sourceApp: Application::APP_ID,
+			sourceApp: AppIdentity::APP_ID,
 			sourceId: $sourceId,
 			operation: 'vrijBericht',
 			arguments: ['name' => $name, 'payload' => $payload],
@@ -137,7 +137,7 @@ class StufIntegriqBridge {
 			return null;
 		}
 
-		$event = new $eventClass(sourceApp: Application::APP_ID, rawXml: $rawXml);
+		$event = new $eventClass(sourceApp: AppIdentity::APP_ID, rawXml: $rawXml);
 		$this->dispatcher->dispatchTyped($event);
 		if ($event->isHandled() === false) {
 			return null;
@@ -163,7 +163,7 @@ class StufIntegriqBridge {
 			return null;
 		}
 
-		$event = new $eventClass(sourceApp: Application::APP_ID, rawXml: $rawXml, sourceId: $sourceId, service: $service);
+		$event = new $eventClass(sourceApp: AppIdentity::APP_ID, rawXml: $rawXml, sourceId: $sourceId, service: $service);
 		$this->dispatcher->dispatchTyped($event);
 		if ($event->isHandled() === false) {
 			return null;

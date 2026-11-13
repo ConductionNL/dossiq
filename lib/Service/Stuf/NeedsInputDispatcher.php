@@ -42,7 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Stuf;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IGroupManager;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
@@ -109,7 +109,7 @@ class NeedsInputDispatcher {
 
 		foreach ($admin->getUsers() as $user) {
 			$notification = $this->notificationManager->createNotification();
-			$notification->setApp(app: Application::APP_ID)
+			$notification->setApp(app: AppIdentity::APP_ID)
 				->setUser(user: $user->getUID())
 				->setDateTime(dateTime: new DateTime())
 				->setObject(type: 'stuf_needs_input', id: ($context['endpointId'] ?? $type))

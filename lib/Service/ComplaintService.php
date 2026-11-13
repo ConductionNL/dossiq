@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -202,7 +202,7 @@ class ComplaintService {
 		// number no complaint carries.
 		$this->logger->info(
 			'Complaint created: ' . (string)($saved['complaintNumber'] ?? 'number pending'),
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return $saved;
@@ -372,7 +372,7 @@ class ComplaintService {
 
 		$this->logger->info(
 			'Verdaging requested for complaint ' . $id . '; new deadline: ' . $newDeadline,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return $this->updateComplaint(id: $id, data: $updateData);

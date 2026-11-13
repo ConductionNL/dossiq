@@ -40,7 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Workflow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Task\TaskDeclarationValidator;
 use Psr\Log\LoggerInterface;
 
@@ -265,7 +265,7 @@ class WorkflowLifecycleGuard {
 		$this->logger->warning(
 			'Dossiq: case type has several active workflow definitions and no usable default route',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'caseType' => $caseTypeId,
 				'routes' => array_map(fn (array $row): string => $this->variantOf(row: $row), $active),
 				'chose' => $this->idOf(row: $active[0]),
@@ -341,7 +341,7 @@ class WorkflowLifecycleGuard {
 
 		$this->logger->warning(
 			'Dossiq: publish() — definition is not a draft',
-			['app' => Application::APP_ID, 'id' => $draft->id]
+			['app' => AppIdentity::APP_ID, 'id' => $draft->id]
 		);
 		return false;
 	}//end isDraft()
@@ -366,7 +366,7 @@ class WorkflowLifecycleGuard {
 
 		$this->logger->warning(
 			'Dossiq: publish() refused, a step configuration does not hold',
-			['app' => Application::APP_ID, 'id' => $draft->id, 'errors' => $this->lastStepConfigErrors]
+			['app' => AppIdentity::APP_ID, 'id' => $draft->id, 'errors' => $this->lastStepConfigErrors]
 		);
 		return false;
 	}//end stepConfigsHold()
@@ -387,7 +387,7 @@ class WorkflowLifecycleGuard {
 
 		$this->logger->warning(
 			'Dossiq: publish() — referential integrity failure',
-			['app' => Application::APP_ID, 'id' => $draft->id]
+			['app' => AppIdentity::APP_ID, 'id' => $draft->id]
 		);
 		return false;
 	}//end referencesOwnStatuses()
@@ -420,7 +420,7 @@ class WorkflowLifecycleGuard {
 
 		$this->logger->warning(
 			'Dossiq: publish() — a task declaration names something that is not there',
-			['app' => Application::APP_ID, 'id' => $id, 'refusals' => $this->lastRefusals]
+			['app' => AppIdentity::APP_ID, 'id' => $id, 'refusals' => $this->lastRefusals]
 		);
 
 		return false;
@@ -442,7 +442,7 @@ class WorkflowLifecycleGuard {
 		if ($this->statusOf(row: $current) !== self::STATUS_PUBLISHED) {
 			$this->logger->warning(
 				'Dossiq: deprecate() — definition is not published',
-				['app' => Application::APP_ID, 'id' => $id]
+				['app' => AppIdentity::APP_ID, 'id' => $id]
 			);
 			return false;
 		}
@@ -453,7 +453,7 @@ class WorkflowLifecycleGuard {
 		) {
 			$this->logger->warning(
 				'Dossiq: deprecate() — last published definition with open cases',
-				['app' => Application::APP_ID, 'id' => $id, 'caseType' => $caseTypeId]
+				['app' => AppIdentity::APP_ID, 'id' => $id, 'caseType' => $caseTypeId]
 			);
 			return false;
 		}

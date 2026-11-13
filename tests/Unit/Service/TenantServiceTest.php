@@ -28,6 +28,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Service\TenantService
  * @uses \OCA\Dossiq\Service\TenantOrganisationResolver
+ * @uses \OCA\Dossiq\Service\OrganisationLookup
  */
 class TenantServiceTest extends TestCase {
 	use MakesTenantAnchors;

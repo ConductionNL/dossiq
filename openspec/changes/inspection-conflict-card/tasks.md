@@ -21,9 +21,9 @@
 ### Task 4: Resolve endpoint (SIG)
 - **spec_ref**: `openspec/changes/inspection-conflict-card/specs/mobiel-inspectie-offline/spec.md#requirement-resolving-a-conflict-record-writes-the-chosen-value-and-marks-the-record-resolved`
 - **files**: `appinfo/routes.php`, `lib/Controller/ConflictRecordController.php`, `lib/Service/...`, `lib/Capabilities.php`, `lib/AppInfo/Application.php`
-- [ ] Route, controller and service per the contract in `design.md`, access checked before any write
-- [ ] Capability `conflictResolution`
-- [ ] PHPUnit: refused resolution, already resolved, office changed again, no update right, both choices
+- [x] Route, controller and service per the contract in `design.md`, access checked before any write
+- [x] Capability `conflictResolution`
+- [x] PHPUnit: refused resolution, already resolved, office changed again, no update right, both choices
 
 ### Task 5: File conflicts from the device (after Task 4)
 - **files**: `src/main.js`, nextcloud-vue `src/integrations/offline/offlineDb.js`

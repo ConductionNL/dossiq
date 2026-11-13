@@ -35,6 +35,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Kcc\CitizenLookupRecorder
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class CitizenLookupRecorderTest extends TestCase {
 

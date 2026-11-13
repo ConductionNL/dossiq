@@ -124,6 +124,7 @@ class FanOutCaseStore {
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Routing\RoutingNote
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Intake\FanOutRun
  */
 class IntakeFanOutTest extends TestCase {
 

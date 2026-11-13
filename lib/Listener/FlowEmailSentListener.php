@@ -37,7 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Support\CaseObjectReference;
 use OCA\OpenRegister\Event\FlowEmailSentEvent;
@@ -104,7 +104,7 @@ class FlowEmailSentListener implements IEventListener {
 		try {
 			$this->emails->recordSentEmail(
 				caseId: $caseId,
-				fromAddress: $this->appConfig->getValueString(Application::APP_ID, 'email_from_address', ''),
+				fromAddress: $this->appConfig->getValueString(AppIdentity::APP_ID, 'email_from_address', ''),
 				to: $this->recipientAddress(event: $event),
 				subject: $event->getSubject(),
 				body: $event->getBody(),

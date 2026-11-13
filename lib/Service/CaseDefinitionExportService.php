@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use DateTimeInterface;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
@@ -321,13 +321,13 @@ class CaseDefinitionExportService {
 	 */
 	private function bumpExportVersion(string $caseTypeId): array {
 		$previousVersion = $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'export_version_' . $caseTypeId,
 			'0.0'
 		);
 		$newVersion = $this->incrementVersion(version: $previousVersion);
 		$this->appConfig->setValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'export_version_' . $caseTypeId,
 			$newVersion
 		);
@@ -346,7 +346,7 @@ class CaseDefinitionExportService {
 	 */
 	private function sourceEnvironment(): string {
 		return $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'environment_name',
 			'unknown'
 		);

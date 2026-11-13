@@ -45,7 +45,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Queue\QueueOldestNote;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -276,7 +276,7 @@ class KpiAggregationService {
 	 * @return array<string, string> The titles; empty when the case type schema is not configured.
 	 */
 	private function caseTypeTitles(array $ids): array {
-		$schema = $this->appConfig->getValueString(Application::APP_ID, 'case_type_schema', '');
+		$schema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_type_schema', '');
 		if ($schema === '') {
 			return [];
 		}
@@ -654,8 +654,8 @@ class KpiAggregationService {
 	 */
 	private function ids(): ?array {
 		$ids = [
-			'register' => $this->appConfig->getValueString(Application::APP_ID, 'register', ''),
-			'case' => $this->appConfig->getValueString(Application::APP_ID, 'case_schema', ''),
+			'register' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', ''),
+			'case' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_schema', ''),
 		];
 
 		if (in_array('', $ids, true) === true) {

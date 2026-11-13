@@ -41,7 +41,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Actions\ActionResult;
 use OCA\Dossiq\Service\Flow\UnmappableStep;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
@@ -267,7 +267,7 @@ class CaseDocumentGenerationService {
 				],
 				'metadata' => $run->metadata,
 			],
-			requestingApp: Application::APP_ID
+			requestingApp: AppIdentity::APP_ID
 		);
 	}//end generationRequest()
 

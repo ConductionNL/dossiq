@@ -40,6 +40,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\DocumentTemplating
  * @uses \OCA\Dossiq\Service\Actions\ActionResult
  * @uses \OCA\Dossiq\Service\Flow\RetiredTemplateSyntax
+ * @uses \OCA\Dossiq\Service\GeneratedDocumentRun
  */
 class CaseDocumentGenerationServiceTest extends TestCase {
 

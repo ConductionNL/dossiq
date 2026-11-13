@@ -29,8 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Controller\Support\JsonRequestBody;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\AdviceService;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
@@ -210,7 +210,7 @@ class AdviceController extends Controller {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Failed to create advice request for case ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['error' => 'Could not create advice request: ' . $e->getMessage()],

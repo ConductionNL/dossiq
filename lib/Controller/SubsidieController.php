@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Subsidie\BeschikkingService;
 use OCA\Dossiq\Service\Subsidie\SubsidieService;
 use OCA\Dossiq\Service\Subsidie\TussenrapportageService;
@@ -67,7 +67,7 @@ class SubsidieController extends Controller {
 		private readonly VaststellingService $determinationService,
 		private readonly IUserSession $userSession,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

@@ -40,6 +40,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\ContractDecisionDelegationService
  * @covers \OCA\Dossiq\Service\BezwaarDecisionDelegationService
  * @covers \OCA\Dossiq\Service\AdviceDelegationService
+ * @uses \OCA\Dossiq\Service\DelegatedDecisionRequest
  */
 class RemainingDecisionDelegationTest extends TestCase {
 	/**

@@ -2114,6 +2114,9 @@
 					"message-applicant": {
 						"group": "Case"
 					},
+					"request-information": {
+						"group": "Case"
+					},
 					"link-object": {
 						"group": "Case"
 					},
@@ -2631,7 +2634,8 @@
 									"overflow": true,
 									"widgetIds": [
 										"case-payment-requests",
-										"case-contract"
+										"case-contract",
+										"case-notices-of-default"
 									],
 									"_note": "The fees and the contract shillinq renders for this case, as cards of their own tab. They stood as grid cells under the tab card, outside every tab, so each tab ended in two untitled blocks; the boards draw neither there, and the Linked side card already names both."
 								},
@@ -6261,6 +6265,109 @@
 						}
 					},
 					{
+						"id": "case-notices-of-default",
+						"type": "object-table",
+						"title": "Notices of default",
+						"subtitle": "Awb 4:17 and 4:18",
+						"_note": "notice-of-default-from-the-case task 3: the notices of default on THIS case, read with the case's own access through GET /api/cases/{caseId}/notices-of-default (NoticeOfDefaultRows::forCase, the same rows as the DqTermijnen card, so the two never disagree). A definitive amount is prepared for payout from its row through the same prepareNoticePayout handler. Shown only where the case type says a late decision costs a penalty, as the Register notice of default header action is.",
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/case-types/@object.caseType/terms",
+							"field": "penaltyApplies",
+							"op": "eq",
+							"value": true
+						},
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/notices-of-default",
+								"responsePath": "notices"
+							},
+							"limit": 20,
+							"columns": [
+								{
+									"key": "receiptDate",
+									"label": "Notice of default",
+									"formatter": "receivedOn"
+								},
+								{
+									"key": "validityStatus",
+									"label": "Assessment",
+									"widget": "badge",
+									"enum": [
+										"unknown",
+										"valid",
+										"premaat",
+										"ongeldig"
+									],
+									"enumLabels": {
+										"unknown": "Not assessed yet",
+										"valid": "Valid",
+										"premaat": "Too early: the term is still running",
+										"ongeldig": "Invalid"
+									},
+									"widgetProps": {
+										"colorMap": {
+											"valid": "success",
+											"premaat": "warning",
+											"ongeldig": "error"
+										}
+									}
+								},
+								{
+									"key": "penaltyState",
+									"label": "Penalty payment",
+									"formatter": "penaltyLine"
+								},
+								{
+									"key": "financeState",
+									"label": "Finances",
+									"widget": "badge",
+									"enum": [
+										"payout-due",
+										"prepared",
+										"signal-sent",
+										"paid",
+										"rejected",
+										"on-hold",
+										"amount-open"
+									],
+									"enumLabels": {
+										"payout-due": "Ready for payout",
+										"prepared": "Payout prepared",
+										"signal-sent": "Payment signal sent",
+										"paid": "Paid",
+										"rejected": "Payout rejected",
+										"on-hold": "On hold for an objection",
+										"amount-open": "Amount not fixed yet"
+									},
+									"widgetProps": {
+										"colorMap": {
+											"payout-due": "warning",
+											"signal-sent": "teal",
+											"paid": "success",
+											"rejected": "error"
+										}
+									},
+									"emptyLabel": "Not applicable"
+								}
+							],
+							"actions": [
+								{
+									"id": "payout-prepare",
+									"type": "handler",
+									"handler": "prepareNoticePayout",
+									"label": "Prepare payout",
+									"icon": "Cash",
+									"visibleWhen": {
+										"field": "financeState",
+										"op": "eq",
+										"value": "payout-due"
+									}
+								}
+							],
+							"emptyText": "No notice of default has been received on this case"
+						}
+					},
+					{
 							"id": "case-advice-requests",
 							"type": "record-list",
 							"title": "Advice on the case",
@@ -6624,6 +6731,7 @@
 					"case-version-move",
 					"cross-domain-lookup",
 					"message-applicant",
+					"request-information",
 					"remedy-lodge",
 					"start-enforcement",
 					"advice-request",
@@ -8829,6 +8937,7 @@
 									"id": "rules",
 									"label": "Rules",
 									"widgetIds": [
+										"case-type-rule-rows",
 										"case-type-rules"
 									],
 									"countField": "rules"
@@ -9822,6 +9931,43 @@
 							"footnote": "Anyone who opted out of messages only receives what the law requires. Every e-mail carries an unsubscribe link.",
 							"footnoteVariant": "info",
 							"emptyText": "This case type sends no messages yet"
+						}
+					},
+					{
+						"id": "case-type-rule-rows",
+						"type": "record-list",
+						"title": "Rules of this case type",
+						"subtitle": "What happens when a case of this type meets a condition, in order",
+						"_note": "case-type-conditional-rules Task 3, board DqZaaktypeRegels: the case type's own rules (caseType.rules) as 'If ... / then ...' rows with an On or Off pill, written by GET /api/case-types/{id}/rules because a rule is stored as kinds and operands and a status as a uuid. Above the OpenRegister rules of the case schema (case-type-rules). Adding and editing a rule through a form is not built yet.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case-types/@objectId/rules",
+								"responsePath": "rules"
+							},
+							"presentation": "rows",
+							"limit": 100,
+							"title": [
+								"{title}"
+							],
+							"meta": "{moment}",
+							"text": "{line}",
+							"pill": {
+								"cases": [
+									{
+										"when": {
+											"field": "enabled",
+											"op": "eq",
+											"value": false
+										},
+										"label": "Off",
+										"variant": "default"
+									}
+								],
+								"label": "On",
+								"variant": "success"
+							},
+							"emptyText": "This case type has no rules yet",
+							"errorText": "The rules of this case type could not be read"
 						}
 					},
 					{

@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\Registry\RequesterRegistrySubscription;
+use OCA\Dossiq\Service\Support\ReferenceId;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -126,14 +127,6 @@ class RequesterRegistrySubscriptionListener implements IEventListener {
 	 * @return string The uuid, '' when none.
 	 */
 	private static function reference(mixed $value): string {
-		if (is_array($value) === true) {
-			$value = ($value['id'] ?? ($value['uuid'] ?? ''));
-		}
-
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
+		return ReferenceId::of(value: $value);
 	}//end reference()
 }//end class

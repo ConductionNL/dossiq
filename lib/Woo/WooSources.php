@@ -33,7 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
@@ -187,7 +187,7 @@ class WooSources {
 
 		$result = $this->ask(
 			relative: self::SEARCH_EVENT,
-			arguments: [Application::APP_ID, $this->connectionKey(), $userId, $terms, $from, $to, [], self::ROW_LIMIT],
+			arguments: [AppIdentity::APP_ID, $this->connectionKey(), $userId, $terms, $from, $to, [], self::ROW_LIMIT],
 		);
 		if ($result === null) {
 			return ['rows' => [], 'remaining' => 0, 'notices' => [], 'refusal' => 'integriq-did-not-answer'];
@@ -216,7 +216,7 @@ class WooSources {
 			return null;
 		}
 
-		$result = $this->ask(relative: self::FETCH_EVENT, arguments: [Application::APP_ID, $this->connectionKey(), $userId, $handle]);
+		$result = $this->ask(relative: self::FETCH_EVENT, arguments: [AppIdentity::APP_ID, $this->connectionKey(), $userId, $handle]);
 		if ($result === null || is_string($result['content'] ?? null) === false || trim((string)($result['fileName'] ?? '')) === '') {
 			return null;
 		}
@@ -251,7 +251,7 @@ class WooSources {
 	 * @return string The key.
 	 */
 	private function connectionKey(): string {
-		return $this->appConfig->getValueString(Application::APP_ID, self::CONNECTION_KEY, '');
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, self::CONNECTION_KEY, '');
 	}//end connectionKey()
 
 	/**

@@ -32,7 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Dso;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -117,7 +117,7 @@ class DsoDeadlineActs {
 
 		try {
 			$notification = $this->notifications->createNotification();
-			$notification->setApp(app: Application::APP_ID);
+			$notification->setApp(app: AppIdentity::APP_ID);
 			$notification->setUser(user: $assignee);
 			$notification->setSubject(subject: $subject, parameters: ['caseId' => $caseId]);
 			$notification->setObject(type: 'case', id: $caseId);

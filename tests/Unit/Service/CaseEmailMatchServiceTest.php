@@ -68,6 +68,8 @@ use Stringable;
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeRelink
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeRule
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\CaseEmailMatchRun
+ * @uses \OCA\Dossiq\Service\Support\ReferencedUuid
  */
 class CaseEmailMatchServiceTest extends TestCase {
 

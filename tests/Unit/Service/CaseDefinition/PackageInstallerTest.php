@@ -20,6 +20,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\CaseDefinition;
 
 use OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher;
+use OCA\Dossiq\Service\CaseDefinition\InstalledPackageExamples;
 use OCA\Dossiq\Service\CaseDefinition\PackageCapabilities;
 use OCA\Dossiq\Service\CaseDefinition\PackageDirectory;
 use OCA\Dossiq\Service\CaseDefinition\PackageIds;
@@ -328,6 +329,7 @@ final class PackageTestSchemaEntity {
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageSchemaReferences
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageSettingRules
  * @covers \OCA\Dossiq\Service\CaseDefinition\AdoptedCaseTypeFill
+ * @covers \OCA\Dossiq\Service\CaseDefinition\InstalledPackageExamples
  * @uses \OCA\Dossiq\Support\FleetAppId
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageValidator
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageWriter
@@ -335,6 +337,7 @@ final class PackageTestSchemaEntity {
  * @uses \OCA\Dossiq\Service\CaseDefinition\RowTarget
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageSeedRules
  * @uses \OCA\Dossiq\Service\CaseDefinition\WritesPackageRows
+ * @uses \OCA\Dossiq\Service\CaseDefinition\StampsPackageRows
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageIds
  * @uses \OCA\Dossiq\Service\Starter\ShippedConfigurationService
  * @uses \OCA\Dossiq\Service\Starter\ShippedRowAdopter
@@ -348,6 +351,7 @@ final class PackageTestSchemaEntity {
  * @uses \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageInstallRun
+ * @uses \OCA\Dossiq\Service\CaseDefinition\RowMatchRun
  */
 class PackageInstallerTest extends TestCase {
 
@@ -419,15 +423,17 @@ class PackageInstallerTest extends TestCase {
 	}//end tearDown()
 
 	/**
-	 * The installer over the given package root, the shared register and a real ledger.
+	 * The collaborators an installer or example writer shares: the package
+	 * root, the app manager and config, a real ledger, the writer and the
+	 * schema references, all over the shared register.
 	 *
 	 * @param string             $root          The package root.
 	 * @param array<int, string> $unconfigured  Settings keys that resolve to nothing.
 	 * @param array<int, string> $installedApps Apps IAppManager reports installed.
 	 *
-	 * @return PackageInstaller The installer.
+	 * @return array<string, mixed> The collaborators by name.
 	 */
-	private function installer(string $root = self::FIXTURES, array $unconfigured = [], array $installedApps = []): PackageInstaller {
+	private function collaborators(string $root, array $unconfigured, array $installedApps): array {
 		$settings = $this->getMockBuilder(SettingsService::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['getObjectService', 'getConfigValue'])
@@ -472,17 +478,60 @@ class PackageInstallerTest extends TestCase {
 			new NullLogger(),
 		);
 
+		return [
+			'packages' => $packages,
+			'apps' => $apps,
+			'appConfig' => $appConfig,
+			'ledger' => $ledger,
+			'writer' => new PackageWriter(new NullLogger(), $settings, new ExistingRowMatcher(new NullLogger())),
+			'references' => new PackageSchemaReferences($apps, $this->schemas, new NullLogger()),
+		];
+	}//end collaborators()
+
+	/**
+	 * The installer over the given package root, the shared register and a real ledger.
+	 *
+	 * @param string             $root          The package root.
+	 * @param array<int, string> $unconfigured  Settings keys that resolve to nothing.
+	 * @param array<int, string> $installedApps Apps IAppManager reports installed.
+	 *
+	 * @return PackageInstaller The installer.
+	 */
+	private function installer(string $root = self::FIXTURES, array $unconfigured = [], array $installedApps = []): PackageInstaller {
+		$c = $this->collaborators(root: $root, unconfigured: $unconfigured, installedApps: $installedApps);
+
 		return new PackageInstaller(
-			$packages,
+			$c['packages'],
 			new PackageValidator(new NullLogger(), new PackageIds()),
-			new PackageCapabilities($apps),
-			new PackageWriter(new NullLogger(), $settings, new ExistingRowMatcher(new NullLogger())),
-			$ledger,
-			$appConfig,
+			new PackageCapabilities($c['apps']),
+			$c['writer'],
+			$c['ledger'],
+			$c['appConfig'],
 			new NullLogger(),
-			new PackageSchemaReferences($apps, $this->schemas, new NullLogger()),
+			$c['references'],
 		);
 	}//end installer()
+
+	/**
+	 * The example writer over the given package root, the shared register and a real ledger.
+	 *
+	 * @param string $root The package root.
+	 *
+	 * @return InstalledPackageExamples The writer.
+	 */
+	private function examples(string $root = self::FIXTURES): InstalledPackageExamples {
+		$c = $this->collaborators(root: $root, unconfigured: [], installedApps: []);
+
+		return new InstalledPackageExamples(
+			$c['packages'],
+			new PackageValidator(new NullLogger(), new PackageIds()),
+			$c['writer'],
+			$c['ledger'],
+			$c['appConfig'],
+			new NullLogger(),
+			$c['references'],
+		);
+	}//end examples()
 
 	/**
 	 * A copy of the fixture package in a temporary root, changed by a callback.
@@ -1953,4 +2002,119 @@ class PackageInstallerTest extends TestCase {
 
 		$this->fail(message: "No ledger row for {$targetObject}");
 	}//end stampLedger()
+
+	/**
+	 * Example data chosen after a package was installed: the package's example
+	 * rows are written then, dated from today and recorded under the package.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testTheExamplesOfAnInstalledPackageAreWrittenOnceExampleDataIsChosen(): void {
+		$root = $this->withAnExample();
+		$this->installer(root: $root)->install(id: 'fixture-case-type');
+		$this->assertSame(expected: [], actual: $this->register->all('case'));
+
+		$this->appConfigValues[DemoDataService::DECIDED_KEY] = DemoDataService::DECIDED_INSTALLED;
+		$outcomes = $this->examples(root: $root)->forInstalled();
+
+		$this->assertCount(expectedCount: 1, haystack: $outcomes);
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcomes[0]['status'], message: $outcomes[0]['message']);
+		$this->assertSame(expected: 'fixture-case-type', actual: $outcomes[0]['package']);
+		$this->assertSame(expected: 1, actual: $outcomes[0]['written']);
+		$case = $this->register->row('case', self::EXAMPLE_CASE);
+		$this->assertSame(expected: (new \DateTimeImmutable('today'))->modify('-3 days')->format('Y-m-d'), actual: $case['startDate']);
+		$this->assertSame(expected: 'fixture-case-type', actual: $this->ledgerRowOf(targetObject: self::EXAMPLE_CASE)['set']);
+		$this->assertCount(expectedCount: 7, haystack: $this->rowLedger());
+	}//end testTheExamplesOfAnInstalledPackageAreWrittenOnceExampleDataIsChosen()
+
+	/**
+	 * Writing the examples a second time adds no second example case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testWritingTheExamplesAgainAddsNothing(): void {
+		$root = $this->withAnExample();
+		$this->installer(root: $root)->install(id: 'fixture-case-type');
+		$this->appConfigValues[DemoDataService::DECIDED_KEY] = DemoDataService::DECIDED_INSTALLED;
+		$this->examples(root: $root)->forPackage(id: 'fixture-case-type');
+
+		$outcome = $this->examples(root: $root)->forPackage(id: 'fixture-case-type');
+
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcome['status'], message: $outcome['message']);
+		$this->assertSame(expected: 0, actual: $outcome['written']);
+		$this->assertCount(expectedCount: 1, haystack: $this->register->all('case'));
+		$this->assertCount(expectedCount: 7, haystack: $this->rowLedger());
+	}//end testWritingTheExamplesAgainAddsNothing()
+
+	/**
+	 * Without the opt-in an installed package's examples stay unwritten.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testWithoutTheOptInNoExampleRowIsWrittenLater(): void {
+		$root = $this->withAnExample();
+		$this->installer(root: $root)->install(id: 'fixture-case-type');
+		$this->appConfigValues[DemoDataService::DECIDED_KEY] = 'skipped';
+
+		$outcome = $this->examples(root: $root)->forPackage(id: 'fixture-case-type');
+
+		$this->assertSame(expected: PackageInstaller::CURRENT, actual: $outcome['status']);
+		$this->assertSame(expected: "Package 'fixture-case-type' has no example rows to write.", actual: $outcome['message']);
+		$this->assertSame(expected: [], actual: $this->register->all('case'));
+	}//end testWithoutTheOptInNoExampleRowIsWrittenLater()
+
+	/**
+	 * A package that is not installed here gets no example rows, and nothing
+	 * of it is written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testAPackageThatIsNotInstalledGetsNoExamples(): void {
+		$this->appConfigValues[DemoDataService::DECIDED_KEY] = DemoDataService::DECIDED_INSTALLED;
+
+		$this->assertSame(expected: [], actual: $this->examples(root: $this->withAnExample())->forInstalled());
+		$this->assertSame(expected: [], actual: $this->register->all('case'));
+		$this->assertSame(expected: [], actual: $this->register->all('caseType'));
+	}//end testAPackageThatIsNotInstalledGetsNoExamples()
+
+	/**
+	 * A package installed here as other content than it ships now is left to
+	 * its next install, which writes its examples with everything else.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testAPackageInstalledAsOtherContentIsLeftToItsNextInstall(): void {
+		$this->installer()->install(id: 'fixture-case-type');
+		$this->appConfigValues[DemoDataService::DECIDED_KEY] = DemoDataService::DECIDED_INSTALLED;
+
+		$outcome = $this->examples(root: $this->withAnExample())->forPackage(id: 'fixture-case-type');
+
+		$this->assertSame(expected: PackageInstaller::REFUSED, actual: $outcome['status']);
+		$this->assertStringContainsString(needle: 'its next install writes its examples', haystack: $outcome['message']);
+		$this->assertSame(expected: [], actual: $this->register->all('case'));
+	}//end testAPackageInstalledAsOtherContentIsLeftToItsNextInstall()
+
+	/**
+	 * An id no package answers to is refused by name.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testExamplesOfAnUnknownPackageAreRefused(): void {
+		$outcome = $this->examples()->forPackage(id: 'no-such-package');
+
+		$this->assertSame(expected: PackageInstaller::REFUSED, actual: $outcome['status']);
+		$this->assertSame(expected: "No package named 'no-such-package' is shipped.", actual: $outcome['message']);
+	}//end testExamplesOfAnUnknownPackageAreRefused()
 }//end class

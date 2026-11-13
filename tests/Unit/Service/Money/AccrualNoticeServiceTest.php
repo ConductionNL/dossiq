@@ -52,6 +52,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  * @uses \OCA\Dossiq\Service\TermKind
  * @uses \OCA\Dossiq\Service\Term\ThresholdShares
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaWriter
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndAsk
  */
 class AccrualNoticeServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -43,6 +43,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Listener\BeschikkingImmutabilityListener
  *
  * @uses \OCA\Dossiq\Service\StateMachineService
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
  */
 class BeschikkingImmutabilityListenerTest extends TestCase {
 	/**

@@ -44,7 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -146,7 +146,7 @@ class DeclareTimelineKinds implements IRepairStep {
 				$this->logger->warning(
 					'Dossiq timeline: kind {kind} was not declared, {reason}',
 					[
-						'app' => Application::APP_ID,
+						'app' => AppIdentity::APP_ID,
 						'kind' => $declaration['slug'],
 						'reason' => $e->getMessage(),
 					],
@@ -177,7 +177,7 @@ class DeclareTimelineKinds implements IRepairStep {
 				$this->logger->warning(
 					'Dossiq timeline: text block {block} was not seeded, {reason}',
 					[
-						'app' => Application::APP_ID,
+						'app' => AppIdentity::APP_ID,
 						'block' => $block['slug'],
 						'reason' => $e->getMessage(),
 					],

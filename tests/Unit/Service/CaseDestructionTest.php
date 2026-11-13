@@ -45,6 +45,7 @@ use RuntimeException;
  * The destroying role, the two clocks and the open window, each a refusal.
  *
  * @covers \OCA\Dossiq\Service\Recycle\CaseDestructionService
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class CaseDestructionTest extends TestCase {
 

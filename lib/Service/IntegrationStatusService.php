@@ -30,8 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice;
@@ -126,7 +126,7 @@ class IntegrationStatusService {
 		'zgw' => ['register', 'case_schema'],
 		'kcc' => ['identification_method'],
 		'dmn' => ['decision_table_schema'],
-		'financial' => [MoneyConfigKeys::PAYOUT_CALLBACK_SECRET],
+		'financial' => [MoneyConfigKeys::PAYOUT_CALLBACK_SECRET_KEY],
 		'kadaster' => ['integration.brk.mode'],
 		'berichtenbox' => ['digital_post_source', 'berichtenbox_adapter'],
 		'templates' => ['beschikking_template_adapter'],
@@ -167,7 +167,7 @@ class IntegrationStatusService {
 			return null;
 		}
 
-		$named = trim($this->appConfig->getValueString(Application::APP_ID, SubstitutableAdapterRegistrar::TEMPLATE_CONFIG_KEY, ''));
+		$named = trim($this->appConfig->getValueString(AppIdentity::APP_ID, SubstitutableAdapterRegistrar::TEMPLATE_CONFIG_KEY, ''));
 		$adapter = $this->templateChoice->adapterFor(named: $named);
 
 		if ($adapter === MockTemplateEngineAdapter::class) {
@@ -243,7 +243,7 @@ class IntegrationStatusService {
 		return $this->send(
 			key: $key,
 			build: static fn (): object => new $eventClass(
-				app: Application::APP_ID,
+				app: AppIdentity::APP_ID,
 				key: $key,
 				status: $status,
 				message: $message,
@@ -279,7 +279,7 @@ class IntegrationStatusService {
 			$sent = $this->send(
 				key: $key,
 				build: static fn (): object => new $eventClass(
-					app: Application::APP_ID,
+					app: AppIdentity::APP_ID,
 					key: $key,
 				)
 			);

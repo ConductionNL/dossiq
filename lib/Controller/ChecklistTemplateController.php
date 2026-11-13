@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Checklist\ChecklistTemplateStore;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
@@ -105,7 +105,7 @@ class ChecklistTemplateController extends Controller {
 			// server fault, and its message already names the property.
 			$this->logger->info(
 				'Rejected checklist template create: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['message' => $e->getMessage()],
@@ -114,7 +114,7 @@ class ChecklistTemplateController extends Controller {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Failed to create checklist template: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['message' => 'Failed to create checklist: ' . $e->getMessage()],
@@ -148,7 +148,7 @@ class ChecklistTemplateController extends Controller {
 			// server fault, and its message already names the property.
 			$this->logger->info(
 				'Rejected checklist template update for ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['message' => $e->getMessage()],
@@ -157,7 +157,7 @@ class ChecklistTemplateController extends Controller {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Failed to update checklist template ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['message' => 'Failed to update checklist: ' . $e->getMessage()],

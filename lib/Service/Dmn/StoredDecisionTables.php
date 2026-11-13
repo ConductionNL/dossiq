@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Dmn;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Container\ContainerInterface;
@@ -216,7 +216,7 @@ class StoredDecisionTables {
 			'inputs' => array_values((array)($table['inputs'] ?? [])),
 			'outputs' => array_values((array)($table['outputs'] ?? [])),
 			'rules' => array_values((array)($table['rules'] ?? [])),
-			'owner' => Application::APP_ID,
+			'owner' => AppIdentity::APP_ID,
 		];
 		if ($row['key'] === '' || $row['name'] === '') {
 			throw new RuntimeException('A decision table needs a key and a name.');

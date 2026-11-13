@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -179,7 +179,7 @@ class BoundFormsCheck {
 	 */
 	private function judged(object $form, array $caseType, array $names): ?array {
 		$fixed = ($form->mapping['fixed'] ?? null);
-		if ($form->app === Application::APP_ID || is_array($fixed) === false) {
+		if ($form->app === AppIdentity::APP_ID || is_array($fixed) === false) {
 			return null;
 		}
 

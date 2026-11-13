@@ -25,9 +25,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Task\OnboardingSteps;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
@@ -65,6 +66,7 @@ class TenantOnboardingService {
 	 * @param OnboardingSteps $steps The onboarding steps, as engine tasks.
 	 * @param IUserSession $userSession The acting user.
 	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
+	 * @param MandaatCheckService|null $mandates Answers whether the tenant has an active mandate.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
@@ -75,6 +77,7 @@ class TenantOnboardingService {
 		private readonly OnboardingSteps $steps,
 		private readonly IUserSession $userSession,
 		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
+		private readonly ?MandaatCheckService $mandates = null,
 	) {
 	}//end __construct()
 
@@ -126,6 +129,38 @@ class TenantOnboardingService {
 	}//end createOnboarding()
 
 	/**
+	 * The steps with "Mandates set" done once the tenant has an active mandate.
+	 *
+	 * Read when the checklist is shown, so the step follows the mandate
+	 * register without a write on a read. A step already completed or skipped
+	 * keeps its own state, and so does one the register cannot confirm.
+	 *
+	 * @param string                              $tenantId The tenant (organisation) UUID.
+	 * @param array<string, array<string, mixed>> $steps    The steps, keyed by step.
+	 *
+	 * @return array<string, array<string, mixed>> The steps.
+	 *
+	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md#requirement-the-overview-reads-decisions-from-the-mandate-register
+	 */
+	private function withMandatesSet(string $tenantId, array $steps): array {
+		$step = ($steps['mandate_import'] ?? null);
+		if ($step === null || $this->mandates === null) {
+			return $steps;
+		}
+
+		if (in_array((string) ($step['status'] ?? ''), ['completed', 'skipped'], true) === true) {
+			return $steps;
+		}
+
+		if ($this->mandates->hasActiveMandateFor(organisation: $tenantId, date: new DateTimeImmutable()) === false) {
+			return $steps;
+		}
+
+		$steps['mandate_import']['status'] = 'completed';
+		return $steps;
+	}//end withMandatesSet()
+
+	/**
 	 * Get the per-step progress and overall completion fraction.
 	 *
 	 * @param string $tenantId Tenant UUID.
@@ -135,7 +170,12 @@ class TenantOnboardingService {
 	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
 	 */
 	public function getProgress(string $tenantId): array {
-		$steps = array_values($this->stepsCarryingLegacyRows(tenantId: $tenantId, actor: $this->actor()));
+		$steps = array_values(
+			$this->withMandatesSet(
+				tenantId: $tenantId,
+				steps: $this->stepsCarryingLegacyRows(tenantId: $tenantId, actor: $this->actor())
+			)
+		);
 
 		$completed = 0;
 		foreach ($steps as $step) {
@@ -254,7 +294,7 @@ class TenantOnboardingService {
 			$rows = $objectService->findAll(
 				[
 					'filters' => [
-						'register' => Application::REGISTER_SLUG,
+						'register' => AppIdentity::REGISTER_SLUG,
 						'schema' => 'tenantOnboardingTask',
 						'tenantRef' => $tenantId,
 					],
@@ -386,7 +426,7 @@ class TenantOnboardingService {
 		}
 
 		try {
-			$anchor = $objectService->find($tenantId, register: Application::REGISTER_SLUG, schema: 'tenant', _rbac: false, _multitenancy: false);
+			$anchor = $objectService->find($tenantId, register: AppIdentity::REGISTER_SLUG, schema: 'tenant', _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			return 'basic';
 		}
@@ -416,7 +456,7 @@ class TenantOnboardingService {
 				[
 					'filters' => array_merge(
 						[
-							'register' => Application::REGISTER_SLUG,
+							'register' => AppIdentity::REGISTER_SLUG,
 							'schema' => $schema,
 						],
 						$filters

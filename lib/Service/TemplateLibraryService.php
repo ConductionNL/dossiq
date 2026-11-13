@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\TemplateLibrary\TemplateActivation;
 use OCA\Dossiq\Service\TemplateLibrary\TemplateRows;
 use Psr\Log\LoggerInterface;
@@ -94,7 +94,7 @@ class TemplateLibraryService {
 			if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
 				$this->logger->warning(
 					'Invalid template file: ' . basename($file),
-					['app' => Application::APP_ID]
+					['app' => AppIdentity::APP_ID]
 				);
 				continue;
 			}
@@ -260,7 +260,7 @@ class TemplateLibraryService {
 
 		$this->logger->info(
 			'Template activated: ' . $templateId . ' -> caseType ' . $caseTypeId,
-			['app' => Application::APP_ID]
+			['app' => AppIdentity::APP_ID]
 		);
 
 		return $result;
@@ -452,7 +452,7 @@ class TemplateLibraryService {
 			$this->logger->warning(
 				'Template transition names a status the template does not declare, dropped: '
 				. (string)($transition['label'] ?? ''),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}

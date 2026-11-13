@@ -43,6 +43,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Listener\BewijsstukImmutabilityListener
  *
  * @uses \OCA\Dossiq\Service\Subsidie\BewijsstukService
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
  */
 class BewijsstukImmutabilityListenerTest extends TestCase {
 	/**

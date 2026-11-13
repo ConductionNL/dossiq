@@ -223,4 +223,60 @@ class CaseTypeRightsByRoleTest extends TestCase {
 
 		$this->assertSame('Unknown', $rows[0]['decide']);
 	}//end testAnUnreadableRegisterIsUnknown()
+	/**
+	 * A stored matrix that is not a list grants nothing, and so does a row
+	 * that names no role: neither becomes a row of the card.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedMatrixGrantsNothing(): void {
+		$this->assertSame([], $this->serviceOverRow(row: ['id' => 'ct-1', 'rightsMatrix' => 'read everything'])->rowsFor(caseTypeId: 'ct-1'));
+
+		$rows = $this->serviceOverRow(
+			row: ['id' => 'ct-1', 'rightsMatrix' => [
+				'not a row',
+				['department' => 'Vergunningen', 'role' => '', 'actions' => ['read']],
+				['department' => 'Vergunningen', 'role' => ['Intaker'], 'actions' => ['read']],
+				['department' => 'Vergunningen', 'role' => 'Intaker', 'actions' => ['read']],
+			]]
+		)->rowsFor(caseTypeId: 'ct-1');
+
+		$this->assertSame(['Intaker'], array_column($rows, 'role'));
+	}//end testAMalformedMatrixGrantsNothing()
+
+	/**
+	 * A status with no name in any language is named by its id, never by "".
+	 *
+	 * @return void
+	 */
+	public function testAnUnnamedStatusIsNamedByItsId(): void {
+		$rows = $this->serviceOverRow(
+			row: ['id' => 'ct-1', 'rightsMatrix' => [['department' => 'Vergunningen', 'role' => 'Intaker', 'actions' => ['update'], 'statuses' => ['st-9', 'st-1']]]],
+			statuses: [['id' => 'st-1', 'name' => 'Fase 1'], ['@self' => ['id' => 'st-9'], 'name' => '  ']]
+		)->rowsFor(caseTypeId: 'ct-1');
+
+		$this->assertSame('st-9, Fase 1', $rows[0]['handle']);
+	}//end testAnUnnamedStatusIsNamedByItsId()
+
+	/**
+	 * The service over a raw case type row and its statuses, no mandates.
+	 *
+	 * @param array<string, mixed>             $row      The effective case type.
+	 * @param array<int, array<string, mixed>> $statuses The statuses.
+	 *
+	 * @return CaseTypeRightsByRole
+	 */
+	private function serviceOverRow(array $row, array $statuses=[]): CaseTypeRightsByRole {
+		$resolver = $this->createMock(CaseTypeResolver::class);
+		$resolver->method('effectiveCaseType')->willReturn($row);
+		$resolver->method('statusTypesFor')->willReturn($statuses);
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters));
+		$mandateService = $this->createMock(MandaatCheckService::class);
+		$mandateService->method('activeRows')->willReturn([]);
+		$roles = $this->getMockBuilder(OrganisationRoles::class)->disableOriginalConstructor()->onlyMethods(['all'])->getMock();
+		$roles->method('all')->willReturn([]);
+
+		return new CaseTypeRightsByRole(resolver: $resolver, l10n: $l10n, mandates: $mandateService, roles: $roles);
+	}//end serviceOverRow()
 }//end class

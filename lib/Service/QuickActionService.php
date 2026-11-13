@@ -30,8 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
+use OCA\Dossiq\Service\Support\CastArray;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -137,7 +138,7 @@ class QuickActionService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to create case via quick-action: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			throw new RuntimeException('Could not create case');
 		}
@@ -188,7 +189,7 @@ class QuickActionService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to register klacht: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			throw new RuntimeException('Could not register klacht');
 		}
@@ -222,7 +223,7 @@ class QuickActionService {
 		$this->logger->info(
 			'Dossiq: callback scheduled',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'burgerId' => $burgerId,
 				'window' => $window,
 			],
@@ -316,18 +317,6 @@ class QuickActionService {
 	 * @return array<string, mixed> The normalised record.
 	 */
 	private function toArray($result): array {
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		if (is_object($result) === true && method_exists($result, 'jsonSerialize') === true) {
-			return (array)$result->jsonSerialize();
-		}
-
-		if (is_object($result) === true) {
-			return (array)$result;
-		}
-
-		return [];
+		return CastArray::of(value: $result);
 	}//end toArray()
 }//end class

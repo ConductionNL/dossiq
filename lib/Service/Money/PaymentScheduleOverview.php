@@ -27,8 +27,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 
 /**
@@ -209,7 +209,7 @@ class PaymentScheduleOverview {
 		$rows = $objectService->findAll(
 			[
 				'filters' => [
-					'register' => Application::REGISTER_SLUG,
+					'register' => AppIdentity::REGISTER_SLUG,
 					'schema' => PaymentScheduleRaiser::DECISION_SCHEMA,
 					'caseId' => $caseId,
 				],

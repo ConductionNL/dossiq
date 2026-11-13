@@ -54,6 +54,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Review\DocumentRelevance
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class ReviewBatchesTest extends TestCase {
 

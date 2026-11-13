@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\SociaalDomein;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Support\StoredArray;
 
 /**
  * Record a plan review, and answer whether a plan is due for one.
@@ -236,18 +237,7 @@ class CasePlanReview {
 	 * @return array<int, array<string, mixed>> The reviews.
 	 */
 	private function reviewsOf(array $plan): array {
-		$raw = ($plan['reviews'] ?? []);
-		if (is_string($raw) === true && trim($raw) !== '') {
-			$decoded = json_decode($raw, true);
-			$raw = [];
-			if (is_array($decoded) === true) {
-				$raw = $decoded;
-			}
-		}
-
-		if (is_array($raw) === false) {
-			return [];
-		}
+		$raw = StoredArray::from(value: ($plan['reviews'] ?? []));
 
 		return array_values(array_filter($raw, static fn ($row): bool => is_array($row) === true));
 	}//end reviewsOf()
