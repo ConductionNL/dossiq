@@ -1,0 +1,23 @@
+{
+  "_note": "enforcement-intervention-from-the-case 1.1 (row 7.10). A case type opts into the generic advice-from-a-decision-table step on the case by naming one of OpenRegister's stored decision tables here, by id or key. Empty, the default, means the case page offers no advice step. Nothing in it is named after a procedure (decision 182): the enforcement case types point at the LHS intervention table through the vth package. A property only: OpenRegister's importer compares `properties` on content, so the schema version does not have to move, and no version is set here so this fragment cannot lower one another fragment raised.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "adviceDecisionTable": {
+            "type": "string",
+            "maxLength": 255,
+            "default": "",
+            "title": "Advice decision table",
+            "description": "The decision table a handler asks for advice on a case of this type. Leave empty for no advice step.",
+            "x-notes": "Read by the advice step on the case (change enforcement-intervention-from-the-case, REQ-LHS-CASE-01): the action shows only when this is set, and the table it names declares the inputs the dialog asks for."
+          }
+        }
+      }
+    }
+  }
+}
