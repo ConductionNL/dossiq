@@ -119,6 +119,60 @@ export function textsAndAccessFields(t) {
 }
 
 /**
+ * The administrator's own text for each notification dossiq sends
+ * (REQ-CRS-13). One field per kind, keyed `notification_text_<subject>` as
+ * `ConfigKeys::NOTIFICATION_TEXT_KEYS` lists them; the Notifier reads the key
+ * on every notification, so a saved text reaches the next one of that kind.
+ * An empty field keeps the shipped, translated wording.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/admin-settings/spec.md#requirement-an-administrator-edits-the-text-of-each-notification-req-crs-13
+ */
+export function notificationTextFields(t) {
+	const kinds = [
+		['note_mention', t('dossiq', 'You were mentioned in a note')],
+		['case_status_changed', t('dossiq', 'A case you handle changed status')],
+		['case_role_notified', t('dossiq', 'A case you handle needs your attention')],
+		['milestone_bottleneck', t('dossiq', 'A case is stuck on a milestone')],
+		['cases_reassigned', t('dossiq', 'Cases were transferred to you')],
+		['advice_requested', t('dossiq', 'Advice requested')],
+		['advies_ontvangen', t('dossiq', 'Advice received')],
+		['advies_herinnering', t('dossiq', 'Advice reminder')],
+		['woo_deadline_warning', t('dossiq', 'Woo deadline nearing')],
+		['woo_deadline_overdue', t('dossiq', 'Woo deadline passed')],
+		['dso_deadline_warning', t('dossiq', 'Permit deadline nearing')],
+		['dso_deadline_critical', t('dossiq', 'Permit deadline critical')],
+		['dso_deadline_overdue', t('dossiq', 'Permit deadline passed')],
+		['term_nearing', t('dossiq', 'Term nearing')],
+		['term_exceeded', t('dossiq', 'Term exceeded')],
+		['applicant_responded', t('dossiq', 'The applicant responded')],
+		['applicant_withdrew', t('dossiq', 'The applicant withdrew')],
+		['stuf_circuit_open', t('dossiq', 'StUF connection paused')],
+		['stuf_timeout', t('dossiq', 'StUF request timed out')],
+		['stuf_permanent_error', t('dossiq', 'StUF request refused')],
+		['background_service_account_missing', t('dossiq', 'Background account missing')],
+		['tenant_quota_soft_limit', t('dossiq', 'Quota nearly reached')],
+	]
+	return [
+		{
+			key: 'notificationTextsNote',
+			label: t('dossiq', 'Notification texts'),
+			type: 'note',
+			text: t(
+				'dossiq',
+				'The text under the title of each notification. Empty keeps the standard text. {name} is filled with the notification\'s own value of that name.',
+			),
+		},
+		...kinds.map(([subject, label]) => ({
+			key: `notification_text_${subject}`,
+			label,
+			type: 'textarea',
+		})),
+	]
+}
+
+/**
  * The sender of dossiq's messages, the text above Mijn zaken, and where the
  * allowed websites are set instead.
  *
