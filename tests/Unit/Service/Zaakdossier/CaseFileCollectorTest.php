@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\Zaakdossier\CaseFileCollector;
+use OCA\Dossiq\Service\Zaakdossier\CaseMailThreads;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\MailHeaderReader;
@@ -48,6 +49,8 @@ class CaseFileCollectorTest extends TestCase {
 
 	private DocumentProjectionService&MockObject $projection;
 
+	private CaseMailThreads&MockObject $mailThreads;
+
 	/**
 	 * The records saved, in order.
 	 *
@@ -58,6 +61,7 @@ class CaseFileCollectorTest extends TestCase {
 	protected function setUp(): void {
 		$this->store = $this->createMock(DocumentRecordStore::class);
 		$this->projection = $this->createMock(DocumentProjectionService::class);
+		$this->mailThreads = $this->createMock(CaseMailThreads::class);
 		$this->store->method('saveRecord')->willReturnCallback(
 			function (array $record): string {
 				$this->saved[] = $record;
@@ -79,6 +83,7 @@ class CaseFileCollectorTest extends TestCase {
 			store: $this->store,
 			projection: $this->projection,
 			mailHeaders: new MailHeaderReader(container: $container, logger: $this->createMock(LoggerInterface::class)),
+			mailThreads: $this->mailThreads,
 		);
 	}//end collector()
 
@@ -134,4 +139,28 @@ class CaseFileCollectorTest extends TestCase {
 		self::assertSame(['unreadable' => true], $this->saved[0]['provenance']['mail']);
 		self::assertSame(['unreadable' => true], $this->saved[1]['provenance']['mail']);
 	}//end testAMailWhoseHeadersCannotBeReadIsMarked()
+
+	/**
+	 * REQ-WRC-006: a collected mail's provenance carries its conversation; a file that is no mail is never placed in one.
+	 *
+	 * @return void
+	 */
+	public function testAMailIsPlacedInItsConversation(): void {
+		$this->store->method('storeFileOnObject')->willReturn(5);
+		$this->store->method('findRecord')->willReturn(['title' => 'bericht']);
+		$this->projection->method('folderOf')->willReturn(null);
+		$this->mailThreads->expects(self::once())
+			->method('conversationOf')
+			->with(self::CASE_ID, 'antwoord.eml', 'mail bytes')
+			->willReturn(['threadId' => 'mail-1', 'messageId' => 'b@x', 'parentIds' => ['a@x'], 'sentAt' => '2024-03-13T09:00:00+00:00']);
+
+		$this->collector()->collect(caseId: self::CASE_ID, fileName: 'antwoord.eml', content: 'mail bytes', provenance: ['source' => 'files', 'custodian' => 'Wethouder']);
+		$this->collector()->collect(caseId: self::CASE_ID, fileName: 'notulen.pdf', content: 'x', provenance: ['source' => 'files']);
+
+		self::assertSame(
+			['source' => 'files', 'custodian' => 'Wethouder', 'mail' => ['unreadable' => true], 'threadId' => 'mail-1', 'messageId' => 'b@x', 'parentIds' => ['a@x'], 'sentAt' => '2024-03-13T09:00:00+00:00'],
+			$this->saved[0]['provenance']
+		);
+		self::assertSame(['source' => 'files'], $this->saved[1]['provenance']);
+	}//end testAMailIsPlacedInItsConversation()
 }//end class

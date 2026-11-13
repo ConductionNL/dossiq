@@ -3,7 +3,7 @@
   "components": {
     "schemas": {
       "informatieobject": {
-        "version": "1.4.2",
+        "version": "1.4.3",
         "properties": {
           "provenance": {
             "type": "object",
@@ -100,13 +100,40 @@
                     "description": "True when the mail's headers could not be read; a report counts it under unreadable."
                   }
                 }
+              },
+              "threadId": {
+                "type": "string",
+                "title": "Conversation",
+                "maxLength": 64,
+                "description": "The conversation a collected e-mail belongs to. Every message of one reply chain carries the same value, whichever custodian or system it came from; a mail without threading headers has one of its own. Absent on a document that is no mail."
+              },
+              "messageId": {
+                "type": "string",
+                "title": "Message id",
+                "maxLength": 998,
+                "description": "The collected e-mail's own Message-ID, without angle brackets, as the conversation is matched on. Absent on a document that is no mail."
+              },
+              "parentIds": {
+                "type": "array",
+                "title": "Answers",
+                "items": {
+                  "type": "string",
+                  "maxLength": 998
+                },
+                "description": "The message ids the collected e-mail answers or references (In-Reply-To and References), oldest first."
+              },
+              "sentAt": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Sent at",
+                "description": "When the collected e-mail was sent, from its Date header, so a conversation reads in date order."
               }
             }
           }
         }
       },
       "zaakinformatieobject": {
-        "version": "1.2.1",
+        "version": "1.2.2",
         "properties": {
           "provenance": {
             "type": "object",
@@ -155,6 +182,33 @@
                 "title": "Source system",
                 "description": "The system it came from.",
                 "maxLength": 64
+              },
+              "threadId": {
+                "type": "string",
+                "title": "Conversation",
+                "maxLength": 64,
+                "description": "The conversation a collected e-mail belongs to. Every message of one reply chain carries the same value, whichever custodian or system it came from; a mail without threading headers has one of its own. Absent on a document that is no mail."
+              },
+              "messageId": {
+                "type": "string",
+                "title": "Message id",
+                "maxLength": 998,
+                "description": "The collected e-mail's own Message-ID, without angle brackets, as the conversation is matched on. Absent on a document that is no mail."
+              },
+              "parentIds": {
+                "type": "array",
+                "title": "Answers",
+                "items": {
+                  "type": "string",
+                  "maxLength": 998
+                },
+                "description": "The message ids the collected e-mail answers or references (In-Reply-To and References), oldest first."
+              },
+              "sentAt": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Sent at",
+                "description": "When the collected e-mail was sent, from its Date header, so a conversation reads in date order."
               }
             }
           }
