@@ -29,7 +29,7 @@ criteria under a task are plain bullets.
   `layout`.
   - `npm run check:manifest` exits 0
   - `@spec openspec/specs/document-zaakdossier/spec.md`
-- [ ] 2.2 RESCOPED 2026-10-22 to the Files tab (coordinator call). The
+- [x] 2.2 RESCOPED 2026-10-22 to the Files tab (coordinator call). The
   Documents tab this task meant to rebuild was retired on 2026-09-13: the
   case's own folder in the Files tab (`case-files`, nextcloud-vue
   CnFilesBrowser through the `files` leaf) is the one documents surface, and
