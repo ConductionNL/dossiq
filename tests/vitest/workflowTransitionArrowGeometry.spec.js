@@ -13,11 +13,11 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import WorkflowTransitionArrow from '../../src/views/settings/components/WorkflowTransitionArrow.vue'
 
-function arrow (props = {}) {
-  return mount(WorkflowTransitionArrow, {
-	props: { transition: { label: 'Approve' }, fromPos: { x: 0, y: 0 }, toPos: { x: 100, y: 40 }, ...props },
-	attachTo: document.createElementNS('http://www.w3.org/2000/svg', 'svg'),
-})
+function arrow(props = {}) {
+	return mount(WorkflowTransitionArrow, {
+		props: { transition: { label: 'Approve' }, fromPos: { x: 0, y: 0 }, toPos: { x: 100, y: 40 }, ...props },
+		attachTo: document.createElementNS('http://www.w3.org/2000/svg', 'svg'),
+	})
 }
 
 describe('WorkflowTransitionArrow', () => {
