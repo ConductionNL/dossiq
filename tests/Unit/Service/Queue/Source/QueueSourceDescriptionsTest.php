@@ -64,7 +64,10 @@ class QueueSourceDescriptionsTest extends TestCase {
 
 		$this->assertSame(expected: 'Cases assigned to you', actual: $assigned->label());
 		$this->assertSame(expected: 'A case leaves when it is closed or goes to somebody else.', actual: $assigned->closesWhen());
-		$this->assertSame(expected: ['notification:caseAssigned', 'notification:caseHandoffIntake'], actual: $assigned->mechanisms());
+		$this->assertSame(
+			expected: ['notification:caseAssigned', 'notification:caseHandoffIntake', 'notification:termResumedAfterPause'],
+			actual: $assigned->mechanisms()
+		);
 	}//end testTheSourcesDescribeThemselves()
 
 	/**
