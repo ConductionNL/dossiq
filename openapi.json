@@ -208,6 +208,10 @@
             "description": "`GET /api/cases/{caseId}/next-status`: `{name, number}`, `{}` at the last status, 404 for a case the user may not read."
         },
         {
+            "name": "case-notices-of-default",
+            "description": "Answers the notices of default on one case."
+        },
+        {
             "name": "case-reassignment",
             "description": "Controller for coordinator-only bulk case reassignment."
         },
@@ -280,6 +284,10 @@
             "description": "Answers a case type's rights per role."
         },
         {
+            "name": "case-type-rules",
+            "description": "Answers a case type's rules in words."
+        },
+        {
             "name": "case-type-terms",
             "description": "Answers a case type's terms in words."
         },
@@ -318,6 +326,10 @@
         {
             "name": "complaint-patterns",
             "description": "The complaint patterns, behind the reporting audience gate."
+        },
+        {
+            "name": "conflict-record",
+            "description": "The resolve endpoint of conflict records."
         },
         {
             "name": "connection-test",
@@ -4021,6 +4033,51 @@
                     },
                     "404": {
                         "$ref": "#/components/responses/Problem404"
+                    }
+                }
+            }
+        },
+        "/case-types/{id}/rules": {
+            "get": {
+                "operationId": "case-type-rules-index",
+                "summary": "The rules of a case type as rows",
+                "description": "The rules of a case type as rows. Ordinary users read case types on the case page. The case type is first read with the caller's own rights; one the caller may not read answers 404, the same as a missing one. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "case-type-rules"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The case type id.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
                     }
                 }
             }
@@ -8899,6 +8956,60 @@
                 }
             }
         },
+        "/cases/{caseId}/goals/{goalId}/close": {
+            "post": {
+                "operationId": "case-goal-close",
+                "summary": "Close one of the case's goals as met, not met or withdrawn, with what was seen",
+                "description": "Close one of the case's goals as met, not met or withdrawn, with what was seen. The caller must be allowed to update the case, checked before the store is touched; a goal of another case is answered as not found. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "case-goal"
+                ],
+                "parameters": [
+                    {
+                        "name": "caseId",
+                        "in": "path",
+                        "required": true,
+                        "description": "Case UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "goalId",
+                        "in": "path",
+                        "required": true,
+                        "description": "Goal UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Problem500"
+                    }
+                }
+            }
+        },
         "/cases/{caseId}/household-cases": {
             "get": {
                 "operationId": "household-cases-index",
@@ -9576,6 +9687,51 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Problem401"
+                    }
+                }
+            }
+        },
+        "/cases/{caseId}/notices-of-default": {
+            "get": {
+                "operationId": "case-notices-of-default-index",
+                "summary": "The notices of default on a case, newest first",
+                "description": "The notices of default on a case, newest first. The case is first read with the caller's own rights; a case the caller may not read answers 404, the same as a missing one, and its notices are never read. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "case-notices-of-default"
+                ],
+                "parameters": [
+                    {
+                        "name": "caseId",
+                        "in": "path",
+                        "required": true,
+                        "description": "Case UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
                     }
                 }
             }
@@ -14576,6 +14732,48 @@
                                 "schema": {}
                             }
                         }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    }
+                }
+            }
+        },
+        "/conflict-records/{id}/resolve": {
+            "post": {
+                "operationId": "conflict-record-resolve",
+                "summary": "Keep the device's version or the office's",
+                "description": "Keep the device's version or the office's. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "conflict-record"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The conflict record id.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
                     },
                     "401": {
                         "$ref": "#/components/responses/Problem401"
