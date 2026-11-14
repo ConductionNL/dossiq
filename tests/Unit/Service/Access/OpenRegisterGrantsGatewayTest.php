@@ -49,6 +49,8 @@ use RuntimeException;
 /**
  * Drives the gateway over a container we dictate.
  *
+ * @covers \OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway
+ *
  * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
  */
 class OpenRegisterGrantsGatewayTest extends TestCase {

@@ -45,7 +45,7 @@ namespace OCA\Dossiq\Service\Setup;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
@@ -112,7 +112,7 @@ class ExampleDataFragments {
 	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function rawObjects(): array {
-		$files = glob($this->appManager->getAppPath(Application::APP_ID) . self::DIRECTORY . '/*.json');
+		$files = glob($this->appManager->getAppPath(AppIdentity::APP_ID) . self::DIRECTORY . '/*.json');
 		if ($files === false) {
 			return [];
 		}
@@ -219,7 +219,7 @@ class ExampleDataFragments {
 			return '';
 		}
 
-		$register = $this->settingsService->getConfigValue('register', Application::APP_ID);
+		$register = $this->settingsService->getConfigValue('register', AppIdentity::APP_ID);
 
 		try {
 			$row = $this->asSystemWithoutUser(

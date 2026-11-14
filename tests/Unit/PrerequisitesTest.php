@@ -455,4 +455,105 @@ class PrerequisitesTest extends TestCase {
 			$this->assertNotSame($id, $name, sprintf('"%s" reads as a product name, not its id', $id));
 		}
 	}//end testEveryAppRowShowsAProductNameAndKeepsItsLookupId()
+
+	/**
+	 * An app manager that throws reads that app as missing, and the report still completes.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function testAnAppManagerThatThrowsReadsTheAppAsMissing(): void {
+		$appManager = $this->getMockBuilder(IAppManager::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['isInstalled'])
+			->getMockForAbstractClass();
+		$appManager->method('isInstalled')->willReturnCallback(
+			static function (string $appId): bool {
+				if ($appId === 'openregister') {
+					throw new \RuntimeException('broken app directory');
+				}
+
+				return $appId === 'portaliq';
+			}
+		);
+
+		$report = (new Prerequisites())->check($appManager, static fn (): bool => true, 80300, 33);
+
+		$this->assertSame(
+			[['id' => 'openregister', 'name' => 'OpenRegister', 'unlocks' => Prerequisites::APPS_REQUIRED['openregister'], 'present' => false]],
+			$report['apps']['required']
+		);
+		$optional = array_column($report['apps']['optional'], 'present', 'id');
+		$this->assertTrue($optional['portaliq'], 'the other apps are still read');
+		$this->assertFalse($optional['pipelinq']);
+	}//end testAnAppManagerThatThrowsReadsTheAppAsMissing()
+
+	/**
+	 * Without a known Nextcloud major the row has no running version and is not in range.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function testAnUnknownNextcloudVersionIsNotInRange(): void {
+		$this->assertSame(
+			['min' => '32', 'max' => '35', 'running' => '', 'present' => false],
+			(new Prerequisites())->check($this->appManager([]))['nextcloud']
+		);
+		$this->assertSame(
+			['min' => '32', 'max' => '35', 'running' => '32', 'present' => true],
+			(new Prerequisites())->check($this->appManager([]), null, null, 32)['nextcloud'],
+			'the bottom of the range is inside it'
+		);
+	}//end testAnUnknownNextcloudVersionIsNotInRange()
+
+	/**
+	 * The report has the four sections in order, the running PHP and every extension in declared order.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function testTheReportShapeAndTheRunningPhp(): void {
+		$asked = [];
+		$report = (new Prerequisites())->check(
+			$this->appManager(['openregister']),
+			static function (string $name) use (&$asked): int {
+				$asked[] = $name;
+				return ($name === 'json') ? 1 : 0;
+			},
+			80399
+		);
+
+		$this->assertSame(['php', 'nextcloud', 'extensions', 'apps'], array_keys($report));
+		$this->assertSame(['required', 'optional'], array_keys($report['apps']));
+		$this->assertSame(['required' => '8.3', 'running' => PHP_VERSION, 'present' => true], $report['php']);
+		$this->assertSame(['json', 'mbstring', 'zip'], $asked);
+		$this->assertSame(
+			[
+				['name' => 'json', 'why' => Prerequisites::EXTENSIONS['json'], 'present' => true],
+				['name' => 'mbstring', 'why' => Prerequisites::EXTENSIONS['mbstring'], 'present' => false],
+				['name' => 'zip', 'why' => Prerequisites::EXTENSIONS['zip'], 'present' => false],
+			],
+			$report['extensions']
+		);
+		$this->assertSame(array_keys(Prerequisites::APPS_OPTIONAL), array_column($report['apps']['optional'], 'id'));
+	}//end testTheReportShapeAndTheRunningPhp()
+
+	/**
+	 * Without a checker the extensions are read from this PHP, and without a version id from this PHP too.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function testWithoutDoublesThisPhpIsRead(): void {
+		$report = (new Prerequisites())->check($this->appManager([]));
+
+		$this->assertSame(PHP_VERSION_ID >= 80300, $report['php']['present']);
+		foreach ($report['extensions'] as $row) {
+			$this->assertSame(extension_loaded($row['name']), $row['present'], $row['name']);
+		}
+	}//end testWithoutDoublesThisPhpIsRead()
 }//end class

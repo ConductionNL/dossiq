@@ -10,7 +10,7 @@
 
 ## 2. Scoring
 
-- [ ] 2.1 Check whether an OpenRegister stored decision table (decision 186) can hold the three formulas; if yes, seed them as tables; if not, `lib/Service/Scoring/FormulaScorer.php` with `tests/Unit/Service/Scoring/FormulaScorerTest.php`.
+- [x] 2.1 Check whether an OpenRegister stored decision table (decision 186) can hold the three formulas; if yes, seed them as tables; if not, `lib/Service/Scoring/FormulaScorer.php` with `tests/Unit/Service/Scoring/FormulaScorerTest.php`. Checked: OpenRegister's decision tables match unary tests on inputs and return literal outputs, so they cannot compute a price score; FormulaScorer evaluates a stored expression instead.
 
 ## 3. Case page
 

@@ -40,7 +40,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ClassificationSchemesInterface;
 use OCP\IAppConfig;
 
 /**
@@ -50,7 +51,7 @@ use OCP\IAppConfig;
  *
  * @spec openspec/specs/semantic-case-intake/spec.md
  */
-class ClassificationSchemes {
+class ClassificationSchemes implements ClassificationSchemesInterface {
 
 	/**
 	 * The app-config key holding the administered schemes.
@@ -181,7 +182,7 @@ class ClassificationSchemes {
 	 * @return array<string, array<int, string>> Scheme name to allowed values.
 	 */
 	private function administered(): array {
-		$raw = $this->appConfig->getValueString(Application::APP_ID, self::SCHEMES_KEY, '');
+		$raw = $this->appConfig->getValueString(AppIdentity::APP_ID, self::SCHEMES_KEY, '');
 
 		if (trim($raw) === '') {
 			return [];

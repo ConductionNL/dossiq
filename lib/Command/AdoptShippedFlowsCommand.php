@@ -37,7 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\Flow\ShippedFlowAdoption;
+use OCA\Dossiq\Kernel\Contracts\ShippedFlowAdoptionInterface;
 use OCP\IUserManager;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -53,11 +53,11 @@ class AdoptShippedFlowsCommand extends Command {
 	/**
 	 * Wire the command against the adoption service.
 	 *
-	 * @param ShippedFlowAdoption $adoption Reports and performs the adoption.
+	 * @param ShippedFlowAdoptionInterface $adoption Reports and performs the adoption.
 	 * @param IUserManager $userManager Resolves the acting user.
 	 */
 	public function __construct(
-		private readonly ShippedFlowAdoption $adoption,
+		private readonly ShippedFlowAdoptionInterface $adoption,
 		private readonly IUserManager $userManager,
 	) {
 		parent::__construct();

@@ -62,6 +62,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class ResultRowCopiesTest extends TestCase {
 	/**

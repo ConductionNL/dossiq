@@ -78,6 +78,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Subsidie\SubsidieSchemaLookup
  *
  * @spec openspec/specs/subsidieverlening-keten/spec.md
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class SubsidyGuardsAreConsultedTest extends TestCase {
 

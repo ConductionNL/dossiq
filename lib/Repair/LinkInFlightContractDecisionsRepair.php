@@ -31,10 +31,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\ContractDecisionDelegationService;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ContractDecisionDelegationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\JsonEncodedStringPropertiesInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -75,15 +75,15 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param ContractDecisionDelegationService $delegationService Decision delegation service.
-	 * @param SettingsService $settingsService Settings / ObjectService resolver.
-	 * @param JsonEncodedStringProperties $jsonProperties Restores the declared string shape of JSON-encoded properties.
+	 * @param ContractDecisionDelegationServiceInterface $delegationService Decision delegation service.
+	 * @param SettingsServiceInterface $settingsService Settings / ObjectService resolver.
+	 * @param JsonEncodedStringPropertiesInterface $jsonProperties Restores the declared string shape of JSON-encoded properties.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly ContractDecisionDelegationService $delegationService,
-		private readonly SettingsService $settingsService,
-		private readonly JsonEncodedStringProperties $jsonProperties,
+		private readonly ContractDecisionDelegationServiceInterface $delegationService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly JsonEncodedStringPropertiesInterface $jsonProperties,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -167,7 +167,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 			// the associative arrays this loop expects.
 			return $this->searchObjectsAsArrays(
 				objectService: $run->objectService,
-				register: Application::REGISTER_SLUG,
+				register: AppIdentity::REGISTER_SLUG,
 				schema: 'case',
 				filters: $this->caseTypeFilters(caseTypeSlug: $caseTypeSlug),
 			);
@@ -257,7 +257,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 				contractRef: (string)($case['contractRef'] ?? ''),
 				decisionType: $this->mapCaseTypeToDecisionType(caseTypeSlug: $caseTypeSlug),
 				subject: [
-					'subjectRegister' => Application::REGISTER_SLUG,
+					'subjectRegister' => AppIdentity::REGISTER_SLUG,
 					'subjectSchema' => 'case',
 					'subjectId' => $caseUuid,
 					'subjectLabel' => (string)($case['title'] ?? $caseTypeSlug),
@@ -276,7 +276,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 					updates: ['decisionRef' => $newDecisionRef],
 					schemaSlug: 'case',
 				),
-				register: Application::REGISTER_SLUG,
+				register: AppIdentity::REGISTER_SLUG,
 				schema: 'case',
 				uuid: $caseUuid,
 			);
@@ -303,8 +303,8 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	 */
 	private function mapCaseTypeToDecisionType(string $caseTypeSlug): string {
 		return match ($caseTypeSlug) {
-			'leverancier-contractverlenging-verzoek' => ContractDecisionDelegationService::DECISION_TYPE_CONTRACT_RENEWAL,
-			default => ContractDecisionDelegationService::DECISION_TYPE_REPORT_ADOPTION,
+			'leverancier-contractverlenging-verzoek' => ContractDecisionDelegationServiceInterface::DECISION_TYPE_CONTRACT_RENEWAL,
+			default => ContractDecisionDelegationServiceInterface::DECISION_TYPE_REPORT_ADOPTION,
 		};
 	}//end mapCaseTypeToDecisionType()
 }//end class

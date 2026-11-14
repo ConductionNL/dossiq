@@ -57,7 +57,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Pause;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PauseChaseServiceInterface;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\SettingsService;
@@ -78,7 +79,7 @@ use Throwable;
  * schedule and the case timeline. Splitting it would put the count that keeps
  * two triggers apart in one class and the send that increments it in another.
  */
-class PauseChaseService {
+class PauseChaseService implements PauseChaseServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -274,7 +275,7 @@ class PauseChaseService {
 		if ($step->recipient === '') {
 			$this->logger->warning(
 				'Dossiq pause: a reminder was due but the case carries no address to send it to',
-				['app' => Application::APP_ID, 'instance' => $step->instanceId, 'case' => $step->caseId]
+				['app' => AppIdentity::APP_ID, 'instance' => $step->instanceId, 'case' => $step->caseId]
 			);
 			return false;
 		}
@@ -348,7 +349,7 @@ class PauseChaseService {
 			// budget on a letter nobody received.
 			$this->logger->warning(
 				'Dossiq pause: a reminder could not be sent, so nothing was counted',
-				['app' => Application::APP_ID, 'instance' => $step->instanceId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'instance' => $step->instanceId, 'error' => $e->getMessage()]
 			);
 			return false;
 		}//end try
@@ -367,7 +368,7 @@ class PauseChaseService {
 		$this->logger->info(
 			'Dossiq pause: a reminder went out on a suspended term',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'instance' => $step->instanceId,
 				'case' => $step->caseId,
 				'reason' => (string)$step->reason['key'],
@@ -400,7 +401,7 @@ class PauseChaseService {
 		$this->logger->info(
 			'Dossiq pause: the reminders ran out without an answer',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'instance' => $step->instanceId,
 				'case' => $step->caseId,
 				'reason' => (string)$reason['key'],
@@ -514,7 +515,7 @@ class PauseChaseService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq pause: the open request behind a suspended term could not be read',
-				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 			);
 			return '';
 		}
@@ -564,7 +565,7 @@ class PauseChaseService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq pause: the waiting sentence on the case could not be written; the term is correct',
-				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 			);
 		}
 	}//end projectOntoCase()

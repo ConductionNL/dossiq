@@ -50,6 +50,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\OpenWorkloadAgeServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
@@ -59,7 +60,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/termijn-reporting/spec.md
  */
-class OpenWorkloadAgeService {
+class OpenWorkloadAgeService implements OpenWorkloadAgeServiceInterface {
 	use SearchesObjects;
 
 	/**

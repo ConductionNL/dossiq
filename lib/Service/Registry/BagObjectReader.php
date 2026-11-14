@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Registry;
 
+use OCA\Dossiq\Kernel\Contracts\BagObjectReaderInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -41,21 +42,11 @@ use Throwable;
  *
  * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
  */
-class BagObjectReader {
+class BagObjectReader implements BagObjectReaderInterface {
 	/**
 	 * Integriq's BAG object read, below integriq's app namespace.
 	 */
 	public const INTEGRIQ_READER = 'PropertySource\\Provider\\BagObjectReader';
-
-	/**
-	 * Integriq is not installed on this instance.
-	 */
-	public const REASON_NO_INTEGRIQ = 'integriq-not-installed';
-
-	/**
-	 * Integriq is installed, in a version without the BAG object read.
-	 */
-	public const REASON_NO_READER = 'integriq-has-no-bag-read';
 
 	/**
 	 * The read was asked and gave no usable answer.

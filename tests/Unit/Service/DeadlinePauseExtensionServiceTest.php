@@ -56,6 +56,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\TermTimerFields
  * @uses \OCA\Dossiq\Service\Termijn\TermEndAsk
  * @uses \OCA\Dossiq\Service\TimerArmRun
+ * @uses \OCA\Dossiq\Service\ExtensionRun
  */
 class DeadlinePauseExtensionServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

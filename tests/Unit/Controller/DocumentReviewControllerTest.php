@@ -63,6 +63,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses \OCA\Dossiq\Review\CaseAssessmentRows
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class DocumentReviewControllerTest extends TestCase {
 

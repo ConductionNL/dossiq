@@ -52,6 +52,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\Dossiq\Kernel\Contracts\JsonEncodedStringPropertiesInterface;
+
 /**
  * Restores the declared string shape of JSON-encoded properties before a write.
  *
@@ -59,7 +61,7 @@ namespace OCA\Dossiq\Service\Support;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class JsonEncodedStringProperties {
+class JsonEncodedStringProperties implements JsonEncodedStringPropertiesInterface {
 
 	/**
 	 * Every property dossiq's register declares as `type: string` while

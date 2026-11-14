@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Ai\AiAuditService;
+use OCA\Dossiq\Kernel\Contracts\AiAuditServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -98,7 +98,7 @@ class AiAuditExportController extends Controller {
 	 * @param IRequest $request Incoming request
 	 * @param IUserSession $userSession Current user session
 	 * @param IGroupManager $groupManager Group manager (for RBAC check)
-	 * @param AiAuditService $auditService The AI oversight audit service (audit listing)
+	 * @param AiAuditServiceInterface $auditService The AI oversight audit service (audit listing)
 	 * @param LoggerInterface $logger PSR-3 logger
 	 */
 	public function __construct(
@@ -106,7 +106,7 @@ class AiAuditExportController extends Controller {
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
-		private readonly AiAuditService $auditService,
+		private readonly AiAuditServiceInterface $auditService,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);

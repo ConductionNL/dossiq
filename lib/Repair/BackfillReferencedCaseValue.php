@@ -43,8 +43,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -78,11 +78,11 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Names the register and the schemas, and hands out the object service.
+	 * @param SettingsServiceInterface $settingsService Names the register and the schemas, and hands out the object service.
 	 * @param LoggerInterface $logger          Records a row that refused.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -211,7 +211,7 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 		$field = $this->field();
 		$this->logger->warning(
 			'Dossiq: the ' . $field . ' backfill could not read the cases',
-			['app' => Application::APP_ID, 'error' => $error->getMessage()]
+			['app' => AppIdentity::APP_ID, 'error' => $error->getMessage()]
 		);
 		$output->info($field . ' backfill: the cases could not be read, skipped.');
 	}//end reportUnreadableCases()
@@ -391,7 +391,7 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 	private function reportFailedWrite(string $uuid, Throwable $error): void {
 		$this->logger->error(
 			'Dossiq: the ' . $this->field() . ' backfill failed for one case',
-			['app' => Application::APP_ID, 'uuid' => $uuid, 'exception' => $error->getMessage()]
+			['app' => AppIdentity::APP_ID, 'uuid' => $uuid, 'exception' => $error->getMessage()]
 		);
 	}//end reportFailedWrite()
 

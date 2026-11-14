@@ -33,8 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\AdvisoryCommitteeServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\ActsOnStatusEntry;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -65,13 +65,13 @@ class BezwaarAdviceRequestedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param AdvisoryCommitteeService $bacService The BAC service
-	 * @param SettingsService $settingsService Schema slug bridge
+	 * @param AdvisoryCommitteeServiceInterface $bacService The BAC service
+	 * @param SettingsServiceInterface $settingsService Schema slug bridge
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
-		private readonly AdvisoryCommitteeService $bacService,
-		private readonly SettingsService $settingsService,
+		private readonly AdvisoryCommitteeServiceInterface $bacService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

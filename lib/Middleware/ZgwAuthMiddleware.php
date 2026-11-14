@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Middleware;
 
 use OCA\Dossiq\Controller\ZgwController;
-use OCA\Dossiq\Service\ZgwJwtValidator;
+use OCA\Dossiq\Kernel\Contracts\ZgwJwtValidatorInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
@@ -108,9 +108,9 @@ class ZgwAuthMiddleware extends Middleware {
 	/**
 	 * The ZGW JWT validator.
 	 *
-	 * @var ZgwJwtValidator
+	 * @var ZgwJwtValidatorInterface
 	 */
-	private ZgwJwtValidator $jwtValidator;
+	private ZgwJwtValidatorInterface $jwtValidator;
 
 	/**
 	 * The OpenRegister ConsumerMapper (loaded dynamically).
@@ -123,14 +123,14 @@ class ZgwAuthMiddleware extends Middleware {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The incoming request
-	 * @param ZgwJwtValidator $jwtValidator The ZGW JWT validator
+	 * @param ZgwJwtValidatorInterface $jwtValidator The ZGW JWT validator
 	 * @param LoggerInterface $logger The logger
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly IRequest $request,
-		ZgwJwtValidator $jwtValidator,
+		ZgwJwtValidatorInterface $jwtValidator,
 		private readonly LoggerInterface $logger,
 	) {
 		$this->jwtValidator = $jwtValidator;

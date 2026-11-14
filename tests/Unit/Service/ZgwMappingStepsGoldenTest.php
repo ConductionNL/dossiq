@@ -33,6 +33,8 @@ use PHPUnit\Framework\TestCase;
  * Golden tests for ZgwService::applyOutboundMapping() and applyInboundMapping().
  *
  * @covers \OCA\Dossiq\Service\ZgwService
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwInboundMapping
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwOutboundMapping
  */
 class ZgwMappingStepsGoldenTest extends TestCase {
 

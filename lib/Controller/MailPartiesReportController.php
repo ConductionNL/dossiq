@@ -27,9 +27,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Zaakdossier\MailPartiesReport;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\MailPartiesReportInterface;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -52,8 +52,8 @@ class MailPartiesReportController extends Controller {
 	 *
 	 * @param IRequest          $request       The request.
 	 * @param WooReportSwitches $switches      The organisation's report switches.
-	 * @param CaseAccessGuard   $accessGuard   Whether the caller may read the case.
-	 * @param MailPartiesReport $partiesReport The parties of a case's collected mail.
+	 * @param CaseAccessGuardInterface   $accessGuard   Whether the caller may read the case.
+	 * @param MailPartiesReportInterface $partiesReport The parties of a case's collected mail.
 	 * @param IUserSession      $userSession   The user session.
 	 * @param IL10N             $l10n          The translations.
 	 *
@@ -62,12 +62,12 @@ class MailPartiesReportController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly WooReportSwitches $switches,
-		private readonly CaseAccessGuard $accessGuard,
-		private readonly MailPartiesReport $partiesReport,
+		private readonly CaseAccessGuardInterface $accessGuard,
+		private readonly MailPartiesReportInterface $partiesReport,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

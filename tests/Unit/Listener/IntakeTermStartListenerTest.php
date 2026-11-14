@@ -74,6 +74,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/burger-notifications/spec.md
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class IntakeTermStartListenerTest extends TestCase {
 

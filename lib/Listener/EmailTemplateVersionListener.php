@@ -29,8 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Email\EmailTemplateRepository;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\EmailTemplateRepositoryInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
@@ -65,14 +65,14 @@ class EmailTemplateVersionListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService         $settingsService Config values.
-	 * @param EmailTemplateRepository $repository      Saves the copy of the earlier wording.
+	 * @param SettingsServiceInterface         $settingsService Config values.
+	 * @param EmailTemplateRepositoryInterface $repository      Saves the copy of the earlier wording.
 	 * @param IL10N                   $l10n            Words the refusal.
 	 * @param LoggerInterface         $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly EmailTemplateRepository $repository,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly EmailTemplateRepositoryInterface $repository,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {

@@ -41,8 +41,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\JsonRequestBody;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\BeschikkingService;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\BeschikkingServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -66,18 +66,18 @@ class BeschikkingController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The HTTP request.
-	 * @param BeschikkingService $decisionService The beschikking service.
+	 * @param BeschikkingServiceInterface $decisionService The beschikking service.
 	 * @param IUserSession $userSession The current session.
 	 * @param LoggerInterface $logger The logger.
-	 * @param CaseAccessGuard $accessGuard Per-case mutation access, for issuing a successor.
+	 * @param CaseAccessGuardInterface $accessGuard Per-case mutation access, for issuing a successor.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly BeschikkingService $decisionService,
+		private readonly BeschikkingServiceInterface $decisionService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseAccessGuardInterface $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

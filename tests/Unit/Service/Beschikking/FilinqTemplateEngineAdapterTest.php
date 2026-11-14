@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Beschikking;
 
+use OCA\Dossiq\Service\Beschikking\DecisionTemplateEngine;
 use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IUser;
@@ -38,6 +39,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\Beschikking\DecisionTemplateEngine
  */
 class FilinqTemplateEngineAdapterTest extends TestCase {
 
@@ -85,6 +87,13 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	private IUserSession $userSession;
 
 	/**
+	 * The engine the case type names; filinq unless a test says otherwise.
+	 *
+	 * @var string
+	 */
+	private string $engine = 'filinq';
+
+	/**
 	 * Set up the collaborators every test shares.
 	 *
 	 * @return void
@@ -109,9 +118,22 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 			$this->container,
 			$this->settings,
 			$this->userSession,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$this->engines()
 		);
 	}//end adapter()
+
+	/**
+	 * The engine resolver, answering `$this->engine` for every template.
+	 *
+	 * @return DecisionTemplateEngine The double.
+	 */
+	private function engines(): DecisionTemplateEngine {
+		$engines = $this->createMock(DecisionTemplateEngine::class);
+		$engines->method('engineFor')->willReturnCallback(fn (): string => $this->engine);
+
+		return $engines;
+	}//end engines()
 
 	/**
 	 * Point the container at a filinq document service that records its calls.
@@ -371,7 +393,8 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 			$this->container,
 			$this->settings,
 			$session,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$this->engines()
 		);
 
 		$this->expectException(RuntimeException::class);
@@ -606,5 +629,104 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 
 		$this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
 	}//end testRenderRefusesWhenFilinqThrows()
+
+	/**
+	 * The engine the case type names for the template reaches filinq.
+	 *
+	 * @return void
+	 */
+	public function testRenderHandsTheTemplatesEngineToFilinq(): void {
+		$this->settings->method('getConfigValue')->willReturn('');
+		$this->engine = 'vendor:smartdocuments';
+		$filinq = $this->givenFilinq(
+			['content' => self::PDF_BYTES, 'format' => 'pdf', 'output' => ['fileId' => 41]]
+		);
+
+		$composition = $this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
+
+		$this->assertSame('vendor:smartdocuments', $filinq->calls[0]['options']['engine']);
+		$this->assertSame('41', $composition['fileId']);
+	}//end testRenderHandsTheTemplatesEngineToFilinq()
+
+	/**
+	 * A template on filinq's own engine says so to filinq.
+	 *
+	 * @return void
+	 */
+	public function testRenderHandsFilinqItsOwnEngineByDefault(): void {
+		$this->settings->method('getConfigValue')->willReturn('');
+		$filinq = $this->givenFilinq(
+			['content' => self::PDF_BYTES, 'format' => 'pdf', 'output' => ['fileId' => 42]]
+		);
+
+		$this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
+
+		$this->assertSame('filinq', $filinq->calls[0]['options']['engine']);
+	}//end testRenderHandsFilinqItsOwnEngineByDefault()
+
+	/**
+	 * An unreachable vendor fails with its name, and no composition is returned.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreachableVendorIsRefusedByName(): void {
+		$this->settings->method('getConfigValue')->willReturn('');
+		$this->engine = 'vendor:xential';
+		$service = new class {
+
+			/**
+			 * Filinq's document generation, whose vendor is down here.
+			 *
+			 * @param string $templateId The template id.
+			 * @param array<int, mixed> $dataRefs The OpenRegister references.
+			 * @param array<string, mixed> $options The generation options.
+			 *
+			 * @return array<string, mixed> Never returns.
+			 */
+			public function generateDocument(string $templateId, array $dataRefs, array $options): array {
+				throw new \RuntimeException('connection refused');
+			}
+		};
+		$this->bindFilinq(documents: $service, templates: null);
+
+		try {
+			$this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
+			$this->fail('an unreachable vendor must not produce a composition');
+		} catch (RuntimeException $e) {
+			$this->assertSame('Xential is niet bereikbaar', $e->getMessage());
+			$this->assertSame('connection refused', $e->getPrevious()?->getMessage());
+		}
+	}//end testAnUnreachableVendorIsRefusedByName()
+
+	/**
+	 * A vendor source the fleet has no display name for is named by its slug.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownVendorIsNamedBySlug(): void {
+		$this->settings->method('getConfigValue')->willReturn('');
+		$this->engine = 'vendor:acme-docs';
+		$service = new class {
+
+			/**
+			 * Filinq's document generation, whose vendor is down here.
+			 *
+			 * @param string $templateId The template id.
+			 * @param array<int, mixed> $dataRefs The OpenRegister references.
+			 * @param array<string, mixed> $options The generation options.
+			 *
+			 * @return array<string, mixed> Never returns.
+			 */
+			public function generateDocument(string $templateId, array $dataRefs, array $options): array {
+				throw new \RuntimeException('timeout');
+			}
+		};
+		$this->bindFilinq(documents: $service, templates: null);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('acme-docs is niet bereikbaar');
+
+		$this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
+	}//end testAnUnknownVendorIsNamedBySlug()
 
 }//end class

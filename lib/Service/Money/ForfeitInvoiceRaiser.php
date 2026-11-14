@@ -36,8 +36,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Money;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\ForfeitInvoiceNotRaisedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ForfeitInvoiceRaiserInterface;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-005)
  */
-class ForfeitInvoiceRaiser {
+class ForfeitInvoiceRaiser implements ForfeitInvoiceRaiserInterface {
 	use SearchesObjects;
 
 	/**
@@ -147,7 +148,7 @@ class ForfeitInvoiceRaiser {
 	private function requestInvoice(ForfeitInvoiceRun $run, object $leaf): string {
 		try {
 			$created = $leaf->createAsApp(
-				Application::APP_ID,
+				AppIdentity::APP_ID,
 				CasePaymentReader::CASE_REGISTER,
 				CasePaymentReader::CASE_SCHEMA,
 				$run->caseId,

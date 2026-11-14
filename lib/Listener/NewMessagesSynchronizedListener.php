@@ -39,8 +39,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Email\InboundMailIntake;
-use OCA\Dossiq\Service\Email\IntakeAccount;
+use OCA\Dossiq\Kernel\Contracts\InboundMailIntakeInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeAccountInterface;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -62,14 +62,14 @@ class NewMessagesSynchronizedListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param MailGatewayInterface $gateway The mail gateway, which owns the event shape.
-	 * @param IntakeAccount        $account The account and folder an administrator picked.
-	 * @param InboundMailIntake    $intake  The intake path.
+	 * @param IntakeAccountInterface        $account The account and folder an administrator picked.
+	 * @param InboundMailIntakeInterface    $intake  The intake path.
 	 * @param LoggerInterface      $logger  Logger.
 	 */
 	public function __construct(
 		private readonly MailGatewayInterface $gateway,
-		private readonly IntakeAccount $account,
-		private readonly InboundMailIntake $intake,
+		private readonly IntakeAccountInterface $account,
+		private readonly InboundMailIntakeInterface $intake,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

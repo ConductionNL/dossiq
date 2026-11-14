@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\PartnerMigrationService;
+use OCA\Dossiq\Kernel\Contracts\PartnerMigrationServiceInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -38,10 +38,10 @@ class MigratePartnersCommand extends Command {
 	/**
 	 * Wire the command against the migration service.
 	 *
-	 * @param PartnerMigrationService $migrationService Partner → Organisation migrator.
+	 * @param PartnerMigrationServiceInterface $migrationService Partner → Organisation migrator.
 	 */
 	public function __construct(
-		private readonly PartnerMigrationService $migrationService,
+		private readonly PartnerMigrationServiceInterface $migrationService,
 	) {
 		parent::__construct();
 	}//end __construct()

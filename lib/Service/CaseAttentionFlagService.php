@@ -46,20 +46,17 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Kernel\Contracts\CaseAttentionFlagServiceInterface;
+use OCA\Dossiq\Service\Support\CaseReadAndPatch;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use Throwable;
 
 /**
  * Raise and clear the attention flag, and keep every reason.
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseAttentionFlagService {
-
-	use SearchesObjects;
+class CaseAttentionFlagService implements CaseAttentionFlagServiceInterface {
 
 	/**
 	 * The two acts a history row can record.
@@ -79,15 +76,28 @@ class CaseAttentionFlagService {
 	public const MINIMUM_REASON_LENGTH = 3;
 
 	/**
+	 * Reads and patches the case, naming this service in its warnings.
+	 *
+	 * @var CaseReadAndPatch
+	 */
+	private readonly CaseReadAndPatch $cases;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings service (OpenRegister access).
 	 * @param LoggerInterface $logger          The logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly LoggerInterface $logger,
+		SettingsService $settingsService,
+		LoggerInterface $logger,
 	) {
+		$this->cases = new CaseReadAndPatch(
+			settingsService: $settingsService,
+			logger: $logger,
+			owner: 'CaseAttentionFlagService',
+			act: 'attention'
+		);
 	}//end __construct()
 
 	/**
@@ -328,28 +338,7 @@ class CaseAttentionFlagService {
 	 * @throws RuntimeException With code `case_not_found`.
 	 */
 	private function read(string $caseId): array {
-		[$objectService, $register, $schema] = $this->openRegister();
-
-		try {
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $caseId
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq CaseAttentionFlagService: case lookup failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'caseId' => $caseId]
-			);
-			throw new RuntimeException('case_not_found');
-		}
-
-		if ($case === null) {
-			throw new RuntimeException('case_not_found');
-		}
-
-		return $case;
+		return $this->cases->read(caseId: $caseId);
 	}//end read()
 
 	/**
@@ -367,52 +356,6 @@ class CaseAttentionFlagService {
 	 * @throws RuntimeException With code `attention_write_failed`.
 	 */
 	private function write(string $caseId, array $changes): void {
-		[$objectService, $register, $schema] = $this->openRegister();
-
-		try {
-			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $caseId,
-				changes: $changes
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq CaseAttentionFlagService: attention write failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'caseId' => $caseId]
-			);
-			throw new RuntimeException('attention_write_failed');
-		}
+		$this->cases->patch(caseId: $caseId, changes: $changes);
 	}//end write()
-
-	/**
-	 * The OpenRegister seam and the case schema, or a refusal.
-	 *
-	 * @return array{0: object, 1: string, 2: string} The object service, register and schema.
-	 *
-	 * @throws RuntimeException With code `case_not_found` when OpenRegister or the schema is absent.
-	 */
-	private function openRegister(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			$this->logger->warning(
-				'Dossiq CaseAttentionFlagService: OpenRegister unavailable',
-				['app' => Application::APP_ID]
-			);
-			throw new RuntimeException('case_not_found');
-		}
-
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($register === '' || $schema === '') {
-			$this->logger->warning(
-				'Dossiq CaseAttentionFlagService: case schema not configured',
-				['app' => Application::APP_ID]
-			);
-			throw new RuntimeException('case_not_found');
-		}
-
-		return [$objectService, $register, $schema];
-	}//end openRegister()
 }//end class

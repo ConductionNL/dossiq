@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar;
 use OCA\Dossiq\Listener\IntakeFormBindingListener;
 use OCA\Dossiq\Service\Intake\IntakeFormBinding;
 use OCA\Dossiq\Service\Intake\IntakeFormBindingCheck;
@@ -41,8 +41,8 @@ use Psr\Log\LoggerInterface;
 /**
  * The registered listener refuses a case type whose intake form the case schema refuses.
  *
- * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
- * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\IntakeFormListenerRegistrar
  * @covers \OCA\Dossiq\Listener\IntakeFormBindingListener
  * @uses   \OCA\Dossiq\Service\Intake\IntakeFormBindingCheck
  * @uses   \OCA\Dossiq\Service\Intake\IntakeFormBinding

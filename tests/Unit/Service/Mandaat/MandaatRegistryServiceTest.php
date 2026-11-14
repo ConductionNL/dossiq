@@ -94,6 +94,17 @@ class MandaatRegistryServiceTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	public function testSaveDelegatesToTheRegistry(): void {
+		$this->registry->expects($this->once())
+			->method('save')
+			->with(schemaConfigKey: MandaatRegistryService::SCHEMA_MANDAAT, data: ['role' => 'r-1'], id: 'm-9')
+			->willReturn(['id' => 'm-9', 'role' => 'r-1']);
+
+		$saved = $this->service->save(MandaatRegistryService::SCHEMA_MANDAAT, ['role' => 'r-1'], 'm-9');
+
+		$this->assertSame(['id' => 'm-9', 'role' => 'r-1'], $saved);
+	}//end testSaveDelegatesToTheRegistry()
+
 	public function testDeletesAnUnreferencedRole(): void {
 		$this->stubListings([], []);
 		$this->registry->expects($this->once())

@@ -54,6 +54,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Intake\IntakeFormBinding
  * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  */
 class FormsIntakeServiceTest extends TestCase {
 

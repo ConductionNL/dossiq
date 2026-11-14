@@ -54,6 +54,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\AanvullingAnswerRun
  * @uses \OCA\Dossiq\Service\ItemArrivalMarker
  * @uses \OCA\Dossiq\Service\RequestWrite
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class PortalWooAnswerTest extends TestCase {
 

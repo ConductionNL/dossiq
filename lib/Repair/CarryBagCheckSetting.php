@@ -47,9 +47,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\IntegrationModeInterface;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
-use OCA\Dossiq\Service\External\IntegrationMode;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -76,12 +76,12 @@ class CarryBagCheckSetting implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param IAppConfig $appConfig App config.
-	 * @param IntegrationMode $integrationMode Reads the old BAG settings the way the deleted client did.
+	 * @param IntegrationModeInterface $integrationMode Reads the old BAG settings the way the deleted client did.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
-		private readonly IntegrationMode $integrationMode,
+		private readonly IntegrationModeInterface $integrationMode,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -108,7 +108,7 @@ class CarryBagCheckSetting implements IRepairStep {
 	 */
 	public function run(IOutput $output): void {
 		try {
-			if ($this->appConfig->hasKey(Application::APP_ID, self::CHECK_KEY) === true) {
+			if ($this->appConfig->hasKey(AppIdentity::APP_ID, self::CHECK_KEY) === true) {
 				return;
 			}
 
@@ -116,7 +116,7 @@ class CarryBagCheckSetting implements IRepairStep {
 				return;
 			}
 
-			$this->appConfig->setValueString(Application::APP_ID, self::CHECK_KEY, LocationBagValidationListener::CHECK_ON);
+			$this->appConfig->setValueString(AppIdentity::APP_ID, self::CHECK_KEY, LocationBagValidationListener::CHECK_ON);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not carry the BAG check setting; the BAG check is off until an administrator sets {key} to on',
@@ -140,9 +140,9 @@ class CarryBagCheckSetting implements IRepairStep {
 	private function oldClientWasOn(): bool {
 		$mode = $this->integrationMode->resolve(
 			integration: 'bag',
-			allowed: [IntegrationMode::TEST, IntegrationMode::LIVE]
+			allowed: [IntegrationModeInterface::TEST, IntegrationModeInterface::LIVE]
 		);
-		if ($mode !== IntegrationMode::LOG) {
+		if ($mode !== IntegrationModeInterface::LOG) {
 			return true;
 		}
 

@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\AmountObjectionServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnService;
@@ -44,7 +45,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
-class AmountObjectionService {
+class AmountObjectionService implements AmountObjectionServiceInterface {
 	use SearchesObjects;
 
 	/**
