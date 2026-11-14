@@ -355,11 +355,13 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 		}
 
 		$this->savePropertyDefinitions(
-			scheme: $scheme,
-			caseTypeId: $caseTypeId,
-			name: $name,
-			register: $register,
-			output: $output
+			migrated: new MigratedScheme(
+				scheme: $scheme,
+				name: $name,
+				caseTypeId: $caseTypeId,
+				register: $register,
+				output: $output
+			)
 		);
 	}
 
@@ -492,27 +494,17 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	/**
 	 * Persist one propertyDefinition per grant-specific property.
 	 *
-	 * @param array<string, mixed> $scheme     The source subsidieRegeling.
-	 * @param string               $caseTypeId The case type they belong to.
-	 * @param string               $name       The scheme name, for messages.
-	 * @param string               $register   Register id.
-	 * @param IOutput              $output     Upgrade output.
+	 * @param MigratedScheme $migrated The scheme, its name, its case type, the register and the output.
 	 *
 	 * @return void
 	 */
-	private function savePropertyDefinitions(
-		array $scheme,
-		string $caseTypeId,
-		string $name,
-		string $register,
-		IOutput $output,
-	): void {
-		$propertySchema = $this->propertySchema(name: $name, output: $output);
+	private function savePropertyDefinitions(MigratedScheme $migrated): void {
+		$propertySchema = $this->propertySchema(name: $migrated->name, output: $migrated->output);
 		if ($propertySchema === '') {
 			return;
 		}
 
-		$this->saveDefinitions(scheme: $scheme, caseTypeId: $caseTypeId, register: $register, propertySchema: $propertySchema);
+		$this->saveDefinitions(migrated: $migrated, propertySchema: $propertySchema);
 	}
 
 	/**
@@ -537,14 +529,15 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	/**
 	 * Save a propertyDefinition for each grant-specific property the scheme fills.
 	 *
-	 * @param array<string, mixed> $scheme         The source subsidieRegeling.
-	 * @param string               $caseTypeId     The case type they belong to.
-	 * @param string               $register       Register id.
-	 * @param string               $propertySchema The propertyDefinition schema id.
+	 * @param MigratedScheme $migrated       The source scheme, its case type and the register.
+	 * @param string         $propertySchema The propertyDefinition schema id.
 	 *
 	 * @return void
 	 */
-	private function saveDefinitions(array $scheme, string $caseTypeId, string $register, string $propertySchema): void {
+	private function saveDefinitions(MigratedScheme $migrated, string $propertySchema): void {
+		$scheme = $migrated->scheme;
+		$caseTypeId = $migrated->caseTypeId;
+		$register = $migrated->register;
 		$objectService = $this->settingsService->getObjectService();
 		foreach (self::PROPERTY_MAP as $property => $type) {
 			// `isset()` already excludes null, so a `=== null` test here would

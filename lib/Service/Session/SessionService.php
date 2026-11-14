@@ -137,7 +137,7 @@ class SessionService {
 		$write->definition->rules()->assertInspectionFloor(scheduled: $write->scheduled, now: $write->now);
 		$write->definition->rules()->assertInvitees(invitees: $invitees);
 
-		return $this->save(objectService: $write->objectService, register: $write->register, record: $this->plannedRecord(write: $write));
+		return $this->save(write: $write, record: $this->plannedRecord(write: $write));
 	}//end schedule()
 
 	/**
@@ -181,7 +181,7 @@ class SessionService {
 		$write->payload = $payload;
 		$write->now = $this->timeFactory->now();
 
-		return $this->save(objectService: $write->objectService, register: $write->register, record: $this->waivedRecord(write: $write, reason: $reason));
+		return $this->save(write: $write, record: $this->waivedRecord(write: $write, reason: $reason));
 	}//end waive()
 
 	/**
@@ -508,19 +508,23 @@ class SessionService {
 	 * It opens in the schema's initial status, and moves to the status the
 	 * record names through the schema's declared transitions.
 	 *
-	 * @param object               $objectService The object service.
-	 * @param string               $register      The register.
-	 * @param array<string, mixed> $record        The session.
+	 * @param SessionWrite         $write  The object service and register to write through.
+	 * @param array<string, mixed> $record The session.
 	 *
 	 * @return array<string, mixed> The stored session.
 	 *
 	 * @throws RuntimeException When the register refuses the write.
 	 */
-	private function save(object $objectService, string $register, array $record): array {
+	private function save(SessionWrite $write, array $record): array {
 		try {
 			return $this->createThenMove(
-				objectService: $objectService,
-				write: ['register' => $register, 'schema' => $this->reads()->schemaKey(key: 'hearing_session_schema'), 'object' => $record, 'field' => 'status']
+				objectService: $write->objectService,
+				write: [
+					'register' => $write->register,
+					'schema'   => $this->reads()->schemaKey(key: 'hearing_session_schema'),
+					'object'   => $record,
+					'field'    => 'status',
+				]
 			);
 		} catch (Throwable $e) {
 			throw new RuntimeException('The session could not be saved: ' . $e->getMessage(), 0, $e);
