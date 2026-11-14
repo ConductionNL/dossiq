@@ -104,22 +104,7 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 	 */
 	public function validateMandateMatrix(string $tenantId, string $userId, string $action): array {
 		try {
-			$matrix = $this->loadActiveMatrix(tenantId: $tenantId);
-			if ($matrix === null) {
-				return ['allowed' => false, 'reason' => 'No active mandate matrix for tenant'];
-			}
-
-			$role = $this->resolveUserRole(tenantId: $tenantId, userId: $userId);
-			if ($role === null) {
-				return ['allowed' => false, 'reason' => 'User has no role inside tenant'];
-			}
-
-			$allowed = $this->isAllowed(matrix: $matrix, role: $role, action: $action);
-			if ($allowed === true) {
-				return ['allowed' => true, 'reason' => 'Authorised by mandate matrix'];
-			}
-
-			return ['allowed' => false, 'reason' => 'Role ' . $role . ' is not authorised for action ' . $action];
+			return $this->matrixDecision(tenantId: $tenantId, userId: $userId, action: $action);
 		} catch (RefusedException $e) {
 			// A refusal already says what happened and with which status.
 			// Folding it into the fail-closed branch below is what made an
@@ -133,6 +118,38 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 			return ['allowed' => false, 'reason' => 'Mandate validation error'];
 		}//end try
 	}//end validateMandateMatrix()
+
+	/**
+	 * Decide one action from the active matrix and the user's role inside the tenant.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param string $userId   NC user ID.
+	 * @param string $action   Requested action.
+	 *
+	 * @return array{allowed: bool, reason: string} Decision payload.
+	 *
+	 * @throws Throwable When the matrix or the role cannot be read.
+	 *
+	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
+	 */
+	private function matrixDecision(string $tenantId, string $userId, string $action): array {
+		$matrix = $this->loadActiveMatrix(tenantId: $tenantId);
+		if ($matrix === null) {
+			return ['allowed' => false, 'reason' => 'No active mandate matrix for tenant'];
+		}
+
+		$role = $this->resolveUserRole(tenantId: $tenantId, userId: $userId);
+		if ($role === null) {
+			return ['allowed' => false, 'reason' => 'User has no role inside tenant'];
+		}
+
+		$allowed = $this->isAllowed(matrix: $matrix, role: $role, action: $action);
+		if ($allowed === true) {
+			return ['allowed' => true, 'reason' => 'Authorised by mandate matrix'];
+		}
+
+		return ['allowed' => false, 'reason' => 'Role ' . $role . ' is not authorised for action ' . $action];
+	}//end matrixDecision()
 
 	/**
 	 * Check whether the matrix authorises (role, action).

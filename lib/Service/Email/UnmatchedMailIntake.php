@@ -316,13 +316,12 @@ class UnmatchedMailIntake implements UnmatchedMailIntakeInterface {
 	 * @return string The principal, or '' when the type names none.
 	 */
 	private function assigneeFor(string $caseTypeId): string {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_type_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$source = $this->caseTypeSource();
+		if ($source === null) {
 			return '';
 		}
 
+		[$objectService, $register, $schema] = $source;
 		try {
 			$caseType = $objectService->find($caseTypeId, register: $register, schema: $schema);
 		} catch (Throwable $e) {
@@ -333,8 +332,33 @@ class UnmatchedMailIntake implements UnmatchedMailIntakeInterface {
 			return '';
 		}
 
-		$row = $this->normaliseObjectRow(row: $caseType);
+		return $this->defaultAssigneeOf(row: $this->normaliseObjectRow(row: $caseType));
+	}//end assigneeFor()
 
+	/**
+	 * The object service, register and case type schema, when all are configured.
+	 *
+	 * @return array{0: object, 1: mixed, 2: mixed}|null Null when one is missing.
+	 */
+	private function caseTypeSource(): array|null {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_type_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end caseTypeSource()
+
+	/**
+	 * The principal a case type assigns new cases to.
+	 *
+	 * @param array<string, mixed> $row The case type.
+	 *
+	 * @return string The principal, or '' when the type names none.
+	 */
+	private function defaultAssigneeOf(array $row): string {
 		// Through CaseTypeHandling, so the block an administrator filled in on
 		// the case type wins and `defaultAssignee` is the fallback for a type
 		// nobody has migrated. Reading the raw property here is how one of the
@@ -346,7 +370,7 @@ class UnmatchedMailIntake implements UnmatchedMailIntakeInterface {
 			fallback: '',
 			case: []
 		);
-	}//end assigneeFor()
+	}//end defaultAssigneeOf()
 
 	/**
 	 * Normalise one store answer into a plain row.

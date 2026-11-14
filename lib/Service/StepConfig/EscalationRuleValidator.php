@@ -282,7 +282,6 @@ final class EscalationRuleValidator {
 	 */
 	private function validateRoles(array $rule, array $roleTypes, string $path): array {
 		$errors = [];
-		$checkRoles = ($roleTypes !== []);
 
 		foreach (['notifyRole', 'escalateToRole'] as $roleKey) {
 			$role = ($rule[$roleKey] ?? null);
@@ -290,26 +289,47 @@ final class EscalationRuleValidator {
 				continue;
 			}
 
-			if (is_string($role) === false || $role === '') {
-				$errors[] = $this->error(
-					path: $path . '.' . $roleKey,
-					code: 'malformed_role_reference',
-					message: $roleKey . ' must be a non-empty role reference'
-				);
-				continue;
-			}
-
-			if ($checkRoles === true && array_key_exists($role, $roleTypes) === false) {
-				$errors[] = $this->error(
-					path: $path . '.' . $roleKey,
-					code: 'unknown_role_reference',
-					message: $roleKey . ' does not resolve to a roleType on the linked caseType'
-				);
+			$error = $this->roleError(role: $role, roleKey: $roleKey, roleTypes: $roleTypes, path: $path);
+			if ($error !== null) {
+				$errors[] = $error;
 			}
 		}//end foreach
 
 		return $errors;
 	}//end validateRoles()
+
+	/**
+	 * The error for one role reference, when it is malformed or does not resolve.
+	 *
+	 * @param mixed                $role      The role reference.
+	 * @param string               $roleKey   `notifyRole` or `escalateToRole`.
+	 * @param array<string, mixed> $roleTypes Map of role name/uuid to definition.
+	 * @param string               $path      The path prefix for any error.
+	 *
+	 * @return array{path: string, code: string, message: string}|null Null when the reference is fine.
+	 *
+	 * @spec openspec/specs/process-step-configuration/spec.md
+	 */
+	private function roleError(mixed $role, string $roleKey, array $roleTypes, string $path): array|null {
+		$checkRoles = ($roleTypes !== []);
+		if (is_string($role) === false || $role === '') {
+			return $this->error(
+				path: $path . '.' . $roleKey,
+				code: 'malformed_role_reference',
+				message: $roleKey . ' must be a non-empty role reference'
+			);
+		}
+
+		if ($checkRoles === true && array_key_exists($role, $roleTypes) === false) {
+			return $this->error(
+				path: $path . '.' . $roleKey,
+				code: 'unknown_role_reference',
+				message: $roleKey . ' does not resolve to a roleType on the linked caseType'
+			);
+		}
+
+		return null;
+	}//end roleError()
 
 	/**
 	 * Build a structured error record.

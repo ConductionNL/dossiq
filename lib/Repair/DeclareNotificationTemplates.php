@@ -148,6 +148,17 @@ class DeclareNotificationTemplates implements IRepairStep {
 			return [];
 		}
 
+		return $this->gapNames(gaps: $gaps);
+	}//end gaps()
+
+	/**
+	 * The non-empty event names a gap list holds.
+	 *
+	 * @param mixed $gaps What the registry answered.
+	 *
+	 * @return array<int, string> The event names.
+	 */
+	private function gapNames(mixed $gaps): array {
 		if (is_array($gaps) === false) {
 			return [];
 		}
@@ -160,7 +171,7 @@ class DeclareNotificationTemplates implements IRepairStep {
 		}
 
 		return $names;
-	}//end gaps()
+	}//end gapNames()
 
 	/**
 	 * Write dossiq's Dutch text for each gap it can answer.

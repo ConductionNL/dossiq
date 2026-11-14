@@ -209,35 +209,61 @@ class TermDeclarationReader {
 	 * @return array<int, array<string, mixed>> The rows, empty when unreadable.
 	 */
 	private function statusRowsOf(string $caseTypeId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null || $caseTypeId === '') {
+		$source = $this->configuredSource(schemaKey: 'status_type_schema', id: $caseTypeId);
+		if ($source === null) {
 			return [];
 		}
 
-		$register = (string)$this->settingsService->getConfigValue(key: 'register');
-		$schema = (string)$this->settingsService->getConfigValue(key: 'status_type_schema');
-		if ($register === '' || $schema === '') {
-			return [];
-		}
-
+		[$objectService, $register, $schema] = $source;
 		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['caseType' => $caseTypeId]
-			);
+			$filters = ['caseType' => $caseTypeId];
+			return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 		} catch (\Throwable $e) {
 			// "This type declares no phases" and "we could not ask" are opposite
 			// answers, and the first one silently gives every phase zero days.
-			throw new RefusedException(
-				rule: 'term-declarations-unreadable',
-				sentence: 'The phases of this case type could not be read, so its terms were not resolved.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}//end try
+			throw $this->unreadable(sentence: 'The phases of this case type could not be read, so its terms were not resolved.', previous: $e);
+		}
 	}//end statusRowsOf()
+
+	/**
+	 * The object service, register and one configured schema, when all are in hand.
+	 *
+	 * @param string $schemaKey The app-config key naming the schema.
+	 * @param string $id        The id the caller will read by.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null Null when the service, the id, the register or the schema is missing.
+	 */
+	private function configuredSource(string $schemaKey, string $id): array|null {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null || $id === '') {
+			return null;
+		}
+
+		$register = (string)$this->settingsService->getConfigValue(key: 'register');
+		$schema = (string)$this->settingsService->getConfigValue(key: $schemaKey);
+		if ($register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end configuredSource()
+
+	/**
+	 * The refusal for a case type whose declarations could not be read.
+	 *
+	 * @param string     $sentence What could not be read.
+	 * @param \Throwable $previous Why.
+	 *
+	 * @return RefusedException
+	 */
+	private function unreadable(string $sentence, \Throwable $previous): RefusedException {
+		return new RefusedException(
+			rule: 'term-declarations-unreadable',
+			sentence: $sentence,
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $previous,
+		);
+	}//end unreadable()
 
 	/**
 	 * One status row as a phase declaration.
@@ -336,36 +362,21 @@ class TermDeclarationReader {
 	 * @return array<string, mixed> The row, empty when unresolvable.
 	 */
 	private function findRow(string $schemaKey, string $id): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null || $id === '') {
+		$source = $this->configuredSource(schemaKey: $schemaKey, id: $id);
+		if ($source === null) {
 			return [];
 		}
 
-		$register = (string)$this->settingsService->getConfigValue(key: 'register');
-		$schema = (string)$this->settingsService->getConfigValue(key: $schemaKey);
-		if ($register === '' || $schema === '') {
-			return [];
-		}
-
+		[$objectService, $register, $schema] = $source;
 		try {
-			$row = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $id
-			);
+			$row = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
 		} catch (\Throwable $e) {
 			// A row that is not there comes back as null from the finder, which
 			// is a read miss and an ordinary answer. Reaching this catch means
 			// the store could not be asked, and answering "declares nothing"
 			// to that would let an unreadable case type allow every suspension.
-			throw new RefusedException(
-				rule: 'term-declarations-unreadable',
-				sentence: 'This case type could not be read, so its terms were not resolved.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}//end try
+			throw $this->unreadable(sentence: 'This case type could not be read, so its terms were not resolved.', previous: $e);
+		}
 
 		return ($row ?? []);
 	}//end findRow()

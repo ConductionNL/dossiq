@@ -189,14 +189,33 @@ class CaseFieldRoleProjector implements CaseFieldRoleProjectorInterface {
 	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function registerBase(): array {
+		$configData = $this->mergedRegisterConfig();
+		if ($configData === null) {
+			return [];
+		}
+
+		$properties = ($configData['components']['schemas'][self::CASE_SCHEMA_SLUG]['properties'] ?? []);
+		if (is_array($properties) === false) {
+			return [];
+		}
+
+		return $this->declaredBlocks(properties: $properties);
+	}//end registerBase()
+
+	/**
+	 * The shipped register JSON with its fragments merged in.
+	 *
+	 * @return array<string, mixed>|null Null when the file is missing or not a JSON object.
+	 */
+	private function mergedRegisterConfig(): array|null {
 		$configPath = __DIR__ . '/../../Settings/dossiq_register.json';
 		if (file_exists($configPath) === false) {
-			return [];
+			return null;
 		}
 
 		$configData = json_decode((string)file_get_contents($configPath), true);
 		if (json_last_error() !== JSON_ERROR_NONE || is_array($configData) === false) {
-			return [];
+			return null;
 		}
 
 		[$configData] = $this->fragments->merge(
@@ -204,11 +223,17 @@ class CaseFieldRoleProjector implements CaseFieldRoleProjectorInterface {
 			fragmentDir: __DIR__ . '/../../Settings/register.d'
 		);
 
-		$properties = ($configData['components']['schemas'][self::CASE_SCHEMA_SLUG]['properties'] ?? []);
-		if (is_array($properties) === false) {
-			return [];
-		}
+		return $configData;
+	}//end mergedRegisterConfig()
 
+	/**
+	 * The non-empty authorization block of every case property that declares one.
+	 *
+	 * @param array<mixed> $properties The case schema's properties.
+	 *
+	 * @return array<string, mixed> The declared blocks, by property name.
+	 */
+	private function declaredBlocks(array $properties): array {
 		$base = [];
 		foreach ($properties as $field => $definition) {
 			$block = ($definition[self::DECLARED_AUTHORIZATION_KEY] ?? $definition[self::AUTHORIZATION_KEY] ?? null);
@@ -218,7 +243,7 @@ class CaseFieldRoleProjector implements CaseFieldRoleProjectorInterface {
 		}
 
 		return $base;
-	}//end registerBase()
+	}//end declaredBlocks()
 
 	/**
 	 * Write the ledger and the properties back, answering whether it landed.

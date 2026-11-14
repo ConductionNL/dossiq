@@ -49,6 +49,27 @@ class JsonRequestBody {
 	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
 	 */
 	public function read(IRequest $request): array {
+		$content = $this->requestContent(request: $request);
+
+		if ($content === '') {
+			$content = (string)file_get_contents('php://input');
+		}
+
+		if ($content === '') {
+			return [];
+		}
+
+		return $this->decodedObject(content: $content);
+	}//end read()
+
+	/**
+	 * The body the request object itself holds, '' when it holds none or cannot be read.
+	 *
+	 * @param IRequest $request The HTTP request.
+	 *
+	 * @return string
+	 */
+	private function requestContent(IRequest $request): string {
 		// Prefer the request object's getContent() when reachable — test
 		// stubs expose a public getContent() so unit tests can drive
 		// controllers without faking php://input.
@@ -64,21 +85,24 @@ class JsonRequestBody {
 			}
 		}
 
-		if ($content === '') {
-			$content = (string)file_get_contents('php://input');
-		}
+		return $content;
+	}//end requestContent()
 
-		if ($content === '') {
-			return [];
-		}
-
+	/**
+	 * The decoded JSON, or [] when it is not an object.
+	 *
+	 * @param string $content The raw body.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function decodedObject(string $content): array {
 		$decoded = json_decode($content, true);
 		if (is_array($decoded) === true) {
 			return $decoded;
 		}
 
 		return [];
-	}//end read()
+	}//end decodedObject()
 
 	/**
 	 * The named fields a body carries, and nothing else.

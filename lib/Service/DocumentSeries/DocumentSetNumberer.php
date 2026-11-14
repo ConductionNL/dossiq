@@ -208,18 +208,56 @@ class DocumentSetNumberer {
 	 * @return array<int, int> Sequence per position.
 	 */
 	private function keep(array $ordered, string $field): array {
+		[$sequences, $taken] = $this->storedSequences(ordered: $ordered, field: $field);
+
+		return $this->numberTheRest(ordered: $ordered, sequences: $sequences, taken: $taken);
+	}//end keep()
+
+	/**
+	 * The stored numbers to keep, by position, and the numbers they take.
+	 *
+	 * @param array<int, array<string, mixed>> $ordered The documents, in order.
+	 * @param string                           $field   Where a kept number is stored.
+	 *
+	 * @return array{0: array<int, int>, 1: array<int, bool>} Sequence per kept position, and the taken numbers.
+	 */
+	private function storedSequences(array $ordered, string $field): array {
 		$sequences = [];
 		$taken = [];
 		foreach ($ordered as $index => $document) {
 			$stored = ($document[$field] ?? null);
-			if (is_numeric($stored) === true && (int)$stored >= 1 && (string)(int)$stored === (string)$stored
-				&& isset($taken[(int)$stored]) === false
-			) {
+			if ($this->isKeepable(stored: $stored, taken: $taken) === true) {
 				$sequences[$index] = (int)$stored;
 				$taken[(int)$stored] = true;
 			}
 		}
 
+		return [$sequences, $taken];
+	}//end storedSequences()
+
+	/**
+	 * Whether a stored value is a whole number from 1 that no earlier document holds.
+	 *
+	 * @param mixed            $stored The stored value.
+	 * @param array<int, bool> $taken  The numbers already kept.
+	 *
+	 * @return bool
+	 */
+	private function isKeepable(mixed $stored, array $taken): bool {
+		return is_numeric($stored) === true && (int)$stored >= 1 && (string)(int)$stored === (string)$stored
+			&& isset($taken[(int)$stored]) === false;
+	}//end isKeepable()
+
+	/**
+	 * Give every position without a kept number the next number after the highest, in order.
+	 *
+	 * @param array<int, array<string, mixed>> $ordered   The documents, in order.
+	 * @param array<int, int>                  $sequences Sequence per kept position.
+	 * @param array<int, bool>                 $taken     The taken numbers.
+	 *
+	 * @return array<int, int> Sequence per position.
+	 */
+	private function numberTheRest(array $ordered, array $sequences, array $taken): array {
 		$next = 1;
 		if ($taken !== []) {
 			$next = (max(array_keys($taken)) + 1);
@@ -233,7 +271,7 @@ class DocumentSetNumberer {
 		}
 
 		return $sequences;
-	}//end keep()
+	}//end numberTheRest()
 
 	/**
 	 * The printed number: `<prefix>-<padded>` or just the padded sequence.
