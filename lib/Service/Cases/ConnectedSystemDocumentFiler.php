@@ -79,11 +79,13 @@ class ConnectedSystemDocumentFiler {
 		$metadata = $this->documentMetadata(operation: $operation, fileName: $fileName, type: $type);
 
 		$result = $this->upload(
-			caseId: self::text(value: ($case['@self']['id'] ?? ($case['id'] ?? ''))),
-			fileName: $fileName,
-			content: $content,
-			format: self::text(value: ($operation['format'] ?? '')),
-			metadata: $metadata
+			document: new ConnectedDocumentUpload(
+				caseId: self::text(value: ($case['@self']['id'] ?? ($case['id'] ?? ''))),
+				fileName: $fileName,
+				content: $content,
+				format: self::text(value: ($operation['format'] ?? '')),
+				metadata: $metadata
+			)
 		);
 		return $this->filedOutcome(result: $result, system: $system);
 	}//end file()
@@ -160,24 +162,24 @@ class ConnectedSystemDocumentFiler {
 	/**
 	 * Hand the bytes to the upload path as the file it expects.
 	 *
-	 * @param string               $caseId   The case uuid.
-	 * @param string               $fileName The file name.
-	 * @param string               $content  The bytes.
-	 * @param string               $format   The media type, '' when the system named none.
-	 * @param array<string, mixed> $metadata The document metadata.
+	 * @param ConnectedDocumentUpload $document The case uuid, file name, bytes, media type and metadata.
 	 *
 	 * @return array<string, mixed> The upload path's result entry.
 	 *
 	 * @throws RuntimeException When no temporary file can be written.
 	 */
-	private function upload(string $caseId, string $fileName, string $content, string $format, array $metadata): array {
+	private function upload(ConnectedDocumentUpload $document): array {
 		$path = tempnam(sys_get_temp_dir(), 'dossiq-connected-');
-		if ($path === false || file_put_contents($path, $content) === false) {
+		if ($path === false || file_put_contents($path, $document->content) === false) {
 			throw new RuntimeException('No temporary file for the document.');
 		}
 
 		try {
-			return $this->uploads->uploadOne(caseId: $caseId, file: ['name' => $fileName, 'tmp_name' => $path, 'type' => $format], metadata: $metadata);
+			return $this->uploads->uploadOne(
+				caseId: $document->caseId,
+				file: ['name' => $document->fileName, 'tmp_name' => $path, 'type' => $document->format],
+				metadata: $document->metadata
+			);
 		} finally {
 			unlink($path);
 		}

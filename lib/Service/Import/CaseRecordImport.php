@@ -423,7 +423,7 @@ class CaseRecordImport implements CaseRecordImportInterface {
 			return $failed($placed['reason']);
 		}
 
-		$moved = $this->moveAndStamp(run: $run, source: $source, sourceId: $sourceId, caseId: $placed['caseId']);
+		$moved = $this->moveAndStamp(run: $run, source: $source, caseId: $placed['caseId']);
 		if (isset($moved['reason']) === true) {
 			return $failed($moved['reason']);
 		}
@@ -435,14 +435,14 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	/**
 	 * Move the records pointing at the source onto the case, then stamp the source as moved.
 	 *
-	 * @param array<string, mixed> $run      The run: objectService, caseType, import, existing.
-	 * @param array<string, mixed> $source   The source record.
-	 * @param string               $sourceId The source record's id.
-	 * @param string               $caseId   The case written for it.
+	 * @param array<string, mixed> $run    The run: objectService, caseType, import, existing.
+	 * @param array<string, mixed> $source The source record.
+	 * @param string               $caseId The case written for it.
 	 *
 	 * @return array{repointed?: mixed, reason?: string} How many references moved, or why the record is not moved.
 	 */
-	private function moveAndStamp(array $run, array $source, string $sourceId, string $caseId): array {
+	private function moveAndStamp(array $run, array $source, string $caseId): array {
+		$sourceId = $this->steps->store->idOf(row: $source);
 		// References are moved before the stamp: a record whose references
 		// could not all be moved stays unstamped, so the next run tries again.
 		try {

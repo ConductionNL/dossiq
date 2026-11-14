@@ -82,19 +82,16 @@ class RoleLinkService implements RoleLinkServiceInterface {
 	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-the-case-says-which-required-roles-are-missing-req-lcr-3
 	 */
 	public function rolesFor(string $caseId): array {
-		$objectService = $this->reads()->objectService();
-		$register      = $this->settingsService->getConfigValue(key: 'register');
-		$roles         = $this->definitionsFor(objectService: $objectService, register: $register, caseId: $caseId);
+		$location = new RoleLinkRegister(
+			objectService: $this->reads()->objectService(),
+			register: $this->settingsService->getConfigValue(key: 'register'),
+		);
+		$roles    = $this->definitionsFor(location: $location, caseId: $caseId);
 
 		$answer  = [];
 		$missing = [];
 		foreach ($roles as $definition) {
-			$linked = $this->isLinked(
-				objectService: $objectService,
-				register: $register,
-				caseId: $caseId,
-				definition: $definition
-			);
+			$linked = $this->isLinked(location: $location, caseId: $caseId, definition: $definition);
 			if ($definition->requiredAtIntake === true && $linked === false) {
 				$missing[] = $definition->role;
 			}
@@ -127,32 +124,26 @@ class RoleLinkService implements RoleLinkServiceInterface {
 			throw new InvalidArgumentException('Name the case and what it is linked to.');
 		}
 
-		$objectService = $this->reads()->objectService();
-		$register      = $this->settingsService->getConfigValue(key: 'register');
-		$roles         = $this->definitionsFor(objectService: $objectService, register: $register, caseId: $caseId);
+		$location = new RoleLinkRegister(
+			objectService: $this->reads()->objectService(),
+			register: $this->settingsService->getConfigValue(key: 'register'),
+		);
+		$roles    = $this->definitionsFor(location: $location, caseId: $caseId);
 		if (isset($roles[$role]) === false) {
 			throw new InvalidArgumentException("This case type declares no relation role '$role'.");
 		}
 
 		$definition = $roles[$role];
-		$linkedCase = $this->resolveLinkedCase(
-			objectService: $objectService,
-			register: $register,
-			definition: $definition,
-			targetId: $targetId
-		);
+		$linkedCase = $this->resolveLinkedCase(location: $location, definition: $definition, targetId: $targetId);
 
 		$this->relateCases(caseId: $caseId, linkedCase: $linkedCase, definition: $definition);
 
 		return [
 			'linkedCase' => $linkedCase,
 			'record'     => $this->openRecord(
-				objectService: $objectService,
-				register: $register,
+				location: $location,
 				definition: $definition,
-				caseId: $caseId,
-				targetId: $targetId,
-				payload: $payload
+				request: new RoleLinkRequest(caseId: $caseId, targetId: $targetId, payload: $payload),
 			),
 		];
 	}//end link()
@@ -187,16 +178,15 @@ class RoleLinkService implements RoleLinkServiceInterface {
 	/**
 	 * The roles declared by the case type of a case.
 	 *
-	 * @param object $objectService The object service.
-	 * @param string $register      The register.
-	 * @param string $caseId        The case uuid.
+	 * @param RoleLinkRegister $location The object service and register.
+	 * @param string           $caseId   The case uuid.
 	 *
 	 * @return array<string, RoleLinkDefinition> The roles, keyed by role.
 	 *
 	 * @throws RuntimeException When the case or its case type cannot be read.
 	 */
-	private function definitionsFor(object $objectService, string $register, string $caseId): array {
-		$caseType = $this->reads()->caseTypeOf(location: [$objectService, $register], caseId: $caseId);
+	private function definitionsFor(RoleLinkRegister $location, string $caseId): array {
+		$caseType = $this->reads()->caseTypeOf(location: [$location->objectService, $location->register], caseId: $caseId);
 		if ($caseType === null) {
 			return [];
 		}
@@ -216,29 +206,23 @@ class RoleLinkService implements RoleLinkServiceInterface {
 	/**
 	 * The case the link points at: the target itself, or the case its object belongs to.
 	 *
-	 * @param object             $objectService The object service.
-	 * @param string             $register      The register.
-	 * @param RoleLinkDefinition $definition    The role.
-	 * @param string             $targetId      The target uuid.
+	 * @param RoleLinkRegister   $location   The object service and register.
+	 * @param RoleLinkDefinition $definition The role.
+	 * @param string             $targetId   The target uuid.
 	 *
 	 * @return string The case uuid, or '' when the object belongs to no case.
 	 *
 	 * @throws InvalidArgumentException When the target cannot be read.
 	 */
-	private function resolveLinkedCase(
-		object $objectService,
-		string $register,
-		RoleLinkDefinition $definition,
-		string $targetId,
-	): string {
+	private function resolveLinkedCase(RoleLinkRegister $location, RoleLinkDefinition $definition, string $targetId): string {
 		$schemaKey = 'case_schema';
 		if ($definition->target === RoleLinkDefinition::TARGET_OBJECT) {
 			$schemaKey = $definition->targetSchema;
 		}
 
 		$target = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
+			objectService: $location->objectService,
+			register: $location->register,
 			schema: $this->reads()->schemaKey(key: $schemaKey),
 			id: $targetId
 		);
@@ -260,28 +244,23 @@ class RoleLinkService implements RoleLinkServiceInterface {
 	 * resolved, so a caller can never point the record elsewhere nor name who
 	 * registered it. Linking twice answers the record already there.
 	 *
-	 * @param object               $objectService The object service.
-	 * @param string               $register      The register.
-	 * @param RoleLinkDefinition   $definition    The role.
-	 * @param string               $caseId        The linked case.
-	 * @param string               $targetId      The target.
-	 * @param array<string, mixed> $payload       Caller fields.
+	 * @param RoleLinkRegister   $location   The object service and register.
+	 * @param RoleLinkDefinition $definition The role.
+	 * @param RoleLinkRequest    $request    The linked case, the target and the caller fields.
 	 *
 	 * @return array<string, mixed>|null The record, or null when the role opens none.
 	 *
 	 * @throws RuntimeException When the record schema is not configured.
 	 */
-	private function openRecord(
-		object $objectService,
-		string $register,
-		RoleLinkDefinition $definition,
-		string $caseId,
-		string $targetId,
-		array $payload,
-	): ?array {
+	private function openRecord(RoleLinkRegister $location, RoleLinkDefinition $definition, RoleLinkRequest $request): ?array {
 		if ($definition->opensRecord() === false) {
 			return null;
 		}
+
+		$objectService = $location->objectService;
+		$register      = $location->register;
+		$caseId        = $request->caseId;
+		$targetId      = $request->targetId;
 
 		$schema   = $this->reads()->schemaKey(key: $definition->recordSchema);
 		$existing = $this->searchObjectsAsArrays(
@@ -297,7 +276,7 @@ class RoleLinkService implements RoleLinkServiceInterface {
 			return $existing[0];
 		}
 
-		$record = $payload;
+		$record = $request->payload;
 		$record[$definition->recordCaseField]   = $caseId;
 		$record[$definition->recordTargetField] = $targetId;
 		if ($definition->recordActorField !== null) {
@@ -315,23 +294,17 @@ class RoleLinkService implements RoleLinkServiceInterface {
 	/**
 	 * Whether a case already holds a link for a role.
 	 *
-	 * @param object             $objectService The object service.
-	 * @param string             $register      The register.
-	 * @param string             $caseId        The case.
-	 * @param RoleLinkDefinition $definition    The role.
+	 * @param RoleLinkRegister   $location   The object service and register.
+	 * @param string             $caseId     The case.
+	 * @param RoleLinkDefinition $definition The role.
 	 *
 	 * @return bool True when a record (or, for a role without one, a relation of its type) exists.
 	 */
-	private function isLinked(
-		object $objectService,
-		string $register,
-		string $caseId,
-		RoleLinkDefinition $definition,
-	): bool {
+	private function isLinked(RoleLinkRegister $location, string $caseId, RoleLinkDefinition $definition): bool {
 		if ($definition->opensRecord() === true) {
 			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
+				objectService: $location->objectService,
+				register: $location->register,
 				schema: $this->reads()->schemaKey(key: $definition->recordSchema),
 				filters: [$definition->recordCaseField => $caseId]
 			) !== [];

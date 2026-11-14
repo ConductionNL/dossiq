@@ -105,7 +105,7 @@ class CasePriorityRaiseService {
 
 		$rule = (string)($this->priorityService->termRaiseRule()['id'] ?? 'case-priority-term-raise');
 
-		return $this->writeFloor(caseId: $caseId, floor: $raised, rule: $rule, fallback: $current);
+		return $this->writeFloor(raise: new PriorityFloorRaise(caseId: $caseId, floor: $raised, rule: $rule, fallback: $current));
 	}//end raiseForThreshold()
 
 	/**
@@ -129,29 +129,30 @@ class CasePriorityRaiseService {
 	/**
 	 * Write the floor, and report what the case reads afterwards.
 	 *
-	 * @param string $caseId   The case.
-	 * @param string $floor    The floor to store.
-	 * @param string $rule     The declared rule that asked for it.
-	 * @param string $fallback What to report when the write cannot be read back.
+	 * @param PriorityFloorRaise $raise The case, the floor, the rule that asked for it and the fallback.
 	 *
 	 * @return string The case's priority after the write.
 	 */
-	private function writeFloor(string $caseId, string $floor, string $rule, string $fallback): string {
+	private function writeFloor(PriorityFloorRaise $raise): string {
 		$store = $this->caseStore();
 		if ($store === null) {
-			return $fallback;
+			return $raise->fallback;
 		}
 
 		try {
-			$stored = $this->patchAsSystem(store: $store, caseId: $caseId, changes: ['priorityFloor' => $floor, 'priorityRaisedBy' => $rule]);
+			$stored = $this->patchAsSystem(
+				store: $store,
+				caseId: $raise->caseId,
+				changes: ['priorityFloor' => $raise->floor, 'priorityRaisedBy' => $raise->rule]
+			);
 		} catch (Throwable $e) {
-			$this->logRaiseFailed(caseId: $caseId, floor: $floor, error: $e);
-			return $fallback;
+			$this->logRaiseFailed(raise: $raise, error: $e);
+			return $raise->fallback;
 		}
 
-		$this->logRaised(caseId: $caseId, floor: $floor, rule: $rule);
+		$this->logRaised(raise: $raise);
 
-		return $this->priorityAfter(stored: $stored, fallback: $fallback, floor: $floor);
+		return $this->priorityAfter(stored: $stored, raise: $raise);
 	}//end writeFloor()
 
 	/**
@@ -198,45 +199,43 @@ class CasePriorityRaiseService {
 	/**
 	 * Log that the floor could not be written.
 	 *
-	 * @param string    $caseId The case.
-	 * @param string    $floor  The floor that was asked for.
-	 * @param Throwable $error  Why the write failed.
+	 * @param PriorityFloorRaise $raise The case and the floor that was asked for.
+	 * @param Throwable          $error Why the write failed.
 	 *
 	 * @return void
 	 */
-	private function logRaiseFailed(string $caseId, string $floor, Throwable $error): void {
+	private function logRaiseFailed(PriorityFloorRaise $raise, Throwable $error): void {
 		$this->logger->warning(
 			'Dossiq: the term rule could not raise a case priority',
-			['case' => $caseId, 'floor' => $floor, 'error' => $error->getMessage()]
+			['case' => $raise->caseId, 'floor' => $raise->floor, 'error' => $error->getMessage()]
 		);
 	}//end logRaiseFailed()
 
 	/**
 	 * Log that the floor was written.
 	 *
-	 * @param string $caseId The case.
-	 * @param string $floor  The floor that was stored.
-	 * @param string $rule   The declared rule that asked for it.
+	 * @param PriorityFloorRaise $raise The case, the floor that was stored and the rule that asked for it.
 	 *
 	 * @return void
 	 */
-	private function logRaised(string $caseId, string $floor, string $rule): void {
+	private function logRaised(PriorityFloorRaise $raise): void {
 		$this->logger->info(
 			'Dossiq: the term rule raised a case priority',
-			['case' => $caseId, 'floor' => $floor, 'rule' => $rule]
+			['case' => $raise->caseId, 'floor' => $raise->floor, 'rule' => $raise->rule]
 		);
 	}//end logRaised()
 
 	/**
 	 * The priority the case reads after the write.
 	 *
-	 * @param mixed  $stored   The case as the patch answered it.
-	 * @param string $fallback What to raise when the write cannot be read back.
-	 * @param string $floor    The floor that was stored.
+	 * @param mixed              $stored The case as the patch answered it.
+	 * @param PriorityFloorRaise $raise  The fallback to raise when the write cannot be read back, and the floor stored.
 	 *
 	 * @return string The case's priority after the write.
 	 */
-	private function priorityAfter(mixed $stored, string $fallback, string $floor): string {
+	private function priorityAfter(mixed $stored, PriorityFloorRaise $raise): string {
+		$fallback = $raise->fallback;
+		$floor = $raise->floor;
 		if (is_array($stored) === false) {
 			return $this->priorityService->raise(current: $fallback, floor: $floor);
 		}

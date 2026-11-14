@@ -70,6 +70,16 @@ class ObligationService {
 	public const KIND_ADVICE = 'advice';
 
 	/**
+	 * Per terminal state, the moment field it stamps and the field its reason is written to.
+	 *
+	 * @var array<string, array{0: string, 1: string}>
+	 */
+	private const CLOSING_FIELDS = [
+		ObligationDeclaration::STATE_MET => ['metAt', 'settlementNote'],
+		ObligationDeclaration::STATE_WITHDRAWN => ['withdrawnAt', 'withdrawalReason'],
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService       $settingsService Resolves the object service and schemas.
@@ -120,13 +130,7 @@ class ObligationService {
 	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function meet(string $obligationId, string $note = ''): bool {
-		return $this->close(
-			obligationId: $obligationId,
-			state: ObligationDeclaration::STATE_MET,
-			field: 'metAt',
-			reason: $note,
-			reasonField: 'settlementNote',
-		);
+		return $this->close(obligationId: $obligationId, state: ObligationDeclaration::STATE_MET, reason: $note);
 	}//end meet()
 
 	/**
@@ -145,13 +149,7 @@ class ObligationService {
 	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function withdraw(string $obligationId, string $reason): bool {
-		return $this->close(
-			obligationId: $obligationId,
-			state: ObligationDeclaration::STATE_WITHDRAWN,
-			field: 'withdrawnAt',
-			reason: $reason,
-			reasonField: 'withdrawalReason',
-		);
+		return $this->close(obligationId: $obligationId, state: ObligationDeclaration::STATE_WITHDRAWN, reason: $reason);
 	}//end withdraw()
 
 	/**
@@ -332,23 +330,19 @@ class ObligationService {
 	/**
 	 * Settle an obligation into a terminal state.
 	 *
+	 * The moment field it stamps and the field the reason goes to are read
+	 * from {@see self::CLOSING_FIELDS} by the state.
+	 *
 	 * @param string $obligationId The obligation.
-	 * @param string $state        The terminal state.
-	 * @param string $field        The moment field to stamp.
+	 * @param string $state        The terminal state, a key of CLOSING_FIELDS.
 	 * @param string $reason       The reason or note.
-	 * @param string $reasonField  Which field the reason is written to.
 	 *
 	 * @return bool True when the write landed.
 	 *
 	 * @spec openspec/specs/consultation-management/spec.md
 	 */
-	private function close(
-		string $obligationId,
-		string $state,
-		string $field,
-		string $reason,
-		string $reasonField,
-	): bool {
+	private function close(string $obligationId, string $state, string $reason): bool {
+		[$field, $reasonField] = self::CLOSING_FIELDS[$state];
 		if (trim($obligationId) === '') {
 			return false;
 		}

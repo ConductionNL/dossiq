@@ -173,14 +173,7 @@ class WorkflowDeployer {
 	 * @return array{kind: string, id: string, message: string} What became of it.
 	 */
 	private function deployEntry(RowTarget $target, WorkflowEntry $entry): array {
-		return $this->deployWorkflow(
-			objectService: $target->objectService,
-			register: $target->register,
-			schema: $target->schema,
-			name: $entry->name,
-			content: $entry->content,
-			strategy: $target->strategy,
-		);
+		return $this->deployWorkflow(target: $target, entry: $entry);
 	}//end deployEntry()
 
 	/**
@@ -207,17 +200,17 @@ class WorkflowDeployer {
 	/**
 	 * Deploy one workflow template, and say what became of it.
 	 *
-	 * @param object            $objectService The OpenRegister object service.
-	 * @param string            $register      The register being written into.
-	 * @param string            $schema        The workflow template schema.
-	 * @param string            $name          The archive entry, for the message.
-	 * @param string|false      $content       The raw entry, or false when unreadable.
-	 * @param string            $strategy      What to do about a template already here.
+	 * @param RowTarget     $target Where the template goes, and what to do about one already here.
+	 * @param WorkflowEntry $entry  The archive entry: its name, for the message, and its raw content.
 	 *
 	 * @return array{kind: string, id: string, message: string} What became of it.
 	 */
-	private function deployWorkflow(object $objectService, string $register, string $schema, string $name,
-		string|false $content, string $strategy): array {
+	private function deployWorkflow(RowTarget $target, WorkflowEntry $entry): array {
+		$objectService = $target->objectService;
+		$register = $target->register;
+		$schema = $target->schema;
+		$name = $entry->name;
+		$content = $entry->content;
 		$template = $this->decodedTemplate(content: $content);
 		if (is_array($template) === false) {
 			return $this->unreadableTemplate(name: $name, content: $content);
@@ -226,12 +219,14 @@ class WorkflowDeployer {
 		$packageId = $this->existingId(row: $template);
 		$conflict = ($packageId !== '' && $this->holds(objectService: $objectService, register: $register, schema: $schema, id: $packageId) === true);
 
-		if ($conflict === true && $strategy === self::STRATEGY_SKIP) {
+		if ($conflict === true && $target->strategy === self::STRATEGY_SKIP) {
 			return ['kind' => 'skipped', 'id' => $packageId, 'message' => ''];
 		}
 
-		return $this->storeTemplate(objectService: $objectService, register: $register, schema: $schema, name: $name,
-			template: $template, packageId: $packageId, conflict: $conflict);
+		return $this->storeTemplate(
+			target: $target,
+			toStore: new TemplateToStore(name: $name, template: $template, packageId: $packageId, conflict: $conflict),
+		);
 	}//end deployWorkflow()
 
 	/**
@@ -272,27 +267,26 @@ class WorkflowDeployer {
 	/**
 	 * Store one decoded template, and say what became of it.
 	 *
-	 * @param object               $objectService The OpenRegister object service.
-	 * @param string               $register      The register being written into.
-	 * @param string               $schema        The workflow template schema.
-	 * @param string               $name          The archive entry, for the message.
-	 * @param array<string, mixed> $template      The decoded template.
-	 * @param string               $packageId     The id the package gives it, or ''.
-	 * @param bool                 $conflict      Whether this instance already holds it.
+	 * @param RowTarget       $target  The object service, register and workflow template schema.
+	 * @param TemplateToStore $toStore The entry name, the decoded template, its package id and whether it conflicts.
 	 *
 	 * @return array{kind: string, id: string, message: string} What became of it.
 	 */
-	private function storeTemplate(object $objectService, string $register, string $schema, string $name,
-		array $template, string $packageId, bool $conflict): array {
+	private function storeTemplate(RowTarget $target, TemplateToStore $toStore): array {
 		try {
-			$templateUuid = self::templateUuid(packageId: $packageId);
-			$stored = $objectService->saveObject($this->withoutMetadata(row: $template), register: $register, schema: $schema, uuid: $templateUuid);
+			$templateUuid = self::templateUuid(packageId: $toStore->packageId);
+			$stored = $target->objectService->saveObject(
+				$this->withoutMetadata(row: $toStore->template),
+				register: $target->register,
+				schema: $target->schema,
+				uuid: $templateUuid
+			);
 		} catch (\Throwable $e) {
-			return ['kind' => 'error', 'id' => '', 'message' => "Workflow '{$name}' could not be deployed: " . $e->getMessage()];
+			return ['kind' => 'error', 'id' => '', 'message' => "Workflow '{$toStore->name}' could not be deployed: " . $e->getMessage()];
 		}
 
 		$id = $this->storedId(stored: $stored);
-		if ($conflict === true) {
+		if ($toStore->conflict === true) {
 			return ['kind' => 'replaced', 'id' => $id, 'message' => ''];
 		}
 

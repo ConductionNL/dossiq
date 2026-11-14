@@ -1077,7 +1077,8 @@ class ZgwService implements ZgwServiceInterface {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function handleIndex(IRequest $request, string $zgwApi, string $resource): JSONResponse {
-		$mappingConfig = $this->mappingOrRefusal(route: new ResourceRoute(request: $request, api: $zgwApi, resource: $resource));
+		$route = new ResourceRoute(request: $request, api: $zgwApi, resource: $resource);
+		$mappingConfig = $this->mappingOrRefusal(route: $route);
 		if ($mappingConfig instanceof JSONResponse) {
 			return $mappingConfig;
 		}
@@ -1090,7 +1091,7 @@ class ZgwService implements ZgwServiceInterface {
 		}
 
 		try {
-			return $this->listMapped(request: $request, zgwApi: $zgwApi, resource: $resource, mappingConfig: $mappingConfig);
+			return $this->listMapped(route: $route, mappingConfig: $mappingConfig);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'ZGW list error: ' . $e->getMessage(),
@@ -1106,17 +1107,15 @@ class ZgwService implements ZgwServiceInterface {
 	/**
 	 * Search one page of a resource and map it outbound.
 	 *
-	 * @param IRequest $request The request object
-	 * @param string $zgwApi The ZGW API group
-	 * @param string $resource The ZGW resource name
+	 * @param ResourceRoute $route The request, API group and resource
 	 * @param array $mappingConfig The mapping configuration
 	 *
 	 * @return JSONResponse The paginated list
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function listMapped(IRequest $request, string $zgwApi, string $resource, array $mappingConfig): JSONResponse {
-		$params = $request->getParams();
+	private function listMapped(ResourceRoute $route, array $mappingConfig): JSONResponse {
+		$params = $route->request->getParams();
 		$filters = $this->translateQueryParams(params: $params, mappingConfig: $mappingConfig);
 
 		[$page, $pageSize] = $this->pageWindow(params: $params);
@@ -1125,7 +1124,7 @@ class ZgwService implements ZgwServiceInterface {
 		$result = $this->searchPage(searchParams: $searchParams, mappingConfig: $mappingConfig);
 
 		$objects = $result['results'] ?? [];
-		$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
+		$baseUrl = $this->buildBaseUrl(request: $route->request, zgwApi: $route->api, resource: $route->resource);
 		$mapped = $this->mapListObjects(objects: $objects, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
 
 		return $this->pageResponse(mapped: $mapped, totalCount: $result['total'] ?? count($objects), params: $params, baseUrl: $baseUrl);
@@ -1459,13 +1458,7 @@ class ZgwService implements ZgwServiceInterface {
 	 */
 	private function showMappedOrNotFound(ResourceRoute $route, array $mappingConfig, mixed $object): JSONResponse {
 		try {
-			return $this->showMapped(
-				request: $route->request,
-				zgwApi: $route->api,
-				resource: $route->resource,
-				mappingConfig: $mappingConfig,
-				object: $object
-			);
+			return $this->showMapped(route: $route, mappingConfig: $mappingConfig, object: $object);
 		} catch (\Throwable $e) {
 			$this->logger->error('ZGW show error: ' . $e->getMessage(), ['exception' => $e]);
 			return new JSONResponse(data: ['detail' => 'Not found'], statusCode: Http::STATUS_NOT_FOUND);
@@ -1475,9 +1468,7 @@ class ZgwService implements ZgwServiceInterface {
 	/**
 	 * Map one stored object outbound.
 	 *
-	 * @param IRequest $request The request object
-	 * @param string $zgwApi The ZGW API group
-	 * @param string $resource The ZGW resource name
+	 * @param ResourceRoute $route The request, API group and resource
 	 * @param array $mappingConfig The mapping configuration
 	 * @param mixed $object The stored object
 	 *
@@ -1485,14 +1476,8 @@ class ZgwService implements ZgwServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function showMapped(
-		IRequest $request,
-		string $zgwApi,
-		string $resource,
-		array $mappingConfig,
-		mixed $object,
-	): JSONResponse {
-		$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
+	private function showMapped(ResourceRoute $route, array $mappingConfig, mixed $object): JSONResponse {
+		$baseUrl = $this->buildBaseUrl(request: $route->request, zgwApi: $route->api, resource: $route->resource);
 		$outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
 
 		$objectData = $object;
@@ -1578,7 +1563,7 @@ class ZgwService implements ZgwServiceInterface {
 			return $mappingConfig;
 		}
 
-		$existingData = $this->readExisting(uuid: $route->uuid, mappingConfig: $mappingConfig, operation: $operation, resource: $route->resource);
+		$existingData = $this->readExisting(route: $route, mappingConfig: $mappingConfig, operation: $operation);
 		if ($existingData instanceof JSONResponse) {
 			return $existingData;
 		}
@@ -1714,18 +1699,17 @@ class ZgwService implements ZgwServiceInterface {
 	/**
 	 * The stored object an update or delete acts on, or the answer when it cannot be read.
 	 *
-	 * @param string $uuid The object uuid
+	 * @param ResourceRoute $route The route: the object uuid, and the resource for the log
 	 * @param array $mappingConfig The ZGW mapping (`sourceRegister`, `sourceSchema`)
 	 * @param string $operation What the request asks (`ZGW delete`), for the log
-	 * @param string $resource The ZGW resource name, for the log
 	 *
 	 * @return array|JSONResponse The object as an array, or the 404, 403 or 503 answer
 	 */
-	private function readExisting(string $uuid, array $mappingConfig, string $operation, string $resource): array|JSONResponse {
+	private function readExisting(ResourceRoute $route, array $mappingConfig, string $operation): array|JSONResponse {
 		try {
-			$existing = $this->findSerialized(uuid: $uuid, mappingConfig: $mappingConfig);
+			$existing = $this->findSerialized(uuid: $route->uuid, mappingConfig: $mappingConfig);
 		} catch (\Throwable $e) {
-			return $this->storeFailureResponse(error: $e, operation: $operation, object: $resource . ' ' . $uuid);
+			return $this->storeFailureResponse(error: $e, operation: $operation, object: $route->objectLabel());
 		}
 
 		return $existing ?? $this->notFoundResponse();
