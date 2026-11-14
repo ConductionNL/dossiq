@@ -399,13 +399,25 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			return null;
 		}
 
+		return $this->versionTag(page: $page, cutoff: $cutoff);
+	}//end versionInForce()
+
+	/**
+	 * The tag of the highest version on the page that was in force at the cutoff.
+	 *
+	 * @param array $page   The page of template versions.
+	 * @param int   $cutoff The end of the effective date, as a timestamp.
+	 *
+	 * @return string|null The version tag, or null when none was in force.
+	 */
+	private function versionTag(array $page, int $cutoff): ?string {
 		$highest = $this->highestVersionAtOrBefore(rows: (array)($page['results'] ?? []), cutoff: $cutoff);
 		if ($highest === null) {
 			return null;
 		}
 
 		return 'v' . $highest;
-	}//end versionInForce()
+	}//end versionTag()
 
 	/**
 	 * The highest version number among the chain rows at or before a moment.
