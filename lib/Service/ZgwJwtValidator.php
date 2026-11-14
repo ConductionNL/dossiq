@@ -25,8 +25,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\Contracts\ZgwJwtValidatorInterface;
-use OCP\IUserManager;
-use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -72,15 +70,11 @@ class ZgwJwtValidator implements ZgwJwtValidatorInterface {
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger The logger
-	 * @param IUserSession $userSession The user session
-	 * @param IUserManager $userManager The user manager
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
-		private readonly IUserSession $userSession,
-		private readonly IUserManager $userManager,
 	) {
 		$this->loadOpenRegisterServices();
 	}//end __construct()
@@ -103,29 +97,6 @@ class ZgwJwtValidator implements ZgwJwtValidatorInterface {
 			);
 		}
 	}//end loadOpenRegisterServices()
-
-	/**
-	 * Validate a JWT bearer token from an Authorization header.
-	 *
-	 * On success the matching Consumer's Nextcloud user is set on the session
-	 * (mirroring OpenRegister's authorizeJwt behaviour) so downstream object
-	 * operations run with the correct identity.
-	 *
-	 * @param string $authorization The full Authorization header value
-	 *
-	 * @return void
-	 *
-	 * @throws ZgwAuthValidationException If the token is missing, malformed,
-	 *                                    or the signature/payload is invalid.
-	 *
-	 * @spec openspec/specs/zgw-api-mapping/spec.md
-	 */
-	public function validate(string $authorization): void {
-		$consumer = $this->consumerFor(authorization: $authorization);
-
-		// Mirror OpenRegister: bind the request to the Consumer's user.
-		$this->bindConsumerUser(userId: $consumer->getUserId());
-	}//end validate()
 
 	/**
 	 * The consumer a JWT bearer token belongs to, verified, without binding its user.
@@ -240,24 +211,6 @@ class ZgwJwtValidator implements ZgwJwtValidatorInterface {
 			throw new ZgwAuthValidationException(message: 'The token does not match the shared secret');
 		}
 	}//end verifySignature()
-
-	/**
-	 * Bind the session to the consumer's Nextcloud user, when it has a known one.
-	 *
-	 * @param string|null $userId The consumer's user id
-	 *
-	 * @return void
-	 */
-	private function bindConsumerUser(?string $userId): void {
-		if ($userId === null || $userId === '') {
-			return;
-		}
-
-		$user = $this->userManager->get($userId);
-		if ($user !== null) {
-			$this->userSession->setUser($user);
-		}
-	}//end bindConsumerUser()
 
 	/**
 	 * Validate the iat/exp timing of the payload.
