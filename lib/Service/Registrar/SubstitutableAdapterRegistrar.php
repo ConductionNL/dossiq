@@ -111,33 +111,7 @@ class SubstitutableAdapterRegistrar {
 		$context->registerService(
 			BerichtenboxAdapterInterface::class,
 			static function (ContainerInterface $c): BerichtenboxAdapterInterface {
-				// 🔴 THE DEFAULT IS THE REAL ONE NOW, AND THAT IS THE CHANGE.
-				// It used to be MockAdapter, whose own class comment says it
-				// simulates sending without external calls, and whose
-				// `sendMessage` answers `status: sent` with a generated id. So
-				// an instance that had simply never set this key reported every
-				// letter to a citizen as delivered, and the only trace was a
-				// warning in the boot log. IntegriqAdapter refuses instead, and
-				// names what is missing, which is the rule integriq's own
-				// factory already follows once its Logius flag is on.
-				//
-				// The mock is still selectable: `berichtenbox_adapter=mock`, or
-				// its class name. What it is no longer is what you get by
-				// forgetting.
-				self::resolveBerichtenboxAlias(container: $c);
-
-				return ConfiguredAdapter::resolve(
-					container: $c,
-					configKey: self::BERICHTENBOX_CONFIG_KEY,
-					interface: BerichtenboxAdapterInterface::class,
-					mockClass: IntegriqAdapter::class,
-					fallbackReason: $c->get(IL10N::class)->t(
-						'No Berichtenbox adapter is configured, so digital post goes through '
-						. 'integriq. An instance without integriq refuses each send and says so, '
-						. 'rather than simulating one. Set berichtenbox_adapter to mock to go '
-						. 'back to simulating.'
-					),
-				);
+				return self::berichtenboxAdapter(container: $c);
 			}
 		);
 
@@ -149,27 +123,96 @@ class SubstitutableAdapterRegistrar {
 		$context->registerService(
 			TemplateEngineAdapterInterface::class,
 			static function (ContainerInterface $c): TemplateEngineAdapterInterface {
-				$l10n = $c->get(IL10N::class);
-
-				return ConfiguredAdapter::resolve(
-					container: $c,
-					configKey: self::TEMPLATE_CONFIG_KEY,
-					interface: TemplateEngineAdapterInterface::class,
-					mockClass: MockTemplateEngineAdapter::class,
-					fallbackReason: $l10n->t(
-						'Filinq is not installed, so every beschikking is rendered by a mock. '
-						. 'Install filinq to render through it.'
-					),
-					defaultClass: self::defaultTemplateAdapter(container: $c),
-					chosenMockReason: $l10n->t(
-						'beschikking_template_adapter names the mock, so every beschikking is rendered '
-						. 'by a mock although filinq is installed. Clear beschikking_template_adapter '
-						. 'to render through filinq.'
-					),
-				);
+				return self::templateAdapter(container: $c);
 			}
 		);
 	}//end register()
+
+	/**
+	 * The Berichtenbox adapter the admin named, or integriq's when nobody has.
+	 *
+	 * @param ContainerInterface $container The DI container.
+	 *
+	 * @return BerichtenboxAdapterInterface The adapter.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) ConfiguredAdapter is a stateless resolver, used at the composition root.
+	 *
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
+	 */
+	private static function berichtenboxAdapter(ContainerInterface $container): BerichtenboxAdapterInterface {
+		// 🔴 THE DEFAULT IS THE REAL ONE NOW, AND THAT IS THE CHANGE.
+		// It used to be MockAdapter, whose own class comment says it
+		// simulates sending without external calls, and whose
+		// `sendMessage` answers `status: sent` with a generated id. So
+		// an instance that had simply never set this key reported every
+		// letter to a citizen as delivered, and the only trace was a
+		// warning in the boot log. IntegriqAdapter refuses instead, and
+		// names what is missing, which is the rule integriq's own
+		// factory already follows once its Logius flag is on.
+		//
+		// The mock is still selectable: `berichtenbox_adapter=mock`, or
+		// its class name. What it is no longer is what you get by
+		// forgetting.
+		self::resolveBerichtenboxAlias(container: $container);
+
+		return ConfiguredAdapter::resolve(
+			container: $container,
+			configKey: self::BERICHTENBOX_CONFIG_KEY,
+			interface: BerichtenboxAdapterInterface::class,
+			mockClass: IntegriqAdapter::class,
+			fallbackReason: $container->get(IL10N::class)->t(
+				'No Berichtenbox adapter is configured, so digital post goes through '
+				. 'integriq. An instance without integriq refuses each send and says so, '
+				. 'rather than simulating one. Set berichtenbox_adapter to mock to go '
+				. 'back to simulating.'
+			),
+		);
+	}//end berichtenboxAdapter()
+
+	/**
+	 * The template adapter the admin named, filinq's when it is installed, or the mock.
+	 *
+	 * @param ContainerInterface $container The DI container.
+	 *
+	 * @return TemplateEngineAdapterInterface The adapter.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) ConfiguredAdapter is a stateless resolver, used at the composition root.
+	 *
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
+	 */
+	private static function templateAdapter(ContainerInterface $container): TemplateEngineAdapterInterface {
+		$l10n = $container->get(IL10N::class);
+
+		return ConfiguredAdapter::resolve(
+			container: $container,
+			configKey: self::TEMPLATE_CONFIG_KEY,
+			interface: TemplateEngineAdapterInterface::class,
+			mockClass: MockTemplateEngineAdapter::class,
+			fallbackReason: $l10n->t(
+				'Filinq is not installed, so every beschikking is rendered by a mock. '
+				. 'Install filinq to render through it.'
+			),
+			defaultClass: self::defaultTemplateAdapter(container: $container),
+			chosenMockReason: self::chosenTemplateMockReason(l10n: $l10n),
+		);
+	}//end templateAdapter()
+
+	/**
+	 * What the log says when the admin chose the template mock although filinq is installed.
+	 *
+	 * @param IL10N $l10n The translator.
+	 *
+	 * @return string The reason.
+	 *
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
+	 */
+	private static function chosenTemplateMockReason(IL10N $l10n): string {
+		return $l10n->t(
+			'beschikking_template_adapter names the mock, so every beschikking is rendered '
+			. 'by a mock although filinq is installed. Clear beschikking_template_adapter '
+			. 'to render through filinq.'
+		);
+	}//end chosenTemplateMockReason()
 
 	/**
 	 * Expand a Berichtenbox adapter shorthand into the class it names.
