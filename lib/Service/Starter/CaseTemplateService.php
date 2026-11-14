@@ -163,13 +163,22 @@ class CaseTemplateService implements CaseTemplateServiceInterface {
 			return ['ok' => false, 'reason' => 'not_a_template', 'case' => []];
 		}
 
-		$payload = $this->preset(template: $template);
-		foreach ($overrides as $key => $value) {
-			$payload[$key] = $value;
-		}
+		return $this->createFrom(template: $template, overrides: $overrides, templateId: $templateId);
+	}//end startFrom()
 
-		$payload[self::PROPERTY] = false;
-		$payload['startedFromTemplate'] = $templateId;
+	/**
+	 * Write the new case from the template and the handler's fields.
+	 *
+	 * @param array<string, mixed> $template   The template row.
+	 * @param array<string, mixed> $overrides  Fields the handler set themselves.
+	 * @param string               $templateId The template's id.
+	 *
+	 * @return array{ok: bool, reason: string, case: array<string, mixed>} What happened.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
+	 */
+	private function createFrom(array $template, array $overrides, string $templateId): array {
+		$payload = $this->startPayload(template: $template, overrides: $overrides, templateId: $templateId);
 
 		$created = $this->store->save(configKey: self::CASES, payload: $payload);
 		if ($created === null) {
@@ -182,7 +191,28 @@ class CaseTemplateService implements CaseTemplateServiceInterface {
 		);
 
 		return ['ok' => true, 'reason' => '', 'case' => $created];
-	}//end startFrom()
+	}//end createFrom()
+
+	/**
+	 * The template's preset fields, the handler's fields over them, marked as started from it.
+	 *
+	 * @param array<string, mixed> $template   The template row.
+	 * @param array<string, mixed> $overrides  Fields the handler set themselves.
+	 * @param string               $templateId The template's id.
+	 *
+	 * @return array<string, mixed> The payload to write.
+	 */
+	private function startPayload(array $template, array $overrides, string $templateId): array {
+		$payload = $this->preset(template: $template);
+		foreach ($overrides as $key => $value) {
+			$payload[$key] = $value;
+		}
+
+		$payload[self::PROPERTY] = false;
+		$payload['startedFromTemplate'] = $templateId;
+
+		return $payload;
+	}//end startPayload()
 
 	/**
 	 * The fields a template presets, with the template's own identity dropped.
