@@ -310,6 +310,34 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 		}
 
 		[$objectService, $register, $schema] = $store;
+		$rows = $this->activeMandateRows(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			organisation: $organisation,
+		);
+		if ($rows === null) {
+			return false;
+		}
+
+		$dateStr = $date->format('Y-m-d');
+
+		return $this->anyActiveFor(rows: $rows, organisation: $organisation, dateStr: $dateStr);
+	}//end hasActiveMandateFor()
+
+	/**
+	 * The active mandate rows across organisations.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register      The register id.
+	 * @param string $schema        The mandate schema id.
+	 * @param string $organisation  The organisation UUID, for the log.
+	 *
+	 * @return array<int, array<string, mixed>>|null The rows, or null when the register could not be read.
+	 *
+	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md#requirement-the-overview-reads-decisions-from-the-mandate-register
+	 */
+	private function activeMandateRows(object $objectService, string $register, string $schema, string $organisation): ?array {
 		try {
 			$rows = $this->searchObjectsAsArraysUnscoped(
 				objectService: $objectService,
@@ -322,10 +350,24 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 				'Dossiq MandaatCheckService: mandate register could not be read for an organisation',
 				['organisation' => $organisation, 'exception' => $e->getMessage()]
 			);
-			return false;
+			return null;
 		}
 
-		$dateStr = $date->format('Y-m-d');
+		return $rows;
+	}//end activeMandateRows()
+
+	/**
+	 * Whether any row is an active mandate of the organisation, valid on the date.
+	 *
+	 * @param array<int, array<string, mixed>> $rows         The mandate rows.
+	 * @param string                           $organisation The organisation UUID.
+	 * @param string                           $dateStr      The date, `Y-m-d`.
+	 *
+	 * @return bool True when one is.
+	 *
+	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md#requirement-the-overview-reads-decisions-from-the-mandate-register
+	 */
+	private function anyActiveFor(array $rows, string $organisation, string $dateStr): bool {
 		foreach ($rows as $row) {
 			if ((string)($row['status'] ?? '') === 'active'
 				&& self::organisationOf(row: $row) === $organisation
@@ -336,7 +378,7 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 		}
 
 		return false;
-	}//end hasActiveMandateFor()
+	}//end anyActiveFor()
 
 	/**
 	 * The organisation that owns a row: its `@self` organisation, else its own field.
