@@ -78,16 +78,9 @@ class CaseDocumentMergeController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function merge(string $caseId, array $fileIds=[], string $name=''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(
-				['error' => 'no-case-access', 'message' => $this->l10n->t('You may not add documents to this case')],
-				Http::STATUS_FORBIDDEN
-			);
+		$refusal = $this->mergeAccessRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$ids = array_values(array_filter(array_map('intval', $fileIds), static fn (int $id): bool => $id > 0));
@@ -101,14 +94,48 @@ class CaseDocumentMergeController extends Controller {
 		try {
 			return new JSONResponse($this->merges->merge(fileIds: $ids, name: $name, caseId: $caseId));
 		} catch (Throwable $e) {
-			if (str_starts_with(haystack: $e->getMessage(), needle: 'filinq_unavailable') === true) {
-				return new JSONResponse(
-					['error' => 'filinq-unavailable', 'message' => $this->l10n->t('Filinq is not installed, so documents cannot be merged')],
-					Http::STATUS_SERVICE_UNAVAILABLE
-				);
-			}
-
-			return new JSONResponse(['error' => 'merge-refused', 'message' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
+			return $this->mergeFailure(e: $e);
 		}
 	}//end merge()
+
+	/**
+	 * Refuse a merge to an anonymous caller or a user who may not add documents to the case.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the merge may run.
+	 */
+	private function mergeAccessRefusal(string $caseId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(
+				['error' => 'no-case-access', 'message' => $this->l10n->t('You may not add documents to this case')],
+				Http::STATUS_FORBIDDEN
+			);
+		}
+
+		return null;
+	}//end mergeAccessRefusal()
+
+	/**
+	 * Answer a failed merge: 503 when Filinq is missing, else 422 with the reason.
+	 *
+	 * @param Throwable $e The failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function mergeFailure(Throwable $e): JSONResponse {
+		if (str_starts_with(haystack: $e->getMessage(), needle: 'filinq_unavailable') === true) {
+			return new JSONResponse(
+				['error' => 'filinq-unavailable', 'message' => $this->l10n->t('Filinq is not installed, so documents cannot be merged')],
+				Http::STATUS_SERVICE_UNAVAILABLE
+			);
+		}
+
+		return new JSONResponse(['error' => 'merge-refused', 'message' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
+	}//end mergeFailure()
 }//end class
