@@ -44,17 +44,20 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Vth;
 
+use OCA\Dossiq\Kernel\Contracts\LhsRecommendationServiceInterface;
+use OCA\Dossiq\Service\Support\StoredArray;
+use OCP\IUser;
 use OCP\IUserSession;
 use RuntimeException;
 
 /**
  * LHS recommendation engine.
  *
- * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
  *
  * @psalm-suppress UnusedClass
  */
-class LhsRecommendationService {
+class LhsRecommendationService implements LhsRecommendationServiceInterface {
 	/**
 	 * Severity ordering of the `interventie` enum, lowest -> highest.
 	 *
@@ -122,55 +125,18 @@ class LhsRecommendationService {
 		?int $lhsVersion = null,
 		?string $inspection = null,
 	): array {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new RuntimeException('Authenticatie vereist voor LHS-aanbeveling');
-		}
-
+		$user = $this->sessionUser(refusal: 'Authenticatie vereist voor LHS-aanbeveling');
 		$matrix = $this->store->loadMatrix(version: $lhsVersion);
-
-		// THE DECISION TABLE IS THE LOOKUP. The matrix is a three-axis grid
-		// yielding one value, which is a decision table, and OpenRegister
-		// carries one evaluator for those. Asking it first is the whole point
-		// of the projection: a declared table NAMES its inputs, so it refuses
-		// what it cannot resolve instead of missing silently the way a
-		// hand-indexed dictionary does (dossiq#1596).
-		$intervention = $this->tableLookup->intervention(
-			matrixVersion: (string)($matrix['version'] ?? '1'),
+		$question = new LhsQuestion(
+			caseId: $caseId,
 			severity: $severity,
 			behaviour: $behaviour,
 			actorType: $actorType,
+			inspection: $inspection,
 		);
 
-		if ($intervention === null) {
-			// FALLBACK, and it is not dead code. Projecting a matrix needs an
-			// owner for the table it writes, so it is an occ command a person
-			// runs and not something an upgrade can do unattended. An instance
-			// that has not run it yet still has to be able to enforce.
-			$intervention = $this->interventionFromMatrix(
-				matrix: $matrix,
-				severity: $severity,
-				behaviour: $behaviour,
-				actorType: $actorType,
-			);
-		}
-
-		$recommendation = [
-			'case' => $caseId,
-			'inspection' => $inspection,
-			'severity' => $severity,
-			'behaviour' => $behaviour,
-			'actorType' => $actorType,
-			'matrixVersion' => (int)($matrix['version'] ?? 1),
-			'recommendedIntervention' => $intervention,
-			'finalIntervention' => $intervention,
-			'override' => false,
-			'recommendedBy' => $user->getUID(),
-		];
-
-		if ($inspection === null) {
-			unset($recommendation['inspection']);
-		}
+		$recommendation = $this->recommendationRow(question: $question, matrix: $matrix);
+		$recommendation['recommendedBy'] = $user->getUID();
 
 		return $this->store->persistRecommendation(row: $recommendation);
 	}//end recommend()
@@ -214,68 +180,171 @@ class LhsRecommendationService {
 		string $justification,
 		string $userRole,
 	): array {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new RuntimeException('Authenticatie vereist voor override');
-		}
-
-		$trimmed = preg_replace('/\s+/u', '', $justification) ?? '';
-		if (mb_strlen($trimmed) < self::MIN_JUSTIFICATION_LENGTH) {
-			throw new RuntimeException(
-				'Motivatie afwijking moet minimaal 20 tekens bevatten'
-			);
-		}
+		$user = $this->sessionUser(refusal: 'Authenticatie vereist voor override');
+		self::requireJustification(justification: $justification);
 
 		$recommendationId = trim($recommendationId);
 		if ($recommendationId === '') {
 			throw new RuntimeException('Recommendation ID ontbreekt voor override');
 		}
 
-		// Read back, never trust. The escalation guard below compares against
-		// what the MATRIX said, so that value has to come from the store.
+		// Read back, never trust. The escalation guard compares against what
+		// the MATRIX said, so that value has to come from the store.
 		$recommendation = $this->store->loadRecommendation(recommendationId: $recommendationId);
-
-		$recommended = (string)($recommendation['recommendedIntervention'] ?? '');
-		$recSeverity = self::INTERVENTIE_SEVERITY[$recommended] ?? 0;
-		$newSeverity = self::INTERVENTIE_SEVERITY[$intervention] ?? 0;
-		if ($newSeverity === 0) {
-			throw new RuntimeException(
-				'Ongeldige interventie: ' . $intervention
-			);
-		}
-
-		$overrideUp = ($newSeverity > $recSeverity);
-		$authority = 'inspector';
-		if ($userRole === 'manager') {
-			$authority = 'manager';
-		}
-
-		if ($overrideUp === true && $authority !== 'manager') {
-			throw new RuntimeException('Verzwaring vereist managerrol');
-		}
+		$override = new LhsOverride(intervention: $intervention, justification: $justification, userRole: $userRole);
+		self::requireAuthority(recommendation: $recommendation, override: $override);
 
 		// Only the override fields are written. The stored row supplies
 		// everything else, so a request cannot rewrite `severity`, `behaviour`,
 		// `matrixVersion` or `recommendedBy` on its way past the guard — which
 		// would leave the audit record of what the matrix said agreeing with
 		// whoever overrode it.
-		$updated = array_merge(
-			$recommendation,
-			[
-				'override' => true,
-				'overrideJustification' => $justification,
-				'overrideBy' => $user->getUID(),
-				'overrideAuthority' => $authority,
-				'finalIntervention' => $intervention,
-			]
-		);
+		$updated = array_merge($recommendation, self::overrideFields(override: $override, user: $user));
 
 		return $this->store->persistRecommendation(row: $updated, id: $recommendationId);
 	}//end override()
 
+	/**
+	 * The signed-in user; identity always comes from the session.
+	 *
+	 * @param string $refusal The refusal when nobody is signed in.
+	 *
+	 * @return IUser The user.
+	 *
+	 * @throws RuntimeException When nobody is signed in.
+	 */
+	private function sessionUser(string $refusal): IUser {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			throw new RuntimeException($refusal);
+		}
 
+		return $user;
+	}//end sessionUser()
 
+	/**
+	 * The recommendation row for a question, before it names who asked.
+	 *
+	 * @param LhsQuestion          $question The question.
+	 * @param array<string, mixed> $matrix   The stored matrix row.
+	 *
+	 * @return array<string, mixed> The row.
+	 *
+	 * @throws RuntimeException When no cell matches the triple.
+	 */
+	private function recommendationRow(LhsQuestion $question, array $matrix): array {
+		$intervention = $this->interventionFor(question: $question, matrix: $matrix);
+		$recommendation = [
+			'case' => $question->caseId,
+			'inspection' => $question->inspection,
+			'severity' => $question->severity,
+			'behaviour' => $question->behaviour,
+			'actorType' => $question->actorType,
+			'matrixVersion' => (int)($matrix['version'] ?? 1),
+			'recommendedIntervention' => $intervention,
+			'finalIntervention' => $intervention,
+			'override' => false,
+		];
+		if ($question->inspection === null) {
+			unset($recommendation['inspection']);
+		}
 
+		return $recommendation;
+	}//end recommendationRow()
+
+	/**
+	 * The intervention the decision table prescribes, else the matrix.
+	 *
+	 * THE DECISION TABLE IS THE LOOKUP. The matrix is a three-axis grid
+	 * yielding one value, which is a decision table, and OpenRegister carries
+	 * one evaluator for those. Asking it first is the whole point of the
+	 * projection: a declared table NAMES its inputs, so it refuses what it
+	 * cannot resolve instead of missing silently the way a hand-indexed
+	 * dictionary does (dossiq#1596).
+	 *
+	 * The matrix is the FALLBACK, and it is not dead code. Projecting a matrix
+	 * needs an owner for the table it writes, so it is an occ command a person
+	 * runs and not something an upgrade can do unattended. An instance that
+	 * has not run it yet still has to be able to enforce.
+	 *
+	 * @param LhsQuestion          $question The question.
+	 * @param array<string, mixed> $matrix   The stored matrix row.
+	 *
+	 * @return string The prescribed intervention.
+	 *
+	 * @throws RuntimeException When no cell matches the triple.
+	 */
+	private function interventionFor(LhsQuestion $question, array $matrix): string {
+		$intervention = $this->tableLookup->intervention(
+			matrixVersion: (string)($matrix['version'] ?? '1'),
+			severity: $question->severity,
+			behaviour: $question->behaviour,
+			actorType: $question->actorType,
+		);
+
+		return ($intervention ?? $this->interventionFromMatrix(matrix: $matrix, question: $question));
+	}//end interventionFor()
+
+	/**
+	 * Refuse a justification under the minimum length, whitespace not counted.
+	 *
+	 * @param string $justification The justification.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When it is too short.
+	 */
+	private static function requireJustification(string $justification): void {
+		$trimmed = preg_replace('/\s+/u', '', $justification) ?? '';
+		if (mb_strlen($trimmed) < self::MIN_JUSTIFICATION_LENGTH) {
+			throw new RuntimeException(
+				'Motivatie afwijking moet minimaal 20 tekens bevatten'
+			);
+		}
+	}//end requireJustification()
+
+	/**
+	 * Refuse an unknown intervention, and an escalation by anyone but a manager.
+	 *
+	 * @param array<string, mixed> $recommendation The stored recommendation.
+	 * @param LhsOverride          $override       The override asked for.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the override is not allowed.
+	 */
+	private static function requireAuthority(array $recommendation, LhsOverride $override): void {
+		$recommended = (string)($recommendation['recommendedIntervention'] ?? '');
+		$recSeverity = self::INTERVENTIE_SEVERITY[$recommended] ?? 0;
+		$newSeverity = self::INTERVENTIE_SEVERITY[$override->intervention] ?? 0;
+		if ($newSeverity === 0) {
+			throw new RuntimeException(
+				'Ongeldige interventie: ' . $override->intervention
+			);
+		}
+
+		if ($newSeverity > $recSeverity && $override->authority() !== 'manager') {
+			throw new RuntimeException('Verzwaring vereist managerrol');
+		}
+	}//end requireAuthority()
+
+	/**
+	 * The fields an override writes over the stored row.
+	 *
+	 * @param LhsOverride $override The override.
+	 * @param IUser       $user     Who overrode.
+	 *
+	 * @return array<string, mixed> The fields.
+	 */
+	private static function overrideFields(LhsOverride $override, IUser $user): array {
+		return [
+			'override' => true,
+			'overrideJustification' => $override->justification,
+			'overrideBy' => $user->getUID(),
+			'overrideAuthority' => $override->authority(),
+			'finalIntervention' => $override->intervention,
+		];
+	}//end overrideFields()
 
 	/**
 	 * Read the intervention straight off the matrix.
@@ -290,10 +359,8 @@ class LhsRecommendationService {
 	 * made the actorType vocabulary split invisible for as long as it was
 	 * (dossiq#1596), and it is the reason the table is asked first.
 	 *
-	 * @param array<string, mixed> $matrix The stored matrix row.
-	 * @param string $severity Severity axis value.
-	 * @param string $behaviour Behaviour axis value.
-	 * @param string $actorType Actor-type axis value.
+	 * @param array<string, mixed> $matrix   The stored matrix row.
+	 * @param LhsQuestion          $question The question, naming the three axis values.
 	 *
 	 * @return string The prescribed intervention.
 	 *
@@ -301,14 +368,9 @@ class LhsRecommendationService {
 	 *
 	 * @spec openspec/specs/enforcement-lhs/spec.md
 	 */
-	private function interventionFromMatrix(
-		array $matrix,
-		string $severity,
-		string $behaviour,
-		string $actorType,
-	): string {
+	private function interventionFromMatrix(array $matrix, LhsQuestion $question): string {
 		$cellIndex = $this->indexCells(cells: ($matrix['cells'] ?? []));
-		$key = $severity . ':' . $behaviour . ':' . $actorType;
+		$key = $question->cellKey();
 
 		if (isset($cellIndex[$key]) === false) {
 			throw new RuntimeException(
@@ -330,17 +392,7 @@ class LhsRecommendationService {
 	 * @return array<string, array<string, mixed>>
 	 */
 	private function indexCells(mixed $cells): array {
-		if (is_string($cells) === true) {
-			$decoded = json_decode($cells, true);
-			$cells = [];
-			if (is_array($decoded) === true) {
-				$cells = $decoded;
-			}
-		}
-
-		if (is_array($cells) === false) {
-			return [];
-		}
+		$cells = StoredArray::from(value: $cells);
 
 		$index = [];
 		foreach ($cells as $cell) {
@@ -356,6 +408,5 @@ class LhsRecommendationService {
 
 		return $index;
 	}//end indexCells()
-
 
 }//end class

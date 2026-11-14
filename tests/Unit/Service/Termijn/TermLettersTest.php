@@ -17,14 +17,17 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Termijn;
 
 use OCA\Dossiq\Service\Termijn\TermLetters;
+use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Termijn\TermLetters
+ * @covers \OCA\Dossiq\Service\Term\TermLetter
  * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\Support\ReadableDay
  */
 class TermLettersTest extends TestCase {
+	use MatchesGoldenFiles;
 
 	/**
 	 * Woo art. 4.4 lid 2: the extension letter carries the reason and the new end date.
@@ -61,7 +64,7 @@ class TermLettersTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
 	 */
 	public function testEveryDateInALetterReadsTheSameWay(): void {
 		$letters = new TermLetters();
@@ -90,4 +93,51 @@ class TermLettersTest extends TestCase {
 		$noTerm = $letters->render(type: 'ingebrekestelling-receipt', instance: ['case' => 'Z-1'], context: []);
 		self::assertStringContainsString('eindigt op –.', $noTerm['body'], 'a placeholder stays a placeholder');
 	}//end testEveryDateInALetterReadsTheSameWay()
+
+	/**
+	 * Every letter type in both languages over a full and an empty context,
+	 * plus the case-number fallbacks and an unknown type, pinned whole.
+	 *
+	 * @return void
+	 */
+	public function testGoldenLetters(): void {
+		$full = [
+			'case' => ' 2026-0117 ',
+			'subject' => ' a permit ',
+			'contact' => ' the desk ',
+			'receivedAt' => '2026-10-31T12:00:00+00:00',
+			'termStartsAt' => '2026-11-02',
+			'receivedOutsideWorkingHours' => true,
+			'graceEnd' => '2026-12-01',
+			'newEinddatum' => '2026-12-15',
+			'reason' => ' more advice is needed. ',
+			'items' => ['a map', '', 'a photo'],
+			'pauseDeadline' => '2026-11-20',
+			'chaseText' => ' please send it ',
+			'destination' => ' the province ',
+			'bedragCents' => 123456,
+			'betalingsreferentie' => 'REF-9',
+		];
+		$types = ['ontvangstbevestiging', 'extension', 'ingebrekestelling-receipt', 'hersteltermijn-request', 'hersteltermijn-reminder', 'doorzending', 'niet-ontvankelijk', 'dwangsom-payment', 'unknown'];
+		$instance = ['case' => 'term-link', 'endDateCurrent' => '2026-12-01'];
+		$letters = new TermLetters();
+
+		$world = [];
+		foreach ($types as $type) {
+			foreach (['nl', 'en'] as $locale) {
+				$world[$type . ' ' . $locale . ' full'] = $letters->render(type: $type, instance: $instance, context: ($full + ['locale' => $locale]));
+				$world[$type . ' ' . $locale . ' bare'] = $letters->render(type: $type, instance: [], context: ['locale' => $locale]);
+			}
+		}
+
+		$world['no locale, term link only'] = $letters->render(type: 'ontvangstbevestiging', instance: ['case' => 'term-link'], context: ['endDate' => '2026-12-01']);
+		$world['blank type'] = $letters->render(type: '', instance: $instance, context: $full);
+		$world['wrong-case type'] = $letters->render(type: 'Ontvangstbevestiging', instance: $instance, context: $full);
+		$world['withheld'] = $letters->render(type: 'ontvangstbevestiging', instance: $instance, context: ['contentWithheld' => true, 'locale' => 'en']);
+		$world['withheld nl'] = $letters->render(type: 'ontvangstbevestiging', instance: $instance, context: ['contentWithheld' => true, 'locale' => 'nl']);
+		$world['received in hours'] = $letters->render(type: 'ontvangstbevestiging', instance: $instance, context: ['receivedAt' => '2026-11-03', 'termStartsAt' => '2026-11-03', 'locale' => 'nl']);
+		$world['received in hours en'] = $letters->render(type: 'ontvangstbevestiging', instance: $instance, context: ['receivedAt' => '2026-11-03', 'termStartsAt' => '2026-11-03', 'locale' => 'en']);
+
+		$this->assertMatchesGolden('term-letters', $world);
+	}//end testGoldenLetters()
 }//end class

@@ -24,9 +24,11 @@ namespace OCA\Dossiq\Woo;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooReportReadLogInterface;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -45,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  */
-class WooReportReadLog {
+class WooReportReadLog implements WooReportReadLogInterface {
 
 	/**
 	 * The audit action of a throughput read.
@@ -60,13 +62,13 @@ class WooReportReadLog {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -90,13 +92,7 @@ class WooReportReadLog {
 			return 0;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$mapper = $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER);
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $mapper === null || $register === '' || $schema === '') {
-			throw $this->notRecorded(previous: null);
-		}
+		$target = $this->auditTarget();
 
 		$context = [
 			'reader' => $readerId,
@@ -105,28 +101,64 @@ class WooReportReadLog {
 		];
 		$written = 0;
 		foreach ($caseIds as $caseId) {
-			try {
-				$case = $objectService->find($caseId, register: $register, schema: $schema);
-				$mapper->createAuditTrailEntry(
-					object: $case,
-					action: self::ACTION_THROUGHPUT,
-					context: $context,
-					actorId: $readerId,
-					actorName: $readerId,
-				);
-			} catch (Throwable $e) {
-				$this->logger->error(
-					'Dossiq: a Woo throughput read could not be recorded, so it is refused',
-					['app' => Application::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
-				);
-				throw $this->notRecorded(previous: $e);
-			}
+			$this->recordOn(target: $target, caseId: $caseId, context: $context);
 
 			$written++;
-		}//end foreach
+		}
 
 		return $written;
 	}//end recordThroughputRead()
+
+	/**
+	 * The object service, audit mapper, register and case schema a read is recorded with.
+	 *
+	 * @return array{0: object, 1: object, 2: string, 3: string} The audit target.
+	 *
+	 * @throws RefusedException When any of them is missing.
+	 */
+	private function auditTarget(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$mapper = $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER);
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_schema');
+		if ($objectService === null || $mapper === null || $register === '' || $schema === '') {
+			throw $this->notRecorded(previous: null);
+		}
+
+		return [$objectService, $mapper, $register, $schema];
+	}//end auditTarget()
+
+	/**
+	 * Record the throughput read on one case.
+	 *
+	 * @param array{0: object, 1: object, 2: string, 3: string} $target  The audit target.
+	 * @param string                                            $caseId  The case read.
+	 * @param array<string, mixed>                              $context The reader, the moment and the scope.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the entry cannot be written.
+	 */
+	private function recordOn(array $target, string $caseId, array $context): void {
+		[$objectService, $mapper, $register, $schema] = $target;
+		$readerId = $context['reader'];
+		try {
+			$case = $objectService->find($caseId, register: $register, schema: $schema);
+			$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
+				object: $case,
+				action: self::ACTION_THROUGHPUT,
+				context: $context,
+				actorId: $readerId,
+				actorName: $readerId,
+			));
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: a Woo throughput read could not be recorded, so it is refused',
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
+			);
+			throw $this->notRecorded(previous: $e);
+		}
+	}//end recordOn()
 
 	/**
 	 * The refusal when a read cannot be recorded.

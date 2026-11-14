@@ -63,34 +63,12 @@ class RegisterFragmentMerger {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function merge(array $base, string $fragmentDir): array {
-		if (is_dir($fragmentDir) === false) {
+		$files = $this->fragmentFiles(fragmentDir: $fragmentDir);
+		if ($files === []) {
 			return [$base, ''];
 		}
 
-		$files = glob($fragmentDir . '/*.json');
-		if ($files === false || empty($files) === true) {
-			return [$base, ''];
-		}
-
-		sort($files);
-
-		$merged = $base;
-		$hashAccumulator = '';
-
-		foreach ($files as $file) {
-			$content = file_get_contents($file);
-			if ($content === false) {
-				continue;
-			}
-
-			$fragment = json_decode($content, true);
-			if (json_last_error() !== JSON_ERROR_NONE || is_array($fragment) === false) {
-				continue;
-			}
-
-			$merged = $this->deepMerge(base: $merged, override: $fragment);
-			$hashAccumulator .= basename($file) . ':' . $content . "\n";
-		}//end foreach
+		[$merged, $hashAccumulator] = $this->mergeFiles(base: $base, files: $files);
 
 		if ($hashAccumulator === '') {
 			return [$merged, ''];
@@ -100,6 +78,75 @@ class RegisterFragmentMerger {
 	}//end merge()
 
 	/**
+	 * The fragment files in the directory, in sorted filename order; none when it is absent.
+	 *
+	 * @param string $fragmentDir Absolute path to the register.d directory.
+	 *
+	 * @return array<int, string> The file paths.
+	 */
+	private function fragmentFiles(string $fragmentDir): array {
+		if (is_dir($fragmentDir) === false) {
+			return [];
+		}
+
+		$files = glob($fragmentDir . '/*.json');
+		if ($files === false || empty($files) === true) {
+			return [];
+		}
+
+		sort($files);
+
+		return $files;
+	}//end fragmentFiles()
+
+	/**
+	 * Deep-merge every readable fragment onto the base, fingerprinting what was applied.
+	 *
+	 * @param array $base The parsed monolith configuration.
+	 * @param array<int, string> $files The fragment files, in order.
+	 *
+	 * @return array{0: array<string,mixed>, 1: string} The merged config and the accumulated filename and content.
+	 */
+	private function mergeFiles(array $base, array $files): array {
+		$merged = $base;
+		$hashAccumulator = '';
+
+		foreach ($files as $file) {
+			$read = $this->readFragment(file: $file);
+			if ($read === null) {
+				continue;
+			}
+
+			[$content, $fragment] = $read;
+			$merged = $this->deepMerge(base: $merged, override: $fragment);
+			$hashAccumulator .= basename($file) . ':' . $content . "\n";
+		}//end foreach
+
+		return [$merged, $hashAccumulator];
+	}//end mergeFiles()
+
+	/**
+	 * A fragment file's content and its decoded configuration, or null when it cannot be read as one.
+	 *
+	 * @param string $file The fragment file.
+	 *
+	 * @return array{0: string, 1: array<int|string,mixed>}|null The content and the fragment.
+	 */
+	private function readFragment(string $file): ?array {
+		$content = file_get_contents($file);
+		if ($content === false) {
+			return null;
+		}
+
+		$fragment = json_decode($content, true);
+		if (json_last_error() !== JSON_ERROR_NONE || is_array($fragment) === false) {
+			return null;
+		}
+
+		return [$content, $fragment];
+	}//end readFragment()
+
+	/**
 	 * Recursively deep-merge an override array onto a base array (ADR-037).
 	 *
 	 * Associative arrays (OpenAPI objects like `components.schemas`, `paths`)
@@ -107,6 +154,12 @@ class RegisterFragmentMerger {
 	 * sequential keys) are concatenated; scalar values from the override
 	 * overwrite the base. Disjoint fragments therefore union cleanly without
 	 * collision.
+	 *
+	 * The one exception is a `version` both sides give as a version string:
+	 * the higher one stays. A schema's version is OpenRegister's per-schema
+	 * import gate, so a fragment that sorts later with a lower version would
+	 * otherwise lower it and keep an earlier fragment's properties from ever
+	 * reaching an instance that has the higher one.
 	 *
 	 * @param array<int|string,mixed> $base The base array.
 	 * @param array<int|string,mixed> $override The override array.
@@ -128,11 +181,36 @@ class RegisterFragmentMerger {
 				continue;
 			}
 
+			if ($key === 'version' && $this->keepsHigherVersion(current: $base[$key] ?? null, incoming: $value) === true) {
+				continue;
+			}
+
 			$base[$key] = $value;
 		}//end foreach
 
 		return $base;
 	}//end deepMerge()
+
+	/**
+	 * Whether the version already merged is higher than the incoming one, so
+	 * the incoming one must not replace it. Only two version strings
+	 * (`1.29.0`) compare; anything else is overwritten as before.
+	 *
+	 * @param mixed $current The version merged so far, or null.
+	 * @param mixed $incoming The fragment's version.
+	 *
+	 * @return bool True when the current version stays.
+	 */
+	private function keepsHigherVersion(mixed $current, mixed $incoming): bool {
+		$pattern = '/^\d+(\.\d+)*$/';
+		if (is_string($current) === false || is_string($incoming) === false
+			|| preg_match($pattern, $current) !== 1 || preg_match($pattern, $incoming) !== 1
+		) {
+			return false;
+		}
+
+		return version_compare($current, $incoming, '>');
+	}//end keepsHigherVersion()
 
 	/**
 	 * Determine whether an array is a sequential list (vs. an associative map).

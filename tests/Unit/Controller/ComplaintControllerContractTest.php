@@ -56,6 +56,7 @@ use PHPUnit\Framework\TestCase;
  * Wire-contract tests for ComplaintController's verdaging + escalate endpoints.
  *
  * @covers \OCA\Dossiq\Controller\ComplaintController
+ * @covers \OCA\Dossiq\Controller\Support\ComplaintMutationGate
  *
  * @uses \OCA\Dossiq\Service\Complaint\ComplaintAccessGuard
  */

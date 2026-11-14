@@ -24,11 +24,12 @@ namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -56,15 +57,15 @@ class StoppingRuleMet {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
-	 * @param CaseTimeline $timeline The case timeline.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
+	 * @param CaseTimelineInterface $timeline The case timeline.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseTimeline $timeline,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseTimelineInterface $timeline,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -111,9 +112,30 @@ class StoppingRuleMet {
 			return null;
 		}
 
-		$sampleId = (string)($sample['id'] ?? ($sample['uuid'] ?? ''));
 		$metAt = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
-		$numbers = [
+		$numbers = $this->numbers(rule: $rule, sample: $sample);
+
+		$this->audit(caseId: $caseId, context: $numbers + ['rule' => (string)($rule['id'] ?? ($rule['uuid'] ?? '')), 'at' => $metAt], userId: $userId);
+
+		$this->recordOnTimeline(caseId: $caseId, numbers: $numbers);
+
+		return $metAt;
+	}//end record()
+
+	/**
+	 * The figures the rule was met with.
+	 *
+	 * @param array<string, mixed>|null $rule   The case's stopping rule.
+	 * @param array<string, mixed>      $sample The finished recall sample.
+	 *
+	 * @return array<string, mixed> `sample`, `targetRecall`, `confidence`, `recallEstimate`, `recallLowerBound`, `n` and `k`.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-meeting-the-stopping-rule-is-recorded-req-wrs-003
+	 */
+	private function numbers(?array $rule, array $sample): array {
+		$sampleId = (string)($sample['id'] ?? ($sample['uuid'] ?? ''));
+
+		return [
 			'sample' => $sampleId,
 			'targetRecall' => (float)$rule['targetRecall'],
 			'confidence' => (float)$rule['confidence'],
@@ -122,26 +144,47 @@ class StoppingRuleMet {
 			'n' => count((array)($sample['documents'] ?? [])),
 			'k' => (int)($sample['k'] ?? 0),
 		];
+	}//end numbers()
 
-		$this->audit(caseId: $caseId, context: $numbers + ['rule' => (string)($rule['id'] ?? ($rule['uuid'] ?? '')), 'at' => $metAt], userId: $userId);
-
+	/**
+	 * Put the met rule on the case's internal timeline.
+	 *
+	 * @param string               $caseId  The case UUID.
+	 * @param array<string, mixed> $numbers The figures.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-meeting-the-stopping-rule-is-recorded-req-wrs-003
+	 */
+	private function recordOnTimeline(string $caseId, array $numbers): void {
 		$this->timeline->record(
 			caseId: $caseId,
-			kind: TimelineKinds::STOPPING_RULE_MET,
-			message: sprintf(
-				'The stopping rule was met: recall at least %s at %s confidence (estimate %s, target %s, sample of %d)',
-				number_format($numbers['recallLowerBound'], 4, '.', ''),
-				number_format($numbers['confidence'], 2, '.', ''),
-				number_format($numbers['recallEstimate'], 4, '.', ''),
-				number_format($numbers['targetRecall'], 2, '.', ''),
-				$numbers['n']
-			),
+			kind: TimelineKindsInterface::STOPPING_RULE_MET,
+			message: $this->metMessage(numbers: $numbers),
 			fields: $numbers,
-			visibility: CaseTimeline::INTERNAL,
+			visibility: CaseTimelineInterface::INTERNAL,
 		);
+	}//end recordOnTimeline()
 
-		return $metAt;
-	}//end record()
+	/**
+	 * The timeline sentence of a met rule.
+	 *
+	 * @param array<string, mixed> $numbers The figures.
+	 *
+	 * @return string The sentence.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-meeting-the-stopping-rule-is-recorded-req-wrs-003
+	 */
+	private function metMessage(array $numbers): string {
+		return sprintf(
+			'The stopping rule was met: recall at least %s at %s confidence (estimate %s, target %s, sample of %d)',
+			number_format($numbers['recallLowerBound'], 4, '.', ''),
+			number_format($numbers['confidence'], 2, '.', ''),
+			number_format($numbers['recallEstimate'], 4, '.', ''),
+			number_format($numbers['targetRecall'], 2, '.', ''),
+			$numbers['n']
+		);
+	}//end metMessage()
 
 	/**
 	 * Write the entry on the case's audit trail.
@@ -165,11 +208,13 @@ class StoppingRuleMet {
 
 		try {
 			$case = $objectService->find($caseId, register: $register, schema: $schema);
-			$mapper->createAuditTrailEntry(object: $case, action: self::ACTION, context: $context, actorId: $userId, actorName: $userId);
+			$mapper->recordObjectEvent(
+				event: ObjectAuditEvents::of(object: $case, action: self::ACTION, context: $context, actorId: $userId, actorName: $userId)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: a met stopping rule could not be recorded on the audit trail',
-				['app' => Application::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
 			);
 			throw $this->notRecorded(previous: $e);
 		}

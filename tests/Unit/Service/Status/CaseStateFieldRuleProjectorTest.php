@@ -149,6 +149,41 @@ class CaseStateFieldRuleProjectorTest extends TestCase {
 	}//end testARoleRuleLandsInEveryState()
 
 	/**
+	 * A role rule limited to statuses lands only in those states; an empty
+	 * list means every status (coordinator, 24 Oct: field rights per role and
+	 * status, DqZaaktypeVelden).
+	 *
+	 * @return void
+	 */
+	public function testARoleRuleLimitedToStatusesLandsOnlyThere(): void {
+		$states = $this->projector(
+			[
+				['id' => 'intake-uuid', 'name' => 'Ontvangen'],
+				['id' => 'work-uuid', 'name' => 'In behandeling'],
+				['id' => 'closed-uuid', 'name' => 'Afgehandeld'],
+			],
+			[],
+			[
+				'fieldRoleRules' => [
+					['field' => 'bouwkosten', 'rule' => 'readOnly', 'groups' => ['intakers'], 'statuses' => ['work-uuid', 'closed-uuid']],
+					['field' => 'welstand', 'rule' => 'hidden', 'groups' => ['intakers'], 'statuses' => []],
+				],
+			]
+		)->statesOf(caseTypeId: 'ct');
+
+		$this->assertSame(['hidden' => [['fields' => ['welstand'], 'groups' => ['intakers']]]], $states['intake-uuid']['fields']);
+		foreach (['work-uuid', 'closed-uuid'] as $key) {
+			$this->assertSame(
+				[
+					'hidden' => [['fields' => ['welstand'], 'groups' => ['intakers']]],
+					'readOnly' => [['fields' => ['bouwkosten'], 'groups' => ['intakers']]],
+				],
+				$states[$key]['fields']
+			);
+		}
+	}//end testARoleRuleLimitedToStatusesLandsOnlyThere()
+
+	/**
 	 * A status rule on the same field and kind keeps the role rule out.
 	 *
 	 * The status rule may carry a condition and a message; the role rule
@@ -414,4 +449,59 @@ class CaseStateFieldRuleProjectorTest extends TestCase {
 		$this->assertFalse($this->projector([['id' => 's2']])->publish(caseTypeId: 'ct'));
 		$this->assertFalse($this->projector([])->publish(caseTypeId: ''));
 	}//end testPublishingWithoutOpenRegisterAnswersFalse()
+
+	/**
+	 * A live lifecycle with no states, or empty ones, carries nothing forward.
+	 *
+	 * @return void
+	 */
+	public function testALiveLifecycleWithoutStatesCarriesNothing(): void {
+		$declared = ['field' => 'status'];
+
+		$this->assertSame(
+			expected: $declared,
+			actual: CaseStateFieldRuleProjector::carryForwardStates(
+				annotationKey: CaseStateFieldRuleProjector::LIFECYCLE_KEY,
+				declared: $declared,
+				live: ['field' => 'status', 'states' => []],
+			)
+		);
+		$this->assertSame(
+			expected: $declared,
+			actual: CaseStateFieldRuleProjector::carryForwardStates(
+				annotationKey: CaseStateFieldRuleProjector::LIFECYCLE_KEY,
+				declared: $declared,
+				live: ['states' => 'not-a-map'],
+			)
+		);
+		$this->assertSame(
+			expected: $declared,
+			actual: CaseStateFieldRuleProjector::carryForwardStates(
+				annotationKey: CaseStateFieldRuleProjector::LIFECYCLE_KEY,
+				declared: $declared,
+				live: null,
+			)
+		);
+	}//end testALiveLifecycleWithoutStatesCarriesNothing()
+
+	/**
+	 * A property flag with no status or no name is not published.
+	 *
+	 * @return void
+	 */
+	public function testAPropertyFlagWithoutStatusOrNameIsSkipped(): void {
+		$states = $this->projector(
+			statusTypes: [['id' => 's2', 'name' => 'Besluitvorming']],
+			properties: [
+				['name' => '  ', 'requiredAtStatus' => 's2'],
+				['name' => 'kadastraalNummer', 'requiredAtStatus' => ''],
+				['name' => 'perceel', 'requiredAtStatus' => ['id' => 's2']],
+			]
+		)->statesOf(caseTypeId: 'ct');
+
+		$this->assertSame(
+			expected: ['s2' => ['fields' => ['required' => [['fields' => ['perceel']]]]]],
+			actual: $states
+		);
+	}//end testAPropertyFlagWithoutStatusOrNameIsSkipped()
 }//end class

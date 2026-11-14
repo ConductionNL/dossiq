@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\People;
 
+use OCA\Dossiq\Kernel\Contracts\CaseRoleVocabularyInterface;
+use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -31,7 +33,7 @@ use Throwable;
  *
  * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
  */
-class CaseRoleVocabulary {
+class CaseRoleVocabulary implements CaseRoleVocabularyInterface {
 
 	use SearchesObjects;
 
@@ -48,6 +50,13 @@ class CaseRoleVocabulary {
 	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
 
 	/**
+	 * The register and the configured schemas, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
+
+	/**
 	 * @param SettingsService $settingsService OpenRegister access and the configured register and schemas.
 	 * @param PartyVocabulary $parties The kinds of party a case takes and the roles they may hold.
 	 * @param LoggerInterface $logger Says why a sync did nothing.
@@ -59,6 +68,7 @@ class CaseRoleVocabulary {
 		private readonly LoggerInterface $logger,
 		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -197,26 +207,41 @@ class CaseRoleVocabulary {
 	/**
 	 * The published role types as vocabulary entries, keyed by uuid.
 	 *
+	 * Every role type, page by page, read regardless of who asks: the
+	 * vocabulary belongs to the instance, and a sync triggered by one user's
+	 * save must not shrink it to what that user may see.
+	 *
 	 * @return array<int, array<string, string>> The entries, ordered by label.
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
 	 */
 	public function roleEntries(): array {
 		[$objectService, $register] = $this->requireRegister();
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $this->schema(key: 'role_type_schema'),
-			filters: ['_limit' => self::PAGE_SIZE],
-		);
+		$schema = $this->schema(key: 'role_type_schema');
 
 		$entries = [];
-		foreach ($rows as $row) {
-			$entry = $this->entryOf(row: $row);
-			if ($entry !== []) {
-				$entries[$entry['key']] = $entry;
+		$offset = 0;
+		do {
+			$rows = $this->searchObjectsAsArraysUnscoped(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['_limit' => self::PAGE_SIZE, '_offset' => $offset],
+			);
+			$before  = count($entries);
+			$fetched = count($rows);
+			foreach ($rows as $row) {
+				$entry = $this->entryOf(row: $row);
+				if ($entry !== []) {
+					$entries[$entry['key']] = $entry;
+				}
 			}
-		}
+
+			$offset += self::PAGE_SIZE;
+			// A full page that added nothing new is a service ignoring the
+			// offset: reading on would answer the same page forever.
+			$grew = count($entries) > $before;
+		} while ($fetched >= self::PAGE_SIZE && $grew === true);
 
 		$entries = array_values($entries);
 		usort($entries, static fn (array $a, array $b): int => strcasecmp($a['label'], $b['label']));
@@ -253,13 +278,29 @@ class CaseRoleVocabulary {
 	}//end entryOf()
 
 	/**
-	 * The case schema entity, or null when it cannot be read.
+	 * The case schema entity as stored, or null when it cannot be read.
+	 *
+	 * OpenRegister's mapper caches find() per request and update() leaves that
+	 * cache alone, so after another caller saves its own copy of the schema (a
+	 * register import does, after its update event already ran this sync),
+	 * find() still answers the copy this sync wrote. The cache is cleared and
+	 * the schema read again, so the comparison is against the stored row.
 	 *
 	 * @return object|null The schema.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-the-case-schemas-role-vocabulary-survives-a-rewrite-of-the-schema
 	 */
 	private function caseSchema(): ?object {
 		try {
-			return $this->schemaMapper()->find($this->schema(key: 'case_schema'));
+			$mapper = $this->schemaMapper();
+			$key = $this->schema(key: 'case_schema');
+			$schema = $mapper->find($key);
+			if (is_callable([$mapper, 'clearFindCache']) === false || is_callable([$schema, 'getId']) === false) {
+				return $schema;
+			}
+
+			$mapper->clearFindCache((int)$schema->getId());
+			return $mapper->find($key);
 		} catch (Throwable $e) {
 			$this->logger->info('Dossiq people: the case schema could not be read: ' . $e->getMessage());
 			return null;
@@ -290,17 +331,7 @@ class CaseRoleVocabulary {
 	 * @throws RuntimeException When OpenRegister or the register is not configured.
 	 */
 	private function requireRegister(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
+		return $this->dossierRegister->context();
 	}//end requireRegister()
 
 	/**
@@ -313,11 +344,6 @@ class CaseRoleVocabulary {
 	 * @throws RuntimeException When the key is not configured.
 	 */
 	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
+		return $this->dossierRegister->schema(key: $key);
 	}//end schema()
 }//end class

@@ -14,7 +14,7 @@
  * it does not declare leaves a hole, and a team widget copied from the
  * dashboard can drift from it without anybody noticing.
  *
- * @spec openspec/changes/landing-views/specs/my-work-landing/spec.md
+ * @spec openspec/specs/my-work-landing/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
@@ -78,7 +78,8 @@ describe('the landing page in the full structure', () => {
 			['team', 'My team'],
 		])
 		expect(home.config.defaultView).toBe('mine')
-		expect(home.config.viewsLabel).toBe('Whose work')
+		// DqMijnWerk and DqMijnTeam name the switch "Weergave".
+		expect(home.config.viewsLabel).toBe('Display')
 	})
 
 	it('keeps its own grid empty, so the switch sits in the page header', () => {
@@ -115,26 +116,132 @@ describe('the landing page in the full structure', () => {
 			)
 			expect(widget, widget.id).toEqual(withoutNotes(source))
 		}
-		// The team queue is the dashboard's own preset: the Queue page's
-		// filter narrowed to the reader's own teams (my-teams-queue).
+		// The team queue asks what the dashboard's own preset asks: the team
+		// queue view's filter narrowed to the reader's own teams
+		// (my-teams-queue). DqMijnTeam draws it as rows with a Pick up
+		// button, so its columns and row actions are its own.
 		const preset = dashboard.config.userWidgets.find(
 			(item) => item.id === 'your-teams-queue',
 		)
-		expect(team[0]).toEqual({ id: preset.id, ...preset.widget })
+		expect(team[0].type).toBe(preset.widget.type)
+		expect(team[0].content.filter).toEqual(preset.widget.content.filter)
 		expect(team[0].content.filter).toEqual({
-			...page(manifest.pages, 'Queue').config.filter,
+			...page(manifest.pages, 'Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters,
 			assignedGroup: '@myGroups',
 		})
 		// The deadline reads as a date, not as the stored ISO string
 		// (my-work-cards-and-team-tiles-read-right, finding F3).
-		const deadline = team[0].content.columns.find(
-			(column) => column.key === 'deadline',
-		)
-		expect(deadline.format).toBe('date')
+		expect(team[0].content.columns[0].secondary).toContain('{deadline|date}')
+	})
+
+	it('fits the team cards to their content, as DqMijnTeam draws them', () => {
+		// A grid that floats keeps every card on its row, so a card that
+		// shrinks would leave a band under it; this one packs upward.
+		expect(home.config.gridFloat).toBe(false)
+		expect(page(builtSimple.pages, 'MyWorkHome').config.gridFloat).toBe(false)
+		const layout = pageView(home, 'team').layout
+		for (const id of ['t4', 't5', 't6', 't7']) {
+			expect(layout.find((item) => item.id === id).sizeToContent, id).toBe(true)
+		}
 	})
 
 	it('gives My team a sentence for when it has nothing to draw', () => {
 		expect(pageView(home, 'team').emptyText).toBeTruthy()
+	})
+})
+
+describe('My team in the simple structure', () => {
+	const team = pageView(page(builtSimple.pages, 'MyWorkHome'), 'team')
+	const fullTeam = pageView(home, 'team')
+
+	it('draws the stalled cases as DqMijnTeam\'s rows: title, number and handler, days idle at the end, no chevron', () => {
+		const stalled = team.widgets.find((widget) => widget.id === 'stalled-cases')
+		const table = dashboard.config.widgets.find((widget) => widget.id === 'stalled-cases')
+		expect(stalled.type).toBe('record-list')
+		expect(stalled.content).toMatchObject({
+			register: table.content.source.register,
+			schema: table.content.source.schema,
+			filter: table.content.source.filter,
+			extend: ['calculations'],
+			sort: { field: 'lastActivityAt', dir: 'asc' },
+			limit: 3,
+			presentation: 'rows',
+			title: '{title}',
+			meta: { parts: ['{identifier}', '{assignee|user}'] },
+			trailing: ['{daysSinceActivity} days idle'],
+			chevron: false,
+			rowRoute: 'CaseDetail',
+		})
+		const { name, ...rest } = table.content.viewAllRoute
+		expect(stalled.headerLink).toEqual({ label: 'View all', route: name, ...rest })
+	})
+
+	it('draws the team queue as DqMijnTeam\'s rows: number, case type and deadline, Pick up at the end', () => {
+		const queue = team.widgets.find((widget) => widget.id === 'your-teams-queue')
+		const full = fullTeam.widgets.find((widget) => widget.id === 'your-teams-queue')
+		expect(queue.type).toBe('record-list')
+		expect(queue.content).toMatchObject({
+			register: full.content.register,
+			schema: full.content.schema,
+			filter: full.content.filter,
+			extend: ['caseType'],
+			limit: 3,
+			presentation: 'rows',
+			title: '{title}',
+			meta: { parts: ['{identifier}', '{caseType.title}', 'deadline {deadline|date}'] },
+			rowAction: { id: 'claim', label: 'Pick up', type: 'handler', handler: 'claimCase' },
+			chevron: false,
+			rowRoute: 'CaseDetail',
+			emptyText: full.content.emptyText,
+		})
+		expect(queue.headerLink).toEqual({ label: 'To the queue', route: 'Cases', query: { savedView: 'default:team-queue' } })
+	})
+
+	it('keeps every other team widget as the full structure declares it', () => {
+		expect(team.widgets.map((widget) => widget.id)).toEqual(fullTeam.widgets.map((widget) => widget.id))
+		for (const widget of team.widgets.filter((item) => !['stalled-cases', 'your-teams-queue'].includes(item.id))) {
+			expect(withoutNotes(widget), widget.id).toEqual(withoutNotes(fullTeam.widgets.find((item) => item.id === widget.id)))
+		}
+		expect(team.layout).toEqual(fullTeam.layout)
+	})
+})
+
+describe('My work in the simple structure keeps the board\'s side column', () => {
+	it('draws the side cards 320px wide and the cards beside them in the rest, the tiles untouched', () => {
+		// DqMijnWerk: Mijn taken and Recente activiteit 320px, Termijnen deze
+		// week, per stap and Verder werken filling the rest; the four counts and
+		// the two half-width cards keep their twelve shares.
+		const mine = pageView(page(builtSimple.pages, 'MyWorkHome'), 'mine')
+		expect(mine.gridSideColumn).toEqual({ width: 320 })
+		const tracks = Object.fromEntries(mine.layout.map((cell) => [cell.widgetId, cell.track]))
+		expect(tracks).toMatchObject({
+			'simple-week': 'main',
+			'simple-per-step': 'main',
+			'simple-continue': 'main',
+			'simple-my-tasks': 'side',
+			'simple-recent-activity': 'side',
+		})
+		for (const cell of mine.layout) {
+			if (cell.track === 'main') {
+				expect(cell.gridX + cell.gridWidth, cell.widgetId).toBeLessThanOrEqual(8)
+			} else if (cell.track === 'side') {
+				expect(cell.gridX, cell.widgetId).toBeGreaterThanOrEqual(8)
+			} else {
+				expect(cell.track, cell.widgetId).toBeUndefined()
+			}
+		}
+		expect(tracks['simple-my-open']).toBeUndefined()
+		expect(tracks['archival-reviews']).toBeUndefined()
+	})
+
+	it('fits every card under First today to its content, as DqMijnWerk draws them', () => {
+		// The board's counts are 110px, not two grid rows (136), and each card
+		// below ends where its content ends, so the next one closes up.
+		expect(page(builtSimple.pages, 'MyWorkHome').config.gridFloat).toBe(false)
+		const mine = pageView(page(builtSimple.pages, 'MyWorkHome'), 'mine')
+		for (const cell of mine.layout) {
+			expect(cell.sizeToContent, cell.widgetId).toBe(true)
+		}
 	})
 })
 

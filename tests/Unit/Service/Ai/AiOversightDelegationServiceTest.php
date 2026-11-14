@@ -90,6 +90,63 @@ class AiOversightDelegationServiceTest extends TestCase {
 	}//end entry()
 
 	/**
+	 * The whole record hermiq is handed, in its key order, and the two log
+	 * lines of a refused delegation.
+	 *
+	 * @return void
+	 */
+	public function testTheRecordAndTheLogLinesKeepTheirShape(): void {
+		$this->service()->delegate($this->entry(['confidence' => 0.8, 'responseTimeMs' => 12, 'unusedBecause' => 'late', 'prompt' => 'p', 'suggestionRef' => 's-1']));
+
+		self::assertSame(
+			[
+				'originApp' => 'dossiq',
+				'subjectType' => 'case',
+				'subjectId' => 'case-1',
+				'humanAction' => 'overridden',
+				'userId' => 'alice',
+				'decidedAt' => '2026-08-22T10:25:00+00:00',
+				'suggestionType' => 'classification',
+				'action' => 'modified',
+				'model' => 'openai/gpt-4o',
+				'prompt' => 'p',
+				'suggestion' => $this->dispatched->getRecord()['suggestion'],
+				'confidence' => 0.8,
+				'actualValue' => $this->dispatched->getRecord()['actualValue'],
+				'reason' => 'misread the header',
+				'responseTimeMs' => 12,
+				'unusedBecause' => 'late',
+				'externalRef' => 'dossiq:suggestion:s-1',
+			],
+			$this->dispatched->getRecord()
+		);
+
+		$lines = [];
+		$logger = $this->createMock(LoggerInterface::class);
+		foreach (['warning', 'error'] as $level) {
+			$logger->method($level)->willReturnCallback(
+				static function (string $message, array $context = []) use (&$lines, $level): void {
+					$lines[] = [$level, $message, $context];
+				}
+			);
+		}
+
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willThrowException(new \RuntimeException('bus unavailable'));
+		$service = new AiOversightDelegationService($dispatcher, $logger);
+		$service->delegate($this->entry(['caseId' => '', 'documentId' => '']));
+		$service->delegate($this->entry());
+
+		self::assertSame(
+			[
+				['warning', 'AI oversight: entry has neither caseId nor documentId; not delegated', ['type' => 'classification']],
+				['error', 'AI oversight: delegation to hermiq failed', ['error' => 'bus unavailable', 'subjectId' => 'case-1']],
+			],
+			$lines
+		);
+	}//end testTheRecordAndTheLogLinesKeepTheirShape()
+
+	/**
 	 * procest's `modified` becomes hermiq's `overridden`.
 	 *
 	 * The two vocabularies disagree and hermiq's wins, because the record lives
@@ -102,7 +159,7 @@ class AiOversightDelegationServiceTest extends TestCase {
 
 		$record = $this->dispatched->getRecord();
 		$this->assertSame('overridden', $record['humanAction']);
-		$this->assertSame('procest', $record['originApp']);
+		$this->assertSame('dossiq', $record['originApp']);
 		$this->assertSame('case', $record['subjectType']);
 		$this->assertSame('case-1', $record['subjectId']);
 		$this->assertSame('alice', $record['userId']);
@@ -136,9 +193,36 @@ class AiOversightDelegationServiceTest extends TestCase {
 			'accepted' => ['accepted', 'accepted'],
 			'rejected' => ['rejected', 'rejected'],
 			'modified' => ['modified', 'overridden'],
+			'ignored' => ['ignored', 'ignored'],
 		];
 
 	}//end actionProvider()
+
+	/**
+	 * A suggestion nobody acted on carries why it went unused.
+	 *
+	 * @return void
+	 */
+	public function testIgnoredCarriesUnusedBecause(): void {
+		$this->service()->delegate($this->entry(['userAction' => 'ignored', 'unusedBecause' => 'expired']));
+
+		$record = $this->dispatched->getRecord();
+		$this->assertSame('ignored', $record['humanAction']);
+		$this->assertSame('expired', $record['unusedBecause']);
+
+	}//end testIgnoredCarriesUnusedBecause()
+
+	/**
+	 * A suggestion reference from the surface becomes the hermiq reference.
+	 *
+	 * @return void
+	 */
+	public function testSuggestionRefIsUsedAsTheReference(): void {
+		$this->service()->delegate($this->entry(['suggestionRef' => 'qa:case-1:s-9']));
+
+		$this->assertSame('dossiq:suggestion:qa:case-1:s-9', $this->dispatched->getRecord()['externalRef']);
+
+	}//end testSuggestionRefIsUsedAsTheReference()
 
 	/**
 	 * A suggestion-only entry is NOT an oversight decision.

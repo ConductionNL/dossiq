@@ -1,7 +1,7 @@
 # case-assistant-via-hermiq Specification
 
 ## Purpose
-TBD - created by archiving change case-assistant-via-hermiq. Update Purpose after archive.
+Offer a conversational assistant on the case page through Hermiq. It is switched on only when Hermiq is available, and it fails closed when the case context cannot be read.
 
 ## Requirements
 

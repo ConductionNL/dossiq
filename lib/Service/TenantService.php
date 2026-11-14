@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantServiceInterface;
 use OCP\App\IAppManager;
 use OCP\IGroupManager;
 use Psr\Container\ContainerInterface;
@@ -48,7 +49,7 @@ use Throwable;
  *
  * @spec openspec/specs/tenant-organisation-boundary/spec.md
  */
-class TenantService {
+class TenantService implements TenantServiceInterface {
 	/**
 	 * The register that holds the anchors.
 	 *
@@ -124,6 +125,20 @@ class TenantService {
 			return true;
 		}
 
+		return $this->writeAnchor(objectService: $objectService, uuid: $uuid);
+	}//end ensureAuditAnchor()
+
+	/**
+	 * Write the tenant audit anchor of an Organisation, and report whether it exists afterwards.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $uuid          The Organisation's uuid, which is the tenant uuid.
+	 *
+	 * @return bool True when the anchor exists afterwards.
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
+	 */
+	private function writeAnchor(object $objectService, string $uuid): bool {
 		$organisation = $this->organisations->findOrganisation(uuid: $uuid);
 		if ($organisation === null) {
 			$this->logger->warning('Dossiq: no Organisation to anchor the tenant audit trail on', ['organisation' => $uuid]);
@@ -148,7 +163,7 @@ class TenantService {
 		}
 
 		return $this->anchorExists(objectService: $objectService, uuid: $uuid);
-	}//end ensureAuditAnchor()
+	}//end writeAnchor()
 
 	/**
 	 * The anchor's fields, read off the Organisation.

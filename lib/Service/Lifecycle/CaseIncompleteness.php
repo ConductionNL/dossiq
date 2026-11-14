@@ -49,9 +49,11 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 /**
  * Records that a case is incomplete, names the fields, and refuses what needs them.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseIncompleteness {
+	use LoadsCaseOrRefuses;
+
 
 	/**
 	 * Whether the case knows it is incomplete.
@@ -92,7 +94,7 @@ class CaseIncompleteness {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function record(string $caseId, array $missing): array {
 		$case = $this->load(caseId: $caseId);
@@ -127,7 +129,7 @@ class CaseIncompleteness {
 	 *
 	 * @return list<string> The field names, empty when the case is complete.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function missingOn(array $case): array {
 		$raw = ($case[self::FIELDS_FIELD] ?? '');
@@ -164,7 +166,7 @@ class CaseIncompleteness {
 	 *
 	 * @throws RefusedException When any of them is missing.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function requireFields(array $case, array $needs): void {
 		$missing = array_values(array_intersect($this->missingOn(case: $case), $needs));
@@ -203,33 +205,9 @@ class CaseIncompleteness {
 	 *
 	 * @throws RefusedException When anything required is missing, naming it.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function requireComplete(array $case): void {
 		$this->requireFields(case: $case, needs: $this->missingOn(case: $case));
 	}//end requireComplete()
-
-	/**
-	 * Load the case, or refuse.
-	 *
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return array<string, mixed> The case.
-	 *
-	 * @throws RefusedException When the case cannot be read.
-	 *
-	 * @spec exclude one read behind record(), which carries the requirement
-	 */
-	private function load(string $caseId): array {
-		$case = $this->store->loadCase(caseId: $caseId);
-		if ($case === null) {
-			throw new RefusedException(
-				rule: 'case-not-found',
-				sentence: 'This case could not be found.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
-	}//end load()
 }//end class

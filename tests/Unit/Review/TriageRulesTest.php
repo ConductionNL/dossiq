@@ -48,6 +48,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class TriageRulesTest extends TestCase {
 
@@ -130,10 +131,12 @@ class TriageRulesTest extends TestCase {
 	/**
 	 * The rules service over the store.
 	 *
+	 * @param array<string, string> $overrides Config values that replace the defaults.
+	 *
 	 * @return TriageRules
 	 */
-	private function rules(): TriageRules {
-		$config = ['register' => 'dossiq', 'document_review_schema' => 'documentReview', 'triage_rule_schema' => 'triageRule', 'dossier_informatieobject_schema' => 'informatieobject', 'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject'];
+	private function rules(array $overrides = []): TriageRules {
+		$config = $overrides + ['register' => 'dossiq', 'document_review_schema' => 'documentReview', 'triage_rule_schema' => 'triageRule', 'dossier_informatieobject_schema' => 'informatieobject', 'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject'];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
@@ -461,4 +464,104 @@ class TriageRulesTest extends TestCase {
 		$this->assertCount(2, $this->store->all('documentReview'), 'no second review for a document that has one');
 		$this->assertSame(1, $rules->forCase(caseId: 'case-x')[0]['decided']);
 	}//end testApplyHonoursReviewsTheCallerCannotRead()
+	/**
+	 * A rule keeps its own name when changed, gets the next order by default, and stays active unless switched off.
+	 *
+	 * @return void
+	 */
+	public function testARuleKeepsItsNameAndGetsItsOrderAndActivity(): void {
+		$rules = $this->rules();
+		$first = $rules->save(caseId: 'case-x', input: ['name' => ' Eerste ', 'conditions' => ['custodian' => 'A'], 'effect' => 'in-scope']);
+		$second = $rules->save(caseId: 'case-x', input: ['name' => 'Tweede', 'conditions' => ['custodian' => 'B'], 'effect' => 'out-of-scope', 'order' => '7', 'active' => 0]);
+
+		$this->assertSame('Eerste', $first['name']);
+		$this->assertSame(1, $first['order']);
+		$this->assertTrue($first['active']);
+		$this->assertSame(7, $second['order']);
+		$this->assertTrue($second['active']);
+
+		$renamed = $rules->save(caseId: 'case-x', input: ['name' => 'Eerste', 'order' => 'first', 'active' => false], ruleId: (string)$first['id']);
+		$this->assertSame('Eerste', $renamed['name']);
+		$this->assertSame(3, $renamed['order'], 'An order that is not a number falls back to after the last rule.');
+		$this->assertFalse($renamed['active']);
+
+		$third = $rules->save(caseId: 'case-x', input: ['name' => 'Derde', 'conditions' => ['custodian' => 'C'], 'effect' => 'in-scope', 'order' => null]);
+		$this->assertSame(3, $third['order']);
+	}//end testARuleKeepsItsNameAndGetsItsOrderAndActivity()
+
+	/**
+	 * Without a rule schema no rule is listed, and saving one is refused as unavailable.
+	 *
+	 * @return void
+	 */
+	public function testWithoutARuleSchemaRulesAreUnavailable(): void {
+		$this->store->seed(schema: 'triageRule', uuid: 'rule-1', row: ['case' => 'case-x', 'name' => 'Nieuwsbrieven']);
+		$rules = $this->rules(overrides: ['triage_rule_schema' => '']);
+
+		$this->assertSame([], $rules->forCase(caseId: 'case-x'));
+
+		try {
+			$rules->save(caseId: 'case-x', input: ['name' => 'Spam', 'conditions' => ['senderDomain' => 'spam.example'], 'effect' => 'out-of-scope']);
+			$this->fail('A rule without a schema must be refused.');
+		} catch (RefusedException $e) {
+			$this->assertSame('triage-rule-unavailable', $e->getRule());
+			$this->assertSame(503, $e->getStatus());
+			$this->assertSame('The triage rules cannot be stored or applied, so nothing was marked.', $e->getSentence());
+			$this->assertNull($e->getPrevious());
+		}
+	}//end testWithoutARuleSchemaRulesAreUnavailable()
+
+	/**
+	 * A rule the register refuses to write is refused as unavailable, with the cause.
+	 *
+	 * @return void
+	 */
+	public function testARuleTheRegisterCannotWriteIsRefused(): void {
+		$this->store->refusedSchemas = ['triageRule'];
+
+		try {
+			$this->rules()->save(caseId: 'case-x', input: ['name' => 'Spam', 'conditions' => ['senderDomain' => 'spam.example'], 'effect' => 'out-of-scope']);
+			$this->fail('A rule the register refuses must be refused.');
+		} catch (RefusedException $e) {
+			$this->assertSame('triage-rule-unavailable', $e->getRule());
+			$this->assertSame(503, $e->getStatus());
+			$this->assertInstanceOf(\RuntimeException::class, $e->getPrevious());
+		}
+
+		$this->assertSame([], $this->store->all('triageRule'));
+	}//end testARuleTheRegisterCannotWriteIsRefused()
+
+	/**
+	 * A delete the register fails is refused as unavailable, and the rule stays.
+	 *
+	 * @return void
+	 */
+	public function testADeleteTheRegisterFailsIsRefused(): void {
+		$this->store = new class extends InMemoryRegister {
+			/**
+			 * A delete that always fails.
+			 *
+			 * @param int|string $register Ignored.
+			 * @param int|string $schema   Ignored.
+			 * @param string     $uuid     Ignored.
+			 *
+			 * @return bool Never.
+			 */
+			public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = ''): bool {
+				throw new \RuntimeException('Delete refused');
+			}//end deleteObject()
+		};
+		$this->store->seed(schema: 'triageRule', uuid: 'rule-1', row: ['case' => 'case-x', 'name' => 'Nieuwsbrieven']);
+
+		try {
+			$this->rules()->delete(caseId: 'case-x', ruleId: 'rule-1');
+			$this->fail('A failed delete must be refused.');
+		} catch (RefusedException $e) {
+			$this->assertSame('triage-rule-unavailable', $e->getRule());
+			$this->assertSame(503, $e->getStatus());
+			$this->assertSame('Delete refused', $e->getPrevious()?->getMessage());
+		}
+
+		$this->assertCount(1, $this->store->all('triageRule'));
+	}//end testADeleteTheRegisterFailsIsRefused()
 }//end class

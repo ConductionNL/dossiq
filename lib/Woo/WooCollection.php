@@ -31,12 +31,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseDocumentProvenanceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCollectionInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use RuntimeException;
 
 /**
@@ -44,7 +45,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-collection-is-reported-per-custodian-and-system-req-wrc-002
  */
-class WooCollection {
+class WooCollection implements WooCollectionInterface {
 
 	use SearchesObjects;
 
@@ -61,22 +62,22 @@ class WooCollection {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService              $settingsService The register and the exclusion schema.
+	 * @param SettingsServiceInterface              $settingsService The register and the exclusion schema.
 	 * @param WooCaseDocuments             $caseDocuments   Which documents are on the case.
-	 * @param DocumentRecordStore          $store           A document's record and its join to the case.
-	 * @param WOODocumentAssessmentService $assessments     Whether a document is assessed.
+	 * @param DocumentRecordStoreInterface          $store           A document's record and its join to the case.
+	 * @param WOODocumentAssessmentServiceInterface $assessments     Whether a document is assessed.
 	 * @param WooSearchPlans               $plans           The plan's custodians and systems.
-	 * @param CaseDocumentProvenance       $provenance      Where each document was found.
-	 * @param CaseReviewerAccess           $access          The read a count makes, and the grants of a new exclusion.
+	 * @param CaseDocumentProvenanceInterface       $provenance      Where each document was found.
+	 * @param CaseReviewerAccessInterface           $access          The read a count makes, and the grants of a new exclusion.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly WooCaseDocuments $caseDocuments,
-		private readonly DocumentRecordStore $store,
-		private readonly WOODocumentAssessmentService $assessments,
+		private readonly DocumentRecordStoreInterface $store,
+		private readonly WOODocumentAssessmentServiceInterface $assessments,
 		private readonly WooSearchPlans $plans,
-		private readonly CaseDocumentProvenance $provenance,
-		private readonly CaseReviewerAccess $access,
+		private readonly CaseDocumentProvenanceInterface $provenance,
+		private readonly CaseReviewerAccessInterface $access,
 	) {
 	}//end __construct()
 
@@ -85,9 +86,11 @@ class WooCollection {
 	 *
 	 * @param string $caseId The case uuid.
 	 *
-	 * @return array<string, mixed> `{custodians, systems, exclusions, arrived, assessed, excluded, outstanding}`.
+	 * @return array<string, mixed> `{custodians, systems, exclusions, arrived, assessed, excluded, outstanding,
+	 *         documents, conversations, threads}`.
 	 *
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-collection-is-reported-per-custodian-and-system-req-wrc-002
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-every-exclusion-before-review-is-kept-with-its-reason-req-wrc-003
 	 */
 	public function report(string $caseId): array {
@@ -97,26 +100,10 @@ class WooCollection {
 
 		// The rows a person is shown, and the split per custodian, come from what the caller may read.
 		$exclusions = $this->exclusions(caseId: $caseId);
-		foreach ($exclusions as $exclusion) {
-			$custodian = (string)($exclusion['custodian'] ?? '');
-			if ($custodian !== '') {
-				$custodians[$custodian] = ($custodians[$custodian] ?? $this->zero());
-				$custodians[$custodian]['excluded']++;
-			}
-		}
+		$custodians = $this->withExcludedPerCustodian(exclusions: $exclusions, custodians: $custodians);
 
 		// The totals hold for the case whoever asks: an exclusion the caller cannot read still counts.
-		$excludedDocs = [];
-		$neverArrived = 0;
-		foreach ($this->exclusionsOfCase(caseId: $caseId) as $exclusion) {
-			$docRef = (string)($exclusion['documentRef'] ?? '');
-			if ($docRef === '') {
-				$neverArrived++;
-				continue;
-			}
-
-			$excludedDocs[$docRef] = true;
-		}
+		[$excludedDocs, $neverArrived] = $this->caseExclusionTotals(caseId: $caseId);
 
 		$documentIds = $this->caseDocuments->idsFor(caseId: $caseId);
 		$assessed = 0;
@@ -130,6 +117,8 @@ class WooCollection {
 		$excludedOnCase = count(array_intersect_key($excludedDocs, array_flip($documentIds)));
 		$arrived = (count($documentIds) + $neverArrived);
 
+		$conversations = $this->conversations(caseId: $caseId);
+
 		return [
 			'custodians' => $this->listed(groups: $custodians, key: 'custodian'),
 			'systems' => $this->listed(groups: $systems, key: 'system'),
@@ -138,8 +127,89 @@ class WooCollection {
 			'assessed' => $assessed,
 			'excluded' => ($excludedOnCase + $neverArrived),
 			'outstanding' => (count($documentIds) - $excludedOnCase - $assessed),
+			'documents' => count($documentIds),
+			'conversations' => count($conversations),
+			'threads' => $conversations,
 		];
 	}//end report()
+
+	/**
+	 * The custodian groups with each readable exclusion counted against its custodian.
+	 *
+	 * @param array<int, array<string, mixed>>  $exclusions The exclusions the caller may read.
+	 * @param array<string, array<string, int>> $custodians The custodian groups.
+	 *
+	 * @return array<string, array<string, int>> The custodian groups.
+	 */
+	private function withExcludedPerCustodian(array $exclusions, array $custodians): array {
+		foreach ($exclusions as $exclusion) {
+			$custodian = (string)($exclusion['custodian'] ?? '');
+			if ($custodian !== '') {
+				$custodians[$custodian] = ($custodians[$custodian] ?? $this->zero());
+				$custodians[$custodian]['excluded']++;
+			}
+		}
+
+		return $custodians;
+	}//end withExcludedPerCustodian()
+
+	/**
+	 * The case's excluded documents and the count of exclusions that never arrived.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array{0: array<string, bool>, 1: int} The excluded document refs and the never-arrived count.
+	 */
+	private function caseExclusionTotals(string $caseId): array {
+		$excludedDocs = [];
+		$neverArrived = 0;
+		foreach ($this->exclusionsOfCase(caseId: $caseId) as $exclusion) {
+			$docRef = (string)($exclusion['documentRef'] ?? '');
+			if ($docRef === '') {
+				$neverArrived++;
+				continue;
+			}
+
+			$excludedDocs[$docRef] = true;
+		}
+
+		return [$excludedDocs, $neverArrived];
+	}//end caseExclusionTotals()
+
+	/**
+	 * The collected mails grouped by conversation, each conversation's messages in date order.
+	 *
+	 * A message without a date sorts after the dated ones; ties keep the document id order.
+	 * Conversations are listed by their first message.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return list<array{threadId: string, messages: list<array{documentId: string, sentAt: string}>}>
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
+	 */
+	private function conversations(string $caseId): array {
+		$grouped = [];
+		foreach ($this->provenance->threadsForCase(caseId: $caseId) as $documentId => $thread) {
+			$grouped[$thread['threadId']][] = ['documentId' => (string)$documentId, 'sentAt' => $thread['sentAt']];
+		}
+
+		$byDate = static fn (array $one, array $other): int => [($one['sentAt'] === ''), $one['sentAt'], $one['documentId']]
+			<=> [($other['sentAt'] === ''), $other['sentAt'], $other['documentId']];
+
+		$conversations = [];
+		foreach ($grouped as $threadId => $messages) {
+			usort($messages, $byDate);
+			$conversations[] = ['threadId' => (string)$threadId, 'messages' => $messages];
+		}
+
+		usort(
+			$conversations,
+			static fn (array $one, array $other): int => $byDate($one['messages'][0], $other['messages'][0])
+		);
+
+		return $conversations;
+	}//end conversations()
 
 	/**
 	 * Set a document on the case aside before review.
@@ -158,23 +228,8 @@ class WooCollection {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-every-exclusion-before-review-is-kept-with-its-reason-req-wrc-003
 	 */
 	public function exclude(string $caseId, string $documentRef, string $reason, string $note, string $userId): array {
-		if (in_array($reason, self::REASONS, true) === false) {
-			throw new WooCorpusRefused(reason: 'unknown_reason', status: 400);
-		}
-
-		if (in_array($documentRef, $this->caseDocuments->idsFor(caseId: $caseId), true) === false) {
-			throw new WooCorpusRefused(reason: 'document_not_on_case', status: 404);
-		}
-
-		if ($this->assessments->findAssessment(caseId: $caseId, documentRef: $documentRef) !== null) {
-			throw new WooCorpusRefused(reason: 'document_assessed', status: 409);
-		}
-
-		foreach ($this->exclusionsOfCase(caseId: $caseId) as $exclusion) {
-			if ((string)($exclusion['documentRef'] ?? '') === $documentRef) {
-				throw new WooCorpusRefused(reason: 'document_excluded', status: 409);
-			}
-		}
+		$this->assertExcludable(caseId: $caseId, documentRef: $documentRef, reason: $reason);
+		$this->assertNotExcluded(caseId: $caseId, documentRef: $documentRef);
 
 		$provenance = $this->provenance->forDocument(caseId: $caseId, documentId: $documentRef);
 
@@ -189,6 +244,50 @@ class WooCollection {
 			]
 		);
 	}//end exclude()
+
+	/**
+	 * Refuse an unknown reason, a document not on the case, or an assessed document.
+	 *
+	 * @param string $caseId      The case uuid.
+	 * @param string $documentRef The document's uuid.
+	 * @param string $reason      One of {@see self::REASONS}.
+	 *
+	 * @return void
+	 *
+	 * @throws WooCorpusRefused 400 for an unknown reason, 404 for a document not on the case,
+	 *                          409 for an assessed document.
+	 */
+	private function assertExcludable(string $caseId, string $documentRef, string $reason): void {
+		if (in_array($reason, self::REASONS, true) === false) {
+			throw new WooCorpusRefused(reason: 'unknown_reason', status: 400);
+		}
+
+		if (in_array($documentRef, $this->caseDocuments->idsFor(caseId: $caseId), true) === false) {
+			throw new WooCorpusRefused(reason: 'document_not_on_case', status: 404);
+		}
+
+		if ($this->assessments->findAssessment(caseId: $caseId, documentRef: $documentRef) !== null) {
+			throw new WooCorpusRefused(reason: 'document_assessed', status: 409);
+		}
+	}//end assertExcludable()
+
+	/**
+	 * Refuse a document the case already set aside.
+	 *
+	 * @param string $caseId      The case uuid.
+	 * @param string $documentRef The document's uuid.
+	 *
+	 * @return void
+	 *
+	 * @throws WooCorpusRefused 409 for an already excluded document.
+	 */
+	private function assertNotExcluded(string $caseId, string $documentRef): void {
+		foreach ($this->exclusionsOfCase(caseId: $caseId) as $exclusion) {
+			if ((string)($exclusion['documentRef'] ?? '') === $documentRef) {
+				throw new WooCorpusRefused(reason: 'document_excluded', status: 409);
+			}
+		}
+	}//end assertNotExcluded()
 
 	/**
 	 * Record a candidate set aside before review.

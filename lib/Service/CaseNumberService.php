@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseNumberServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -58,7 +59,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseNumberService {
+class CaseNumberService implements CaseNumberServiceInterface {
 
 	use SearchesObjects;
 
@@ -168,51 +169,102 @@ class CaseNumberService {
 			return '';
 		}
 
+		$scope = $this->caseScope();
+		if ($scope === null) {
+			return '';
+		}
+
+		return $this->numberCase(scope: $scope, case: $case);
+	}//end assign()
+
+	/**
+	 * The object service, register and case schema, or null when OpenRegister
+	 * or either setting is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null
+	 */
+	private function caseScope(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return '';
+			return null;
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
 		if ($register === '' || $schema === '') {
-			return '';
+			return null;
 		}
 
+		return [$objectService, $register, $schema];
+	}//end caseScope()
+
+	/**
+	 * Give the case the next number of its year and store it.
+	 *
+	 * A case without a number is readable, editable and closable. It is worth
+	 * a warning and not worth losing the case over, so the failure is loud and
+	 * the creation stands.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $scope The object service, register and case schema.
+	 * @param array<string, mixed>                   $case  The case, with an id and without a number.
+	 *
+	 * @return string The number, or '' when it could not be given.
+	 */
+	private function numberCase(array $scope, array $case): string {
+		$caseId = trim((string)($case['id'] ?? ($case['uuid'] ?? '')));
 		$year = $this->yearOf(case: $case);
 
 		try {
-			$number = $this->nextNumber(
-				year: $year,
-				identifiers: $this->identifiersInUse(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-				)
-			);
-
-			$case['identifier'] = $number;
-			$this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $case,
-				uuid: $caseId,
-			);
+			$case['identifier'] = $this->nextNumberIn(scope: $scope, year: $year);
+			$this->storeNumbered(scope: $scope, case: $case);
 		} catch (Throwable $e) {
-			// A case without a number is readable, editable and closable. It is
-			// worth a warning and not worth losing the case over, so the
-			// failure is loud and the creation stands.
 			$this->logger->warning(
 				'Dossiq: could not give case ' . $caseId . ' a number: ' . $e->getMessage(),
 				['case' => $caseId, 'year' => $year]
 			);
 
 			return '';
-		}//end try
+		}
 
-		return $number;
-	}//end assign()
+		return $case['identifier'];
+	}//end numberCase()
+
+	/**
+	 * The next free number of a year, from the identifiers the register holds.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $scope The object service, register and case schema.
+	 * @param int                                    $year  The case's year.
+	 *
+	 * @return string
+	 */
+	private function nextNumberIn(array $scope, int $year): string {
+		return $this->nextNumber(
+			year: $year,
+			identifiers: $this->identifiersInUse(
+				objectService: $scope[0],
+				register: $scope[1],
+				schema: $scope[2],
+			)
+		);
+	}//end nextNumberIn()
+
+	/**
+	 * Store the numbered case.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $scope The object service, register and case schema.
+	 * @param array<string, mixed>                   $case  The case, with its number.
+	 *
+	 * @return void
+	 */
+	private function storeNumbered(array $scope, array $case): void {
+		$this->saveObjectAsArray(
+			objectService: $scope[0],
+			register: $scope[1],
+			schema: $scope[2],
+			object: $case,
+			uuid: trim((string)($case['id'] ?? ($case['uuid'] ?? ''))),
+		);
+	}//end storeNumbered()
 
 	/**
 	 * Every identifier the register currently holds.

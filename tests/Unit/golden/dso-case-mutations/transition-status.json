@@ -1,0 +1,58 @@
+{
+    "no session": [
+        {
+            "status": 401,
+            "data": {
+                "error": "Not authenticated"
+            }
+        }
+    ],
+    "missing field": [
+        {
+            "status": 400,
+            "data": {
+                "error": "newStatus is required"
+            }
+        }
+    ],
+    "unknown case": [
+        {
+            "status": 400,
+            "data": {
+                "error": "Invalid status value"
+            }
+        }
+    ],
+    "guard refuses": [
+        {
+            "status": 400,
+            "data": {
+                "error": "Invalid status value"
+            }
+        }
+    ],
+    "done": [
+        {
+            "status": 400,
+            "data": {
+                "error": "Invalid status value"
+            }
+        }
+    ],
+    "store fails": [
+        {
+            "status": 400,
+            "data": {
+                "error": "Invalid status value"
+            }
+        }
+    ],
+    "invalid field": [
+        {
+            "status": 400,
+            "data": {
+                "error": "Invalid status value"
+            }
+        }
+    ]
+}

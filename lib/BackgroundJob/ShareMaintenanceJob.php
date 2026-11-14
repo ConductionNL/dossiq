@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use DateTime;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -52,7 +52,7 @@ class ShareMaintenanceJob extends TimedJob {
 	 * Constructor for the ShareMaintenanceJob.
 	 *
 	 * @param ITimeFactory $time The time factory
-	 * @param SettingsService $settingsService The settings service
+	 * @param SettingsServiceInterface $settingsService The settings service
 	 * @param IAppManager $appManager The app manager
 	 * @param ContainerInterface $container The DI container
 	 * @param LoggerInterface $logger The logger
@@ -61,7 +61,7 @@ class ShareMaintenanceJob extends TimedJob {
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private SettingsService $settingsService,
+		private SettingsServiceInterface $settingsService,
 		private IAppManager $appManager,
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
@@ -80,33 +80,18 @@ class ShareMaintenanceJob extends TimedJob {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — required by parent
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function run($argument): void {
-		if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
-			return;
-		}
-
-		try {
-			$objectService = $this->container->get('OCA\OpenRegister\Service\ObjectService');
-		} catch (\Exception $e) {
-			$this->logger->error(
-				'Dossiq: ShareMaintenanceJob could not get ObjectService',
-				['exception' => $e->getMessage()]
-			);
-			return;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_share_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
+		$objectService = $this->objectService();
+		$filters = $this->shareFilters();
+		if ($objectService === null || $filters === null) {
 			return;
 		}
 
 		try {
 			$shares = $objectService->findAll(
-				['filters' => ['register' => (int)$register, 'schema' => (int)$schema]],
+				['filters' => $filters],
 			);
 
 			$reminderDate = new DateTime('+' . self::REMINDER_DAYS . ' days');
@@ -121,6 +106,46 @@ class ShareMaintenanceJob extends TimedJob {
 			);
 		}//end try
 	}//end run()
+
+	/**
+	 * OpenRegister's ObjectService, or null when OpenRegister is not there.
+	 *
+	 * @return object|null
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function objectService(): ?object {
+		if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
+			return null;
+		}
+
+		try {
+			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
+		} catch (\Exception $e) {
+			$this->logger->error(
+				'Dossiq: ShareMaintenanceJob could not get ObjectService',
+				['exception' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end objectService()
+
+	/**
+	 * The register and schema of the case shares, or null when they are not configured.
+	 *
+	 * @return array{register: int, schema: int}|null
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function shareFilters(): ?array {
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_share_schema');
+		if (empty($register) === true || empty($schema) === true) {
+			return null;
+		}
+
+		return ['register' => (int)$register, 'schema' => (int)$schema];
+	}//end shareFilters()
 
 	/**
 	 * Log a reminder when a single share expires within the reminder window.

@@ -219,14 +219,107 @@ function uuidOf(entry) {
  * @return {object} `{key, name, location, date, snippet}`.
  */
 function rowOf(source, entry) {
+	return source === 'files' ? fileRowOf(entry) : recordRowOf(entry)
+}
+
+/**
+ * A Files search entry as a dialog row, keyed by its file id.
+ *
+ * @param {object} entry The entry.
+ * @return {object} `{key, name, location, date, snippet}`.
+ */
+function fileRowOf(entry) {
 	const attributes = entry?.attributes ?? {}
-	const key = source === 'files' ? String(attributes.fileId ?? '') : uuidOf(entry)
 	return {
-		key,
+		key: String(attributes.fileId ?? ''),
 		name: String(entry?.title ?? ''),
-		location: String(attributes.path ?? entry?.subline ?? ''),
+		location: locationOf(entry),
 		date: '',
-		snippet: source === 'files' ? '' : String(entry?.subline ?? ''),
+		snippet: '',
+	}
+}
+
+/**
+ * A record search entry as a dialog row, keyed by the uuid it links to.
+ *
+ * @param {object} entry The entry.
+ * @return {object} `{key, name, location, date, snippet}`.
+ */
+function recordRowOf(entry) {
+	return {
+		key: uuidOf(entry),
+		name: String(entry?.title ?? ''),
+		location: locationOf(entry),
+		date: '',
+		snippet: String(entry?.subline ?? ''),
+	}
+}
+
+/**
+ * Where a unified search entry lives: its path, else its subline.
+ *
+ * @param {object} entry The entry.
+ * @return {string} The location, or ''.
+ */
+function locationOf(entry) {
+	const attributes = entry?.attributes ?? {}
+	return String(attributes.path ?? entry?.subline ?? '')
+}
+
+/**
+ * A source's result group before it answered.
+ *
+ * @param {object} source The source.
+ * @return {object} `{id, label, rows, remaining, notices, error}`.
+ */
+function emptyGroup(source) {
+	return {
+		id: source.id,
+		label: source.label,
+		rows: [],
+		remaining: 0,
+		notices: [],
+		error: '',
+	}
+}
+
+/**
+ * What integriq's search answered, with lists that are not lists read as empty.
+ *
+ * @param {object|undefined} data The answer.
+ * @return {{rows: Array<object>, remaining: number, notices: Array}} The group fields.
+ */
+function integriqAnswer(data) {
+	return {
+		rows: Array.isArray(data?.rows) ? data.rows : [],
+		remaining: Number(data?.remaining ?? 0),
+		notices: Array.isArray(data?.notices) ? data.notices : [],
+	}
+}
+
+/**
+ * The names of a plan's custodians.
+ *
+ * @param {object|null} plan The recorded plan.
+ * @return {Array<string>} The names, empty ones left out.
+ */
+function custodianNames(plan) {
+	return (plan?.custodians ?? [])
+		.map((custodian) => String(custodian?.name ?? ''))
+		.filter(Boolean)
+}
+
+/**
+ * The terms and period a plan prefills.
+ *
+ * @param {object|null} plan The recorded plan.
+ * @return {{terms: string, from: string, to: string}} The prefill.
+ */
+function planPrefill(plan) {
+	return {
+		terms: String(plan?.terms ?? ''),
+		from: String(plan?.periodFrom ?? ''),
+		to: String(plan?.periodTo ?? ''),
 	}
 }
 
@@ -330,19 +423,29 @@ export default {
 						`/apps/dossiq/api/cases/${encodeURIComponent(this.targetCaseId)}/woo/plan`,
 					),
 				)
-				const plan = data?.recorded ? data.plan : null
-				this.custodians = (plan?.custodians ?? [])
-					.map((custodian) => String(custodian?.name ?? ''))
-					.filter(Boolean)
-				this.custodian = this.custodians[0] ?? ''
-				this.terms = this.terms || String(plan?.terms ?? '')
-				this.from = this.from || String(plan?.periodFrom ?? '')
-				this.to = this.to || String(plan?.periodTo ?? '')
+				this.prefillFromPlan(data?.recorded ? data.plan : null)
 			} catch {
 				this.custodians = []
 			} finally {
 				this.planLoaded = true
 			}
+		},
+
+		/**
+		 * Offer the plan's custodians, and fill the terms and period nobody
+		 * typed yet from it.
+		 *
+		 * @param {object|null} plan The recorded plan, or null.
+		 * @return {void}
+		 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
+		 */
+		prefillFromPlan(plan) {
+			const prefill = planPrefill(plan)
+			this.custodians = custodianNames(plan)
+			this.custodian = this.custodians[0] ?? ''
+			this.terms = this.terms || prefill.terms
+			this.from = this.from || prefill.from
+			this.to = this.to || prefill.to
 		},
 
 		/**
@@ -468,48 +571,14 @@ export default {
 		 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
 		 */
 		async searchOne(source) {
-			const group = {
-				id: source.id,
-				label: source.label,
-				rows: [],
-				remaining: 0,
-				notices: [],
-				error: '',
-			}
+			const group = emptyGroup(source)
 			try {
 				if (source.kind === 'integriq') {
-					const { data } = await axios.post(this.endpoint('/search'), {
-						source: source.id,
-						terms: this.searchedTerms,
-						from: this.from,
-						to: this.to,
-					})
-					group.rows = Array.isArray(data?.rows) ? data.rows : []
-					group.remaining = Number(data?.remaining ?? 0)
-					group.notices = Array.isArray(data?.notices) ? data.notices : []
+					Object.assign(group, await this.searchIntegriq(source))
 					return group
 				}
 
-				const params = {
-					term: this.searchedTerms,
-					limit: ROW_LIMIT,
-					...(source.search?.filters ?? {}),
-				}
-				if (this.from) {
-					params.since = this.from
-				}
-				if (this.to) {
-					params.until = this.to
-				}
-				const provider = encodeURIComponent(source.search?.provider ?? '')
-				const { data } = await axios.get(
-					generateOcsUrl(`search/providers/${provider}/search`),
-					{ params },
-				)
-				const entries = data?.ocs?.data?.entries ?? []
-				group.rows = entries
-					.map((entry) => rowOf(source.id, entry))
-					.filter((row) => row.key !== '')
+				group.rows = await this.searchPlatform(source)
 				await this.recordQuery(source, group.rows)
 			} catch (error) {
 				group.error =
@@ -517,6 +586,65 @@ export default {
 					|| t('dossiq', 'This source could not be searched.')
 			}
 			return group
+		},
+
+		/**
+		 * Search integriq's source through dossiq.
+		 *
+		 * @param {object} source The source.
+		 * @return {Promise<{rows: Array<object>, remaining: number, notices: Array}>} What it answered.
+		 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+		 */
+		async searchIntegriq(source) {
+			const { data } = await axios.post(this.endpoint('/search'), {
+				source: source.id,
+				terms: this.searchedTerms,
+				from: this.from,
+				to: this.to,
+			})
+			return integriqAnswer(data)
+		},
+
+		/**
+		 * Search a platform source through Nextcloud's unified search.
+		 *
+		 * @param {object} source The source.
+		 * @return {Promise<Array<object>>} The rows it answered.
+		 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+		 */
+		async searchPlatform(source) {
+			const params = this.platformParams(source)
+			const provider = encodeURIComponent(source.search?.provider ?? '')
+			const { data } = await axios.get(
+				generateOcsUrl(`search/providers/${provider}/search`),
+				{ params },
+			)
+			const entries = data?.ocs?.data?.entries ?? []
+			return entries
+				.map((entry) => rowOf(source.id, entry))
+				.filter((row) => row.key !== '')
+		},
+
+		/**
+		 * The unified search parameters for a platform source.
+		 *
+		 * @param {object} source The source.
+		 * @return {object} The parameters.
+		 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+		 */
+		platformParams(source) {
+			const params = {
+				term: this.searchedTerms,
+				limit: ROW_LIMIT,
+				...(source.search?.filters ?? {}),
+			}
+			if (this.from) {
+				params.since = this.from
+			}
+			if (this.to) {
+				params.until = this.to
+			}
+			return params
 		},
 
 		/**
@@ -567,35 +695,73 @@ export default {
 			if (this.busy || this.picks.length === 0) {
 				return
 			}
+			this.startAdding()
+			const names = this.pickNames()
+			try {
+				const { data } = await axios.post(this.endpoint('/add'), this.addBody())
+				this.readResults(data, names)
+			} catch (error) {
+				this.readAddFailure(error, names)
+			} finally {
+				this.busy = false
+			}
+		},
+
+		/**
+		 * Mark the dialog busy and clear the last add's error and refusals.
+		 *
+		 * @return {void}
+		 */
+		startAdding() {
 			this.busy = true
 			this.error = ''
 			this.refusals = []
-			const names = Object.fromEntries(
+		},
+
+		/**
+		 * The picks' names by `source:key`, for the refusal lines.
+		 *
+		 * @return {object} Pick names by `source:key`.
+		 */
+		pickNames() {
+			return Object.fromEntries(
 				this.picks.map((pick) => [`${pick.source}:${pick.key}`, pick.name]),
 			)
-			try {
-				const { data } = await axios.post(this.endpoint('/add'), {
-					terms: this.searchedTerms,
-					picks: this.picks.map(
-						({ source, custodian, key, location }) => ({
-							source,
-							custodian,
-							key,
-							location,
-						}),
-					),
-				})
+		},
+
+		/**
+		 * What adding the picks sends: the searched terms and each pick's source, custodian, key and location.
+		 *
+		 * @return {object} The body.
+		 */
+		addBody() {
+			return {
+				terms: this.searchedTerms,
+				picks: this.picks.map(
+					({ source, custodian, key, location }) => ({
+						source,
+						custodian,
+						key,
+						location,
+					}),
+				),
+			}
+		},
+
+		/**
+		 * Read a refused add: its per-pick answer when it has one, else its sentence.
+		 *
+		 * @param {Error} error The failure.
+		 * @param {object} names Pick names by `source:key`.
+		 * @return {void}
+		 */
+		readAddFailure(error, names) {
+			const data = error?.response?.data
+			if (Array.isArray(data?.results)) {
 				this.readResults(data, names)
-			} catch (error) {
-				const data = error?.response?.data
-				if (Array.isArray(data?.results)) {
-					this.readResults(data, names)
-				} else {
-					this.error =
-						data?.message || t('dossiq', 'The documents were not added.')
-				}
-			} finally {
-				this.busy = false
+			} else {
+				this.error =
+					data?.message || t('dossiq', 'The documents were not added.')
 			}
 		},
 

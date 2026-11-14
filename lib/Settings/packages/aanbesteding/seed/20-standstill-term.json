@@ -1,0 +1,19 @@
+{
+  "schema": "termijn_definitie_schema",
+  "match": [
+    "caseType",
+    "legalBasis"
+  ],
+  "rows": [
+    {
+      "id": "0b94015f-42f0-56b8-9fd8-f9f7fecae070",
+      "caseType": "aanbesteding",
+      "legalBasis": "Aw 2012 art. 2.127",
+      "standardDurationDays": 20,
+      "countingMode": "calendarDays",
+      "rollToWorkingDay": false,
+      "kind": "statutory",
+      "validFrom": "2026-01-01"
+    }
+  ]
+}

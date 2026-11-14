@@ -29,8 +29,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\TenantBillingService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TenantBillingServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -48,13 +48,13 @@ class TenantBillingController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest             $request        HTTP request.
-	 * @param TenantBillingService $billingService Tenant billing service.
+	 * @param TenantBillingServiceInterface $billingService Tenant billing service.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly TenantBillingService $billingService,
+		private readonly TenantBillingServiceInterface $billingService,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -80,14 +80,15 @@ class TenantBillingController extends Controller {
 
 	/**
 	 * Run monthly invoicing for a tenant: aggregate unbilled usage, export a
-	 * Shillinq invoice, and stamp the events.
+	 * Shillinq invoice, and stamp the events. A run that exports nothing
+	 * answers 409 with the reason.
 	 *
 	 * @param string $tenantId Tenant UUID.
-	 * @param string $month    YYYY-MM.
+	 * @param string $month    YYYY-MM, or `previous` for last month.
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/specs/tenant-billing/spec.md
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-an-administrator-sees-and-runs-a-tenants-monthly-billing-req-tq-bill-01
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function run(string $tenantId, string $month): JSONResponse {
@@ -95,6 +96,12 @@ class TenantBillingController extends Controller {
 			$result = $this->billingService->runInvoicing(tenantId: $tenantId, month: $month);
 		} catch (InvalidArgumentException $e) {
 			return new JSONResponse(['success' => false, 'error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+
+		// A run that handed nothing to the finance app says why, so the
+		// administrator does not read a success for an invoice that was not made.
+		if (($result['error'] ?? null) !== null) {
+			return new JSONResponse(['success' => false, 'error' => $result['error'], 'invoice' => $result], Http::STATUS_CONFLICT);
 		}
 
 		return new JSONResponse(['success' => true, 'invoice' => $result]);

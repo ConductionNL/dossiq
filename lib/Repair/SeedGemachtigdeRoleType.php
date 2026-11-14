@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\People\GemachtigdeRoleTypeSeeder;
+use OCA\Dossiq\Kernel\Contracts\GemachtigdeRoleTypeSeederInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -40,13 +40,13 @@ class SeedGemachtigdeRoleType implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param GemachtigdeRoleTypeSeeder $seeder The seed itself.
+	 * @param GemachtigdeRoleTypeSeederInterface $seeder The seed itself.
 	 * @param LoggerInterface           $logger Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly GemachtigdeRoleTypeSeeder $seeder,
+		private readonly GemachtigdeRoleTypeSeederInterface $seeder,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -73,22 +73,63 @@ class SeedGemachtigdeRoleType implements IRepairStep {
 		$result = $this->seeder->seed();
 
 		if ($result['available'] === false) {
-			$output->warning(
-				'OpenRegister could not be asked for the role types, so the generic Gemachtigde role '
-				. 'was not seeded. This seed re-runs on the next upgrade.'
-			);
+			$this->reportUnavailable(output: $output);
 			return;
 		}
 
 		if ($result['refused'] !== null) {
-			$output->warning('The generic Gemachtigde role type was refused. See the log.');
-			$this->logger->error(
-				'Dossiq: the generic Gemachtigde role type could not be written',
-				['reason' => $result['refused']]
-			);
+			$this->reportRefused(output: $output, refused: $result['refused']);
 			return;
 		}
 
+		$this->reportWritten(output: $output, result: $result);
+	}//end run()
+
+	/**
+	 * Say the role types could not be read.
+	 *
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+	 */
+	private function reportUnavailable(IOutput $output): void {
+		$output->warning(
+			'OpenRegister could not be asked for the role types, so the generic Gemachtigde role '
+			. 'was not seeded. This seed re-runs on the next upgrade.'
+		);
+	}//end reportUnavailable()
+
+	/**
+	 * Say, and log, that the role type was refused.
+	 *
+	 * @param IOutput $output  Progress reporting.
+	 * @param string  $refused Why.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+	 */
+	private function reportRefused(IOutput $output, string $refused): void {
+		$output->warning('The generic Gemachtigde role type was refused. See the log.');
+		$this->logger->error(
+			'Dossiq: the generic Gemachtigde role type could not be written',
+			['reason' => $refused]
+		);
+	}//end reportRefused()
+
+	/**
+	 * Say what the seed wrote, if anything.
+	 *
+	 * @param IOutput              $output Progress reporting.
+	 * @param array<string, mixed> $result What the seed did.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+	 */
+	private function reportWritten(IOutput $output, array $result): void {
 		if ($result['created'] === 1) {
 			$output->info('Created the generic Gemachtigde role type. Every case type now offers it.');
 			return;
@@ -103,5 +144,5 @@ class SeedGemachtigdeRoleType implements IRepairStep {
 		}
 
 		$output->info('The generic Gemachtigde role type is already there. Nothing was written.');
-	}//end run()
+	}//end reportWritten()
 }//end class

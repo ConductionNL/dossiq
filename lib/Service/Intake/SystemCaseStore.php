@@ -33,7 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use Psr\Log\LoggerInterface;
@@ -65,7 +65,7 @@ class SystemCaseStore {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService             $settingsService The configured case and case type schemas.
+	 * @param SettingsServiceInterface             $settingsService The configured case and case type schemas.
 	 * @param LoggerInterface             $logger          Logger.
 	 * @param UnscopedObjectReader|null   $reader          Reads unscoped; a fresh one when null.
 	 * @param CaseCreationAnnouncer|null  $announcer       Announces the written case; null where
@@ -76,7 +76,7 @@ class SystemCaseStore {
 	 *                                                     one when null.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		?UnscopedObjectReader $reader = null,
 		private readonly ?CaseCreationAnnouncer $announcer = null,
@@ -112,6 +112,49 @@ class SystemCaseStore {
 
 		return $caseType;
 	}//end caseType()
+
+	/**
+	 * The version of a case type that new cases get: the row the id names,
+	 * followed along `supersededBy` to the version nothing has superseded.
+	 * The answer carries its own `id`, so a caller files on that version.
+	 *
+	 * A link that cannot be read ends the walk on the last readable version,
+	 * and a chain that loops back ends where it would repeat: a broken chain
+	 * files on a version that exists rather than on none.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register      The dossiq register.
+	 * @param string $caseTypeId    Any version of the case type.
+	 *
+	 * @return array<string, mixed>|null The current version, or null when the id names nothing.
+	 *
+	 * @spec openspec/changes/woo-five-steps/specs/woo-request-intake/spec.md#requirement-a-request-is-filed-on-the-current-version-of-the-case-type
+	 */
+	public function currentCaseType(object $objectService, string $register, string $caseTypeId): ?array {
+		$current = $this->caseType(objectService: $objectService, register: $register, caseTypeId: $caseTypeId);
+		if ($current === null) {
+			return null;
+		}
+
+		$currentId = $caseTypeId;
+		$seen      = [$caseTypeId => true];
+		$next      = trim((string)($current['supersededBy'] ?? ''));
+		while ($next !== '' && isset($seen[$next]) === false) {
+			$seen[$next] = true;
+			$row = $this->caseType(objectService: $objectService, register: $register, caseTypeId: $next);
+			if ($row === null) {
+				break;
+			}
+
+			$current   = $row;
+			$currentId = $next;
+			$next      = trim((string)($row['supersededBy'] ?? ''));
+		}
+
+		$current['id'] = $currentId;
+
+		return $current;
+	}//end currentCaseType()
 
 	/**
 	 * A case by id, or an empty array when it is absent or cannot be read.
@@ -162,6 +205,35 @@ class SystemCaseStore {
 	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
 	 */
 	public function write(object $objectService, string $register, array $case, ?array $caseType = null): ?array {
+		$case = $this->withOpeningDefaults(objectService: $objectService, register: $register, case: $case, caseType: $caseType);
+
+		$written = $this->saveAsSystem(objectService: $objectService, register: $register, case: $case);
+		$saved = $written['saved'];
+		$failed = $written['failed'];
+
+		if ($failed === true) {
+			return null;
+		}
+
+		$this->announce(objectService: $objectService, saved: $saved);
+
+		return (new WrittenCase())->read(saved: $saved);
+	}//end write()
+
+	/**
+	 * The case with the opening fields it lacks taken from its case type.
+	 *
+	 * @param object                    $objectService The OpenRegister ObjectService.
+	 * @param string                    $register      The dossiq register.
+	 * @param array<string, mixed>      $case          The case to write.
+	 * @param array<string, mixed>|null $caseType      Its case type, or null to read it from `caseType`.
+	 *
+	 * @return array<string, mixed> The case.
+	 *
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
+	 */
+	private function withOpeningDefaults(object $objectService, string $register, array $case, ?array $caseType): array {
 		$caseTypeId = trim((string)($case['caseType'] ?? ''));
 		if ($caseType === null && $caseTypeId !== '') {
 			$caseType = $this->caseType(objectService: $objectService, register: $register, caseTypeId: $caseTypeId);
@@ -171,6 +243,22 @@ class SystemCaseStore {
 			$case = $this->openingDefaults->apply(case: $case, caseType: $caseType);
 		}
 
+		return $case;
+	}//end withOpeningDefaults()
+
+	/**
+	 * Write the case as the system, logging a failed write.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param string               $register      The dossiq register.
+	 * @param array<string, mixed> $case          The case to write.
+	 *
+	 * @return array{saved: mixed, failed: bool} What the write returned, and whether it failed.
+	 *
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
+	 */
+	private function saveAsSystem(object $objectService, string $register, array $case): array {
 		$saved  = null;
 		$failed = false;
 		try {
@@ -189,14 +277,8 @@ class SystemCaseStore {
 			$failed = true;
 		}
 
-		if ($failed === true) {
-			return null;
-		}
-
-		$this->announce(objectService: $objectService, saved: $saved);
-
-		return (new WrittenCase())->read(saved: $saved);
-	}//end write()
+		return ['saved' => $saved, 'failed' => $failed];
+	}//end saveAsSystem()
 
 	/**
 	 * Send the created event OpenRegister withheld, when it withheld one.

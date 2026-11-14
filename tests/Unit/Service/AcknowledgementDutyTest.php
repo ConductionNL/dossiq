@@ -28,6 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\AcknowledgementDelivery;
+use OCA\Dossiq\Service\AcknowledgementTerms;
+use OCA\Dossiq\Service\AcknowledgementDeclaration;
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\AcknowledgementService;
@@ -43,6 +47,7 @@ use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use OCA\Dossiq\Woo\WooReceivedAnswers;
 use OCA\Dossiq\Woo\WooRequestForm;
 use OCA\Dossiq\Tests\Support\MakesRealTermNoticeSender;
@@ -105,11 +110,15 @@ class AcknowledgementCaseStore {
  * Confirming receipt, recording it, and refusing when there is nowhere to send.
  *
  * @covers \OCA\Dossiq\Service\AcknowledgementService
+ * @covers \OCA\Dossiq\Service\AcknowledgementDelivery
+ * @covers \OCA\Dossiq\Service\AcknowledgementTerms
+ * @covers \OCA\Dossiq\Service\AcknowledgementDeclaration
  * @uses \OCA\Dossiq\Service\Support\LetterDays
  *
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
  * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
+ * @uses \OCA\Dossiq\Service\Email\OutboundMailPolicy
  * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
  * @uses \OCA\Dossiq\Service\Email\IntakeAccount
@@ -118,7 +127,9 @@ class AcknowledgementCaseStore {
  * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
+ * @uses \OCA\Dossiq\Service\Term\TermNoticeSources
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
+ * @uses \OCA\Dossiq\Service\Term\TermLetter
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\Notification\RequesterNoticeSender
@@ -130,6 +141,8 @@ class AcknowledgementCaseStore {
  * @uses \OCA\Dossiq\Woo\WooReceivedAnswers
  * @uses \OCA\Dossiq\Woo\WooRequestForm
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses \OCA\Dossiq\Service\Termijn\TermNotice
+ * @uses \OCA\Dossiq\Service\Termijn\TermNoticeRun
  */
 class AcknowledgementDutyTest extends TestCase {
 	use MakesRealTermNoticeSender;
@@ -177,11 +190,12 @@ class AcknowledgementDutyTest extends TestCase {
 	/**
 	 * The service, wired against the in-memory store.
 	 *
-	 * @param TermNoticeSender|null $sender The e-mail transport; a mock that always sends when null.
+	 * @param TermNoticeSender|null      $sender    The e-mail transport; a mock that always sends when null.
+	 * @param RequesterNoticeSender|null $requester The channel picker; the real one over the store when null.
 	 *
 	 * @return AcknowledgementService The service under test.
 	 */
-	private function service(?TermNoticeSender $sender = null): AcknowledgementService {
+	private function service(?TermNoticeSender $sender = null, ?RequesterNoticeSender $requester = null): AcknowledgementService {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 
 		$settings = $this->createMock(originalClassName: SettingsService::class);
@@ -214,23 +228,28 @@ class AcknowledgementDutyTest extends TestCase {
 
 		return new AcknowledgementService(
 			settingsService: $settings,
-			caseTypeResolver: $resolver,
-			store: $store,
-			declaration: new CaseTypeAcknowledgement(),
-			termService: $terms,
-			notifications: new TermijnNotificationService(
-				termService: $noticeTerms,
-				sender: ($sender ?? $this->sentNotices()),
-				logger: $logger,
-				requester: new RequesterNoticeSender(
-					email: ($sender ?? $this->sentNotices()),
-					settings: $settings,
-					writer: new CaseFieldWriter(),
+			caseTypes: new AcknowledgementDeclaration(
+				caseTypeResolver: $resolver,
+				store: $store,
+				declaration: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
+			),
+			terms: new AcknowledgementTerms(
+				termService: $terms,
+				notifications: new TermijnNotificationService(
+					notices: new TermNoticeSources(termService: $noticeTerms, sender: ($sender ?? $this->sentNotices())),
+					logger: $logger,
+					requester: ($requester ?? new RequesterNoticeSender(
+						email: ($sender ?? $this->sentNotices()),
+						settings: $settings,
+						writer: new CaseFieldWriter(),
+					)),
 				),
 			),
-			contacts: new CaseContactDirectory(),
-			portal: new PortalContributionProvider(),
-			writer: new CaseFieldWriter(),
+			delivery: new AcknowledgementDelivery(
+				contacts: new CaseContactDirectory(),
+				portal: new PortalContributionProvider(),
+				writer: new CaseFieldWriter(),
+			),
 			logger: $logger,
 			timeline: $this->timeline,
 		);
@@ -311,6 +330,67 @@ class AcknowledgementDutyTest extends TestCase {
 			'the API case creation' => ['zgw-api'],
 		];
 	}//end electronicIntakePaths()
+
+	/**
+	 * REQ-ACK-COPY-001: a case type that declares `emailCopy` asks the
+	 * sender for a copy by e-mail; one that does not, does not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 */
+	public function testACaseTypeDeclaresAnEmailCopy(): void {
+		$asked = [];
+		$requester = $this->createMock(originalClassName: RequesterNoticeSender::class);
+		$requester->method('momentFor')->willReturn('acknowledgement');
+		$requester->method('send')->willReturnCallback(
+			static function (array $case, string $template, array $rendered, string $moment, array $options) use (&$asked): array {
+				$asked[] = [(string)$case['id'], $options['channels']];
+				$channel = 'portal-inbox';
+				if ($options['channels'] !== null) {
+					$channel = 'email';
+				}
+
+				return ['status' => 'sent', 'channel' => $channel, 'messageId' => 'm-1', 'sentAt' => '2026-10-16T10:00:00+02:00', 'record' => []];
+			}
+		);
+
+		$this->caseType = ['acknowledgement' => ['emailCopy' => true]];
+		$met = $this->service(requester: $requester)->acknowledge(caseId: $this->seedCase());
+
+		$this->caseType = [];
+		$this->service(requester: $requester)->acknowledge(caseId: $this->seedCase(overrides: ['id' => 'case-2']));
+
+		self::assertSame(expected: [['case-1', null], ['case-1', ['email']], ['case-2', null]], actual: $asked);
+		self::assertSame(expected: 'portal-inbox', actual: $met['duty']['channel'], message: 'the duty stays met by the first channel');
+	}//end testACaseTypeDeclaresAnEmailCopy()
+
+	/**
+	 * REQ-ACK-COPY-001: a copy that does not go out leaves the duty met.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 */
+	public function testACopyThatIsNotSentLeavesTheDutyMet(): void {
+		$requester = $this->createMock(originalClassName: RequesterNoticeSender::class);
+		$requester->method('momentFor')->willReturn('acknowledgement');
+		$requester->method('send')->willReturnCallback(
+			static function (array $case, string $template, array $rendered, string $moment, array $options): array {
+				if ($options['channels'] !== null) {
+					return ['status' => 'not-sent', 'channel' => '', 'reasonCode' => 'no-channel', 'reason' => 'No address.', 'record' => []];
+				}
+
+				return ['status' => 'sent', 'channel' => 'portal-inbox', 'messageId' => 'm-1', 'sentAt' => '2026-10-16T10:00:00+02:00', 'record' => []];
+			}
+		);
+
+		$this->caseType = ['acknowledgement' => ['emailCopy' => true]];
+		$result = $this->service(requester: $requester)->acknowledge(caseId: $this->seedCase());
+
+		self::assertTrue(condition: $result['sent']);
+		self::assertSame(expected: AcknowledgementService::STATUS_MET, actual: $this->store->cases['case-1']['acknowledgementDuty']['status']);
+	}//end testACopyThatIsNotSentLeavesTheDutyMet()
 
 	/**
 	 * A case typed at the balie is not mailed.
@@ -630,7 +710,7 @@ class AcknowledgementDutyTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-names-the-case-number/specs/burger-notifications/spec.md#requirement-a-requester-letter-names-the-case-by-its-number
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-letter-names-the-case-by-its-number
 	 */
 	public function testTheReceiptNamesTheCaseNumberNotTheTermsCaseLink(): void {
 		$uuid = 'cecc92cc-6e45-4edd-b38f-908fb543e710';

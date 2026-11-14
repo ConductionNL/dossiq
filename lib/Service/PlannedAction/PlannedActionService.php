@@ -36,7 +36,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\PlannedAction;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PlannedActionServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -47,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/task-management/spec.md
  */
-class PlannedActionService {
+class PlannedActionService implements PlannedActionServiceInterface {
 
 	use SearchesObjects;
 
@@ -194,30 +195,9 @@ class PlannedActionService {
 	 *
 	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/task-management/spec.md
 	 */
-	public function complete(
-		array $action,
-		string $completedBy = '',
-		array $roleHolders = [],
-		?DateTimeImmutable $completedOn = null,
-	): ?array {
+	public function complete(array $action, string $completedBy = '', array $roleHolders = [], ?DateTimeImmutable $completedOn = null): ?array {
 		$moment = ($completedOn ?? new DateTimeImmutable('today'));
-		$actionId = (string)($action['id'] ?? ($action['uuid'] ?? ''));
-		$uuid = null;
-		if ($actionId !== '') {
-			$uuid = $actionId;
-		}
-
-		$this->write(
-			object: array_merge(
-				$action,
-				[
-					'state' => 'completed',
-					'completedAt' => $moment->format('Y-m-d\TH:i:sP'),
-					'completedBy' => $completedBy,
-				]
-			),
-			uuid: $uuid
-		);
+		$this->markCompleted(action: $action, completedBy: $completedBy, moment: $moment);
 
 		$next = $this->chain->next(
 			completed: $action,
@@ -232,6 +212,28 @@ class PlannedActionService {
 
 		return $this->write(object: $next, uuid: null);
 	}//end complete()
+
+	/**
+	 * Write an action as completed.
+	 *
+	 * @param array<string, mixed> $action      The action being completed.
+	 * @param string               $completedBy Who completed it.
+	 * @param DateTimeImmutable    $moment      The completion date.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/task-management/spec.md
+	 */
+	private function markCompleted(array $action, string $completedBy, DateTimeImmutable $moment): void {
+		$actionId = (string)($action['id'] ?? ($action['uuid'] ?? ''));
+		$uuid = null;
+		if ($actionId !== '') {
+			$uuid = $actionId;
+		}
+
+		$changes = ['state' => 'completed', 'completedAt' => $moment->format('Y-m-d\TH:i:sP'), 'completedBy' => $completedBy];
+		$this->write(object: array_merge($action, $changes), uuid: $uuid);
+	}//end markCompleted()
 
 	/**
 	 * The action types available on a case type, by identifier.
@@ -327,7 +329,7 @@ class PlannedActionService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq PlannedActionService: could not read ' . $slug . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return [];
 		}
@@ -344,15 +346,11 @@ class PlannedActionService {
 	private function write(array $object, ?string $uuid): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
-		if ($objectService === null || $register === '') {
+		if ($this->canWrite(objectService: $objectService, register: $register) === false) {
 			return null;
 		}
 
-		$schema = (string)$this->settingsService->getConfigValue(self::ACTION_SCHEMA_KEY);
-		if ($schema === '') {
-			$schema = 'plannedAction';
-		}
-
+		$schema = $this->actionSchema();
 		try {
 			return $this->saveObjectAsArray(
 				objectService: $objectService,
@@ -364,9 +362,35 @@ class PlannedActionService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq PlannedActionService: could not write a planned action: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}
-	}
+	}//end write()
+
+	/**
+	 * The configured planned action schema, plannedAction when none is set.
+	 *
+	 * @return string
+	 */
+	private function actionSchema(): string {
+		$schema = (string)$this->settingsService->getConfigValue(self::ACTION_SCHEMA_KEY);
+		if ($schema === '') {
+			$schema = 'plannedAction';
+		}
+
+		return $schema;
+	}//end actionSchema()
+
+	/**
+	 * Whether OpenRegister and the register are there to write to.
+	 *
+	 * @param object|null $objectService OpenRegister's object service.
+	 * @param string      $register      The register id.
+	 *
+	 * @return bool
+	 */
+	private function canWrite(?object $objectService, string $register): bool {
+		return $objectService !== null && $register !== '';
+	}//end canWrite()
 }//end class

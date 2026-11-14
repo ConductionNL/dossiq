@@ -29,9 +29,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Starter\CaseTemplateService;
-use OCA\Dossiq\Service\Starter\ContentTemplateService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTemplateServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ContentTemplateServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -57,24 +58,22 @@ class TemplateStartController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string                 $appName  The app name.
 	 * @param IRequest               $request  The HTTP request.
-	 * @param CaseTemplateService    $cases    The case templates.
-	 * @param ContentTemplateService $content  The template library.
-	 * @param CaseAccessGuard        $guard    Who may write to a case.
+	 * @param CaseTemplateServiceInterface    $cases    The case templates.
+	 * @param ContentTemplateServiceInterface $content  The template library.
+	 * @param CaseAccessGuardInterface        $guard    Who may write to a case.
 	 * @param IUserSession           $session  Who is asking.
 	 * @param LoggerInterface        $logger   Logger.
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
-		private readonly CaseTemplateService $cases,
-		private readonly ContentTemplateService $content,
-		private readonly CaseAccessGuard $guard,
+		private readonly CaseTemplateServiceInterface $cases,
+		private readonly ContentTemplateServiceInterface $content,
+		private readonly CaseAccessGuardInterface $guard,
 		private readonly IUserSession $session,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -121,28 +120,15 @@ class TemplateStartController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function startFromTemplate(string $templateId): JSONResponse {
-		$user = $this->session->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		// The per-object guard, on the template itself. A template is a case
-		// row, so the right that governs reading it is the right that governs
-		// reading any case, and a handler who may not see the bezwaar
-		// templates may not start from one either.
-		if ($this->guard->hasCaseReadAccess(caseId: $templateId, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not allowed'], Http::STATUS_FORBIDDEN);
-		}
-
-		$overrides = $this->request->getParam('overrides', []);
-		if (is_array($overrides) === false) {
-			$overrides = [];
+		$refusal = $this->accessRefusal(templateId: $templateId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
 			$result = $this->cases->startFrom(
 				templateId: $templateId,
-				overrides: $overrides,
+				overrides: $this->overrides(),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: could not start from a template: ' . $e->getMessage());
@@ -150,17 +136,72 @@ class TemplateStartController extends Controller {
 			return new JSONResponse(['error' => 'Could not start the case'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
-		if ($result['ok'] === false) {
-			$refused = Http::STATUS_CONFLICT;
-			if ($result['reason'] === 'not_found') {
-				$refused = Http::STATUS_NOT_FOUND;
-			}
+		return new JSONResponse($result, $this->statusOf(result: $result));
+	}//end startFromTemplate()
 
-			return new JSONResponse($result, $refused);
+	/**
+	 * The refusal for a caller who is not signed in or may not read the template, else null.
+	 *
+	 * The per-object guard, on the template itself. A template is a case
+	 * row, so the right that governs reading it is the right that governs
+	 * reading any case, and a handler who may not see the bezwaar
+	 * templates may not start from one either.
+	 *
+	 * @param string $templateId The template (a case row).
+	 *
+	 * @return JSONResponse|null
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
+	 */
+	private function accessRefusal(string $templateId): ?JSONResponse {
+		$user = $this->session->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		return new JSONResponse($result, Http::STATUS_CREATED);
-	}//end startFromTemplate()
+		if ($this->guard->hasCaseReadAccess(caseId: $templateId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not allowed'], Http::STATUS_FORBIDDEN);
+		}
+
+		return null;
+	}//end accessRefusal()
+
+	/**
+	 * The overrides the request carries, or none.
+	 *
+	 * @return array<mixed>
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
+	 */
+	private function overrides(): array {
+		$overrides = $this->request->getParam('overrides', []);
+		if (is_array($overrides) === false) {
+			return [];
+		}
+
+		return $overrides;
+	}//end overrides()
+
+	/**
+	 * The status of the answer: 201 for a started case, 404 for an unknown template, 409 for any other refusal.
+	 *
+	 * @param array<string, mixed> $result What starting from the template answered.
+	 *
+	 * @return int
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
+	 */
+	private function statusOf(array $result): int {
+		if ($result['ok'] !== false) {
+			return Http::STATUS_CREATED;
+		}
+
+		if ($result['reason'] === 'not_found') {
+			return Http::STATUS_NOT_FOUND;
+		}
+
+		return Http::STATUS_CONFLICT;
+	}//end statusOf()
 
 	/**
 	 * The templates of one kind, offered on one case type.
@@ -183,6 +224,17 @@ class TemplateStartController extends Controller {
 			return new JSONResponse(['error' => 'Not allowed'], Http::STATUS_FORBIDDEN);
 		}
 
+		return $this->offeredResponse(kind: $kind);
+	}//end contentTemplates()
+
+	/**
+	 * The content templates of a kind offered for the requested case type and search term.
+	 *
+	 * @param string $kind The template kind.
+	 *
+	 * @return JSONResponse
+	 */
+	private function offeredResponse(string $kind): JSONResponse {
 		$caseTypeId = (string)$this->request->getParam('caseType', '');
 		$search = (string)$this->request->getParam('search', '');
 
@@ -195,12 +247,9 @@ class TemplateStartController extends Controller {
 		}
 
 		if ($templates === null) {
-			return new JSONResponse(
-				['error' => 'The register is not available'],
-				Http::STATUS_SERVICE_UNAVAILABLE
-			);
+			return new JSONResponse(['error' => 'The register is not available'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
 		return new JSONResponse(['items' => $templates, 'total' => count($templates)]);
-	}//end contentTemplates()
+	}//end offeredResponse()
 }//end class

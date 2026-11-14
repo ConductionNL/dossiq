@@ -29,8 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\DemoCaseloadReport;
-use OCA\Dossiq\Service\DemoCaseloadSeedDataService;
+use OCA\Dossiq\Kernel\Contracts\DemoCaseloadReportInterface;
+use OCA\Dossiq\Kernel\Contracts\DemoCaseloadSeedDataServiceInterface;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -48,14 +48,14 @@ class SeedDemoCaseloadCommand extends Command {
 	/**
 	 * Wire the command against the seeder and the user/group managers.
 	 *
-	 * @param DemoCaseloadSeedDataService $seeder The demo caseload seeder.
-	 * @param DemoCaseloadReport $report Reads the caseload buckets back.
+	 * @param DemoCaseloadSeedDataServiceInterface $seeder The demo caseload seeder.
+	 * @param DemoCaseloadReportInterface $report Reads the caseload buckets back.
 	 * @param IUserSession $userSession Session used to impersonate an admin.
 	 * @param IGroupManager $groupManager Resolves an admin to impersonate.
 	 */
 	public function __construct(
-		private readonly DemoCaseloadSeedDataService $seeder,
-		private readonly DemoCaseloadReport $report,
+		private readonly DemoCaseloadSeedDataServiceInterface $seeder,
+		private readonly DemoCaseloadReportInterface $report,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 	) {
@@ -94,26 +94,15 @@ class SeedDemoCaseloadCommand extends Command {
 		// OpenRegister enforces RBAC on saveObject against the current user.
 		// occ runs with no session ("Anonymous"), which lacks create rights on
 		// the Case schema, so impersonate an admin for the seed.
-		if ($this->userSession->getUser() === null) {
-			$admin = $this->resolveAdmin();
-			if ($admin === null) {
-				$output->writeln('<error>No admin user found to run the seed under.</error>');
-				return Command::FAILURE;
-			}
-
-			$this->userSession->setUser($admin);
-			$output->writeln('<comment>Seeding as admin user "' . $admin->getUID() . '".</comment>');
+		if ($this->userSession->getUser() === null && $this->impersonateAdmin(output: $output) === false) {
+			return Command::FAILURE;
 		}
 
 		$verifyOnly = (bool)$input->getOption('verify-only');
 
 		try {
 			if ($verifyOnly === false) {
-				$result = $this->seeder->seed();
-				$output->writeln('<info>dossiq:demo:seed done</info>');
-				$output->writeln('  cases created = ' . $result['cases']);
-				$output->writeln('  tasks created = ' . $result['tasks']);
-				$output->writeln('  cases skipped = ' . $result['skipped'] . ' (already present)');
+				$this->seed(output: $output);
 			}
 
 			$buckets = $this->report->buckets();
@@ -124,14 +113,7 @@ class SeedDemoCaseloadCommand extends Command {
 
 		// Read back from the register, because the deadline a case ends up with
 		// is materialised by OpenRegister, not written by the seed.
-		$output->writeln('');
-		$output->writeln('<info>What the dashboard will read</info>');
-		$output->writeln('  open cases          = ' . $buckets['open']);
-		$output->writeln('  overdue             = ' . $buckets['overdue']);
-		$output->writeln('  deadline within 3d  = ' . $buckets['dueSoon']);
-		$output->writeln('  closed              = ' . $buckets['closed']);
-		$output->writeln('  open tasks          = ' . $buckets['tasksOpen']);
-		$output->writeln('  tasks due within 3d = ' . $buckets['tasksDue']);
+		$this->printBuckets(output: $output, buckets: $buckets);
 
 		if ($buckets['tasksOpen'] === 0) {
 			$output->writeln('');
@@ -141,6 +123,59 @@ class SeedDemoCaseloadCommand extends Command {
 
 		return Command::SUCCESS;
 	}//end execute()
+
+	/**
+	 * Impersonate the first admin, so OpenRegister grants the seed its writes.
+	 *
+	 * @param OutputInterface $output Console output.
+	 *
+	 * @return bool False when no admin exists.
+	 */
+	private function impersonateAdmin(OutputInterface $output): bool {
+		$admin = $this->resolveAdmin();
+		if ($admin === null) {
+			$output->writeln('<error>No admin user found to run the seed under.</error>');
+			return false;
+		}
+
+		$this->userSession->setUser($admin);
+		$output->writeln('<comment>Seeding as admin user "' . $admin->getUID() . '".</comment>');
+		return true;
+	}//end impersonateAdmin()
+
+	/**
+	 * Seed the caseload and print what was created.
+	 *
+	 * @param OutputInterface $output Console output.
+	 *
+	 * @return void
+	 */
+	private function seed(OutputInterface $output): void {
+		$result = $this->seeder->seed();
+		$output->writeln('<info>dossiq:demo:seed done</info>');
+		$output->writeln('  cases created = ' . $result['cases']);
+		$output->writeln('  tasks created = ' . $result['tasks']);
+		$output->writeln('  cases skipped = ' . $result['skipped'] . ' (already present)');
+	}//end seed()
+
+	/**
+	 * Print what the dashboard will read.
+	 *
+	 * @param OutputInterface    $output  Console output.
+	 * @param array<string, int> $buckets The read-back buckets.
+	 *
+	 * @return void
+	 */
+	private function printBuckets(OutputInterface $output, array $buckets): void {
+		$output->writeln('');
+		$output->writeln('<info>What the dashboard will read</info>');
+		$output->writeln('  open cases          = ' . $buckets['open']);
+		$output->writeln('  overdue             = ' . $buckets['overdue']);
+		$output->writeln('  deadline within 3d  = ' . $buckets['dueSoon']);
+		$output->writeln('  closed              = ' . $buckets['closed']);
+		$output->writeln('  open tasks          = ' . $buckets['tasksOpen']);
+		$output->writeln('  tasks due within 3d = ' . $buckets['tasksDue']);
+	}//end printBuckets()
 
 	/**
 	 * Resolve the first member of the admin group, if any.

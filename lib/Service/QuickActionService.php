@@ -23,15 +23,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\QuickActionServiceInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
+use OCA\Dossiq\Service\Support\CastArray;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -39,9 +41,9 @@ use Throwable;
 /**
  * Executes configured KCC quick-actions against the case register.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
  */
-class QuickActionService {
+class QuickActionService implements QuickActionServiceInterface {
 	/**
 	 * Case type identifier used for klacht cases (Awb hoofdstuk 9).
 	 *
@@ -87,7 +89,7 @@ class QuickActionService {
 	 *
 	 * @throws RuntimeException When the case cannot be loaded.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
 	 */
 	public function executeStatusTerugkoppelen(string $caseId): array {
 		$case = $this->loadCase(caseId: $caseId);
@@ -114,7 +116,7 @@ class QuickActionService {
 	 *
 	 * @throws RuntimeException When input is invalid or the write fails.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
 	 */
 	public function executeNieuweZaak(string $caseType, string $burgerId, array $details): array {
 		$caseType = trim($caseType);
@@ -137,7 +139,7 @@ class QuickActionService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to create case via quick-action: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			throw new RuntimeException('Could not create case');
 		}
@@ -156,24 +158,78 @@ class QuickActionService {
 	 *
 	 * @throws RuntimeException When the klacht text is empty or the write fails.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
 	 */
 	public function executeKlachtRegistreren(string $caseId, string $summary, string $burgerId): array {
+		$summary = $this->requiredKlachtSummary(summary: $summary);
+
+		[$objectService, $register, $caseSchema] = $this->resolveCase();
+
+		$deadline = $this->klachtDeadline();
+		$record = $this->klachtRecord(caseId: $caseId, summary: $summary, burgerId: $burgerId, deadline: $deadline);
+
+		try {
+			$created = $this->toArray(result: $objectService->saveObject(object: $record, register: $register, schema: $caseSchema));
+		} catch (Throwable $e) {
+			throw $this->klachtNotRegistered(error: $e);
+		}
+
+		$complaintId = (string)($created['id'] ?? ($created['uuid'] ?? ''));
+		$this->noteKlachtOnCase(caseId: $caseId, complaintId: $complaintId);
+
+		return ['klachtCaseId' => $complaintId, 'deadline' => $deadline];
+	}//end executeKlachtRegistreren()
+
+	/**
+	 * The klacht text, trimmed, or an error when it is empty.
+	 *
+	 * @param string $summary The klacht text.
+	 *
+	 * @return string The trimmed text.
+	 *
+	 * @throws RuntimeException When the klacht text is empty.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+	 */
+	private function requiredKlachtSummary(string $summary): string {
 		$summary = trim($summary);
 		if ($summary === '') {
 			throw new RuntimeException('Klacht samenvatting is required');
 		}
 
-		[$objectService, $register, $caseSchema] = $this->resolveCase();
+		return $summary;
+	}//end requiredKlachtSummary()
 
+	/**
+	 * The klacht decision deadline as a calendar date.
+	 *
+	 * @return string The deadline.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+	 */
+	private function klachtDeadline(): string {
 		// Awb 9:11: six weeks (42 days) decision term, landing on a day the
 		// organisation's calendar calls a working day (Awt art. 1).
 		$raw = $this->dates->today()->modify('+42 days');
-		$deadline = $this->dates->formatCalendarDate(
+		return $this->dates->formatCalendarDate(
 			moment: ($this->timerService?->rollTermEndFor(date: $raw) ?? $raw)
 		);
+	}//end klachtDeadline()
 
-		$record = $this->caseTypeFields(reference: self::KLACHT_ZAAKTYPE) + [
+	/**
+	 * The klacht case record to write.
+	 *
+	 * @param string $caseId The case being complained about (may be empty).
+	 * @param string $summary The klacht text.
+	 * @param string $burgerId The identified burger reference.
+	 * @param string $deadline The decision deadline.
+	 *
+	 * @return array<string, mixed> The record.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+	 */
+	private function klachtRecord(string $caseId, string $summary, string $burgerId, string $deadline): array {
+		return $this->caseTypeFields(reference: self::KLACHT_ZAAKTYPE) + [
 			'initiator' => $burgerId,
 			'sourceChannel' => 'kcc_telefoon',
 			'startDate' => $this->dates->todayAsCalendarDate(),
@@ -182,19 +238,36 @@ class QuickActionService {
 			'description' => $summary,
 			'gerelateerdeZaak' => $caseId,
 		];
+	}//end klachtRecord()
 
-		try {
-			$created = $this->toArray(result: $objectService->saveObject(object: $record, register: $register, schema: $caseSchema));
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: failed to register klacht: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
-			);
-			throw new RuntimeException('Could not register klacht');
-		}
+	/**
+	 * Log a failed klacht write and describe it as the error to throw.
+	 *
+	 * @param Throwable $error Why the write failed.
+	 *
+	 * @return RuntimeException The error.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+	 */
+	private function klachtNotRegistered(Throwable $error): RuntimeException {
+		$this->logger->error(
+			'Dossiq: failed to register klacht: ' . $error->getMessage(),
+			['app' => AppIdentity::APP_ID],
+		);
+		return new RuntimeException('Could not register klacht');
+	}//end klachtNotRegistered()
 
-		$complaintId = (string)($created['id'] ?? ($created['uuid'] ?? ''));
-
+	/**
+	 * Record the registered klacht as an activity on the original case, when there is one.
+	 *
+	 * @param string $caseId The case being complained about (may be empty).
+	 * @param string $complaintId The klacht case id (may be empty).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+	 */
+	private function noteKlachtOnCase(string $caseId, string $complaintId): void {
 		if ($caseId !== '' && $complaintId !== '') {
 			$this->contactMomentService->recordActivity(
 				$caseId,
@@ -204,9 +277,7 @@ class QuickActionService {
 				'Klacht geregistreerd als zaak ' . $complaintId,
 			);
 		}
-
-		return ['klachtCaseId' => $complaintId, 'deadline' => $deadline];
-	}//end executeKlachtRegistreren()
+	}//end noteKlachtOnCase()
 
 	/**
 	 * Schedule a callback (bel terug inplannen) for the burger.
@@ -216,13 +287,13 @@ class QuickActionService {
 	 *
 	 * @return array{burgerId: string, window: string, scheduledAt: string}
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
 	 */
 	public function executeBelTerug(string $burgerId, string $window): array {
 		$this->logger->info(
 			'Dossiq: callback scheduled',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'burgerId' => $burgerId,
 				'window' => $window,
 			],
@@ -316,18 +387,6 @@ class QuickActionService {
 	 * @return array<string, mixed> The normalised record.
 	 */
 	private function toArray($result): array {
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		if (is_object($result) === true && method_exists($result, 'jsonSerialize') === true) {
-			return (array)$result->jsonSerialize();
-		}
-
-		if (is_object($result) === true) {
-			return (array)$result;
-		}
-
-		return [];
+		return CastArray::of(value: $result);
 	}//end toArray()
 }//end class

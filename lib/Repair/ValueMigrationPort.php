@@ -41,7 +41,7 @@ interface ValueMigrationPort {
 	public function shardTables(): array;
 
 	/**
-	 * The columns a table has.
+	 * The text columns a table has: only those can hold an enum value.
 	 *
 	 * @param string $table Table name.
 	 *

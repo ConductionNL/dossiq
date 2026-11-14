@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Support\FleetAppId;
 use Psr\Container\ContainerInterface;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -53,17 +54,6 @@ use Throwable;
  * @spec openspec/changes/delegated-authority-guard/specs/status-transition-engine/spec.md
  */
 class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
-
-	/**
-	 * The refusal sentence per decidiq reason key.
-	 */
-	private const SENTENCES = [
-		'no-allocation'       => 'De ondertekenende ambtenaar heeft onvoldoende mandaat voor dit besluit. Raadpleeg het mandaatregister.',
-		'over-ceiling'        => 'Het bedrag ligt boven het financiële plafond van het mandaat van de ondertekenaar.',
-		'register-unreadable' => 'Het mandaatregister kan nu niet worden gelezen, dus deze stap kan niet worden goedgekeurd.',
-		'no-actor'            => 'Er is geen ondertekenaar bekend.',
-		'no-act'              => 'Deze stap noemt geen handeling om het mandaat voor te controleren.',
-	];
 
 	/**
 	 * Config defaults merged under every evaluation.
@@ -77,10 +67,12 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 	 *
 	 * @param ContainerInterface $container The server container, for the duck-typed decidiq lookup.
 	 * @param LoggerInterface    $logger    The logger.
+	 * @param IL10N              $l10n      Translates the refusals.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
 
@@ -115,38 +107,108 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {
 		$config = ($guardConfig + $this->defaults);
 
+		$act = $this->actOf(config: $config, case: $case);
+		if ($act === '') {
+			return $this->refuse(reason: 'no-act');
+		}
+
+		$actor = $this->actorOf(config: $config, case: $case);
+		if ($actor === '') {
+			$actor = $userId;
+		}
+
+		$refusal = $this->amountRefusal(config: $config, case: $case);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->ask(actor: $actor, act: $act, amount: $this->amountOf(config: $config, case: $case));
+	}//end evaluate()
+
+	/**
+	 * The act to check the mandate for: the configured one, else the one the
+	 * case answers under the configured field.
+	 *
+	 * @param array<string, mixed> $config The guard configuration, defaults applied.
+	 * @param array<string, mixed> $case   The case object.
+	 *
+	 * @return string The act key, or ''.
+	 */
+	private function actOf(array $config, array $case): string {
 		$act = trim((string)($config['act'] ?? ''));
 		if ($act === '' && trim((string)($config['actField'] ?? '')) !== '') {
 			$act = (string)$this->caseValue(case: $case, field: (string)$config['actField']);
 		}
 
-		if ($act === '') {
-			return $this->refuse(reason: 'no-act');
+		return $act;
+	}//end actOf()
+
+	/**
+	 * The acting account the case names under the configured field, the
+	 * signatory by default.
+	 *
+	 * @param array<string, mixed> $config The guard configuration, defaults applied.
+	 * @param array<string, mixed> $case   The case object.
+	 *
+	 * @return string The account, or '' when the case names nobody.
+	 */
+	private function actorOf(array $config, array $case): string {
+		return (string)$this->caseValue(case: $case, field: (string)($config['actorField'] ?? 'signatory'));
+	}//end actorOf()
+
+	/**
+	 * The amount in cents the case answers under the configured field.
+	 *
+	 * @param array<string, mixed> $config The guard configuration, defaults applied.
+	 * @param array<string, mixed> $case   The case object.
+	 *
+	 * @return string|null The cents, or null when no field is configured or the case does not answer it.
+	 */
+	private function amountCents(array $config, array $case): ?string {
+		if (trim((string)($config['amountField'] ?? '')) === '') {
+			return null;
 		}
 
-		$actor = (string)$this->caseValue(case: $case, field: (string)($config['actorField'] ?? 'signatory'));
-		if ($actor === '') {
-			$actor = $userId;
+		return $this->caseValue(case: $case, field: (string)$config['amountField']);
+	}//end amountCents()
+
+	/**
+	 * The refusal for an amount that is not a number, or null.
+	 *
+	 * @param array<string, mixed> $config The guard configuration, defaults applied.
+	 * @param array<string, mixed> $case   The case object.
+	 *
+	 * @return GuardResult|null The refusal.
+	 */
+	private function amountRefusal(array $config, array $case): ?GuardResult {
+		$cents = $this->amountCents(config: $config, case: $case);
+		if ($cents !== null && is_numeric($cents) === false) {
+			return new GuardResult(
+				passed: false,
+				failureMessage: $this->l10n->t('The amount on the case is not a number, so the mandate cannot be checked.'),
+				details: ['authority' => 'amount-unreadable'],
+			);
 		}
 
-		$amount = null;
-		if (trim((string)($config['amountField'] ?? '')) !== '') {
-			$cents = $this->caseValue(case: $case, field: (string)$config['amountField']);
-			if ($cents !== null && is_numeric($cents) === false) {
-				return new GuardResult(
-					passed: false,
-					failureMessage: 'Het bedrag op de zaak is geen getal, dus het mandaat kan niet worden gecontroleerd.',
-					details: ['authority' => 'amount-unreadable'],
-				);
-			}
+		return null;
+	}//end amountRefusal()
 
-			if ($cents !== null) {
-				$amount = ((float)$cents / 100);
-			}
+	/**
+	 * The amount in euro, or null when the case names none.
+	 *
+	 * @param array<string, mixed> $config The guard configuration, defaults applied.
+	 * @param array<string, mixed> $case   The case object.
+	 *
+	 * @return float|null The amount.
+	 */
+	private function amountOf(array $config, array $case): ?float {
+		$cents = $this->amountCents(config: $config, case: $case);
+		if ($cents === null) {
+			return null;
 		}
 
-		return $this->ask(actor: $actor, act: $act, amount: $amount);
-	}//end evaluate()
+		return ((float)$cents / 100);
+	}//end amountOf()
 
 	/**
 	 * Ask decidiq and translate the answer.
@@ -164,24 +226,56 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 			relative: 'Service\\DelegatedAuthorityCheck'
 		);
 		if ($check === null) {
-			return new GuardResult(
-				passed: false,
-				failureMessage: 'Het mandaatregister (decidiq) is niet geïnstalleerd, dus het mandaat kan niet worden gecontroleerd.',
-				details: ['authority' => 'register-absent'],
-			);
+			return $this->registerAbsent();
 		}
 
 		try {
 			$answer = $check->check(actor: $actor, act: $act, amount: $amount);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq could not ask decidiq for delegated authority: ' . $e->getMessage(),
-				['app' => 'dossiq', 'act' => $act]
-			);
-
-			return $this->refuse(reason: 'register-unreadable');
+			return $this->registerFailed(failure: $e, act: $act);
 		}
 
+		return $this->verdictOf(answer: $answer);
+	}//end ask()
+
+	/**
+	 * The refusal when decidiq is not installed.
+	 *
+	 * @return GuardResult The refusal.
+	 */
+	private function registerAbsent(): GuardResult {
+		return new GuardResult(
+			passed: false,
+			failureMessage: $this->l10n->t('The mandate register (decidiq) is not installed, so the mandate cannot be checked.'),
+			details: ['authority' => 'register-absent'],
+		);
+	}//end registerAbsent()
+
+	/**
+	 * Log that decidiq could not be asked, and refuse.
+	 *
+	 * @param Throwable $failure What asking threw.
+	 * @param string    $act     The act key.
+	 *
+	 * @return GuardResult The refusal.
+	 */
+	private function registerFailed(Throwable $failure, string $act): GuardResult {
+		$this->logger->warning(
+			'Dossiq could not ask decidiq for delegated authority: ' . $failure->getMessage(),
+			['app' => 'dossiq', 'act' => $act]
+		);
+
+		return $this->refuse(reason: 'register-unreadable');
+	}//end registerFailed()
+
+	/**
+	 * Translate decidiq's answer: only an explicit `authorised: true` passes.
+	 *
+	 * @param mixed $answer What decidiq answered.
+	 *
+	 * @return GuardResult The verdict.
+	 */
+	private function verdictOf(mixed $answer): GuardResult {
 		if (is_array($answer) === true && ($answer['authorised'] ?? false) === true) {
 			return new GuardResult(
 				passed: true,
@@ -195,7 +289,7 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 		}
 
 		return $this->refuse(reason: $reason);
-	}//end ask()
+	}//end verdictOf()
 
 	/**
 	 * A refusal with the sentence for its reason.
@@ -207,10 +301,27 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 	private function refuse(string $reason): GuardResult {
 		return new GuardResult(
 			passed: false,
-			failureMessage: (self::SENTENCES[$reason] ?? self::SENTENCES['no-allocation']),
+			failureMessage: $this->sentenceFor(reason: $reason),
 			details: ['authority' => $reason],
 		);
 	}//end refuse()
+
+	/**
+	 * The refusal sentence for a decidiq reason key; an unknown key reads as no allocation.
+	 *
+	 * @param string $reason The reason key.
+	 *
+	 * @return string
+	 */
+	private function sentenceFor(string $reason): string {
+		return match ($reason) {
+			'over-ceiling' => $this->l10n->t('The amount is above the financial ceiling of the signatory\'s mandate.'),
+			'register-unreadable' => $this->l10n->t('The mandate register cannot be read right now, so this step cannot be approved.'),
+			'no-actor' => $this->l10n->t('No signatory is known.'),
+			'no-act' => $this->l10n->t('This step names no act to check the mandate for.'),
+			default => $this->l10n->t('The signing official does not hold enough mandate for this decision. Consult the mandate register.'),
+		};
+	}//end sentenceFor()
 
 	/**
 	 * Read a case field, or the case-type property the case answers in `properties[]`.
@@ -231,22 +342,45 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 			return trim((string)$direct);
 		}
 
-		$entries = ($case['properties'] ?? null);
+		return self::propertyValue(entries: ($case['properties'] ?? null), field: $field);
+	}//end caseValue()
+
+	/**
+	 * The first non-empty value the case answers for a field in `properties[]`.
+	 *
+	 * @param mixed  $entries The case's `properties`.
+	 * @param string $field   The field name.
+	 *
+	 * @return string|null The value, or null when none answers it.
+	 */
+	private static function propertyValue(mixed $entries, string $field): ?string {
 		if (is_array($entries) === false) {
 			return null;
 		}
 
 		foreach ($entries as $entry) {
-			if (is_array($entry) === false || (string)($entry['name'] ?? '') !== $field) {
-				continue;
-			}
-
-			$value = trim((string)($entry['value'] ?? ''));
+			$value = self::entryValue(entry: $entry, field: $field);
 			if ($value !== '') {
 				return $value;
 			}
 		}
 
 		return null;
-	}//end caseValue()
+	}//end propertyValue()
+
+	/**
+	 * One `properties[]` entry's value for a field, or '' when it is another field's.
+	 *
+	 * @param mixed  $entry The entry.
+	 * @param string $field The field name.
+	 *
+	 * @return string The trimmed value, or ''.
+	 */
+	private static function entryValue(mixed $entry, string $field): string {
+		if (is_array($entry) === false || (string)($entry['name'] ?? '') !== $field) {
+			return '';
+		}
+
+		return trim((string)($entry['value'] ?? ''));
+	}//end entryValue()
 }//end class

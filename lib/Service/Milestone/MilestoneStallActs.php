@@ -31,10 +31,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Milestone;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\MilestoneStallActsInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Notification\IManager as INotificationManager;
+use OCP\Notification\INotification;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -43,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class MilestoneStallActs {
+class MilestoneStallActs implements MilestoneStallActsInterface {
 	use SearchesObjects;
 
 	/**
@@ -94,32 +96,13 @@ class MilestoneStallActs {
 	 */
 	public function notifyIfStalled(array $case, string $identifier = ''): bool {
 		$row = $this->detector->waitingOn(case: $case);
-		if ($row === null
-			|| (int) ($row['daysOverdue'] ?? 0) <= 0
-			|| ($identifier !== '' && (string) ($row['milestoneIdentifier'] ?? '') !== $identifier)
-		) {
+		if (self::isNotifiableStall(row: $row, identifier: $identifier) === false) {
 			return false;
 		}
 
-		$assignee = (string) ($row['assignee'] ?? '');
-		$caseId   = (string) ($row['caseId'] ?? '');
-		if ($assignee === '' || $caseId === '') {
-			return false;
-		}
-
-		$label       = (string) ($row['milestoneLabel'] ?? '');
-		$daysOverdue = (int) $row['daysOverdue'];
-
+		$caseId = (string) ($row['caseId'] ?? '');
 		try {
-			$notification = $this->notifications->createNotification();
-			$notification
-				->setApp(Application::APP_ID)
-				->setUser($assignee)
-				->setDateTime(new DateTime())
-				->setObject('case', $caseId)
-				->setSubject('milestone_bottleneck', ['milestone' => $label, 'daysOverdue' => $daysOverdue])
-				->setMessage('plain', ['message' => 'Zaak wacht '.$daysOverdue.' dag(en) langer dan verwacht op mijlpaal "'.$label.'".']);
-			$this->notifications->notify($notification);
+			$this->notifications->notify($this->stallNotification(row: $row));
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq milestone: the stall notification failed: '.$e->getMessage(), ['case' => $caseId]);
 			return false;
@@ -127,4 +110,59 @@ class MilestoneStallActs {
 
 		return true;
 	}//end notifyIfStalled()
+
+	/**
+	 * Whether the case waits past its milestone, on this milestone when one is named, with a handler to tell.
+	 *
+	 * @param array<string, mixed>|null $row        What the detector read, or null when the case waits on nothing.
+	 * @param string                    $identifier The milestone asked about, or '' for any.
+	 *
+	 * @return bool True when the stall is notified.
+	 */
+	private static function isNotifiableStall(?array $row, string $identifier): bool {
+		if ($row === null || self::isOverdueOn(row: $row, identifier: $identifier) === false) {
+			return false;
+		}
+
+		return ((string) ($row['assignee'] ?? '') !== '' && (string) ($row['caseId'] ?? '') !== '');
+	}//end isNotifiableStall()
+
+	/**
+	 * Whether the case is overdue on its milestone, and on this one when one is named.
+	 *
+	 * @param array<string, mixed> $row        What the detector read.
+	 * @param string               $identifier The milestone asked about, or '' for any.
+	 *
+	 * @return bool True when it is overdue on it.
+	 */
+	private static function isOverdueOn(array $row, string $identifier): bool {
+		if ((int) ($row['daysOverdue'] ?? 0) <= 0) {
+			return false;
+		}
+
+		return ($identifier === '' || (string) ($row['milestoneIdentifier'] ?? '') === $identifier);
+	}//end isOverdueOn()
+
+	/**
+	 * The notification that tells the handler the case waits past its milestone.
+	 *
+	 * @param array<string, mixed> $row What the detector read.
+	 *
+	 * @return INotification The notification.
+	 */
+	private function stallNotification(array $row): INotification {
+		$label       = (string) ($row['milestoneLabel'] ?? '');
+		$daysOverdue = (int) $row['daysOverdue'];
+
+		$notification = $this->notifications->createNotification();
+		$notification
+			->setApp(AppIdentity::APP_ID)
+			->setUser((string) ($row['assignee'] ?? ''))
+			->setDateTime(new DateTime())
+			->setObject('case', (string) ($row['caseId'] ?? ''))
+			->setSubject('milestone_bottleneck', ['milestone' => $label, 'daysOverdue' => $daysOverdue])
+			->setMessage('plain', ['message' => 'Zaak wacht '.$daysOverdue.' dag(en) langer dan verwacht op mijlpaal "'.$label.'".']);
+
+		return $notification;
+	}//end stallNotification()
 }//end class

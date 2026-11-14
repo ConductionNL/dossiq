@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Routing\Strategy;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Routing\PoolMembership;
 use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 use OCP\IAppConfig;
@@ -35,7 +35,7 @@ use OCP\IAppConfig;
 /**
  * Round-robin strategy.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T03
  */
 class RoundRobinStrategy implements RoutingStrategyInterface {
 	/**
@@ -92,34 +92,58 @@ class RoundRobinStrategy implements RoutingStrategyInterface {
 		// what makes an existing pool route exactly as it did yesterday
 		// (REQ-RTP-01).
 		$participants = $this->pool->rotation(members: $members);
-		$count = count($participants);
-		if ($count === 0) {
+		if (count($participants) === 0) {
 			return [];
 		}
 
-		$caseType = (string)($case['caseType'] ?? '');
-		// The cursor is keyed by the TEAM as well, because two rules over one
-		// roleType in two teams are two rotations; one cursor between them
-		// would make each rule skip the other's turn.
+		return [$this->nextInRotation(key: self::cursorKey(rule: $rule, case: $case), participants: $participants)];
+	}//end resolve()
+
+	/**
+	 * The config key of the rotation cursor for one rule on one case type.
+	 *
+	 * The cursor is keyed by the TEAM as well, because two rules over one
+	 * roleType in two teams are two rotations; one cursor between them
+	 * would make each rule skip the other's turn.
+	 *
+	 * @param array<string, mixed> $rule The routing rule.
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return string The key.
+	 */
+	private static function cursorKey(array $rule, array $case): string {
+		$team = trim((string)($rule['team'] ?? ''));
 		$suffix = '';
 		if ($team !== '') {
 			$suffix = ('.' . $team);
 		}
 
-		$key = sprintf('routing.rr.%s.%s%s', $caseType, $target, $suffix);
+		return sprintf('routing.rr.%s.%s%s', (string)($case['caseType'] ?? ''), (string)($rule['roleType'] ?? ''), $suffix);
+	}//end cursorKey()
+
+	/**
+	 * The participant whose turn it is, moving the cursor on by one.
+	 *
+	 * @param string             $key          The cursor's config key.
+	 * @param array<int, string> $participants The rotation; never empty.
+	 *
+	 * @return string The participant.
+	 */
+	private function nextInRotation(string $key, array $participants): string {
+		$count = count($participants);
 		$cursor = (int)$this->appConfig->getValueInt(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			$key,
 			0,
 		);
 
 		$pick = $participants[$cursor % $count];
 		$this->appConfig->setValueInt(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			$key,
 			(($cursor + 1) % max($count, 1)),
 		);
 
-		return [$pick];
-	}//end resolve()
+		return $pick;
+	}//end nextInRotation()
 }//end class

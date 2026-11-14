@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\DecisionDocument;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -44,6 +44,13 @@ class PublicationReadiness {
 	use SearchesObjects;
 
 	/**
+	 * Lists the recorded decision on its case.
+	 *
+	 * @var CaseDecisionLink
+	 */
+	private readonly CaseDecisionLink $decisionLink;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The case schema.
@@ -53,6 +60,7 @@ class PublicationReadiness {
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->decisionLink = new CaseDecisionLink(settingsService: $settingsService, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -64,12 +72,16 @@ class PublicationReadiness {
 	 * @param object $objectService The OpenRegister ObjectService.
 	 * @param string $register The dossiq register.
 	 * @param string $caseId The case UUID.
+	 * @param string $decisionId The recorded decision, listed on the case first; '' lists nothing.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-recorded-decision-is-listed-on-its-case-req-cm-81
 	 */
-	public function markCaseReady(object $objectService, string $register, string $caseId): void {
+	public function markCaseReady(object $objectService, string $register, string $caseId, string $decisionId = ''): void {
+		$this->decisionLink->link(objectService: $objectService, register: $register, caseId: $caseId, decisionId: $decisionId);
+
 		try {
 			$case = $this->findObjectAsArray(
 				objectService: $objectService,
@@ -91,7 +103,7 @@ class PublicationReadiness {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'PublicationReadiness: the case could not show that its decision is ready to publish',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 		}
 	}//end markCaseReady()

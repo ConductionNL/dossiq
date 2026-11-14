@@ -24,8 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCP\IUserManager;
-use OCP\IUserSession;
+use OCA\Dossiq\Kernel\Contracts\ZgwJwtValidatorInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -41,7 +40,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
-class ZgwJwtValidator {
+class ZgwJwtValidator implements ZgwJwtValidatorInterface {
 	/**
 	 * Map of JWT algorithm names to hash_hmac algorithm strings.
 	 *
@@ -71,15 +70,11 @@ class ZgwJwtValidator {
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger The logger
-	 * @param IUserSession $userSession The user session
-	 * @param IUserManager $userManager The user manager
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
-		private readonly IUserSession $userSession,
-		private readonly IUserManager $userManager,
 	) {
 		$this->loadOpenRegisterServices();
 	}//end __construct()
@@ -104,22 +99,23 @@ class ZgwJwtValidator {
 	}//end loadOpenRegisterServices()
 
 	/**
-	 * Validate a JWT bearer token from an Authorization header.
+	 * The consumer a JWT bearer token belongs to, verified, without binding its user.
 	 *
-	 * On success the matching Consumer's Nextcloud user is set on the session
-	 * (mirroring OpenRegister's authorizeJwt behaviour) so downstream object
-	 * operations run with the correct identity.
+	 * Decodes the token, finds the consumer named by its issuer, checks the
+	 * signature against that consumer's shared secret and checks `iat`/`exp`.
+	 * The caller decides what to do with the consumer; ApiCredentialResolver
+	 * binds its user once, whatever the credential.
 	 *
 	 * @param string $authorization The full Authorization header value
 	 *
-	 * @return void
+	 * @return object The OpenRegister consumer
 	 *
 	 * @throws ZgwAuthValidationException If the token is missing, malformed,
 	 *                                    or the signature/payload is invalid.
 	 *
-	 * @spec openspec/specs/zgw-api-mapping/spec.md
+	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-the-caller-may-present-a-jwt-an-api-key-or-a-client-certificate-req-paa-02
 	 */
-	public function validate(string $authorization): void {
+	public function consumerFor(string $authorization): object {
 		if ($this->consumerMapper === null) {
 			throw new ZgwAuthValidationException(message: 'Authorization service is unavailable');
 		}
@@ -141,9 +137,8 @@ class ZgwJwtValidator {
 		// otherwise fall back to a local check.
 		$this->validatePayloadTiming(payload: $token['payload']);
 
-		// Mirror OpenRegister: bind the request to the Consumer's user.
-		$this->bindConsumerUser(userId: $consumer->getUserId());
-	}//end validate()
+		return $consumer;
+	}//end consumerFor()
 
 	/**
 	 * Split and decode a bearer JWT.
@@ -156,6 +151,29 @@ class ZgwJwtValidator {
 	 *                                    header or payload does not decode
 	 */
 	private function decodeToken(string $authorization): array {
+		[$headerB64, $payloadB64, $signatureB64] = $this->tokenParts(authorization: $authorization);
+		$header = $this->decodedHeader(headerB64: $headerB64);
+		$payload = $this->decodedPayload(payloadB64: $payloadB64);
+
+		return [
+			'header'       => $header,
+			'payload'      => $payload,
+			'headerB64'    => $headerB64,
+			'payloadB64'   => $payloadB64,
+			'signatureB64' => $signatureB64,
+		];
+	}//end decodeToken()
+
+	/**
+	 * The three dot-separated parts of the bearer token.
+	 *
+	 * @param string $authorization The Authorization header.
+	 *
+	 * @return array<int, string> The header, payload and signature, base64url encoded.
+	 *
+	 * @throws ZgwAuthValidationException When there is no token or it is not a JWT.
+	 */
+	private function tokenParts(string $authorization): array {
 		$token = substr(string: $authorization, offset: strlen(string: 'Bearer '));
 		if ($token === '') {
 			throw new ZgwAuthValidationException(message: 'No token has been provided');
@@ -166,26 +184,44 @@ class ZgwJwtValidator {
 			throw new ZgwAuthValidationException(message: 'Invalid JWT format');
 		}
 
-		[$headerB64, $payloadB64, $signatureB64] = $parts;
+		return $parts;
+	}//end tokenParts()
 
+	/**
+	 * The token's decoded header, which must name its algorithm.
+	 *
+	 * @param string $headerB64 The base64url encoded header.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws ZgwAuthValidationException When the header is not a JSON object with alg.
+	 */
+	private function decodedHeader(string $headerB64): array {
 		$header = json_decode(json: $this->base64urlDecode(data: $headerB64), associative: true);
 		if (is_array(value: $header) === false || isset($header['alg']) === false) {
 			throw new ZgwAuthValidationException(message: 'Invalid token header');
 		}
 
+		return $header;
+	}//end decodedHeader()
+
+	/**
+	 * The token's decoded payload.
+	 *
+	 * @param string $payloadB64 The base64url encoded payload.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws ZgwAuthValidationException When the payload is not a JSON object.
+	 */
+	private function decodedPayload(string $payloadB64): array {
 		$payload = json_decode(json: $this->base64urlDecode(data: $payloadB64), associative: true);
 		if (is_array(value: $payload) === false) {
 			throw new ZgwAuthValidationException(message: 'Invalid token payload');
 		}
 
-		return [
-			'header'       => $header,
-			'payload'      => $payload,
-			'headerB64'    => $headerB64,
-			'payloadB64'   => $payloadB64,
-			'signatureB64' => $signatureB64,
-		];
-	}//end decodeToken()
+		return $payload;
+	}//end decodedPayload()
 
 	/**
 	 * Check the token's HMAC signature against the consumer's shared secret.
@@ -216,24 +252,6 @@ class ZgwJwtValidator {
 			throw new ZgwAuthValidationException(message: 'The token does not match the shared secret');
 		}
 	}//end verifySignature()
-
-	/**
-	 * Bind the session to the consumer's Nextcloud user, when it has a known one.
-	 *
-	 * @param string|null $userId The consumer's user id
-	 *
-	 * @return void
-	 */
-	private function bindConsumerUser(?string $userId): void {
-		if ($userId === null || $userId === '') {
-			return;
-		}
-
-		$user = $this->userManager->get($userId);
-		if ($user !== null) {
-			$this->userSession->setUser($user);
-		}
-	}//end bindConsumerUser()
 
 	/**
 	 * Validate the iat/exp timing of the payload.

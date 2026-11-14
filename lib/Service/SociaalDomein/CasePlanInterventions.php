@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 
 declare(strict_types=1);
@@ -38,22 +38,16 @@ namespace OCA\Dossiq\Service\SociaalDomein;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CasePlanInterventionsInterface;
 
 /**
  * Save and read the interventions of one plan.
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
-class CasePlanInterventions {
-
-	/**
-	 * The schema slug interventions are stored under.
-	 *
-	 * @var string
-	 */
-	public const SCHEMA = 'intervention';
+class CasePlanInterventions implements CasePlanInterventionsInterface {
 
 	/**
 	 * The states an intervention can be in.
@@ -94,7 +88,7 @@ class CasePlanInterventions {
 	 *
 	 * @throws RefusedException When the store cannot be read.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	public function ofPlan(string $planId, string $today = ''): array {
 		if (trim($planId) === '') {
@@ -104,7 +98,6 @@ class CasePlanInterventions {
 		if ($today === '') {
 			$today = (new DateTimeImmutable())->format('Y-m-d');
 		}
-
 
 		$rows = [];
 		foreach ($this->store->rows(schema: self::SCHEMA, filters: ['plan' => $planId]) as $row) {
@@ -127,7 +120,7 @@ class CasePlanInterventions {
 	 *
 	 * @return boolean True when it is overdue.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	public function isOverdue(array $intervention, string $today): bool {
 		$target = trim((string)($intervention['targetDate'] ?? ''));
@@ -156,7 +149,7 @@ class CasePlanInterventions {
 	 *
 	 * @throws RefusedException When the intervention is incomplete, or the write fails.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	public function save(array $intervention): array {
 		if (trim((string)($intervention['plan'] ?? '')) === '') {

@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-contribution/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-30-portal-contribution/tasks.md#T3
  */
 
 declare(strict_types=1);

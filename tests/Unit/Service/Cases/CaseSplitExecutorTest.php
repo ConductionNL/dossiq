@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\Cases\CaseSplitPlan;
 use OCA\Dossiq\Service\Cases\CaseSplitStore;
 use OCA\Dossiq\Service\Cases\CaseSplitPolicy;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -59,6 +60,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitStore
  *
  * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class CaseSplitExecutorTest extends TestCase {
 
@@ -395,7 +397,7 @@ class CaseSplitExecutorTest extends TestCase {
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			// A REAL store over the SAME settings double the assertions read
 			// through. Only the wiring line moved when it was split out.
-			store: new CaseSplitStore($settings),
+			store: new CaseSplitStore(settingsService: $settings, ledger: $this->createMock(originalClassName: CaseMoveLedger::class)),
 		);
 	}//end executor()
 }//end class

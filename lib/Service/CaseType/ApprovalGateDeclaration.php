@@ -35,17 +35,19 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Service\Support\RowList;
+
 /**
  * Reads the approval gates a case type declares, and the references a case carries.
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 final class ApprovalGateDeclaration {
 
@@ -84,7 +86,7 @@ final class ApprovalGateDeclaration {
 	 *
 	 * @return array<int, array{act: string, decisionType: string, label: string}> The active gates.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
 	 */
 	public static function declaredOn(array $caseType): array {
 		$gates = [];
@@ -123,7 +125,7 @@ final class ApprovalGateDeclaration {
 	 *
 	 * @return array{act: string, decisionType: string, label: string}|array{} The gate, or [].
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
 	 */
 	public static function gateFor(array $caseType, string $act): array {
 		$act = trim($act);
@@ -153,7 +155,7 @@ final class ApprovalGateDeclaration {
 	 *
 	 * @return string The decidiq decision id, or '' when none is recorded.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
 	 */
 	public static function referenceFor(array $case, string $act): string {
 		$act = trim($act);
@@ -183,7 +185,7 @@ final class ApprovalGateDeclaration {
 	 *
 	 * @return array<int, array{act: string, decisionRef: string, raisedAt: string}> The new list.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
 	 */
 	public static function withReference(array $case, string $act, string $decisionRef, string $raisedAt): array {
 		$act = trim($act);
@@ -226,25 +228,6 @@ final class ApprovalGateDeclaration {
 	 * @return array<int, array<string, mixed>> The rows, non-arrays dropped.
 	 */
 	private static function rowsOf(mixed $value): array {
-		if (is_string($value) === true) {
-			$decoded = json_decode($value, true);
-			$value = [];
-			if (is_array($decoded) === true) {
-				$value = $decoded;
-			}
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$rows = [];
-		foreach ($value as $row) {
-			if (is_array($row) === true) {
-				$rows[] = $row;
-			}
-		}
-
-		return $rows;
+		return RowList::from(value: $value);
 	}//end rowsOf()
 }//end class

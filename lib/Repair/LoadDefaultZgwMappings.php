@@ -29,9 +29,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\LoadDefaultZgwMappingsInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZgwMappingServiceInterface;
+use OCA\Dossiq\Repair\Support\DefaultMappingTables;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\ZgwMappingService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -39,35 +41,25 @@ use Psr\Log\LoggerInterface;
 /**
  * Repair step that loads default ZGW API mapping configurations.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassLength)
- * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- *
  * @spec openspec/specs/zgw-api-mapping/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class LoadDefaultZgwMappings implements IRepairStep {
+class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInterface {
 	use RunsUnderSystemIdentity;
-
-	/**
-	 * Twig template prefix: replace path segment and append UUID variable.
-	 *
-	 * Used to build cross-resource URL references in ZGW property mappings.
-	 * Pattern: {{ _baseUrl | replace({"<from>": "<to>"}) }}/{{ <var> }}
-	 */
-	private const TPL_PREFIX = '{{ _baseUrl | replace({"%s": "%s"}) }}/{{ %s }}';
 
 	/**
 	 * Constructor for LoadDefaultZgwMappings.
 	 *
-	 * @param ZgwMappingService $zgwMappingService The ZGW mapping service
-	 * @param SettingsService $settingsService The settings service
+	 * @param ZgwMappingServiceInterface $zgwMappingService The ZGW mapping service
+	 * @param SettingsServiceInterface $settingsService The settings service
 	 * @param LoggerInterface $logger The logger interface
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly ZgwMappingService $zgwMappingService,
-		private readonly SettingsService $settingsService,
+		private readonly ZgwMappingServiceInterface $zgwMappingService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -92,20 +84,55 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function run(IOutput $output): void {
 		$output->info('Loading default ZGW API mappings...');
 
-		$registerId = $this->settingsService->getConfigValue(key: 'register', default: '');
-		if ($registerId === '') {
-			$output->warning('No Dossiq register configured yet. Skipping ZGW mapping defaults.');
+		$defaults = $this->registerDefaults(output: $output);
+		if ($defaults === null) {
 			return;
 		}
 
-		$defaults = $this->getDefaultMappings(registerId: $registerId);
-		$loaded = 0;
+		$loaded = $this->loadMissingMappings(defaults: $defaults);
+		$output->info("Loaded {$loaded} default ZGW mapping configurations.");
 
+		// Patch existing mappings that have known bugs (e.g., Twig renders false as "").
+		$this->patchExistingMappings(defaults: $defaults, output: $output);
+		$this->seedDefaults(output: $output);
+
+		$this->logger->info(
+			'Dossiq: Default ZGW mappings loaded',
+			['loaded' => $loaded, 'total' => count(value: $defaults)]
+		);
+	}//end run()
+
+	/**
+	 * The default mappings for the configured register, or null when none is configured yet.
+	 *
+	 * @param IOutput $output The output interface for progress reporting
+	 *
+	 * @return array<string, array<string, mixed>>|null The defaults by resource key.
+	 */
+	private function registerDefaults(IOutput $output): ?array {
+		$registerId = $this->settingsService->getConfigValue(key: 'register', default: '');
+		if ($registerId === '') {
+			$output->warning('No Dossiq register configured yet. Skipping ZGW mapping defaults.');
+			return null;
+		}
+
+		return $this->getDefaultMappings(registerId: $registerId);
+	}//end registerDefaults()
+
+	/**
+	 * Save every default mapping this instance does not have yet.
+	 *
+	 * @param array<string, array<string, mixed>> $defaults The defaults by resource key.
+	 *
+	 * @return int How many were saved.
+	 */
+	private function loadMissingMappings(array $defaults): int {
+		$loaded = 0;
 		foreach ($defaults as $resourceKey => $config) {
 			if ($this->zgwMappingService->hasMapping($resourceKey) === true) {
 				continue;
@@ -115,11 +142,17 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			$loaded++;
 		}
 
-		$output->info("Loaded {$loaded} default ZGW mapping configurations.");
+		return $loaded;
+	}//end loadMissingMappings()
 
-		// Patch existing mappings that have known bugs (e.g., Twig renders false as "").
-		$this->patchExistingMappings(defaults: $defaults, output: $output);
-
+	/**
+	 * Seed the default test applicaties and notification channels, each phase warning rather than throwing.
+	 *
+	 * @param IOutput $output The output interface for progress reporting
+	 *
+	 * @return void
+	 */
+	private function seedDefaults(IOutput $output): void {
 		// The two seeding phases below are conveniences, and a repair step
 		// that THROWS aborts the whole install. On a fresh install the schema
 		// settings this register was configured with can still be empty, and a
@@ -140,12 +173,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			$output->warning('Could not create default notification channels: ' . $e->getMessage());
 			$this->logger->warning('Dossiq: default kanalen seed failed', ['exception' => $e->getMessage()]);
 		}
-
-		$this->logger->info(
-			'Dossiq: Default ZGW mappings loaded',
-			['loaded' => $loaded, 'total' => count(value: $defaults)]
-		);
-	}//end run()
+	}//end seedDefaults()
 
 	/**
 	 * Patch existing mappings that contain known bugs.
@@ -209,54 +237,78 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		$healed = 0;
 
 		foreach ($defaults as $resourceKey => $config) {
-			$resolved = (string)($config['sourceSchema'] ?? '');
-			if ($resolved === '') {
+			$existing = $this->healedMapping(resourceKey: $resourceKey, config: $config);
+			if ($existing === null) {
 				continue;
 			}
 
-			if ($this->zgwMappingService->hasMapping($resourceKey) === false) {
-				continue;
-			}
-
-			$existing = $this->zgwMappingService->getMapping($resourceKey);
-			if ($existing === null || (string)($existing['sourceSchema'] ?? '') !== '') {
-				continue;
-			}
-
-			$existing['sourceSchema'] = $resolved;
 			$this->zgwMappingService->saveMapping(resourceKey: $resourceKey, config: $existing);
 			$healed++;
 			$output->info("Filled in the empty sourceSchema on the {$resourceKey} ZGW mapping.");
 		}
 
+		$this->logHealed(healed: $healed);
+	}//end healEmptySourceSchemas()
+
+	/**
+	 * The stored mapping with the schema its default resolves to, when it has none yet.
+	 *
+	 * @param string               $resourceKey The resource key.
+	 * @param array<string, mixed> $config      The default mapping.
+	 *
+	 * @return array<string, mixed>|null The mapping to save, or null when there is nothing to fill in.
+	 */
+	private function healedMapping(string $resourceKey, array $config): ?array {
+		$resolved = (string)($config['sourceSchema'] ?? '');
+		if ($resolved === '') {
+			return null;
+		}
+
+		$existing = $this->storedMappingWithoutSchema(resourceKey: $resourceKey);
+		if ($existing === null) {
+			return null;
+		}
+
+		$existing['sourceSchema'] = $resolved;
+
+		return $existing;
+	}//end healedMapping()
+
+	/**
+	 * The stored mapping of a resource, when it exists and its sourceSchema is empty.
+	 *
+	 * @param string $resourceKey The resource key.
+	 *
+	 * @return array<string, mixed>|null The mapping, or null.
+	 */
+	private function storedMappingWithoutSchema(string $resourceKey): ?array {
+		if ($this->zgwMappingService->hasMapping($resourceKey) === false) {
+			return null;
+		}
+
+		$existing = $this->zgwMappingService->getMapping($resourceKey);
+		if ($existing === null || (string)($existing['sourceSchema'] ?? '') !== '') {
+			return null;
+		}
+
+		return $existing;
+	}//end storedMappingWithoutSchema()
+
+	/**
+	 * Log how many mappings had their empty schema filled in, when any did.
+	 *
+	 * @param int $healed The number filled in.
+	 *
+	 * @return void
+	 */
+	private function logHealed(int $healed): void {
 		if ($healed > 0) {
 			$this->logger->info(
 				'Dossiq: filled in empty ZGW mapping schemas',
 				['healed' => $healed]
 			);
 		}
-	}//end healEmptySourceSchemas()
-
-	/**
-	 * Build a Twig URL-replacement template string.
-	 *
-	 * Generates: {{ _baseUrl | replace({"<from>": "<to>"}) }}/{{ <var> }}
-	 *
-	 * @param string $from The path segment to replace
-	 * @param string $to The replacement path segment
-	 * @param string $varName The Twig variable to append
-	 *
-	 * @return string The Twig template string
-	 */
-	private function tplUrl(string $from, string $to, string $varName): string {
-		// Insert /v1/ between API group and resource (e.g. "zaken/zaken" → "zaken/v1/zaken").
-		$fromParts = explode('/', $from);
-		$toParts = explode('/', $to);
-		$fromPath = $fromParts[0] . '/v1/' . $fromParts[1];
-		$toPath = $toParts[0] . '/v1/' . $toParts[1];
-
-		return sprintf(self::TPL_PREFIX, $fromPath, $toPath, $varName);
-	}//end tplUrl()
+	}//end logHealed()
 
 	/**
 	 * Get the default mapping configurations for all 12 ZGW resources.
@@ -265,1354 +317,27 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array<string, array> Mapping configurations keyed by resource key
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getDefaultMappings(string $registerId): array {
 		$settings = $this->settingsService->getSettings();
+		$mappings = [];
+		foreach (DefaultMappingTables::BY_RESOURCE as $resourceKey => $entry) {
+			$mappings[$resourceKey] = $entry['mapping'];
+			if ($entry['schemaSetting'] !== null) {
+				$mappings[$resourceKey] = [
+					'zgwResource' => $entry['mapping']['zgwResource'],
+					'zgwApiVersion' => '1',
+					'sourceRegister' => $registerId,
+					'sourceSchema' => ($settings[$entry['schemaSetting']] ?? ''),
+					'enabled' => true,
+					'propertyMapping' => (DefaultMappingTables::RECORD_IDENTITY + $entry['mapping']['propertyMapping']),
+				] + $entry['mapping'];
+			}
+		}
 
-		return [
-			'catalogus' => $this->getCatalogusMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'zaak' => $this->getCaseMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'caseType' => $this->getCaseTypeMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'status' => $this->getStatusMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'statustype' => $this->getStatusTypeMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'result' => $this->getResultMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'resultaattype' => $this->getResultTypeMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'role' => $this->getRoleMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'roltype' => $this->getRoleTypeMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'eigenschap' => $this->getAttributeMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'decision' => $this->getDecisionMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'besluittype' => $this->getDecisionTypeMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'informatieobjecttype' => $this->getInformatieObjectTypeMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'zaaktypeinformatieobjecttype' => $this->getCaseTypeInformatieobjecttypeMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'enkelvoudiginformatieobject' => $this->getEnkelvoudigInformatieObjectMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'objectinformatieobject' => $this->getObjectInformatieObjectMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'gebruiksrechten' => $this->getGebruiksrechtenMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'zaakeigenschap' => $this->getZaakeigenschapMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'zaakinformatieobject' => $this->getZaakinformatieobjectMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'zaakobject' => $this->getZaakobjectMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'klantcontact' => $this->getKlantcontactMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'besluitinformatieobject' => $this->getBesluitinformatieobjectMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'verzending' => $this->getVerzendingMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'applicatie' => $this->getApplicatieMapping(),
-			'kanaal' => $this->getChannelMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-			'abonnement' => $this->getAbonnementMapping(
-				registerId: $registerId,
-				settings: $settings
-			),
-		];
+		return $mappings;
 	}//end getDefaultMappings()
-
-	/**
-	 * Get default mapping for Zaak (case).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getCaseMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'zaak',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['case_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'identificatie' => '{{ identifier }}',
-				'bronorganisatie' => '{{ sourceOrganisation }}',
-				'omschrijving' => '{{ title }}',
-				'notes' => '{{ description }}',
-				'caseType' => $this->tplUrl(
-					from: 'zaken/zaken',
-					to: 'catalogi/zaaktypen',
-					varName: 'caseType'
-				),
-				'registrationDate' => '{{ _created }}',
-				'startdatum' => '{{ startDate }}',
-				'endDate' => '{{ endDate }}',
-				'einddatumGepland' => '{{ plannedEndDate }}',
-				'uiterlijkeEinddatumAfdoening' => '{{ deadline }}',
-				'vertrouwelijkheidaanduiding' => '{{ confidentiality }}',
-				'verantwoordelijkeOrganisatie' => '{{ assignee }}',
-				'archiefnominatie' => '{{ archiveNomination }}',
-				'archiefactiedatum' => '{{ archiveActionDate }}',
-				'archiefstatus' => '{{ archiveStatus | default("") | zgw_enum("archiveStatus", _valueMappings) }}',
-				'betalingsindicatie' => '{{ paymentIndication | default("") | zgw_enum("paymentIndication", _valueMappings) }}',
-				'laatsteBetaaldatum' => '{{ lastPaymentDate }}',
-				'hoofdzaak' => '{% if parentCase %}{{ _baseUrl }}/{{ parentCase }}{% endif %}',
-			],
-			'reverseMapping' => [
-				'title' => '{{ omschrijving }}',
-				'description' => '{{ toelichting }}',
-				'identifier' => '{{ identificatie }}',
-				'sourceOrganisation' => '{{ bronorganisatie }}',
-				'caseType' => '{{ zaaktype | zgw_extract_uuid }}',
-				'startDate' => '{{ startdatum }}',
-				'endDate' => '{{ einddatum }}',
-				'plannedEndDate' => '{{ einddatumGepland }}',
-				'deadline' => '{{ uiterlijkeEinddatumAfdoening }}',
-				'confidentiality' => '{{ vertrouwelijkheidaanduiding }}',
-				'assignee' => '{{ verantwoordelijkeOrganisatie }}',
-				'archiveNomination' => '{{ archiefnominatie }}',
-				'archiveActionDate' => '{{ archiefactiedatum }}',
-				'archiveStatus' => '{{ archiefstatus | default("") | zgw_enum_reverse("archiveStatus", _valueMappings) }}',
-				'paymentIndication' => '{{ betalingsindicatie | default("") | zgw_enum_reverse("paymentIndication", _valueMappings) }}',
-				'lastPaymentDate' => '{{ laatsteBetaaldatum }}',
-				'parentCase' => '{{ hoofdzaak | zgw_extract_uuid }}',
-			],
-			// Two of these three enums were HALF translated, which is worse than
-			// either language on its own: only the values that happened to stay
-			// Dutch were reachable, and ZGW's own words for the rest answered
-			// 400. `vertrouwelijkheidaanduiding` really is identical on both
-			// sides, so it maps to itself and says so.
-			'valueMapping' => [
-				'confidentiality' => [
-					'openbaar' => 'openbaar',
-					'beperkt_openbaar' => 'beperkt_openbaar',
-					'intern' => 'intern',
-					'zaakvertrouwelijk' => 'zaakvertrouwelijk',
-					'vertrouwelijk' => 'vertrouwelijk',
-					'confidentieel' => 'confidentieel',
-					'geheim' => 'geheim',
-					'zeer_geheim' => 'zeer_geheim',
-				],
-				'archiveStatus' => [
-					'nog_te_archiveren' => 'nog_te_archiveren',
-					'archived' => 'gearchiveerd',
-					'archived_retention_period_unknown' => 'gearchiveerd_procestermijn_onbekend',
-					'overgedragen' => 'overgedragen',
-				],
-				'paymentIndication' => [
-					'nvt' => 'nvt',
-					'not_yet' => 'nog_niet',
-					'gedeeltelijk' => 'gedeeltelijk',
-					'geheel' => 'geheel',
-				],
-			],
-			'nullableFields' => [
-				'endDate',
-				'einddatumGepland',
-				'uiterlijkeEinddatumAfdoening',
-				'archiefnominatie',
-				'archiefactiedatum',
-				'archiefstatus',
-				'betalingsindicatie',
-				'laatsteBetaaldatum',
-				'hoofdzaak',
-			],
-			'queryParameterMapping' => [
-				'caseType' => [
-					'field' => 'caseType',
-					'extractUuid' => true,
-				],
-				'identificatie' => [
-					'field' => 'identifier',
-				],
-				'bronorganisatie' => [
-					'field' => 'sourceOrganisation',
-				],
-				'startdatum' => [
-					'field' => 'startDate',
-				],
-				'startdatum__gte' => [
-					'field' => 'startDate',
-					'operator' => 'gte',
-				],
-				'startdatum__lte' => [
-					'field' => 'startDate',
-					'operator' => 'lte',
-				],
-				'endDate' => [
-					'field' => 'endDate',
-				],
-				'einddatum__isnull' => [
-					'field' => 'endDate',
-					'operator' => 'isnull',
-				],
-				'archiefnominatie' => [
-					'field' => 'archiveNomination',
-				],
-				'archiefactiedatum__lt' => [
-					'field' => 'archiveActionDate',
-					'operator' => 'lt',
-				],
-				'archiefstatus' => [
-					'field' => 'archiveStatus',
-				],
-			],
-		];
-	}//end getZaakMapping()
-
-	/**
-	 * Get default mapping for ZaakType (caseType).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getCaseTypeMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'caseType',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['case_type_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'identificatie' => '{{ identifier }}',
-				'omschrijving' => '{{ title }}',
-				'omschrijvingGeneriek' => '{{ description }}',
-				'catalogus' => $this->tplUrl(
-					from: 'catalogi/zaaktypen',
-					to: 'catalogi/catalogussen',
-					varName: 'catalogus'
-				),
-				'doel' => '{{ purpose }}',
-				'aanleiding' => '{{ trigger }}',
-				'subject' => '{{ subject }}',
-				'doorlooptijd' => '{{ processingDeadline }}',
-				'vertrouwelijkheidaanduiding' => '{{ confidentiality }}',
-				'concept' => '{{ isDraft }}',
-				'startValidity' => '{{ validFrom }}',
-				'endValidity' => '{{ validUntil }}',
-				'handelingInitiator' => '{{ origin }}',
-				'indicatieInternOfExtern' => '{{ internalOrExternal }}',
-				'handelingBehandelaar' => '{{ handlerAction }}',
-				'opschortingEnAanhoudingMogelijk' => '{{ suspensionAllowed }}',
-				'extensionPossible' => '{{ extensionAllowed }}',
-				'verlengingstermijn' => '{{ extensionPeriod }}',
-				'publicatieIndicatie' => '{{ publicationRequired }}',
-				// Encoded here and decoded by the `cast` below, because Twig renders
-				// a bare array as the literal string "Array". Unlike referentieproces
-				// and gerelateerdeZaaktypen beside it, this one is backed by an ARRAY
-				// property, so the JSON text is a transport step and never the stored
-				// value. See the reverseCast for the inbound half.
-				'productenOfDiensten' => '{{ productsOrServices | json_encode }}',
-				'selectielijstDossiqype' => '{{ selectionListProcessType }}',
-				'referentieproces' => '{{ referenceProcess | json_encode }}',
-				'responsible' => '{{ responsible }}',
-				'gerelateerdeZaaktypen' => '{{ relatedCaseTypes | json_encode }}',
-				'besluittypen' => 'decisionTypes',
-				'informatieobjecttypen' => '[]',
-			],
-			'reverseMapping' => [
-				'title' => '{{ omschrijving }}',
-				'description' => '{{ omschrijvingGeneriek }}',
-				'identifier' => '{{ identificatie }}',
-				'catalogus' => '{{ catalogus | zgw_extract_uuid }}',
-				'purpose' => '{{ doel }}',
-				'trigger' => '{{ aanleiding }}',
-				'subject' => '{{ onderwerp }}',
-				'processingDeadline' => '{{ doorlooptijd }}',
-				'confidentiality' => '{{ vertrouwelijkheidaanduiding }}',
-				'isDraft' => '{{ concept }}',
-				'validFrom' => '{{ beginGeldigheid }}',
-				'validUntil' => '{{ eindeGeldigheid }}',
-				'origin' => '{{ handelingInitiator }}',
-				'internalOrExternal' => '{{ indicatieInternOfExtern }}',
-				'handlerAction' => '{{ handelingBehandelaar }}',
-				'suspensionAllowed' => '{{ opschortingEnAanhoudingMogelijk }}',
-				'extensionAllowed' => '{{ verlengingMogelijk }}',
-				'extensionPeriod' => '{{ verlengingstermijn }}',
-				'publicationRequired' => '{{ publicatieIndicatie }}',
-				'selectionListProcessType' => '{{ selectielijstDossiqype }}',
-				'responsible' => '{{ verantwoordelijke }}',
-				'productsOrServices' => '{{ productenOfDiensten | json_encode }}',
-				'referenceProcess' => '{{ referentieproces | json_encode }}',
-				'relatedCaseTypes' => '{{ gerelateerdeZaaktypen | json_encode }}',
-				'versionDate' => '{{ versiedatum }}',
-			],
-			'reverseCast' => [
-				'isDraft' => 'bool',
-				'suspensionAllowed' => 'bool',
-				'extensionAllowed' => 'bool',
-				'publicationRequired' => 'bool',
-				// The template above json_encodes it, because Twig cannot emit an
-				// array; this turns it back into one before the write. Without it
-				// OpenRegister refuses with "should be type 'array or null' but is
-				// 'string'" and the whole ZTC setUp falls over behind that one 400.
-				'productsOrServices' => 'jsonToArray',
-			],
-			'cast' => [
-				'concept' => 'bool',
-				'opschortingEnAanhoudingMogelijk' => 'bool',
-				'extensionPossible' => 'bool',
-				'publicatieIndicatie' => 'bool',
-				'productenOfDiensten' => 'jsonToArray',
-				'gerelateerdeZaaktypen' => 'jsonToArray',
-				'informatieobjecttypen' => 'jsonToArray',
-				'referentieproces' => 'jsonToArray',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'identificatie' => [
-					'field' => 'identifier',
-				],
-				'catalogus' => [
-					'field' => 'catalogus',
-					'extractUuid' => true,
-				],
-			],
-		];
-	}//end getZaakTypeMapping()
-
-	/**
-	 * Get default mapping for Status.
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getStatusMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'status',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['status_record_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'zaak' => $this->tplUrl(
-					from: 'zaken/statussen',
-					to: 'zaken/zaken',
-					varName: 'case'
-				),
-				'statustype' => $this->tplUrl(
-					from: 'zaken/statussen',
-					to: 'catalogi/statustypen',
-					varName: 'statusType'
-				),
-				'datumStatusGezet' => '{{ _created }}',
-				'statustoelichting' => '{{ description }}',
-			],
-			'reverseMapping' => [
-				'case' => '{{ zaak | zgw_extract_uuid }}',
-				'statusType' => '{{ statustype | zgw_extract_uuid }}',
-				'description' => '{{ statustoelichting }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-			],
-		];
-	}//end getStatusMapping()
-
-	/**
-	 * Get default mapping for StatusType (statusType).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getStatusTypeMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'statustype',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['status_type_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'omschrijving' => '{{ name }}',
-				'omschrijvingGeneriek' => '{{ description }}',
-				'caseType' => $this->tplUrl(
-					from: 'catalogi/statustypen',
-					to: 'catalogi/zaaktypen',
-					varName: 'caseType'
-				),
-				'sequenceNumber' => '{{ order }}',
-				'isEindstatus' => '{{ isFinal }}',
-				// What the applicant reads, which ZTC has carried since 1.0 and
-				// this mapping did not. `default(name)` is the same fallback
-				// StatusPublicLabels applies in PHP and in the browser: a status
-				// that declares no public label publishes its name, so a
-				// consumer that has been reading `statustekst` sees the name
-				// appear rather than a field that used to be absent.
-				'statustekst' => '{{ publicLabel | default(name) }}',
-			],
-			'reverseMapping' => [
-				'name' => '{{ omschrijving }}',
-				'description' => '{{ omschrijvingGeneriek }}',
-				'caseType' => '{{ zaaktype | zgw_extract_uuid }}',
-				'order' => '{{ volgnummer }}',
-				'isFinal' => '{{ isEindstatus }}',
-				// Inbound the fallback must NOT run: a foreign catalogue whose
-				// statustekst equals its omschrijving would otherwise be stored
-				// as a public label somebody chose, and the two would then be
-				// impossible to tell apart when it is edited here.
-				'publicLabel' => '{{ statustekst }}',
-			],
-			'reverseCast' => [
-				'order' => 'int',
-				'isFinal' => 'bool',
-			],
-			'cast' => [
-				'sequenceNumber' => 'int',
-				'isEindstatus' => 'bool',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'caseType' => [
-					'field' => 'caseType',
-					'extractUuid' => true,
-				],
-			],
-		];
-	}//end getStatusTypeMapping()
-
-	/**
-	 * Get default mapping for Resultaat (result).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getResultMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'result',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['result_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'zaak' => $this->tplUrl(
-					from: 'zaken/resultaten',
-					to: 'zaken/zaken',
-					varName: 'case'
-				),
-				'resultaattype' => $this->tplUrl(
-					from: 'zaken/resultaten',
-					to: 'catalogi/resultaattypen',
-					varName: 'resultType'
-				),
-				'notes' => '{{ description }}',
-			],
-			'reverseMapping' => [
-				'name' => '{{ toelichting }}',
-				'case' => '{{ zaak | zgw_extract_uuid }}',
-				'resultType' => '{{ resultaattype | zgw_extract_uuid }}',
-				'description' => '{{ toelichting }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-			],
-		];
-	}//end getResultaatMapping()
-
-	/**
-	 * Get default mapping for ResultaatType (resultType).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getResultTypeMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'resultaattype',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['result_type_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'omschrijving' => '{{ name }}',
-				'omschrijvingGeneriek' => '{{ genericDescription }}',
-				'notes' => '{{ description }}',
-				'caseType' => $this->tplUrl(
-					from: 'catalogi/resultaattypen',
-					to: 'catalogi/zaaktypen',
-					varName: 'caseType'
-				),
-				'archiefnominatie' => '{{ archivalAction }}',
-				'archiefactietermijn' => '{{ archivalPeriod }}',
-				'brondatumArchiefprocedure' => '{{ sourceDateArchiveProcedure | json_encode }}',
-				'selectielijstklasse' => '{{ selectionListClass }}',
-			],
-			'reverseMapping' => [
-				'name' => '{{ omschrijving }}',
-				'genericDescription' => '{{ omschrijvingGeneriek }}',
-				'description' => '{{ toelichting }}',
-				'caseType' => '{{ zaaktype | zgw_extract_uuid }}',
-				'archivalAction' => '{{ archiefnominatie }}',
-				'archivalPeriod' => '{{ archiefactietermijn }}',
-				'sourceDateArchiveProcedure' => '{{ brondatumArchiefprocedure | json_encode }}',
-				'selectionListClass' => '{{ selectielijstklasse }}',
-			],
-			'valueMapping' => [
-				'archivalAction' => [
-					'bewaren' => 'bewaren',
-					'vernietigen' => 'vernietigen',
-					'blijvend_bewaren' => 'blijvend_bewaren',
-				],
-			],
-			'cast' => [
-				'sourceDateArchiveProcedure' => 'jsonToArray',
-			],
-			'reverseCast' => [],
-			'nullableFields' => [
-				'archiefactietermijn',
-				'omschrijvingGeneriek',
-				'brondatumArchiefprocedure',
-				'selectielijstklasse',
-			],
-			'queryParameterMapping' => [
-				'caseType' => [
-					'field' => 'caseType',
-					'extractUuid' => true,
-				],
-			],
-		];
-	}//end getResultaatTypeMapping()
-
-	/**
-	 * Get default mapping for Rol (role).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getRoleMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'role',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['role_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'zaak' => $this->tplUrl(
-					from: 'zaken/rollen',
-					to: 'zaken/zaken',
-					varName: 'case'
-				),
-				'roltype' => $this->tplUrl(
-					from: 'zaken/rollen',
-					to: 'catalogi/roltypen',
-					varName: 'roleType'
-				),
-				'omschrijving' => '{{ name }}',
-				'omschrijvingGeneriek' => '{{ description }}',
-				'betrokkeneIdentificatie' => '{{ participant }}',
-			],
-			'reverseMapping' => [
-				'name' => '{{ omschrijving }}',
-				'description' => '{{ omschrijvingGeneriek }}',
-				'case' => '{{ zaak | zgw_extract_uuid }}',
-				'roleType' => '{{ roltype | zgw_extract_uuid }}',
-				'participant' => '{{ betrokkeneIdentificatie }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-			],
-		];
-	}//end getRolMapping()
-
-	/**
-	 * Get default mapping for RolType (roleType).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getRoleTypeMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'roltype',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['role_type_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'omschrijving' => '{{ name }}',
-				'omschrijvingGeneriek' => '{{ description }}',
-				'caseType' => $this->tplUrl(
-					from: 'catalogi/roltypen',
-					to: 'catalogi/zaaktypen',
-					varName: 'caseType'
-				),
-			],
-			'reverseMapping' => [
-				'name' => '{{ omschrijving }}',
-				'description' => '{{ omschrijvingGeneriek }}',
-				'caseType' => '{{ zaaktype | zgw_extract_uuid }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'caseType' => [
-					'field' => 'caseType',
-					'extractUuid' => true,
-				],
-			],
-		];
-	}//end getRolTypeMapping()
-
-	/**
-	 * Get default mapping for Eigenschap (propertyDefinition).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getAttributeMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'eigenschap',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['property_definition_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'name' => '{{ name }}',
-				'definitie' => '{{ definition }}',
-				'notes' => '{{ description }}',
-				'caseType' => $this->tplUrl(
-					from: 'catalogi/eigenschappen',
-					to: 'catalogi/zaaktypen',
-					varName: 'caseType'
-				),
-				'specificatie' => '{{ {formaat: propertyType ?: "tekst"} | json_encode }}',
-			],
-			'reverseMapping' => [
-				'name' => '{{ naam }}',
-				'definition' => '{{ definitie }}',
-				'description' => '{{ toelichting }}',
-				'caseType' => '{{ zaaktype | zgw_extract_uuid }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'caseType' => [
-					'field' => 'caseType',
-					'extractUuid' => true,
-				],
-			],
-		];
-	}//end getEigenschapMapping()
-
-	/**
-	 * Get default mapping for Besluit (decision).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getDecisionMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'decision',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['decision_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'identificatie' => '{{ title }}',
-				'notes' => '{{ explanation }}',
-				'zaak' => $this->tplUrl(
-					from: 'besluiten/besluiten',
-					to: 'zaken/zaken',
-					varName: 'case'
-				),
-				'besluittype' => $this->tplUrl(
-					from: 'besluiten/besluiten',
-					to: 'catalogi/besluittypen',
-					varName: 'decisionType'
-				),
-				'verantwoordelijkeOrganisatie' => '{{ responsibleOrganisation }}',
-				'bestuursorgaan' => '{{ governingBody }}',
-				'date' => '{{ decisionDate }}',
-				'effectiveDate' => '{{ effectiveDate }}',
-				'vervaldatum' => '{{ expiryDate }}',
-				'publicationDate' => '{{ publicationDate }}',
-				'verzenddatum' => '{{ deliveryDate }}',
-			],
-			'reverseMapping' => [
-				'title' => '{{ identificatie }}',
-				'explanation' => '{{ toelichting }}',
-				'case' => '{% if zaak is defined and zaak %}{{ zaak | zgw_extract_uuid }}{% endif %}',
-				'decisionType' => '{{ besluittype | zgw_extract_uuid }}',
-				'responsibleOrganisation' => '{{ verantwoordelijkeOrganisatie }}',
-				'governingBody' => '{{ bestuursorgaan }}',
-				'decisionDate' => '{{ datum }}',
-				'effectiveDate' => '{{ ingangsdatum }}',
-				'expiryDate' => '{{ vervaldatum }}',
-				'publicationDate' => '{{ publicatiedatum }}',
-				'deliveryDate' => '{{ verzenddatum }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-			],
-		];
-	}//end getBesluitMapping()
-
-	/**
-	 * Get default mapping for BesluitType (decisionType).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getDecisionTypeMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'besluittype',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['decision_type_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'omschrijving' => '{{ name }}',
-				'notes' => '{{ description }}',
-				'catalogus' => $this->tplUrl(
-					from: 'catalogi/besluittypen',
-					to: 'catalogi/catalogussen',
-					varName: 'catalogus'
-				),
-				'zaaktypen' => 'caseTypes',
-				'concept' => '{{ isDraft }}',
-				'publicatieIndicatie' => '{{ publicationRequired }}',
-				'informatieobjecttypen' => 'documentTypes',
-				'startValidity' => '{{ validFrom }}',
-				'endValidity' => '{{ validUntil }}',
-			],
-			'reverseMapping' => [
-				'name' => '{{ omschrijving }}',
-				'description' => '{{ toelichting }}',
-				'catalogus' => '{{ catalogus | zgw_extract_uuid }}',
-				'isDraft' => '{{ concept }}',
-				'publicationRequired' => '{{ publicatieIndicatie }}',
-				'caseTypes' => 'zaaktypen',
-				'documentTypes' => 'informatieobjecttypen',
-				'validFrom' => '{{ beginGeldigheid }}',
-				'validUntil' => '{{ eindeGeldigheid }}',
-			],
-			'reverseCast' => [
-				'isDraft' => 'bool',
-				'publicationRequired' => 'bool',
-			],
-			'cast' => [
-				'concept' => 'bool',
-				'publicatieIndicatie' => 'bool',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaaktypen' => [
-					'field' => 'caseType',
-					'extractUuid' => true,
-				],
-				'catalogus' => [
-					'field' => 'catalogus',
-					'extractUuid' => true,
-				],
-				'omschrijving' => [
-					'field' => 'name',
-				],
-			],
-		];
-	}//end getBesluitTypeMapping()
-
-	/**
-	 * Get default mapping for InformatieObjectType (documentType).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getInformatieObjectTypeMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'informatieobjecttype',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['document_type_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'omschrijving' => '{{ name }}',
-				'notes' => '{{ description }}',
-				'catalogus' => $this->tplUrl(
-					from: 'catalogi/informatieobjecttypen',
-					to: 'catalogi/catalogussen',
-					varName: 'catalogus'
-				),
-				'concept' => '{{ isDraft }}',
-				'vertrouwelijkheidaanduiding' => '{{ confidentiality }}',
-				'informatieobjectcategorie' => '{{ category }}',
-				'startValidity' => '{{ validFrom }}',
-				'endValidity' => '{{ validUntil }}',
-				'verplicht' => '{{ isRequired }}',
-			],
-			'reverseMapping' => [
-				'name' => '{{ omschrijving }}',
-				'description' => '{{ toelichting }}',
-				'catalogus' => '{{ catalogus | zgw_extract_uuid }}',
-				'isDraft' => '{{ concept }}',
-				'confidentiality' => '{{ vertrouwelijkheidaanduiding }}',
-				'category' => '{{ informatieobjectcategorie }}',
-				'validFrom' => '{{ beginGeldigheid }}',
-				'validUntil' => '{{ eindeGeldigheid }}',
-				'isRequired' => '{{ verplicht }}',
-			],
-			'reverseCast' => [
-				'isDraft' => 'bool',
-				'isRequired' => 'bool',
-			],
-			'cast' => [
-				'concept' => 'bool',
-				'verplicht' => 'bool',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'catalogus' => [
-					'field' => 'catalogus',
-					'extractUuid' => true,
-				],
-			],
-		];
-	}//end getInformatieObjectTypeMapping()
-
-	/**
-	 * Get default mapping for EnkelvoudigInformatieObject (document).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getEnkelvoudigInformatieObjectMapping(
-		string $registerId,
-		array $settings,
-	): array {
-		return [
-			'zgwResource' => 'enkelvoudiginformatieobject',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['document_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'identificatie' => '{{ identifier }}',
-				'bronorganisatie' => '{{ sourceOrganisation }}',
-				'creatiedatum' => '{{ creationDate }}',
-				'titel' => '{{ title }}',
-				'vertrouwelijkheidaanduiding' => '{{ confidentiality }}',
-				'auteur' => '{{ author }}',
-				'status' => '{{ status | default("") | zgw_enum("status", _valueMappings) }}',
-				'format' => '{{ format }}',
-				'taal' => '{{ language }}',
-				'fileName' => '{{ fileName }}',
-				'bestandsomvang' => '{{ fileSize }}',
-				'inhoud' => '{{ _downloadUrl }}',
-				'link' => '{{ link }}',
-				'beschrijving' => '{{ description }}',
-				'informatieobjecttype' => $this->tplUrl(
-					from: 'documenten/enkelvoudiginformatieobjecten',
-					to: 'catalogi/informatieobjecttypen',
-					varName: 'documentType'
-				),
-				'locked' => '{{ locked }}',
-				'registrationDate' => '{{ _created }}',
-				// phpcs:ignore Generic.Files.LineLength.MaxExceeded
-				'indicatieGebruiksrecht' => '{{ usageRightsIndication is same as(true) ? "true" : (usageRightsIndication is same as(false) ? "false" : "") }}',
-			],
-			'reverseMapping' => [
-				'identifier' => '{{ identificatie }}',
-				'sourceOrganisation' => '{{ bronorganisatie }}',
-				'creationDate' => '{{ creatiedatum }}',
-				'title' => '{{ titel }}',
-				'confidentiality' => '{{ vertrouwelijkheidaanduiding }}',
-				'author' => '{{ auteur }}',
-				'status' => '{{ status | default("") | zgw_enum_reverse("status", _valueMappings) }}',
-				'format' => '{{ formaat }}',
-				'language' => '{{ taal }}',
-				'fileName' => '{{ bestandsnaam }}',
-				'fileSize' => '{{ bestandsomvang }}',
-				'link' => '{{ link }}',
-				'description' => '{{ beschrijving }}',
-				'documentType' => '{{ informatieobjecttype | zgw_extract_uuid }}',
-				'usageRightsIndication' => '{{ indicatieGebruiksrecht }}',
-			],
-			'valueMapping' => [
-				'confidentiality' => [
-					'openbaar' => 'openbaar',
-					'beperkt_openbaar' => 'beperkt_openbaar',
-					'intern' => 'intern',
-					'zaakvertrouwelijk' => 'zaakvertrouwelijk',
-					'vertrouwelijk' => 'vertrouwelijk',
-					'confidentieel' => 'confidentieel',
-					'geheim' => 'geheim',
-					'zeer_geheim' => 'zeer_geheim',
-				],
-				// The KEYS are what the register stores and the values are what
-				// ZGW sends. This table used to map Dutch to Dutch, while the
-				// document schema declares in_bewerking, for_determination, final
-				// and archived, so three of ZGW's four statuses could not be
-				// stored at all and answered 400 'should be one of'.
-				'status' => [
-					'in_bewerking' => 'in_bewerking',
-					'for_determination' => 'ter_vaststelling',
-					'final' => 'definitief',
-					'archived' => 'gearchiveerd',
-				],
-			],
-			'reverseCast' => [
-				'fileSize' => 'int',
-			],
-			'cast' => [
-				'bestandsomvang' => 'int',
-				'locked' => 'bool',
-				'indicatieGebruiksrecht' => '?bool',
-			],
-			'queryParameterMapping' => [
-				'informatieobjecttype' => [
-					'field' => 'documentType',
-					'extractUuid' => true,
-				],
-				'bronorganisatie' => [
-					'field' => 'sourceOrganisation',
-				],
-			],
-		];
-	}//end getEnkelvoudigInformatieObjectMapping()
-
-	/**
-	 * Get default mapping for ObjectInformatieObject (documentLink).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getObjectInformatieObjectMapping(
-		string $registerId,
-		array $settings,
-	): array {
-		return [
-			'zgwResource' => 'objectinformatieobject',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['document_link_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'informatieobject' => '{{ document }}',
-				'object' => '{{ object }}',
-				'objectType' => '{{ objectType | default("") | zgw_enum("objectType", _valueMappings) }}',
-			],
-			'reverseMapping' => [
-				'document' => '{{ informatieobject }}',
-				'object' => '{{ object }}',
-				'objectType' => '{{ objectType | default("") | zgw_enum_reverse("objectType", _valueMappings) }}',
-			],
-			// This table existed and nothing used it, because neither template
-			// called zgw_enum. It also mapped 'zaak' to 'zaak' and 'decision'
-			// to 'decision', while the register stores 'case' and 'decision'
-			// and ZGW spells them 'zaak' and 'besluit'. Neither of ZGW's two
-			// values could be stored.
-			'valueMapping' => [
-				'objectType' => [
-					'case' => 'zaak',
-					'decision' => 'besluit',
-				],
-			],
-			'queryParameterMapping' => [
-				'informatieobject' => [
-					'field' => 'document',
-				],
-				'object' => [
-					'field' => 'object',
-				],
-			],
-		];
-	}//end getObjectInformatieObjectMapping()
-
-	/**
-	 * Get default mapping for GebruiksRechten (usageRights).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getGebruiksrechtenMapping(
-		string $registerId,
-		array $settings,
-	): array {
-		return [
-			'zgwResource' => 'gebruiksrechten',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['usage_rights_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'informatieobject' => '{{ document }}',
-				'startdatum' => '{{ startDate }}',
-				'endDate' => '{{ endDate }}',
-				'omschrijvingVoorwaarden' => '{{ conditionsDescription }}',
-			],
-			'reverseMapping' => [
-				'document' => '{{ informatieobject }}',
-				'startDate' => '{{ startdatum }}',
-				'endDate' => '{{ einddatum }}',
-				'conditionsDescription' => '{{ omschrijvingVoorwaarden }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'informatieobject' => [
-					'field' => 'document',
-				],
-			],
-		];
-	}//end getGebruiksrechtenMapping()
-
-	/**
-	 * Get default mapping for Kanaal (notification channel).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getChannelMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'kanaal',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['kanaal_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				// Inverted before this: the keys are ZGW field names, which are
-				// `naam` and `documentatieLink`, and the templates read register
-				// properties, which are `name` and `documentationLink`. Both
-				// halves pointed the wrong way, so the NRC kanalen response
-				// carried two fields ZGW does not define, both empty.
-				'naam' => '{{ name }}',
-				'documentatieLink' => '{{ documentationLink }}',
-				'filters' => '{{ filters }}',
-			],
-			'cast' => [
-				'filters' => 'jsonToArray',
-			],
-			'reverseMapping' => [
-				'name' => '{{ naam }}',
-				'documentationLink' => '{{ documentatieLink }}',
-				'filters' => '{{ filters|json_encode|raw }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'name' => [
-					'field' => 'name',
-				],
-			],
-		];
-	}//end getKanaalMapping()
-
-	/**
-	 * Get default mapping for Abonnement (notification subscription).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getAbonnementMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'abonnement',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['abonnement_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'callbackUrl' => '{{ callbackUrl }}',
-				'auth' => '{{ auth }}',
-				'kanalen' => '{{ kanalen }}',
-			],
-			'cast' => [
-				'kanalen' => 'jsonToArray',
-			],
-			'reverseMapping' => [
-				'callbackUrl' => '{{ callbackUrl }}',
-				'auth' => '{{ auth }}',
-				'kanalen' => '{{ kanalen|json_encode|raw }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [],
-		];
-	}//end getAbonnementMapping()
-
-	/**
-	 * Get default mapping for Catalogus.
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getCatalogusMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'catalogus',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['catalogus_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'domein' => '{{ domein }}',
-				'rsin' => '{{ rsin }}',
-				// Inverted before this, the same way the kanaal mapping was: the
-				// keys are the ZGW field names and the templates read register
-				// properties. The ZTC catalogussen response carried three fields
-				// ZGW does not define, all empty, and dropped the three it does.
-				'contactpersoonBeheerNaam' => '{{ contactPersonManagementName }}',
-				'contactpersoonBeheerTelefoonnummer' => '{{ contactPersonManagementPhoneNumber }}',
-				'contactpersoonBeheerEmailadres' => '{{ contactPersonManagementEmailAddress }}',
-				'zaaktypen' => '[]',
-				'besluittypen' => '[]',
-				'informatieobjecttypen' => '[]',
-			],
-			'cast' => [
-				'zaaktypen' => 'jsonToArray',
-				'besluittypen' => 'jsonToArray',
-				'informatieobjecttypen' => 'jsonToArray',
-			],
-			'reverseMapping' => [
-				'domein' => '{{ domein }}',
-				'rsin' => '{{ rsin }}',
-				'contactPersonManagementName' => '{{ contactpersoonBeheerNaam }}',
-				'contactPersonManagementPhoneNumber' => '{{ contactpersoonBeheerTelefoonnummer }}',
-				'contactPersonManagementEmailAddress' => '{{ contactpersoonBeheerEmailadres }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'domein' => [
-					'field' => 'domein',
-				],
-				'rsin' => [
-					'field' => 'rsin',
-				],
-			],
-		];
-	}//end getCatalogusMapping()
-
-	/**
-	 * Get default mapping for ZaaktypeInformatieobjecttype.
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getCaseTypeInformatieobjecttypeMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'zaaktypeinformatieobjecttype',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['zaaktype_informatieobjecttype_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'caseType' => $this->tplUrl(
-					from: 'catalogi/zaaktype-informatieobjecttypen',
-					to: 'catalogi/zaaktypen',
-					varName: 'caseType'
-				),
-				'informatieobjecttype' => $this->tplUrl(
-					from: 'catalogi/zaaktype-informatieobjecttypen',
-					to: 'catalogi/informatieobjecttypen',
-					varName: 'informatieobjecttype'
-				),
-				// Same inversion as `richting` below: the ZGW field is
-				// `volgnummer`, and the value comes from `sequenceNumber`.
-				'volgnummer' => '{{ sequenceNumber }}',
-				// The ZGW field is `richting`, not `direction`. This key used to
-				// say `direction` and read `{{ richting }}`, so the response
-				// carried a field ZGW does not define, holding a value the
-				// register does not store. Both halves were inverted.
-				'richting' => '{{ direction | default("") | zgw_enum("direction", _valueMappings) }}',
-				'statustype' => '{{ statustype }}',
-			],
-			'reverseMapping' => [
-				'caseType' => '{{ zaaktype | zgw_extract_uuid }}',
-				'informatieobjecttype' => '{{ informatieobjecttype | zgw_extract_uuid }}',
-				'sequenceNumber' => '{{ volgnummer }}',
-				'direction' => '{{ richting | default("") | zgw_enum_reverse("direction", _valueMappings) }}',
-				'statustype' => '{{ statustype }}',
-			],
-			'reverseCast' => [
-				'sequenceNumber' => 'int',
-			],
-			'cast' => [
-				'volgnummer' => 'int',
-			],
-			// ZGW spells this enum in Dutch and the schema declares it in
-			// English, and both templates used to pass the value straight
-			// through. POST /catalogi/v1/zaaktype-informatieobjecttypen with
-			// ZGW's own `richting: inkomend` answered 400 "should be one of:
-			// 'inbound', 'internal', 'outbound'", so the endpoint could not
-			// accept a conformant body at all.
-			'valueMapping' => [
-				'direction' => [
-					'inbound' => 'inkomend',
-					'internal' => 'intern',
-					'outbound' => 'uitgaand',
-				],
-			],
-			'queryParameterMapping' => [
-				'caseType' => [
-					'field' => 'caseType',
-					'extractUuid' => true,
-				],
-				'informatieobjecttype' => [
-					'field' => 'informatieobjecttype',
-					'extractUuid' => true,
-				],
-			],
-		];
-	}//end getZaaktypeInformatieobjecttypeMapping()
-
-	/**
-	 * Get the mapping metadata for Applicatie (Consumer entity).
-	 *
-	 * This mapping does not use Twig templates because Applicatie maps to
-	 * OpenRegister's Consumer entity rather than to register objects.
-	 * The field correspondence is handled in ZgwController directly.
-	 *
-	 * @return array
-	 */
-	private function getApplicatieMapping(): array {
-		return [
-			'zgwResource' => 'applicatie',
-			'zgwApiVersion' => '1',
-			'enabled' => true,
-			'fieldMapping' => [
-				'clientIds[0]' => 'name',
-				'label' => 'description',
-				'uuid' => 'uuid',
-				'heeftAlleAutorisaties' => 'authorizationConfiguration.superuser',
-				'autorisaties' => 'authorizationConfiguration.scopes',
-			],
-		];
-	}//end getApplicatieMapping()
 
 	/**
 	 * Create default test applicaties via OpenRegister's ConsumerMapper.
@@ -1635,7 +360,20 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			return;
 		}
 
-		$defaults = $this->getDefaultApplicaties();
+		[$created, $updated] = $this->upsertApplicaties(consumerMapper: $consumerMapper, defaults: $this->getDefaultApplicaties());
+
+		$output->info("Created {$created}, updated {$updated} default test applicaties.");
+	}//end createDefaultApplicaties()
+
+	/**
+	 * Create each default applicatie, or update the one that already exists by name.
+	 *
+	 * @param object                           $consumerMapper OpenRegister's ConsumerMapper.
+	 * @param array<int, array<string, mixed>> $defaults       The default applicaties.
+	 *
+	 * @return array{0: int, 1: int} The number created and the number updated.
+	 */
+	private function upsertApplicaties(object $consumerMapper, array $defaults): array {
 		$created = 0;
 
 		$updated = 0;
@@ -1643,25 +381,47 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		foreach ($defaults as $applicatie) {
 			$existing = $consumerMapper->findAll(filters: ['name' => $applicatie['name']]);
 			if (count(value: $existing) > 0) {
-				// Update existing consumer's authorization configuration
-				// to ensure new scopes are applied.
-				$consumer = $existing[0];
-				$newConfig = $applicatie['authorizationConfiguration'] ?? [];
-				$consumer->setAuthorizationConfiguration($newConfig);
-				$consumer->setUpdated(new DateTime());
-				$consumerMapper->update($consumer);
+				$this->updateApplicatie(consumerMapper: $consumerMapper, consumer: $existing[0], applicatie: $applicatie);
 				$updated++;
 				continue;
 			}
 
-			$applicatie['created'] = new DateTime();
-			$applicatie['updated'] = new DateTime();
-			$consumerMapper->createFromArray(object: $applicatie);
+			$this->createApplicatie(consumerMapper: $consumerMapper, applicatie: $applicatie);
 			$created++;
 		}
 
-		$output->info("Created {$created}, updated {$updated} default test applicaties.");
-	}//end createDefaultApplicaties()
+		return [$created, $updated];
+	}//end upsertApplicaties()
+
+	/**
+	 * Update an existing consumer's authorization configuration so new scopes are applied.
+	 *
+	 * @param object               $consumerMapper OpenRegister's ConsumerMapper.
+	 * @param object               $consumer       The existing consumer.
+	 * @param array<string, mixed> $applicatie     The default applicatie.
+	 *
+	 * @return void
+	 */
+	private function updateApplicatie(object $consumerMapper, object $consumer, array $applicatie): void {
+		$newConfig = $applicatie['authorizationConfiguration'] ?? [];
+		$consumer->setAuthorizationConfiguration($newConfig);
+		$consumer->setUpdated(new DateTime());
+		$consumerMapper->update($consumer);
+	}//end updateApplicatie()
+
+	/**
+	 * Create a default applicatie with fresh timestamps.
+	 *
+	 * @param object               $consumerMapper OpenRegister's ConsumerMapper.
+	 * @param array<string, mixed> $applicatie     The default applicatie.
+	 *
+	 * @return void
+	 */
+	private function createApplicatie(object $consumerMapper, array $applicatie): void {
+		$applicatie['created'] = new DateTime();
+		$applicatie['updated'] = new DateTime();
+		$consumerMapper->createFromArray(object: $applicatie);
+	}//end createApplicatie()
 
 	/**
 	 * Get default test applicatie configurations.
@@ -1670,53 +430,76 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 */
 	private function getDefaultApplicaties(): array {
 		return [
-			[
-				// FROZEN client ids + secrets below. These are ZGW consumer
-				// credentials registered in the ZGW consumer table and referenced
-				// by name from tests/zgw/seed-consumers.sh and the Postman
-				// environments. A renamed id here makes the seed script look up a
-				// consumer that does not exist — a KeyError that aborts the whole
-				// e2e job before a single test runs. `procest-admin` is also a
-				// Nextcloud GROUP id (see TransitionAuthorizer::ADMIN_GROUP_ID).
-				'name' => 'procest-admin',
-				'description' => 'Dossiq Admin (development)',
-				'authorizationType' => 'jwt-zgw',
-				'userId' => 'admin',
-				'authorizationConfiguration' => [
-					'publicKey' => 'procest-admin-secret-key-for-testing',
-					'algorithm' => 'HS256',
-					'superuser' => true,
-					'scopes' => [],
-				],
-			],
-			[
-				'name' => 'procest-limited',
-				'description' => 'Dossiq Limited (testing)',
-				'authorizationType' => 'jwt-zgw',
-				'userId' => 'admin',
-				'authorizationConfiguration' => [
-					'publicKey' => 'procest-limited-secret-key-for-test',
-					'algorithm' => 'HS256',
-					'superuser' => false,
-					'scopes' => [
-						[
-							'component' => 'ztc',
-							'scopes' => [
-								'zaaktypen.lezen',
-							],
-						],
-						[
-							'component' => 'zrc',
-							'scopes' => [
-								'zaken.lezen',
-							],
-							'maxVertrouwelijkheidaanduiding' => 'openbaar',
-						],
-					],
-				],
-			],
+			$this->adminApplicatie(),
+			$this->limitedApplicatie(),
 		];
 	}//end getDefaultApplicaties()
+
+	/**
+	 * The superuser test applicatie.
+	 *
+	 * @return array<string, mixed> The applicatie data
+	 */
+	private function adminApplicatie(): array {
+		return [
+			// FROZEN client ids + secrets below. These are ZGW consumer
+			// credentials registered in the ZGW consumer table and referenced
+			// by name from tests/zgw/seed-consumers.sh and the Postman
+			// environments. A renamed id here makes the seed script look up a
+			// consumer that does not exist — a KeyError that aborts the whole
+			// e2e job before a single test runs. `procest-admin` is also a
+			// Nextcloud GROUP id (see TransitionAuthorizer::ADMIN_GROUP_ID).
+			'name' => 'procest-admin',
+			'description' => 'Dossiq Admin (development)',
+			'authorizationType' => 'jwt-zgw',
+			'userId' => 'admin',
+			'authorizationConfiguration' => [
+				'publicKey' => 'procest-admin-secret-key-for-testing',
+				'algorithm' => 'HS256',
+				'superuser' => true,
+				'scopes' => [],
+			],
+		];
+	}//end adminApplicatie()
+
+	/**
+	 * The read-only test applicatie with limited scopes.
+	 *
+	 * @return array<string, mixed> The applicatie data
+	 */
+	private function limitedApplicatie(): array {
+		return [
+			'name' => 'procest-limited',
+			'description' => 'Dossiq Limited (testing)',
+			'authorizationType' => 'jwt-zgw',
+			'userId' => 'admin',
+			'authorizationConfiguration' => [
+				'publicKey' => 'procest-limited-secret-key-for-test',
+				'algorithm' => 'HS256',
+				'superuser' => false,
+				'scopes' => $this->limitedScopes(),
+			],
+		];
+	}//end limitedApplicatie()
+
+	/**
+	 * The scopes the limited test applicatie holds.
+	 *
+	 * @return array<int, array<string, mixed>> The scopes
+	 */
+	private function limitedScopes(): array {
+		return [
+			[
+				'component' => 'ztc',
+				'scopes' => ['zaaktypen.lezen'],
+			],
+			[
+				'component' => 'zrc',
+				'scopes' => ['zaken.lezen'],
+				'maxVertrouwelijkheidaanduiding' => 'openbaar',
+			],
+		];
+	}//end limitedScopes()
 
 	/**
 	 * Create default notification channels (kanalen).
@@ -1729,9 +512,32 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		$channelMapping = $this->zgwMappingService->getMapping(
 			resourceKey: 'kanaal'
 		);
+		if ($this->kanaalMappingReady(output: $output, channelMapping: $channelMapping) === false) {
+			return;
+		}
+
+		$objectService = $this->kanaalObjectService(output: $output);
+		if ($objectService === null) {
+			return;
+		}
+
+		$result = $this->createMissingKanalen(objectService: $objectService, channelMapping: $channelMapping);
+
+		$this->reportKanalen(output: $output, created: $result['created'], refused: $result['refused']);
+	}//end createDefaultKanalen()
+
+	/**
+	 * Whether the kanaal mapping is configured with a register and schema.
+	 *
+	 * @param IOutput                   $output         The output interface for progress reporting
+	 * @param array<string, mixed>|null $channelMapping The kanaal mapping, or null when absent
+	 *
+	 * @return bool True when the default channels can be written
+	 */
+	private function kanaalMappingReady(IOutput $output, ?array $channelMapping): bool {
 		if ($channelMapping === null) {
 			$output->info('Kanaal mapping not configured. Skipping default channels.');
-			return;
+			return false;
 		}
 
 		// On a fresh install the schema settings can still be empty when this
@@ -1741,19 +547,40 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			|| (string)($channelMapping['sourceSchema'] ?? '') === ''
 		) {
 			$output->info('Kanaal mapping has no register/schema configured yet. Skipping default channels.');
-			return;
+			return false;
 		}
 
+		return true;
+	}//end kanaalMappingReady()
+
+	/**
+	 * Resolve OpenRegister's ObjectService for the default channels.
+	 *
+	 * @param IOutput $output The output interface for progress reporting
+	 *
+	 * @return object|null The object service, or null when it is unavailable
+	 */
+	private function kanaalObjectService(IOutput $output): ?object {
 		try {
 			$container = \OC::$server;
-			$objectService = $container->get(
+			return $container->get(
 				'OCA\OpenRegister\Service\ObjectService'
 			);
 		} catch (\Throwable $e) {
 			$output->info('OpenRegister ObjectService not available. Skipping default channels.');
-			return;
+			return null;
 		}
+	}//end kanaalObjectService()
 
+	/**
+	 * Create every missing default channel under the system identity.
+	 *
+	 * @param object               $objectService  OpenRegister's ObjectService
+	 * @param array<string, mixed> $channelMapping The kanaal mapping
+	 *
+	 * @return array{created: int, refused: list<string>} The count created and the names refused
+	 */
+	private function createMissingKanalen(object $objectService, array $channelMapping): array {
 		$defaults = $this->getDefaultKanalen();
 		$created = 0;
 		$refused = [];
@@ -1773,35 +600,70 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			objectService: $objectService,
 			work: function () use ($objectService, $channelMapping, $defaults, &$created, &$refused): void {
 				foreach ($defaults as $channel) {
-					try {
-						// Check if kanaal already exists.
-						$query = $objectService->buildSearchQuery(
-							requestParams: ['name' => $channel['name']],
-							register: $channelMapping['sourceRegister'],
-							schema: $channelMapping['sourceSchema']
-						);
-						$existing = $objectService->searchObjectsPaginated(query: $query);
-						if (($existing['total'] ?? 0) > 0) {
-							continue;
-						}
-
-						$objectService->saveObject(
-							register: $channelMapping['sourceRegister'],
-							schema: $channelMapping['sourceSchema'],
-							object: $channel
-						);
+					$outcome = $this->createKanaal(
+						objectService: $objectService,
+						channelMapping: $channelMapping,
+						channel: $channel
+					);
+					if ($outcome === 'created') {
 						$created++;
-					} catch (\Throwable $e) {
+					} else if ($outcome === 'refused') {
 						$refused[] = (string)$channel['name'];
-						$this->logger->error(
-							'Dossiq: default notification channel refused',
-							['channel' => $channel['name'], 'exception' => $e->getMessage()]
-						);
-					}//end try
-				}//end foreach
+					}
+				}
 			}
 		);
 
+		return ['created' => $created, 'refused' => $refused];
+	}//end createMissingKanalen()
+
+	/**
+	 * Create one default channel unless it already exists.
+	 *
+	 * @param object               $objectService  OpenRegister's ObjectService
+	 * @param array<string, mixed> $channelMapping The kanaal mapping
+	 * @param array<string, mixed> $channel        The default channel data
+	 *
+	 * @return string 'created', 'exists' or 'refused'
+	 */
+	private function createKanaal(object $objectService, array $channelMapping, array $channel): string {
+		try {
+			// Check if kanaal already exists.
+			$query = $objectService->buildSearchQuery(
+				requestParams: ['name' => $channel['name']],
+				register: $channelMapping['sourceRegister'],
+				schema: $channelMapping['sourceSchema']
+			);
+			$existing = $objectService->searchObjectsPaginated(query: $query);
+			if (($existing['total'] ?? 0) > 0) {
+				return 'exists';
+			}
+
+			$objectService->saveObject(
+				register: $channelMapping['sourceRegister'],
+				schema: $channelMapping['sourceSchema'],
+				object: $channel
+			);
+			return 'created';
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Dossiq: default notification channel refused',
+				['channel' => $channel['name'], 'exception' => $e->getMessage()]
+			);
+			return 'refused';
+		}//end try
+	}//end createKanaal()
+
+	/**
+	 * Report how many default channels were created and which were refused.
+	 *
+	 * @param IOutput      $output  The output interface for progress reporting
+	 * @param int          $created Number of channels created
+	 * @param list<string> $refused Names of refused channels
+	 *
+	 * @return void
+	 */
+	private function reportKanalen(IOutput $output, int $created, array $refused): void {
 		if ($refused !== []) {
 			$output->warning(
 				sprintf(
@@ -1815,7 +677,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		}
 
 		$output->info("Created {$created} default notification channels.");
-	}//end createDefaultKanalen()
+	}//end reportKanalen()
 
 	/**
 	 * Get default notification channel configurations.
@@ -1824,314 +686,12 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 */
 	private function getDefaultKanalen(): array {
 		return [
-			[
-				'name' => 'zaken',
-				'filters' => [
-					'bronorganisatie',
-					'caseType',
-					'vertrouwelijkheidaanduiding',
-				],
-			],
-			[
-				'name' => 'documenten',
-				'filters' => [
-					'bronorganisatie',
-					'informatieobjecttype',
-					'vertrouwelijkheidaanduiding',
-				],
-			],
-			[
-				'name' => 'besluiten',
-				'filters' => [
-					'verantwoordelijkeOrganisatie',
-					'besluittype',
-				],
-			],
-			[
-				'name' => 'catalogi',
-				'filters' => [],
-			],
-			[
-				'name' => 'autorisaties',
-				'filters' => [],
-			],
+			['name' => 'zaken', 'filters' => ['bronorganisatie', 'caseType', 'vertrouwelijkheidaanduiding']],
+			['name' => 'documenten', 'filters' => ['bronorganisatie', 'informatieobjecttype', 'vertrouwelijkheidaanduiding']],
+			['name' => 'besluiten', 'filters' => ['verantwoordelijkeOrganisatie', 'besluittype']],
+			['name' => 'catalogi', 'filters' => []],
+			['name' => 'autorisaties', 'filters' => []],
 		];
 	}//end getDefaultKanalen()
 
-	/**
-	 * Get default mapping for ZaakEigenschap (case property).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getZaakeigenschapMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'zaakeigenschap',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['case_property_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'zaak' => $this->tplUrl(
-					from: 'zaken/zaakeigenschappen',
-					to: 'zaken/zaken',
-					varName: 'case'
-				),
-				'eigenschap' => $this->tplUrl(
-					from: 'zaken/zaakeigenschappen',
-					to: 'catalogi/eigenschappen',
-					varName: 'propertyDefinition'
-				),
-				'value' => '{{ value }}',
-			],
-			'reverseMapping' => [
-				'case' => '{{ zaak | zgw_extract_uuid }}',
-				'propertyDefinition' => '{{ eigenschap | zgw_extract_uuid }}',
-				'value' => '{{ waarde }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-			],
-		];
-	}//end getZaakeigenschapMapping()
-
-	/**
-	 * Get default mapping for ZaakInformatieObject (case document link).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getZaakinformatieobjectMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'zaakinformatieobject',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['case_document_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'zaak' => $this->tplUrl(
-					from: 'zaken/zaakinformatieobjecten',
-					to: 'zaken/zaken',
-					varName: 'case'
-				),
-				'informatieobject' => '{{ document }}',
-				'titel' => '{{ title }}',
-				'beschrijving' => '{{ description }}',
-				'registrationDate' => '{{ registrationDate }}',
-			],
-			'reverseMapping' => [
-				'case' => '{{ zaak | zgw_extract_uuid }}',
-				'document' => '{{ informatieobject }}',
-				'title' => '{{ titel }}',
-				'description' => '{{ beschrijving }}',
-				'registrationDate' => '{{ registratiedatum }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-				'informatieobject' => [
-					'field' => 'document',
-				],
-			],
-		];
-	}//end getZaakinformatieobjectMapping()
-
-	/**
-	 * Get default mapping for ZaakObject (case object).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getZaakobjectMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'zaakobject',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['case_object_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'zaak' => $this->tplUrl(
-					from: 'zaken/zaakobjecten',
-					to: 'zaken/zaken',
-					varName: 'case'
-				),
-				'object' => '{{ objectUrl }}',
-				'objectType' => '{{ objectType }}',
-				'objectIdentificatie' => '{{ objectIdentification }}',
-				'relatieomschrijving' => '{{ description }}',
-			],
-			'cast' => [
-				'objectIdentificatie' => 'jsonToArray',
-			],
-			'reverseMapping' => [
-				'case' => '{{ zaak | zgw_extract_uuid }}',
-				'objectUrl' => '{{ object }}',
-				'objectType' => '{{ objectType }}',
-				'objectIdentification' => '{{ objectIdentificatie | json_encode | raw }}',
-				'description' => '{{ relatieomschrijving }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-			],
-		];
-	}//end getZaakobjectMapping()
-
-	/**
-	 * Get default mapping for KlantContact (customer contact).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getKlantcontactMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'klantcontact',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['customer_contact_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'zaak' => $this->tplUrl(
-					from: 'zaken/klantcontacten',
-					to: 'zaken/zaken',
-					varName: 'case'
-				),
-				'datumtijd' => '{{ contactDateTime }}',
-				'kanaal' => '{{ channel }}',
-				'subject' => '{{ subject }}',
-				'initiator' => '{{ initiator }}',
-			],
-			'reverseMapping' => [
-				'case' => '{{ zaak | zgw_extract_uuid }}',
-				'contactDateTime' => '{{ datumtijd }}',
-				'channel' => '{{ kanaal }}',
-				'subject' => '{{ onderwerp }}',
-				'initiator' => '{{ initiator }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-			],
-		];
-	}//end getKlantcontactMapping()
-
-	/**
-	 * Get default mapping for BesluitInformatieObject (decision document link).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getBesluitinformatieobjectMapping(
-		string $registerId,
-		array $settings,
-	): array {
-		return [
-			'zgwResource' => 'besluitinformatieobject',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['decision_document_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'decision' => $this->tplUrl(
-					from: 'besluiten/besluitinformatieobjecten',
-					to: 'besluiten/besluiten',
-					varName: 'decision'
-				),
-				'informatieobject' => '{{ document }}',
-			],
-			'reverseMapping' => [
-				'decision' => '{{ besluit | zgw_extract_uuid }}',
-				'document' => '{{ informatieobject }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'decision' => [
-					'field' => 'decision',
-					'extractUuid' => true,
-				],
-				'informatieobject' => [
-					'field' => 'document',
-				],
-			],
-		];
-	}//end getBesluitinformatieobjectMapping()
-
-	/**
-	 * Get default mapping for Verzending (dispatch).
-	 *
-	 * @param string $registerId The register ID
-	 * @param array $settings The Dossiq settings
-	 *
-	 * @return array
-	 */
-	private function getVerzendingMapping(string $registerId, array $settings): array {
-		return [
-			'zgwResource' => 'verzending',
-			'zgwApiVersion' => '1',
-			'sourceRegister' => $registerId,
-			'sourceSchema' => ($settings['dispatch_schema'] ?? ''),
-			'enabled' => true,
-			'propertyMapping' => [
-				'url' => '{{ _baseUrl }}/{{ _uuid }}',
-				'uuid' => '{{ _uuid }}',
-				'informatieobject' => '{{ document }}',
-				'betrokkene' => '{{ involvedParty }}',
-				'aardRelatie' => '{{ relationshipType }}',
-				'notes' => '{{ description }}',
-				'receiptDate' => '{{ receiveDate }}',
-				'verzenddatum' => '{{ sendDate }}',
-				'contactPersoon' => '{{ contactPerson }}',
-				'contactpersoonnaam' => '{{ contactPersonName }}',
-			],
-			'reverseMapping' => [
-				'document' => '{{ informatieobject }}',
-				'involvedParty' => '{{ betrokkene }}',
-				'relationshipType' => '{{ aardRelatie }}',
-				'description' => '{{ toelichting }}',
-				'receiveDate' => '{{ ontvangstdatum }}',
-				'sendDate' => '{{ verzenddatum }}',
-				'contactPerson' => '{{ contactPersoon }}',
-				'contactPersonName' => '{{ contactpersoonnaam }}',
-			],
-			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'informatieobject' => [
-					'field' => 'document',
-				],
-			],
-		];
-	}//end getVerzendingMapping()
 }//end class

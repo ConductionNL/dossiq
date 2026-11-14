@@ -3,7 +3,7 @@
 /**
  * Test stub for OpenRegister's AuditTrail entity.
  *
- * It exists so `AuditTrailMapper::createAuditTrailEntry()` can hand back what the
+ * It exists so `AuditTrailMapper::recordObjectEvent()` can hand back what the
  * real mapper hands back. Before this, the stub returned a bare `object`, which is
  * a shape the real class never produces: anything a test asserted about the return
  * value agreed with the stub and would have been fatal against a real

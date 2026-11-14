@@ -55,7 +55,7 @@ use Throwable;
  *     the engine actually dispatches; only the proof is unavailable here.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 class DossiqFlowNodeListener implements IEventListener {
 
@@ -79,6 +79,9 @@ class DossiqFlowNodeListener implements IEventListener {
         DossiqAskPersonNode::class,
         DossiqEnsureCommitteeNode::class,
         DossiqTxBesluitvormingPublishNode::class,
+        DossiqTxSuspendTermNode::class,
+        DossiqTxSendMessageNode::class,
+        DossiqTxSetCaseAnswerNode::class,
     ];
 
 

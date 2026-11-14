@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -35,7 +35,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Dormant log-backed Dossiq WOZ adapter.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 class LogWozAdapter implements WozAdapterInterface {
 	/**
@@ -63,7 +63,7 @@ class LogWozAdapter implements WozAdapterInterface {
 	 *
 	 * @return WozLookupResult The dispatch outcome.
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupAddress(
 		string $postcode,
@@ -94,7 +94,7 @@ class LogWozAdapter implements WozAdapterInterface {
 	 *
 	 * @return WozLookupResult The dispatch outcome.
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByNummeraanduiding(string $addressDesignationId, array $context = []): WozLookupResult {
 		$this->logger->info(
@@ -113,7 +113,7 @@ class LogWozAdapter implements WozAdapterInterface {
 	 *
 	 * @return WozLookupResult The dispatch outcome.
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByWozObjectNummer(string $wozobjectnummer, array $context = []): WozLookupResult {
 		$this->logger->info(
@@ -152,7 +152,7 @@ class LogWozAdapter implements WozAdapterInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function isDormant(): bool {
 		return true;

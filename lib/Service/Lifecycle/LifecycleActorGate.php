@@ -53,7 +53,7 @@ use Throwable;
 /**
  * The per-act, per-case-type role gate, with the missing role named.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class LifecycleActorGate {
 
@@ -92,7 +92,7 @@ class LifecycleActorGate {
 	 *
 	 * @return string The group id.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function roleFor(string $act, array $case): string {
 		return $this->rules->roleFor(caseTypeId: (string)($case['caseType'] ?? ''), act: $act);
@@ -106,7 +106,7 @@ class LifecycleActorGate {
 	 *
 	 * @return bool True when the act is permitted.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function may(string $act, array $case): bool {
 		$user = $this->userSession->getUser();
@@ -122,14 +122,39 @@ class LifecycleActorGate {
 			// every signed-in user), so the rule is enforced here, and it is
 			// checked before the admin bypass so promoting the account cannot
 			// widen it.
-			return ($act === 'abort'
-				&& $this->rules->autoCloseOptedIn(caseTypeId: (string)($case['caseType'] ?? '')) === true);
+			return $this->backgroundMay(act: $act, case: $case);
 		}
 
 		if ($this->isAdmin(uid: $uid) === true) {
 			return true;
 		}
 
+		return $this->mayByRole(act: $act, case: $case, uid: $uid);
+	}//end may()
+
+	/**
+	 * Whether the background account may perform the act: only the opted-in silence close.
+	 *
+	 * @param string               $act  The act.
+	 * @param array<string, mixed> $case The loaded case.
+	 *
+	 * @return bool
+	 */
+	private function backgroundMay(string $act, array $case): bool {
+		return ($act === 'abort'
+			&& $this->rules->autoCloseOptedIn(caseTypeId: (string)($case['caseType'] ?? '')) === true);
+	}//end backgroundMay()
+
+	/**
+	 * Whether the user holds the role the act needs, or the act needs none.
+	 *
+	 * @param string               $act  The act.
+	 * @param array<string, mixed> $case The loaded case.
+	 * @param string               $uid  The user.
+	 *
+	 * @return bool
+	 */
+	private function mayByRole(string $act, array $case, string $uid): bool {
 		$role = $this->roleFor(act: $act, case: $case);
 		if ($role === '') {
 			return (in_array($act, self::CLOSED_WITHOUT_A_ROLE, true) === false);
@@ -145,7 +170,7 @@ class LifecycleActorGate {
 
 			return false;
 		}
-	}//end may()
+	}//end mayByRole()
 
 	/**
 	 * Refuse the act when the caller may not perform it, naming the role.
@@ -162,7 +187,7 @@ class LifecycleActorGate {
 	 *
 	 * @throws RefusedException When the caller may not perform the act.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function require(string $act, array $case): void {
 		if ($this->may(act: $act, case: $case) === true) {
@@ -184,7 +209,7 @@ class LifecycleActorGate {
 	 *
 	 * @return string The sentence, naming the role when one is declared.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function refusalSentence(string $act, array $case): string {
 		$user = $this->userSession->getUser();

@@ -24,8 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -65,7 +65,7 @@ class ShipAssistantPrompts implements IRepairStep {
 	 *
 	 * @param ContainerInterface   $container   Resolves hermiq's library.
 	 * @param IAppManager          $appManager  Says whether hermiq is installed.
-	 * @param SettingsService|null $settings    Resolves OpenRegister for the system identity.
+	 * @param SettingsServiceInterface|null $settings    Resolves OpenRegister for the system identity.
 	 * @param string|null          $libraryFile The prompt library file; the shipped one when null.
 	 *
 	 * @return void
@@ -73,7 +73,7 @@ class ShipAssistantPrompts implements IRepairStep {
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly IAppManager $appManager,
-		private readonly ?SettingsService $settings=null,
+		private readonly ?SettingsServiceInterface $settings=null,
 		private readonly ?string $libraryFile=null,
 	) {
 	}//end __construct()
@@ -99,20 +99,8 @@ class ShipAssistantPrompts implements IRepairStep {
 	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-an-edited-prompt-is-not-overwritten-by-dossiq
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appManager->isInstalled('hermiq') === false) {
-			$output->info('hermiq is not installed; no assistant prompts shipped.');
-			return;
-		}
-
-		try {
-			$library = $this->container->get(self::LIBRARY_CLASS);
-		} catch (Throwable $e) {
-			$output->warning('hermiq has no prompt library to ship into: ' . $e->getMessage());
-			return;
-		}
-
-		if (is_object($library) === false || method_exists($library, 'seed') === false) {
-			$output->warning('hermiq\'s prompt library cannot take shipped prompts.');
+		$library = $this->promptLibrary(output: $output);
+		if ($library === null) {
 			return;
 		}
 
@@ -125,20 +113,61 @@ class ShipAssistantPrompts implements IRepairStep {
 		$this->withSystemIdentity(
 			objectService: $this->settings?->getObjectService(),
 			work: function () use ($library, $prompts, $output): void {
-				try {
-					$result = $library->seed('dossiq', $prompts);
-				} catch (Throwable $e) {
-					$output->warning('Could not ship the assistant prompts: ' . $e->getMessage());
-					return;
-				}
-
-				$output->info(
-					'Assistant prompts: ' . (int)($result['installed'] ?? 0) . ' shipped, '
-					. (int)($result['skipped'] ?? 0) . ' kept as an administrator left them.'
-				);
+				$this->seedLibrary(library: $library, prompts: $prompts, output: $output);
 			}
 		);
 	}//end run()
+
+	/**
+	 * Hermiq's prompt library, when it is installed and can take shipped prompts.
+	 *
+	 * @param IOutput $output The upgrade output.
+	 *
+	 * @return object|null The library, or null when there is none to ship into.
+	 */
+	private function promptLibrary(IOutput $output): ?object {
+		if ($this->appManager->isInstalled('hermiq') === false) {
+			$output->info('hermiq is not installed; no assistant prompts shipped.');
+			return null;
+		}
+
+		try {
+			$library = $this->container->get(self::LIBRARY_CLASS);
+		} catch (Throwable $e) {
+			$output->warning('hermiq has no prompt library to ship into: ' . $e->getMessage());
+			return null;
+		}
+
+		if (is_object($library) === false || method_exists($library, 'seed') === false) {
+			$output->warning('hermiq\'s prompt library cannot take shipped prompts.');
+			return null;
+		}
+
+		return $library;
+	}//end promptLibrary()
+
+	/**
+	 * Seed the prompts into the library and report the outcome.
+	 *
+	 * @param object                           $library The prompt library.
+	 * @param array<int, array<string, mixed>> $prompts The shipped prompts.
+	 * @param IOutput                          $output  The upgrade output.
+	 *
+	 * @return void
+	 */
+	private function seedLibrary(object $library, array $prompts, IOutput $output): void {
+		try {
+			$result = $library->seed('dossiq', $prompts);
+		} catch (Throwable $e) {
+			$output->warning('Could not ship the assistant prompts: ' . $e->getMessage());
+			return;
+		}
+
+		$output->info(
+			'Assistant prompts: ' . (int)($result['installed'] ?? 0) . ' shipped, '
+			. (int)($result['skipped'] ?? 0) . ' kept as an administrator left them.'
+		);
+	}//end seedLibrary()
 
 	/**
 	 * The prompts in the library file, each carrying the library's usage scope.

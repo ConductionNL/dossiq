@@ -6,7 +6,7 @@
  * The single writer of the bezwaar procedure's Awb and AVG entries. Every
  * entry is one row on OpenRegister's hash-chained audit trail of the record
  * it describes, a `hearingSession` or a `bacAdviceRequest`, written through
- * `AuditTrailMapper::createAuditTrailEntry()`. It used to be appended to an
+ * `AuditTrailMapper::recordObjectEvent()`. It used to be appended to an
  * `auditTrail` array on that same record, which anyone who could write the
  * record could edit, and which was not part of the hash chain (gate 23 rule 2).
  *
@@ -43,6 +43,8 @@ namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Kernel\Contracts\BezwaarAuditTrailInterface;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -54,12 +56,7 @@ use Throwable;
  *
  * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
  */
-class BezwaarAuditTrail {
-
-	/**
-	 * The action prefix of every bezwaar entry.
-	 */
-	public const ACTION_PREFIX = 'dossiq.bezwaar.';
+class BezwaarAuditTrail implements BezwaarAuditTrailInterface {
 
 	/**
 	 * Awb art. 7:2 — hearing scheduled / invitation sent.
@@ -197,23 +194,9 @@ class BezwaarAuditTrail {
 	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function write(string $register, string $schema, string $objectUuid, string $action, array $context, ?string $actorId = null): void {
-		if (in_array('openregister', (array)$this->appManager->getInstalledApps(), true) === false) {
-			throw new BezwaarEntryNotWrittenException(
-				action: $action,
-				objectUuid: $objectUuid,
-				entry: $context,
-				reason: 'OpenRegister is not available, so the bezwaar entry '.$action.' cannot be written',
-			);
-		}
+		$this->assertOpenRegister(action: $action, objectUuid: $objectUuid, context: $context);
 
-		$object = null;
-		$cause = null;
-		try {
-			$object = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService')
-				->find($objectUuid, register: $register, schema: $schema);
-		} catch (Throwable $e) {
-			$cause = $e;
-		}
+		[$object, $cause] = $this->findRecord(register: $register, schema: $schema, objectUuid: $objectUuid);
 
 		if (is_object($object) === false) {
 			throw new BezwaarEntryNotWrittenException(
@@ -227,7 +210,9 @@ class BezwaarAuditTrail {
 
 		try {
 			$this->container->get('OCA\\OpenRegister\\Db\\AuditTrailMapper')
-				->createAuditTrailEntry(object: $object, action: $action, context: $context, actorId: $actorId, actorName: $actorId);
+				->recordObjectEvent(
+					event: ObjectAuditEvents::of(object: $object, action: $action, context: $context, actorId: $actorId, actorName: $actorId)
+				);
 		} catch (Throwable $e) {
 			throw new BezwaarEntryNotWrittenException(
 				action: $action,
@@ -238,6 +223,54 @@ class BezwaarAuditTrail {
 			);
 		}
 	}//end write()
+
+	/**
+	 * Throw when OpenRegister is not installed.
+	 *
+	 * @param string               $action     The full action.
+	 * @param string               $objectUuid The record's uuid.
+	 * @param array<string, mixed> $context    The row's context.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When OpenRegister is absent.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	private function assertOpenRegister(string $action, string $objectUuid, array $context): void {
+		if (in_array('openregister', (array)$this->appManager->getInstalledApps(), true) === false) {
+			throw new BezwaarEntryNotWrittenException(
+				action: $action,
+				objectUuid: $objectUuid,
+				entry: $context,
+				reason: 'OpenRegister is not available, so the bezwaar entry '.$action.' cannot be written',
+			);
+		}
+	}//end assertOpenRegister()
+
+	/**
+	 * Look the record up, keeping the lookup's failure as the cause.
+	 *
+	 * @param string $register   The register the record lives in.
+	 * @param string $schema     The record's schema.
+	 * @param string $objectUuid The record's uuid.
+	 *
+	 * @return array{0: mixed, 1: Throwable|null} The found record (or null) and the failure, if any.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	private function findRecord(string $register, string $schema, string $objectUuid): array {
+		$object = null;
+		$cause = null;
+		try {
+			$object = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService')
+				->find($objectUuid, register: $register, schema: $schema);
+		} catch (Throwable $e) {
+			$cause = $e;
+		}
+
+		return [$object, $cause];
+	}//end findRecord()
 
 	/**
 	 * Record the entry of a record this act just created, or undo the act.
@@ -321,8 +354,55 @@ class BezwaarAuditTrail {
 		string $tag,
 		callable $apply,
 	): mixed {
+		$command = new BezwaarEntryCommand(
+			register: $register, schema: $schema, objectUuid: $objectUuid, event: $event, payload: $payload, tag: $tag
+		);
+
+		return $this->applyAfterEntry(command: $command, apply: $apply);
+	}//end recordThenApply()
+
+	/**
+	 * Write the entry first, then make the change, as recordThenApply() describes.
+	 *
+	 * @param BezwaarEntryCommand $command The entry.
+	 * @param callable            $apply   Makes the change; its return value is returned.
+	 *
+	 * @return mixed What $apply returned.
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the entry could not be written; nothing is changed.
+	 * @throws Throwable The change's own failure, after the not-applied entry.
+	 */
+	private function applyAfterEntry(BezwaarEntryCommand $command, callable $apply): mixed {
+		$this->recordOrRefuseTheChange(command: $command);
+
 		try {
-			$this->record(register: $register, schema: $schema, objectUuid: $objectUuid, event: $event, payload: $payload, tag: $tag);
+			return $apply();
+		} catch (Throwable $failure) {
+			$this->recordNotApplied(command: $command, failure: $failure);
+
+			throw $failure;
+		}
+	}//end applyAfterEntry()
+
+	/**
+	 * Write the entry of a change; a failed entry is logged and refuses the change.
+	 *
+	 * @param BezwaarEntryCommand $command The entry.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the entry could not be written.
+	 */
+	private function recordOrRefuseTheChange(BezwaarEntryCommand $command): void {
+		try {
+			$this->record(
+				register: $command->register,
+				schema: $command->schema,
+				objectUuid: $command->objectUuid,
+				event: $command->event,
+				payload: $command->payload,
+				tag: $command->tag
+			);
 		} catch (BezwaarEntryNotWrittenException $notWritten) {
 			$this->logger->error(
 				'Dossiq bezwaar: entry not written, so the change it records is not made',
@@ -331,22 +411,26 @@ class BezwaarAuditTrail {
 
 			throw $notWritten;
 		}
+	}//end recordOrRefuseTheChange()
 
-		try {
-			return $apply();
-		} catch (Throwable $failure) {
-			$this->recordRefusal(
-				register: $register,
-				schema: $schema,
-				objectUuid: $objectUuid,
-				event: $event.'-not-applied',
-				payload: $payload + ['error' => $failure->getMessage()],
-				tag: $tag,
-			);
-
-			throw $failure;
-		}
-	}//end recordThenApply()
+	/**
+	 * Record that a change whose entry was written did not happen.
+	 *
+	 * @param BezwaarEntryCommand $command The entry of the change.
+	 * @param Throwable           $failure Why the change failed.
+	 *
+	 * @return void
+	 */
+	private function recordNotApplied(BezwaarEntryCommand $command, Throwable $failure): void {
+		$this->recordRefusal(
+			register: $command->register,
+			schema: $command->schema,
+			objectUuid: $command->objectUuid,
+			event: $command->event.'-not-applied',
+			payload: $command->payload + ['error' => $failure->getMessage()],
+			tag: $command->tag,
+		);
+	}//end recordNotApplied()
 
 	/**
 	 * Record a refusal, whether or not the entry can be written.

@@ -50,6 +50,11 @@ Written 12 Oct 2026 (lane L7), not run (live pass, decision 139): `tests/e2e/cmm
 - [ ] 6.1 Analyzers green on the touched files: lint, phpcs, psalm, phpstan individually, phpmd per subdir; eslint and vitest for the frontend removals.
 - [ ] 6.2 Hydra gates with `--scope-to-diff` report 0 FAIL on the diff; gate-16 `@spec` tags on every changed method point at `openspec/specs/retire-cmmn-caseplanstate/spec.md`.
 
+## 7. CaseModelEngine (decision 400)
+
+- [x] 7.1 Remove dossiq's `lib/Service/Cmmn/CaseModelEngine.php`. Done with the whole of `lib/Service/Cmmn` in 96a5cc44c ("retire the local CMMN runtime"). REQ-CMMN-008, which made it the write path for `casePlanState`, is REMOVED by this change's `specs/cmmn-adaptive-case` delta.
+- [x] 7.2 Drop the remaining "loadable by CaseModelEngine" wording from the `caseType` description in `lib/Settings/register.d/70-cmmn-case-model.json`, `lib/Settings/dossiq_mock_register.json` and the l10n catalogues, so nothing names the removed engine.
+
 ## Re-verified 2026-10-12
 
 Groups 1, 2, 3.1, 3.3 and 4 are built. Open: 3.2 (gated on the drain report, its own pull request), the live pass of group 5, and 6.

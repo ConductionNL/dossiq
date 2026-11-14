@@ -24,11 +24,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Settings;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\QueueUrgencySettingsInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Prerequisites;
+use OCA\Dossiq\Repair\ProvisionAssignedGroups;
+use OCA\Dossiq\Service\Access\RoleActs;
+use OCA\Dossiq\Service\CaseDefinition\PackageAdminTabs;
 use OCA\Dossiq\Service\Settings\MenuStructure;
-use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
@@ -50,16 +53,18 @@ class AdminSettings implements IDelegatedSettings {
 	 *
 	 * @param IAppManager $appManager The app manager.
 	 * @param IInitialState $initialState The initial state service.
-	 * @param SettingsService $settingsService Reads the stored config values.
-	 * @param QueueUrgencySettings $queueUrgency The queue thresholds and weights.
+	 * @param SettingsServiceInterface $settingsService Reads the stored config values.
+	 * @param QueueUrgencySettingsInterface $queueUrgency The queue thresholds and weights.
 	 * @param ServerVersion        $serverVersion The Nextcloud this instance runs.
+	 * @param PackageAdminTabs     $packageTabs   The installed packages that declare an admin tab.
 	 */
 	public function __construct(
 		private IAppManager $appManager,
 		private IInitialState $initialState,
-		private SettingsService $settingsService,
-		private QueueUrgencySettings $queueUrgency,
+		private SettingsServiceInterface $settingsService,
+		private QueueUrgencySettingsInterface $queueUrgency,
 		private ServerVersion $serverVersion,
+		private PackageAdminTabs $packageTabs,
 	) {
 	}//end __construct()
 
@@ -77,10 +82,31 @@ class AdminSettings implements IDelegatedSettings {
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
 	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/changes/vth-cases-run-end-to-end
 	 */
 	public function getForm(): TemplateResponse {
-		$version = $this->appManager->getAppVersion(appId: Application::APP_ID);
+		$version = $this->appManager->getAppVersion(appId: AppIdentity::APP_ID);
 
+		$this->provideInstanceState(version: $version);
+		$this->provideTabState();
+
+		return new TemplateResponse(
+			AppIdentity::APP_ID,
+			'settings/admin',
+			[]
+		);
+	}//end getForm()
+
+	/**
+	 * Provide the version, the prerequisites and the sibling apps this instance has.
+	 *
+	 * @param string $version The app version.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function provideInstanceState(string $version): void {
 		$this->initialState->provideInitialState('version', $version);
 		// What this instance actually has, read at page load and never cached.
 		// A cached answer is exactly the wrong thing to show somebody who has
@@ -91,6 +117,44 @@ class AdminSettings implements IDelegatedSettings {
 				appManager: $this->appManager,
 				nextcloudMajor: $this->serverVersion->getMajorVersion()
 			)
+		);
+		// The apps whose records the admin tables list (integriq's connection
+		// registry and DSO mappings, shillinq's fee schedules), so a missing
+		// app reads as missing rather than as an empty table.
+		$this->initialState->provideInitialState(
+			'ownerApps',
+			[
+				'integriq' => $this->appManager->isInstalled(appId: 'integriq'),
+				'shillinq' => $this->appManager->isInstalled(appId: 'shillinq'),
+			]
+		);
+		// The siblings named by product name, with the app id each was found under.
+		$this->initialState->provideInitialState(
+			'dependencyApps',
+			(new DependencyApps())->read(appManager: $this->appManager)
+		);
+		// What each provisioned role allows (REQ-CRS-14), in provisioning order.
+		$this->initialState->provideInitialState(
+			'roleActs',
+			(new RoleActs())->table(groups: ProvisionAssignedGroups::ASSIGNED_GROUPS)
+		);
+	}//end provideInstanceState()
+
+	/**
+	 * Provide the stored settings each admin tab reads.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function provideTabState(): void {
+		// The publication card on VTH: the template and the publication date rule.
+		$this->initialState->provideInitialState(
+			'publicationSettings',
+			[
+				'template' => $this->settingsService->getConfigValue('publication_template', ''),
+				'dateRule' => $this->settingsService->getConfigValue('publication_date_rule', ''),
+			]
 		);
 		$this->initialState->provideInitialState(
 			'consultationSettings',
@@ -113,12 +177,14 @@ class AdminSettings implements IDelegatedSettings {
 			(new MenuStructure())->normalise(stored: $this->settingsService->getConfigValue(MenuStructure::KEY, ''))
 		);
 
-		return new TemplateResponse(
-			Application::APP_ID,
-			'settings/admin',
-			[]
+		// One tab per installed package that declares one, with the ids of
+		// what it installed, read from the shipped-set ledger. This page is
+		// admin-only, so the list never reaches anybody else.
+		$this->initialState->provideInitialState(
+			'packageAdminTabs',
+			$this->packageTabs->installed()
 		);
-	}//end getForm()
+	}//end provideTabState()
 
 	/**
 	 * Build the consultation tab's initial state.

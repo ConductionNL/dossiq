@@ -51,9 +51,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Contribution\CaseTypeContributionRegistry;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeContributionRegistryInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -90,8 +90,8 @@ class SeedContributedCaseTypes implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTypeContributionRegistry $registry        What the installed apps contribute.
-	 * @param SettingsService              $settingsService Register and schema resolution, and the object service.
+	 * @param CaseTypeContributionRegistryInterface $registry        What the installed apps contribute.
+	 * @param SettingsServiceInterface              $settingsService Register and schema resolution, and the object service.
 	 * @param LoggerInterface              $logger          The logger.
 	 *
 	 * @return void
@@ -99,8 +99,8 @@ class SeedContributedCaseTypes implements IRepairStep {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function __construct(
-		private readonly CaseTypeContributionRegistry $registry,
-		private readonly SettingsService $settingsService,
+		private readonly CaseTypeContributionRegistryInterface $registry,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -149,41 +149,67 @@ class SeedContributedCaseTypes implements IRepairStep {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function seed(IOutput $output): void {
+		$target = $this->seedTarget(output: $output);
+		if ($target === null) {
+			return;
+		}
+
+		$added = 0;
+		foreach ($this->registry->all() as $contributed) {
+			$added += $this->addSafely(target: $target, contributed: $contributed);
+		}
+
+		$output->info('Dossiq: added ' . $added . ' contributed case type(s).');
+	}//end seed()
+
+	/**
+	 * The object service, register and case-type schema, or null (said on the output) when any is missing.
+	 *
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The object service, the register and the schema.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function seedTarget(IOutput $output): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_type_schema');
 		if ($objectService === null || $register === '' || $schema === '') {
 			$output->info('Dossiq: the case-type register is not configured; contributed case types skipped.');
 
-			return;
+			return null;
 		}
 
-		$added = 0;
-		foreach ($this->registry->all() as $contributed) {
-			try {
-				$added += $this->addOne(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					contributed: $contributed,
-				);
-			} catch (Throwable $e) {
-				// ONE APP'S BAD DECLARATION MUST NOT COST THE OTHERS THEIRS,
-				// which is the rule the registry already applies to a provider
-				// that throws. The same rule has to hold on the write.
-				$this->logger->error(
-					'Dossiq: a contributed case type could not be stored',
-					[
-						'identifier' => (string)($contributed['identifier'] ?? ''),
-						'app' => (string)($contributed['contributedBy'] ?? ''),
-						'reason' => $e->getMessage(),
-					]
-				);
-			}
-		}
+		return [$objectService, $register, $schema];
+	}//end seedTarget()
 
-		$output->info('Dossiq: added ' . $added . ' contributed case type(s).');
-	}//end seed()
+	/**
+	 * Store one contributed case type, logging rather than throwing when it cannot be stored.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $target      The object service, the register and the schema.
+	 * @param array<string, mixed>                   $contributed The normalised declaration.
+	 *
+	 * @return int 1 when a case type was created, 0 otherwise.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function addSafely(array $target, array $contributed): int {
+		[$objectService, $register, $schema] = $target;
+		try {
+			return $this->addOne(objectService: $objectService, register: $register, schema: $schema, contributed: $contributed);
+		} catch (Throwable $e) {
+			// ONE APP'S BAD DECLARATION MUST NOT COST THE OTHERS THEIRS,
+			// which is the rule the registry already applies to a provider
+			// that throws. The same rule has to hold on the write.
+			$this->logger->error('Dossiq: a contributed case type could not be stored', [
+				'identifier' => (string)($contributed['identifier'] ?? ''),
+				'app' => (string)($contributed['contributedBy'] ?? ''),
+				'reason' => $e->getMessage(),
+			]);
+			return 0;
+		}
+	}//end addSafely()
 
 	/**
 	 * Store one contributed case type, unless its identifier is already taken.
@@ -197,23 +223,31 @@ class SeedContributedCaseTypes implements IRepairStep {
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
-	private function addOne(
-		object $objectService,
-		string $register,
-		string $schema,
-		array $contributed,
-	): int {
+	private function addOne(object $objectService, string $register, string $schema, array $contributed): int {
 		$identifier = (string)($contributed['identifier'] ?? '');
-		$existing = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['identifier' => $identifier],
-		);
+		$filters = ['identifier' => $identifier];
+		$existing = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 		if ($existing !== []) {
 			return 0;
 		}
 
+		$payload = self::carriedPayload(contributed: $contributed);
+
+		$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $payload);
+
+		return 1;
+	}//end addOne()
+
+	/**
+	 * The carried fields of a declaration that hold a value.
+	 *
+	 * @param array<string, mixed> $contributed The normalised declaration.
+	 *
+	 * @return array<string, mixed> The case type to store.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private static function carriedPayload(array $contributed): array {
 		$payload = [];
 		foreach (self::CARRIED as $key) {
 			$value = ($contributed[$key] ?? null);
@@ -222,13 +256,6 @@ class SeedContributedCaseTypes implements IRepairStep {
 			}
 		}
 
-		$this->saveObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			object: $payload,
-		);
-
-		return 1;
-	}//end addOne()
+		return $payload;
+	}//end carriedPayload()
 }//end class

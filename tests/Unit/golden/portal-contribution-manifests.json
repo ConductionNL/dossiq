@@ -1,0 +1,3450 @@
+{
+    "supplier": {
+        "label": "Opdrachten en facturen",
+        "collections": [
+            {
+                "id": "tenders",
+                "register": "dossiq",
+                "schema": "supplierTender",
+                "scopeField": "supplierRef",
+                "label": "Aanbestedingen",
+                "listable": true
+            },
+            {
+                "id": "contracts",
+                "register": "dossiq",
+                "schema": "supplierContract",
+                "scopeField": "supplierRef",
+                "label": "Contracten",
+                "listable": true
+            },
+            {
+                "id": "invoices",
+                "register": "dossiq",
+                "schema": "caseSupplierInvoice",
+                "scopeField": "supplierRef",
+                "label": "Facturen",
+                "listable": true
+            },
+            {
+                "id": "performance",
+                "register": "dossiq",
+                "schema": "supplierKpi",
+                "scopeField": "supplierRef",
+                "label": "Prestaties",
+                "listable": true
+            },
+            {
+                "id": "messages",
+                "kind": "inbox",
+                "register": "dossiq",
+                "schema": "supplierMessage",
+                "scopeField": "supplierRef",
+                "label": "Berichten",
+                "listable": true,
+                "messageFields": {
+                    "receivedAt": "sentAt",
+                    "readAt": "readByRecipientAt",
+                    "attachments": "attachmentRefs"
+                },
+                "reply": {
+                    "action": "replyToSupplierMessage",
+                    "subjectFrom": "subject"
+                }
+            },
+            {
+                "id": "mijnZaken",
+                "register": "dossiq",
+                "schema": "case",
+                "scopeField": "portalSubject",
+                "label": "Mijn zaken",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "identifier",
+                    "title",
+                    "caseType",
+                    "status",
+                    "statusPublicLabel",
+                    "statusPublicDescription",
+                    "resultPublicLabel",
+                    "resultPublicDescription",
+                    "startDate",
+                    "endDate",
+                    "deadline",
+                    "portalTurn",
+                    "waitingOnApplicant",
+                    "waitingOn",
+                    "assignedGroupPublicName",
+                    "isFinalStatus",
+                    "receivedAt",
+                    "termStartsAt",
+                    "receivedOutsideWorkingHours",
+                    "wooPublicationUrl",
+                    "termNote",
+                    "legalDecisionDate",
+                    "resultLink",
+                    "portalBranch",
+                    "portalParty"
+                ],
+                "columns": [
+                    {
+                        "field": "identifier",
+                        "label": "Zaaknummer",
+                        "render": "text"
+                    },
+                    {
+                        "field": "title",
+                        "label": "Onderwerp",
+                        "render": "text"
+                    },
+                    {
+                        "field": "statusPublicLabel",
+                        "label": "Status",
+                        "render": "badge"
+                    },
+                    {
+                        "field": "resultPublicLabel",
+                        "label": "Uitkomst",
+                        "render": "text"
+                    },
+                    {
+                        "field": "startDate",
+                        "label": "Gestart op",
+                        "render": "date"
+                    },
+                    {
+                        "field": "deadline",
+                        "label": "Uiterlijk klaar op",
+                        "render": "date"
+                    },
+                    {
+                        "field": "termStartsAt",
+                        "label": "Termijn loopt vanaf",
+                        "render": "date"
+                    },
+                    {
+                        "field": "receivedOutsideWorkingHours",
+                        "label": "Ontvangen buiten kantoortijd",
+                        "render": "boolean"
+                    }
+                ],
+                "detail": {
+                    "layout": "card",
+                    "fields": [
+                        "identifier",
+                        "assignedGroupPublicName",
+                        "title",
+                        "statusPublicLabel",
+                        "statusPublicDescription",
+                        "resultPublicLabel",
+                        "resultPublicDescription",
+                        "startDate",
+                        "endDate",
+                        "deadline",
+                        "receivedAt",
+                        "termStartsAt",
+                        "receivedOutsideWorkingHours",
+                        "wooPublicationUrl"
+                    ],
+                    "actions": [
+                        "askAboutCase"
+                    ]
+                },
+                "fieldConfigs": {
+                    "assignedGroupPublicName": {
+                        "label": "Behandeld door"
+                    },
+                    "statusPublicDescription": {
+                        "label": "Toelichting op de status"
+                    },
+                    "resultPublicDescription": {
+                        "label": "Toelichting op de uitkomst"
+                    },
+                    "endDate": {
+                        "label": "Einddatum"
+                    },
+                    "receivedAt": {
+                        "label": "Ontvangen op"
+                    },
+                    "wooPublicationUrl": {
+                        "label": "Gepubliceerd besluit"
+                    }
+                },
+                "timeline": {
+                    "label": "Wat er is gebeurd",
+                    "provider": "caseTimeline"
+                },
+                "documents": {
+                    "label": "Documenten",
+                    "provider": "caseDocuments"
+                },
+                "messages": {
+                    "label": "Berichten",
+                    "provider": "caseMessages"
+                },
+                "steps": {
+                    "label": "Waar staat uw aanvraag?",
+                    "provider": "caseSteps"
+                },
+                "turnField": "portalTurn",
+                "dueField": "deadline",
+                "valueLabels": {
+                    "portalTurn": {
+                        "applicant": "Wacht op u",
+                        "thirdParty": "In behandeling",
+                        "us": "In behandeling"
+                    }
+                },
+                "kind": "cases",
+                "closedField": "isFinalStatus",
+                "rowActions": [
+                    "proposeCaseChange"
+                ],
+                "branchField": "portalBranch",
+                "mandateField": "portalParty",
+                "referenceField": "identifier",
+                "statusLabelField": "statusPublicLabel",
+                "caseTypeField": "caseType",
+                "caseTypeSource": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "labelField": "title"
+                }
+            }
+        ],
+        "actions": [
+            {
+                "id": "replyToSupplierMessage",
+                "type": "create",
+                "label": "Antwoorden",
+                "register": "dossiq",
+                "schema": "supplierMessage",
+                "scopeField": "supplierRef",
+                "fields": [
+                    "subject",
+                    "body",
+                    "attachmentRefs"
+                ],
+                "defaults": {
+                    "direction": "inbound"
+                },
+                "requiredFields": [
+                    "body"
+                ],
+                "fieldConfigs": {
+                    "subject": {
+                        "label": "Onderwerp"
+                    },
+                    "body": {
+                        "label": "Uw bericht",
+                        "size": "large"
+                    },
+                    "attachmentRefs": {
+                        "label": "Bijlagen",
+                        "type": "file",
+                        "multiple": true,
+                        "accept": [
+                            ".pdf",
+                            ".jpg",
+                            ".jpeg",
+                            ".png",
+                            ".doc",
+                            ".docx",
+                            ".odt"
+                        ],
+                        "maxSizeMb": 20
+                    }
+                }
+            }
+        ],
+        "notifications": [
+            "tenderPublished",
+            "contractExpiring",
+            "invoiceDue"
+        ],
+        "pages": [
+            {
+                "id": "tenders",
+                "label": "Aanbestedingen",
+                "group": "Opdrachten en facturen",
+                "blocks": [
+                    {
+                        "type": "collection",
+                        "collection": "tenders"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "tenders"
+                    }
+                ]
+            },
+            {
+                "id": "contracts",
+                "label": "Contracten",
+                "group": "Opdrachten en facturen",
+                "blocks": [
+                    {
+                        "type": "collection",
+                        "collection": "contracts"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "contracts"
+                    }
+                ]
+            },
+            {
+                "id": "invoices",
+                "label": "Facturen",
+                "group": "Opdrachten en facturen",
+                "blocks": [
+                    {
+                        "type": "collection",
+                        "collection": "invoices"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "invoices"
+                    }
+                ]
+            },
+            {
+                "id": "performance",
+                "label": "Prestaties",
+                "group": "Opdrachten en facturen",
+                "blocks": [
+                    {
+                        "type": "collection",
+                        "collection": "performance"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "performance"
+                    }
+                ]
+            },
+            {
+                "id": "messages",
+                "label": "Berichten",
+                "group": "Opdrachten en facturen",
+                "blocks": [
+                    {
+                        "type": "action",
+                        "action": "replyToSupplierMessage"
+                    },
+                    {
+                        "type": "collection",
+                        "collection": "messages"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "messages"
+                    }
+                ]
+            },
+            {
+                "id": "mijnZaken",
+                "label": "Mijn zaken",
+                "group": "Opdrachten en facturen",
+                "blocks": [
+                    {
+                        "type": "collection",
+                        "collection": "mijnZaken"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "mijnZaken"
+                    }
+                ]
+            }
+        ]
+    },
+    "citizen": {
+        "label": "Mijn zaken en verzoeken",
+        "collections": [
+            {
+                "id": "mijnZaken",
+                "register": "dossiq",
+                "schema": "case",
+                "scopeField": "portalSubject",
+                "label": "Mijn zaken",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "identifier",
+                    "title",
+                    "caseType",
+                    "status",
+                    "statusPublicLabel",
+                    "statusPublicDescription",
+                    "resultPublicLabel",
+                    "resultPublicDescription",
+                    "startDate",
+                    "endDate",
+                    "deadline",
+                    "portalTurn",
+                    "waitingOnApplicant",
+                    "waitingOn",
+                    "assignedGroupPublicName",
+                    "isFinalStatus",
+                    "receivedAt",
+                    "termStartsAt",
+                    "receivedOutsideWorkingHours",
+                    "wooPublicationUrl",
+                    "termNote",
+                    "legalDecisionDate",
+                    "resultLink",
+                    "portalBranch",
+                    "portalParty"
+                ],
+                "columns": [
+                    {
+                        "field": "identifier",
+                        "label": "Zaaknummer",
+                        "render": "text"
+                    },
+                    {
+                        "field": "title",
+                        "label": "Onderwerp",
+                        "render": "text"
+                    },
+                    {
+                        "field": "statusPublicLabel",
+                        "label": "Status",
+                        "render": "badge"
+                    },
+                    {
+                        "field": "resultPublicLabel",
+                        "label": "Uitkomst",
+                        "render": "text"
+                    },
+                    {
+                        "field": "startDate",
+                        "label": "Gestart op",
+                        "render": "date"
+                    },
+                    {
+                        "field": "deadline",
+                        "label": "Uiterlijk klaar op",
+                        "render": "date"
+                    },
+                    {
+                        "field": "termStartsAt",
+                        "label": "Termijn loopt vanaf",
+                        "render": "date"
+                    },
+                    {
+                        "field": "receivedOutsideWorkingHours",
+                        "label": "Ontvangen buiten kantoortijd",
+                        "render": "boolean"
+                    }
+                ],
+                "detail": {
+                    "layout": "card",
+                    "fields": [
+                        "identifier",
+                        "assignedGroupPublicName",
+                        "title",
+                        "statusPublicLabel",
+                        "statusPublicDescription",
+                        "resultPublicLabel",
+                        "resultPublicDescription",
+                        "startDate",
+                        "endDate",
+                        "deadline",
+                        "receivedAt",
+                        "termStartsAt",
+                        "receivedOutsideWorkingHours",
+                        "wooPublicationUrl"
+                    ],
+                    "actions": [
+                        "askAboutCase"
+                    ]
+                },
+                "fieldConfigs": {
+                    "assignedGroupPublicName": {
+                        "label": "Behandeld door"
+                    },
+                    "statusPublicDescription": {
+                        "label": "Toelichting op de status"
+                    },
+                    "resultPublicDescription": {
+                        "label": "Toelichting op de uitkomst"
+                    },
+                    "endDate": {
+                        "label": "Einddatum"
+                    },
+                    "receivedAt": {
+                        "label": "Ontvangen op"
+                    },
+                    "wooPublicationUrl": {
+                        "label": "Gepubliceerd besluit"
+                    }
+                },
+                "timeline": {
+                    "label": "Wat er is gebeurd",
+                    "provider": "caseTimeline"
+                },
+                "documents": {
+                    "label": "Documenten",
+                    "provider": "caseDocuments"
+                },
+                "messages": {
+                    "label": "Berichten",
+                    "provider": "caseMessages"
+                },
+                "steps": {
+                    "label": "Waar staat uw aanvraag?",
+                    "provider": "caseSteps"
+                },
+                "turnField": "portalTurn",
+                "dueField": "deadline",
+                "valueLabels": {
+                    "portalTurn": {
+                        "applicant": "Wacht op u",
+                        "thirdParty": "In behandeling",
+                        "us": "In behandeling"
+                    }
+                },
+                "kind": "cases",
+                "closedField": "isFinalStatus",
+                "rowActions": [
+                    "proposeCaseChange"
+                ],
+                "branchField": "portalBranch",
+                "mandateField": "portalParty",
+                "referenceField": "identifier",
+                "statusLabelField": "statusPublicLabel",
+                "caseTypeField": "caseType",
+                "caseTypeSource": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "labelField": "title"
+                }
+            },
+            {
+                "id": "vragenAanU",
+                "register": "dossiq",
+                "schema": "aanvullingsverzoek",
+                "scopeField": "portalSubject",
+                "label": "Wat wij nog van u nodig hebben",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "case",
+                    "summary",
+                    "missingItems",
+                    "hersteltermijn",
+                    "state",
+                    "requestedAt"
+                ],
+                "defaultFilters": {
+                    "state": "open"
+                },
+                "rowActions": [
+                    "beantwoordVraag"
+                ],
+                "columns": [
+                    {
+                        "field": "summary",
+                        "label": "Wat wij nodig hebben",
+                        "render": "text"
+                    },
+                    {
+                        "field": "hersteltermijn",
+                        "label": "Graag voor",
+                        "render": "date"
+                    },
+                    {
+                        "field": "requestedAt",
+                        "label": "Gevraagd op",
+                        "render": "date"
+                    }
+                ]
+            },
+            {
+                "id": "berichten",
+                "kind": "inbox",
+                "messageBox": {
+                    "recipientProvider": "messageBoxRecipient"
+                },
+                "register": "dossiq",
+                "schema": "portaalBericht",
+                "scopeField": "recipientRef",
+                "label": "Berichten",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "caseReference",
+                    "senderType",
+                    "senderName",
+                    "subject",
+                    "content",
+                    "attachments",
+                    "direction",
+                    "sentAt",
+                    "readByRecipientAt",
+                    "caseId"
+                ],
+                "messageFields": {
+                    "body": "content",
+                    "receivedAt": "sentAt",
+                    "readAt": "readByRecipientAt",
+                    "attachments": "attachments"
+                },
+                "filesDownload": true,
+                "reply": {
+                    "action": "replyToMessage",
+                    "carry": {
+                        "caseId": "caseId"
+                    },
+                    "subjectFrom": "subject"
+                }
+            },
+            {
+                "id": "verzoeken",
+                "register": "dossiq",
+                "schema": "portaalVerzoek",
+                "scopeField": "submitterRef",
+                "label": "Mijn verzoeken",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "kind",
+                    "category",
+                    "subject",
+                    "rationale",
+                    "reference",
+                    "status",
+                    "submittedAt",
+                    "deadline",
+                    "withinTerm"
+                ]
+            },
+            {
+                "id": "mijnVergunningen",
+                "register": "dossiq",
+                "schema": "permit",
+                "scopeField": "portalSubject",
+                "label": "Vergunningen",
+                "listable": true,
+                "minTrust": "low",
+                "kind": "products",
+                "theme": "parkeren",
+                "fields": [
+                    "title",
+                    "kind",
+                    "theme",
+                    "validFrom",
+                    "validUntil",
+                    "status",
+                    "kenteken",
+                    "adres"
+                ],
+                "titleField": "title",
+                "validFromField": "validFrom",
+                "validUntilField": "validUntil",
+                "metaFields": [
+                    "kenteken",
+                    "adres",
+                    "validFrom"
+                ],
+                "fieldConfigs": {
+                    "kenteken": {
+                        "label": "Kenteken"
+                    },
+                    "adres": {
+                        "label": "Adres"
+                    },
+                    "validFrom": {
+                        "label": "Ingegaan op"
+                    },
+                    "validUntil": {
+                        "label": "Geldig tot en met"
+                    }
+                },
+                "countLabel": {
+                    "singular": "vergunning",
+                    "plural": "vergunningen"
+                },
+                "defaultFilters": {
+                    "status": "active"
+                },
+                "rowActions": [
+                    "changePermitPlate"
+                ]
+            }
+        ],
+        "actions": [
+            {
+                "id": "replyToMessage",
+                "type": "create",
+                "recordField": "caseId",
+                "label": "Antwoorden",
+                "register": "dossiq",
+                "schema": "portaalBericht",
+                "scopeField": "senderRef",
+                "minTrust": "low",
+                "fields": [
+                    "subject",
+                    "content",
+                    "attachments",
+                    "caseId"
+                ],
+                "defaults": {
+                    "direction": "citizen_to_handler",
+                    "senderType": "burger"
+                },
+                "requiredFields": [
+                    "content"
+                ],
+                "fieldConfigs": {
+                    "subject": {
+                        "label": "Onderwerp"
+                    },
+                    "content": {
+                        "label": "Uw bericht",
+                        "size": "large"
+                    },
+                    "attachments": {
+                        "label": "Bijlagen",
+                        "type": "file",
+                        "multiple": true,
+                        "accept": [
+                            ".pdf",
+                            ".jpg",
+                            ".jpeg",
+                            ".png",
+                            ".doc",
+                            ".docx",
+                            ".odt"
+                        ],
+                        "maxSizeMb": 20
+                    },
+                    "caseId": {
+                        "label": "Over welke zaak gaat uw bericht?"
+                    }
+                },
+                "optionsProviders": {
+                    "caseId": {
+                        "type": "collection",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "labelField": "title",
+                        "valueField": "id"
+                    }
+                },
+                "crossRefs": {
+                    "caseId": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "scopeField": "portalSubject",
+                        "required": true
+                    }
+                }
+            },
+            {
+                "id": "askAboutCase",
+                "type": "create",
+                "recordField": "caseId",
+                "label": "Stel een vraag over deze zaak",
+                "register": "dossiq",
+                "schema": "portaalBericht",
+                "scopeField": "senderRef",
+                "minTrust": "low",
+                "fields": [
+                    "subject",
+                    "content",
+                    "attachments",
+                    "caseId"
+                ],
+                "defaults": {
+                    "direction": "citizen_to_handler",
+                    "senderType": "burger"
+                },
+                "requiredFields": [
+                    "content"
+                ],
+                "fieldConfigs": {
+                    "caseId": {
+                        "visible": false
+                    },
+                    "subject": {
+                        "label": "Onderwerp"
+                    },
+                    "content": {
+                        "label": "Wat wilt u weten?",
+                        "size": "large"
+                    },
+                    "attachments": {
+                        "label": "Bijlagen",
+                        "type": "file",
+                        "multiple": true,
+                        "accept": [
+                            ".pdf",
+                            ".jpg",
+                            ".jpeg",
+                            ".png",
+                            ".doc",
+                            ".docx",
+                            ".odt"
+                        ],
+                        "maxSizeMb": 20
+                    }
+                },
+                "crossRefs": {
+                    "caseId": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "scopeField": "portalSubject",
+                        "required": true
+                    }
+                }
+            },
+            {
+                "id": "amendCase",
+                "type": "update",
+                "label": "Uw zaak aanpassen",
+                "register": "dossiq",
+                "schema": "case",
+                "scopeField": "portalSubject",
+                "minTrust": "low",
+                "fields": [
+                    "description"
+                ],
+                "citizenWrite": {
+                    "typeField": "caseType",
+                    "typeRegister": "dossiq",
+                    "typeSchema": "caseType"
+                }
+            },
+            {
+                "id": "proposeCaseChange",
+                "type": "propose-change",
+                "label": "Wijziging voorstellen",
+                "register": "dossiq",
+                "schema": "case",
+                "scopeField": "portalSubject",
+                "minTrust": "low",
+                "proposable": [
+                    "title",
+                    "description"
+                ]
+            },
+            {
+                "id": "startWooVerzoek",
+                "label": "Start een Woo-verzoek",
+                "endpoint": "/index.php/apps/dossiq/api/portal/woo-verzoek",
+                "method": "POST",
+                "attachTo": {
+                    "app": "opencatalogi",
+                    "schema": "collection"
+                },
+                "rowField": "collectionId",
+                "minTrust": "low",
+                "fields": [
+                    "collectionId",
+                    "onderwerp",
+                    "omschrijving",
+                    "periodeVan",
+                    "periodeTot",
+                    "documentSoorten",
+                    "toelichting",
+                    "verzoekerNaam",
+                    "verzoekerEmail",
+                    "verzoekerType"
+                ],
+                "requiredFields": [
+                    "onderwerp"
+                ],
+                "fieldConfigs": {
+                    "collectionId": {
+                        "visible": false
+                    },
+                    "onderwerp": {
+                        "label": "Waar gaat uw verzoek over?"
+                    },
+                    "omschrijving": {
+                        "label": "Welke informatie wilt u hebben?",
+                        "size": "large"
+                    },
+                    "periodeVan": {
+                        "label": "Vanaf welke datum zoekt u informatie?",
+                        "input": "date"
+                    },
+                    "periodeTot": {
+                        "label": "Tot en met welke datum?",
+                        "input": "date"
+                    },
+                    "documentSoorten": {
+                        "label": "Welke documenten zoekt u?",
+                        "widget": "choices"
+                    },
+                    "toelichting": {
+                        "label": "Wilt u nog iets toelichten?",
+                        "size": "large"
+                    },
+                    "verzoekerNaam": {
+                        "label": "Uw naam",
+                        "prefill": "name"
+                    },
+                    "verzoekerEmail": {
+                        "label": "Uw e-mailadres",
+                        "prefill": "email"
+                    },
+                    "verzoekerType": {
+                        "label": "U vraagt dit als",
+                        "widget": "choices"
+                    }
+                },
+                "optionsProviders": {
+                    "documentSoorten": {
+                        "type": "static",
+                        "options": [
+                            {
+                                "value": "besluiten",
+                                "label": "Besluiten en vergunningen"
+                            },
+                            {
+                                "value": "rapporten",
+                                "label": "Rapporten en adviezen"
+                            },
+                            {
+                                "value": "correspondentie",
+                                "label": "E-mails en brieven"
+                            },
+                            {
+                                "value": "alles",
+                                "label": "Alles wat de gemeente hierover heeft"
+                            }
+                        ]
+                    },
+                    "verzoekerType": {
+                        "type": "static",
+                        "options": [
+                            {
+                                "value": "burger",
+                                "label": "Inwoner"
+                            },
+                            {
+                                "value": "journalist",
+                                "label": "Journalist"
+                            },
+                            {
+                                "value": "organisatie",
+                                "label": "Organisatie"
+                            }
+                        ]
+                    }
+                },
+                "steps": [
+                    {
+                        "id": "vraag",
+                        "title": "Uw verzoek",
+                        "description": "Vertel ons welke informatie u zoekt. Hoe preciezer uw vraag, hoe sneller u antwoord krijgt.",
+                        "fields": [
+                            "collectionId",
+                            "onderwerp",
+                            "omschrijving",
+                            "periodeVan",
+                            "periodeTot",
+                            "documentSoorten",
+                            "toelichting"
+                        ]
+                    },
+                    {
+                        "id": "gegevens",
+                        "title": "Uw gegevens",
+                        "description": "Wij gebruiken deze gegevens alleen voor uw verzoek.",
+                        "fields": [
+                            "verzoekerNaam",
+                            "verzoekerEmail",
+                            "verzoekerType"
+                        ]
+                    },
+                    {
+                        "id": "controleren",
+                        "title": "Controleren en versturen",
+                        "review": true
+                    }
+                ],
+                "draft": {
+                    "retentionDays": 30
+                },
+                "confirmation": {
+                    "title": "Wij hebben uw Woo-verzoek ontvangen",
+                    "body": "Uw zaaknummer is {identifier}. Wij tellen de termijn vanaf {termStartsDay}. U krijgt uiterlijk op {deadlineDay} antwoord.",
+                    "next": "U vindt uw verzoek onder Zaken. U krijgt ook een ontvangstbevestiging in uw berichten."
+                },
+                "submitLabel": "Verzoek versturen",
+                "successMessage": "Uw Woo-verzoek is ontvangen. U vindt het onder Mijn zaken."
+            },
+            {
+                "id": "startWooVerzoekAlgemeen",
+                "label": "Informatie opvragen (Woo-verzoek)",
+                "summary": "Vraag documenten van de gemeente op. Dit kan dankzij de Wet open overheid (Woo).",
+                "audiences": [
+                    "citizen",
+                    "client"
+                ],
+                "endpoint": "/index.php/apps/dossiq/api/portal/woo-verzoek",
+                "method": "POST",
+                "minTrust": "low",
+                "fields": [
+                    "onderwerp",
+                    "omschrijving",
+                    "periodeVan",
+                    "periodeTot",
+                    "documentSoorten",
+                    "toelichting",
+                    "verzoekerNaam",
+                    "verzoekerEmail",
+                    "verzoekerType"
+                ],
+                "requiredFields": [
+                    "onderwerp"
+                ],
+                "fieldConfigs": {
+                    "onderwerp": {
+                        "label": "Waar gaat uw verzoek over?"
+                    },
+                    "omschrijving": {
+                        "label": "Welke informatie wilt u hebben?",
+                        "size": "large"
+                    },
+                    "periodeVan": {
+                        "label": "Vanaf welke datum zoekt u informatie?",
+                        "input": "date"
+                    },
+                    "periodeTot": {
+                        "label": "Tot en met welke datum?",
+                        "input": "date"
+                    },
+                    "documentSoorten": {
+                        "label": "Welke documenten zoekt u?",
+                        "widget": "choices"
+                    },
+                    "toelichting": {
+                        "label": "Wilt u nog iets toelichten?",
+                        "size": "large"
+                    },
+                    "verzoekerNaam": {
+                        "label": "Uw naam",
+                        "prefill": "name"
+                    },
+                    "verzoekerEmail": {
+                        "label": "Uw e-mailadres",
+                        "prefill": "email"
+                    },
+                    "verzoekerType": {
+                        "label": "U vraagt dit als",
+                        "widget": "choices"
+                    }
+                },
+                "optionsProviders": {
+                    "documentSoorten": {
+                        "type": "static",
+                        "options": [
+                            {
+                                "value": "besluiten",
+                                "label": "Besluiten en vergunningen"
+                            },
+                            {
+                                "value": "rapporten",
+                                "label": "Rapporten en adviezen"
+                            },
+                            {
+                                "value": "correspondentie",
+                                "label": "E-mails en brieven"
+                            },
+                            {
+                                "value": "alles",
+                                "label": "Alles wat de gemeente hierover heeft"
+                            }
+                        ]
+                    },
+                    "verzoekerType": {
+                        "type": "static",
+                        "options": [
+                            {
+                                "value": "burger",
+                                "label": "Inwoner"
+                            },
+                            {
+                                "value": "journalist",
+                                "label": "Journalist"
+                            },
+                            {
+                                "value": "organisatie",
+                                "label": "Organisatie"
+                            }
+                        ]
+                    }
+                },
+                "steps": [
+                    {
+                        "id": "vraag",
+                        "title": "Uw verzoek",
+                        "description": "Vertel ons welke informatie u zoekt. Hoe preciezer uw vraag, hoe sneller u antwoord krijgt.",
+                        "fields": [
+                            "onderwerp",
+                            "omschrijving",
+                            "periodeVan",
+                            "periodeTot",
+                            "documentSoorten",
+                            "toelichting"
+                        ]
+                    },
+                    {
+                        "id": "gegevens",
+                        "title": "Uw gegevens",
+                        "description": "Wij gebruiken deze gegevens alleen voor uw verzoek.",
+                        "fields": [
+                            "verzoekerNaam",
+                            "verzoekerEmail",
+                            "verzoekerType"
+                        ]
+                    },
+                    {
+                        "id": "controleren",
+                        "title": "Controleren en versturen",
+                        "review": true
+                    }
+                ],
+                "draft": {
+                    "retentionDays": 30
+                },
+                "confirmation": {
+                    "title": "Wij hebben uw Woo-verzoek ontvangen",
+                    "body": "Uw zaaknummer is {identifier}. Wij tellen de termijn vanaf {termStartsDay}. U krijgt uiterlijk op {deadlineDay} antwoord.",
+                    "next": "U vindt uw verzoek onder Zaken. U krijgt ook een ontvangstbevestiging in uw berichten."
+                },
+                "submitLabel": "Verzoek versturen",
+                "successMessage": "Uw Woo-verzoek is ontvangen. U vindt het onder Mijn zaken."
+            },
+            {
+                "id": "changePermitPlate",
+                "label": "Kenteken wijzigen",
+                "summary": "Rijdt u in een andere auto? Zet het nieuwe kenteken op uw vergunning.",
+                "endpoint": "/index.php/apps/dossiq/api/portal/vergunning/kenteken",
+                "method": "POST",
+                "rowField": "permitId",
+                "theme": "parkeren",
+                "when": {
+                    "field": "kind",
+                    "op": "eq",
+                    "value": "parkeren-bewoner"
+                },
+                "minTrust": "low",
+                "fields": [
+                    "permitId",
+                    "nieuwKenteken"
+                ],
+                "requiredFields": [
+                    "nieuwKenteken"
+                ],
+                "fieldConfigs": {
+                    "permitId": {
+                        "visible": false
+                    },
+                    "nieuwKenteken": {
+                        "label": "Nieuw kenteken",
+                        "placeholder": "GZ-482-K"
+                    }
+                },
+                "submitLabel": "Kenteken doorgeven",
+                "successMessage": "Wij hebben uw nieuwe kenteken ontvangen. U vindt de aanvraag onder Mijn zaken."
+            },
+            {
+                "id": "beantwoordVraag",
+                "label": "Beantwoorden",
+                "audiences": [
+                    "citizen",
+                    "client"
+                ],
+                "endpoint": "/index.php/apps/dossiq/api/portal/vragen/antwoord",
+                "method": "POST",
+                "rowField": "requestId",
+                "rowWhen": {
+                    "field": "state",
+                    "in": [
+                        "open"
+                    ]
+                },
+                "minTrust": "low",
+                "fields": [
+                    "antwoord"
+                ],
+                "requiredFields": [
+                    "antwoord"
+                ],
+                "files": {
+                    "field": "bijlagen",
+                    "max": 5,
+                    "maxBytes": 10485760
+                },
+                "fieldConfigs": {
+                    "antwoord": {
+                        "label": "Uw antwoord",
+                        "size": "large",
+                        "maxLength": 4000
+                    }
+                },
+                "submitLabel": "Antwoord versturen",
+                "successMessage": "Wij hebben uw antwoord ontvangen. U hoort van ons of wij nog iets nodig hebben."
+            }
+        ],
+        "pages": [
+            {
+                "id": "overzicht",
+                "label": "Overzicht",
+                "group": "Mijn zaken en verzoeken",
+                "home": true,
+                "menu": false,
+                "blocks": [
+                    {
+                        "type": "greeting",
+                        "showDate": false
+                    },
+                    {
+                        "type": "tasks",
+                        "collection": "vragenAanU",
+                        "dueField": "hersteltermijn",
+                        "titleFields": [
+                            "summary"
+                        ],
+                        "label": "Wat u nog moet doen",
+                        "display": "highlight",
+                        "tone": "warning",
+                        "dueInLine": true,
+                        "buttonLabel": "Document toevoegen"
+                    },
+                    {
+                        "type": "cta",
+                        "page": "startWooVerzoekAlgemeen",
+                        "label": "Informatie opvragen (Woo-verzoek)"
+                    },
+                    {
+                        "type": "cases",
+                        "collection": "mijnZaken",
+                        "open": true,
+                        "limit": 5,
+                        "label": "Lopende zaken",
+                        "display": "compact",
+                        "showAll": true,
+                        "yourTurn": [
+                            "applicant"
+                        ]
+                    },
+                    {
+                        "type": "inbox",
+                        "collection": "berichten",
+                        "limit": 3,
+                        "label": "Nieuwe berichten",
+                        "display": "list"
+                    }
+                ]
+            },
+            {
+                "id": "mijnZaken",
+                "label": "Uw zaak",
+                "group": "Mijn zaken en verzoeken",
+                "menu": false,
+                "record": {
+                    "collection": "mijnZaken",
+                    "titleFields": [
+                        "title"
+                    ],
+                    "heading": "record",
+                    "under": "cases"
+                },
+                "blocks": [
+                    {
+                        "type": "tasks",
+                        "collection": "vragenAanU",
+                        "recordField": "case",
+                        "dueField": "hersteltermijn",
+                        "titleFields": [
+                            "summary"
+                        ]
+                    },
+                    {
+                        "type": "steps",
+                        "collection": "mijnZaken"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "mijnZaken",
+                        "label": "Gegevens",
+                        "timeline": false
+                    },
+                    {
+                        "type": "documents",
+                        "collection": "mijnZaken",
+                        "label": "Stukken",
+                        "upload": true
+                    },
+                    {
+                        "type": "timeline",
+                        "collection": "mijnZaken"
+                    },
+                    {
+                        "type": "cta",
+                        "action": "replyToMessage",
+                        "label": "Bericht sturen",
+                        "withRecord": true
+                    },
+                    {
+                        "type": "citizenCase",
+                        "collection": "mijnZaken",
+                        "display": "actions"
+                    }
+                ]
+            },
+            {
+                "id": "berichten",
+                "label": "Berichten",
+                "group": "Mijn zaken en verzoeken",
+                "menu": false,
+                "blocks": [
+                    {
+                        "type": "action",
+                        "action": "replyToMessage"
+                    },
+                    {
+                        "type": "collection",
+                        "collection": "berichten"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "berichten"
+                    }
+                ]
+            },
+            {
+                "id": "verzoeken",
+                "label": "Mijn verzoeken",
+                "group": "Mijn zaken en verzoeken",
+                "menu": false,
+                "blocks": [
+                    {
+                        "type": "collection",
+                        "collection": "verzoeken"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "verzoeken"
+                    }
+                ]
+            },
+            {
+                "id": "startWooVerzoekAlgemeen",
+                "label": "Informatie opvragen (Woo-verzoek)",
+                "group": "Mijn zaken en verzoeken",
+                "menu": false,
+                "blocks": [
+                    {
+                        "type": "action",
+                        "action": "startWooVerzoekAlgemeen"
+                    }
+                ]
+            }
+        ],
+        "notifications": [
+            "dossiq.wooRequest.published"
+        ]
+    },
+    "client": {
+        "label": "Mijn zaken en verzoeken",
+        "collections": [
+            {
+                "id": "mijnZaken",
+                "register": "dossiq",
+                "schema": "case",
+                "scopeField": "portalSubject",
+                "label": "Mijn zaken",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "identifier",
+                    "title",
+                    "caseType",
+                    "status",
+                    "statusPublicLabel",
+                    "statusPublicDescription",
+                    "resultPublicLabel",
+                    "resultPublicDescription",
+                    "startDate",
+                    "endDate",
+                    "deadline",
+                    "portalTurn",
+                    "waitingOnApplicant",
+                    "waitingOn",
+                    "assignedGroupPublicName",
+                    "isFinalStatus",
+                    "receivedAt",
+                    "termStartsAt",
+                    "receivedOutsideWorkingHours",
+                    "wooPublicationUrl",
+                    "termNote",
+                    "legalDecisionDate",
+                    "resultLink",
+                    "portalBranch",
+                    "portalParty"
+                ],
+                "columns": [
+                    {
+                        "field": "identifier",
+                        "label": "Zaaknummer",
+                        "render": "text"
+                    },
+                    {
+                        "field": "title",
+                        "label": "Onderwerp",
+                        "render": "text"
+                    },
+                    {
+                        "field": "statusPublicLabel",
+                        "label": "Status",
+                        "render": "badge"
+                    },
+                    {
+                        "field": "resultPublicLabel",
+                        "label": "Uitkomst",
+                        "render": "text"
+                    },
+                    {
+                        "field": "startDate",
+                        "label": "Gestart op",
+                        "render": "date"
+                    },
+                    {
+                        "field": "deadline",
+                        "label": "Uiterlijk klaar op",
+                        "render": "date"
+                    },
+                    {
+                        "field": "termStartsAt",
+                        "label": "Termijn loopt vanaf",
+                        "render": "date"
+                    },
+                    {
+                        "field": "receivedOutsideWorkingHours",
+                        "label": "Ontvangen buiten kantoortijd",
+                        "render": "boolean"
+                    }
+                ],
+                "detail": {
+                    "layout": "card",
+                    "fields": [
+                        "identifier",
+                        "assignedGroupPublicName",
+                        "title",
+                        "statusPublicLabel",
+                        "statusPublicDescription",
+                        "resultPublicLabel",
+                        "resultPublicDescription",
+                        "startDate",
+                        "endDate",
+                        "deadline",
+                        "receivedAt",
+                        "termStartsAt",
+                        "receivedOutsideWorkingHours",
+                        "wooPublicationUrl"
+                    ],
+                    "actions": [
+                        "askAboutCase"
+                    ]
+                },
+                "fieldConfigs": {
+                    "assignedGroupPublicName": {
+                        "label": "Behandeld door"
+                    },
+                    "statusPublicDescription": {
+                        "label": "Toelichting op de status"
+                    },
+                    "resultPublicDescription": {
+                        "label": "Toelichting op de uitkomst"
+                    },
+                    "endDate": {
+                        "label": "Einddatum"
+                    },
+                    "receivedAt": {
+                        "label": "Ontvangen op"
+                    },
+                    "wooPublicationUrl": {
+                        "label": "Gepubliceerd besluit"
+                    }
+                },
+                "timeline": {
+                    "label": "Wat er is gebeurd",
+                    "provider": "caseTimeline"
+                },
+                "documents": {
+                    "label": "Documenten",
+                    "provider": "caseDocuments"
+                },
+                "messages": {
+                    "label": "Berichten",
+                    "provider": "caseMessages"
+                },
+                "steps": {
+                    "label": "Waar staat uw aanvraag?",
+                    "provider": "caseSteps"
+                },
+                "turnField": "portalTurn",
+                "dueField": "deadline",
+                "valueLabels": {
+                    "portalTurn": {
+                        "applicant": "Wacht op u",
+                        "thirdParty": "In behandeling",
+                        "us": "In behandeling"
+                    }
+                },
+                "kind": "cases",
+                "closedField": "isFinalStatus",
+                "rowActions": [
+                    "proposeCaseChange"
+                ],
+                "branchField": "portalBranch",
+                "mandateField": "portalParty",
+                "referenceField": "identifier",
+                "statusLabelField": "statusPublicLabel",
+                "caseTypeField": "caseType",
+                "caseTypeSource": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "labelField": "title"
+                }
+            },
+            {
+                "id": "vragenAanU",
+                "register": "dossiq",
+                "schema": "aanvullingsverzoek",
+                "scopeField": "portalSubject",
+                "label": "Wat wij nog van u nodig hebben",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "case",
+                    "summary",
+                    "missingItems",
+                    "hersteltermijn",
+                    "state",
+                    "requestedAt"
+                ],
+                "defaultFilters": {
+                    "state": "open"
+                },
+                "rowActions": [
+                    "beantwoordVraag"
+                ],
+                "columns": [
+                    {
+                        "field": "summary",
+                        "label": "Wat wij nodig hebben",
+                        "render": "text"
+                    },
+                    {
+                        "field": "hersteltermijn",
+                        "label": "Graag voor",
+                        "render": "date"
+                    },
+                    {
+                        "field": "requestedAt",
+                        "label": "Gevraagd op",
+                        "render": "date"
+                    }
+                ]
+            },
+            {
+                "id": "berichten",
+                "kind": "inbox",
+                "messageBox": {
+                    "recipientProvider": "messageBoxRecipient"
+                },
+                "register": "dossiq",
+                "schema": "portaalBericht",
+                "scopeField": "recipientRef",
+                "label": "Berichten",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "caseReference",
+                    "senderType",
+                    "senderName",
+                    "subject",
+                    "content",
+                    "attachments",
+                    "direction",
+                    "sentAt",
+                    "readByRecipientAt",
+                    "caseId"
+                ],
+                "messageFields": {
+                    "body": "content",
+                    "receivedAt": "sentAt",
+                    "readAt": "readByRecipientAt",
+                    "attachments": "attachments"
+                },
+                "filesDownload": true,
+                "reply": {
+                    "action": "replyToMessage",
+                    "carry": {
+                        "caseId": "caseId"
+                    },
+                    "subjectFrom": "subject"
+                }
+            },
+            {
+                "id": "verzoeken",
+                "register": "dossiq",
+                "schema": "portaalVerzoek",
+                "scopeField": "submitterRef",
+                "label": "Mijn verzoeken",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "kind",
+                    "category",
+                    "subject",
+                    "rationale",
+                    "reference",
+                    "status",
+                    "submittedAt",
+                    "deadline",
+                    "withinTerm"
+                ]
+            },
+            {
+                "id": "mijnVergunningen",
+                "register": "dossiq",
+                "schema": "permit",
+                "scopeField": "portalSubject",
+                "label": "Vergunningen",
+                "listable": true,
+                "minTrust": "low",
+                "kind": "products",
+                "theme": "parkeren",
+                "fields": [
+                    "title",
+                    "kind",
+                    "theme",
+                    "validFrom",
+                    "validUntil",
+                    "status",
+                    "kenteken",
+                    "adres"
+                ],
+                "titleField": "title",
+                "validFromField": "validFrom",
+                "validUntilField": "validUntil",
+                "metaFields": [
+                    "kenteken",
+                    "adres",
+                    "validFrom"
+                ],
+                "fieldConfigs": {
+                    "kenteken": {
+                        "label": "Kenteken"
+                    },
+                    "adres": {
+                        "label": "Adres"
+                    },
+                    "validFrom": {
+                        "label": "Ingegaan op"
+                    },
+                    "validUntil": {
+                        "label": "Geldig tot en met"
+                    }
+                },
+                "countLabel": {
+                    "singular": "vergunning",
+                    "plural": "vergunningen"
+                },
+                "defaultFilters": {
+                    "status": "active"
+                },
+                "rowActions": [
+                    "changePermitPlate"
+                ]
+            }
+        ],
+        "actions": [
+            {
+                "id": "replyToMessage",
+                "type": "create",
+                "recordField": "caseId",
+                "label": "Antwoorden",
+                "register": "dossiq",
+                "schema": "portaalBericht",
+                "scopeField": "senderRef",
+                "minTrust": "low",
+                "fields": [
+                    "subject",
+                    "content",
+                    "attachments",
+                    "caseId"
+                ],
+                "defaults": {
+                    "direction": "citizen_to_handler",
+                    "senderType": "burger"
+                },
+                "requiredFields": [
+                    "content"
+                ],
+                "fieldConfigs": {
+                    "subject": {
+                        "label": "Onderwerp"
+                    },
+                    "content": {
+                        "label": "Uw bericht",
+                        "size": "large"
+                    },
+                    "attachments": {
+                        "label": "Bijlagen",
+                        "type": "file",
+                        "multiple": true,
+                        "accept": [
+                            ".pdf",
+                            ".jpg",
+                            ".jpeg",
+                            ".png",
+                            ".doc",
+                            ".docx",
+                            ".odt"
+                        ],
+                        "maxSizeMb": 20
+                    },
+                    "caseId": {
+                        "label": "Over welke zaak gaat uw bericht?"
+                    }
+                },
+                "optionsProviders": {
+                    "caseId": {
+                        "type": "collection",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "labelField": "title",
+                        "valueField": "id"
+                    }
+                },
+                "crossRefs": {
+                    "caseId": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "scopeField": "portalSubject",
+                        "required": true
+                    }
+                }
+            },
+            {
+                "id": "askAboutCase",
+                "type": "create",
+                "recordField": "caseId",
+                "label": "Stel een vraag over deze zaak",
+                "register": "dossiq",
+                "schema": "portaalBericht",
+                "scopeField": "senderRef",
+                "minTrust": "low",
+                "fields": [
+                    "subject",
+                    "content",
+                    "attachments",
+                    "caseId"
+                ],
+                "defaults": {
+                    "direction": "citizen_to_handler",
+                    "senderType": "burger"
+                },
+                "requiredFields": [
+                    "content"
+                ],
+                "fieldConfigs": {
+                    "caseId": {
+                        "visible": false
+                    },
+                    "subject": {
+                        "label": "Onderwerp"
+                    },
+                    "content": {
+                        "label": "Wat wilt u weten?",
+                        "size": "large"
+                    },
+                    "attachments": {
+                        "label": "Bijlagen",
+                        "type": "file",
+                        "multiple": true,
+                        "accept": [
+                            ".pdf",
+                            ".jpg",
+                            ".jpeg",
+                            ".png",
+                            ".doc",
+                            ".docx",
+                            ".odt"
+                        ],
+                        "maxSizeMb": 20
+                    }
+                },
+                "crossRefs": {
+                    "caseId": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "scopeField": "portalSubject",
+                        "required": true
+                    }
+                }
+            },
+            {
+                "id": "amendCase",
+                "type": "update",
+                "label": "Uw zaak aanpassen",
+                "register": "dossiq",
+                "schema": "case",
+                "scopeField": "portalSubject",
+                "minTrust": "low",
+                "fields": [
+                    "description"
+                ],
+                "citizenWrite": {
+                    "typeField": "caseType",
+                    "typeRegister": "dossiq",
+                    "typeSchema": "caseType"
+                }
+            },
+            {
+                "id": "proposeCaseChange",
+                "type": "propose-change",
+                "label": "Wijziging voorstellen",
+                "register": "dossiq",
+                "schema": "case",
+                "scopeField": "portalSubject",
+                "minTrust": "low",
+                "proposable": [
+                    "title",
+                    "description"
+                ]
+            },
+            {
+                "id": "startWooVerzoek",
+                "label": "Start een Woo-verzoek",
+                "endpoint": "/index.php/apps/dossiq/api/portal/woo-verzoek",
+                "method": "POST",
+                "attachTo": {
+                    "app": "opencatalogi",
+                    "schema": "collection"
+                },
+                "rowField": "collectionId",
+                "minTrust": "low",
+                "fields": [
+                    "collectionId",
+                    "onderwerp",
+                    "omschrijving",
+                    "periodeVan",
+                    "periodeTot",
+                    "documentSoorten",
+                    "toelichting",
+                    "verzoekerNaam",
+                    "verzoekerEmail",
+                    "verzoekerType"
+                ],
+                "requiredFields": [
+                    "onderwerp"
+                ],
+                "fieldConfigs": {
+                    "collectionId": {
+                        "visible": false
+                    },
+                    "onderwerp": {
+                        "label": "Waar gaat uw verzoek over?"
+                    },
+                    "omschrijving": {
+                        "label": "Welke informatie wilt u hebben?",
+                        "size": "large"
+                    },
+                    "periodeVan": {
+                        "label": "Vanaf welke datum zoekt u informatie?",
+                        "input": "date"
+                    },
+                    "periodeTot": {
+                        "label": "Tot en met welke datum?",
+                        "input": "date"
+                    },
+                    "documentSoorten": {
+                        "label": "Welke documenten zoekt u?",
+                        "widget": "choices"
+                    },
+                    "toelichting": {
+                        "label": "Wilt u nog iets toelichten?",
+                        "size": "large"
+                    },
+                    "verzoekerNaam": {
+                        "label": "Uw naam",
+                        "prefill": "name"
+                    },
+                    "verzoekerEmail": {
+                        "label": "Uw e-mailadres",
+                        "prefill": "email"
+                    },
+                    "verzoekerType": {
+                        "label": "U vraagt dit als",
+                        "widget": "choices"
+                    }
+                },
+                "optionsProviders": {
+                    "documentSoorten": {
+                        "type": "static",
+                        "options": [
+                            {
+                                "value": "besluiten",
+                                "label": "Besluiten en vergunningen"
+                            },
+                            {
+                                "value": "rapporten",
+                                "label": "Rapporten en adviezen"
+                            },
+                            {
+                                "value": "correspondentie",
+                                "label": "E-mails en brieven"
+                            },
+                            {
+                                "value": "alles",
+                                "label": "Alles wat de gemeente hierover heeft"
+                            }
+                        ]
+                    },
+                    "verzoekerType": {
+                        "type": "static",
+                        "options": [
+                            {
+                                "value": "burger",
+                                "label": "Inwoner"
+                            },
+                            {
+                                "value": "journalist",
+                                "label": "Journalist"
+                            },
+                            {
+                                "value": "organisatie",
+                                "label": "Organisatie"
+                            }
+                        ]
+                    }
+                },
+                "steps": [
+                    {
+                        "id": "vraag",
+                        "title": "Uw verzoek",
+                        "description": "Vertel ons welke informatie u zoekt. Hoe preciezer uw vraag, hoe sneller u antwoord krijgt.",
+                        "fields": [
+                            "collectionId",
+                            "onderwerp",
+                            "omschrijving",
+                            "periodeVan",
+                            "periodeTot",
+                            "documentSoorten",
+                            "toelichting"
+                        ]
+                    },
+                    {
+                        "id": "gegevens",
+                        "title": "Uw gegevens",
+                        "description": "Wij gebruiken deze gegevens alleen voor uw verzoek.",
+                        "fields": [
+                            "verzoekerNaam",
+                            "verzoekerEmail",
+                            "verzoekerType"
+                        ]
+                    },
+                    {
+                        "id": "controleren",
+                        "title": "Controleren en versturen",
+                        "review": true
+                    }
+                ],
+                "draft": {
+                    "retentionDays": 30
+                },
+                "confirmation": {
+                    "title": "Wij hebben uw Woo-verzoek ontvangen",
+                    "body": "Uw zaaknummer is {identifier}. Wij tellen de termijn vanaf {termStartsDay}. U krijgt uiterlijk op {deadlineDay} antwoord.",
+                    "next": "U vindt uw verzoek onder Zaken. U krijgt ook een ontvangstbevestiging in uw berichten."
+                },
+                "submitLabel": "Verzoek versturen",
+                "successMessage": "Uw Woo-verzoek is ontvangen. U vindt het onder Mijn zaken."
+            },
+            {
+                "id": "startWooVerzoekAlgemeen",
+                "label": "Informatie opvragen (Woo-verzoek)",
+                "summary": "Vraag documenten van de gemeente op. Dit kan dankzij de Wet open overheid (Woo).",
+                "audiences": [
+                    "citizen",
+                    "client"
+                ],
+                "endpoint": "/index.php/apps/dossiq/api/portal/woo-verzoek",
+                "method": "POST",
+                "minTrust": "low",
+                "fields": [
+                    "onderwerp",
+                    "omschrijving",
+                    "periodeVan",
+                    "periodeTot",
+                    "documentSoorten",
+                    "toelichting",
+                    "verzoekerNaam",
+                    "verzoekerEmail",
+                    "verzoekerType"
+                ],
+                "requiredFields": [
+                    "onderwerp"
+                ],
+                "fieldConfigs": {
+                    "onderwerp": {
+                        "label": "Waar gaat uw verzoek over?"
+                    },
+                    "omschrijving": {
+                        "label": "Welke informatie wilt u hebben?",
+                        "size": "large"
+                    },
+                    "periodeVan": {
+                        "label": "Vanaf welke datum zoekt u informatie?",
+                        "input": "date"
+                    },
+                    "periodeTot": {
+                        "label": "Tot en met welke datum?",
+                        "input": "date"
+                    },
+                    "documentSoorten": {
+                        "label": "Welke documenten zoekt u?",
+                        "widget": "choices"
+                    },
+                    "toelichting": {
+                        "label": "Wilt u nog iets toelichten?",
+                        "size": "large"
+                    },
+                    "verzoekerNaam": {
+                        "label": "Uw naam",
+                        "prefill": "name"
+                    },
+                    "verzoekerEmail": {
+                        "label": "Uw e-mailadres",
+                        "prefill": "email"
+                    },
+                    "verzoekerType": {
+                        "label": "U vraagt dit als",
+                        "widget": "choices"
+                    }
+                },
+                "optionsProviders": {
+                    "documentSoorten": {
+                        "type": "static",
+                        "options": [
+                            {
+                                "value": "besluiten",
+                                "label": "Besluiten en vergunningen"
+                            },
+                            {
+                                "value": "rapporten",
+                                "label": "Rapporten en adviezen"
+                            },
+                            {
+                                "value": "correspondentie",
+                                "label": "E-mails en brieven"
+                            },
+                            {
+                                "value": "alles",
+                                "label": "Alles wat de gemeente hierover heeft"
+                            }
+                        ]
+                    },
+                    "verzoekerType": {
+                        "type": "static",
+                        "options": [
+                            {
+                                "value": "burger",
+                                "label": "Inwoner"
+                            },
+                            {
+                                "value": "journalist",
+                                "label": "Journalist"
+                            },
+                            {
+                                "value": "organisatie",
+                                "label": "Organisatie"
+                            }
+                        ]
+                    }
+                },
+                "steps": [
+                    {
+                        "id": "vraag",
+                        "title": "Uw verzoek",
+                        "description": "Vertel ons welke informatie u zoekt. Hoe preciezer uw vraag, hoe sneller u antwoord krijgt.",
+                        "fields": [
+                            "onderwerp",
+                            "omschrijving",
+                            "periodeVan",
+                            "periodeTot",
+                            "documentSoorten",
+                            "toelichting"
+                        ]
+                    },
+                    {
+                        "id": "gegevens",
+                        "title": "Uw gegevens",
+                        "description": "Wij gebruiken deze gegevens alleen voor uw verzoek.",
+                        "fields": [
+                            "verzoekerNaam",
+                            "verzoekerEmail",
+                            "verzoekerType"
+                        ]
+                    },
+                    {
+                        "id": "controleren",
+                        "title": "Controleren en versturen",
+                        "review": true
+                    }
+                ],
+                "draft": {
+                    "retentionDays": 30
+                },
+                "confirmation": {
+                    "title": "Wij hebben uw Woo-verzoek ontvangen",
+                    "body": "Uw zaaknummer is {identifier}. Wij tellen de termijn vanaf {termStartsDay}. U krijgt uiterlijk op {deadlineDay} antwoord.",
+                    "next": "U vindt uw verzoek onder Zaken. U krijgt ook een ontvangstbevestiging in uw berichten."
+                },
+                "submitLabel": "Verzoek versturen",
+                "successMessage": "Uw Woo-verzoek is ontvangen. U vindt het onder Mijn zaken."
+            },
+            {
+                "id": "changePermitPlate",
+                "label": "Kenteken wijzigen",
+                "summary": "Rijdt u in een andere auto? Zet het nieuwe kenteken op uw vergunning.",
+                "endpoint": "/index.php/apps/dossiq/api/portal/vergunning/kenteken",
+                "method": "POST",
+                "rowField": "permitId",
+                "theme": "parkeren",
+                "when": {
+                    "field": "kind",
+                    "op": "eq",
+                    "value": "parkeren-bewoner"
+                },
+                "minTrust": "low",
+                "fields": [
+                    "permitId",
+                    "nieuwKenteken"
+                ],
+                "requiredFields": [
+                    "nieuwKenteken"
+                ],
+                "fieldConfigs": {
+                    "permitId": {
+                        "visible": false
+                    },
+                    "nieuwKenteken": {
+                        "label": "Nieuw kenteken",
+                        "placeholder": "GZ-482-K"
+                    }
+                },
+                "submitLabel": "Kenteken doorgeven",
+                "successMessage": "Wij hebben uw nieuwe kenteken ontvangen. U vindt de aanvraag onder Mijn zaken."
+            },
+            {
+                "id": "beantwoordVraag",
+                "label": "Beantwoorden",
+                "audiences": [
+                    "citizen",
+                    "client"
+                ],
+                "endpoint": "/index.php/apps/dossiq/api/portal/vragen/antwoord",
+                "method": "POST",
+                "rowField": "requestId",
+                "rowWhen": {
+                    "field": "state",
+                    "in": [
+                        "open"
+                    ]
+                },
+                "minTrust": "low",
+                "fields": [
+                    "antwoord"
+                ],
+                "requiredFields": [
+                    "antwoord"
+                ],
+                "files": {
+                    "field": "bijlagen",
+                    "max": 5,
+                    "maxBytes": 10485760
+                },
+                "fieldConfigs": {
+                    "antwoord": {
+                        "label": "Uw antwoord",
+                        "size": "large",
+                        "maxLength": 4000
+                    }
+                },
+                "submitLabel": "Antwoord versturen",
+                "successMessage": "Wij hebben uw antwoord ontvangen. U hoort van ons of wij nog iets nodig hebben."
+            }
+        ],
+        "pages": [
+            {
+                "id": "overzicht",
+                "label": "Overzicht",
+                "group": "Mijn zaken en verzoeken",
+                "home": true,
+                "menu": false,
+                "blocks": [
+                    {
+                        "type": "greeting",
+                        "showDate": false
+                    },
+                    {
+                        "type": "tasks",
+                        "collection": "vragenAanU",
+                        "dueField": "hersteltermijn",
+                        "titleFields": [
+                            "summary"
+                        ],
+                        "label": "Wat u nog moet doen",
+                        "display": "highlight",
+                        "tone": "warning",
+                        "dueInLine": true,
+                        "buttonLabel": "Document toevoegen"
+                    },
+                    {
+                        "type": "cta",
+                        "page": "startWooVerzoekAlgemeen",
+                        "label": "Informatie opvragen (Woo-verzoek)"
+                    },
+                    {
+                        "type": "cases",
+                        "collection": "mijnZaken",
+                        "open": true,
+                        "limit": 5,
+                        "label": "Lopende zaken",
+                        "display": "compact",
+                        "showAll": true,
+                        "yourTurn": [
+                            "applicant"
+                        ]
+                    },
+                    {
+                        "type": "inbox",
+                        "collection": "berichten",
+                        "limit": 3,
+                        "label": "Nieuwe berichten",
+                        "display": "list"
+                    }
+                ]
+            },
+            {
+                "id": "mijnZaken",
+                "label": "Uw zaak",
+                "group": "Mijn zaken en verzoeken",
+                "menu": false,
+                "record": {
+                    "collection": "mijnZaken",
+                    "titleFields": [
+                        "title"
+                    ],
+                    "heading": "record",
+                    "under": "cases"
+                },
+                "blocks": [
+                    {
+                        "type": "tasks",
+                        "collection": "vragenAanU",
+                        "recordField": "case",
+                        "dueField": "hersteltermijn",
+                        "titleFields": [
+                            "summary"
+                        ]
+                    },
+                    {
+                        "type": "steps",
+                        "collection": "mijnZaken"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "mijnZaken",
+                        "label": "Gegevens",
+                        "timeline": false
+                    },
+                    {
+                        "type": "documents",
+                        "collection": "mijnZaken",
+                        "label": "Stukken",
+                        "upload": true
+                    },
+                    {
+                        "type": "timeline",
+                        "collection": "mijnZaken"
+                    },
+                    {
+                        "type": "cta",
+                        "action": "replyToMessage",
+                        "label": "Bericht sturen",
+                        "withRecord": true
+                    },
+                    {
+                        "type": "citizenCase",
+                        "collection": "mijnZaken",
+                        "display": "actions"
+                    }
+                ]
+            },
+            {
+                "id": "berichten",
+                "label": "Berichten",
+                "group": "Mijn zaken en verzoeken",
+                "menu": false,
+                "blocks": [
+                    {
+                        "type": "action",
+                        "action": "replyToMessage"
+                    },
+                    {
+                        "type": "collection",
+                        "collection": "berichten"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "berichten"
+                    }
+                ]
+            },
+            {
+                "id": "verzoeken",
+                "label": "Mijn verzoeken",
+                "group": "Mijn zaken en verzoeken",
+                "menu": false,
+                "blocks": [
+                    {
+                        "type": "collection",
+                        "collection": "verzoeken"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "verzoeken"
+                    }
+                ]
+            },
+            {
+                "id": "startWooVerzoekAlgemeen",
+                "label": "Informatie opvragen (Woo-verzoek)",
+                "group": "Mijn zaken en verzoeken",
+                "menu": false,
+                "blocks": [
+                    {
+                        "type": "action",
+                        "action": "startWooVerzoekAlgemeen"
+                    }
+                ]
+            }
+        ],
+        "notifications": [
+            "dossiq.wooRequest.published"
+        ]
+    },
+    "business": {
+        "label": "Uw bedrijf",
+        "collections": [
+            {
+                "id": "mijnZaken",
+                "register": "dossiq",
+                "schema": "case",
+                "scopeField": "portalSubject",
+                "label": "Mijn zaken",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "identifier",
+                    "title",
+                    "caseType",
+                    "status",
+                    "statusPublicLabel",
+                    "statusPublicDescription",
+                    "resultPublicLabel",
+                    "resultPublicDescription",
+                    "startDate",
+                    "endDate",
+                    "deadline",
+                    "portalTurn",
+                    "waitingOnApplicant",
+                    "waitingOn",
+                    "assignedGroupPublicName",
+                    "isFinalStatus",
+                    "receivedAt",
+                    "termStartsAt",
+                    "receivedOutsideWorkingHours",
+                    "wooPublicationUrl",
+                    "termNote",
+                    "legalDecisionDate",
+                    "resultLink",
+                    "portalBranch",
+                    "portalParty"
+                ],
+                "columns": [
+                    {
+                        "field": "identifier",
+                        "label": "Zaaknummer",
+                        "render": "text"
+                    },
+                    {
+                        "field": "title",
+                        "label": "Onderwerp",
+                        "render": "text"
+                    },
+                    {
+                        "field": "statusPublicLabel",
+                        "label": "Status",
+                        "render": "badge"
+                    },
+                    {
+                        "field": "resultPublicLabel",
+                        "label": "Uitkomst",
+                        "render": "text"
+                    },
+                    {
+                        "field": "startDate",
+                        "label": "Gestart op",
+                        "render": "date"
+                    },
+                    {
+                        "field": "deadline",
+                        "label": "Uiterlijk klaar op",
+                        "render": "date"
+                    },
+                    {
+                        "field": "termStartsAt",
+                        "label": "Termijn loopt vanaf",
+                        "render": "date"
+                    },
+                    {
+                        "field": "receivedOutsideWorkingHours",
+                        "label": "Ontvangen buiten kantoortijd",
+                        "render": "boolean"
+                    }
+                ],
+                "detail": {
+                    "layout": "card",
+                    "fields": [
+                        "identifier",
+                        "assignedGroupPublicName",
+                        "title",
+                        "statusPublicLabel",
+                        "statusPublicDescription",
+                        "resultPublicLabel",
+                        "resultPublicDescription",
+                        "startDate",
+                        "endDate",
+                        "deadline",
+                        "receivedAt",
+                        "termStartsAt",
+                        "receivedOutsideWorkingHours",
+                        "wooPublicationUrl"
+                    ],
+                    "actions": [
+                        "askAboutCase"
+                    ]
+                },
+                "fieldConfigs": {
+                    "assignedGroupPublicName": {
+                        "label": "Behandeld door"
+                    },
+                    "statusPublicDescription": {
+                        "label": "Toelichting op de status"
+                    },
+                    "resultPublicDescription": {
+                        "label": "Toelichting op de uitkomst"
+                    },
+                    "endDate": {
+                        "label": "Einddatum"
+                    },
+                    "receivedAt": {
+                        "label": "Ontvangen op"
+                    },
+                    "wooPublicationUrl": {
+                        "label": "Gepubliceerd besluit"
+                    }
+                },
+                "timeline": {
+                    "label": "Wat er is gebeurd",
+                    "provider": "caseTimeline"
+                },
+                "documents": {
+                    "label": "Documenten",
+                    "provider": "caseDocuments"
+                },
+                "messages": {
+                    "label": "Berichten",
+                    "provider": "caseMessages"
+                },
+                "steps": {
+                    "label": "Waar staat uw aanvraag?",
+                    "provider": "caseSteps"
+                },
+                "turnField": "portalTurn",
+                "dueField": "deadline",
+                "valueLabels": {
+                    "portalTurn": {
+                        "applicant": "Wacht op u",
+                        "thirdParty": "In behandeling",
+                        "us": "In behandeling"
+                    }
+                },
+                "kind": "cases",
+                "closedField": "isFinalStatus",
+                "rowActions": [
+                    "proposeCaseChange"
+                ],
+                "branchField": "portalBranch",
+                "mandateField": "portalParty",
+                "referenceField": "identifier",
+                "statusLabelField": "statusPublicLabel",
+                "caseTypeField": "caseType",
+                "caseTypeSource": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "labelField": "title"
+                }
+            },
+            {
+                "id": "vragenAanU",
+                "register": "dossiq",
+                "schema": "aanvullingsverzoek",
+                "scopeField": "portalSubject",
+                "label": "Wat wij nog van u nodig hebben",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "case",
+                    "summary",
+                    "missingItems",
+                    "hersteltermijn",
+                    "state",
+                    "requestedAt"
+                ],
+                "defaultFilters": {
+                    "state": "open"
+                },
+                "rowActions": [
+                    "beantwoordVraag"
+                ],
+                "columns": [
+                    {
+                        "field": "summary",
+                        "label": "Wat wij nodig hebben",
+                        "render": "text"
+                    },
+                    {
+                        "field": "hersteltermijn",
+                        "label": "Graag voor",
+                        "render": "date"
+                    },
+                    {
+                        "field": "requestedAt",
+                        "label": "Gevraagd op",
+                        "render": "date"
+                    }
+                ]
+            },
+            {
+                "id": "berichten",
+                "kind": "inbox",
+                "messageBox": {
+                    "recipientProvider": "messageBoxRecipient"
+                },
+                "register": "dossiq",
+                "schema": "portaalBericht",
+                "scopeField": "recipientRef",
+                "label": "Berichten",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "caseReference",
+                    "senderType",
+                    "senderName",
+                    "subject",
+                    "content",
+                    "attachments",
+                    "direction",
+                    "sentAt",
+                    "readByRecipientAt",
+                    "caseId"
+                ],
+                "messageFields": {
+                    "body": "content",
+                    "receivedAt": "sentAt",
+                    "readAt": "readByRecipientAt",
+                    "attachments": "attachments"
+                },
+                "filesDownload": true,
+                "reply": {
+                    "action": "replyToMessage",
+                    "carry": {
+                        "caseId": "caseId"
+                    },
+                    "subjectFrom": "subject"
+                }
+            },
+            {
+                "id": "verzoeken",
+                "register": "dossiq",
+                "schema": "portaalVerzoek",
+                "scopeField": "submitterRef",
+                "label": "Mijn verzoeken",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "kind",
+                    "category",
+                    "subject",
+                    "rationale",
+                    "reference",
+                    "status",
+                    "submittedAt",
+                    "deadline",
+                    "withinTerm"
+                ]
+            },
+            {
+                "id": "mijnVergunningen",
+                "register": "dossiq",
+                "schema": "permit",
+                "scopeField": "portalSubject",
+                "label": "Vergunningen",
+                "listable": true,
+                "minTrust": "low",
+                "kind": "products",
+                "theme": "parkeren",
+                "fields": [
+                    "title",
+                    "kind",
+                    "theme",
+                    "validFrom",
+                    "validUntil",
+                    "status",
+                    "kenteken",
+                    "adres"
+                ],
+                "titleField": "title",
+                "validFromField": "validFrom",
+                "validUntilField": "validUntil",
+                "metaFields": [
+                    "kenteken",
+                    "adres",
+                    "validFrom"
+                ],
+                "fieldConfigs": {
+                    "kenteken": {
+                        "label": "Kenteken"
+                    },
+                    "adres": {
+                        "label": "Adres"
+                    },
+                    "validFrom": {
+                        "label": "Ingegaan op"
+                    },
+                    "validUntil": {
+                        "label": "Geldig tot en met"
+                    }
+                },
+                "countLabel": {
+                    "singular": "vergunning",
+                    "plural": "vergunningen"
+                },
+                "defaultFilters": {
+                    "status": "active"
+                },
+                "rowActions": [
+                    "changePermitPlate"
+                ]
+            }
+        ],
+        "actions": [
+            {
+                "id": "replyToMessage",
+                "type": "create",
+                "recordField": "caseId",
+                "label": "Antwoorden",
+                "register": "dossiq",
+                "schema": "portaalBericht",
+                "scopeField": "senderRef",
+                "minTrust": "low",
+                "fields": [
+                    "subject",
+                    "content",
+                    "attachments",
+                    "caseId"
+                ],
+                "defaults": {
+                    "direction": "citizen_to_handler",
+                    "senderType": "burger"
+                },
+                "requiredFields": [
+                    "content"
+                ],
+                "fieldConfigs": {
+                    "subject": {
+                        "label": "Onderwerp"
+                    },
+                    "content": {
+                        "label": "Uw bericht",
+                        "size": "large"
+                    },
+                    "attachments": {
+                        "label": "Bijlagen",
+                        "type": "file",
+                        "multiple": true,
+                        "accept": [
+                            ".pdf",
+                            ".jpg",
+                            ".jpeg",
+                            ".png",
+                            ".doc",
+                            ".docx",
+                            ".odt"
+                        ],
+                        "maxSizeMb": 20
+                    },
+                    "caseId": {
+                        "label": "Over welke zaak gaat uw bericht?"
+                    }
+                },
+                "optionsProviders": {
+                    "caseId": {
+                        "type": "collection",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "labelField": "title",
+                        "valueField": "id"
+                    }
+                },
+                "crossRefs": {
+                    "caseId": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "scopeField": "portalSubject",
+                        "required": true
+                    }
+                }
+            },
+            {
+                "id": "askAboutCase",
+                "type": "create",
+                "recordField": "caseId",
+                "label": "Stel een vraag over deze zaak",
+                "register": "dossiq",
+                "schema": "portaalBericht",
+                "scopeField": "senderRef",
+                "minTrust": "low",
+                "fields": [
+                    "subject",
+                    "content",
+                    "attachments",
+                    "caseId"
+                ],
+                "defaults": {
+                    "direction": "citizen_to_handler",
+                    "senderType": "burger"
+                },
+                "requiredFields": [
+                    "content"
+                ],
+                "fieldConfigs": {
+                    "caseId": {
+                        "visible": false
+                    },
+                    "subject": {
+                        "label": "Onderwerp"
+                    },
+                    "content": {
+                        "label": "Wat wilt u weten?",
+                        "size": "large"
+                    },
+                    "attachments": {
+                        "label": "Bijlagen",
+                        "type": "file",
+                        "multiple": true,
+                        "accept": [
+                            ".pdf",
+                            ".jpg",
+                            ".jpeg",
+                            ".png",
+                            ".doc",
+                            ".docx",
+                            ".odt"
+                        ],
+                        "maxSizeMb": 20
+                    }
+                },
+                "crossRefs": {
+                    "caseId": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "scopeField": "portalSubject",
+                        "required": true
+                    }
+                }
+            },
+            {
+                "id": "amendCase",
+                "type": "update",
+                "label": "Uw zaak aanpassen",
+                "register": "dossiq",
+                "schema": "case",
+                "scopeField": "portalSubject",
+                "minTrust": "low",
+                "fields": [
+                    "description"
+                ],
+                "citizenWrite": {
+                    "typeField": "caseType",
+                    "typeRegister": "dossiq",
+                    "typeSchema": "caseType"
+                }
+            },
+            {
+                "id": "proposeCaseChange",
+                "type": "propose-change",
+                "label": "Wijziging voorstellen",
+                "register": "dossiq",
+                "schema": "case",
+                "scopeField": "portalSubject",
+                "minTrust": "low",
+                "proposable": [
+                    "title",
+                    "description"
+                ]
+            },
+            {
+                "id": "startWooVerzoek",
+                "label": "Start een Woo-verzoek",
+                "endpoint": "/index.php/apps/dossiq/api/portal/woo-verzoek",
+                "method": "POST",
+                "attachTo": {
+                    "app": "opencatalogi",
+                    "schema": "collection"
+                },
+                "rowField": "collectionId",
+                "minTrust": "low",
+                "fields": [
+                    "collectionId",
+                    "onderwerp",
+                    "omschrijving",
+                    "periodeVan",
+                    "periodeTot",
+                    "documentSoorten",
+                    "toelichting",
+                    "verzoekerNaam",
+                    "verzoekerEmail",
+                    "verzoekerType"
+                ],
+                "requiredFields": [
+                    "onderwerp"
+                ],
+                "fieldConfigs": {
+                    "collectionId": {
+                        "visible": false
+                    },
+                    "onderwerp": {
+                        "label": "Waar gaat uw verzoek over?"
+                    },
+                    "omschrijving": {
+                        "label": "Welke informatie wilt u hebben?",
+                        "size": "large"
+                    },
+                    "periodeVan": {
+                        "label": "Vanaf welke datum zoekt u informatie?",
+                        "input": "date"
+                    },
+                    "periodeTot": {
+                        "label": "Tot en met welke datum?",
+                        "input": "date"
+                    },
+                    "documentSoorten": {
+                        "label": "Welke documenten zoekt u?",
+                        "widget": "choices"
+                    },
+                    "toelichting": {
+                        "label": "Wilt u nog iets toelichten?",
+                        "size": "large"
+                    },
+                    "verzoekerNaam": {
+                        "label": "Uw naam",
+                        "prefill": "name"
+                    },
+                    "verzoekerEmail": {
+                        "label": "Uw e-mailadres",
+                        "prefill": "email"
+                    },
+                    "verzoekerType": {
+                        "label": "U vraagt dit als",
+                        "widget": "choices"
+                    }
+                },
+                "optionsProviders": {
+                    "documentSoorten": {
+                        "type": "static",
+                        "options": [
+                            {
+                                "value": "besluiten",
+                                "label": "Besluiten en vergunningen"
+                            },
+                            {
+                                "value": "rapporten",
+                                "label": "Rapporten en adviezen"
+                            },
+                            {
+                                "value": "correspondentie",
+                                "label": "E-mails en brieven"
+                            },
+                            {
+                                "value": "alles",
+                                "label": "Alles wat de gemeente hierover heeft"
+                            }
+                        ]
+                    },
+                    "verzoekerType": {
+                        "type": "static",
+                        "options": [
+                            {
+                                "value": "burger",
+                                "label": "Inwoner"
+                            },
+                            {
+                                "value": "journalist",
+                                "label": "Journalist"
+                            },
+                            {
+                                "value": "organisatie",
+                                "label": "Organisatie"
+                            }
+                        ]
+                    }
+                },
+                "steps": [
+                    {
+                        "id": "vraag",
+                        "title": "Uw verzoek",
+                        "description": "Vertel ons welke informatie u zoekt. Hoe preciezer uw vraag, hoe sneller u antwoord krijgt.",
+                        "fields": [
+                            "collectionId",
+                            "onderwerp",
+                            "omschrijving",
+                            "periodeVan",
+                            "periodeTot",
+                            "documentSoorten",
+                            "toelichting"
+                        ]
+                    },
+                    {
+                        "id": "gegevens",
+                        "title": "Uw gegevens",
+                        "description": "Wij gebruiken deze gegevens alleen voor uw verzoek.",
+                        "fields": [
+                            "verzoekerNaam",
+                            "verzoekerEmail",
+                            "verzoekerType"
+                        ]
+                    },
+                    {
+                        "id": "controleren",
+                        "title": "Controleren en versturen",
+                        "review": true
+                    }
+                ],
+                "draft": {
+                    "retentionDays": 30
+                },
+                "confirmation": {
+                    "title": "Wij hebben uw Woo-verzoek ontvangen",
+                    "body": "Uw zaaknummer is {identifier}. Wij tellen de termijn vanaf {termStartsDay}. U krijgt uiterlijk op {deadlineDay} antwoord.",
+                    "next": "U vindt uw verzoek onder Zaken. U krijgt ook een ontvangstbevestiging in uw berichten."
+                },
+                "submitLabel": "Verzoek versturen",
+                "successMessage": "Uw Woo-verzoek is ontvangen. U vindt het onder Mijn zaken."
+            },
+            {
+                "id": "startWooVerzoekAlgemeen",
+                "label": "Informatie opvragen (Woo-verzoek)",
+                "summary": "Vraag documenten van de gemeente op. Dit kan dankzij de Wet open overheid (Woo).",
+                "audiences": [
+                    "citizen",
+                    "client"
+                ],
+                "endpoint": "/index.php/apps/dossiq/api/portal/woo-verzoek",
+                "method": "POST",
+                "minTrust": "low",
+                "fields": [
+                    "onderwerp",
+                    "omschrijving",
+                    "periodeVan",
+                    "periodeTot",
+                    "documentSoorten",
+                    "toelichting",
+                    "verzoekerNaam",
+                    "verzoekerEmail",
+                    "verzoekerType"
+                ],
+                "requiredFields": [
+                    "onderwerp"
+                ],
+                "fieldConfigs": {
+                    "onderwerp": {
+                        "label": "Waar gaat uw verzoek over?"
+                    },
+                    "omschrijving": {
+                        "label": "Welke informatie wilt u hebben?",
+                        "size": "large"
+                    },
+                    "periodeVan": {
+                        "label": "Vanaf welke datum zoekt u informatie?",
+                        "input": "date"
+                    },
+                    "periodeTot": {
+                        "label": "Tot en met welke datum?",
+                        "input": "date"
+                    },
+                    "documentSoorten": {
+                        "label": "Welke documenten zoekt u?",
+                        "widget": "choices"
+                    },
+                    "toelichting": {
+                        "label": "Wilt u nog iets toelichten?",
+                        "size": "large"
+                    },
+                    "verzoekerNaam": {
+                        "label": "Uw naam",
+                        "prefill": "name"
+                    },
+                    "verzoekerEmail": {
+                        "label": "Uw e-mailadres",
+                        "prefill": "email"
+                    },
+                    "verzoekerType": {
+                        "label": "U vraagt dit als",
+                        "widget": "choices"
+                    }
+                },
+                "optionsProviders": {
+                    "documentSoorten": {
+                        "type": "static",
+                        "options": [
+                            {
+                                "value": "besluiten",
+                                "label": "Besluiten en vergunningen"
+                            },
+                            {
+                                "value": "rapporten",
+                                "label": "Rapporten en adviezen"
+                            },
+                            {
+                                "value": "correspondentie",
+                                "label": "E-mails en brieven"
+                            },
+                            {
+                                "value": "alles",
+                                "label": "Alles wat de gemeente hierover heeft"
+                            }
+                        ]
+                    },
+                    "verzoekerType": {
+                        "type": "static",
+                        "options": [
+                            {
+                                "value": "burger",
+                                "label": "Inwoner"
+                            },
+                            {
+                                "value": "journalist",
+                                "label": "Journalist"
+                            },
+                            {
+                                "value": "organisatie",
+                                "label": "Organisatie"
+                            }
+                        ]
+                    }
+                },
+                "steps": [
+                    {
+                        "id": "vraag",
+                        "title": "Uw verzoek",
+                        "description": "Vertel ons welke informatie u zoekt. Hoe preciezer uw vraag, hoe sneller u antwoord krijgt.",
+                        "fields": [
+                            "onderwerp",
+                            "omschrijving",
+                            "periodeVan",
+                            "periodeTot",
+                            "documentSoorten",
+                            "toelichting"
+                        ]
+                    },
+                    {
+                        "id": "gegevens",
+                        "title": "Uw gegevens",
+                        "description": "Wij gebruiken deze gegevens alleen voor uw verzoek.",
+                        "fields": [
+                            "verzoekerNaam",
+                            "verzoekerEmail",
+                            "verzoekerType"
+                        ]
+                    },
+                    {
+                        "id": "controleren",
+                        "title": "Controleren en versturen",
+                        "review": true
+                    }
+                ],
+                "draft": {
+                    "retentionDays": 30
+                },
+                "confirmation": {
+                    "title": "Wij hebben uw Woo-verzoek ontvangen",
+                    "body": "Uw zaaknummer is {identifier}. Wij tellen de termijn vanaf {termStartsDay}. U krijgt uiterlijk op {deadlineDay} antwoord.",
+                    "next": "U vindt uw verzoek onder Zaken. U krijgt ook een ontvangstbevestiging in uw berichten."
+                },
+                "submitLabel": "Verzoek versturen",
+                "successMessage": "Uw Woo-verzoek is ontvangen. U vindt het onder Mijn zaken."
+            },
+            {
+                "id": "changePermitPlate",
+                "label": "Kenteken wijzigen",
+                "summary": "Rijdt u in een andere auto? Zet het nieuwe kenteken op uw vergunning.",
+                "endpoint": "/index.php/apps/dossiq/api/portal/vergunning/kenteken",
+                "method": "POST",
+                "rowField": "permitId",
+                "theme": "parkeren",
+                "when": {
+                    "field": "kind",
+                    "op": "eq",
+                    "value": "parkeren-bewoner"
+                },
+                "minTrust": "low",
+                "fields": [
+                    "permitId",
+                    "nieuwKenteken"
+                ],
+                "requiredFields": [
+                    "nieuwKenteken"
+                ],
+                "fieldConfigs": {
+                    "permitId": {
+                        "visible": false
+                    },
+                    "nieuwKenteken": {
+                        "label": "Nieuw kenteken",
+                        "placeholder": "GZ-482-K"
+                    }
+                },
+                "submitLabel": "Kenteken doorgeven",
+                "successMessage": "Wij hebben uw nieuwe kenteken ontvangen. U vindt de aanvraag onder Mijn zaken."
+            },
+            {
+                "id": "beantwoordVraag",
+                "label": "Beantwoorden",
+                "audiences": [
+                    "citizen",
+                    "client"
+                ],
+                "endpoint": "/index.php/apps/dossiq/api/portal/vragen/antwoord",
+                "method": "POST",
+                "rowField": "requestId",
+                "rowWhen": {
+                    "field": "state",
+                    "in": [
+                        "open"
+                    ]
+                },
+                "minTrust": "low",
+                "fields": [
+                    "antwoord"
+                ],
+                "requiredFields": [
+                    "antwoord"
+                ],
+                "files": {
+                    "field": "bijlagen",
+                    "max": 5,
+                    "maxBytes": 10485760
+                },
+                "fieldConfigs": {
+                    "antwoord": {
+                        "label": "Uw antwoord",
+                        "size": "large",
+                        "maxLength": 4000
+                    }
+                },
+                "submitLabel": "Antwoord versturen",
+                "successMessage": "Wij hebben uw antwoord ontvangen. U hoort van ons of wij nog iets nodig hebben."
+            }
+        ],
+        "pages": [
+            {
+                "id": "overzicht",
+                "label": "Overzicht",
+                "group": "Uw bedrijf",
+                "home": true,
+                "menu": false,
+                "blocks": [
+                    {
+                        "type": "greeting",
+                        "showDate": false
+                    },
+                    {
+                        "type": "tasks",
+                        "collection": "vragenAanU",
+                        "dueField": "hersteltermijn",
+                        "titleFields": [
+                            "summary"
+                        ],
+                        "label": "Wat u nog moet doen",
+                        "display": "highlight",
+                        "tone": "warning",
+                        "dueInLine": true,
+                        "buttonLabel": "Document toevoegen"
+                    },
+                    {
+                        "type": "cta",
+                        "page": "startWooVerzoekAlgemeen",
+                        "label": "Informatie opvragen (Woo-verzoek)"
+                    },
+                    {
+                        "type": "cases",
+                        "collection": "mijnZaken",
+                        "open": true,
+                        "limit": 5,
+                        "label": "Lopende zaken van uw bedrijf",
+                        "display": "compact",
+                        "showAll": true,
+                        "yourTurn": [
+                            "applicant"
+                        ]
+                    },
+                    {
+                        "type": "inbox",
+                        "collection": "berichten",
+                        "limit": 3,
+                        "label": "Nieuwe berichten",
+                        "display": "list"
+                    }
+                ]
+            },
+            {
+                "id": "mijnZaken",
+                "label": "Uw zaak",
+                "group": "Uw bedrijf",
+                "menu": false,
+                "record": {
+                    "collection": "mijnZaken",
+                    "titleFields": [
+                        "title"
+                    ],
+                    "heading": "record",
+                    "under": "cases"
+                },
+                "blocks": [
+                    {
+                        "type": "tasks",
+                        "collection": "vragenAanU",
+                        "recordField": "case",
+                        "dueField": "hersteltermijn",
+                        "titleFields": [
+                            "summary"
+                        ]
+                    },
+                    {
+                        "type": "steps",
+                        "collection": "mijnZaken"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "mijnZaken",
+                        "label": "Gegevens",
+                        "timeline": false
+                    },
+                    {
+                        "type": "documents",
+                        "collection": "mijnZaken",
+                        "label": "Stukken",
+                        "upload": true
+                    },
+                    {
+                        "type": "timeline",
+                        "collection": "mijnZaken"
+                    },
+                    {
+                        "type": "cta",
+                        "action": "replyToMessage",
+                        "label": "Bericht sturen",
+                        "withRecord": true
+                    },
+                    {
+                        "type": "citizenCase",
+                        "collection": "mijnZaken",
+                        "display": "actions"
+                    }
+                ]
+            },
+            {
+                "id": "berichten",
+                "label": "Berichten",
+                "group": "Uw bedrijf",
+                "menu": false,
+                "blocks": [
+                    {
+                        "type": "action",
+                        "action": "replyToMessage"
+                    },
+                    {
+                        "type": "collection",
+                        "collection": "berichten"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "berichten"
+                    }
+                ]
+            },
+            {
+                "id": "verzoeken",
+                "label": "Verzoeken van uw bedrijf",
+                "group": "Uw bedrijf",
+                "menu": false,
+                "blocks": [
+                    {
+                        "type": "collection",
+                        "collection": "verzoeken"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "verzoeken"
+                    }
+                ]
+            },
+            {
+                "id": "startWooVerzoekAlgemeen",
+                "label": "Informatie opvragen (Woo-verzoek)",
+                "group": "Uw bedrijf",
+                "menu": false,
+                "blocks": [
+                    {
+                        "type": "action",
+                        "action": "startWooVerzoekAlgemeen"
+                    }
+                ]
+            }
+        ],
+        "notifications": [
+            "dossiq.wooRequest.published"
+        ]
+    },
+    "inspector": {
+        "label": "Inspecties",
+        "collections": [
+            {
+                "id": "inspectieRapporten",
+                "register": "dossiq",
+                "schema": "inspectieRapport",
+                "scopeField": "assignedInspectorRef",
+                "label": "Mijn inspecties",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "case",
+                    "checklist",
+                    "inspectionDate",
+                    "location",
+                    "result",
+                    "failedItems",
+                    "remarks",
+                    "followUpRequired"
+                ]
+            },
+            {
+                "id": "checklistRuns",
+                "register": "dossiq",
+                "schema": "inspectionChecklistRun",
+                "scopeField": "assignedInspectorRef",
+                "label": "Mijn checklists",
+                "listable": true,
+                "minTrust": "low",
+                "fields": [
+                    "case",
+                    "template",
+                    "templateVersion",
+                    "startedAt",
+                    "completedAt",
+                    "submittedAt",
+                    "status",
+                    "overallResult",
+                    "followUpType",
+                    "syncState"
+                ]
+            }
+        ],
+        "actions": [
+            {
+                "id": "submitChecklistRun",
+                "type": "update",
+                "label": "Checklist indienen",
+                "register": "dossiq",
+                "schema": "inspectionChecklistRun",
+                "scopeField": "assignedInspectorRef",
+                "minTrust": "low",
+                "fields": [
+                    "responses",
+                    "overallResult",
+                    "followUpType",
+                    "photos",
+                    "completedAt",
+                    "status"
+                ],
+                "set": {
+                    "status": "submitted"
+                }
+            }
+        ],
+        "notifications": [],
+        "pages": [
+            {
+                "id": "inspectieRapporten",
+                "label": "Mijn inspecties",
+                "group": "Inspecties",
+                "blocks": [
+                    {
+                        "type": "collection",
+                        "collection": "inspectieRapporten"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "inspectieRapporten"
+                    }
+                ]
+            },
+            {
+                "id": "checklistRuns",
+                "label": "Mijn checklists",
+                "group": "Inspecties",
+                "blocks": [
+                    {
+                        "type": "collection",
+                        "collection": "checklistRuns"
+                    },
+                    {
+                        "type": "detail",
+                        "collection": "checklistRuns"
+                    }
+                ]
+            }
+        ]
+    },
+    "employee": null,
+    "": null
+}

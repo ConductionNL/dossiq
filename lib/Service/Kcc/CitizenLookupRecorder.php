@@ -17,6 +17,7 @@ namespace OCA\Dossiq\Service\Kcc;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IRequest;
@@ -52,7 +53,7 @@ use Throwable;
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+ * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
  */
 class CitizenLookupRecorder {
 
@@ -76,6 +77,13 @@ class CitizenLookupRecorder {
 	public const RESULT_REFUSED = 'geweigerd-none-toegang';
 
 	/**
+	 * The register, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService OpenRegister access and the configured register.
@@ -85,10 +93,11 @@ class CitizenLookupRecorder {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		SettingsService $settingsService,
 		private readonly IRequest $request,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -102,30 +111,15 @@ class CitizenLookupRecorder {
 	 *
 	 * @return bool True when the row was written. Never throws.
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
-	public function record(
-		string $employeeId,
-		string $subjectId,
-		bool $allowed,
-		array $fields = [],
-		string $ground = '',
-	): bool {
+	public function record(string $employeeId, string $subjectId, bool $allowed, array $fields = [], string $ground = ''): bool {
+		$lookup = new CitizenLookup(employeeId: $employeeId, subjectId: $subjectId, allowed: $allowed, fields: $fields, ground: $ground);
 		try {
 			[$objectService, $register] = $this->target();
 
-			$this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: self::SCHEMA,
-				object: $this->row(
-					employeeId: $employeeId,
-					subjectId: $subjectId,
-					allowed: $allowed,
-					fields: $fields,
-					ground: $ground,
-				),
-			);
+			$row = $this->row(lookup: $lookup);
+			$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: self::SCHEMA, object: $row);
 
 			return true;
 		} catch (Throwable $e) {
@@ -133,19 +127,33 @@ class CitizenLookupRecorder {
 			// a PHP Error, and an audit that cannot be written must not take the
 			// contact centre down with it. See the class comment for why this
 			// fail-open is the right one here and nowhere else.
-			$this->logger->error(
-				'Dossiq: a citizen lookup could not be recorded. The lookup itself was not affected, '
-				. 'and it is now unaccountable.',
-				[
-					'employee' => $employeeId,
-					'allowed' => $allowed,
-					'exception' => $e->getMessage(),
-				]
-			);
-
-			return false;
-		}//end try
+			return $this->unrecorded(error: $e, lookup: $lookup);
+		}
 	}//end record()
+
+	/**
+	 * Log that a lookup could not be recorded.
+	 *
+	 * @param Throwable     $error  Why the row could not be written.
+	 * @param CitizenLookup $lookup The lookup: the account that looked and whether the guard permitted it.
+	 *
+	 * @return bool Always false: the row was not written.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 */
+	private function unrecorded(Throwable $error, CitizenLookup $lookup): bool {
+		$this->logger->error(
+			'Dossiq: a citizen lookup could not be recorded. The lookup itself was not affected, '
+			. 'and it is now unaccountable.',
+			[
+				'employee' => $lookup->employeeId,
+				'allowed' => $lookup->allowed,
+				'exception' => $error->getMessage(),
+			]
+		);
+
+		return false;
+	}//end unrecorded()
 
 	/**
 	 * The row one lookup writes.
@@ -154,34 +162,24 @@ class CitizenLookupRecorder {
 	 * answer no case at all, which is why the schema stopped requiring it at
 	 * 1.1.0. `subjectId` is what an inzageverzoek searches on.
 	 *
-	 * @param string             $employeeId The account that looked.
-	 * @param string             $subjectId  The citizen reference.
-	 * @param bool               $allowed    Whether it was permitted.
-	 * @param array<int, string> $fields     The sensitive fields answered.
-	 * @param string             $ground     The ground.
+	 * @param CitizenLookup $lookup Who looked, at whom, whether it was permitted, the fields answered and the ground.
 	 *
 	 * @return array<string, mixed> The row.
 	 */
-	private function row(
-		string $employeeId,
-		string $subjectId,
-		bool $allowed,
-		array $fields,
-		string $ground,
-	): array {
+	private function row(CitizenLookup $lookup): array {
 		$result = self::RESULT_REFUSED;
-		if ($allowed === true) {
+		if ($lookup->allowed === true) {
 			$result = self::RESULT_ALLOWED;
 		}
 
 		return [
-			'employeeId' => $employeeId,
-			'subjectId' => $subjectId,
+			'employeeId' => $lookup->employeeId,
+			'subjectId' => $lookup->subjectId,
 			'action' => 'read',
 			'moment' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
 			'ipAddress' => $this->request->getRemoteAddress(),
-			'geraadpleegdeVelden' => array_values($fields),
-			'authorisationGround' => $ground,
+			'geraadpleegdeVelden' => array_values($lookup->fields),
+			'authorisationGround' => $lookup->ground,
 			'result' => $result,
 		];
 	}//end row()
@@ -194,16 +192,6 @@ class CitizenLookupRecorder {
 	 * @throws RuntimeException When OpenRegister or the register is absent.
 	 */
 	private function target(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
+		return $this->dossierRegister->context();
 	}//end target()
 }//end class

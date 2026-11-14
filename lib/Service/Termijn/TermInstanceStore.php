@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
  */
 
 declare(strict_types=1);
@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service\Termijn;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -53,12 +54,14 @@ class TermInstanceStore {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register and schema ids, and the object service.
-	 * @param LoggerInterface $logger          Logger.
+	 * @param SettingsService   $settingsService Register and schema ids, and the object service.
+	 * @param LoggerInterface   $logger          Logger.
+	 * @param IUserSession|null $userSession     Whether anybody is signed in; nobody means a write runs as the system.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?IUserSession $userSession = null,
 	) {
 	}//end __construct()
 
@@ -69,32 +72,19 @@ class TermInstanceStore {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function read(string $termInstanceId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
-		if ($register === '' || $schema === '') {
+		$store = $this->storeFor(schemaKey: 'termijn_instance_schema');
+		if ($store === null) {
 			return null;
 		}
 
 		try {
-			return $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $termInstanceId
-			);
+			return $this->findIn(store: $store, termInstanceId: $termInstanceId);
 		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'TermInstanceStore.read failed',
-				['id' => $termInstanceId, 'error' => $e->getMessage()]
-			);
+			$context = ['id' => $termInstanceId, 'error' => $e->getMessage()];
+			$this->logger->warning('TermInstanceStore.read failed', $context);
 			return null;
 		}
 	}//end read()
@@ -106,22 +96,16 @@ class TermInstanceStore {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function latestForCase(string $caseId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
-		if ($register === '' || $schema === '') {
+		$store = $this->storeFor(schemaKey: 'termijn_instance_schema');
+		if ($store === null) {
 			return null;
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['case' => $caseId]);
+			$rows = $this->instancesOn(store: $store, caseId: $caseId);
 		} catch (\Throwable $e) {
 			return null;
 		}
@@ -130,13 +114,7 @@ class TermInstanceStore {
 			return null;
 		}
 
-		usort(
-			$rows,
-			static fn (array $a, array $b): int
-				=> strcmp((string)($b['startDate'] ?? ''), (string)($a['startDate'] ?? ''))
-		);
-
-		return $rows[0];
+		return self::newestFirst(rows: $rows)[0];
 	}//end latestForCase()
 
 	/**
@@ -154,44 +132,144 @@ class TermInstanceStore {
 	 *
 	 * @throws RefusedException When the store could not be asked.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function allForCase(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null || $caseId === '') {
-			return [];
-		}
-
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
-		if ($register === '' || $schema === '') {
+		$store = $this->storeFor(schemaKey: 'termijn_instance_schema');
+		if ($store === null || $caseId === '') {
 			return [];
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['case' => $caseId]
-			);
+			$rows = $this->instancesOn(store: $store, caseId: $caseId);
 		} catch (\Throwable $e) {
 			// NOT an empty list. A case with no clocks and a case whose clocks
 			// could not be read are opposite facts, and the second rendered as
 			// the first tells a handler there is no deadline.
-			$this->logger->warning(
-				'TermInstanceStore.allForCase lookup failed, so the read is refused',
-				['case' => $caseId, 'error' => $e->getMessage()]
-			);
+			throw $this->unreadable(caseId: $caseId, failure: $e);
+		}
 
-			throw new RefusedException(
-				rule: 'term-instances-unreadable',
-				sentence: 'The terms on this case could not be read.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}//end try
+		return self::newestFirst(rows: $rows);
+	}//end allForCase()
 
+	/**
+	 * Persist an object to a configured schema.
+	 *
+	 * A write with nobody signed in (an install, an example set, a cron job)
+	 * runs as the system: OpenRegister refuses a create by "Anonymous", and
+	 * every case such a run made got no term (rehearsal R3, twelve times
+	 * "TermInstanceStore persist failed" during the example set install). A
+	 * write by a signed-in user keeps that user's rights.
+	 *
+	 * @param string $schemaConfigKey The schema config key (e.g. 'termijn_instance_schema').
+	 * @param array<string, mixed> $object The payload.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	public function save(string $schemaConfigKey, array $object): ?array {
+		$store = $this->storeFor(schemaKey: $schemaConfigKey);
+		if ($store === null) {
+			return null;
+		}
+
+		try {
+			return $this->saveAsSystem(store: $store, object: $object);
+		} catch (\Throwable $e) {
+			$context = ['schemaConfigKey' => $schemaConfigKey, 'error' => $e->getMessage()];
+			$this->logger->error('TermInstanceStore persist failed', $context);
+			return null;
+		}
+	}//end save()
+
+	/**
+	 * The object service, register and schema for one schema key, null when any is missing.
+	 *
+	 * The register and schema are only read once there is an object service.
+	 *
+	 * @param string $schemaKey The settings key of the schema.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|null The store.
+	 */
+	private function storeFor(string $schemaKey): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema   = (string)$this->settingsService->getConfigValue($schemaKey);
+		if ($register === '' || $schema === '') {
+			return null;
+		}
+
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
+	}//end storeFor()
+
+	/**
+	 * One term instance by id.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store          The instance store.
+	 * @param string                                                          $termInstanceId The instance.
+	 *
+	 * @return array<string, mixed>|null The instance, null when it does not exist.
+	 */
+	private function findIn(array $store, string $termInstanceId): ?array {
+		return $this->findObjectAsArray(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			id: $termInstanceId
+		);
+	}//end findIn()
+
+	/**
+	 * Save an object, as the system when nobody is signed in.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store  The target store.
+	 * @param array<string, mixed>                                            $object The payload.
+	 *
+	 * @return array<string, mixed>|null The saved object.
+	 */
+	private function saveAsSystem(array $store, array $object): ?array {
+		return $this->asSystemWithoutUser(
+			objectService: $store['objectService'],
+			userSession: $this->userSession,
+			operation: fn (): ?array => $this->saveObjectAsArray(
+				objectService: $store['objectService'],
+				register: $store['register'],
+				schema: $store['schema'],
+				object: $object
+			)
+		);
+	}//end saveAsSystem()
+
+	/**
+	 * Every term instance bound to a case, as stored.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store  The instance store.
+	 * @param string                                                          $caseId The case.
+	 *
+	 * @return array<int, array<string, mixed>> The instances.
+	 */
+	private function instancesOn(array $store, string $caseId): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			filters: ['case' => $caseId]
+		);
+	}//end instancesOn()
+
+	/**
+	 * Instances ordered by start date, newest first.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The instances.
+	 *
+	 * @return array<int, array<string, mixed>> The instances, newest start first.
+	 */
+	private static function newestFirst(array $rows): array {
 		usort(
 			$rows,
 			static fn (array $a, array $b): int
@@ -199,41 +277,27 @@ class TermInstanceStore {
 		);
 
 		return $rows;
-	}//end allForCase()
+	}//end newestFirst()
 
 	/**
-	 * Persist an object to a configured schema.
+	 * The refusal for a case whose terms could not be read, logged.
 	 *
-	 * @param string $schemaConfigKey The schema config key (e.g. 'termijn_instance_schema').
-	 * @param array<string, mixed> $object The payload.
+	 * @param string     $caseId  The case.
+	 * @param \Throwable $failure What went wrong.
 	 *
-	 * @return array<string, mixed>|null
+	 * @return RefusedException The refusal to throw.
 	 */
-	public function save(string $schemaConfigKey, array $object): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
+	private function unreadable(string $caseId, \Throwable $failure): RefusedException {
+		$this->logger->warning(
+			'TermInstanceStore.allForCase lookup failed, so the read is refused',
+			['case' => $caseId, 'error' => $failure->getMessage()]
+		);
 
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue($schemaConfigKey);
-		if ($register === '' || $schema === '') {
-			return null;
-		}
-
-		try {
-			return $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $object
-			);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'TermInstanceStore persist failed',
-				['schemaConfigKey' => $schemaConfigKey, 'error' => $e->getMessage()]
-			);
-			return null;
-		}
-	}//end save()
+		return new RefusedException(
+			rule: 'term-instances-unreadable',
+			sentence: 'The terms on this case could not be read.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $failure,
+		);
+	}//end unreadable()
 }//end class

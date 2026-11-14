@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Sharing;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessLinkServiceInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -44,7 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/case-share-via-shares-leaf/spec.md
  */
-class CaseAccessLinkService {
+class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 	/**
 	 * The capabilities a case link may declare.
 	 *
@@ -55,17 +56,6 @@ class CaseAccessLinkService {
 	 * @var array<int, string>
 	 */
 	public const CAPABILITIES = ['read', 'comment', 'upload'];
-
-	/**
-	 * What a case share declares when the handler names nothing.
-	 *
-	 * Reading and commenting, because the case a share exists for is nearly
-	 * always one somebody outside is expected to answer. Uploading is opted
-	 * into, never assumed.
-	 *
-	 * @var array<int, string>
-	 */
-	public const DEFAULT_CAPABILITIES = ['read', 'comment'];
 
 	/**
 	 * How long a share lasts when the handler names no end date.
@@ -115,13 +105,15 @@ class CaseAccessLinkService {
 		?string $label = null,
 	): array {
 		return $this->mint(
-			userId: $userId,
-			subjectType: 'object',
-			subjectId: $caseId,
-			capabilities: $capabilities,
-			expiresAt: $expiresAt,
-			password: $password,
-			label: $label
+			request: new AccessLinkRequest(
+				userId: $userId,
+				subjectType: 'object',
+				subjectId: $caseId,
+				capabilities: $capabilities,
+				expiresAt: $expiresAt,
+				password: $password,
+				label: $label
+			)
 		);
 	}//end mintCaseLink()
 
@@ -151,22 +143,41 @@ class CaseAccessLinkService {
 		?string $password = null,
 		?string $label = null,
 	): array {
-		$caseId = trim($caseId);
-		$fileId = trim($fileId);
-		if ($caseId === '' || $fileId === '') {
+		$subjectId = $this->fileSubjectId(caseId: $caseId, fileId: $fileId);
+		if ($subjectId === '') {
 			return ['error' => 'A file link must name both the case and the file'];
 		}
 
 		return $this->mint(
-			userId: $userId,
-			subjectType: 'file',
-			subjectId: $caseId . '/' . $fileId,
-			capabilities: ['read'],
-			expiresAt: $expiresAt,
-			password: $password,
-			label: $label
+			request: new AccessLinkRequest(
+				userId: $userId,
+				subjectType: 'file',
+				subjectId: $subjectId,
+				capabilities: ['read'],
+				expiresAt: $expiresAt,
+				password: $password,
+				label: $label
+			)
 		);
 	}//end mintFileLink()
+
+	/**
+	 * The `<objectUuid>/<fileId>` subject of a file link, '' when either part is blank.
+	 *
+	 * @param string $caseId The uuid of the object carrying the file.
+	 * @param string $fileId The file id on that object.
+	 *
+	 * @return string
+	 */
+	private function fileSubjectId(string $caseId, string $fileId): string {
+		$caseId = trim($caseId);
+		$fileId = trim($fileId);
+		if ($caseId === '' || $fileId === '') {
+			return '';
+		}
+
+		return $caseId . '/' . $fileId;
+	}//end fileSubjectId()
 
 	/**
 	 * Revoke a link.
@@ -263,19 +274,32 @@ class CaseAccessLinkService {
 			return 'paused';
 		}
 
-		$expiresAt = trim((string)($link['expiresAt'] ?? ''));
-		if ($expiresAt !== '') {
-			try {
-				if (new DateTimeImmutable($expiresAt) <= new DateTimeImmutable()) {
-					return 'expired';
-				}
-			} catch (\Exception $unreadable) {
-				unset($unreadable);
-			}
+		if ($this->hasExpired(expiresAt: trim((string)($link['expiresAt'] ?? ''))) === true) {
+			return 'expired';
 		}
 
 		return 'live';
 	}//end stateOf()
+
+	/**
+	 * Whether an expiry moment has passed; a blank or unreadable one never has.
+	 *
+	 * @param string $expiresAt The trimmed expiry.
+	 *
+	 * @return bool
+	 */
+	private function hasExpired(string $expiresAt): bool {
+		if ($expiresAt === '') {
+			return false;
+		}
+
+		try {
+			return new DateTimeImmutable($expiresAt) <= new DateTimeImmutable();
+		} catch (\Exception $unreadable) {
+			unset($unreadable);
+			return false;
+		}
+	}//end hasExpired()
 
 	/**
 	 * What the holder of this link reads, as the handler should see it before
@@ -288,19 +312,18 @@ class CaseAccessLinkService {
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	public function holderPreview(string $anchor): ?array {
-		$service = $this->gateway->accessLinkService();
-		$reader = $this->gateway->accessLinkReader();
-		if ($service === null || $reader === null) {
+		$tools = $this->previewTools();
+		if ($tools === []) {
 			return null;
 		}
 
 		try {
-			$link = $service->resolve(trim($anchor));
+			$link = $tools['service']->resolve(trim($anchor));
 			if ($link === null) {
 				return null;
 			}
 
-			$body = $reader->read($link);
+			$body = $tools['reader']->read($link);
 		} catch (\Throwable $failure) {
 			$this->logger->error(
 				'CaseAccessLinkService: could not read a link preview',
@@ -309,37 +332,82 @@ class CaseAccessLinkService {
 			return null;
 		}
 
+		return $this->strippedPreview(body: $body);
+	}//end holderPreview()
+
+	/**
+	 * OpenRegister's link service and link reader, empty when either is not there.
+	 *
+	 * @return array{service: object, reader: object}|array{}
+	 */
+	private function previewTools(): array {
+		$service = $this->gateway->accessLinkService();
+		$reader = $this->gateway->accessLinkReader();
+		if ($service === null || $reader === null) {
+			return [];
+		}
+
+		return ['service' => $service, 'reader' => $reader];
+	}//end previewTools()
+
+	/**
+	 * What a holder reads, stripped of the internals OpenRegister does not publish; null when the link read nothing.
+	 *
+	 * @param mixed $body What the link reader answered.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function strippedPreview(mixed $body): ?array {
 		if (is_array($body) === false) {
 			return null;
 		}
 
 		return $this->projection->strip(body: $body);
-	}//end holderPreview()
+	}//end strippedPreview()
 
 	/**
 	 * Mint one link, whatever its subject.
 	 *
-	 * @param string $userId The principal minting it.
-	 * @param string $subjectType `object` or `file`.
-	 * @param string $subjectId The subject.
-	 * @param array<int, string> $capabilities What the holder may do.
-	 * @param string|null $expiresAt When the link stops answering.
-	 * @param string|null $password An optional password.
-	 * @param string|null $label What the link is called.
+	 * @param AccessLinkRequest $request Who mints it, what it opens, what the holder may do and its terms.
 	 *
 	 * @return array<string, mixed> The link row plus its url, or an error array.
 	 *
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
-	private function mint(
-		string $userId,
-		string $subjectType,
-		string $subjectId,
-		array $capabilities,
-		?string $expiresAt,
-		?string $password,
-		?string $label,
-	): array {
+	private function mint(AccessLinkRequest $request): array {
+		$subjectType = $request->subjectType;
+		$prepared = $this->mintServiceAndCapabilities(capabilities: $request->capabilities);
+		if (isset($prepared['error']) === true) {
+			return $prepared;
+		}
+
+		[$service, $declared] = $prepared;
+
+		try {
+			return (array)$service->mint(
+				$request->userId,
+				$subjectType,
+				$request->subjectId,
+				$declared,
+				$this->expiry(expiresAt: $request->expiresAt),
+				$this->trimmedOrNull(value: $request->password),
+				$this->trimmedOrNull(value: $request->label)
+			);
+		} catch (\Throwable $failure) {
+			return $this->mintFailed(subjectType: $subjectType, failure: $failure);
+		}
+	}//end mint()
+
+	/**
+	 * The access-link service and the capabilities to declare, or an error array when either is missing.
+	 *
+	 * @param array<int, string> $capabilities What the holder may do.
+	 *
+	 * @return array{0: object, 1: array<int, string>}|array{error: string} The service and capabilities, or an error.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function mintServiceAndCapabilities(array $capabilities): array {
 		$service = $this->gateway->accessLinkService();
 		if ($service === null) {
 			return ['error' => 'This instance cannot publish links: OpenRegister does not offer them'];
@@ -350,27 +418,29 @@ class CaseAccessLinkService {
 			return ['error' => 'A link may grant reading, commenting or uploading, and nothing else'];
 		}
 
-		try {
-			return (array)$service->mint(
-				$userId,
-				$subjectType,
-				$subjectId,
-				$declared,
-				$this->expiry(expiresAt: $expiresAt),
-				$this->trimmedOrNull(value: $password),
-				$this->trimmedOrNull(value: $label)
-			);
-		} catch (\Throwable $failure) {
-			$this->logger->error(
-				'CaseAccessLinkService: could not mint an access link',
-				[
-					'subjectType' => $subjectType,
-					'exception' => $failure->getMessage(),
-				]
-			);
-			return ['error' => 'Could not create the link'];
-		}
-	}//end mint()
+		return [$service, $declared];
+	}//end mintServiceAndCapabilities()
+
+	/**
+	 * Log a mint OpenRegister refused and describe it.
+	 *
+	 * @param string $subjectType `object` or `file`.
+	 * @param \Throwable $failure Why the mint failed.
+	 *
+	 * @return array<string, string> The error array.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function mintFailed(string $subjectType, \Throwable $failure): array {
+		$this->logger->error(
+			'CaseAccessLinkService: could not mint an access link',
+			[
+				'subjectType' => $subjectType,
+				'exception' => $failure->getMessage(),
+			]
+		);
+		return ['error' => 'Could not create the link'];
+	}//end mintFailed()
 
 	/**
 	 * The capabilities to declare, or null when one of them is not a
@@ -386,24 +456,32 @@ class CaseAccessLinkService {
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	private function declaredCapabilities(array $capabilities): ?array {
-		$declared = ['read'];
+		$names = $this->capabilityNames(capabilities: $capabilities);
+		if (array_diff($names, self::CAPABILITIES) !== []) {
+			return null;
+		}
+
+		return array_values(array_unique(array_merge(['read'], $names)));
+	}//end declaredCapabilities()
+
+	/**
+	 * The asked-for capabilities trimmed and lowercased, blanks left out, in the order asked.
+	 *
+	 * @param array<int, string> $capabilities What the caller asked for.
+	 *
+	 * @return array<int, string>
+	 */
+	private function capabilityNames(array $capabilities): array {
+		$names = [];
 		foreach ($capabilities as $candidate) {
 			$name = strtolower(trim((string)$candidate));
-			if ($name === '') {
-				continue;
-			}
-
-			if (in_array($name, self::CAPABILITIES, true) === false) {
-				return null;
-			}
-
-			if (in_array($name, $declared, true) === false) {
-				$declared[] = $name;
+			if ($name !== '') {
+				$names[] = $name;
 			}
 		}
 
-		return $declared;
-	}//end declaredCapabilities()
+		return $names;
+	}//end capabilityNames()
 
 	/**
 	 * The expiry to mint with.

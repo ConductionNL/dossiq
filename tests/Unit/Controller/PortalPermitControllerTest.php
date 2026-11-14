@@ -8,7 +8,7 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -45,6 +45,7 @@ class PortalPermitControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturnCallback(fn (string $name): string => ($name === PortalAssertionVerifier::HEADER) ? $assertion : '');
 		$request->method('getParam')->willReturnCallback(fn (string $key, mixed $default = null): mixed => ($body[$key] ?? $default));
+		$request->method('getParams')->willReturn($body);
 		$request->method('getRemoteAddress')->willReturn('127.0.0.1');
 		$this->change = $this->createMock(PermitPlateChange::class);
 
@@ -71,6 +72,20 @@ class PortalPermitControllerTest extends TestCase {
 		self::assertSame(201, $response->getStatus());
 		self::assertSame('2026-0042', $response->getData()['identifier']);
 	}//end testTheAssertedResidentChangesTheirPlate()
+
+	/**
+	 * A subject in the body never replaces the one the assertion names.
+	 *
+	 * @return void
+	 */
+	public function testABodySubjectDoesNotReplaceTheAssertedResident(): void {
+		$forged = ['permitId' => 'permit-1', 'nieuwKenteken' => 'HX901B', 'portalSubject' => 'subj-bob', 'subjectRef' => 'subj-bob', 'sub' => 'subj-bob'];
+		$controller = $this->controller(PortalAssertionVerifierTest::mint(['sub' => 'subj-sanne']), $forged);
+		$this->change->expects(self::once())->method('request')->with('subj-sanne', 'permit-1', 'HX901B')
+			->willReturn(['caseId' => 'case-new', 'identifier' => '2026-0042']);
+
+		self::assertSame(201, $controller->changePlate()->getStatus());
+	}//end testABodySubjectDoesNotReplaceTheAssertedResident()
 
 	/**
 	 * @return void

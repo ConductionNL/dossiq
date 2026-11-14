@@ -29,20 +29,16 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Custody;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseCustodyQueryInterface;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
-use Throwable;
 
 /**
  * Who held this case on a date, and which cases a unit held in a period.
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseCustodyQuery {
-
-	use SearchesObjects;
+class CaseCustodyQuery implements CaseCustodyQueryInterface {
 
 	/**
 	 * How many holdings one unit read takes at most.
@@ -83,19 +79,19 @@ class CaseCustodyQuery {
 	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function holderOn(string $caseId, string $asOf): ?array {
-		$moment = $this->instant(value: $asOf);
+		$moment = (new StoredInstant())->parse(value: $asOf);
 		if ($moment === null) {
 			return null;
 		}
 
 		$found = null;
 		foreach ($this->chain->holdings(caseId: $caseId) as $holding) {
-			$from = $this->instant(value: (string)($holding['from'] ?? ''));
+			$from = (new StoredInstant())->parse(value: (string)($holding['from'] ?? ''));
 			if ($from === null || $from > $moment) {
 				continue;
 			}
 
-			$until = $this->instant(value: (string)($holding['until'] ?? ''));
+			$until = (new StoredInstant())->parse(value: (string)($holding['until'] ?? ''));
 			if ($until !== null && $until <= $moment) {
 				continue;
 			}
@@ -123,45 +119,53 @@ class CaseCustodyQuery {
 	 */
 	public function heldBy(string $organisationUnit, string $from, string $to): array {
 		$organisationUnit = trim($organisationUnit);
-		$windowStart = $this->instant(value: $from);
-		$windowEnd = $this->instant(value: $to);
+		$windowStart = (new StoredInstant())->parse(value: $from);
+		$windowEnd = (new StoredInstant())->parse(value: $to);
 		if ($organisationUnit === '' || $windowStart === null || $windowEnd === null) {
 			return [];
 		}
 
-		try {
-			[$objectService, $register] = $this->context();
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_custody_schema'),
-				filters: ['organisationUnit' => $organisationUnit, '_limit' => self::PAGE_SIZE],
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq custody: the holdings of a unit could not be read',
-				['organisationUnit' => $organisationUnit, 'exception' => $e->getMessage()],
-			);
+		$overlapping = array_values(
+			array_filter(
+				$this->unitHoldings(organisationUnit: $organisationUnit),
+				fn (array $row): bool => $this->overlaps(holding: $row, windowStart: $windowStart, windowEnd: $windowEnd) === true,
+			)
+		);
 
-			return [];
-		}
+		return $this->oldestFirst(holdings: $overlapping);
+	}//end heldBy()
 
-		$overlapping = [];
-		foreach ($rows as $row) {
-			if ($this->overlaps(holding: $row, windowStart: $windowStart, windowEnd: $windowEnd) === true) {
-				$overlapping[] = $row;
-			}
-		}
+	/**
+	 * Every holding a unit had, or an empty list when the register cannot be read.
+	 *
+	 * @param string $organisationUnit The unit, trimmed.
+	 *
+	 * @return array<int, array<string, mixed>> The holdings.
+	 */
+	private function unitHoldings(string $organisationUnit): array {
+		return (new CustodyRows(settingsService: $this->settingsService, logger: $this->logger))->find(
+			filters: ['organisationUnit' => $organisationUnit, '_limit' => self::PAGE_SIZE],
+			failure: 'Dossiq custody: the holdings of a unit could not be read',
+		);
+	}//end unitHoldings()
 
+	/**
+	 * Holdings ordered by the moment they began, oldest first.
+	 *
+	 * @param array<int, array<string, mixed>> $holdings The holdings.
+	 *
+	 * @return array<int, array<string, mixed>> The same holdings, sorted.
+	 */
+	private function oldestFirst(array $holdings): array {
 		usort(
-			$overlapping,
+			$holdings,
 			static function (array $left, array $right): int {
 				return (((string)($left['from'] ?? '')) <=> ((string)($right['from'] ?? '')));
 			},
 		);
 
-		return $overlapping;
-	}//end heldBy()
+		return $holdings;
+	}//end oldestFirst()
 
 	/**
 	 * Whether one holding overlaps the window that was asked about.
@@ -178,72 +182,13 @@ class CaseCustodyQuery {
 	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	private function overlaps(array $holding, DateTimeImmutable $windowStart, DateTimeImmutable $windowEnd): bool {
-		$holdingStart = $this->instant(value: (string)($holding['from'] ?? ''));
+		$holdingStart = (new StoredInstant())->parse(value: (string)($holding['from'] ?? ''));
 		if ($holdingStart === null || $holdingStart > $windowEnd) {
 			return false;
 		}
 
-		$holdingEnd = $this->instant(value: (string)($holding['until'] ?? ''));
+		$holdingEnd = (new StoredInstant())->parse(value: (string)($holding['until'] ?? ''));
 
 		return ($holdingEnd === null || $holdingEnd >= $windowStart);
 	}//end overlaps()
-
-	/**
-	 * A moment, or null when the value is empty or unreadable.
-	 *
-	 * @param string $value The candidate.
-	 *
-	 * @return DateTimeImmutable|null The moment.
-	 */
-	private function instant(string $value): ?DateTimeImmutable {
-		$value = trim($value);
-		if ($value === '') {
-			return null;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end instant()
-
-	/**
-	 * The object service and the register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
-	 */
-	private function context(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
-	}//end context()
-
-	/**
-	 * A configured schema, or an exception naming the key.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema id or slug.
-	 *
-	 * @throws RuntimeException When the key is unset.
-	 */
-	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
-	}//end schema()
 }//end class

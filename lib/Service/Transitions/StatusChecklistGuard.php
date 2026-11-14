@@ -77,25 +77,43 @@ class StatusChecklistGuard implements GuardEvaluatorInterface {
 	 */
 	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {
 		$statusTypeId = (string)($case['status'] ?? '');
-		$required = array_values(
-			array_filter(
-				$this->checklist->itemsFor(statusTypeId: $statusTypeId),
-				static fn (array $item): bool => $item['required'] === true
-			)
-		);
+		$required = $this->requiredItems(statusTypeId: $statusTypeId);
 		if ($required === []) {
 			return new GuardResult(passed: true);
 		}
 
 		$completed = $this->completedTitles(statusTypeId: $statusTypeId, case: $case, actor: $userId);
 
-		$open = [];
-		foreach ($required as $item) {
-			if (in_array($item['title'], $completed, true) === false) {
-				$open[] = $item['title'];
-			}
-		}
+		return $this->resultFor(required: $required, completed: $completed, statusTypeId: $statusTypeId);
+	}//end evaluate()
 
+	/**
+	 * The checklist items of a status type that must be done.
+	 *
+	 * @param string $statusTypeId The status type uuid.
+	 *
+	 * @return array<int, array<string, mixed>> The required items.
+	 */
+	private function requiredItems(string $statusTypeId): array {
+		return array_values(
+			array_filter(
+				$this->checklist->itemsFor(statusTypeId: $statusTypeId),
+				static fn (array $item): bool => $item['required'] === true
+			)
+		);
+	}//end requiredItems()
+
+	/**
+	 * Pass when every required item is done, else fail naming the first open one.
+	 *
+	 * @param array<int, array<string, mixed>> $required     The required items.
+	 * @param array<int, string>               $completed    The titles of the items done.
+	 * @param string                           $statusTypeId The status type uuid.
+	 *
+	 * @return GuardResult
+	 */
+	private function resultFor(array $required, array $completed, string $statusTypeId): GuardResult {
+		$open = $this->openTitles(required: $required, completed: $completed);
 		if ($open === []) {
 			return new GuardResult(passed: true, details: ['required' => count($required)]);
 		}
@@ -107,7 +125,26 @@ class StatusChecklistGuard implements GuardEvaluatorInterface {
 			failureMessage: $this->l10n->t('Checklist item not done: %s', [$open[0]]),
 			details: ['open' => $open, 'statusType' => $statusTypeId],
 		);
-	}//end evaluate()
+	}//end resultFor()
+
+	/**
+	 * The titles of the required items not done yet.
+	 *
+	 * @param array<int, array<string, mixed>> $required  The required items.
+	 * @param array<int, string>               $completed The titles of the items done.
+	 *
+	 * @return array<int, string>
+	 */
+	private function openTitles(array $required, array $completed): array {
+		$open = [];
+		foreach ($required as $item) {
+			if (in_array($item['title'], $completed, true) === false) {
+				$open[] = $item['title'];
+			}
+		}
+
+		return $open;
+	}//end openTitles()
 
 	/**
 	 * The titles of this status's tasks that are at `completed`.

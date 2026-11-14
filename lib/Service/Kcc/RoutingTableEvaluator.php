@@ -47,7 +47,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -62,7 +62,7 @@ use RuntimeException;
 /**
  * Compiles KCC routing rules into a shared-evaluator decision table and runs it.
  *
- * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 class RoutingTableEvaluator {
 
@@ -113,7 +113,7 @@ class RoutingTableEvaluator {
 	 *                                     must surface loudly rather than
 	 *                                     read as "route to nobody".
 	 *
-	 * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function route(array $rules, array $contactMoment, ?DateTimeImmutable $now = null): ?array {
 		$now = ($now ?? new DateTimeImmutable());
@@ -124,21 +124,7 @@ class RoutingTableEvaluator {
 			return null;
 		}
 
-		$table = [
-			'hitPolicy' => 'FIRST',
-			'inputs' => array_map(
-				static fn (array $column): array => ['name' => $column['name'], 'type' => $column['type']],
-				$compiled['columns']
-			),
-			'outputs' => [
-				['name' => 'rule', 'type' => 'string'],
-				['name' => 'assignedDomain', 'type' => 'string'],
-				['name' => 'assignedTeam', 'type' => 'string'],
-				['name' => 'escalationTeam', 'type' => 'string'],
-			],
-			'rules' => $compiled['rules'],
-		];
-
+		$table = $this->decisionTable(compiled: $compiled);
 		$inputs = $this->deriveInputs(columns: $compiled['columns'], contactMoment: $contactMoment, now: $now);
 
 		try {
@@ -158,6 +144,30 @@ class RoutingTableEvaluator {
 			'escalationTeam' => ($result['outputs']['escalationTeam'] ?? ''),
 		];
 	}//end route()
+
+	/**
+	 * The inline FIRST-hit decision table of the compiled rules.
+	 *
+	 * @param array{columns: array<int, array<string, mixed>>, rules: array<int, array<string, mixed>>} $compiled The compiled rules.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function decisionTable(array $compiled): array {
+		return [
+			'hitPolicy' => 'FIRST',
+			'inputs' => array_map(
+				static fn (array $column): array => ['name' => $column['name'], 'type' => $column['type']],
+				$compiled['columns']
+			),
+			'outputs' => [
+				['name' => 'rule', 'type' => 'string'],
+				['name' => 'assignedDomain', 'type' => 'string'],
+				['name' => 'assignedTeam', 'type' => 'string'],
+				['name' => 'escalationTeam', 'type' => 'string'],
+			],
+			'rules' => $compiled['rules'],
+		];
+	}//end decisionTable()
 
 	/**
 	 * The shared evaluator, failing closed when OpenRegister is absent.
@@ -194,23 +204,21 @@ class RoutingTableEvaluator {
 	 * @return array{columns: array<int, array<string, mixed>>, rules: array<int, array<string, mixed>>}
 	 */
 	private function compile(array $rules): array {
-		$enabled = array_values(
-			array_filter(
-				$rules,
-				static function (array $rule): bool {
-					return (($rule['enabled'] ?? true) === true);
-				}
-			)
-		);
-
-		usort(
-			$enabled,
-			static function (array $first, array $second): int {
-				return (((int)($first['priority'] ?? 0)) <=> ((int)($second['priority'] ?? 0)));
-			}
-		);
-
 		$columns = [];
+		$rows = $this->ruleRows(enabled: RoutingRuleOrder::enabledByPriority(rules: $rules), columns: $columns);
+
+		return ['columns' => $columns, 'rules' => $this->alignedRules(rows: $rows, names: array_column($columns, 'name'))];
+	}//end compile()
+
+	/**
+	 * One row per rule that can match, its cells keyed by column name.
+	 *
+	 * @param array<int, array<string, mixed>> $enabled The enabled rules, by priority.
+	 * @param array<int, array<string, mixed>> $columns The shared column list, grown as needed.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function ruleRows(array $enabled, array &$columns): array {
 		$rows = [];
 		foreach ($enabled as $index => $rule) {
 			$cells = $this->compileRule(rule: $rule, columns: $columns);
@@ -230,9 +238,21 @@ class RoutingTableEvaluator {
 			];
 		}
 
-		// Cells were collected per column NAME while columns were still being
-		// discovered; align them positionally now that the list is closed.
-		$names = array_column($columns, 'name');
+		return $rows;
+	}//end ruleRows()
+
+	/**
+	 * The table rules, each row's cells in column order.
+	 *
+	 * Cells were collected per column NAME while columns were still being
+	 * discovered; align them positionally now that the list is closed.
+	 *
+	 * @param array<int, array<string, mixed>> $rows  The name-keyed rows.
+	 * @param array<int, string>               $names The column names, in order.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function alignedRules(array $rows, array $names): array {
 		$tableRules = [];
 		foreach ($rows as $row) {
 			$entries = [];
@@ -247,8 +267,8 @@ class RoutingTableEvaluator {
 			];
 		}
 
-		return ['columns' => $columns, 'rules' => $tableRules];
-	}//end compile()
+		return $tableRules;
+	}//end alignedRules()
 
 	/**
 	 * Compile one rule's conditions into name-keyed cells.
@@ -265,47 +285,64 @@ class RoutingTableEvaluator {
 			return null;
 		}
 
-		$equalities = [];
-		$booleans = [];
-		$lowerBound = null;
-		$upperBound = null;
+		$gathered = $this->gatheredConditions(conditions: $conditions);
+		if ($gathered === null) {
+			return null;
+		}
 
+		return $this->cellsOf(gathered: $gathered, columns: $columns);
+	}//end compileRule()
+
+	/**
+	 * Every condition of a rule gathered, or null when one cannot be expressed.
+	 *
+	 * @param array<int, mixed> $conditions The rule's conditions.
+	 *
+	 * @return RuleConditions|null
+	 */
+	private function gatheredConditions(array $conditions): ?RuleConditions {
+		$gathered = new RuleConditions();
 		foreach ($conditions as $condition) {
 			if (is_array($condition) === false) {
 				return null;
 			}
 
-			$expressible = $this->compileCondition(
-				condition: $condition,
-				equalities: $equalities,
-				booleans: $booleans,
-				lowerBound: $lowerBound,
-				upperBound: $upperBound
-			);
-			if ($expressible === false) {
+			if ($this->compileCondition(condition: $condition, gathered: $gathered) === false) {
 				return null;
 			}
 		}
 
+		return $gathered;
+	}//end gatheredConditions()
+
+	/**
+	 * The rule's cells by column name, adding the columns the table does not have yet.
+	 *
+	 * @param RuleConditions                   $gathered The rule's gathered conditions.
+	 * @param array<int, array<string, mixed>> $columns  The shared column list, grown as needed.
+	 *
+	 * @return array<string, string>
+	 */
+	private function cellsOf(RuleConditions $gathered, array &$columns): array {
 		$cells = [];
-		foreach ($equalities as $column => $value) {
-			$this->ensureColumn(columns: $columns, name: $column, type: 'string', kind: $column);
+		foreach ($gathered->equalities as $column => $value) {
+			$this->ensureColumn(columns: $columns, column: ['name' => $column, 'type' => 'string', 'kind' => $column, 'payload' => []]);
 			$cells[$column] = $this->quote(value: $value);
 		}
 
-		foreach ($booleans as $name => $spec) {
-			$this->ensureColumn(columns: $columns, name: $name, type: 'boolean', kind: $spec['kind'], payload: $spec);
+		foreach ($gathered->booleans as $name => $spec) {
+			$this->ensureColumn(columns: $columns, column: ['name' => $name, 'type' => 'boolean', 'kind' => $spec['kind'], 'payload' => $spec]);
 			$cells[$name] = 'true';
 		}
 
-		$timeCell = $this->timeCell(lowerBound: $lowerBound, upperBound: $upperBound);
+		$timeCell = $this->timeCell(lowerBound: $gathered->lowerBound, upperBound: $gathered->upperBound);
 		if ($timeCell !== null) {
-			$this->ensureColumn(columns: $columns, name: 'minutesOfDay', type: 'number', kind: 'minutesOfDay');
+			$this->ensureColumn(columns: $columns, column: ['name' => 'minutesOfDay', 'type' => 'number', 'kind' => 'minutesOfDay', 'payload' => []]);
 			$cells['minutesOfDay'] = $timeCell;
 		}
 
 		return $cells;
-	}//end compileRule()
+	}//end cellsOf()
 
 	/**
 	 * Compile one condition into the rule's accumulators.
@@ -317,14 +354,11 @@ class RoutingTableEvaluator {
 	 * time value, or a condition type the legacy dialect never knew.
 	 *
 	 * @param array<string, mixed> $condition The condition.
-	 * @param array<string, string> $equalities The rule's equality cells so far.
-	 * @param array<string, array<string, mixed>> $booleans The rule's boolean derive columns.
-	 * @param int|null $lowerBound The time window's inclusive lower bound.
-	 * @param int|null $upperBound The time window's exclusive upper bound.
+	 * @param RuleConditions $gathered The rule's equality cells, boolean derive columns and time window so far.
 	 *
 	 * @return bool False when the rule can never match.
 	 */
-	private function compileCondition(array $condition, array &$equalities, array &$booleans, ?int &$lowerBound, ?int &$upperBound): bool {
+	private function compileCondition(array $condition, RuleConditions $gathered): bool {
 		$type = (string)($condition['type'] ?? '');
 		$value = (string)($condition['value'] ?? '');
 
@@ -335,23 +369,23 @@ class RoutingTableEvaluator {
 				$literal = strtolower($value);
 			}
 
-			return $this->recordEquality(equalities: $equalities, column: self::EQUALITY_COLUMNS[$type], value: $literal);
+			return $this->recordEquality(equalities: $gathered->equalities, column: self::EQUALITY_COLUMNS[$type], value: $literal);
 		}
 
 		if ($type === 'keyword') {
-			$booleans['keyword:' . strtolower($value)] = ['kind' => 'keyword', 'needle' => strtolower($value)];
+			$gathered->booleans['keyword:' . strtolower($value)] = ['kind' => 'keyword', 'needle' => strtolower($value)];
 
 			return true;
 		}
 
 		if ($type === 'regex') {
-			$booleans['regex:' . $value] = ['kind' => 'regex', 'pattern' => $value];
+			$gathered->booleans['regex:' . $value] = ['kind' => 'regex', 'pattern' => $value];
 
 			return true;
 		}
 
 		if ($type === 'time_of_day') {
-			return $this->recordTimeWindow(value: $value, lowerBound: $lowerBound, upperBound: $upperBound);
+			return $this->recordTimeWindow(value: $value, lowerBound: $gathered->lowerBound, upperBound: $gathered->upperBound);
 		}
 
 		// The legacy engine's default arm: an unknown type never matches.
@@ -442,21 +476,19 @@ class RoutingTableEvaluator {
 	 * Declare a column once, keeping its derivation spec.
 	 *
 	 * @param array<int, array<string, mixed>> $columns The column list.
-	 * @param string $name The column name.
-	 * @param string $type The column's DMN type.
-	 * @param string $kind The derivation kind.
-	 * @param array<string, mixed> $payload Extra derivation data (needle/pattern).
+	 * @param array{name: string, type: string, kind: string, payload: array<string, mixed>} $column The column: its name,
+	 *        DMN type, derivation kind and extra derivation data (needle/pattern).
 	 *
 	 * @return void
 	 */
-	private function ensureColumn(array &$columns, string $name, string $type, string $kind, array $payload = []): void {
-		foreach ($columns as $column) {
-			if ($column['name'] === $name) {
+	private function ensureColumn(array &$columns, array $column): void {
+		foreach ($columns as $declared) {
+			if ($declared['name'] === $column['name']) {
 				return;
 			}
 		}
 
-		$columns[] = ['name' => $name, 'type' => $type, 'kind' => $kind, 'payload' => $payload];
+		$columns[] = $column;
 	}//end ensureColumn()
 
 	/**
@@ -483,7 +515,7 @@ class RoutingTableEvaluator {
 		foreach ($columns as $column) {
 			$inputs[$column['name']] = match ($column['kind']) {
 				'channel' => (string)($contactMoment['channel'] ?? ''),
-				'customerType' => $this->customerType(contactMoment: $contactMoment),
+				'customerType' => RoutingRuleOrder::customerType(contactMoment: $contactMoment),
 				'dayOfWeek' => strtolower($now->format('l')),
 				'minutesOfDay' => (((int)$now->format('G')) * 60) + ((int)$now->format('i')),
 				'keyword' => str_contains($haystack, (string)$column['payload']['needle']),
@@ -511,29 +543,6 @@ class RoutingTableEvaluator {
 
 		return (preg_match($delimited, $haystack) === 1);
 	}//end regexMatches()
-
-	/**
-	 * Derive the customer type from the contact moment.
-	 *
-	 * An 8-digit numeric customerRef is treated as a KvK number (bedrijf);
-	 * any other non-empty reference is a burger; empty is anonymous.
-	 *
-	 * @param array<string, mixed> $contactMoment The contact moment.
-	 *
-	 * @return string One of 'bedrijf', 'burger', 'anoniem'.
-	 */
-	private function customerType(array $contactMoment): string {
-		$ref = trim((string)($contactMoment['customerRef'] ?? ''));
-		if ($ref === '') {
-			return 'anoniem';
-		}
-
-		if (preg_match('/^\d{8}$/', $ref) === 1) {
-			return 'bedrijf';
-		}
-
-		return 'burger';
-	}//end customerType()
 
 	/**
 	 * Quote a literal for a rule cell, escaping embedded quotes.

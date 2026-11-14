@@ -41,7 +41,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -50,6 +50,7 @@ namespace OCA\Dossiq\Service\CaseType;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseVersionMoveInterface;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
@@ -65,9 +66,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
-class CaseVersionMove {
+class CaseVersionMove implements CaseVersionMoveInterface {
 
 	/**
 	 * Why the pinned engine run does not move with the case yet.
@@ -83,10 +84,17 @@ class CaseVersionMove {
 	 *
 	 * @var string
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public const RUN_NOT_MOVED = 'The case moves to the new version. A flow run already in progress stays on the '
 		. 'definition version it started under, until openregister ships migrate-run-between-versions.';
+
+	/**
+	 * Binds a moved case to the workflow template of its new case type.
+	 *
+	 * @var WorkflowTemplateBinding
+	 */
+	private readonly WorkflowTemplateBinding $templates;
 
 	/**
 	 * Constructor.
@@ -104,6 +112,7 @@ class CaseVersionMove {
 		private readonly CaseVersionDiff $diff,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->templates = new WorkflowTemplateBinding(store: $store);
 	}//end __construct()
 
 	/**
@@ -115,7 +124,7 @@ class CaseVersionMove {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function options(string $caseId): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -152,7 +161,7 @@ class CaseVersionMove {
 	 *
 	 * @throws RefusedException When the case or the target cannot be read, or the target is not a version of this type.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function preview(string $caseId, string $targetCaseTypeId): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -190,7 +199,7 @@ class CaseVersionMove {
 	 *
 	 * @throws RefusedException When the move is refused, or the write fails.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function move(string $caseId, string $targetCaseTypeId, string $reason, string $actorUid): array {
 		$reason = trim($reason);
@@ -202,6 +211,36 @@ class CaseVersionMove {
 			);
 		}
 
+		$preview = $this->movablePreview(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId);
+
+		$this->applyMove(
+			act: new VersionMoveAct(
+				caseId: $caseId,
+				targetCaseTypeId: $targetCaseTypeId,
+				preview: $preview,
+				reason: $reason,
+				actorUid: $actorUid,
+			)
+		);
+
+		$preview['moved'] = true;
+
+		return $preview;
+	}//end move()
+
+	/**
+	 * The move's preview, re-computed, refused when the case has nowhere to land.
+	 *
+	 * @param string $caseId           The case uuid.
+	 * @param string $targetCaseTypeId The version to move onto.
+	 *
+	 * @return array<string, mixed> The preview.
+	 *
+	 * @throws RefusedException When the move is refused.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function movablePreview(string $caseId, string $targetCaseTypeId): array {
 		$preview = $this->preview(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId);
 		if ($preview['canMove'] !== true) {
 			throw new RefusedException(
@@ -213,19 +252,30 @@ class CaseVersionMove {
 			);
 		}
 
+		return $preview;
+	}//end movablePreview()
+
+	/**
+	 * Write the case onto the target version, with its status, template and journal entry.
+	 *
+	 * @param VersionMoveAct $act The case, target version, preview, reason and actor.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the write fails.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function applyMove(VersionMoveAct $act): void {
+		$caseId = $act->caseId;
+		$targetCaseTypeId = $act->targetCaseTypeId;
 		$case = $this->readCase(caseId: $caseId);
 		$sourceId = $this->store->referenceId(value: ($case['caseType'] ?? ''));
 
 		$case['caseType'] = $targetCaseTypeId;
-		$case['status'] = (string)$preview['status']['targetStatusId'];
+		$case['status'] = (string)$act->preview['status']['targetStatusId'];
 		$case = $this->rebindTemplate(case: $case, targetCaseTypeId: $targetCaseTypeId);
-		$case = $this->journal(
-			case: $case,
-			sourceId: $sourceId,
-			preview: $preview,
-			reason: $reason,
-			actorUid: $actorUid
-		);
+		$case = $this->journal(case: $case, sourceId: $sourceId, act: $act);
 
 		$this->write(caseId: $caseId, case: $case);
 
@@ -235,14 +285,10 @@ class CaseVersionMove {
 				'case' => $caseId,
 				'from' => $sourceId,
 				'to' => $targetCaseTypeId,
-				'actor' => $actorUid,
+				'actor' => $act->actorUid,
 			]
 		);
-
-		$preview['moved'] = true;
-
-		return $preview;
-	}//end move()
+	}//end applyMove()
 
 	/**
 	 * Refuse a target that is not another version of the case's own type.
@@ -254,9 +300,25 @@ class CaseVersionMove {
 	 *
 	 * @throws RefusedException When the two are not versions of one case type.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function assertSameChain(string $sourceId, string $targetId): void {
+		$this->assertTargetNamed(sourceId: $sourceId, targetId: $targetId);
+		$this->assertNotItself(sourceId: $sourceId, targetId: $targetId);
+		$this->assertOnChain(sourceId: $sourceId, targetId: $targetId);
+	}//end assertSameChain()
+
+	/**
+	 * Refuse a move that names no target.
+	 *
+	 * @param string $sourceId The case's current case type version id.
+	 * @param string $targetId The version to move to.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When either version is missing.
+	 */
+	private function assertTargetNamed(string $sourceId, string $targetId): void {
 		if ($sourceId === '' || $targetId === '') {
 			throw new RefusedException(
 				rule: 'version-move-target-missing',
@@ -264,7 +326,19 @@ class CaseVersionMove {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end assertTargetNamed()
 
+	/**
+	 * Refuse a move to the version the case is already on.
+	 *
+	 * @param string $sourceId The case's current case type version id.
+	 * @param string $targetId The version to move to.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the target is the same version.
+	 */
+	private function assertNotItself(string $sourceId, string $targetId): void {
 		if ($sourceId === $targetId) {
 			throw new RefusedException(
 				rule: 'version-move-to-itself',
@@ -272,7 +346,19 @@ class CaseVersionMove {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end assertNotItself()
 
+	/**
+	 * Refuse a target that is not a version of the case's own case type.
+	 *
+	 * @param string $sourceId The case's current case type version id.
+	 * @param string $targetId The version to move to.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the target is another case type.
+	 */
+	private function assertOnChain(string $sourceId, string $targetId): void {
 		foreach ($this->chain->versionsOf(caseTypeId: $sourceId) as $entry) {
 			if ($entry['id'] === $targetId) {
 				return;
@@ -284,7 +370,7 @@ class CaseVersionMove {
 			sentence: 'That is a different case type, not another version of this one. Changing a case\'s type is a rebind and is not this act.',
 			status: RefusedException::STATUS_UNPROCESSABLE,
 		);
-	}//end assertSameChain()
+	}//end assertOnChain()
 
 	/**
 	 * Pin the case to the target version's own workflow template.
@@ -300,37 +386,10 @@ class CaseVersionMove {
 	 *
 	 * @return array<string, mixed> The case, re-pinned.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function rebindTemplate(array $case, string $targetCaseTypeId): array {
-		$rows = $this->store->rowsOfType(
-			schemaKey: 'workflow_template_schema',
-			caseTypeId: $targetCaseTypeId
-		);
-
-		$chosen = [];
-		foreach ($rows as $row) {
-			if (($row['isActive'] ?? false) === true) {
-				$chosen = $row;
-				break;
-			}
-
-			if ($chosen === []) {
-				$chosen = $row;
-			}
-		}
-
-		if ($chosen === []) {
-			$case['workflowTemplate'] = null;
-			$case['workflowVersion'] = null;
-
-			return $case;
-		}
-
-		$case['workflowTemplate'] = $this->store->rowId(row: $chosen);
-		$case['workflowVersion'] = (int)($chosen['version'] ?? 1);
-
-		return $case;
+		return $this->templates->bind(case: $case, targetCaseTypeId: $targetCaseTypeId);
 	}//end rebindTemplate()
 
 	/**
@@ -342,15 +401,14 @@ class CaseVersionMove {
 	 *
 	 * @param array<string, mixed> $case     The case being moved.
 	 * @param string               $sourceId The version it is leaving.
-	 * @param array<string, mixed> $preview  What the move changes.
-	 * @param string               $reason   Why it is moving.
-	 * @param string               $actorUid Who moved it.
+	 * @param VersionMoveAct       $act      What the move changes, why, and who moved it.
 	 *
 	 * @return array<string, mixed> The case, with the entry appended.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
-	private function journal(array $case, string $sourceId, array $preview, string $reason, string $actorUid): array {
+	private function journal(array $case, string $sourceId, VersionMoveAct $act): array {
+		$preview = $act->preview;
 		$entries = [];
 		$raw = ($case['activity'] ?? null);
 		if (is_string($raw) === true && trim($raw) !== '') {
@@ -372,8 +430,8 @@ class CaseVersionMove {
 			'toVersion' => ($preview['to']['version'] ?? null),
 			'status' => (string)$preview['status']['to'],
 			'fieldsRemoved' => $preview['fields']['removed'],
-			'reason' => $reason,
-			'actor' => $actorUid,
+			'reason' => $act->reason,
+			'actor' => $act->actorUid,
 			'timestamp' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 		];
 
@@ -430,7 +488,7 @@ class CaseVersionMove {
 		[$objectService, $register, $schema] = $this->scope();
 
 		try {
-			$objectService->updateObject($register, $schema, $caseId, $case);
+			$objectService->updateObject(objectId: $caseId, data: $case);
 		} catch (Throwable $e) {
 			throw RefusedException::indeterminate(
 				rule: 'version-move-not-written',

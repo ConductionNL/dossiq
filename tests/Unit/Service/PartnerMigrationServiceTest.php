@@ -44,6 +44,7 @@ interface PartnerMigrationObjectServiceStub {
  * Unit tests for PartnerMigrationService.
  *
  * @covers \OCA\Dossiq\Service\PartnerMigrationService
+ * @uses \OCA\Dossiq\Service\OrganisationLookup
  */
 class PartnerMigrationServiceTest extends TestCase {
 

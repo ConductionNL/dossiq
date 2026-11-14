@@ -28,17 +28,18 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\People\CaseSeats;
-use OCA\Dossiq\Service\People\CoordinatorRequirement;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Controller\Support\CaseCaller;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseSeatsInterface;
+use OCA\Dossiq\Kernel\Contracts\CoordinatorRequirementInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -53,7 +54,7 @@ use Throwable;
 /**
  * Reads both seats on a case, and names or empties the coordinator.
  *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 class CaseSeatsController extends Controller {
 
@@ -64,24 +65,24 @@ class CaseSeatsController extends Controller {
 	 *
 	 * @param string                 $appName     The app name.
 	 * @param IRequest               $request     The request.
-	 * @param CaseSeats              $seats       The handler and the coordinator.
-	 * @param CoordinatorRequirement $requirement Whether this case type asks for a coordinator.
-	 * @param CaseAccessGuard        $accessGuard Per-case authorization, failing closed.
-	 * @param SettingsService        $settings    Bridge to OpenRegister.
+	 * @param CaseSeatsInterface              $seats       The handler and the coordinator.
+	 * @param CoordinatorRequirementInterface $requirement Whether this case type asks for a coordinator.
+	 * @param CaseAccessGuardInterface        $accessGuard Per-case authorization, failing closed.
+	 * @param SettingsServiceInterface        $settings    Bridge to OpenRegister.
 	 * @param IUserSession           $userSession The session.
 	 * @param LoggerInterface        $logger      The logger.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+	 * @spec openspec/specs/people-on-the-case/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseSeats $seats,
-		private readonly CoordinatorRequirement $requirement,
-		private readonly CaseAccessGuard $accessGuard,
-		private readonly SettingsService $settings,
+		private readonly CaseSeatsInterface $seats,
+		private readonly CoordinatorRequirementInterface $requirement,
+		private readonly CaseAccessGuardInterface $accessGuard,
+		private readonly SettingsServiceInterface $settings,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -95,7 +96,7 @@ class CaseSeatsController extends Controller {
 	 *
 	 * @return JSONResponse The seats.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
 	 */
 	#[NoAdminRequired]
 	public function show(string $caseId): JSONResponse {
@@ -128,7 +129,7 @@ class CaseSeatsController extends Controller {
 	 *
 	 * @return JSONResponse The seats as they now stand.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
 	 */
 	#[NoAdminRequired]
 	public function nameCoordinator(string $caseId): JSONResponse {
@@ -137,37 +138,68 @@ class CaseSeatsController extends Controller {
 			return $this->notYours();
 		}
 
+		try {
+			$cleared = $this->setCoordinatorSeat(caseId: $caseId);
+		} catch (Throwable $e) {
+			return $this->seatNotSet(caseId: $caseId, error: $e);
+		}
+
+		return $cleared ?? $this->show(caseId: $caseId);
+	}//end nameCoordinator()
+
+	/**
+	 * Fill the coordinator seat from the request, or empty it.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return JSONResponse|null The seats when the seat was emptied, null when it was filled.
+	 *
+	 * @throws Throwable When the seat cannot be set.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 */
+	private function setCoordinatorSeat(string $caseId): ?JSONResponse {
 		$participant = trim((string)$this->request->getParam('participant', ''));
 		$displayName = trim((string)$this->request->getParam('name', ''));
 
-		try {
-			// An empty participant EMPTIES the seat, which is how a coordinator
-			// is removed without a second endpoint that does one thing.
-			if ($participant === '') {
-				$this->seats->clearCoordinator(caseId: $caseId);
+		// An empty participant EMPTIES the seat, which is how a coordinator
+		// is removed without a second endpoint that does one thing.
+		if ($participant === '') {
+			$this->seats->clearCoordinator(caseId: $caseId);
 
-				return $this->show(caseId: $caseId);
-			}
-
-			$this->seats->nameCoordinator(caseId: $caseId, participant: $participant, displayName: $displayName);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'CaseSeatsController: the coordinator seat could not be set',
-				['caseId' => $caseId, 'exception' => $e->getMessage()],
-			);
-
-			return new JSONResponse(
-				[
-					'message' => 'This instance declares no coordinator role type, so the seat cannot be filled. '
-						. 'Add one on the Roles tab of the case type.',
-					'error' => 'no-coordinator-role-type',
-				],
-				Http::STATUS_UNPROCESSABLE_ENTITY,
-			);
+			return $this->show(caseId: $caseId);
 		}
 
-		return $this->show(caseId: $caseId);
-	}//end nameCoordinator()
+		$this->seats->nameCoordinator(caseId: $caseId, participant: $participant, displayName: $displayName);
+
+		return null;
+	}//end setCoordinatorSeat()
+
+	/**
+	 * Log a coordinator seat that could not be set and answer why.
+	 *
+	 * @param string $caseId The case uuid.
+	 * @param Throwable $error Why the seat could not be set.
+	 *
+	 * @return JSONResponse A 422 naming the missing coordinator role type.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 */
+	private function seatNotSet(string $caseId, Throwable $error): JSONResponse {
+		$this->logger->warning(
+			'CaseSeatsController: the coordinator seat could not be set',
+			['caseId' => $caseId, 'exception' => $error->getMessage()],
+		);
+
+		return new JSONResponse(
+			[
+				'message' => 'This instance declares no coordinator role type, so the seat cannot be filled. '
+					. 'Add one on the Roles tab of the case type.',
+				'error' => 'no-coordinator-role-type',
+			],
+			Http::STATUS_UNPROCESSABLE_ENTITY,
+		);
+	}//end seatNotSet()
 
 	/**
 	 * The caller, when they may write this case.
@@ -177,16 +209,7 @@ class CaseSeatsController extends Controller {
 	 * @return IUser|null The caller, or null.
 	 */
 	private function writerOf(string $caseId): ?IUser {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return null;
-		}
-
-		if ($this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return null;
-		}
-
-		return $user;
+		return (new CaseCaller(userSession: $this->userSession, accessGuard: $this->accessGuard))->writer(caseId: $caseId);
 	}//end writerOf()
 
 	/**

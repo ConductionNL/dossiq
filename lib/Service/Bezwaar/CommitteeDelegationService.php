@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Bezwaar;
 
+use OCA\Dossiq\Kernel\Contracts\CommitteeDelegationServiceInterface;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/changes/migrate-committees-to-decidiq/specs/migrate-committees-to-decidiq/spec.md
  */
-class CommitteeDelegationService {
+class CommitteeDelegationService implements CommitteeDelegationServiceInterface {
 
 	/**
 	 * Every spelling of the governance-body command event FQN, newest first.
@@ -147,6 +148,23 @@ class CommitteeDelegationService {
 			);
 		}
 
+		$command = $this->identityOf(committee: $committee) + ['committee' => $committee, 'actorId' => $actorId];
+		$event = $this->dispatchCommand(eventClass: $eventClass, command: $command);
+
+		return $this->governanceBodyId(event: $event, reference: $command['reference']);
+
+	}//end ensureGovernanceBody()
+
+	/**
+	 * The committee's reference, name and active flag, refused when one is missing.
+	 *
+	 * @param array<string, mixed> $committee The committee row.
+	 *
+	 * @return array{reference: string, name: string, active: bool} The identity of the body.
+	 *
+	 * @throws RuntimeException When the id or name is empty or `active` is not a boolean.
+	 */
+	private function identityOf(array $committee): array {
 		$reference = $this->referenceOf(committee: $committee);
 		if ($reference === '') {
 			throw new RuntimeException('A committee needs an id before it can be raised as a governance body');
@@ -167,32 +185,64 @@ class CommitteeDelegationService {
 			throw new RuntimeException('A committee must state `active` as a boolean before it can be raised');
 		}
 
+		return ['reference' => $reference, 'name' => $name, 'active' => $active];
+
+	}//end identityOf()
+
+	/**
+	 * Build the governance-body command and dispatch it, reporting any failure as a service error.
+	 *
+	 * @param string $eventClass The command event class.
+	 * @param array{reference: string, name: string, active: bool, committee: array, actorId: string} $command The body and the acting UID.
+	 *
+	 * @return object The dispatched command, carrying the decision app's answer.
+	 *
+	 * @throws RuntimeException When building or dispatching the command fails.
+	 */
+	private function dispatchCommand(string $eventClass, array $command): object {
+		$committee = $command['committee'];
+
 		try {
 			// Positional ctor args (decision-app contract): sourceApp,
 			// externalReference, name, bodyType, domain, active, attributes,
 			// members, actorId, correlationId.
 			$event = new $eventClass(
 				self::SOURCE_APP,
-				$reference,
-				$name,
+				$command['reference'],
+				$command['name'],
 				self::BODY_TYPE,
 				$this->domainOf(committee: $committee),
-				$active,
+				$command['active'],
 				$this->attributesOf(committee: $committee),
 				$this->rosterOf(committee: $committee),
-				$actorId,
-				$reference
+				$command['actorId'],
+				$command['reference']
 			);
 
 			$this->eventDispatcher->dispatchTyped($event);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq committees: GovernanceBodyRequestedEvent dispatch failed',
-				['externalReference' => $reference, 'error' => $e->getMessage()]
+				['externalReference' => $command['reference'], 'error' => $e->getMessage()]
 			);
 			throw new RuntimeException('Committee service error: ' . $e->getMessage(), 0, $e);
 		}//end try
 
+		return $event;
+
+	}//end dispatchCommand()
+
+	/**
+	 * The governance body id the decision app answered, failing closed when it did not handle the command.
+	 *
+	 * @param object $event     The dispatched command.
+	 * @param string $reference The committee's external reference.
+	 *
+	 * @return string The GovernanceBody id.
+	 *
+	 * @throws RuntimeException When the command was not handled or carries no id.
+	 */
+	private function governanceBodyId(object $event, string $reference): string {
 		$handled = (bool)$event->isHandled();
 		$bodyId = (string)$event->getGovernanceBodyId();
 		if ($handled === false || $bodyId === '') {
@@ -216,7 +266,7 @@ class CommitteeDelegationService {
 
 		return $bodyId;
 
-	}//end ensureGovernanceBody()
+	}//end governanceBodyId()
 
 	/**
 	 * The committee's own id, which becomes the external reference.
@@ -310,7 +360,6 @@ class CommitteeDelegationService {
 
 	}//end rosterOf()
 
-
 	/**
 	 * The chair and secretary seats, when the committee names them.
 	 *
@@ -343,7 +392,6 @@ class CommitteeDelegationService {
 
 	}//end officers()
 
-
 	/**
 	 * Normalise `members[]` into roster entries, dropping the unusable.
 	 *
@@ -371,7 +419,6 @@ class CommitteeDelegationService {
 		return $entries;
 
 	}//end plainMembers()
-
 
 	/**
 	 * One `members[]` element as a roster entry, or null when unusable.

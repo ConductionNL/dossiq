@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\RecordTemplate;
 
+use OCA\Dossiq\Kernel\Contracts\RecordTemplateReaderInterface;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/record-template-start/spec.md#requirement-a-named-record-template-is-read-as-the-caller-req-rts-001
  */
-class RecordTemplateReader {
+class RecordTemplateReader implements RecordTemplateReaderInterface {
 
 	/**
 	 * OpenRegister's template service, resolved by name: an optional runtime dependency.
@@ -92,11 +93,37 @@ class RecordTemplateReader {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/record-template-start/spec.md#requirement-a-named-record-template-is-read-as-the-caller-req-rts-001
 	 */
 	public function find(string $uuid, string $schema): ?array {
-		$userId = (string)$this->userSession->getUser()?->getUID();
+		$userId = $this->callerId();
 		if ($userId === '' || $uuid === '' || $schema === '') {
 			return null;
 		}
 
+		$template = $this->readTemplate(userId: $userId, uuid: $uuid);
+
+		return $this->templateFor(template: $template, schema: $schema);
+	}//end find()
+
+	/**
+	 * The signed-in caller's uid, '' when nobody is signed in.
+	 *
+	 * @return string
+	 */
+	private function callerId(): string {
+		return (string)$this->userSession->getUser()?->getUID();
+	}//end callerId()
+
+	/**
+	 * Read one template within the caller's reach.
+	 *
+	 * @param string $userId The caller's uid.
+	 * @param string $uuid   The template uuid.
+	 *
+	 * @return mixed The template, null when there is no such template.
+	 *
+	 * @throws RuntimeException When OpenRegister is not installed.
+	 * @throws Throwable        When OpenRegister fails for any reason but "no such template".
+	 */
+	private function readTemplate(string $userId, string $uuid): mixed {
 		if ($this->appManager->isInstalled('openregister') === false) {
 			throw new RuntimeException('Record templates need OpenRegister, which is not installed.');
 		}
@@ -112,6 +139,18 @@ class RecordTemplateReader {
 			}
 		}
 
+		return $template;
+	}//end readTemplate()
+
+	/**
+	 * The template as an answer, when it is for the schema.
+	 *
+	 * @param mixed  $template The template, or null.
+	 * @param string $schema   The schema id the template must be for.
+	 *
+	 * @return array{uuid: string, name: string, values: array<string, mixed>}|null
+	 */
+	private function templateFor(mixed $template, string $schema): array|null {
 		if ($template === null || (string)$template->getSchema() !== $schema) {
 			return null;
 		}
@@ -121,5 +160,5 @@ class RecordTemplateReader {
 			'name' => (string)$template->getName(),
 			'values' => (array)$template->getValues(),
 		];
-	}//end find()
+	}//end templateFor()
 }//end class

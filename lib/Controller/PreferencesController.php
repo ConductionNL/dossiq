@@ -33,7 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -85,7 +85,7 @@ class PreferencesController extends Controller {
 		private readonly IConfig $config,
 		private readonly IUserSession $userSession,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 
 	}//end __construct()
 
@@ -112,7 +112,7 @@ class PreferencesController extends Controller {
 
 		$value = $this->config->getUserValue(
 			userId: $user->getUID(),
-			appName: Application::APP_ID,
+			appName: AppIdentity::APP_ID,
 			key: 'pref_' . $safeKey,
 			default: ''
 		);
@@ -143,6 +143,41 @@ class PreferencesController extends Controller {
 		}
 
 		$safeKey = $this->sanitizeKey(key: $key);
+		$refusal = $this->writeRefusal(safeKey: $safeKey, value: $value);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		if ($value === '') {
+			$this->config->deleteUserValue(
+				userId: $user->getUID(),
+				appName: AppIdentity::APP_ID,
+				key: 'pref_' . $safeKey
+			);
+			return new JSONResponse(data: ['value' => null]);
+		}
+
+		$this->config->setUserValue(
+			userId: $user->getUID(),
+			appName: AppIdentity::APP_ID,
+			key: 'pref_' . $safeKey,
+			value: $value
+		);
+
+		return new JSONResponse(data: ['value' => $value]);
+	}//end setPreference()
+
+	/**
+	 * The 400 refusal for a key that is not safe or a value that is too long, else null.
+	 *
+	 * @param string $safeKey The sanitised key; empty when the key was refused.
+	 * @param string $value   The value to store.
+	 *
+	 * @return JSONResponse|null
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function writeRefusal(string $safeKey, string $value): ?JSONResponse {
 		if ($safeKey === '') {
 			return new JSONResponse(data: ['message' => 'Invalid key'], statusCode: Http::STATUS_BAD_REQUEST);
 		}
@@ -154,27 +189,8 @@ class PreferencesController extends Controller {
 			);
 		}
 
-		$stored = null;
-		if ($value === '') {
-			$this->config->deleteUserValue(
-				userId: $user->getUID(),
-				appName: Application::APP_ID,
-				key: 'pref_' . $safeKey
-			);
-		}
-
-		if ($value !== '') {
-			$this->config->setUserValue(
-				userId: $user->getUID(),
-				appName: Application::APP_ID,
-				key: 'pref_' . $safeKey,
-				value: $value
-			);
-			$stored = $value;
-		}
-
-		return new JSONResponse(data: ['value' => $stored]);
-	}//end setPreference()
+		return null;
+	}//end writeRefusal()
 
 	/**
 	 * Accept a key only when it is already in the safe charset, so callers
@@ -192,7 +208,7 @@ class PreferencesController extends Controller {
 	 * @return string The key unchanged, or '' when it is refused.
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
-	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	private function sanitizeKey(string $key): string {
 		if (strlen(string: $key) > self::MAX_KEY_LENGTH) {

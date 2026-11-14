@@ -217,9 +217,11 @@ describe('GatherDocumentsDialog', () => {
 		)
 		expect(action.type).toBe('open-modal')
 		expect(action.target).toBe('GatherDocumentsDialog')
-		expect(JSON.stringify(action.visibleWhen)).toContain(
-			'3c0f5a00-0000-4000-a000-00000000a001',
-		)
+		expect(action.visibleWhen.all).toContainEqual({
+			field: 'caseTypeIdentifier',
+			op: 'eq',
+			value: 'woo-verzoek',
+		})
 		expect(registrySource).toMatch(/GatherDocumentsDialog: \{\s*kind: 'modal'/)
 	})
 
@@ -409,5 +411,62 @@ describe('GatherDocumentsDialog', () => {
 			wrapper.find('[data-testid="gather-search"]').attributes('disabled'),
 		).toBeDefined()
 		expect(axios.post).not.toHaveBeenCalled()
+	})
+
+	it('turns unified search entries into rows per kind of source', async () => {
+		const { wrapper, axios } = await mountDialog()
+		axios.get.mockResolvedValueOnce({ data: { ocs: { data: { entries: [
+			{ title: 'a.pdf', subline: 'Team', attributes: { fileId: 5, path: '/Team/a.pdf' } },
+			{ subline: 'Only subline', attributes: { fileId: '6' } },
+			{ title: 'no id', attributes: {} },
+			null,
+		] } } } })
+		expect(await wrapper.vm.searchPlatform(SOURCES[0])).toEqual([
+			{ key: '5', name: 'a.pdf', location: '/Team/a.pdf', date: '', snippet: '' },
+			{ key: '6', name: '', location: 'Only subline', date: '', snippet: '' },
+		])
+		axios.get.mockResolvedValueOnce({ data: { ocs: { data: { entries: [
+			{ title: 'Advies', subline: 'Zaak', resourceUrl: `/apps/dossiq/cases/${CASE_ID}/documents/${OTHER_DOC}`, attributes: { path: '/p' } },
+			{ title: 'Geen link', subline: 'Zaak' },
+		] } } } })
+		expect(await wrapper.vm.searchPlatform(SOURCES[1])).toEqual([
+			{ key: OTHER_DOC, name: 'Advies', location: '/p', date: '', snippet: 'Zaak' },
+		])
+	})
+
+	it('adds nothing while busy or without picks', async () => {
+		const { wrapper, axios } = await mountDialog()
+		axios.post.mockClear()
+		await wrapper.vm.add()
+		wrapper.vm.picks = [{ source: 'files', key: '11', name: 'n', custodian: 'c', location: 'l' }]
+		wrapper.vm.busy = true
+		await wrapper.vm.add()
+		expect(axios.post).not.toHaveBeenCalled()
+	})
+
+	it('reads a refused add: its per-pick answer, else its sentence, else the plain one', async () => {
+		const { wrapper, axios } = await mountDialog()
+		const pick = { source: 'files', key: '11', name: 'notulen.pdf', custodian: 'c', location: 'l', extra: 'dropped' }
+		wrapper.vm.picks = [pick]
+		axios.post.mockRejectedValueOnce({ response: { data: { results: [{ source: 'files', key: '11', status: 'refused', message: 'Nee' }] } } })
+		await wrapper.vm.add()
+		expect(axios.post).toHaveBeenLastCalledWith(expect.stringContaining('/woo/sources/add'), {
+			terms: '',
+			picks: [{ source: 'files', custodian: 'c', key: '11', location: 'l' }],
+		})
+		expect(wrapper.vm.refusals).toEqual([{ source: 'files', key: '11', status: 'refused', message: 'Nee', name: 'notulen.pdf' }])
+		expect(wrapper.vm.error).toBe('')
+		expect(wrapper.vm.busy).toBe(false)
+
+		axios.post.mockRejectedValueOnce({ response: { data: { message: 'Server zegt nee' } } })
+		await wrapper.vm.add()
+		expect(wrapper.vm.error).toBe('Server zegt nee')
+		expect(wrapper.vm.refusals).toEqual([])
+
+		axios.post.mockRejectedValueOnce(new Error('down'))
+		await wrapper.vm.add()
+		expect(wrapper.vm.error).toBe('The documents were not added.')
+		expect(wrapper.vm.busy).toBe(false)
+		expect(wrapper.vm.picks).toEqual([pick])
 	})
 })

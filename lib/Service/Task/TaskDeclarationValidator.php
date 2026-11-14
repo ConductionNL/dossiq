@@ -40,7 +40,7 @@ use OCP\IGroupManager;
 /**
  * Refuses a workflow whose task declarations name something that is not there.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+ * @spec openspec/specs/process-step-configuration/spec.md
  */
 class TaskDeclarationValidator {
 
@@ -92,7 +92,7 @@ class TaskDeclarationValidator {
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals; empty when it may be published.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function refusalsFor(array $definition): array {
 		return $this->refusals(steps: $this->steps->stepsOf(definition: $definition));
@@ -105,7 +105,7 @@ class TaskDeclarationValidator {
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals; empty when it may be published.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function refusals(array $steps): array {
 		$refusals = [];
@@ -256,16 +256,9 @@ class TaskDeclarationValidator {
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
 	 */
 	private function fieldFormRefusals(array $form, string $task, string $path): array {
-		$refusals = [];
-		if (trim((string)($form['schema'] ?? '')) === '') {
-			$refusals[] = self::refusal(
-				path: $path . '.schema',
-				code: 'unresolvable_form',
-				message: sprintf('Task "%s" declares a form of fields without naming the schema they belong to.', $task)
-			);
-		}
-
-		$fields = ($form['fields'] ?? []);
+		$at       = new TaskFormAt(task: $task, path: $path);
+		$refusals = self::schemaRefusals(form: $form, at: $at);
+		$fields   = ($form['fields'] ?? []);
 		if (is_array($fields) === false || $fields === []) {
 			$refusals[] = self::refusal(
 				path: $path . '.fields',
@@ -276,23 +269,68 @@ class TaskDeclarationValidator {
 			return $refusals;
 		}
 
-		foreach ($fields as $position => $field) {
-			$name = '';
-			if (is_array($field) === true) {
-				$name = trim((string)($field['field'] ?? ''));
-			}
+		return array_merge($refusals, self::unnamedFieldRefusals(fields: $fields, at: $at));
+	}//end fieldFormRefusals()
 
-			if ($name === '') {
+	/**
+	 * A field form must name the schema its fields belong to.
+	 *
+	 * @param array<string, mixed> $form The declared form.
+	 * @param TaskFormAt           $at   The task and the form's path.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}> The refusal, or none.
+	 */
+	private static function schemaRefusals(array $form, TaskFormAt $at): array {
+		if (trim((string)($form['schema'] ?? '')) !== '') {
+			return [];
+		}
+
+		return [
+			self::refusal(
+				path: $at->path . '.schema',
+				code: 'unresolvable_form',
+				message: sprintf('Task "%s" declares a form of fields without naming the schema they belong to.', $at->task)
+			),
+		];
+	}//end schemaRefusals()
+
+	/**
+	 * One refusal per declared field without a name.
+	 *
+	 * @param array<int|string, mixed> $fields The declared fields.
+	 * @param TaskFormAt               $at     The task and the form's path.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
+	 */
+	private static function unnamedFieldRefusals(array $fields, TaskFormAt $at): array {
+		$refusals = [];
+		foreach ($fields as $position => $field) {
+			if (self::fieldName(field: $field) === '') {
 				$refusals[] = self::refusal(
-					path: sprintf('%s.fields[%d].field', $path, (int)$position),
+					path: sprintf('%s.fields[%d].field', $at->path, (int)$position),
 					code: 'unresolvable_form',
-					message: sprintf('Task "%s" declares a form field with no name.', $task)
+					message: sprintf('Task "%s" declares a form field with no name.', $at->task)
 				);
 			}
 		}
 
 		return $refusals;
-	}//end fieldFormRefusals()
+	}//end unnamedFieldRefusals()
+
+	/**
+	 * The name a declared field gives, '' when it gives none.
+	 *
+	 * @param mixed $field The declared field.
+	 *
+	 * @return string The trimmed name.
+	 */
+	private static function fieldName(mixed $field): string {
+		if (is_array($field) === false) {
+			return '';
+		}
+
+		return trim((string)($field['field'] ?? ''));
+	}//end fieldName()
 
 	/**
 	 * Refuse a candidate group nobody has.

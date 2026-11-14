@@ -22,14 +22,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseVoorbladServiceInterface;
+use OCA\Dossiq\Service\Support\CastArray;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -37,9 +39,9 @@ use Throwable;
 /**
  * Builds the KCC case-voorblad for an identified burger.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
  */
-class CaseVoorbladService {
+class CaseVoorbladService implements CaseVoorbladServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -63,7 +65,7 @@ class CaseVoorbladService {
 	 *
 	 * @return array{burgerId: string, openZaken: array<int, mixed>, recenteContactmomenten: array<int, mixed>, suggestedTopic: string}
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
 	 */
 	public function getCaseVoorblad(string $burgerId): array {
 		$maxCases = max(1, (int)$this->settingsService->getKccConfigValue('max_zaken_voorblad'));
@@ -96,47 +98,76 @@ class CaseVoorbladService {
 			return [];
 		}
 
+		$scope = $this->caseSearchScope();
+		if ($scope === null) {
+			return [];
+		}
+
+		try {
+			$results = $this->searchCasesOf(scope: $scope, burgerId: $burgerId);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: failed to fetch zaken for voorblad: ' . $e->getMessage(),
+				['app' => AppIdentity::APP_ID],
+			);
+			return [];
+		}
+
+		return $this->openCaseSummaries(results: (array)$results);
+	}//end fetchOpenZaken()
+
+	/**
+	 * The object service, register and case schema to search, or null when
+	 * OpenRegister or either setting is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null
+	 */
+	private function caseSearchScope(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return [];
+			return null;
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
 		if ($register === '' || $caseSchema === '') {
-			return [];
+			return null;
 		}
 
-		try {
-			$results = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['initiator' => $burgerId, '_limit' => 50],
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: failed to fetch zaken for voorblad: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
-			);
-			return [];
-		}
+		return [$objectService, $register, $caseSchema];
+	}//end caseSearchScope()
 
+	/**
+	 * The cases a burger initiated, at most fifty.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $scope    The object service, register and case schema.
+	 * @param string                                 $burgerId The burger reference.
+	 *
+	 * @return array<int, mixed>
+	 */
+	private function searchCasesOf(array $scope, string $burgerId): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $scope[0],
+			register: $scope[1],
+			schema: $scope[2],
+			filters: ['initiator' => $burgerId, '_limit' => 50],
+		);
+	}//end searchCasesOf()
+
+	/**
+	 * The open cases among the results, summarised, newest action first.
+	 *
+	 * @param array<int, mixed> $results The search results.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function openCaseSummaries(array $results): array {
 		$cases = [];
-		foreach ((array)$results as $result) {
+		foreach ($results as $result) {
 			$case = $this->toArray(result: $result);
-			$status = strtolower((string)($case['status'] ?? ''));
-			if (in_array($status, ['handled', 'gesloten', 'closed'], true) === true) {
-				continue;
+			if ($this->isClosed(case: $case) === false) {
+				$cases[] = $this->caseSummary(case: $case);
 			}
-
-			$cases[] = [
-				'id' => (string)($case['id'] ?? ($case['uuid'] ?? '')),
-				'title' => (string)($case['title'] ?? ($case['titel'] ?? '')),
-				'status' => (string)($case['status'] ?? ''),
-				'laatsteActie' => (string)($case['lastActionDate'] ?? ($case['updated'] ?? '')),
-				'caseType' => (string)($case['caseType'] ?? ''),
-			];
 		}
 
 		usort(
@@ -147,7 +178,37 @@ class CaseVoorbladService {
 		);
 
 		return $cases;
-	}//end fetchOpenZaken()
+	}//end openCaseSummaries()
+
+	/**
+	 * Whether a case is handled or closed.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return bool
+	 */
+	private function isClosed(array $case): bool {
+		$status = strtolower((string)($case['status'] ?? ''));
+
+		return in_array($status, ['handled', 'gesloten', 'closed'], true);
+	}//end isClosed()
+
+	/**
+	 * One open case as the cover sheet shows it.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return array<string, string>
+	 */
+	private function caseSummary(array $case): array {
+		return [
+			'id' => (string)($case['id'] ?? ($case['uuid'] ?? '')),
+			'title' => (string)($case['title'] ?? ($case['titel'] ?? '')),
+			'status' => (string)($case['status'] ?? ''),
+			'laatsteActie' => (string)($case['lastActionDate'] ?? ($case['updated'] ?? '')),
+			'caseType' => (string)($case['caseType'] ?? ''),
+		];
+	}//end caseSummary()
 
 	/**
 	 * Suggest a likely dialogue topic from the most recent open case.
@@ -178,18 +239,6 @@ class CaseVoorbladService {
 	 * @return array<string, mixed> The normalised record.
 	 */
 	private function toArray($result): array {
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		if (is_object($result) === true && method_exists($result, 'jsonSerialize') === true) {
-			return (array)$result->jsonSerialize();
-		}
-
-		if (is_object($result) === true) {
-			return (array)$result;
-		}
-
-		return [];
+		return CastArray::of(value: $result);
 	}//end toArray()
 }//end class

@@ -1,67 +1,7 @@
 {
-  "src/components/InspectionChecklistEditor.vue": {
-    "@nextcloud/l10n-enforce-ellipsis": {
-      "count": 1
-    },
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    }
-  },
-  "src/components/besluitvorming/BesluitPublicatiePanel.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/components/initiator/InitiatorPicker.vue": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "src/components/map/AddressSearch.vue": {
-    "@nextcloud/l10n-enforce-ellipsis": {
-      "count": 2
-    }
-  },
-  "src/components/map/LocationPicker.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    }
-  },
-  "src/components/tabs/CaseDocumentsTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 1
-    }
-  },
-  "src/components/tabs/CaseTasksTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 1
-    }
-  },
   "src/dialogs/AddAssignmentDialog.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 1
-    }
-  },
-  "src/dialogs/AdviesAanvraagDialog.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 4
-    },
-    "no-console": {
-      "count": 1
-    }
-  },
-  "src/dialogs/BeschikkingComposerDialog.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
     }
   },
   "src/dialogs/CaseTransferDialog.vue": {
@@ -141,11 +81,6 @@
   },
   "src/modals/DeelzaakCreateModal.vue": {
     "no-console": {
-      "count": 3
-    }
-  },
-  "src/modals/InitiatorPickerModal.vue": {
-    "@nextcloud/no-deprecated-library-props": {
       "count": 2
     }
   },
@@ -165,33 +100,7 @@
       "count": 1
     }
   },
-  "src/modals/TermijnDefinitieEditor.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    }
-  },
-  "src/services/analyticsSeriesApi.js": {
-    "no-console": {
-      "count": 1
-    },
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "src/services/assistantApi.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/services/casesOnMapApi.js": {
-    "jsdoc/check-tag-names": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 2
-    }
-  },
-  "src/services/initiatorSearch.js": {
     "no-unused-vars": {
       "count": 1
     }
@@ -209,11 +118,6 @@
   "src/store/modules/advice.js": {
     "no-console": {
       "count": 2
-    }
-  },
-  "src/store/modules/bezwaar.js": {
-    "no-console": {
-      "count": 11
     }
   },
   "src/store/modules/enforcement.js": {
@@ -244,11 +148,6 @@
       "count": 3
     }
   },
-  "src/utils/kccTriggerWords.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "src/views/admin/SubstitutionAdmin.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 4
@@ -257,57 +156,9 @@
       "count": 3
     }
   },
-  "src/views/cases/DeelzaakDetail.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    },
-    "no-console": {
-      "count": 2
-    }
-  },
-  "src/views/cases/DeelzaakList.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 2
-    }
-  },
-  "src/views/cases/components/AdviceRequestPanel.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    }
-  },
-  "src/views/cases/components/AdviesPanel.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 3
-    }
-  },
-  "src/views/cases/components/CaseEmailTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 2
-    }
-  },
   "src/views/cases/components/CaseSharingTab.vue": {
     "@typescript-eslint/no-unused-vars": {
       "count": 7
-    }
-  },
-  "src/views/cases/components/EmailThread.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
     }
   },
   "src/views/cases/components/ShareTab.vue": {
@@ -330,19 +181,6 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
-    }
-  },
-  "src/views/dashboard/WooDeadlinePanel.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
-    "vue/custom-event-name-casing": {
-      "count": 2
-    }
-  },
-  "src/views/doorlooptijd/components/DeadlineCaseTable.vue": {
-    "vue/custom-event-name-casing": {
-      "count": 3
     }
   },
   "src/views/public/PublicAppointmentPage.vue": {
@@ -369,42 +207,7 @@
       "count": 1
     }
   },
-  "src/views/settings/CaseTypeDetail.vue": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/views/settings/CaseTypeList.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    }
-  },
-  "src/views/settings/KccIntegrationSettings.vue": {
-    "@nextcloud/l10n-enforce-ellipsis": {
-      "count": 1
-    },
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "vue/no-useless-v-bind": {
-      "count": 1
-    }
-  },
-  "src/views/settings/Settings.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
-    "vue/multi-word-component-names": {
-      "count": 1
-    }
-  },
   "src/views/settings/StufAuditLog.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
@@ -433,37 +236,6 @@
   "src/views/settings/ZgwMappingSettings.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 2
-    }
-  },
-  "src/views/settings/components/MandaatImportPanel.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 2
-    }
-  },
-  "src/views/settings/components/MandaatMatrixTable.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 2
-    }
-  },
-  "src/views/settings/components/MandaatToewijzingenTable.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
-  "src/views/settings/components/OrganisatieRolManager.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
-  "src/views/settings/components/RolNode.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
     }
   },
   "src/views/settings/components/StepConfigPanel.vue": {
@@ -495,90 +267,6 @@
       "count": 2
     }
   },
-  "src/views/settings/tabs/ChecklistsTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 3
-    }
-  },
-  "src/views/settings/tabs/ConsultationSettingsTab.vue": {
-    "@nextcloud/l10n-enforce-ellipsis": {
-      "count": 1
-    },
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    }
-  },
-  "src/views/settings/tabs/DecisionTablesTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
-  "src/views/settings/tabs/DecisionTypesTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    },
-    "jsdoc/require-param-type": {
-      "count": 2
-    }
-  },
-  "src/views/settings/tabs/DocumentTypesTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    }
-  },
-  "src/views/settings/tabs/MandaatMatrixSettingsTab.vue": {
-    "@nextcloud/l10n-enforce-ellipsis": {
-      "count": 1
-    },
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    }
-  },
-  "src/views/settings/tabs/MandaatMatrixTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 4
-    }
-  },
-  "src/views/settings/tabs/PropertiesTab.vue": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/views/settings/tabs/ResultsTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 5
-    }
-  },
-  "src/views/settings/tabs/RolesTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 5
-    }
-  },
-  "src/views/settings/tabs/SubCaseTypesTab.vue": {
-    "@nextcloud/l10n-enforce-ellipsis": {
-      "count": 1
-    },
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
-    "jsdoc/require-param-type": {
-      "count": 2
-    }
-  },
-  "src/views/settings/tabs/TermijnDefinitiesTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    }
-  },
   "src/views/settings/tabs/WorkflowTab.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 7
@@ -587,54 +275,9 @@
       "count": 1
     }
   },
-  "src/views/widgets/CasesOverviewWidget.vue": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "src/views/widgets/DeadlineAlertsWidget.vue": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "src/views/widgets/MyTasksWidget.vue": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "src/views/widgets/OverdueCasesWidget.vue": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "src/views/widgets/StalledCasesWidget.vue": {
-    "no-console": {
-      "count": 1
-    }
-  },
   "src/views/widgets/StartCaseWidget.vue": {
     "no-console": {
       "count": 2
-    }
-  },
-  "src/views/widgets/TaskRemindersWidget.vue": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "src/views/workflow-board/BoardColumn.vue": {
-    "vue/custom-event-name-casing": {
-      "count": 2
-    }
-  },
-  "src/views/workflow-board/CaseCard.vue": {
-    "vue/custom-event-name-casing": {
-      "count": 1
-    }
-  },
-  "src/views/workflow-board/WorkflowBoard.vue": {
-    "no-console": {
-      "count": 3
     }
   }
 }

@@ -92,6 +92,36 @@ class NoteEnvelope {
 		string $bronorganisatie = '',
 	): array {
 		$body = trim((string)($note['message'] ?? ''));
+		self::assertSendable(body: $body, informatieobjecttype: $informatieobjecttype);
+		if (trim($caseId) === '') {
+			throw new InvalidArgumentException('A note with no case is not sent.');
+		}
+
+		return [
+			'identificatie' => 'dossiq-note-' . (string)($note['id'] ?? ''),
+			'bronorganisatie' => $bronorganisatie,
+			'titel' => $this->titleOf(body: $body),
+			'auteur' => $this->authorOf(note: $note),
+			'taal' => self::LANGUAGE,
+			'informatieobjecttype' => trim($informatieobjecttype),
+			'creatiedatum' => $this->createdOn(note: $note),
+			'formaat' => 'text/plain',
+			'inhoud' => base64_encode($body),
+			'zaak' => $caseId,
+		];
+	}//end build()
+
+	/**
+	 * Refuse a note with no text, and any note while no informatieobjecttype is reserved for notes.
+	 *
+	 * @param string $body                 The note's text, trimmed.
+	 * @param string $informatieobjecttype The informatieobjecttype reserved for case notes.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When the note cannot be sent.
+	 */
+	private static function assertSendable(string $body, string $informatieobjecttype): void {
 		if ($body === '') {
 			// An empty note sent as a document is a document with no content,
 			// which the receiver files and nobody can read. Refusing here is
@@ -111,24 +141,7 @@ class NoteEnvelope {
 				. 'your catalogue reserved for them.'
 			);
 		}
-
-		if (trim($caseId) === '') {
-			throw new InvalidArgumentException('A note with no case is not sent.');
-		}
-
-		return [
-			'identificatie' => 'dossiq-note-' . (string)($note['id'] ?? ''),
-			'bronorganisatie' => $bronorganisatie,
-			'titel' => $this->titleOf(body: $body),
-			'auteur' => $this->authorOf(note: $note),
-			'taal' => self::LANGUAGE,
-			'informatieobjecttype' => trim($informatieobjecttype),
-			'creatiedatum' => $this->createdOn(note: $note),
-			'formaat' => 'text/plain',
-			'inhoud' => base64_encode($body),
-			'zaak' => $caseId,
-		];
-	}//end build()
+	}//end assertSendable()
 
 	/**
 	 * The title a note gets, from its first line.

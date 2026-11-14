@@ -139,7 +139,7 @@ class CapacityGuardWiringTest extends TestCase {
 		// An unregistered type is LOGGED and skipped, not refused, so a guard
 		// the registry does not know evaluates as nothing at all.
 		$this->assertStringContainsString(
-			'self::STATUS_CAPACITY => $capacity,',
+			'self::STATUS_CAPACITY => $statusEntry->capacity,',
 			$source,
 			'the registry must map the type to the evaluator, or the guard is skipped in silence'
 		);
@@ -196,7 +196,7 @@ class CapacityGuardWiringTest extends TestCase {
 		// into three free places move three and report seven, each with the
 		// capacity sentence. The assertion is here so that stays true.
 		$this->assertMatchesRegularExpression(
-			'/public function apply\(\s*ObjectEntity \$object/',
+			'/public function apply\(BulkStep \$step\): BulkActionResult/',
 			$source,
 			'the bulk action must apply to one object at a time, or a full status refuses the '
 			. 'whole selection instead of the cases past the limit'

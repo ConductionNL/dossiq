@@ -87,6 +87,66 @@ class TenantQuotaServiceTest extends TestCase {
 		$this->assertSame('unlimited', $d['reason']);
 	}
 
+	/**
+	 * Every decision, with its soft flag and reason, at and around both limits.
+	 *
+	 * @return void
+	 */
+	public function testEveryDecisionIsExact(): void {
+		$decide = fn (array $quota, int $increment=1): array => $this->svc->decide($quota, $increment);
+		$allow = static fn (bool $soft, string $reason): array => ['decision' => 'allow', 'soft' => $soft, 'reason' => $reason];
+
+		$this->assertSame($allow(false, 'unlimited'), $decide(['currentUsage' => 5]));
+		$this->assertSame($allow(false, 'within_limit'), $decide(['limit' => 100, 'currentUsage' => 78]));
+		$this->assertSame($allow(true, 'soft_limit'), $decide(['limit' => 100, 'currentUsage' => 79]));
+		$this->assertSame($allow(true, 'soft_limit'), $decide(['limit' => '100', 'currentUsage' => 99, 'enforcement' => 'block']));
+		$this->assertSame($allow(true, 'soft_limit'), $decide(['limit' => 10, 'currentUsage' => 2, 'softLimitWarningPercent' => 25]));
+		$this->assertSame($allow(false, 'within_limit'), $decide(['limit' => 10, 'currentUsage' => 2], 3));
+		$this->assertSame(
+			['decision' => 'block', 'soft' => true, 'reason' => 'block_limit_exceeded'],
+			$decide(['limit' => 100, 'currentUsage' => 99, 'enforcement' => 'block'], 2)
+		);
+		$this->assertSame(
+			['decision' => 'throttle', 'soft' => true, 'reason' => 'throttle_limit_exceeded'],
+			$decide(['limit' => 0, 'enforcement' => 'throttle'])
+		);
+		$this->assertSame(['decision' => 'warn', 'soft' => true, 'reason' => 'warn_limit_exceeded'], $decide(['limit' => 0]));
+		$this->assertSame(
+			['decision' => 'warn', 'soft' => true, 'reason' => 'warn_limit_exceeded'],
+			$decide(['limit' => 1, 'currentUsage' => 1, 'enforcement' => 'something-else'])
+		);
+	}//end testEveryDecisionIsExact()
+
+	/**
+	 * A quota read that throws answers no quota.
+	 *
+	 * @return void
+	 */
+	public function testAQuotaReadThatThrowsAnswersNull(): void {
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('getInstalledApps')->willReturn(['openregister']);
+		$objectService = new class {
+			/**
+			 * @param array<string, mixed> $config The query.
+			 *
+			 * @return array<int, mixed> Never.
+			 */
+			public function findAll(array $config=[]): array {
+				throw new \RuntimeException('down');
+			}
+		};
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($objectService);
+		$svc = new TenantQuotaService(
+			appManager: $appManager,
+			container: $container,
+			logger: $this->createMock(LoggerInterface::class),
+			organisationLimits: $this->createMock(OrganisationQuotaLimits::class),
+		);
+
+		$this->assertNull($svc->getQuota('t-1', 'cases_per_month'));
+	}//end testAQuotaReadThatThrowsAnswersNull()
+
 	public function testNextResetAtMonthlyAndHourly(): void {
 		$monthly = $this->svc->nextResetAt('cases_per_month');
 		$hourly = $this->svc->nextResetAt('api_calls_per_hour');

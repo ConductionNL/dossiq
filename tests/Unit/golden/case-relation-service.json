@@ -1,0 +1,4725 @@
+{
+    "add vervolg, then list both sides": {
+        "answers": [
+            {
+                "ok": true
+            },
+            [
+                {
+                    "caseId": "b",
+                    "aardRelatie": "vervolg",
+                    "title": "Besluit",
+                    "direction": "outgoing",
+                    "label": "near-vervolg",
+                    "inverseLabel": "far-vervolg",
+                    "displayLabel": "near-vervolg",
+                    "legacy": false,
+                    "notes": "n-vervolg"
+                }
+            ],
+            [
+                {
+                    "caseId": "a",
+                    "aardRelatie": "vervolg",
+                    "title": " Bezwaar ",
+                    "direction": "incoming",
+                    "label": "near-vervolg",
+                    "inverseLabel": "far-vervolg",
+                    "displayLabel": "far-vervolg",
+                    "legacy": false,
+                    "notes": "n-vervolg"
+                }
+            ]
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"vervolg\",\"notes\":\"n-vervolg\"}]",
+                    "followUpCases": [
+                        "b"
+                    ],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "a"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"vervolg\",\"notes\":\"n-vervolg\"}]",
+                "followUpCases": [
+                    "b"
+                ],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add vervolg twice, then reversed": {
+        "answers": [
+            {
+                "ok": true
+            },
+            {
+                "ok": false,
+                "reason": "duplicate"
+            },
+            {
+                "ok": false,
+                "reason": "duplicate"
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"vervolg\"}]",
+                    "followUpCases": [
+                        "b"
+                    ],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"vervolg\"}]",
+                "followUpCases": [
+                    "b"
+                ],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add and remove vervolg": {
+        "answers": [
+            {
+                "ok": true
+            },
+            {
+                "ok": true
+            },
+            [],
+            []
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"vervolg\"}]",
+                    "followUpCases": [
+                        "b"
+                    ],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "b",
+                    "title": "Besluit",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "a"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit",
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add subject, then list both sides": {
+        "answers": [
+            {
+                "ok": true
+            },
+            [
+                {
+                    "caseId": "b",
+                    "aardRelatie": "subject",
+                    "title": "Besluit",
+                    "direction": "outgoing",
+                    "label": "near-subject",
+                    "inverseLabel": "far-subject",
+                    "displayLabel": "near-subject",
+                    "legacy": false,
+                    "notes": "n-subject"
+                }
+            ],
+            [
+                {
+                    "caseId": "a",
+                    "aardRelatie": "subject",
+                    "title": " Bezwaar ",
+                    "direction": "incoming",
+                    "label": "near-subject",
+                    "inverseLabel": "far-subject",
+                    "displayLabel": "far-subject",
+                    "legacy": false,
+                    "notes": "n-subject"
+                }
+            ]
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\",\"notes\":\"n-subject\"}]",
+                    "followUpCases": [],
+                    "subjectCases": [
+                        "b"
+                    ],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "a"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\",\"notes\":\"n-subject\"}]",
+                "followUpCases": [],
+                "subjectCases": [
+                    "b"
+                ],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add subject twice, then reversed": {
+        "answers": [
+            {
+                "ok": true
+            },
+            {
+                "ok": false,
+                "reason": "duplicate"
+            },
+            {
+                "ok": false,
+                "reason": "duplicate"
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"}]",
+                    "followUpCases": [],
+                    "subjectCases": [
+                        "b"
+                    ],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"}]",
+                "followUpCases": [],
+                "subjectCases": [
+                    "b"
+                ],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add and remove subject": {
+        "answers": [
+            {
+                "ok": true
+            },
+            {
+                "ok": true
+            },
+            [],
+            []
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"}]",
+                    "followUpCases": [],
+                    "subjectCases": [
+                        "b"
+                    ],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "b",
+                    "title": "Besluit",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "a"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit",
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add bijdrage, then list both sides": {
+        "answers": [
+            {
+                "ok": true
+            },
+            [
+                {
+                    "caseId": "b",
+                    "aardRelatie": "bijdrage",
+                    "title": "Besluit",
+                    "direction": "outgoing",
+                    "label": "near-bijdrage",
+                    "inverseLabel": "far-bijdrage",
+                    "displayLabel": "near-bijdrage",
+                    "legacy": false,
+                    "notes": "n-bijdrage"
+                }
+            ],
+            [
+                {
+                    "caseId": "a",
+                    "aardRelatie": "bijdrage",
+                    "title": " Bezwaar ",
+                    "direction": "incoming",
+                    "label": "near-bijdrage",
+                    "inverseLabel": "far-bijdrage",
+                    "displayLabel": "far-bijdrage",
+                    "legacy": false,
+                    "notes": "n-bijdrage"
+                }
+            ]
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"bijdrage\",\"notes\":\"n-bijdrage\"}]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [
+                        "b"
+                    ],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "a"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"bijdrage\",\"notes\":\"n-bijdrage\"}]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [
+                    "b"
+                ],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add bijdrage twice, then reversed": {
+        "answers": [
+            {
+                "ok": true
+            },
+            {
+                "ok": false,
+                "reason": "duplicate"
+            },
+            {
+                "ok": false,
+                "reason": "duplicate"
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"bijdrage\"}]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [
+                        "b"
+                    ],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"bijdrage\"}]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [
+                    "b"
+                ],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add and remove bijdrage": {
+        "answers": [
+            {
+                "ok": true
+            },
+            {
+                "ok": true
+            },
+            [],
+            []
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"bijdrage\"}]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [
+                        "b"
+                    ],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "b",
+                    "title": "Besluit",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "a"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit",
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add samenhang, then list both sides": {
+        "answers": [
+            {
+                "ok": true
+            },
+            [
+                {
+                    "caseId": "b",
+                    "aardRelatie": "samenhang",
+                    "title": "Besluit",
+                    "direction": "outgoing",
+                    "label": "near-samenhang",
+                    "inverseLabel": "far-samenhang",
+                    "displayLabel": "near-samenhang",
+                    "legacy": false,
+                    "notes": "n-samenhang"
+                }
+            ],
+            [
+                {
+                    "caseId": "a",
+                    "aardRelatie": "samenhang",
+                    "title": " Bezwaar ",
+                    "direction": "incoming",
+                    "label": "near-samenhang",
+                    "inverseLabel": "far-samenhang",
+                    "displayLabel": "far-samenhang",
+                    "legacy": false,
+                    "notes": "n-samenhang"
+                }
+            ]
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"samenhang\",\"notes\":\"n-samenhang\"}]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [
+                        "b"
+                    ],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "a"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"samenhang\",\"notes\":\"n-samenhang\"}]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [
+                    "b"
+                ],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add samenhang twice, then reversed": {
+        "answers": [
+            {
+                "ok": true
+            },
+            {
+                "ok": false,
+                "reason": "duplicate"
+            },
+            {
+                "ok": false,
+                "reason": "duplicate"
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"samenhang\"}]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [
+                        "b"
+                    ],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"samenhang\"}]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [
+                    "b"
+                ],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add and remove samenhang": {
+        "answers": [
+            {
+                "ok": true
+            },
+            {
+                "ok": true
+            },
+            [],
+            []
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"samenhang\"}]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [
+                        "b"
+                    ],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "b",
+                    "title": "Besluit",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "a"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit",
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add waitsOn, then list both sides": {
+        "answers": [
+            {
+                "ok": true
+            },
+            [
+                {
+                    "caseId": "b",
+                    "aardRelatie": "waitsOn",
+                    "title": "Besluit",
+                    "direction": "outgoing",
+                    "label": "near-waitsOn",
+                    "inverseLabel": "far-waitsOn",
+                    "displayLabel": "near-waitsOn",
+                    "legacy": false
+                }
+            ],
+            [
+                {
+                    "caseId": "a",
+                    "aardRelatie": "waitsOn",
+                    "title": " Bezwaar ",
+                    "direction": "incoming",
+                    "label": "near-waitsOn",
+                    "inverseLabel": "far-waitsOn",
+                    "displayLabel": "far-waitsOn",
+                    "legacy": false
+                }
+            ]
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": [
+                        "b"
+                    ]
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "a"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": [
+                    "b"
+                ]
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add waitsOn twice, then reversed": {
+        "answers": [
+            {
+                "ok": true
+            },
+            {
+                "ok": false,
+                "reason": "duplicate"
+            },
+            {
+                "ok": false,
+                "reason": "duplicate"
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": [
+                        "b"
+                    ]
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": [
+                    "b"
+                ]
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add and remove waitsOn": {
+        "answers": [
+            {
+                "ok": true
+            },
+            {
+                "ok": true
+            },
+            [],
+            []
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": [
+                        "b"
+                    ]
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "b",
+                    "title": "Besluit",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "a"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit",
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, unknown type": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "invalid_aard_relatie"
+            }
+        ],
+        "calls": [],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, no origin id": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "missing_case_id"
+            }
+        ],
+        "calls": [],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, no target id": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "missing_case_id"
+            }
+        ],
+        "calls": [],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, to itself": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "self_relation"
+            }
+        ],
+        "calls": [],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, origin missing": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "access_denied"
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "x",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, target missing": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "access_denied"
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "x",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, target unreadable": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "access_denied"
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "CaseRelationService: case lookup failed",
+                {
+                    "uuid": "b",
+                    "error": "find failed on b"
+                }
+            ]
+        ],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, parent to its sub-case": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "hierarchy_overlap",
+                "detail": "These cases are already linked through the hoofdzaak/deelzaak hierarchy."
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "p",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "kid",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, sub-case to its parent": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "hierarchy_overlap",
+                "detail": "These cases are already linked through the hoofdzaak/deelzaak hierarchy."
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "kid",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "p",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, parent as an object": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "hierarchy_overlap",
+                "detail": "These cases are already linked through the hoofdzaak/deelzaak hierarchy."
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "p",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "kid",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "parentCase": {
+                    "id": "p"
+                }
+            }
+        }
+    },
+    "add, a second type on the same pair": {
+        "answers": [
+            {
+                "ok": true
+            },
+            {
+                "ok": true
+            },
+            {
+                "ok": true
+            },
+            [
+                {
+                    "caseId": "b",
+                    "aardRelatie": "vervolg",
+                    "title": "Besluit",
+                    "direction": "outgoing",
+                    "label": "near-vervolg",
+                    "inverseLabel": "far-vervolg",
+                    "displayLabel": "near-vervolg",
+                    "legacy": false
+                },
+                {
+                    "caseId": "b",
+                    "aardRelatie": "subject",
+                    "title": "Besluit",
+                    "direction": "outgoing",
+                    "label": "near-subject",
+                    "inverseLabel": "far-subject",
+                    "displayLabel": "near-subject",
+                    "legacy": false
+                },
+                {
+                    "caseId": "c",
+                    "aardRelatie": "subject",
+                    "title": "Derde",
+                    "direction": "outgoing",
+                    "label": "near-subject",
+                    "inverseLabel": "far-subject",
+                    "displayLabel": "near-subject",
+                    "legacy": false
+                }
+            ]
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"}]",
+                    "followUpCases": [],
+                    "subjectCases": [
+                        "b"
+                    ],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"},{\"caseId\":\"b\",\"aardRelatie\":\"vervolg\"}]",
+                    "followUpCases": [
+                        "b"
+                    ],
+                    "subjectCases": [
+                        "b"
+                    ],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "c",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "c"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"},{\"caseId\":\"b\",\"aardRelatie\":\"vervolg\"},{\"caseId\":\"c\",\"aardRelatie\":\"subject\"}]",
+                    "followUpCases": [
+                        "b"
+                    ],
+                    "subjectCases": [
+                        "b",
+                        "c"
+                    ],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "a"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"},{\"caseId\":\"b\",\"aardRelatie\":\"vervolg\"},{\"caseId\":\"c\",\"aardRelatie\":\"subject\"}]",
+                "followUpCases": [
+                    "b"
+                ],
+                "subjectCases": [
+                    "b",
+                    "c"
+                ],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, typed link already held by the target": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "duplicate"
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "subjectCases": [
+                    "a"
+                ]
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, legacy pair already held by the origin": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "duplicate"
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"}]"
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, keeps the earlier entries": {
+        "answers": [
+            {
+                "ok": true
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "relatedCases": "[{\"caseId\":\"c\",\"aardRelatie\":\"bijdrage\",\"notes\":\"oud\"},{\"caseId\":\"b\",\"aardRelatie\":\"vervolg\",\"notes\":\"nieuw\"}]",
+                    "followUpCases": [
+                        "c",
+                        "b"
+                    ],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "relatedCases": "[{\"caseId\":\"c\",\"aardRelatie\":\"bijdrage\",\"notes\":\"oud\"},{\"caseId\":\"b\",\"aardRelatie\":\"vervolg\",\"notes\":\"nieuw\"}]",
+                "followUpCases": [
+                    "c",
+                    "b"
+                ],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, save fails": {
+        "answers": [
+            {
+                "ok": true
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"}]",
+                    "followUpCases": [],
+                    "subjectCases": [
+                        "b"
+                    ],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "CaseRelationService: failed to persist relatedCases",
+                {
+                    "error": "save failed on a"
+                }
+            ]
+        ],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, no case schema": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "access_denied"
+            }
+        ],
+        "calls": [],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "add, no object service": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "access_denied"
+            }
+        ],
+        "calls": [],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "list, missing case": {
+        "answers": [
+            []
+        ],
+        "calls": [
+            [
+                "find",
+                "x",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "list, legacy entries only": {
+        "answers": [
+            [
+                {
+                    "caseId": "b",
+                    "aardRelatie": "subject",
+                    "notes": "x",
+                    "title": "Besluit",
+                    "direction": null,
+                    "label": null,
+                    "inverseLabel": null,
+                    "displayLabel": null,
+                    "legacy": true
+                },
+                {
+                    "caseId": "gone",
+                    "aardRelatie": "vervolg",
+                    "title": "",
+                    "direction": null,
+                    "label": null,
+                    "inverseLabel": null,
+                    "displayLabel": null,
+                    "legacy": true
+                },
+                {
+                    "caseId": "c",
+                    "aardRelatie": "",
+                    "title": "Derde",
+                    "direction": null,
+                    "label": null,
+                    "inverseLabel": null,
+                    "displayLabel": null,
+                    "legacy": true
+                }
+            ]
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "a"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "gone",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "c",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\",\"notes\":\"x\"},{\"caseId\":\"\",\"aardRelatie\":\"subject\"},{\"caseId\":\"gone\",\"aardRelatie\":\"vervolg\"},{\"caseId\":\"c\"}]"
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "list, legacy entry already typed": {
+        "answers": [
+            [
+                {
+                    "caseId": "b",
+                    "aardRelatie": "subject",
+                    "title": "Besluit",
+                    "direction": "outgoing",
+                    "label": "near-subject",
+                    "inverseLabel": "far-subject",
+                    "displayLabel": "near-subject",
+                    "legacy": false
+                },
+                {
+                    "caseId": "b",
+                    "aardRelatie": "vervolg",
+                    "title": "Besluit",
+                    "direction": null,
+                    "label": null,
+                    "inverseLabel": null,
+                    "displayLabel": null,
+                    "legacy": true
+                }
+            ],
+            [
+                {
+                    "caseId": "a",
+                    "aardRelatie": "subject",
+                    "title": "",
+                    "direction": "incoming",
+                    "label": "near-subject",
+                    "inverseLabel": "far-subject",
+                    "displayLabel": "far-subject",
+                    "legacy": false
+                }
+            ]
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "a"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "subjectCases": [
+                    "b"
+                ],
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"},{\"caseId\":\"b\",\"aardRelatie\":\"vervolg\"}]"
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "list, relation rows unreadable": {
+        "answers": [
+            []
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "uses",
+                "a"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: OpenRegister could not answer the relation rows for a case",
+                {
+                    "uuid": "a",
+                    "incoming": true,
+                    "error": "used failed"
+                }
+            ]
+        ],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "subjectCases": [
+                    "a"
+                ]
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "remove, no ids": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "missing_case_id"
+            },
+            {
+                "ok": false,
+                "reason": "missing_case_id"
+            }
+        ],
+        "calls": [],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "remove, missing case": {
+        "answers": [
+            {
+                "ok": false,
+                "reason": "access_denied"
+            },
+            {
+                "ok": false,
+                "reason": "access_denied"
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "x",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "x",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "remove, both sides held it": {
+        "answers": [
+            {
+                "ok": true
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "subjectCases": [
+                        "c"
+                    ],
+                    "relatedCases": "[{\"caseId\":\"c\",\"aardRelatie\":\"subject\"}]",
+                    "followUpCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "b",
+                    "subjectCases": [],
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "subjectCases": [
+                    "c"
+                ],
+                "relatedCases": "[{\"caseId\":\"c\",\"aardRelatie\":\"subject\"}]",
+                "followUpCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "subjectCases": [],
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "remove, a type that was not there": {
+        "answers": [
+            {
+                "ok": true
+            },
+            {
+                "ok": true
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"}]",
+                    "followUpCases": [],
+                    "subjectCases": [
+                        "b"
+                    ],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "title": " Bezwaar ",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"}]",
+                    "followUpCases": [],
+                    "subjectCases": [
+                        "b"
+                    ],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "b",
+                    "title": "Besluit",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar ",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"}]",
+                "followUpCases": [],
+                "subjectCases": [
+                    "b"
+                ],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit",
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "remove, the first save fails": {
+        "answers": [
+            {
+                "ok": true
+            }
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "subjectCases": [],
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "b",
+                    "title": "Besluit",
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "CaseRelationService: failed to persist relatedCases",
+                {
+                    "error": "save failed on a"
+                }
+            ]
+        ],
+        "cases": {
+            "a": {
+                "id": "a",
+                "subjectCases": [
+                    "b"
+                ]
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit",
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "cleanup, no id": {
+        "answers": [
+            0
+        ],
+        "calls": [],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "cleanup, the case still there": {
+        "answers": [
+            2
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "b",
+                    "relatedCases": "[{\"caseId\":\"c\",\"aardRelatie\":\"subject\"}]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "c",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "c",
+                    "followUpCases": [
+                        "b"
+                    ],
+                    "relatedCases": "[]",
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "gone",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"},{\"caseId\":\"c\",\"aardRelatie\":\"vervolg\"},{\"caseId\":\"gone\",\"aardRelatie\":\"vervolg\"},{\"caseId\":\"a\",\"aardRelatie\":\"samenhang\"}]"
+            },
+            "b": {
+                "id": "b",
+                "relatedCases": "[{\"caseId\":\"c\",\"aardRelatie\":\"subject\"}]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "c": {
+                "id": "c",
+                "followUpCases": [
+                    "b"
+                ],
+                "relatedCases": "[]",
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "cleanup, the case already gone": {
+        "answers": [
+            2
+        ],
+        "calls": [
+            [
+                "find",
+                "zz",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "zz"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "b",
+                    "subjectCases": [],
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "c",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "c",
+                    "blockingCases": [],
+                    "associatedCases": [],
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": []
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "subjectCases": [],
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "c": {
+                "id": "c",
+                "blockingCases": [],
+                "associatedCases": [],
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": []
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "cleanup, a counterpart with nothing to strip": {
+        "answers": [
+            0
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"}]"
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "cleanup, a counterpart that cannot be read": {
+        "answers": [
+            1
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
+                "find",
+                "b",
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "c",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "c",
+                    "subjectCases": [],
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "CaseRelationService: case lookup failed",
+                {
+                    "uuid": "b",
+                    "error": "find failed on b"
+                }
+            ]
+        ],
+        "cases": {
+            "a": {
+                "id": "a",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"},{\"caseId\":\"c\",\"aardRelatie\":\"subject\"}]"
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "subjectCases": [],
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "normalise, no id": {
+        "answers": [
+            "done"
+        ],
+        "calls": [],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "normalise, missing case": {
+        "answers": [
+            "done"
+        ],
+        "calls": [
+            [
+                "find",
+                "x",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "title": " Bezwaar "
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "normalise, nothing to change": {
+        "answers": [
+            "done"
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "subjectCases": [
+                    "b"
+                ],
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"}]"
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "normalise, legacy entries promoted": {
+        "answers": [
+            "done",
+            "done"
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"},{\"caseId\":\"c\",\"aardRelatie\":\"vervolg\"},{\"caseId\":\"a\",\"aardRelatie\":\"subject\"},{\"caseId\":\"b\",\"aardRelatie\":\"friend\"}]",
+                    "followUpCases": [
+                        "c"
+                    ],
+                    "subjectCases": [
+                        "b"
+                    ],
+                    "contributingCases": [],
+                    "associatedCases": [],
+                    "blockingCases": []
+                },
+                "dossiq",
+                "case"
+            ],
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "relatedCases": "[{\"caseId\":\"b\",\"aardRelatie\":\"subject\"},{\"caseId\":\"c\",\"aardRelatie\":\"vervolg\"},{\"caseId\":\"a\",\"aardRelatie\":\"subject\"},{\"caseId\":\"b\",\"aardRelatie\":\"friend\"}]",
+                "followUpCases": [
+                    "c"
+                ],
+                "subjectCases": [
+                    "b"
+                ],
+                "contributingCases": [],
+                "associatedCases": [],
+                "blockingCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "normalise, a waits-on entry moves to the primitive": {
+        "answers": [
+            "done"
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "relatedCases": "[{\"caseId\":\"c\",\"aardRelatie\":\"samenhang\"}]",
+                    "associatedCases": [
+                        "c"
+                    ],
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "blockingCases": [
+                        "b"
+                    ]
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "relatedCases": "[{\"caseId\":\"c\",\"aardRelatie\":\"samenhang\"}]",
+                "associatedCases": [
+                    "c"
+                ],
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "blockingCases": [
+                    "b"
+                ]
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    },
+    "normalise, only a waits-on entry already on the primitive": {
+        "answers": [
+            "done"
+        ],
+        "calls": [
+            [
+                "find",
+                "a",
+                "dossiq",
+                "case"
+            ],
+            [
+                "save",
+                {
+                    "id": "a",
+                    "blockingCases": [
+                        "b"
+                    ],
+                    "relatedCases": "[]",
+                    "followUpCases": [],
+                    "subjectCases": [],
+                    "contributingCases": [],
+                    "associatedCases": []
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [],
+        "cases": {
+            "a": {
+                "id": "a",
+                "blockingCases": [
+                    "b"
+                ],
+                "relatedCases": "[]",
+                "followUpCases": [],
+                "subjectCases": [],
+                "contributingCases": [],
+                "associatedCases": []
+            },
+            "b": {
+                "id": "b",
+                "title": "Besluit"
+            },
+            "c": {
+                "id": "c",
+                "title": "Derde"
+            },
+            "p": {
+                "id": "p",
+                "title": "Hoofdzaak"
+            },
+            "kid": {
+                "id": "kid",
+                "title": "Deelzaak",
+                "parentCase": "p"
+            }
+        }
+    }
+}

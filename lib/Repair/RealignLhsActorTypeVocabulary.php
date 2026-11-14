@@ -41,16 +41,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/specs/lhs-decision-table/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Repair\Support\StoredValueRewriter;
+use OCA\Dossiq\Repair\Support\ValueRewrite;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -59,16 +60,10 @@ use Throwable;
 /**
  * Repair step restoring the LHS actorType axis vocabulary.
  *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/specs/lhs-decision-table/spec.md
  */
 class RealignLhsActorTypeVocabulary implements IRepairStep {
 	use RunsUnderSystemIdentity;
-	use SearchesObjects;
-
-	/**
-	 * The dossiq register slug.
-	 */
-	private const REGISTER_SLUG = 'dossiq';
 
 	/**
 	 * The recommendation schema slug.
@@ -88,13 +83,13 @@ class RealignLhsActorTypeVocabulary implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Resolves OpenRegister's ObjectService.
+	 * @param SettingsServiceInterface $settingsService Resolves OpenRegister's ObjectService.
 	 * @param LoggerInterface $logger Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private SettingsService $settingsService,
+		private SettingsServiceInterface $settingsService,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -104,7 +99,7 @@ class RealignLhsActorTypeVocabulary implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	public function getName(): string {
 		return 'Realign Dossiq LHS actorType vocabulary (government -> overheid)';
@@ -120,7 +115,7 @@ class RealignLhsActorTypeVocabulary implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -129,31 +124,70 @@ class RealignLhsActorTypeVocabulary implements IRepairStep {
 			return;
 		}
 
-		$repaired = 0;
-
 		try {
-			$this->withSystemIdentity(
-				objectService: $objectService,
-				work: function () use ($objectService, &$repaired): void {
-					$repaired = $this->rewriteRows(objectService: $objectService);
-				}
-			);
+			$repaired = $this->rewriteAsSystem(objectService: $objectService);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: LHS actorType realignment failed',
-				['exception' => $e->getMessage()]
-			);
-			$output->warning('Dossiq: LHS actorType realignment could not run: ' . $e->getMessage());
+			$this->reportFailure(output: $output, error: $e);
 			return;
 		}
 
+		$this->reportRepaired(output: $output, repaired: $repaired);
+	}//end run()
+
+	/**
+	 * Rewrite the affected rows under the system identity.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 *
+	 * @return int How many rows were rewritten.
+	 *
+	 * @spec openspec/specs/lhs-decision-table/spec.md
+	 */
+	private function rewriteAsSystem(object $objectService): int {
+		$repaired = 0;
+
+		$this->withSystemIdentity(
+			objectService: $objectService,
+			work: function () use ($objectService, &$repaired): void {
+				$repaired = $this->rewriteRows(objectService: $objectService);
+			}
+		);
+
+		return $repaired;
+	}//end rewriteAsSystem()
+
+	/**
+	 * Log and report a realignment that could not run.
+	 *
+	 * @param IOutput   $output Output interface for progress reporting.
+	 * @param Throwable $error  The failure.
+	 *
+	 * @return void
+	 */
+	private function reportFailure(IOutput $output, Throwable $error): void {
+		$this->logger->error(
+			'Dossiq: LHS actorType realignment failed',
+			['exception' => $error->getMessage()]
+		);
+		$output->warning('Dossiq: LHS actorType realignment could not run: ' . $error->getMessage());
+	}//end reportFailure()
+
+	/**
+	 * Report how many recommendations were realigned.
+	 *
+	 * @param IOutput $output   Output interface for progress reporting.
+	 * @param int     $repaired How many rows were rewritten.
+	 *
+	 * @return void
+	 */
+	private function reportRepaired(IOutput $output, int $repaired): void {
 		if ($repaired === 0) {
 			$output->info('Dossiq: no LHS recommendations needed the actorType realignment.');
 			return;
 		}
 
 		$output->info(sprintf('Dossiq: realigned actorType on %d LHS recommendation(s).', $repaired));
-	}//end run()
+	}//end reportRepaired()
 
 	/**
 	 * Find and rewrite the affected rows.
@@ -165,39 +199,17 @@ class RealignLhsActorTypeVocabulary implements IRepairStep {
 	 *
 	 * @return integer The number of rows rewritten.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	private function rewriteRows(object $objectService): int {
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: self::REGISTER_SLUG,
-			schema: self::SCHEMA_SLUG,
-			filters: ['actorType' => self::WRONG, '_limit' => 5000],
-		);
+		$rewrite = new ValueRewrite();
+		$rewrite->schema = self::SCHEMA_SLUG;
+		$rewrite->property = 'actorType';
+		$rewrite->wrong = self::WRONG;
+		$rewrite->right = self::RIGHT;
 
-		$repaired = 0;
-		foreach ($rows as $row) {
-			// Defensive: a filter the backend cannot express server-side would
-			// return everything, and rewriting a `burger` row to `overheid`
-			// would be a far worse bug than the one being fixed.
-			if (($row['actorType'] ?? null) !== self::WRONG) {
-				continue;
-			}
-
-			$row['actorType'] = self::RIGHT;
-
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: self::REGISTER_SLUG,
-				schema: self::SCHEMA_SLUG,
-				object: $row,
-			);
-
-			if ($saved !== null) {
-				$repaired++;
-			}
-		}
-
-		return $repaired;
+		// The rewriter re-checks every row before writing: a backend that
+		// ignored the filter would otherwise relabel a `burger` as `overheid`.
+		return (new StoredValueRewriter(objectService: $objectService))->rewrite(rewrite: $rewrite);
 	}//end rewriteRows()
 }//end class

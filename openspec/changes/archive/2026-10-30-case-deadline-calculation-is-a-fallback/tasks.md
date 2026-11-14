@@ -1,0 +1,2 @@
+- [x] 1.1 deadline fallback (register.d/99-case-deadline-is-a-fallback.json)
+- [x] 1.2 test (CaseDeadlineCalculationIsAFallbackTest)

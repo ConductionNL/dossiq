@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Listener\DigitalPostDeliveredListener
  * @uses \OCA\Dossiq\Service\BerichtenboxService
+ * @uses \OCA\Dossiq\Listener\Support\EventGetters
  */
 class DigitalPostDeliveredListenerTest extends TestCase {
 	/**

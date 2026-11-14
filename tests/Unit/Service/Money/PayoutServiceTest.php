@@ -23,8 +23,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Money;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\Money\PayoutRequester;
 use OCA\Dossiq\Service\Money\PayoutService;
+use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
@@ -41,6 +43,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Money\PayoutRequester
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Money\MoneyStore
+ * @uses \OCA\Dossiq\Service\Money\PayoutCallback
  */
 class PayoutServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -58,8 +62,8 @@ class PayoutServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'dossiq',
-					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
-					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
+					'accruing_amount_schema' => 'penaltyPaymentCalculation',
+					'payout_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
 			},
@@ -178,7 +182,7 @@ class PayoutServiceTest extends TestCase {
 	 *
 	 * @return PayoutService The service.
 	 */
-	private function withFinance(?string $refusal, array &$seen): PayoutService {
+	private function withFinance(?string $refusal, array &$seen, ?OwningCaseResolver $owningCase = null): PayoutService {
 		$dispatcher = $this->createMock(IEventDispatcher::class);
 		$dispatcher->method('dispatchTyped')->willReturnCallback(
 			static function (object $event) use ($refusal, &$seen): void {
@@ -198,7 +202,7 @@ class PayoutServiceTest extends TestCase {
 		);
 		$urls = $this->createMock(IURLGenerator::class);
 		$urls->method('linkToRouteAbsolute')->willReturnMap(
-			[[PayoutService::CALLBACK_ROUTE, [], 'https://gemeente.example/apps/dossiq/api/dossiq/openconnector/dwangsom-payment-callback']]
+			[[PayoutService::CALLBACK_ROUTE, [], 'https://gemeente.example/apps/dossiq/api/payments/callback']]
 		);
 
 		return new PayoutService(
@@ -206,6 +210,7 @@ class PayoutServiceTest extends TestCase {
 			dates: $this->caseDates(),
 			payouts: new PayoutRequester(dispatcher: $dispatcher),
 			urls: $urls,
+			owningCase: $owningCase,
 		);
 	}//end withFinance()
 
@@ -235,14 +240,48 @@ class PayoutServiceTest extends TestCase {
 		self::assertSame('b-stopped', $command['correlationId']);
 		self::assertSame(PayoutService::CATEGORY, $command['category']);
 		self::assertSame('2026-04-29', $command['dueOn']);
-		self::assertStringEndsWith('/dwangsom-payment-callback', $command['callbackUrl']);
+		self::assertStringEndsWith('/api/payments/callback', $command['callbackUrl']);
 		self::assertSame('payable-1', $row['payableId']);
-		self::assertSame('payable-1', $this->objects->get('dwangsomUitbetaling', (string)$row['id'])['payableId'] ?? null, 'the stored row keeps the payable');
 		self::assertSame('voorbereid', $row['status']);
-		$stored = $this->objects->get('dwangsomUitbetaling', (string)$row['id']);
-		unset($stored['id']);
-		self::assertSame([], (new RealSchemaValidator())->errors(slug: 'dwangsomUitbetaling', payload: $stored));
+		self::assertSame([], array_values($this->objects->store['dwangsomUitbetaling'] ?? []), 'finance holds the payout; dossiq writes no row (REQ-DQM-004)');
 	}//end testPreparePayoutRaisesItInFinance()
+
+	/**
+	 * The payout names its case, so it shows in the case's financial documents (REQ-DQM-002).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-002)
+	 */
+	public function testThePayoutNamesItsCase(): void {
+		$owningCase = $this->createMock(OwningCaseResolver::class);
+		$owningCase->method('resolveVia')->willReturn('case-7');
+		$seen = [];
+
+		$this->withFinance(refusal: null, seen: $seen, owningCase: $owningCase)->preparePayout('b-stopped', 'J. Burger', 'NL91 ABNA 0417 1643 00', new DateTimeImmutable('2026-04-01'));
+
+		self::assertSame(
+			[['app' => 'dossiq', 'type' => 'case', 'register' => 'dossiq', 'schema' => 'case', 'id' => 'case-7']],
+			$seen[0]->toArray()['linkedObjects']
+		);
+	}//end testThePayoutNamesItsCase()
+
+	/**
+	 * A payout whose case cannot be resolved still reaches finance, linked to nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-002)
+	 */
+	public function testAPayoutWithoutACaseIsStillRaised(): void {
+		$owningCase = $this->createMock(OwningCaseResolver::class);
+		$owningCase->method('resolveVia')->willReturn(null);
+		$seen = [];
+
+		$this->withFinance(refusal: null, seen: $seen, owningCase: $owningCase)->preparePayout('b-stopped', 'J. Burger', 'NL91 ABNA 0417 1643 00', new DateTimeImmutable('2026-04-01'));
+
+		self::assertSame([], $seen[0]->toArray()['linkedObjects']);
+	}//end testAPayoutWithoutACaseIsStillRaised()
 
 	/**
 	 * When finance refuses the payout nothing is written.
@@ -304,4 +343,31 @@ class PayoutServiceTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$service->withdrawFromFinance(row: ['reference' => 'PROC-DWS-1', 'payableId' => 'p-1'], reason: 'Bezwaar');
 	}//end testAWithdrawalFinanceRefusesThrows()
+	/**
+	 * The whole stored payout row, and both entry points refuse an unconfigured store.
+	 *
+	 * @return void
+	 */
+	public function testTheWholePayoutRowAndTheUnconfiguredRefusal(): void {
+		$row = $this->service->preparePayout('b-stopped', 'J. Jansen', 'nl91 abna 0417 1643 00', new \DateTimeImmutable('2026-03-02'));
+		$this->assertSame(
+			['penaltyPaymentCalculation', 'amount', 'accountHolderName', 'iban', 'reference', 'legalBasis', 'paymentDateLatest', 'status'],
+			array_slice(array_keys($row), 0, 8)
+		);
+		$this->assertSame(['b-stopped', 35700, 'J. Jansen', 'NL91ABNA0417164300', 'AWB 4:17', 'voorbereid'], [$row['penaltyPaymentCalculation'], $row['amount'], $row['accountHolderName'], $row['iban'], $row['legalBasis'], $row['status']]);
+		$this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $row['paymentDateLatest']);
+
+		$bare = $this->createMock(SettingsService::class);
+		$bare->method('getObjectService')->willReturn($this->objects);
+		$bare->method('getConfigValue')->willReturn('');
+		$service = new PayoutService(settingsService: $bare, dates: $this->caseDates());
+		foreach ([fn () => $service->preparePayout('b-stopped', 'J. Jansen', 'NL91ABNA0417164300'), fn () => $service->handleCallback('ref', 'paid', null)] as $call) {
+			try {
+				$call();
+				$this->fail('refused');
+			} catch (RuntimeException $e) {
+				$this->assertSame('The accruing amount and payout schemas are not configured', $e->getMessage());
+			}
+		}
+	}
 }

@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service\Routing;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseRouterInterface;
 use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -52,7 +53,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/role-based-step-routing/spec.md#requirement-work-not-taken-up-returns-to-the-pool-req-rtp-03
  */
-class CaseRouter {
+class CaseRouter implements CaseRouterInterface {
 	use SearchesObjects;
 
 	/**
@@ -165,42 +166,79 @@ class CaseRouter {
 			return self::NOT_DUE;
 		}
 
-		$routing = $this->routingOf(case: $case);
-		if ($this->stillUnaccepted(case: $case, routing: $routing, routedTo: $routedTo, routedAt: $routedAt) === false) {
+		if ($this->stillUnaccepted(case: $case, routedTo: $routedTo, routedAt: $routedAt) === false) {
 			return self::NOT_DUE;
 		}
 
-		$rule    = $this->ruleOf(rule: (array) ($routing['rule'] ?? []));
-		$records = $this->takeBacksOf(case: $case);
-		$now     = $this->now();
-		$record  = [
+		return $this->handBack(dueCase: $case, routedTo: $routedTo);
+	}//end takeBack()
+
+	/**
+	 * Route a due case to someone else in its pool, and record the take-back.
+	 *
+	 * @param array<string, mixed> $dueCase  The case whose window breached.
+	 * @param string               $routedTo The person the window was armed for.
+	 *
+	 * @return string TAKEN_BACK or KEPT.
+	 */
+	private function handBack(array $dueCase, string $routedTo): string {
+		$rule    = $this->ruleOf(rule: (array) ($this->routingOf(case: $dueCase)['rule'] ?? []));
+		$records = $this->takeBacksOf(case: $dueCase);
+		$record  = $this->takeBackRecord(routedTo: $routedTo, rule: $rule);
+
+		$this->resolver->invalidateCache(caseId: (string) $dueCase['id']);
+		$answer = $this->routeCase(case: $dueCase, rule: $rule, exclude: $routedTo);
+		$record = $this->withOutcome(record: $record, assignee: $answer['assignee']);
+		$this->write(case: $dueCase, changes: ['routingTakeBacks' => [...$records, $record]]);
+
+		return $record['outcome'];
+	}//end handBack()
+
+	/**
+	 * The take-back record before its outcome is known.
+	 *
+	 * @param string               $routedTo The person the window was armed for.
+	 * @param array<string, mixed> $rule     The sanitised rule.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function takeBackRecord(string $routedTo, array $rule): array {
+		$record = [
 			'from'   => $routedTo,
 			'to'     => $routedTo,
 			'reason' => self::REASON_NOT_ACCEPTED,
-			'at'     => $now->format(DATE_ATOM),
+			'at'     => $this->now()->format(DATE_ATOM),
 		];
 		$window = $this->window->windowOf(rule: $rule);
 		if ($window !== null) {
 			$record['window'] = $window;
 		}
 
-		$this->resolver->invalidateCache(caseId: (string) $case['id']);
-		$answer = $this->routeCase(case: $case, rule: $rule, exclude: $routedTo);
-		if ($answer['assignee'] === '') {
+		return $record;
+	}//end takeBackRecord()
+
+	/**
+	 * The take-back record with who got the case and the outcome.
+	 *
+	 * @param array<string, mixed> $record   The record before its outcome.
+	 * @param string               $assignee Who the case was routed to, or '' for nobody.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withOutcome(array $record, string $assignee): array {
+		if ($assignee === '') {
 			// Nobody else in the pool. The case stays where it is, the window is
 			// not armed again, and the record says so: a take-back that found no
 			// one is a fact about the pool somebody has to look at.
 			$record['outcome'] = self::KEPT;
-			$this->write(case: $case, changes: ['routingTakeBacks' => [...$records, $record]]);
-			return self::KEPT;
+			return $record;
 		}
 
-		$record['to']      = $answer['assignee'];
+		$record['to']      = $assignee;
 		$record['outcome'] = self::TAKEN_BACK;
-		$this->write(case: $case, changes: ['routingTakeBacks' => [...$records, $record]]);
 
-		return self::TAKEN_BACK;
-	}//end takeBack()
+		return $record;
+	}//end withOutcome()
 
 	/**
 	 * Resolve, write and arm.
@@ -215,42 +253,74 @@ class CaseRouter {
 		$caseId = (string) $case['id'];
 		$area   = $this->area->resolve(rule: $rule, case: $case, caseType: null);
 		$pick   = $this->pick(rule: $rule, case: $case, exclude: $exclude);
+		$answer = ['caseId' => $caseId] + $this->areaAnswer(area: $area, pick: $pick);
 
-		$answer = [
-			'caseId'           => $caseId,
+		if ($pick === '') {
+			return $this->nobodyFound(answer: $answer, exclude: $exclude);
+		}
+
+		$routedAt = $this->now();
+		$routing  = [
+			'rule'       => $rule,
+			'routedTo'   => $pick,
+			'routedAt'   => $routedAt->format(DATE_ATOM),
+		];
+		$this->write(case: $case, changes: $this->assignment(answer: $answer, routing: $routing));
+
+		$answer['takeBack'] = $this->window->arm(caseId: $caseId, rule: $rule, routedTo: $pick, routedAt: $routedAt);
+		return $answer;
+	}//end routeCase()
+
+	/**
+	 * The routing answer after the case id: who, which team and why, before any window is armed.
+	 *
+	 * @param array<string, mixed> $area The area routing's answer.
+	 * @param string               $pick The person picked, or ''.
+	 *
+	 * @return array{assignee: string, team: string, areaFallbackUsed: bool, reason: string, takeBack: string}
+	 */
+	private function areaAnswer(array $area, string $pick): array {
+		return [
 			'assignee'         => $pick,
 			'team'             => (string) $area['team'],
 			'areaFallbackUsed' => ($area['fallbackUsed'] === true),
 			'reason'           => (string) $area['reason'],
 			'takeBack'         => TakeBackWindow::SKIPPED,
 		];
+	}//end areaAnswer()
 
-		if ($pick === '') {
-			$this->logger->info('Dossiq routing: the rule found nobody to route the case to', ['case' => $caseId, 'exclude' => $exclude]);
-			if ($answer['reason'] === '') {
-				$answer['reason'] = 'no-candidate';
-			}
-
-			return $answer;
+	/**
+	 * The answer when the rule found nobody: logged, and with a reason.
+	 *
+	 * @param array<string, mixed> $answer  The answer so far.
+	 * @param string               $exclude A person who may not get it, or ''.
+	 *
+	 * @return array{caseId: string, assignee: string, team: string, areaFallbackUsed: bool, reason: string, takeBack: string}
+	 */
+	private function nobodyFound(array $answer, string $exclude): array {
+		$this->logger->info('Dossiq routing: the rule found nobody to route the case to', ['case' => $answer['caseId'], 'exclude' => $exclude]);
+		if ($answer['reason'] === '') {
+			$answer['reason'] = 'no-candidate';
 		}
 
-		$routedAt = $this->now();
-		$this->write(
-			case: $case,
-			changes: [
-				'assignee'         => $pick,
-				'areaFallbackUsed' => $answer['areaFallbackUsed'],
-				'routing'          => [
-					'rule'       => $rule,
-					'routedTo'   => $pick,
-					'routedAt'   => $routedAt->format(DATE_ATOM),
-				],
-			]
-		);
-
-		$answer['takeBack'] = $this->window->arm(caseId: $caseId, rule: $rule, routedTo: $pick, routedAt: $routedAt);
 		return $answer;
-	}//end routeCase()
+	}//end nobodyFound()
+
+	/**
+	 * The changes that assign the case to the person picked and record the routing.
+	 *
+	 * @param array<string, mixed> $answer  The answer so far.
+	 * @param array<string, mixed> $routing The routing record.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function assignment(array $answer, array $routing): array {
+		return [
+			'assignee'         => $answer['assignee'],
+			'areaFallbackUsed' => $answer['areaFallbackUsed'],
+			'routing'          => $routing,
+		];
+	}//end assignment()
 
 	/**
 	 * The first person the rule names who is not excluded.
@@ -285,14 +355,14 @@ class CaseRouter {
 	/**
 	 * Whether the routing the window was armed for still stands unaccepted.
 	 *
-	 * @param array<string, mixed> $case     The fresh case.
-	 * @param array<string, mixed> $routing  Its routing record.
+	 * @param array<string, mixed> $case     The fresh case, with its routing record.
 	 * @param string               $routedTo The person the window was armed for.
 	 * @param string               $routedAt The moment the window was armed for.
 	 *
 	 * @return bool
 	 */
-	private function stillUnaccepted(array $case, array $routing, string $routedTo, string $routedAt): bool {
+	private function stillUnaccepted(array $case, string $routedTo, string $routedAt): bool {
+		$routing = $this->routingOf(case: $case);
 		if (trim((string) ($case['endDate'] ?? '')) !== '') {
 			return false;
 		}

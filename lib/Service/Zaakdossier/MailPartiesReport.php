@@ -31,12 +31,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\MailPartiesReportInterface;
+
 /**
  * The parties of a case's collected mail, counted.
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
  */
-class MailPartiesReport {
+class MailPartiesReport implements MailPartiesReportInterface {
 
 	/**
 	 * Constructor.
@@ -67,39 +69,61 @@ class MailPartiesReport {
 	 */
 	public function forCase(string $caseId): array {
 		$mails = $this->provenance->mailForCase(caseId: $caseId);
-		$senders = [];
-		$recipients = [];
-		$domains = [];
-		$unreadable = 0;
+		$tally = ['unreadable' => 0, 'senders' => [], 'recipients' => [], 'domains' => []];
 		foreach ($mails as $mail) {
-			if ($mail['unreadable'] === true) {
-				$unreadable++;
-				continue;
-			}
-
-			$sender = (string)$mail['from'];
-			$to = array_values(array_unique(array_merge((array)$mail['to'], (array)$mail['cc'])));
-			if ($sender !== '') {
-				$senders[$sender] = (($senders[$sender] ?? 0) + 1);
-			}
-
-			foreach ($to as $address) {
-				$recipients[$address] = (($recipients[$address] ?? 0) + 1);
-			}
-
-			foreach ($this->domainsOf(addresses: array_merge([$sender], $to)) as $domain) {
-				$domains[$domain] = (($domains[$domain] ?? 0) + 1);
-			}
-		}//end foreach
+			$tally = $this->counted(tally: $tally, mail: $mail);
+		}
 
 		return [
 			'mails' => count($mails),
-			'unreadable' => $unreadable,
-			'senders' => $this->rows(counts: $senders, key: 'address'),
-			'recipients' => $this->rows(counts: $recipients, key: 'address'),
-			'domains' => $this->rows(counts: $domains, key: 'domain'),
+			'unreadable' => $tally['unreadable'],
+			'senders' => $this->rows(counts: $tally['senders'], key: 'address'),
+			'recipients' => $this->rows(counts: $tally['recipients'], key: 'address'),
+			'domains' => $this->rows(counts: $tally['domains'], key: 'domain'),
 		];
 	}//end forCase()
+
+	/**
+	 * The tally with one more mail counted: as unreadable, or by its sender, recipients and their domains.
+	 *
+	 * @param array<string, mixed> $tally The counts so far: unreadable, then senders, recipients and domains by name.
+	 * @param array<string, mixed> $mail  One mail's provenance.
+	 *
+	 * @return array<string, mixed> The counts, in the same shape.
+	 */
+	private function counted(array $tally, array $mail): array {
+		if ($mail['unreadable'] === true) {
+			$tally['unreadable']++;
+			return $tally;
+		}
+
+		$sender = (string)$mail['from'];
+		$to     = array_values(array_unique(array_merge((array)$mail['to'], (array)$mail['cc'])));
+		if ($sender !== '') {
+			$tally['senders'] = self::plusOne(counts: $tally['senders'], keys: [$sender]);
+		}
+
+		$tally['recipients'] = self::plusOne(counts: $tally['recipients'], keys: $to);
+		$tally['domains']    = self::plusOne(counts: $tally['domains'], keys: $this->domainsOf(addresses: array_merge([$sender], $to)));
+
+		return $tally;
+	}//end counted()
+
+	/**
+	 * The counts with one added for each key.
+	 *
+	 * @param array<string, int> $counts The counts so far.
+	 * @param array<int, string> $keys   The keys to count once each.
+	 *
+	 * @return array<string, int> The counts.
+	 */
+	private static function plusOne(array $counts, array $keys): array {
+		foreach ($keys as $key) {
+			$counts[$key] = (($counts[$key] ?? 0) + 1);
+		}
+
+		return $counts;
+	}//end plusOne()
 
 	/**
 	 * The report as CSV: one line per party, its kind, and its count; unreadable last.

@@ -32,15 +32,15 @@
 				@update:modelValue="search" />
 
 			<ul v-if="results.length > 0" class="file-contact-moment__results">
-				<li v-for="row in results" :key="row.id">
+				<li v-for="result in results" :key="result.id">
 					<NcCheckboxRadioSwitch
 						type="radio"
 						name="file-contact-moment-target"
 						:modelValue="target"
-						:value="row.id"
+						:value="result.id"
 						data-testid="file-contact-moment-result"
 						@update:modelValue="target = $event">
-						{{ row.label }}
+						{{ result.label }}
 					</NcCheckboxRadioSwitch>
 				</li>
 			</ul>
@@ -85,6 +85,7 @@
 
 <script>
 import axios from '@nextcloud/axios'
+import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -108,7 +109,13 @@ export default {
 		/** The contact moment, as the panel holds it. */
 		moment: {
 			type: Object,
-			required: true,
+			default: null,
+		},
+
+		/** The same moment, as a library record list hands its row to a dialog. */
+		row: {
+			type: Object,
+			default: null,
 		},
 	},
 
@@ -126,11 +133,21 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The moment this dialog files, from either prop.
+		 *
+		 * @return {object|null}
+		 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-shows-every-contact-moment-it-is-a-member-of-and-says-when-one-is-shared-req-plq-03
+		 */
+		item() {
+			return this.moment || this.row
+		},
+
 		/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-shows-every-contact-moment-it-is-a-member-of-and-says-when-one-is-shared-req-plq-03 */
 		momentLabel() {
 			return [
-				this.moment?.channel,
-				this.moment?.subject || this.moment?.summary,
+				this.item?.channel,
+				this.item?.subject || this.item?.summary,
 			]
 				.filter(Boolean)
 				.join(': ')
@@ -191,10 +208,12 @@ export default {
 			try {
 				await fileContactMoment(
 					this.caseId,
-					String(this.moment?.id || ''),
+					String(this.item?.id || ''),
 					this.target,
 				)
 				this.$emit('filed')
+				// The list that opened this dialog reads again.
+				emit('cn:page:refresh')
 				this.$emit('close')
 			} catch (error) {
 				this.error = refusalOf(

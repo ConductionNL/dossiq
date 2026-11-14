@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -66,11 +66,11 @@ class PortalCaseMessages {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService OpenRegister access and the configured register and schemas.
+	 * @param SettingsServiceInterface $settingsService OpenRegister access and the configured register and schemas.
 	 * @param LoggerInterface $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -94,7 +94,9 @@ class PortalCaseMessages {
 		try {
 			return (array)$this->runAsSystemIfAvailable(
 				objectService: $objectService,
-				operation: fn (): array => $this->entries(objectService: $objectService, register: $register, caseId: $caseId)
+				operation: fn (): array => $this->entries(
+					scope: new PortalCaseScope(objectService: $objectService, register: $register, caseId: $caseId)
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: the portal messages of a case could not be read', ['reason' => $e->getMessage()]);
@@ -128,32 +130,56 @@ class PortalCaseMessages {
 	/**
 	 * The entries, read inside the system context.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The register.
-	 * @param string $caseId        The case.
+	 * @param PortalCaseScope $scope The object service, register and case.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function entries(object $objectService, string $register, string $caseId): array {
+	private function entries(PortalCaseScope $scope): array {
+		$caseId = $scope->caseId;
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
 		$messageSchema = $this->settingsService->getConfigValue('portaal_bericht_schema');
 		if ($caseSchema === '' || $messageSchema === '') {
 			return [];
 		}
 
-		$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
+		$case = $this->findObjectAsArray(objectService: $scope->objectService, register: $scope->register, schema: $caseSchema, id: $caseId);
 		$resident = (string)($case['portalSubject'] ?? '');
 		if ($resident === '') {
 			return [];
 		}
 
-		$messages = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
-			schema: $messageSchema,
-			filters: ['caseId' => $caseId, '_limit' => self::LIMIT]
-		);
+		$messages = $this->messagesOf(scope: $scope, messageSchema: $messageSchema);
 
+		return $this->residentEntries(messages: $messages, caseId: $caseId, resident: $resident);
+	}//end entries()
+
+	/**
+	 * The portaalBerichten stored against the case, unscoped.
+	 *
+	 * @param PortalCaseScope $scope         The object service, register and case.
+	 * @param string          $messageSchema The portaalBericht schema.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function messagesOf(PortalCaseScope $scope, string $messageSchema): array {
+		return $this->searchObjectsAsArraysUnscoped(
+			objectService: $scope->objectService,
+			register: $scope->register,
+			schema: $messageSchema,
+			filters: ['caseId' => $scope->caseId, '_limit' => self::LIMIT]
+		);
+	}//end messagesOf()
+
+	/**
+	 * The case's messages between the resident and the handler, newest first, in the inbox's words.
+	 *
+	 * @param array<int, array<string, mixed>> $messages The stored messages.
+	 * @param string $caseId The case.
+	 * @param string $resident The case's resident.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function residentEntries(array $messages, string $caseId, string $resident): array {
 		$entries = [];
 		foreach ($messages as $message) {
 			if (($message['caseId'] ?? null) !== $caseId || $this->isTheResidents(message: $message, resident: $resident) === false) {
@@ -166,7 +192,7 @@ class PortalCaseMessages {
 		usort($entries, static fn (array $a, array $b): int => strcmp((string)$b['receivedAt'], (string)$a['receivedAt']));
 
 		return $entries;
-	}//end entries()
+	}//end residentEntries()
 
 	/**
 	 * One message in the inbox's words.

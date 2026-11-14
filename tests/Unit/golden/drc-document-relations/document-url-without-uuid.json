@@ -1,0 +1,55 @@
+{
+    "calls": [
+        {
+            "getConfigValue": "document_link_schema"
+        },
+        {
+            "buildSearchQuery": {
+                "requestParams": {
+                    "document": "https://drc.example.com/a",
+                    "object": "https://zrc.example.com/zaken/73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "register": "5",
+                "schema": "11"
+            }
+        },
+        {
+            "searchObjectsPaginated": {
+                "q": {
+                    "document": "https://drc.example.com/a",
+                    "object": "https://zrc.example.com/zaken/73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "r": "5",
+                "s": "11"
+            }
+        },
+        {
+            "getConfigValue": "decision_document_schema"
+        },
+        {
+            "buildSearchQuery": {
+                "requestParams": {
+                    "document": "https://drc.example.com/a",
+                    "decision": "https://zrc.example.com/zaken/73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "register": "5",
+                "schema": "13"
+            }
+        },
+        {
+            "searchObjectsPaginated": {
+                "q": {
+                    "document": "https://drc.example.com/a",
+                    "decision": "https://zrc.example.com/zaken/73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "r": "5",
+                "s": "13"
+            }
+        }
+    ],
+    "answer": null
+}

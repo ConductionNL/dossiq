@@ -39,13 +39,20 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Doorlooptijd;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\DeadlineComplianceCalculatorInterface;
 
 /**
  * Computes the deadline-compliance metrics of the throughput-time dashboard.
  *
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
-class DeadlineComplianceCalculator {
+class DeadlineComplianceCalculator implements DeadlineComplianceCalculatorInterface {
+
+	/**
+	 * The KPI counter each RAG status adds to; on-time adds to none.
+	 */
+	private const BAND_COUNTERS = ['at-risk' => 'atRisk', 'overdue' => 'overdue'];
+
 	/**
 	 * Compute the four headline KPIs.
 	 *
@@ -78,33 +85,45 @@ class DeadlineComplianceCalculator {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	private function countOpenBands(array $cases, int $atRiskDays): array {
-		$open = 0;
-		$atRisk = 0;
-		$overdue = 0;
+		$counts = ['open' => 0, 'atRisk' => 0, 'overdue' => 0];
 		foreach ($cases as $caseData) {
 			if ($caseData['_isOpen'] !== true) {
 				continue;
 			}
 
-			$open++;
-			$daysRemaining = $caseData['_daysRemaining'];
-			if ($daysRemaining === null) {
-				continue;
+			$counts['open']++;
+			$band = (self::BAND_COUNTERS[$this->ragStatusOf(daysRemaining: $caseData['_daysRemaining'], atRiskDays: $atRiskDays)] ?? null);
+			if ($band !== null) {
+				$counts[$band]++;
 			}
+		}
 
-			if ($daysRemaining < 0) {
-				$overdue++;
-			} elseif ($daysRemaining <= $atRiskDays) {
-				$atRisk++;
-			}
-		}//end foreach
-
-		return [
-			'open' => $open,
-			'atRisk' => $atRisk,
-			'overdue' => $overdue,
-		];
+		return $counts;
 	}//end countOpenBands()
+
+	/**
+	 * The RAG status of an open case from the days it has left.
+	 *
+	 * @param mixed $daysRemaining The days left, or null when the case has no deadline.
+	 * @param int   $atRiskDays    Threshold for at-risk band.
+	 *
+	 * @return string One of `on-time`, `at-risk` or `overdue`.
+	 */
+	private function ragStatusOf(mixed $daysRemaining, int $atRiskDays): string {
+		if ($daysRemaining === null) {
+			return 'on-time';
+		}
+
+		if ($daysRemaining < 0) {
+			return 'overdue';
+		}
+
+		if ($daysRemaining <= $atRiskDays) {
+			return 'at-risk';
+		}
+
+		return 'on-time';
+	}//end ragStatusOf()
 
 	/**
 	 * Percentage of cases closed in the last 12 months that met their deadline.
@@ -118,36 +137,71 @@ class DeadlineComplianceCalculator {
 	private function computeOnTimePercent(array $cases): int {
 		// Closed cases in the last 12 months.
 		$cutoff = (new DateTimeImmutable('-12 months'))->format('Y-m-d');
-		$closedOnTime = 0;
-		$closedLate = 0;
+		$counts = ['onTime' => 0, 'late' => 0];
 		foreach ($cases as $caseData) {
-			if ($caseData['_isOpen'] === true) {
-				continue;
+			$verdict = $this->closedSinceVerdict(caseData: $caseData, cutoff: $cutoff);
+			if ($verdict !== null) {
+				$counts[$verdict]++;
 			}
+		}
 
-			if ($caseData['_endDate'] === null || $caseData['_endDate'] < $cutoff) {
-				continue;
-			}
+		return $this->percentOnTime(counts: $counts);
+	}//end computeOnTimePercent()
 
-			if ($caseData['_deadline'] === null) {
-				continue;
-			}
+	/**
+	 * Whether a case closed on or after the cutoff met its deadline.
+	 *
+	 * @param array<string, mixed> $caseData Enriched case.
+	 * @param string               $cutoff   The earliest end date counted, Y-m-d.
+	 *
+	 * @return string|null `onTime` or `late`, or null when the case does not count.
+	 */
+	private function closedSinceVerdict(array $caseData, string $cutoff): ?string {
+		if ($caseData['_isOpen'] === true) {
+			return null;
+		}
 
-			if ($caseData['_endDate'] <= $caseData['_deadline']) {
-				$closedOnTime++;
-				continue;
-			}
+		if ($caseData['_endDate'] === null || $caseData['_endDate'] < $cutoff) {
+			return null;
+		}
 
-			$closedLate++;
-		}//end foreach
+		return $this->deadlineVerdict(caseData: $caseData);
+	}//end closedSinceVerdict()
 
-		$totalClosed = ($closedOnTime + $closedLate);
-		if ($totalClosed === 0) {
+	/**
+	 * Whether a case that ended met its deadline.
+	 *
+	 * @param array<string, mixed> $caseData Enriched case.
+	 *
+	 * @return string|null `onTime` or `late`, or null when the end date or the deadline is missing.
+	 */
+	private function deadlineVerdict(array $caseData): ?string {
+		if ($caseData['_endDate'] === null || $caseData['_deadline'] === null) {
+			return null;
+		}
+
+		if ($caseData['_endDate'] <= $caseData['_deadline']) {
+			return 'onTime';
+		}
+
+		return 'late';
+	}//end deadlineVerdict()
+
+	/**
+	 * The share of on-time cases as a whole percentage; 100 when none counted.
+	 *
+	 * @param array{onTime: int, late: int} $counts The on-time and late counts.
+	 *
+	 * @return int The percentage.
+	 */
+	private function percentOnTime(array $counts): int {
+		$total = ($counts['onTime'] + $counts['late']);
+		if ($total === 0) {
 			return 100;
 		}
 
-		return (int)round(($closedOnTime / $totalClosed) * 100);
-	}//end computeOnTimePercent()
+		return (int)round(($counts['onTime'] / $total) * 100);
+	}//end percentOnTime()
 
 	/**
 	 * Monthly on-time / late counts over the requested period.
@@ -160,51 +214,60 @@ class DeadlineComplianceCalculator {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function computeMonthlyCompliance(array $cases, string $period): array {
-		$months = $this->parseMonths(period: $period);
-		$buckets = [];
+		$buckets = $this->emptyMonthBuckets(months: $this->parseMonths(period: $period));
+		foreach ($cases as $caseData) {
+			$verdict = $this->deadlineVerdict(caseData: $caseData);
+			if ($verdict === null) {
+				continue;
+			}
 
+			$month = substr($caseData['_endDate'], 0, 7);
+			if (isset($buckets[$month]) === true) {
+				$buckets[$month][$verdict]++;
+			}
+		}
+
+		return $this->monthlyRows(buckets: $buckets);
+	}//end computeMonthlyCompliance()
+
+	/**
+	 * One zeroed bucket per month, oldest first, ending with this month.
+	 *
+	 * @param int $months The number of months.
+	 *
+	 * @return array<string, array{onTime: int, late: int}> The buckets keyed by Y-m.
+	 */
+	private function emptyMonthBuckets(int $months): array {
+		$buckets = [];
 		$endDate = new DateTimeImmutable('first day of this month');
 		for ($i = ($months - 1); $i >= 0; $i--) {
 			$month = $endDate->modify('-' . $i . ' month')->format('Y-m');
 			$buckets[$month] = ['onTime' => 0, 'late' => 0];
 		}
 
-		foreach ($cases as $caseData) {
-			if ($caseData['_endDate'] === null || $caseData['_deadline'] === null) {
-				continue;
-			}
+		return $buckets;
+	}//end emptyMonthBuckets()
 
-			$month = substr($caseData['_endDate'], 0, 7);
-			if (isset($buckets[$month]) === false) {
-				continue;
-			}
-
-			if ($caseData['_endDate'] <= $caseData['_deadline']) {
-				$buckets[$month]['onTime']++;
-				continue;
-			}
-
-			$buckets[$month]['late']++;
-		}//end foreach
-
+	/**
+	 * The monthly rows with their on-time percentage.
+	 *
+	 * @param array<string, array{onTime: int, late: int}> $buckets The counts keyed by Y-m.
+	 *
+	 * @return array<int, array{month: string, onTime: int, late: int, percent: int}>
+	 */
+	private function monthlyRows(array $buckets): array {
 		$out = [];
 		foreach ($buckets as $month => $counts) {
-			$total = ($counts['onTime'] + $counts['late']);
-			$percent = 100;
-			if ($total !== 0) {
-				$percent = (int)round(($counts['onTime'] / $total) * 100);
-			}
-
 			$out[] = [
 				'month' => $month,
 				'onTime' => $counts['onTime'],
 				'late' => $counts['late'],
-				'percent' => $percent,
+				'percent' => $this->percentOnTime(counts: $counts),
 			];
 		}
 
 		return $out;
-	}//end computeMonthlyCompliance()
+	}//end monthlyRows()
 
 	/**
 	 * Build the sortable list of open cases with RAG status.
@@ -219,32 +282,43 @@ class DeadlineComplianceCalculator {
 	public function buildCaseList(array $cases, int $atRiskDays): array {
 		$rows = [];
 		foreach ($cases as $caseData) {
-			if ($caseData['_isOpen'] !== true) {
-				continue;
+			if ($caseData['_isOpen'] === true) {
+				$rows[] = $this->caseListRow(caseData: $caseData, atRiskDays: $atRiskDays);
 			}
+		}
 
-			$daysRemaining = $caseData['_daysRemaining'];
-			$ragStatus = 'on-time';
-			if ($daysRemaining !== null) {
-				if ($daysRemaining < 0) {
-					$ragStatus = 'overdue';
-				} elseif ($daysRemaining <= $atRiskDays) {
-					$ragStatus = 'at-risk';
-				}
-			}
+		return $this->sortByDaysRemaining(rows: $rows);
+	}//end buildCaseList()
 
-			$rows[] = [
-				'id' => (string)($caseData['id'] ?? ''),
-				'identifier' => (string)($caseData['identifier'] ?? ''),
-				'title' => (string)($caseData['title'] ?? ''),
-				'caseTypeTitle' => (string)($caseData['_caseTypeTitle'] ?? ''),
-				'startDate' => $caseData['_startDate'],
-				'deadline' => $caseData['_deadline'],
-				'daysRemaining' => $daysRemaining,
-				'ragStatus' => $ragStatus,
-			];
-		}//end foreach
+	/**
+	 * One row of the case list.
+	 *
+	 * @param array<string, mixed> $caseData   Enriched open case.
+	 * @param int                  $atRiskDays Threshold for at-risk band.
+	 *
+	 * @return array<string, mixed> The row.
+	 */
+	private function caseListRow(array $caseData, int $atRiskDays): array {
+		return [
+			'id' => (string)($caseData['id'] ?? ''),
+			'identifier' => (string)($caseData['identifier'] ?? ''),
+			'title' => (string)($caseData['title'] ?? ''),
+			'caseTypeTitle' => (string)($caseData['_caseTypeTitle'] ?? ''),
+			'startDate' => $caseData['_startDate'],
+			'deadline' => $caseData['_deadline'],
+			'daysRemaining' => $caseData['_daysRemaining'],
+			'ragStatus' => $this->ragStatusOf(daysRemaining: $caseData['_daysRemaining'], atRiskDays: $atRiskDays),
+		];
+	}//end caseListRow()
 
+	/**
+	 * The rows sorted by days remaining, cases without a deadline last.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The case list rows.
+	 *
+	 * @return array<int, array<string, mixed>> The sorted rows.
+	 */
+	private function sortByDaysRemaining(array $rows): array {
 		usort(
 			$rows,
 			static function (array $left, array $right): int {
@@ -255,7 +329,85 @@ class DeadlineComplianceCalculator {
 		);
 
 		return $rows;
-	}//end buildCaseList()
+	}//end sortByDaysRemaining()
+
+	/**
+	 * The throughput summary over closed cases: the average days a case took
+	 * in the last twelve months, how many closed this calendar year, and the
+	 * average days per month over the requested period as parallel arrays.
+	 *
+	 * The averages over the period are grouped per `granularity`: per month
+	 * (`YYYY-MM`, the default), per quarter (`YYYY-Qn`), per year (`YYYY`) or
+	 * per ISO week (`YYYY-Www`), oldest first, today's last. They keep the key
+	 * `monthlyAvgDays`, which the processing-time chart reads.
+	 *
+	 * @param array<int, array<string, mixed>> $cases       Enriched cases.
+	 * @param string                           $period      Period spec (e.g. `12m`).
+	 * @param DateTimeImmutable|null           $today       The day the figures are read on; now when absent.
+	 * @param string                           $granularity `month`, `quarter`, `year` or `week`.
+	 *
+	 * @return array<string, mixed> `avgDays`, `closedThisYear`, `granularity` and `monthlyAvgDays` (`labels`, `values`).
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function computeSummary(array $cases, string $period, ?DateTimeImmutable $today = null, string $granularity = 'month'): array {
+		$tally = new ClosedCaseTally(today: ($today ?? new DateTimeImmutable()), granularity: $this->knownGranularity(granularity: $granularity));
+		$tally->openWindow(months: $this->parseMonths(period: $period));
+		foreach ($cases as $caseData) {
+			$tally->add(caseData: $caseData);
+		}
+
+		return $this->summaryOf(tally: $tally);
+	}//end computeSummary()
+
+	/**
+	 * The grouping asked for when it is a known one, per month otherwise.
+	 *
+	 * @param string $granularity The grouping asked for.
+	 *
+	 * @return string
+	 */
+	private function knownGranularity(string $granularity): string {
+		if (in_array($granularity, self::GRANULARITIES, true) === false) {
+			return 'month';
+		}
+
+		return $granularity;
+	}//end knownGranularity()
+
+	/**
+	 * The summary figures of a finished tally.
+	 *
+	 * @param ClosedCaseTally $tally The tallied closed cases.
+	 *
+	 * @return array<string, mixed> `avgDays`, `closedThisYear`, `granularity` and `monthlyAvgDays` (`labels`, `values`).
+	 */
+	private function summaryOf(ClosedCaseTally $tally): array {
+		$buckets = $tally->buckets();
+		$values = array_map(fn (array $list): ?int => $this->average(values: $list), array_values($buckets));
+
+		return [
+			'avgDays' => $this->average(values: $tally->recentDays()),
+			'closedThisYear' => $tally->closedThisYear(),
+			'granularity' => $tally->granularity(),
+			'monthlyAvgDays' => ['labels' => array_map('strval', array_keys($buckets)), 'values' => $values],
+		];
+	}//end summaryOf()
+
+	/**
+	 * The rounded average of a list of day counts, or null for an empty list.
+	 *
+	 * @param array<int, int> $values Day counts.
+	 *
+	 * @return int|null
+	 */
+	private function average(array $values): ?int {
+		if ($values === []) {
+			return null;
+		}
+
+		return (int)round(array_sum($values) / count($values));
+	}//end average()
 
 	/**
 	 * Translate a period string into a month count (`12m` → 12, `6m` → 6).

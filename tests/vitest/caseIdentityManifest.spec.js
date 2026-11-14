@@ -222,8 +222,9 @@ describe('CaseDetail: terms and archive', () => {
 		}
 	})
 
-	it('registers its icon, and takes a cell of its own', () => {
-		expect(iconIsRegistered(widget('case-terms').icon)).toBe(true)
+	it('draws no title icon, and takes a cell of its own', () => {
+		// The boards draw no icon on a card title.
+		expect(widget('case-terms').icon).toBeUndefined()
 
 		const cell = caseDetail().config.layout.find(
 			(entry) => entry.widgetId === 'case-terms',
@@ -240,19 +241,13 @@ describe('CaseDetail: terms and archive', () => {
 })
 
 describe('the English demo seed', () => {
-	const seed = JSON.parse(
-		fs.readFileSync(
-			path.join(
-				ROOT,
-				'lib',
-				'Settings',
-				'register.d',
-				'46-demo-cases-english.json',
-			),
-			'utf8',
-		),
+	// The case types ship in the register; the cases are optional example data.
+	const readSettings = (...parts) => JSON.parse(
+		fs.readFileSync(path.join(ROOT, 'lib', 'Settings', ...parts), 'utf8'),
 	)
-	const demoCases = seed.components.objects.filter(
+	const seed = readSettings('register.d', '46-demo-cases-english.json')
+	const examples = readSettings('demo.d', '46-english-cases.json')
+	const demoCases = examples.components.objects.filter(
 		(entry) => entry['@self'].schema === 'case',
 	)
 	const caseTypes = Object.fromEntries(
@@ -265,15 +260,11 @@ describe('the English demo seed', () => {
 		expect(demoCases.length).toBeGreaterThan(0)
 		for (const demo of demoCases) {
 			expect(demo.identifier, demo['@self'].slug).toMatch(/^\d{4}-\d{4}$/)
-			// The year half is the START year here, and that is now a property
-			// of the SEED rather than of the mechanism. The retired
-			// `x-openregister-calculations` expression read `year(startDate)`;
-			// `x-openregister-generated` renders `{year}` from the creation
-			// moment and reads no property (case-number-and-favourites, D-2).
 			// A supplied number is kept and pushes the counter past it, so
 			// these rows are a floor for the register's own counter rather
-			// than something it will ever overwrite.
-			expect(demo.identifier.slice(0, 4)).toBe(demo.startDate.slice(0, 4))
+			// than something it will ever overwrite. The start date is a
+			// load-time token, so the year half no longer follows it.
+			expect(demo.startDate, demo['@self'].slug).toMatch(/^@today([+-]\d+d)?$/)
 		}
 	})
 
@@ -291,7 +282,7 @@ describe('the English demo seed', () => {
 		// page tell the truth only until the next save.
 		for (const demo of demoCases.filter((entry) => entry.statutoryTerm)) {
 			expect(demo.statutoryTerm, demo['@self'].slug).toBe(
-				caseTypes[demo.caseType].processingDeadline,
+				caseTypes[String(demo.caseType).replace(/^@ref:caseType:/, '')].processingDeadline,
 			)
 		}
 	})

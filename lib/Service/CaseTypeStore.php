@@ -36,6 +36,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeStoreInterface;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Throwable;
 
 /**
@@ -45,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseTypeStore {
+class CaseTypeStore implements CaseTypeStoreInterface {
 	/**
 	 * Constructor.
 	 *
@@ -80,7 +82,7 @@ class CaseTypeStore {
 	 *
 	 * @return array<string, mixed> The row, or an empty array.
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function readRow(string $schemaKey, string $id): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -143,7 +145,7 @@ class CaseTypeStore {
 	 * @return array<string, mixed> The template, or an empty array when there is none.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function activeTemplate(string $caseTypeId, string|array|null $named=null): array {
 		$namedId = $this->referenceId(value: $named);
@@ -188,7 +190,7 @@ class CaseTypeStore {
 	 *
 	 * @return array<int, array<string, mixed>> The versions, unordered.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function versionsWithIdentifier(string $identifier): array {
 		$identifier = trim($identifier);
@@ -230,8 +232,8 @@ class CaseTypeStore {
 	 *
 	 * @return array<int, array<string, mixed>> The case types, unordered.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function everyCaseType(array $scope=[]): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -374,15 +376,7 @@ class CaseTypeStore {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function asRow(mixed $value): array {
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$value = $value->jsonSerialize();
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		return $value;
+		return SerialisedResult::arrayOf(value: $value);
 	}//end asRow()
 
 	/**

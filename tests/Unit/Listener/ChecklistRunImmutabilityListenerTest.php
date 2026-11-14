@@ -30,12 +30,15 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 use OCA\Dossiq\Listener\ChecklistRunImmutabilityListener;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Event\ObjectLeavingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\ChecklistRunImmutabilityListener
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
+ * @uses \OCA\Dossiq\Listener\Support\SerialisedObject
  */
 class ChecklistRunImmutabilityListenerTest extends TestCase {
 	/**
@@ -171,4 +174,33 @@ class ChecklistRunImmutabilityListenerTest extends TestCase {
 
 		$this->assertFalse($event->isPropagationStopped());
 	}//end testForeignSchemaIsIgnored()
+
+	/**
+	 * A submitted run cannot be moved out of its register or schema.
+	 *
+	 * @return void
+	 */
+	public function testMovingASubmittedRunIsRejected(): void {
+		$event = new ObjectLeavingEvent($this->entity(['status' => 'submitted', 'responses' => ['a']]));
+
+		$this->listener->handle($event);
+
+		$this->assertTrue($event->isPropagationStopped());
+		$this->assertSame('inspectionChecklistRun.appendOnly', $event->getErrors()['code'] ?? null);
+	}//end testMovingASubmittedRunIsRejected()
+
+	/**
+	 * A run in progress, or another schema's object, may still be moved.
+	 *
+	 * @return void
+	 */
+	public function testMovingAnOpenRunOrAForeignObjectIsAllowed(): void {
+		$open = new ObjectLeavingEvent($this->entity(['status' => 'in_execution']));
+		$this->listener->handle($open);
+		$this->assertFalse($open->isPropagationStopped());
+
+		$foreign = new ObjectLeavingEvent($this->entity(['status' => 'submitted'], 'other-schema'));
+		$this->listener->handle($foreign);
+		$this->assertFalse($foreign->isPropagationStopped());
+	}//end testMovingAnOpenRunOrAForeignObjectIsAllowed()
 }//end class

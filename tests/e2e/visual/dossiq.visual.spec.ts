@@ -42,8 +42,9 @@ test.describe('Dossiq — visual baselines', () => {
 		await shootByNav(page, `${APP}#/`, 'All cases', 'cases.png')
 	})
 
-	// Baselines src/views/store/StoreGallery.vue, the manifest's `Store` page.
-	test('store (StoreGallery)', async ({ page }) => {
+	// Baselines the manifest's `Store` page, the library CnStorePage. The
+	// baseline file keeps its old name.
+	test('store (CnStorePage)', async ({ page }) => {
 		// Shot with no registry configured, which is the state a fresh install
 		// is in: the not-configured note plus the built-in templates.
 		// A PATH: dossiq is on createWebHistory, so `#/store` would shoot the

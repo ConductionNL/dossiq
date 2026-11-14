@@ -35,6 +35,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\LinkMarkerListener
+ * @covers \OCA\Dossiq\Listener\Support\ReadsEventObjects
  * @uses \OCA\Dossiq\Service\Relation\LinkMarkerRule
  * @uses \OCA\Dossiq\Service\Relation\LinkMarkerRuleReader
  */
@@ -169,4 +170,45 @@ class LinkMarkerListenerTest extends TestCase {
 
 		self::assertFalse($this->store->row(schema: 'record', uuid: 'rec-1')['followUpOpen']);
 	}//end testUnreadableRulesDoNotBlockTheSave()
+
+	/**
+	 * A source without a reference, or one naming a target that is not there, writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testNoReferenceOrNoTargetWritesNothing(): void {
+		$before = $this->store->writes;
+		$listener = $this->listener();
+
+		$listener->handle(event: $this->saved(['id' => 'ap-1', 'filedOn' => '2026-03-01', '@self' => ['schema' => 'appeal']]));
+		$listener->handle(event: $this->saved(['id' => 'ap-2', 'sourceRecord' => 'gone', 'filedOn' => '2026-03-01', '@self' => ['schema' => 'appeal']]));
+
+		self::assertSame($before, $this->store->writes);
+	}//end testNoReferenceOrNoTargetWritesNothing()
+
+	/**
+	 * Without a register configured nothing is read or written.
+	 *
+	 * @return void
+	 */
+	public function testWithoutARegisterNothingIsWritten(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->store);
+		$settings->method('getConfigValue')->willReturnCallback(
+			fn (string $key): string => match ($key) {
+				'appeal_schema'                => 'appeal',
+				'record_schema'                => 'record',
+				LinkMarkerListener::RULES_KEY  => $this->rules,
+				default                        => '',
+			}
+		);
+		$before = $this->store->writes;
+
+		(new LinkMarkerListener(settingsService: $settings, logger: $this->createMock(LoggerInterface::class)))->handle(
+			event: $this->saved(['id' => 'ap-1', 'sourceRecord' => 'rec-1', 'filedOn' => '2026-03-01', '@self' => ['schema' => 'appeal']])
+		);
+
+		self::assertSame($before, $this->store->writes);
+		self::assertFalse($this->store->row(schema: 'record', uuid: 'rec-1')['followUpOpen']);
+	}//end testWithoutARegisterNothingIsWritten()
 }//end class

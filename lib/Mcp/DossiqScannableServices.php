@@ -31,13 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Mcp;
 
-use OCA\Dossiq\Service\ComplaintService;
-use OCA\Dossiq\Service\Mcp\AppointmentTools;
-use OCA\Dossiq\Service\Mcp\BeschikkingTools;
-use OCA\Dossiq\Service\Mcp\CaseTools;
-use OCA\Dossiq\Service\Mcp\IntakeTools;
-use OCA\Dossiq\Service\Mcp\ReportingTools;
-use OCA\Dossiq\Service\Mcp\TermTools;
+use OCA\Dossiq\Service\Registrar\ServiceRegistrar;
 use OCA\OpenRegister\Mcp\IMcpScannableServices;
 
 /**
@@ -60,14 +54,6 @@ class DossiqScannableServices implements IMcpScannableServices {
 	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-201-first-imcpscannableservices-opt-in-exact-enumeration
 	 */
 	public function getScannableServiceClasses(): array {
-		return [
-			ReportingTools::class,
-			CaseTools::class,
-			ComplaintService::class,
-			TermTools::class,
-			AppointmentTools::class,
-			BeschikkingTools::class,
-			IntakeTools::class,
-		];
+		return ServiceRegistrar::MCP_SCANNABLE_SERVICES;
 	}//end getScannableServiceClasses()
 }//end class

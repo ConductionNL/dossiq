@@ -38,6 +38,8 @@ use OCA\Dossiq\Service\Term\TermCarryOver;
 /**
  * Maps one source record onto a case, by a case type's import declaration.
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ *
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-a-case-type-declares-how-another-apps-records-become-its-cases-req-cri-001
  */
 class RecordCaseMapping {
@@ -46,6 +48,16 @@ class RecordCaseMapping {
 	 * The `from` that reads the record's own uuid.
 	 */
 	public const RECORD_ID = '@id';
+
+	/**
+	 * The `statuses` key a record takes whose status is not declared or absent.
+	 */
+	public const ANY_STATUS = '*';
+
+	/**
+	 * The words `as: boolean` reads as true.
+	 */
+	private const TRUE_WORDS = ['1', 'true', 'yes'];
 
 	/**
 	 * The term states a status may declare.
@@ -59,10 +71,12 @@ class RecordCaseMapping {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseDateNormaliser $dates The one reader of a date and the tenant's time zone.
+	 * @param CaseDateNormaliser $dates  The one reader of a date and the tenant's time zone.
+	 * @param RecordValues       $values Lists, numbers and answers as the case stores them.
 	 */
 	public function __construct(
 		private readonly CaseDateNormaliser $dates,
+		private readonly RecordValues $values = new RecordValues(),
 	) {
 	}//end __construct()
 
@@ -81,44 +95,161 @@ class RecordCaseMapping {
 	 *                                  outside its list, or the status is not declared.
 	 *
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-a-case-type-declares-how-another-apps-records-become-its-cases-req-cri-001
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-a-declaration-reads-nested-typed-source-values-and-answers-the-case-types-fields-req-cri-005
 	 */
 	public function map(array $import, array $record, string $recordId, string $caseTypeId): array {
+		$sourceStatus = self::sourceStatusOf(import: $import, record: $record);
+		$declared = self::declaredFor(import: $import, sourceStatus: $sourceStatus);
+		$termState = self::termStateOf(declared: $declared, sourceStatus: $sourceStatus);
+
+		$run = new RecordMappingRun(record: $record, recordId: $recordId);
+		$run->case = ['caseType' => $caseTypeId];
+		$this->mapFields(run: $run, fields: (array)($import['fields'] ?? []));
+		self::applyStatus(run: $run, declared: $declared);
+		$this->applyFormerReferences(run: $run, declaration: (array)($import['formerReference'] ?? []));
+
+		return [
+			'case' => $run->case,
+			'term' => $this->term(declaration: (array)($import['term'] ?? []), record: $record, state: $termState),
+			'result' => trim((string)($declared['result'] ?? '')),
+		];
+	}//end map()
+
+	/**
+	 * The status the source record is in, read from the declared status field.
+	 *
+	 * @param array<string, mixed> $import One entry of the case type's `recordImports`.
+	 * @param array<string, mixed> $record The source record.
+	 *
+	 * @return string The source status.
+	 */
+	private static function sourceStatusOf(array $import, array $record): string {
 		$statusField = (string)($import['statusField'] ?? 'status');
-		$sourceStatus = trim((string)($record[$statusField] ?? ''));
-		$declared = ($import['statuses'][$sourceStatus] ?? null);
+
+		return trim((string)($record[$statusField] ?? ''));
+	}//end sourceStatusOf()
+
+	/**
+	 * What the declaration says for a source status, or for any status.
+	 *
+	 * @param array<string, mixed> $import       One entry of the case type's `recordImports`.
+	 * @param string               $sourceStatus The source status.
+	 *
+	 * @return array<string, mixed> The declared status.
+	 *
+	 * @throws InvalidArgumentException When the case type declares neither.
+	 */
+	private static function declaredFor(array $import, string $sourceStatus): array {
+		$declared = ($import['statuses'][$sourceStatus] ?? ($import['statuses'][self::ANY_STATUS] ?? null));
 		if (is_array($declared) === false) {
 			throw new InvalidArgumentException('The record has a status the case type does not declare: ' . $sourceStatus . '.');
 		}
 
+		return $declared;
+	}//end declaredFor()
+
+	/**
+	 * The term state a declared status carries.
+	 *
+	 * @param array<string, mixed> $declared     The declared status.
+	 * @param string               $sourceStatus The source status, for the refusal.
+	 *
+	 * @return string The term state.
+	 *
+	 * @throws InvalidArgumentException When the state is not one of TERM_STATES.
+	 */
+	private static function termStateOf(array $declared, string $sourceStatus): string {
 		$termState = (string)($declared['term'] ?? TermCarryOver::STATE_RUNNING);
 		if (in_array($termState, self::TERM_STATES, true) === false) {
 			throw new InvalidArgumentException('The status ' . $sourceStatus . ' declares an unknown term state: ' . $termState . '.');
 		}
 
-		$case = ['caseType' => $caseTypeId];
-		foreach ((array)($import['fields'] ?? []) as $field) {
-			$value = $this->valueOf(field: (array)$field, record: $record, recordId: $recordId);
-			if ($value !== null) {
-				$case = $this->set(target: $case, path: (string)($field['to'] ?? ''), value: $value);
-			}
+		return $termState;
+	}//end termStateOf()
+
+	/**
+	 * Write every declared field the record carries onto the case.
+	 *
+	 * @param RecordMappingRun          $run    The mapping.
+	 * @param array<int|string, mixed> $fields The field declarations.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When a required value is empty or outside its list.
+	 */
+	private function mapFields(RecordMappingRun $run, array $fields): void {
+		foreach ($fields as $field) {
+			$this->mapField(run: $run, field: (array)$field);
+		}
+	}//end mapFields()
+
+	/**
+	 * Write one declared field onto the case; a typed property is added to the answers at its path.
+	 *
+	 * @param RecordMappingRun     $run   The mapping.
+	 * @param array<string, mixed> $field The field declaration.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When a required value is empty or outside its list.
+	 */
+	private function mapField(RecordMappingRun $run, array $field): void {
+		$value = $this->valueOf(field: $field, record: $run->record, recordId: $run->recordId);
+		if ($value === null) {
+			return;
 		}
 
+		$path = (string)($field['to'] ?? '');
+		if (is_array($field['property'] ?? null) === true) {
+			$answers = $this->answersAt(run: $run, path: $path);
+			$answers[] = $this->values->answer(property: $field['property'], value: $value);
+			$value = $answers;
+		}
+
+		$run->case = $this->set(target: $run->case, path: $path, value: $value);
+	}//end mapField()
+
+	/**
+	 * The answers already at a path of the case, as a list.
+	 *
+	 * @param RecordMappingRun $run  The mapping.
+	 * @param string           $path The dot path.
+	 *
+	 * @return array<int|string, mixed> The answers, empty when there are none.
+	 */
+	private function answersAt(RecordMappingRun $run, string $path): array {
+		return (array)($this->read(case: $run->case, path: $path) ?? []);
+	}//end answersAt()
+
+	/**
+	 * Set the status the declaration maps the source status to, when it names one.
+	 *
+	 * @param RecordMappingRun     $run      The mapping.
+	 * @param array<string, mixed> $declared The declared status.
+	 *
+	 * @return void
+	 */
+	private static function applyStatus(RecordMappingRun $run, array $declared): void {
 		$status = trim((string)($declared['status'] ?? ''));
 		if ($status !== '') {
-			$case['status'] = $status;
+			$run->case['status'] = $status;
 		}
+	}//end applyStatus()
 
-		$former = $this->formerReferences(declaration: (array)($import['formerReference'] ?? []), record: $record);
+	/**
+	 * Keep the record's former references on the case, when it has any.
+	 *
+	 * @param RecordMappingRun     $run         The mapping.
+	 * @param array<string, mixed> $declaration The former-reference declaration.
+	 *
+	 * @return void
+	 */
+	private function applyFormerReferences(RecordMappingRun $run, array $declaration): void {
+		$former = $this->formerReferences(declaration: $declaration, record: $run->record);
 		if ($former !== []) {
-			$case['formerReferences'] = $former;
+			$run->case['formerReferences'] = $former;
 		}
-
-		return [
-			'case' => $case,
-			'term' => $this->term(declaration: (array)($import['term'] ?? []), record: $record, state: $termState),
-			'result' => trim((string)($declared['result'] ?? '')),
-		];
-	}//end map()
+	}//end applyFormerReferences()
 
 	/**
 	 * A value at a dot path of a case payload, or null.
@@ -181,7 +312,7 @@ class RecordCaseMapping {
 		}
 
 		$from = (string)($field['from'] ?? '');
-		$raw = ($record[$from] ?? null);
+		$raw = ($record[$from] ?? $this->read(case: $record, path: $from));
 		if ($from === self::RECORD_ID) {
 			$raw = $recordId;
 		}
@@ -205,26 +336,63 @@ class RecordCaseMapping {
 	 * @throws InvalidArgumentException When a value is outside its declared list.
 	 */
 	private function shaped(array $field, mixed $raw): mixed {
-		$text = '';
-		if (is_scalar($raw) === true) {
-			$text = trim((string)preg_replace('/\s+/u', ' ', (string)$raw));
+		$shape = (string)($field['as'] ?? 'text');
+		if ($shape === 'json') {
+			return $this->values->json(raw: $raw);
 		}
+
+		if ($shape === 'boolean' && is_bool($raw) === true) {
+			return $raw;
+		}
+
+		$text = $this->textOf(raw: $raw);
 
 		if (isset($field['values']) === true) {
 			return $this->listed(field: $field, text: $text);
 		}
 
+		return $this->typed(field: $field, shape: $shape, text: $text);
+	}//end shaped()
+
+	/**
+	 * A scalar raw value as text with its whitespace collapsed; '' for anything else.
+	 *
+	 * @param mixed $raw The raw value.
+	 *
+	 * @return string The text.
+	 */
+	private function textOf(mixed $raw): string {
+		$text = '';
+		if (is_scalar($raw) === true) {
+			$text = trim((string)preg_replace('/\s+/u', ' ', (string)$raw));
+		}
+
+		return $text;
+	}//end textOf()
+
+	/**
+	 * A text value in the shape its declaration asks for.
+	 *
+	 * @param array<string, mixed> $field The field declaration.
+	 * @param string $shape The declared shape.
+	 * @param string $text The raw value as text.
+	 *
+	 * @return mixed The value, or null when empty or unreadable.
+	 */
+	private function typed(array $field, string $shape, string $text): mixed {
 		if ($text === '') {
 			return null;
 		}
 
-		return match ((string)($field['as'] ?? 'text')) {
+		return match ($shape) {
 			'date' => $this->dates->toCalendarDateOrNull(value: $text),
 			'dateTime' => $this->dates->tryParse(value: $text)?->format(DateTimeInterface::ATOM),
 			'integer' => (int)$text,
+			'number' => $this->values->number(text: $text),
+			'boolean' => in_array(strtolower($text), self::TRUE_WORDS, true),
 			default => $this->cut(text: $text, length: (int)($field['maxLength'] ?? 0)),
 		};
-	}//end shaped()
+	}//end typed()
 
 	/**
 	 * A value read through its declared list.

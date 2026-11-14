@@ -39,7 +39,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypePublishServiceInterface;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
+use OCA\Dossiq\Service\CaseType\CaseTypeRuleProjector;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
 use OCA\Dossiq\Service\CaseType\PublicationChecks;
 use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
@@ -53,7 +55,7 @@ use Throwable;
  *
  * @spec openspec/specs/zaaktype-versioning/spec.md
  */
-class CaseTypePublishService {
+class CaseTypePublishService implements CaseTypePublishServiceInterface {
 	/**
 	 * Constructor.
 	 *
@@ -64,6 +66,7 @@ class CaseTypePublishService {
 	 * @param CaseFieldRoleProjector  $fieldRoles       What each role may see and change on the case.
 	 * @param CaseTypeVersionWindow   $window           When a version starts and stops being offered.
 	 * @param LoggerInterface         $logger           The logger.
+	 * @param CaseTypeRuleProjector|null $rules         What the case type's conditional rules do, on the engines that own the actions.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -73,6 +76,7 @@ class CaseTypePublishService {
 		private readonly CaseFieldRoleProjector $fieldRoles,
 		private readonly CaseTypeVersionWindow $window,
 		private readonly LoggerInterface $logger,
+		private readonly ?CaseTypeRuleProjector $rules = null,
 	) {
 	}//end __construct()
 
@@ -91,7 +95,7 @@ class CaseTypePublishService {
 	 *
 	 * @return array<int, string> The warnings, empty when nothing is off.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function warnings(string $caseTypeId): array {
 		return $this->checks->warnings(caseTypeId: $caseTypeId);
@@ -127,36 +131,21 @@ class CaseTypePublishService {
 	 * @return array<string, mixed> `{published: bool, findings: string[], warnings: string[], version: ?int}`.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	public function publish(string $caseTypeId, string $changeNote): array {
 		$findings = $this->validate(caseTypeId: $caseTypeId);
 		$warnings = $this->warnings(caseTypeId: $caseTypeId);
 		if ($findings !== []) {
-			return [
-				'published' => false,
-				'findings' => $findings,
-				'warnings' => $warnings,
-				'version' => null,
-			];
+			return $this->notPublished(findings: $findings, warnings: $warnings);
 		}
 
 		$today = $this->window->today();
 
-		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
-		$caseType['isDraft'] = false;
-		if ((int)($caseType['version'] ?? 0) < 1) {
-			$caseType['version'] = 1;
-		}
-
-		$caseType = $this->window->open(caseType: $caseType);
+		$caseType = $this->publishableCaseType(caseTypeId: $caseTypeId);
 
 		if ($this->save(schemaKey: 'case_type_schema', object: $caseType) === false) {
-			return [
-				'published' => false,
-				'findings' => ['The case type could not be saved.'],
-				'warnings' => $warnings,
-				'version' => null,
-			];
+			return $this->notPublished(findings: ['The case type could not be saved.'], warnings: $warnings);
 		}
 
 		$this->window->closePrevious(
@@ -165,6 +154,68 @@ class CaseTypePublishService {
 			takesEffect: (string)($caseType['validFrom'] ?? $today)
 		);
 
+		$warnings = $this->publishProjections(caseTypeId: $caseTypeId, warnings: $warnings);
+
+		$version = $this->publishActiveTemplate(caseTypeId: $caseTypeId, changeNote: $changeNote);
+
+		return $this->published(caseTypeId: $caseTypeId, warnings: $warnings, version: $version);
+	}//end publish()
+
+	/**
+	 * The answer for a publish that did not happen.
+	 *
+	 * @param array<int, string> $findings Why it did not happen.
+	 * @param array<int, string> $warnings The warnings found beside them.
+	 *
+	 * @return array<string, mixed> `{published: false, findings: string[], warnings: string[], version: null}`.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function notPublished(array $findings, array $warnings): array {
+		return [
+			'published' => false,
+			'findings' => $findings,
+			'warnings' => $warnings,
+			'version' => null,
+		];
+	}//end notPublished()
+
+	/**
+	 * The stored case type, marked published, opened in its validity window,
+	 * with its entry requirements derived.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 *
+	 * @return array<string, mixed> The case type, ready to save.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function publishableCaseType(string $caseTypeId): array {
+		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
+		$caseType['isDraft'] = false;
+		if ((int)($caseType['version'] ?? 0) < 1) {
+			$caseType['version'] = 1;
+		}
+
+		$caseType = $this->window->open(caseType: $caseType);
+		if ($this->rules !== null) {
+			$caseType['entryRequirements'] = $this->rules->entryRequirements(caseType: $caseType);
+		}
+
+		return $caseType;
+	}//end publishableCaseType()
+
+	/**
+	 * Write the field and role projections and the rules onto the case schema.
+	 *
+	 * @param string             $caseTypeId CaseType UUID.
+	 * @param array<int, string> $warnings   The warnings so far.
+	 *
+	 * @return array<int, string> The warnings, with the rules' own added.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function publishProjections(string $caseTypeId, array $warnings): array {
 		// What each status asks of the fields goes onto the case schema HERE,
 		// at the one moment a case type stops being a draft. Any earlier and a
 		// half-written status would start refusing saves on cases already
@@ -181,8 +232,25 @@ class CaseTypePublishService {
 		// from the role there. It never fails the publish either.
 		$this->fieldRoles->publish(caseTypeId: $caseTypeId);
 
-		$version = $this->publishActiveTemplate(caseTypeId: $caseTypeId, changeNote: $changeNote);
+		if ($this->rules !== null) {
+			$warnings = array_merge($warnings, $this->rules->publish(caseTypeId: $caseTypeId));
+		}
 
+		return $warnings;
+	}//end publishProjections()
+
+	/**
+	 * The answer for a publish that happened, logged when it carries warnings.
+	 *
+	 * @param string             $caseTypeId CaseType UUID.
+	 * @param array<int, string> $warnings   The warnings.
+	 * @param int|null           $version    The published template version.
+	 *
+	 * @return array<string, mixed> `{published: true, findings: [], warnings: string[], version: ?int}`.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function published(string $caseTypeId, array $warnings, ?int $version): array {
 		if ($warnings !== []) {
 			$this->logger->warning(
 				'Case type publish: published with warnings',
@@ -196,7 +264,7 @@ class CaseTypePublishService {
 			'warnings' => $warnings,
 			'version' => $version,
 		];
-	}//end publish()
+	}//end published()
 
 	/**
 	 * Mark the case type's active workflow template published, with the note.

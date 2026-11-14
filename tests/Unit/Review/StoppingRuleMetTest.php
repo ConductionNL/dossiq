@@ -37,6 +37,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Review\StoppingRuleMet
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-meeting-the-stopping-rule-is-recorded-req-wrs-003
  */

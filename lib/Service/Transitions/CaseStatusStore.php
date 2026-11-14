@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Timeline\StatusMoveEntry;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -56,6 +57,7 @@ class CaseStatusStore {
 	 * @param StatusTypeLookup  $statusTypeLookup Reads a statusType, by id or by name.
 	 * @param LoggerInterface   $logger           The logger.
 	 * @param StatusMoveEntry|null $moveEntry    The timeline entry a recorded move writes.
+	 * @param TranslatedText       $text         Reads a translatable status description as text, in the reader's language.
 	 *
 	 * @return void
 	 */
@@ -64,6 +66,7 @@ class CaseStatusStore {
 		private readonly StatusTypeLookup $statusTypeLookup,
 		private readonly LoggerInterface $logger,
 		private readonly ?StatusMoveEntry $moveEntry = null,
+		private readonly TranslatedText $text = new TranslatedText(),
 	) {
 	}//end __construct()
 
@@ -153,6 +156,49 @@ class CaseStatusStore {
 		bool $noWorkflowTemplate,
 		string $actor = '',
 	): array {
+		[$objectService, $register, $recordSchema] = $this->statusRecordStore();
+
+		$payload = [
+			'case' => $caseId,
+			'statusType' => $toStatus,
+			'transitionLabel' => $label,
+			'evaluatedGuards' => $evaluatedGuards,
+			'dispatchedActions' => [],
+			'noWorkflowTemplate' => $noWorkflowTemplate,
+		];
+
+		$payload = $this->withOptionalStatusFields(
+			payload: $payload,
+			fromStatus: $fromStatus,
+			comment: $comment,
+			actor: $actor,
+		);
+
+		$record = $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
+
+		$this->moveEntry?->record(
+			caseId: $caseId,
+			toStatus: $toStatus,
+			fromStatus: $fromStatus,
+			label: $label,
+			comment: $comment,
+			record: $record,
+			actor: $actor,
+		);
+
+		return $record;
+	}//end writeStatusRecord()
+
+	/**
+	 * The object service, register and statusRecord schema.
+	 *
+	 * @return array{0: object, 1: string, 2: string} The store.
+	 *
+	 * @throws RuntimeException When OpenRegister or the statusRecord schema is unavailable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function statusRecordStore(): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('storage_unavailable');
@@ -164,15 +210,22 @@ class CaseStatusStore {
 			throw new RuntimeException('status_record_schema_not_configured');
 		}
 
-		$payload = [
-			'case' => $caseId,
-			'statusType' => $toStatus,
-			'transitionLabel' => $label,
-			'evaluatedGuards' => $evaluatedGuards,
-			'dispatchedActions' => [],
-			'noWorkflowTemplate' => $noWorkflowTemplate,
-		];
+		return [$objectService, $register, $recordSchema];
+	}//end statusRecordStore()
 
+	/**
+	 * Add the actor, prior status and comment to a statusRecord payload when given.
+	 *
+	 * @param array<string, mixed> $payload The statusRecord payload.
+	 * @param string $fromStatus Prior statusType UUID.
+	 * @param string|null $comment Free-form comment.
+	 * @param string $actor Who made the move, or the empty string when the caller names nobody.
+	 *
+	 * @return array<string, mixed> The payload with the optional fields.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function withOptionalStatusFields(array $payload, string $fromStatus, ?string $comment, string $actor): array {
 		// WHO made this move. The four-eyes rule reads this chain to find who
 		// performed a named earlier act, and before this property the only
 		// answer was the row's OpenRegister owner, which is a fact about who
@@ -191,20 +244,8 @@ class CaseStatusStore {
 			$payload['description'] = $comment;
 		}
 
-		$record = $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
-
-		$this->moveEntry?->record(
-			caseId: $caseId,
-			toStatus: $toStatus,
-			fromStatus: $fromStatus,
-			label: $label,
-			comment: $comment,
-			record: $record,
-			actor: $actor,
-		);
-
-		return $record;
-	}//end writeStatusRecord()
+		return $payload;
+	}//end withOptionalStatusFields()
 
 	/**
 	 * Where the move's timeline entry is built.
@@ -271,42 +312,83 @@ class CaseStatusStore {
 			return null;
 		}
 
+		$query = $this->statusRecordQuery(caseId: $caseId);
+		if ($query === null) {
+			return null;
+		}
+
+		$records = $this->searchStatusRecords(objectService: $objectService, query: $query);
+		if ($records === null) {
+			return null;
+		}
+
+		return $this->recordArrays(records: $records);
+	}//end findStatusRecords()
+
+	/**
+	 * The searchObjects() query for a case's status records, or null when they are not configured.
+	 *
+	 * @param string $caseId Case UUID.
+	 *
+	 * @return array<string, mixed>|null The query.
+	 */
+	private function statusRecordQuery(string $caseId): ?array {
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$recordSchema = $this->settingsService->getConfigValue(key: 'status_record_schema');
 		if ($register === '' || $recordSchema === '') {
 			return null;
 		}
 
+		return [
+			'@self' => [
+				'register' => (int)$register,
+				'schema' => (int)$recordSchema,
+			],
+			'case' => $caseId,
+		];
+	}//end statusRecordQuery()
+
+	/**
+	 * Run the status record search; a failed read is logged and answers null.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param array<string, mixed> $query         The query, its `case` the case UUID.
+	 *
+	 * @return array<int, mixed>|null The records found, or null when the history cannot be read.
+	 */
+	private function searchStatusRecords(object $objectService, array $query): ?array {
 		try {
-			$records = $objectService->searchObjects(
-				[
-					'@self' => [
-						'register' => (int)$register,
-						'schema' => (int)$recordSchema,
-					],
-					'case' => $caseId,
-				],
-			);
+			$records = $objectService->searchObjects($query);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'StatusTransitionService: replay searchObjects failed',
-				['exception' => $e->getMessage(), 'caseId' => $caseId],
+				['exception' => $e->getMessage(), 'caseId' => $query['case']],
 			);
 			return null;
 		}//end try
 
-		$recordList = [];
 		if (is_array($records) === true) {
-			$recordList = $records;
+			return $records;
 		}
 
+		return [];
+	}//end searchStatusRecords()
+
+	/**
+	 * Every record as an array.
+	 *
+	 * @param array<int, mixed> $records The records found.
+	 *
+	 * @return array<int, array<string, mixed>> The records.
+	 */
+	private function recordArrays(array $records): array {
 		$list = [];
-		foreach ($recordList as $record) {
+		foreach ($records as $record) {
 			$list[] = $this->toArray(value: $record);
 		}
 
 		return $list;
-	}//end findStatusRecords()
+	}//end recordArrays()
 
 	/**
 	 * Look up a human-readable status name for the case-detail panel header.
@@ -360,10 +442,10 @@ class CaseStatusStore {
 	 *
 	 * @return string The description, or the empty string.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function lookupStatusDescription(string $statusTypeId): string {
-		return trim((string)($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['description'] ?? ''));
+		return $this->text->forReader(value: ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['description'] ?? ''));
 	}//end lookupStatusDescription()
 
 	/**

@@ -273,7 +273,7 @@ export default {
 		/**
 		 * @param {object} span The span `{source}`.
 		 * @return {boolean}
-		 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-4-1
+		 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-4-1
 		 */
 		isToggleable(span) {
 			return isSpanToggleable(span)

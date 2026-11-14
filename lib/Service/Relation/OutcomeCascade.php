@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Relation;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\OutcomeCascadeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -51,7 +52,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-an-outcome-cascade-runs-its-configured-steps-req-lcr-5
  */
-class OutcomeCascade {
+class OutcomeCascade implements OutcomeCascadeInterface {
 
 	use SearchesObjects;
 
@@ -119,73 +120,136 @@ class OutcomeCascade {
 
 		$this->guardInputs(name: $name, steps: $steps, inputs: $inputs);
 
-		$target = $this->target(cascade: $cascade, targetId: $targetId);
+		$run = $this->startRun(cascade: $cascade, targetId: $targetId);
+		$run->inputs = $inputs;
 		foreach ($steps as $step) {
-			$target = $this->runStep(cascade: $cascade, step: $step, target: $target, targetId: $targetId, inputs: $inputs);
+			$this->runStep(run: $run, step: $step);
 		}
 
-		return $target;
+		return $run->target;
 	}//end run()
 
 	/**
-	 * Run one step and answer the target as it stands after it.
+	 * A run of a cascade on its target, read as it stands now.
 	 *
 	 * @param array<string, mixed> $cascade  The cascade.
-	 * @param mixed                $step     The step.
-	 * @param array<string, mixed> $target   The target.
 	 * @param string               $targetId The target uuid.
-	 * @param array<string, mixed> $inputs   The caller's values.
 	 *
-	 * @return array<string, mixed> The target.
+	 * @return CascadeRun The run, without inputs yet.
+	 *
+	 * @throws InvalidArgumentException When the target is not found.
+	 */
+	private function startRun(array $cascade, string $targetId): CascadeRun {
+		$run = new CascadeRun();
+		$run->cascade = $cascade;
+		$run->targetId = $targetId;
+		$run->target = $this->target(cascade: $cascade, targetId: $targetId);
+
+		return $run;
+	}//end startRun()
+
+	/**
+	 * Run one step, leaving the target on the run as it stands after it.
+	 *
+	 * @param CascadeRun $run  The cascade run.
+	 * @param mixed      $step The step.
+	 *
+	 * @return void
 	 *
 	 * @throws InvalidArgumentException When the step is of no known kind.
 	 */
-	private function runStep(array $cascade, mixed $step, array $target, string $targetId, array $inputs): array {
-		if (is_array($step) === true && is_array($step['set'] ?? null) === true) {
-			return ($this->write(
-				schemaKey: (string)$cascade['target'],
-				id: $targetId,
-				changes: $this->values(values: $step['set'], inputs: $inputs)
-			) ?? $target);
+	private function runStep(CascadeRun $run, mixed $step): void {
+		$kind = $this->stepKind(step: $step);
+		if ($kind === 'set') {
+			$this->writeTarget(run: $run, set: $step['set']);
+			return;
 		}
 
-		if (is_array($step) === true && is_array($step['setDependents'] ?? null) === true) {
-			$this->setDependents(spec: $step['setDependents'], targetId: $targetId, inputs: $inputs);
-			return $target;
+		if ($kind === 'setDependents') {
+			$this->setDependents(run: $run, spec: $step['setDependents']);
+			return;
 		}
 
-		if (is_array($step) === true && is_string($step['transition'] ?? null) === true) {
-			$this->transition(step: $step, cascade: $cascade, target: $target, targetId: $targetId);
-			return $target;
-		}
-
-		throw new InvalidArgumentException('A cascade step must be set, setDependents or transition.');
+		$this->transition(run: $run, step: $step);
 	}//end runStep()
+
+	/**
+	 * Which kind of step this is: set, setDependents or transition.
+	 *
+	 * @param mixed $step The step.
+	 *
+	 * @return string The kind.
+	 *
+	 * @throws InvalidArgumentException When the step is of no known kind.
+	 */
+	private function stepKind(mixed $step): string {
+		if (is_array($step) === false) {
+			throw $this->unknownStep();
+		}
+
+		if (is_array($step['set'] ?? null) === true) {
+			return 'set';
+		}
+
+		if (is_array($step['setDependents'] ?? null) === true) {
+			return 'setDependents';
+		}
+
+		if (is_string($step['transition'] ?? null) === true) {
+			return 'transition';
+		}
+
+		throw $this->unknownStep();
+	}//end stepKind()
+
+	/**
+	 * The refusal for a step of no known kind.
+	 *
+	 * @return InvalidArgumentException The refusal.
+	 */
+	private function unknownStep(): InvalidArgumentException {
+		return new InvalidArgumentException('A cascade step must be set, setDependents or transition.');
+	}//end unknownStep()
+
+	/**
+	 * Write a set step's values on the target, keeping the target as read when nothing came back.
+	 *
+	 * @param CascadeRun           $run The cascade run.
+	 * @param array<string, mixed> $set The values to write.
+	 *
+	 * @return void
+	 */
+	private function writeTarget(CascadeRun $run, array $set): void {
+		$run->target = ($this->write(
+			schemaKey: (string)$run->cascade['target'],
+			id: $run->targetId,
+			changes: $this->values(values: $set, inputs: $run->inputs)
+		) ?? $run->target);
+	}//end writeTarget()
 
 	/**
 	 * Write fields on every object that references the target through a field.
 	 *
-	 * @param array<string, mixed> $spec     `schema`, `field` and `values`.
-	 * @param string               $targetId The target uuid.
-	 * @param array<string, mixed> $inputs   The caller's values.
+	 * @param CascadeRun           $run  The cascade run.
+	 * @param array<string, mixed> $spec `schema`, `field` and `values`.
 	 *
 	 * @return void
 	 *
 	 * @throws InvalidArgumentException When the step is missing its schema, field or values.
 	 */
-	private function setDependents(array $spec, string $targetId, array $inputs): void {
+	private function setDependents(CascadeRun $run, array $spec): void {
 		$schemaKey = $this->text(value: ($spec['schema'] ?? ''));
 		$field     = $this->text(value: ($spec['field'] ?? ''));
 		if ($schemaKey === '' || $field === '' || is_array($spec['values'] ?? null) === false) {
 			throw new InvalidArgumentException('A setDependents step needs schema, field and values.');
 		}
 
-		$changes    = $this->values(values: $spec['values'], inputs: $inputs);
+		$changes    = $this->values(values: $spec['values'], inputs: $run->inputs);
 		$dependents = $this->searchObjectsAsArrays(
 			objectService: $this->objectService(),
 			register: $this->settingsService->getConfigValue(key: 'register'),
 			schema: $this->schema(key: $schemaKey),
-			filters: [$field => $targetId]
+			filters: [$field => $run->targetId]
 		);
 		foreach ($dependents as $dependent) {
 			$id = $this->text(value: ($dependent['@self']['id'] ?? ($dependent['id'] ?? '')));
@@ -198,25 +262,23 @@ class OutcomeCascade {
 	/**
 	 * Run a named transition on the case of the target, or of an object it references.
 	 *
-	 * @param array<string, mixed> $step     The step: `transition`, optional `via` and `viaSchema`.
-	 * @param array<string, mixed> $cascade  The cascade.
-	 * @param array<string, mixed> $target   The target.
-	 * @param string               $targetId The target uuid, for the comment.
+	 * @param CascadeRun           $run  The cascade run; its target uuid goes in the comment.
+	 * @param array<string, mixed> $step The step: `transition`, optional `via` and `viaSchema`.
 	 *
 	 * @return void
 	 *
 	 * @throws RuntimeException When no case can be found to run it on.
 	 */
-	private function transition(array $step, array $cascade, array $target, string $targetId): void {
-		$caseField = (string)($cascade['caseField'] ?? 'case');
-		$holder    = $target;
+	private function transition(CascadeRun $run, array $step): void {
+		$caseField = (string)($run->cascade['caseField'] ?? 'case');
+		$holder    = $run->target;
 		$via       = $this->text(value: ($step['via'] ?? ''));
 		if ($via !== '') {
 			$holder = $this->findObjectAsArray(
 				objectService: $this->objectService(),
 				register: $this->settingsService->getConfigValue(key: 'register'),
 				schema: $this->schema(key: $this->text(value: ($step['viaSchema'] ?? ''))),
-				id: $this->text(value: ($target[$via] ?? ''))
+				id: $this->text(value: ($run->target[$via] ?? ''))
 			) ?? [];
 		}
 
@@ -228,7 +290,7 @@ class OutcomeCascade {
 		$this->transitions->execute(
 			caseId: $caseId,
 			transitionId: $step['transition'],
-			comment: 'Cascade from '.$targetId,
+			comment: 'Cascade from '.$run->targetId,
 		);
 	}//end transition()
 

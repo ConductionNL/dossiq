@@ -49,14 +49,22 @@ exception escaping it would abort the whole composition root —
 `Coordinator::registerApps()` would catch it, log an `emergency` and continue,
 leaving dossiq enabled and serving with every later registration missing.
 
-This requirement carries no scenarios by design. Both of its behaviours live in
-the app-registration phase, which completes before the first request is
-dispatched, so neither is reachable from a browser or an HTTP client, and the
-absent-OpenRegister path cannot be set up on an instance that must have
-OpenRegister to serve this app at all. They are asserted directly in
+Both of its behaviours live in the app-registration phase, which completes
+before the first request is dispatched, so neither is reachable from a browser
+or an HTTP client, and the absent-OpenRegister path cannot be set up on an
+instance that must have OpenRegister to serve this app at all. The scenario
+below is therefore excluded from e2e. Both behaviours are asserted directly in
 `tests/Unit/AppInfo/OpenRegisterAutoloaderTest.php` and enforced mechanically by
 hydra gate-64 (`apphost-autoload-prelude`), which fails any app that references
 `OCA\OpenRegister\AppHost\…` from `lib/AppInfo/` without the prelude.
+
+#### Scenario: The prefix is there before AppHost is referenced
+@e2e exclude Runs in the app-registration phase, before any request; asserted in tests/Unit/AppInfo/OpenRegisterAutoloaderTest.php and by hydra gate-64.
+
+- **GIVEN** an instance where dossiq registers before OpenRegister's PSR-4 prefix exists
+- **WHEN** dossiq's composition root runs
+- **THEN** OpenRegister's prefix SHALL be registered before any `OCA\OpenRegister\AppHost\…` name is resolved
+- **AND** the prelude SHALL NOT throw, also when OpenRegister is absent
 
 **Notes:** ADR-040. The load order was measured on the sibling app `openbuild`,
 which sorts before `openregister` and logged `OpenRegister AppHost\Bootstrap is

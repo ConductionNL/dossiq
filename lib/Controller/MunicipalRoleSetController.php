@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Starter\MunicipalRoleSetService;
+use OCA\Dossiq\Kernel\Contracts\MunicipalRoleSetServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -57,13 +57,13 @@ class MunicipalRoleSetController extends Controller {
 	 *
 	 * @param string                  $appName The app name.
 	 * @param IRequest                $request The HTTP request.
-	 * @param MunicipalRoleSetService $roleSet The shipped role set.
+	 * @param MunicipalRoleSetServiceInterface $roleSet The shipped role set.
 	 * @param LoggerInterface         $logger  Logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly MunicipalRoleSetService $roleSet,
+		private readonly MunicipalRoleSetServiceInterface $roleSet,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);

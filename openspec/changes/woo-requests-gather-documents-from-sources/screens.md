@@ -1,8 +1,7 @@
-# Screens: woo-requests-gather-documents-from-sources
-
-- DqZaakDialogen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDialogen
-- DqZaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
-- DqZaakDocumenten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDocumenten
 # Screens
 
-- Design backlog: DqWooCorpus (decision 157)
+- dossiq/DqZaakDialogen twaalf kleine zaakdialogen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDialogen
+- dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
+- dossiq/DqZaakDocumenten zaak, tabblad documenten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDocumenten
+
+Components: CnActionButtons, CnActionDialog, CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnConfirmDialog, CnDataTable, CnDeleteDialog, CnDetailCard, CnDetailGrid, CnDetailPage, CnFileField, CnFilesCard, CnFormDialog, CnMapWidget, CnNextStepCard, CnNoteCard, CnPresenceAvatars, CnProgressBar, CnRecordListWidget, CnRelatedCollections, CnRowActions, CnStatusBadge, CnTabs, CnTimelineStages, CnTransitionInputDialog

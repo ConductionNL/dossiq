@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-5
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -27,14 +27,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentRelevanceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
+use OCA\Dossiq\Review\DisclosureAssessmentValidator;
+use OCA\Dossiq\Review\OutstandingDocuments;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Review\DisclosureAssessmentValidator;
-use OCA\Dossiq\Review\DocumentRelevance;
-use OCA\Dossiq\Review\OutstandingDocuments;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -45,11 +46,20 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-5
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of
+ *  small private steps; each method stays under the method thresholds.
  */
-class WOODocumentAssessmentService {
+class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterface {
 
 	use SearchesObjects;
+
+	/**
+	 * The keys that name a stored object, dropped from each caller assessment
+	 * (Support\CallerIdentity::KEYS, written out to keep this class's coupling down).
+	 */
+	private const CALLER_IDENTITY = ['id' => true, 'uuid' => true, '@self' => true];
 
 	/**
 	 * The settled list of Woo refusal grounds.
@@ -78,26 +88,34 @@ class WOODocumentAssessmentService {
 	 * @param SettingsService $settingsService Settings service
 	 * @param IUserSession $userSession Current user session
 	 * @param LoggerInterface $logger Logger
-	 * @param WooCaseDocuments|null $caseDocuments Where a case's documents are: its informatieobjecten.
+	 * @param WooCaseDocumentsInterface|null $caseDocuments Where a case's documents are: its informatieobjecten.
 	 * @param WooRefusalGrounds|null $refusalGrounds The settled list a cited ground is checked against.
 	 *        Built over the same settings and logger when left out, because those are its only
 	 *        collaborators and a default built from them is the instance the container wires.
 	 * @param CaseReviewerAccess|null $reviewerAccess Who may change an assessment and who reads it,
 	 *        when the case type keeps its assessments private to the case (case-reviewer-access).
-	 * @param DocumentRelevance|null $reviews Each document's relevance and pages seen (woo-review-triage); null keeps every document needing a verdict.
+	 * @param DocumentRelevanceInterface|null $reviews Each document's relevance and pages seen (woo-review-triage);
+	 *        null keeps every document needing a verdict.
+	 * @param OutstandingDocuments|null $outstanding The review's outstanding documents, as the container builds them
+	 *        (with the case type's drafted document types left out); null builds one from the collaborators above.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		?WooCaseDocuments $caseDocuments = null,
+		?WooCaseDocumentsInterface $caseDocuments = null,
 		?WooRefusalGrounds $refusalGrounds = null,
 		private readonly ?CaseReviewerAccess $reviewerAccess = null,
-		private readonly ?DocumentRelevance $reviews = null,
+		private readonly ?DocumentRelevanceInterface $reviews = null,
+		?OutstandingDocuments $outstanding = null,
 	) {
 		$this->refusalGrounds       = ($refusalGrounds ?? new WooRefusalGrounds(settingsService: $settingsService, logger: $logger));
 		$this->validator            = new DisclosureAssessmentValidator(refusalGrounds: $this->refusalGrounds);
-		$this->outstandingDocuments = new OutstandingDocuments(settingsService: $settingsService, caseDocuments: $caseDocuments, reviews: $reviews);
+		$this->outstandingDocuments = ($outstanding ?? new OutstandingDocuments(
+			settingsService: $settingsService,
+			caseDocuments: $caseDocuments,
+			reviews: $reviews
+		));
 	}//end __construct()
 
 	/**
@@ -113,10 +131,69 @@ class WOODocumentAssessmentService {
 	 *
 	 * @throws RuntimeException If OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
 	 */
 	public function bulkUpsert(string $caseId, array $assessments): array {
+		$location = $this->assessmentTarget();
+		$target = new AssessmentBatchTarget(
+			objectService: $location['objectService'],
+			register: $location['register'],
+			schema: $location['schema'],
+			userId: ($this->userSession->getUser()?->getUID() ?? 'system'),
+			caseId: $caseId
+		);
+
+		$tally = $this->upsertAll(assessments: $assessments, target: $target);
+
+		$this->reviewerAccess?->reconcileAfterCreate(caseId: $caseId, created: $tally['created']);
+		$this->markJudgedInScope(target: $target, documentRefs: $tally['judged']);
+
+		$outstanding = $this->getOutstanding(caseId: $caseId);
+
+		$this->logger->info(
+			'WOO bulk-upsert: ' . count($tally['saved']) . ' saved, ' . $outstanding['count'] . ' outstanding for case ' . $caseId,
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return ['saved' => $tally['saved'], 'errors' => $tally['errors'], 'outstanding' => $outstanding];
+	}//end bulkUpsert()
+
+	/**
+	 * Upsert each assessment in turn, tallying what was saved, created and judged, and what failed.
+	 *
+	 * @param array<int, array<string, mixed>> $assessments Array of assessment payloads
+	 * @param AssessmentBatchTarget            $target      Where assessments are stored, on which case, and by whom
+	 *
+	 * @return array{saved: array<int, mixed>, errors: array<int, mixed>, created: int, judged: array<int, mixed>} The tally.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
+	 */
+	private function upsertAll(array $assessments, AssessmentBatchTarget $target): array {
+		$tally = ['saved' => [], 'errors' => [], 'created' => 0, 'judged' => []];
+		foreach ($assessments as $assessment) {
+			$result = $this->upsertAssessment(assessment: (array)$assessment, target: $target);
+			if (isset($result['error']) === true) {
+				$tally['errors'][] = $result['error'];
+				continue;
+			}
+
+			$tally['saved'][] = $result['saved'];
+			$tally['created'] += $result['created'];
+			$tally['judged'][] = $result['documentRef'];
+		}
+
+		return $tally;
+	}//end upsertAll()
+
+	/**
+	 * Where assessments are stored: the object service, register and schema.
+	 *
+	 * @return array<string, mixed> The object service, register and schema.
+	 *
+	 * @throws RuntimeException If OpenRegister is unavailable or the schema is not configured.
+	 */
+	private function assessmentTarget(): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -129,92 +206,119 @@ class WOODocumentAssessmentService {
 			throw new RuntimeException('WOO assessment schema not configured');
 		}
 
-		$userId = ($this->userSession->getUser()?->getUID() ?? 'system');
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $assessmentSchema];
+	}//end assessmentTarget()
 
-		$saved = [];
-		$errors = [];
-		$created = 0;
-		$judged = [];
+	/**
+	 * Validate, stamp and store one assessment.
+	 *
+	 * @param array<string, mixed>  $assessment The assessment payload.
+	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
+	 *
+	 * @return array<string, mixed> `{error}` or `{saved, created, documentRef}`.
+	 */
+	private function upsertAssessment(array $assessment, AssessmentBatchTarget $target): array {
+		$caseId = $target->caseId;
+		[$assessment, $unseen] = [array_diff_key($assessment, self::CALLER_IDENTITY), []];
+		if ($this->reviews !== null) {
+			$unseen = $this->reviews->pages()->refusalFor(caseId: $caseId, assessment: $assessment);
+		}
 
-		foreach ($assessments as $assessment) {
-			$unseen = [];
-			if ($this->reviews !== null) {
-				$unseen = $this->reviews->pages()->refusalFor(caseId: $caseId, assessment: $assessment);
+		$validationErrors = $this->validate(assessment: $assessment) + $unseen;
+		if (empty($validationErrors) === false) {
+			return ['error' => ['documentRef' => $assessment['documentRef'] ?? 'unknown', 'errors' => $validationErrors]];
+		}
+
+		$assessment['caseRef'] = $caseId;
+		$assessment['groundsListVersion'] = WooRefusalGrounds::LIST_VERSION;
+		$assessment['assessedBy'] = $target->userId;
+		$assessment['assessedAt'] = date('Y-m-d\TH:i:s');
+
+		return $this->storeAssessment(assessment: $assessment, target: $target);
+	}//end upsertAssessment()
+
+	/**
+	 * Update the case's assessment of the document, or create one.
+	 *
+	 * The existing assessment is read regardless of the caller, so an
+	 * assessment the caller cannot see is never assessed a second time
+	 * (REQ-CRA-003); only its uuid and owner are used, nothing of it is answered.
+	 *
+	 * @param array<string, mixed>  $assessment The stamped assessment.
+	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
+	 *
+	 * @return array<string, mixed> `{error}` or `{saved, created, documentRef}`.
+	 */
+	private function storeAssessment(array $assessment, AssessmentBatchTarget $target): array {
+		$existing = $this->existingAssessments(assessment: $assessment, target: $target);
+
+		$uuid = null;
+		if (count($existing) > 0) {
+			$refusal = $this->refusalOn(record: $existing[0], assessment: $assessment, target: $target);
+			if ($refusal !== null) {
+				return ['error' => $refusal];
 			}
 
-			$validationErrors = $this->validate(assessment: $assessment) + $unseen;
-			if (empty($validationErrors) === false) {
-				$errors[] = [
-					'documentRef' => $assessment['documentRef'] ?? 'unknown',
-					'errors' => $validationErrors,
-				];
-				continue;
-			}
+			$uuid = (string)($existing[0]['id'] ?? $existing[0]['uuid'] ?? null);
+		}
 
-			$assessment['caseRef'] = $caseId;
-			$assessment['groundsListVersion'] = WooRefusalGrounds::LIST_VERSION;
-			$assessment['assessedBy'] = $userId;
-			$assessment['assessedAt'] = date('Y-m-d\TH:i:s');
+		return $this->saveAssessment(assessment: $assessment, target: $target, uuid: $uuid);
+	}//end storeAssessment()
 
-			// Find existing assessment for this document in this case. Read
-			// regardless of the caller, so an assessment the caller cannot see
-			// is never assessed a second time (REQ-CRA-003); only its uuid and
-			// owner are used, nothing of it is answered.
-			$existing = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $assessmentSchema,
-				filters: ['caseRef' => $caseId, 'documentRef' => $assessment['documentRef'], '_limit' => 1],
-			);
+	/**
+	 * The case's stored assessments of the document, whoever can see them.
+	 *
+	 * @param array<string, mixed>  $assessment The stamped assessment.
+	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
+	 *
+	 * @return array<int, array<string, mixed>> At most one assessment.
+	 */
+	private function existingAssessments(array $assessment, AssessmentBatchTarget $target): array {
+		return $this->searchObjectsAsArraysUnscoped(
+			objectService: $target->objectService,
+			register: $target->register,
+			schema: $target->schema,
+			filters: ['caseRef' => $target->caseId, 'documentRef' => $assessment['documentRef'], '_limit' => 1],
+		);
+	}//end existingAssessments()
 
-			if (count($existing) > 0) {
-				$refusal = $this->reviewerAccess?->refusalFor(
-					caseId: $caseId,
-					record: $existing[0],
-					userId: $userId,
-					reference: (string)$assessment['documentRef']
-				);
-				if ($refusal !== null) {
-					$errors[] = $refusal;
-					continue;
-				}
+	/**
+	 * Why the acting user may not change the stored assessment, or null when they may.
+	 *
+	 * @param array<string, mixed>  $record     The stored assessment.
+	 * @param array<string, mixed>  $assessment The stamped assessment.
+	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
+	 *
+	 * @return mixed The refusal, or null.
+	 */
+	private function refusalOn(array $record, array $assessment, AssessmentBatchTarget $target): mixed {
+		return $this->reviewerAccess?->refusalFor(
+			caseId: $target->caseId,
+			record: $record,
+			userId: $target->userId,
+			reference: (string)$assessment['documentRef']
+		);
+	}//end refusalOn()
 
-				$existingId = $existing[0]['id'] ?? $existing[0]['uuid'] ?? null;
-				$saved[] = $objectService->saveObject(
-					object: $assessment,
-					register: $register,
-					schema: $assessmentSchema,
-					uuid: (string)$existingId,
-				);
-				$judged[] = (string)$assessment['documentRef'];
-				continue;
-			}
-
-			$saved[] = $objectService->saveObject(
-				object: $assessment,
-				register: $register,
-				schema: $assessmentSchema,
-			);
-			$created++;
-			$judged[] = (string)$assessment['documentRef'];
-		}//end foreach
-
-		$this->reviewerAccess?->reconcileAfterCreate(caseId: $caseId, created: $created);
-		$this->markJudgedInScope(caseId: $caseId, documentRefs: $judged, userId: $userId);
-
-		$outstanding = $this->getOutstanding(caseId: $caseId);
-
-		$this->logger->info(
-			'WOO bulk-upsert: ' . count($saved) . ' saved, ' . $outstanding['count'] . ' outstanding for case ' . $caseId,
-			['app' => Application::APP_ID],
+	/**
+	 * Save the assessment, new or over the stored one.
+	 *
+	 * @param array<string, mixed>  $assessment The stamped assessment.
+	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
+	 * @param string|null           $uuid       The stored assessment's uuid, or null to create.
+	 *
+	 * @return array<string, mixed> `{saved, created, documentRef}`.
+	 */
+	private function saveAssessment(array $assessment, AssessmentBatchTarget $target, ?string $uuid): array {
+		$saved = $target->objectService->saveObject(
+			object: $assessment,
+			register: $target->register,
+			schema: $target->schema,
+			uuid: $uuid,
 		);
 
-		return [
-			'saved' => $saved,
-			'errors' => $errors,
-			'outstanding' => $outstanding,
-		];
-	}//end bulkUpsert()
+		return ['saved' => $saved, 'created' => (int)($uuid === null), 'documentRef' => (string)$assessment['documentRef']];
+	}//end saveAssessment()
 
 	/**
 	 * Mark the documents that just received a verdict in scope, where nobody marked them yet.
@@ -222,25 +326,25 @@ class WOODocumentAssessmentService {
 	 * A review that cannot be written leaves the verdict saved and the
 	 * document outstanding, which the answer's outstanding list then says.
 	 *
-	 * @param string       $caseId       The case UUID.
-	 * @param list<string> $documentRefs The documents with a saved verdict.
-	 * @param string       $userId       Who gave the verdict.
+	 * @param AssessmentBatchTarget $target       The case and who gave the verdict.
+	 * @param list<string>          $documentRefs The documents with a saved verdict.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/a-verdict-marks-its-document-in-scope/specs/document-review/spec.md#requirement-a-verdict-on-an-unmarked-document-marks-it-in-scope-req-wrt-006
 	 */
-	private function markJudgedInScope(string $caseId, array $documentRefs, string $userId): void {
+	private function markJudgedInScope(AssessmentBatchTarget $target, array $documentRefs): void {
+		$caseId = $target->caseId;
 		if ($this->reviews === null) {
 			return;
 		}
 
 		try {
-			$this->reviews->markInScopeWhereUnmarked(caseId: $caseId, documentRefs: $documentRefs, userId: $userId);
+			$this->reviews->markInScopeWhereUnmarked(caseId: $caseId, documentRefs: $documentRefs, userId: $target->userId);
 		} catch (RefusedException $e) {
 			$this->logger->warning(
 				'WOO bulk-upsert: the judged documents could not be marked in scope for case ' . $caseId,
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()],
 			);
 		}
 	}//end markJudgedInScope()
@@ -252,7 +356,7 @@ class WOODocumentAssessmentService {
 	 *
 	 * @return array<string, string> Validation errors keyed by field name; empty if valid
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
 	 */
 	public function validate(array $assessment): array {
@@ -266,7 +370,7 @@ class WOODocumentAssessmentService {
 	 *
 	 * @return array<string, mixed> Array with 'count' and 'documents' list of unassessed doc IDs
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 */
 	public function getOutstanding(string $caseId): array {
 		return $this->outstandingDocuments->forCase(caseId: $caseId);
@@ -294,7 +398,7 @@ class WOODocumentAssessmentService {
 	 *
 	 * @return bool True if all documents are assessed
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 */
 	public function allDocumentsAssessed(string $caseId): bool {
 		$outstanding = $this->getOutstanding(caseId: $caseId);
@@ -314,9 +418,30 @@ class WOODocumentAssessmentService {
 	 *
 	 * @return array<string, mixed>|null The assessment record, or null if not yet assessed.
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-1
 	 */
 	public function findAssessment(string $caseId, string $documentRef): ?array {
+		$location = $this->assessmentLocation();
+		if ($location === null) {
+			return null;
+		}
+
+		return $this->firstAssessment(
+			location: $location,
+			filters: [
+				'caseRef' => $caseId,
+				'documentRef' => $documentRef,
+				'_limit' => 1,
+			],
+		);
+	}//end findAssessment()
+
+	/**
+	 * Where the assessments are stored, or null when OpenRegister or its configuration is missing.
+	 *
+	 * @return WooAssessmentLocation|null The location.
+	 */
+	private function assessmentLocation(): ?WooAssessmentLocation {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -328,15 +453,23 @@ class WOODocumentAssessmentService {
 			return null;
 		}
 
+		return new WooAssessmentLocation(objectService: $objectService, register: $register, schema: $assessmentSchema);
+	}//end assessmentLocation()
+
+	/**
+	 * The first assessment matching the filters, or null when none does.
+	 *
+	 * @param WooAssessmentLocation $location Where the assessments are stored.
+	 * @param array<string, mixed>  $filters  The search filters.
+	 *
+	 * @return array<string, mixed>|null The assessment record.
+	 */
+	private function firstAssessment(WooAssessmentLocation $location, array $filters): ?array {
 		$existing = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $assessmentSchema,
-			filters: [
-				'caseRef' => $caseId,
-				'documentRef' => $documentRef,
-				'_limit' => 1,
-			],
+			objectService: $location->objectService,
+			register: $location->register,
+			schema: $location->schema,
+			filters: $filters,
 		);
 
 		if (count($existing) > 0) {
@@ -344,7 +477,126 @@ class WOODocumentAssessmentService {
 		}
 
 		return null;
-	}//end findAssessment()
+	}//end firstAssessment()
+
+	/**
+	 * The assessments of a case that judged their document partly public, as far as the caller may read them.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<int, array<string, mixed>> The assessments.
+	 *
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
+	 */
+	public function partlyPublicAssessments(string $caseId): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
+		if ($objectService === null || empty($register) === true || empty($assessmentSchema) === true) {
+			return [];
+		}
+
+		$rows = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $assessmentSchema,
+			filters: ['caseRef' => $caseId, 'classification' => 'deels_openbaar', '_limit' => 500],
+		);
+
+		return array_values(
+			array_filter(
+				$rows,
+				static fn (array $row): bool => (string)($row['caseRef'] ?? '') === $caseId
+					&& (string)($row['classification'] ?? '') === 'deels_openbaar'
+			)
+		);
+	}//end partlyPublicAssessments()
+
+	/**
+	 * The partly public documents of a case that have no redacted copy yet.
+	 *
+	 * Read regardless of the caller, like the outstanding list (REQ-WSA-004):
+	 * an assessment the caller may not read still holds up the stage it is in.
+	 * Only document references are answered.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array{partlyPublic: int, waiting: list<string>} How many documents are partly public, and which still wait.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
+	 */
+	public function partlyPublicWithoutCopy(string $caseId): array {
+		$objectService = $this->requireObjectService();
+		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
+		if (empty($assessmentSchema) === true) {
+			return ['partlyPublic' => 0, 'waiting' => []];
+		}
+
+		$rows = $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $this->settingsService->getConfigValue('register'),
+			schema: $assessmentSchema,
+			filters: ['caseRef' => $caseId, 'classification' => 'deels_openbaar', '_limit' => 500],
+		);
+
+		return $this->redactionTally(rows: $rows, caseId: $caseId);
+	}//end partlyPublicWithoutCopy()
+
+	/**
+	 * OpenRegister's object service, or a refusal when it is not there.
+	 *
+	 * @return object The object service.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable.
+	 */
+	private function requireObjectService(): object {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		return $objectService;
+	}//end requireObjectService()
+
+	/**
+	 * How many of the rows are the case's partly public documents, and which of them have no redacted copy.
+	 *
+	 * @param array<int, array<string, mixed>> $rows   The assessments read.
+	 * @param string                           $caseId The case UUID.
+	 *
+	 * @return array{partlyPublic: int, waiting: list<string>} The count and the documents still waiting.
+	 */
+	private function redactionTally(array $rows, string $caseId): array {
+		$partlyPublic = 0;
+		$waiting = [];
+		foreach ($rows as $row) {
+			if ($this->isPartlyPublicOf(row: $row, caseId: $caseId) === false) {
+				continue;
+			}
+
+			$partlyPublic++;
+			if ((string)($row['redactedDocumentRef'] ?? '') === '') {
+				$waiting[] = (string)($row['documentRef'] ?? '');
+			}
+		}
+
+		return ['partlyPublic' => $partlyPublic, 'waiting' => $waiting];
+	}//end redactionTally()
+
+	/**
+	 * Whether an assessment is on the case and judged its document partly public.
+	 *
+	 * @param array<string, mixed> $row    The assessment.
+	 * @param string               $caseId The case UUID.
+	 *
+	 * @return bool True for a partly public assessment of the case.
+	 */
+	private function isPartlyPublicOf(array $row, string $caseId): bool {
+		return (string)($row['caseRef'] ?? '') === $caseId
+			&& (string)($row['classification'] ?? '') === 'deels_openbaar';
+	}//end isPartlyPublicOf()
 
 	/**
 	 * Attach (or update) a `redactionProposal` on an EXISTING wooAssessment
@@ -366,10 +618,62 @@ class WOODocumentAssessmentService {
 	 * @throws RefusedException (403 `owned-by-another-reviewer`) When the case type keeps
 	 *                          assessments private and the caller neither made this one nor supervises.
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-1
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
 	 */
 	public function saveRedactionProposal(string $caseId, string $documentRef, array $proposal): array {
+		$savedObject = $this->updateAssessment(caseId: $caseId, documentRef: $documentRef, fields: ['redactionProposal' => $proposal]);
+
+		$this->logger->info(
+			'WOO redaction proposal saved for document ' . $documentRef . ' in case ' . $caseId
+			. ' (status: ' . ($proposal['status'] ?? 'unknown') . ')',
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return $savedObject;
+	}//end saveRedactionProposal()
+
+	/**
+	 * Record the redaction of a document on its EXISTING assessment.
+	 *
+	 * Writes the `redaction` record and, when given, the redacted copy the
+	 * publication delivers in place of the original. The same author,
+	 * supervisor or administrator rule holds as for the verdict (REQ-CRA-003).
+	 *
+	 * @param string               $caseId              The case UUID.
+	 * @param string               $documentRef         The document UUID.
+	 * @param array<string, mixed> $redaction           The redaction record.
+	 * @param string|null          $redactedDocumentRef The redacted copy, or null to leave it as it is.
+	 *
+	 * @return array<string, mixed> The updated assessment record.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable or the document has not been assessed.
+	 * @throws RefusedException (403 `owned-by-another-reviewer`) When the caller may not change this assessment.
+	 *
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
+	 */
+	public function saveRedaction(string $caseId, string $documentRef, array $redaction, ?string $redactedDocumentRef = null): array {
+		$fields = ['redaction' => $redaction];
+		if ($redactedDocumentRef !== null) {
+			$fields['redactedDocumentRef'] = $redactedDocumentRef;
+		}
+
+		return $this->updateAssessment(caseId: $caseId, documentRef: $documentRef, fields: $fields);
+	}//end saveRedaction()
+
+	/**
+	 * Change fields of an EXISTING assessment, under the reviewer rule.
+	 *
+	 * @param string               $caseId      The case UUID.
+	 * @param string               $documentRef The document UUID.
+	 * @param array<string, mixed> $fields      The fields to set.
+	 *
+	 * @return array<string, mixed> The updated assessment record.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable or the document has not been assessed.
+	 * @throws RefusedException When the caller may not change this assessment.
+	 */
+	private function updateAssessment(string $caseId, string $documentRef, array $fields): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -382,35 +686,23 @@ class WOODocumentAssessmentService {
 			);
 		}
 
-		// The redaction proposal is part of the assessment, so the same rule
-		// holds as for the verdict (REQ-CRA-003): its author, a supervisor or
-		// an administrator. Proposing and reviewing both write here.
+		// The redaction is part of the assessment, so the same rule holds as
+		// for the verdict (REQ-CRA-003): its author, a supervisor or an
+		// administrator.
 		$this->reviewerAccess?->assertMayChange(
 			caseId: $caseId,
 			record: $existing,
 			userId: (string)$this->userSession->getUser()?->getUID()
 		);
 
-		$register = $this->settingsService->getConfigValue('register');
-		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
-		$existingId = $existing['id'] ?? $existing['uuid'] ?? null;
-
-		$updated = $existing;
-		$updated['redactionProposal'] = $proposal;
-
-		$savedObject = $objectService->saveObject(
-			object: $updated,
-			register: $register,
-			schema: $assessmentSchema,
-			uuid: (string)$existingId,
+		$saved = $this->patchObjectAsArray(
+			objectService: $objectService,
+			register: $this->settingsService->getConfigValue('register'),
+			schema: $this->settingsService->getConfigValue('woo_assessment_schema'),
+			id: (string)($existing['id'] ?? $existing['uuid'] ?? ''),
+			changes: $fields,
 		);
 
-		$this->logger->info(
-			'WOO redaction proposal saved for document ' . $documentRef . ' in case ' . $caseId
-			. ' (status: ' . ($proposal['status'] ?? 'unknown') . ')',
-			['app' => Application::APP_ID],
-		);
-
-		return $savedObject;
-	}//end saveRedactionProposal()
+		return ($saved ?? array_merge($existing, $fields));
+	}//end updateAssessment()
 }//end class

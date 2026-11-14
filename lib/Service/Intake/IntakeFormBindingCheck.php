@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Kernel\Contracts\IntakeFormBindingCheckInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
  */
-class IntakeFormBindingCheck {
+class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 
 	/**
 	 * OpenRegister's validator of a form mapping against its destination schema.
@@ -56,13 +57,6 @@ class IntakeFormBindingCheck {
 	 * @var string
 	 */
 	public const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
-
-	/**
-	 * The rule a refused binding names.
-	 *
-	 * @var string
-	 */
-	public const RULE = 'intake-form-binding-invalid';
 
 	/**
 	 * The finding code for a property that must be filled and that the form does not fill.
@@ -104,6 +98,27 @@ class IntakeFormBindingCheck {
 			return [];
 		}
 
+		$validator = $this->usableValidator();
+		if ($validator === null) {
+			return [];
+		}
+
+		$schema = $this->readableCaseSchema();
+		if ($schema === null) {
+			return [];
+		}
+
+		return $this->findingsAgainst(validator: $validator, schema: $schema, caseType: $caseType);
+	}//end findingsFor()
+
+	/**
+	 * OpenRegister's form destination validator, or null (logged) when there is none.
+	 *
+	 * @return object|null The validator.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
+	 */
+	private function usableValidator(): ?object {
 		$validator = $this->settingsService->getOpenRegisterClass(self::VALIDATOR);
 		if ($validator === null || method_exists($validator, 'validate') === false) {
 			$this->logger->warning(
@@ -111,19 +126,43 @@ class IntakeFormBindingCheck {
 					. 'type was saved without being checked against the case schema'
 			);
 
-			return [];
+			return null;
 		}
 
+		return $validator;
+	}//end usableValidator()
+
+	/**
+	 * The case schema, or null (logged) when it cannot be read.
+	 *
+	 * @return object|null The case schema, or null.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
+	 */
+	private function readableCaseSchema(): ?object {
 		$schema = $this->caseSchema();
 		if ($schema === null) {
 			$this->logger->warning(
 				'Dossiq intake: the case schema could not be read, so the intake form of a case type was '
 					. 'saved without being checked against it'
 			);
-
-			return [];
 		}
 
+		return $schema;
+	}//end readableCaseSchema()
+
+	/**
+	 * The validator's findings for the case type's mapping, plus the unmet requirements.
+	 *
+	 * @param object $validator The form destination validator.
+	 * @param object $schema The case schema.
+	 * @param array<string, mixed> $caseType The case type as it is about to be saved.
+	 *
+	 * @return array<int, array<string, mixed>> The findings.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
+	 */
+	private function findingsAgainst(object $validator, object $schema, array $caseType): array {
 		$mapping = $this->binding->mappingFor(caseType: $caseType);
 		$found = $validator->validate(mapping: $mapping, schema: $schema);
 		if (is_array($found) === false) {
@@ -134,7 +173,7 @@ class IntakeFormBindingCheck {
 			array_values(array_filter($found, 'is_array')),
 			$this->unmetRequirements(caseType: $caseType, mapping: $mapping)
 		);
-	}//end findingsFor()
+	}//end findingsAgainst()
 
 	/**
 	 * Every problem with a mapping that opens a case of this type, whichever app owns the form.
@@ -153,10 +192,7 @@ class IntakeFormBindingCheck {
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-publishing-a-case-type-must-re-check-the-forms-bound-to-it
 	 */
 	public function findingsOfMapping(array $caseType, array $mapping, ?string $audience = null): array {
-		$mapping = [
-			'fields' => array_values(array_filter((array)($mapping['fields'] ?? []), 'is_array')),
-			'fixed' => (array)($mapping['fixed'] ?? []),
-		];
+		$mapping = $this->normalisedMapping(mapping: $mapping);
 
 		$requirements = $this->unmetRequirements(caseType: $caseType, mapping: $mapping);
 		$validator = $this->settingsService->getOpenRegisterClass(self::VALIDATOR);
@@ -170,6 +206,34 @@ class IntakeFormBindingCheck {
 			return $requirements;
 		}
 
+		return array_merge($this->validatorFindings(validator: $validator, schema: $schema, mapping: $mapping, audience: $audience), $requirements);
+	}//end findingsOfMapping()
+
+	/**
+	 * A mapping reduced to its `fields` (each an array) and `fixed` values.
+	 *
+	 * @param array<string, mixed> $mapping The form's mapping.
+	 *
+	 * @return array{fields: list<array<string, mixed>>, fixed: array<string, mixed>} The mapping.
+	 */
+	private function normalisedMapping(array $mapping): array {
+		return [
+			'fields' => array_values(array_filter((array)($mapping['fields'] ?? []), 'is_array')),
+			'fixed' => (array)($mapping['fixed'] ?? []),
+		];
+	}//end normalisedMapping()
+
+	/**
+	 * What OpenRegister's validator finds wrong with a mapping against the case schema.
+	 *
+	 * @param object               $validator OpenRegister's form destination validator.
+	 * @param object               $schema    The case schema.
+	 * @param array<string, mixed> $mapping   The normalised mapping.
+	 * @param string|null          $audience  `public` or `authenticated` for a form that is not internal.
+	 *
+	 * @return array<int, array<string, mixed>> The findings.
+	 */
+	private function validatorFindings(object $validator, object $schema, array $mapping, string|null $audience): array {
 		$options = [];
 		if ($audience !== null) {
 			$options['audience'] = $audience;
@@ -180,8 +244,8 @@ class IntakeFormBindingCheck {
 			$found = [];
 		}
 
-		return array_merge(array_values(array_filter($found, 'is_array')), $requirements);
-	}//end findingsOfMapping()
+		return array_values(array_filter($found, 'is_array'));
+	}//end validatorFindings()
 
 	/**
 	 * What a published case type asks for before a case exists and the form does not fill.

@@ -75,24 +75,76 @@ class PartyVocabulary {
 	 */
 	public function kinds(): array {
 		return [
-			[
-				'key' => 'person',
-				'label' => $this->l10n->t('Person'),
-				'description' => $this->l10n->t('A natural person, with or without an account on this instance.'),
-			],
-			[
-				'key' => 'organisation',
-				'label' => $this->l10n->t('Organisation'),
-				'description' => $this->l10n->t('A company, authority or other body acting on the case.'),
-			],
-			[
-				'key' => 'address',
-				'label' => $this->l10n->t('Address'),
-				'description' => $this->l10n->t('A place the case is about, such as the address a permit is asked for.'),
-				'roles' => [self::ROLE_LOCATION],
-			],
+			$this->personKind(),
+			$this->organisationKind(),
+			$this->colleagueKind(),
+			$this->addressKind(),
 		];
 	}//end kinds()
+
+	/**
+	 * The `person` party kind.
+	 *
+	 * @return array<string, mixed> The `partyKinds` entry.
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
+	 */
+	private function personKind(): array {
+		return [
+			'key' => 'person',
+			'label' => $this->l10n->t('Person'),
+			'description' => $this->l10n->t('A natural person, with or without an account on this instance.'),
+			'identityShapes' => ['naturalPerson'],
+		];
+	}//end personKind()
+
+	/**
+	 * The `organisation` party kind.
+	 *
+	 * @return array<string, mixed> The `partyKinds` entry.
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
+	 */
+	private function organisationKind(): array {
+		return [
+			'key' => 'organisation',
+			'label' => $this->l10n->t('Organisation'),
+			'description' => $this->l10n->t('A company, authority or other body acting on the case.'),
+			'identityShapes' => ['organization'],
+		];
+	}//end organisationKind()
+
+	/**
+	 * The `colleague` party kind.
+	 *
+	 * @return array<string, mixed> The `partyKinds` entry.
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
+	 */
+	private function colleagueKind(): array {
+		return [
+			'key' => 'colleague',
+			'label' => $this->l10n->t('Colleague'),
+			'description' => $this->l10n->t('A colleague of the municipality who takes part in the case, such as an adviser.'),
+			'identityShapes' => ['naturalPerson'],
+		];
+	}//end colleagueKind()
+
+	/**
+	 * The `address` party kind.
+	 *
+	 * @return array<string, mixed> The `partyKinds` entry.
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
+	 */
+	private function addressKind(): array {
+		return [
+			'key' => 'address',
+			'label' => $this->l10n->t('Address'),
+			'description' => $this->l10n->t('A place the case is about, such as the address a permit is asked for.'),
+			'roles' => [self::ROLE_LOCATION],
+		];
+	}//end addressKind()
 
 	/**
 	 * The roles a party may hold on a case, whatever its case type.
@@ -106,37 +158,67 @@ class PartyVocabulary {
 	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
 	 */
 	public function roles(): array {
-		return [
-			[
-				'key' => self::ROLE_REQUESTER,
-				'label' => $this->l10n->t('Requester'),
-				'description' => $this->l10n->t('The party the case is filed for.'),
-			],
-			[
-				'key' => self::ROLE_REPRESENTATIVE,
-				'label' => $this->l10n->t('Authorised representative'),
-				'description' => $this->l10n->t('Acts for another party on this case, under Awb 2:1.'),
-			],
-			[
-				'key' => 'belanghebbende',
-				'label' => $this->l10n->t('Interested party'),
-				'description' => $this->l10n->t('Whose interest is directly affected by the decision.'),
-			],
-			[
-				'key' => 'afzender',
-				'label' => $this->l10n->t('Sender'),
-				'description' => $this->l10n->t('Sent a document that is on this case.'),
-			],
-			[
-				'key' => 'geadresseerde',
-				'label' => $this->l10n->t('Addressee'),
-				'description' => $this->l10n->t('A document on this case was addressed to them.'),
-			],
-			[
-				'key' => self::ROLE_LOCATION,
-				'label' => $this->l10n->t('Location'),
-				'description' => $this->l10n->t('The place this case is about.'),
-			],
-		];
+		return array_merge($this->partyRoles(), $this->documentRoles());
 	}//end roles()
+
+	/**
+	 * The roles a party holds by standing: requester, representative and interested party.
+	 *
+	 * @return array<int, array<string, string>> The `linkRoles` entries.
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
+	 */
+	private function partyRoles(): array {
+		return [
+			$this->role(key: self::ROLE_REQUESTER, label: $this->l10n->t('Requester'), description: $this->l10n->t('The party the case is filed for.')),
+			$this->role(
+				key: self::ROLE_REPRESENTATIVE,
+				label: $this->l10n->t('Authorised representative'),
+				description: $this->l10n->t('Acts for another party on this case, under Awb 2:1.')
+			),
+			$this->role(
+				key: 'belanghebbende',
+				label: $this->l10n->t('Interested party'),
+				description: $this->l10n->t('Whose interest is directly affected by the decision.')
+			),
+		];
+	}//end partyRoles()
+
+	/**
+	 * The roles a party holds through a document or a place: sender, addressee and location.
+	 *
+	 * @return array<int, array<string, string>> The `linkRoles` entries.
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
+	 */
+	private function documentRoles(): array {
+		return [
+			$this->role(key: 'afzender', label: $this->l10n->t('Sender'), description: $this->l10n->t('Sent a document that is on this case.')),
+			$this->role(
+				key: 'geadresseerde',
+				label: $this->l10n->t('Addressee'),
+				description: $this->l10n->t('A document on this case was addressed to them.')
+			),
+			$this->role(key: self::ROLE_LOCATION, label: $this->l10n->t('Location'), description: $this->l10n->t('The place this case is about.')),
+		];
+	}//end documentRoles()
+
+	/**
+	 * One `linkRoles` entry.
+	 *
+	 * @param string $key The role key.
+	 * @param string $label The translated label.
+	 * @param string $description The translated description.
+	 *
+	 * @return array<string, string> The entry.
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
+	 */
+	private function role(string $key, string $label, string $description): array {
+		return [
+			'key' => $key,
+			'label' => $label,
+			'description' => $description,
+		];
+	}//end role()
 }//end class

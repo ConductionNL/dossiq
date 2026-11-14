@@ -29,20 +29,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
-use OCA\Dossiq\Service\AanvullingsverzoekService;
-use OCA\Dossiq\Service\CaseTermsService;
-use OCA\Dossiq\Service\OpenWorkloadAgeService;
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekResolutionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTermsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\OpenWorkloadAgeServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -57,36 +58,37 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 class CaseTermsController extends Controller {
 	use TranslatesRefusals;
+	use ReadsJsonRequests;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param CaseTermsService $terms The four clocks on a case.
-	 * @param OpenWorkloadAgeService $workload The age of what is still standing.
-	 * @param CaseAccessGuard $guard The per-case check, asked of every endpoint below.
+	 * @param CaseTermsServiceInterface $terms The four clocks on a case.
+	 * @param OpenWorkloadAgeServiceInterface $workload The age of what is still standing.
+	 * @param CaseAccessGuardInterface $guard The per-case check, asked of every endpoint below.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
-	 * @param AanvullingsverzoekService $aanvullingen The request as a record.
-	 * @param AanvullingsverzoekResolutionService $resolution The answer, item by item.
+	 * @param AanvullingsverzoekServiceInterface $aanvullingen The request as a record.
+	 * @param AanvullingsverzoekResolutionServiceInterface $resolution The answer, item by item.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseTermsService $terms,
-		private readonly OpenWorkloadAgeService $workload,
-		private readonly CaseAccessGuard $guard,
+		private readonly CaseTermsServiceInterface $terms,
+		private readonly OpenWorkloadAgeServiceInterface $workload,
+		private readonly CaseAccessGuardInterface $guard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly AanvullingsverzoekService $aanvullingen,
-		private readonly AanvullingsverzoekResolutionService $resolution,
+		private readonly AanvullingsverzoekServiceInterface $aanvullingen,
+		private readonly AanvullingsverzoekResolutionServiceInterface $resolution,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -99,7 +101,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	#[NoAdminRequired]
 	public function index(string $caseId): JSONResponse {
@@ -134,7 +136,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	#[NoAdminRequired]
 	public function citizen(string $caseId): JSONResponse {
@@ -164,7 +166,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	#[NoAdminRequired]
 	public function requestInformation(string $caseId): JSONResponse {
@@ -181,27 +183,12 @@ class CaseTermsController extends Controller {
 			// adds; going through a second endpoint for it would give the app
 			// two paths to a statutory suspension, and the second one is always
 			// the one that forgets something.
-			$record = $this->aanvullingen->ask(
-				caseId: $caseId,
-				items: (array)($body['items'] ?? []),
-				recipient: (string)($body['recipient'] ?? ''),
-				durationDays: (int)($body['durationDays'] ?? 14),
-				userId: $this->currentUserId(),
-				pauseReason: (string)($body['pauseReason'] ?? ''),
-				rationale: (string)($body['rationale'] ?? ''),
-				party: (string)($body['party'] ?? ''),
-				question: $this->clarificationOf(body: $body),
-			);
+			$record = $this->askForInformation(caseId: $caseId, body: $body);
 
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'ask the applicant for information', e: $e);
 		} catch (Throwable $e) {
-			$this->logger->warning('CaseTerms information request failed: ' . $e->getMessage());
-
-			return new JSONResponse(
-				['message' => 'The request could not be made.', 'error' => 'information-request-failed'],
-				Http::STATUS_BAD_REQUEST
-			);
+			return $this->informationRequestFailed(error: $e->getMessage());
 		}//end try
 
 		// NO `sent: false` BRANCH ANY MORE, and its absence is the improvement.
@@ -214,6 +201,44 @@ class CaseTermsController extends Controller {
 	}//end requestInformation()
 
 	/**
+	 * Ask the applicant for information: the letter, the suspension and the record.
+	 *
+	 * @param string               $caseId The case UUID.
+	 * @param array<string, mixed> $body   The request body.
+	 *
+	 * @return array<string, mixed> The aanvullingsverzoek record.
+	 */
+	private function askForInformation(string $caseId, array $body): array {
+		return $this->aanvullingen->ask(
+			caseId: $caseId,
+			items: (array)($body['items'] ?? []),
+			recipient: (string)($body['recipient'] ?? ''),
+			durationDays: (int)($body['durationDays'] ?? 14),
+			userId: $this->currentUserId(),
+			pauseReason: (string)($body['pauseReason'] ?? ''),
+			rationale: (string)($body['rationale'] ?? ''),
+			party: (string)($body['party'] ?? ''),
+			question: $this->clarificationOf(body: $body),
+		);
+	}//end askForInformation()
+
+	/**
+	 * Log a failed information request and answer it as a bad request.
+	 *
+	 * @param string $error What went wrong.
+	 *
+	 * @return JSONResponse
+	 */
+	private function informationRequestFailed(string $error): JSONResponse {
+		$this->logger->warning('CaseTerms information request failed: ' . $error);
+
+		return new JSONResponse(
+			['message' => 'The request could not be made.', 'error' => 'information-request-failed'],
+			Http::STATUS_BAD_REQUEST
+		);
+	}//end informationRequestFailed()
+
+	/**
 	 * The question of a clarification, or null when the body asks for documents.
 	 *
 	 * @param array<string, mixed> $body The request body.
@@ -223,7 +248,7 @@ class CaseTermsController extends Controller {
 	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
 	 */
 	private function clarificationOf(array $body): ?string {
-		if ((string)($body['kind'] ?? '') !== AanvullingsverzoekService::KIND_CLARIFICATION) {
+		if ((string)($body['kind'] ?? '') !== AanvullingsverzoekServiceInterface::KIND_CLARIFICATION) {
 			return null;
 		}
 
@@ -237,7 +262,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	#[NoAdminRequired]
 	public function receiveInformation(string $caseId): JSONResponse {
@@ -286,7 +311,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	#[NoAdminRequired]
 	public function aanvullingsverzoeken(string $caseId): JSONResponse {
@@ -300,29 +325,38 @@ class CaseTermsController extends Controller {
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'read the requests on this case', e: $e);
 		} catch (Throwable $e) {
-			$this->logger->warning('CaseTerms aanvullingsverzoeken failed: ' . $e->getMessage());
-
-			return new JSONResponse(
-				['message' => 'The requests could not be read.', 'error' => 'aanvullingsverzoeken-unreadable'],
-				Http::STATUS_BAD_REQUEST
-			);
+			return $this->unreadableRequests(exception: $e);
 		}//end try
 
-		$rows = [];
-		$open = 0;
-		foreach ($requests as $one) {
-			$isOpen = ((string)($one['state'] ?? '') === 'open');
-			if ($isOpen === true) {
-				$open++;
-			}
+		return $this->requestsAnswer(caseId: $caseId, rows: $this->withDaysOpen(requests: $requests));
+	}//end aanvullingsverzoeken()
 
-			$days = 0;
-			if ($isOpen === true) {
-				$days = $this->aanvullingen->daysOpen(request: $one);
-			}
+	/**
+	 * The logged 400 for a list of requests that could not be read.
+	 *
+	 * @param Throwable $exception The failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function unreadableRequests(Throwable $exception): JSONResponse {
+		$this->logger->warning('CaseTerms aanvullingsverzoeken failed: ' . $exception->getMessage());
 
-			$rows[] = array_merge($one, ['daysOpen' => $days]);
-		}
+		return new JSONResponse(
+			['message' => 'The requests could not be read.', 'error' => 'aanvullingsverzoeken-unreadable'],
+			Http::STATUS_BAD_REQUEST
+		);
+	}//end unreadableRequests()
+
+	/**
+	 * The case's requests, how many are open, and whether the case waits on one.
+	 *
+	 * @param string                           $caseId The case.
+	 * @param array<int, array<string, mixed>> $rows   The requests with their waiting days.
+	 *
+	 * @return JSONResponse
+	 */
+	private function requestsAnswer(string $caseId, array $rows): JSONResponse {
+		$open = count(array_filter($rows, static fn (array $row): bool => ((string)($row['state'] ?? '') === 'open')));
 
 		return new JSONResponse([
 			'caseId' => $caseId,
@@ -330,14 +364,35 @@ class CaseTermsController extends Controller {
 			'open' => $open,
 			'requests' => $rows,
 		]);
-	}//end aanvullingsverzoeken()
+	}//end requestsAnswer()
+
+	/**
+	 * Each request with how many days it has waited; a request that is not open has waited none.
+	 *
+	 * @param array<int, array<string, mixed>> $requests The case's requests.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function withDaysOpen(array $requests): array {
+		$rows = [];
+		foreach ($requests as $one) {
+			$days = 0;
+			if ((string)($one['state'] ?? '') === 'open') {
+				$days = $this->aanvullingen->daysOpen(request: $one);
+			}
+
+			$rows[] = array_merge($one, ['daysOpen' => $days]);
+		}
+
+		return $rows;
+	}//end withDaysOpen()
 
 	/**
 	 * How old the open workload is right now, per status.
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	#[NoAdminRequired]
 	public function workloadAge(): JSONResponse {
@@ -372,7 +427,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the caller may read it.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	private function refuseUnlessMayRead(string $caseId): ?JSONResponse {
 		$user = $this->userSession->getUser();
@@ -400,7 +455,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the caller may change it.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function refuseUnlessMayChange(string $caseId): ?JSONResponse {
 		$user = $this->userSession->getUser();
@@ -468,17 +523,18 @@ class CaseTermsController extends Controller {
 	}//end currentUserId()
 
 	/**
-	 * Decode the JSON request body into an array.
+	 * workloadAge() on its old address.
 	 *
-	 * @return array<string, mixed> The body, empty when there is none.
+	 * Deprecated alias of /api/deadlines/reports/open-workload-age; remove after the next major.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 *
+	 * @contract exclude Deprecated path alias for workloadAge(); behaviour covered by the workloadAge() tests.
 	 */
-	private function jsonBody(): array {
-		$raw = (string)file_get_contents('php://input');
-		$body = json_decode($raw, true);
-		if (is_array($body) === false) {
-			return [];
-		}
-
-		return $body;
-	}//end jsonBody()
+	#[NoAdminRequired]
+	public function workloadAgeLegacyPath(): JSONResponse {
+		return $this->workloadAge();
+	}//end workloadAgeLegacyPath()
 }//end class

@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Pipelinq;
 
+use OCA\Dossiq\Kernel\Contracts\CorrespondenceLanguageConsumerInterface;
+
 /**
  * Which language to write to a party in, and why that one.
  *
@@ -29,7 +31,7 @@ namespace OCA\Dossiq\Service\Pipelinq;
  *
  * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-the-language-to-write-to-a-party-in-comes-from-the-resolver-with-its-reason-req-plq-06
  */
-class CorrespondenceLanguageConsumer {
+class CorrespondenceLanguageConsumer implements CorrespondenceLanguageConsumerInterface {
 
 	/**
 	 * What dossiq writes in when nobody can say otherwise.
@@ -68,26 +70,41 @@ class CorrespondenceLanguageConsumer {
 		);
 
 		if ($answer['answered'] === false || is_array($answer['value']) === false) {
-			return [
-				'available' => false,
-				'language' => self::FALLBACK,
-				'rule' => 'unavailable',
-				'stated' => false,
-				'sentence' => 'No preference can be read on this instance, so ' . self::FALLBACK . ' is used.',
-			];
+			return self::unavailable(sentence: 'No preference can be read on this instance, so ' . self::FALLBACK . ' is used.');
 		}
 
-		$resolved = $answer['value'];
-		if ((int)($resolved['status'] ?? 200) !== 200) {
-			return [
-				'available' => false,
-				'language' => self::FALLBACK,
-				'rule' => 'unavailable',
-				'stated' => false,
-				'sentence' => 'This party\'s language could not be read.',
-			];
+		if ((int)($answer['value']['status'] ?? 200) !== 200) {
+			return self::unavailable(sentence: 'This party\'s language could not be read.');
 		}
 
+		return $this->resolved(resolved: $answer['value']);
+	}//end forParty()
+
+	/**
+	 * The fallback answer, with the sentence that says why it answers.
+	 *
+	 * @param string $sentence Why no language could be read.
+	 *
+	 * @return array{available: bool, language: string, rule: string, stated: bool, sentence: string} The answer.
+	 */
+	private static function unavailable(string $sentence): array {
+		return [
+			'available' => false,
+			'language' => self::FALLBACK,
+			'rule' => 'unavailable',
+			'stated' => false,
+			'sentence' => $sentence,
+		];
+	}//end unavailable()
+
+	/**
+	 * The answer for a party the resolver could read.
+	 *
+	 * @param array<string, mixed> $resolved The resolver's answer.
+	 *
+	 * @return array{available: bool, language: string, rule: string, stated: bool, sentence: string} The answer.
+	 */
+	private function resolved(array $resolved): array {
 		$language = trim((string)($resolved['language'] ?? self::FALLBACK));
 		$rule = trim((string)($resolved['rule'] ?? ''));
 		$stated = (trim((string)($resolved['partyPreference'] ?? '')) !== '');
@@ -99,7 +116,7 @@ class CorrespondenceLanguageConsumer {
 			'stated' => $stated,
 			'sentence' => $this->sentenceFor(language: $language, rule: $rule, stated: $stated),
 		];
-	}//end forParty()
+	}//end resolved()
 
 	/**
 	 * What a surface says about the language it is going to write in.

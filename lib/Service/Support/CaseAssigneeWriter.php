@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Support;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseAssigneeWriterInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -39,9 +40,9 @@ use Psr\Log\LoggerInterface;
  * a batch-level `from` would write an audit trail naming the wrong person for
  * most of the rows.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
-class CaseAssigneeWriter {
+class CaseAssigneeWriter implements CaseAssigneeWriterInterface {
 
 	use WritesReassignments;
 
@@ -70,7 +71,7 @@ class CaseAssigneeWriter {
 	 *
 	 * @return bool Whether the write succeeded.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function reassignOne(
 		string $caseId,
@@ -79,7 +80,7 @@ class CaseAssigneeWriter {
 		string $actorId,
 		string $batchId,
 	): bool {
-		[$objectService, $register] = $this->context();
+		[$objectService] = $this->context();
 		$schema = (string)$this->settingsService->getConfigValue('case_schema');
 
 		$batch = new ReassignmentBatch(
@@ -92,7 +93,6 @@ class CaseAssigneeWriter {
 
 		$written = $this->reassignItem(
 			objectService: $objectService,
-			register: $register,
 			schema: $schema,
 			id: $caseId,
 			item: $case,
@@ -117,7 +117,7 @@ class CaseAssigneeWriter {
 	 *
 	 * @return string The batch id.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function newBatchId(): string {
 		return $this->generateBatchId();

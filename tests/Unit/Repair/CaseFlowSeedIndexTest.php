@@ -118,7 +118,7 @@ class CaseFlowSeedIndexTest extends TestCase {
 	/**
 	 * The slug lookup is scoped in the metadata, where OpenRegister keeps the slug.
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function testACaseTypeIsLookedUpBySlugInTheMetadata(): void {
 		$index = $this->index([['id' => 'ct-1', 'title' => ['nl' => 'Bouwvergunning']]]);

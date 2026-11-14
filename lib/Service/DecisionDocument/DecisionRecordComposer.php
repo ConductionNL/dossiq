@@ -22,14 +22,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\DecisionDocument;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -37,7 +37,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Composes the case-derived fields of a decision record.
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
  */
 class DecisionRecordComposer {
 
@@ -64,15 +64,10 @@ class DecisionRecordComposer {
 	 *
 	 * @return array{caseTitle: string, assessmentCount: int, summary: array<string, int>, weigeringsgronden: array<int, mixed>}
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-7
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
 	 */
 	public function compose(object $objectService, string $register, string $caseId): array {
-		$assessments = $this->collectAssessments(
-			objectService: $objectService,
-			register: $register,
-			assessmentSchema: $this->settingsService->getConfigValue('woo_assessment_schema'),
-			caseId: $caseId,
-		);
+		$assessments = $this->collectAssessments(objectService: $objectService, register: $register, caseId: $caseId);
 
 		return [
 			'caseTitle' => $this->readCaseTitle(objectService: $objectService, register: $register, caseId: $caseId),
@@ -109,7 +104,7 @@ class DecisionRecordComposer {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'DecisionRecordComposer: the case title could not be read for the decision summary',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 			return '';
 		}
@@ -127,12 +122,12 @@ class DecisionRecordComposer {
 	 *
 	 * @param object $objectService OpenRegister object service
 	 * @param mixed $register Configured register identifier
-	 * @param mixed $assessmentSchema Configured assessment schema identifier
 	 * @param string $caseId The case UUID
 	 *
 	 * @return array<int, array<string, mixed>> Assessment rows, empty when the schema is not configured
 	 */
-	private function collectAssessments(object $objectService, mixed $register, mixed $assessmentSchema, string $caseId): array {
+	private function collectAssessments(object $objectService, mixed $register, string $caseId): array {
+		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
 		if (empty($assessmentSchema) === true) {
 			return [];
 		}

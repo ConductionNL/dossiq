@@ -144,24 +144,13 @@ class BackfillLegalHoldsCommand extends Command {
 			return Command::FAILURE;
 		}
 
-		$objectService = $this->resolveOr(fqn: self::OBJECT_SERVICE);
-		$objectMapper = $this->resolveOr(fqn: self::OBJECT_MAPPER);
-		$legalHoldService = $this->resolveOr(fqn: self::LEGAL_HOLD_SERVICE);
-
-		if ($objectService === null || $objectMapper === null || $legalHoldService === null) {
-			$output->writeln('<error>OpenRegister is not available; cannot backfill legal holds.</error>');
+		$services = $this->openRegisterServices(output: $output);
+		if ($services === null) {
 			return Command::FAILURE;
 		}
 
-		$candidates = $this->scanner->scan(
-			objectService: $objectService,
-			includeDeleted: $includeDeleted,
-			output: $output
-		);
-
-		foreach ($this->scanner->getScanErrors() as $scanError) {
-			$output->writeln('  <error>[scan failed]</error> ' . $scanError);
-		}
+		[$objectService, $objectMapper, $legalHoldService] = $services;
+		$candidates = $this->scanCandidates(objectService: $objectService, includeDeleted: $includeDeleted, output: $output);
 
 		if (count($candidates) === 0) {
 			$output->writeln('<info>No cases with an open Awb proceeding were found. Nothing to backfill.</info>');
@@ -177,6 +166,49 @@ class BackfillLegalHoldsCommand extends Command {
 			output: $output
 		);
 	}//end execute()
+
+	/**
+	 * OpenRegister's object service, object mapper and legal hold service.
+	 *
+	 * @param OutputInterface $output Console output.
+	 *
+	 * @return array{0: object, 1: object, 2: object}|null The services, or null when OpenRegister is unavailable.
+	 */
+	private function openRegisterServices(OutputInterface $output): ?array {
+		$objectService = $this->resolveOr(fqn: self::OBJECT_SERVICE);
+		$objectMapper = $this->resolveOr(fqn: self::OBJECT_MAPPER);
+		$legalHoldService = $this->resolveOr(fqn: self::LEGAL_HOLD_SERVICE);
+
+		if ($objectService === null || $objectMapper === null || $legalHoldService === null) {
+			$output->writeln('<error>OpenRegister is not available; cannot backfill legal holds.</error>');
+			return null;
+		}
+
+		return [$objectService, $objectMapper, $legalHoldService];
+	}//end openRegisterServices()
+
+	/**
+	 * Scan for cases with an open Awb proceeding and print every scan failure.
+	 *
+	 * @param object          $objectService  OpenRegister's object service.
+	 * @param bool            $includeDeleted Whether soft-deleted cases count.
+	 * @param OutputInterface $output         Console output.
+	 *
+	 * @return array<string, array<string, mixed>> The candidates.
+	 */
+	private function scanCandidates(object $objectService, bool $includeDeleted, OutputInterface $output): array {
+		$candidates = $this->scanner->scan(
+			objectService: $objectService,
+			includeDeleted: $includeDeleted,
+			output: $output
+		);
+
+		foreach ($this->scanner->getScanErrors() as $scanError) {
+			$output->writeln('  <error>[scan failed]</error> ' . $scanError);
+		}
+
+		return $candidates;
+	}//end scanCandidates()
 
 	/**
 	 * Impersonate an admin so OpenRegister writes are permitted.

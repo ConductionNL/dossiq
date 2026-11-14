@@ -38,7 +38,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -47,6 +47,7 @@ namespace OCA\Dossiq\Service\Cases;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseSplitExecutorInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -55,9 +56,11 @@ use Throwable;
 /**
  * Open the second case, move what the plan names, record what left.
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class CaseSplitExecutor {
+class CaseSplitExecutor implements CaseSplitExecutorInterface {
 
 	use SearchesObjects;
 
@@ -125,7 +128,7 @@ class CaseSplitExecutor {
 	 * @param LoggerInterface  $logger          Records every split and every refusal.
 	 * @param CaseSplitStore   $store           Where a split reads and writes.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly CaseSplitPolicy $policy,
@@ -152,72 +155,104 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException When the case cannot be read, the case type refuses, or the write fails.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function split(string $caseId, string $title, array $chosen, string $actor): array {
 		$caseId = trim($caseId);
 		$case = $this->store->requireCase(caseId: $caseId);
-		$caseType = $this->caseTypeOf(case: $case);
-
-		$this->refuseSelection(chosen: $chosen, caseType: $caseType);
-
-		$rows = $this->rowsFor(caseId: $caseId, chosen: $chosen);
-		$onBoth = $this->rowsForPart(
-			caseId: $caseId,
-			part: 'parties',
-			wanted: $this->idsFor(chosen: $chosen, part: 'partiesOnBoth'),
-		);
-
-		if ($rows === [] && $onBoth === []) {
-			throw new RefusedException(
-				rule: self::NOTHING_CHOSEN,
-				sentence: 'Choose what goes to the new case, so the split divides something.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$selection = $this->allowedSelection(caseId: $caseId, caseData: $case, chosen: $chosen);
 
 		$newCase = $this->openSecondCase(source: $case, title: $title, actor: $actor);
 		$newId = $this->store->uuidOf(row: $newCase);
+		$planned = $this->plan->forSelection(sourceId: $caseId, newId: $newId, chosen: $selection['rows']);
+		$moved = $this->carryOut(planned: $planned, selection: $selection, newId: $newId);
 
-		$planned = $this->plan->forSelection(sourceId: $caseId, newId: $newId, chosen: $rows);
-
-		$moved = [];
-		foreach ($planned['moves'] as $move) {
-			if ($this->apply(move: $move, rows: $rows) === true) {
-				$moved[] = $move;
-			}
-		}
-
-		foreach ($onBoth as $item) {
-			$this->duplicateOnto(item: $item, toId: $newId);
-		}
-
-		$note = $this->plan->noteFor(
-			references: $planned['references'],
-			newNumber: trim((string)($newCase['identifier'] ?? $newId)),
-		);
-
-		$this->recordOnOriginal(
-			caseId: $caseId,
-			case: $case,
-			newId: $newId,
-			references: $planned['references'],
-			note: $note,
-		);
-
-		$this->logger->info(
-			'Dossiq split: a case was divided',
-			[
-				'case' => $caseId,
-				'into' => $newId,
-				'moved' => count($moved),
-				'refused' => count($planned['refused']),
-				'onBoth' => count($onBoth),
-			],
-		);
+		$split = $this->splitOf(caseId: $caseId, newCase: $newCase, newId: $newId, references: $planned['references']);
+		$note = $this->recordOnOriginal(case: $case, split: $split);
+		$this->logSplit(caseId: $caseId, newId: $newId, counts: [count($moved), count($planned['refused']), count($selection['onBoth'])]);
 
 		return ['case' => $newCase, 'moved' => $moved, 'refused' => $planned['refused'], 'note' => $note];
 	}//end split()
+
+	/**
+	 * Log a split with how much moved, was refused and stayed on both.
+	 *
+	 * @param string                        $caseId The case that was split.
+	 * @param string                        $newId  The new case.
+	 * @param array{0: int, 1: int, 2: int} $counts The moved, refused and on-both counts.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	private function logSplit(string $caseId, string $newId, array $counts): void {
+		$this->logger->info(
+			'Dossiq split: a case was divided',
+			['case' => $caseId, 'into' => $newId, 'moved' => $counts[0], 'refused' => $counts[1], 'onBoth' => $counts[2]],
+		);
+	}//end logSplit()
+
+	/**
+	 * The selection to split off, after refusing one the case type forbids.
+	 *
+	 * @param string                            $caseId   The case being split.
+	 * @param array<string, mixed>              $caseData The case.
+	 * @param array<string, array<int, string>> $chosen   The ids the handler picked.
+	 *
+	 * @return array<string, mixed> The selection (`rows`, `onBoth`).
+	 *
+	 * @throws RefusedException When the case type refuses the selection.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	private function allowedSelection(string $caseId, array $caseData, array $chosen): array {
+		$this->refuseSelection(chosen: $chosen, caseType: $this->caseTypeOf(case: $caseData));
+
+		return $this->selectionOf(caseId: $caseId, chosen: $chosen);
+	}//end allowedSelection()
+
+	/**
+	 * Apply the planned moves and duplicate what stays on both cases.
+	 *
+	 * @param array<string, mixed> $planned   The plan (`moves`).
+	 * @param array<string, mixed> $selection The selection (`rows`, `onBoth`).
+	 * @param string               $newId     The new case.
+	 *
+	 * @return array<int, array<string, mixed>> The moves that were carried out.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	private function carryOut(array $planned, array $selection, string $newId): array {
+		$moved = array_values(
+			array_filter($planned['moves'], fn (array $move): bool => $this->apply(move: $move, rows: $selection['rows']))
+		);
+		foreach ($selection['onBoth'] as $item) {
+			$this->duplicateOnto(item: $item, toId: $newId);
+		}
+
+		return $moved;
+	}//end carryOut()
+
+	/**
+	 * The split as the original records it.
+	 *
+	 * @param string                           $caseId     The case that was split.
+	 * @param array<string, mixed>             $newCase    The new case.
+	 * @param string                           $newId      The new case's uuid.
+	 * @param array<int, array<string, mixed>> $references The plan's reference entries.
+	 *
+	 * @return array<string, string|array<mixed>> caseId, newId, newNumber and references.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	private function splitOf(string $caseId, array $newCase, string $newId, array $references): array {
+		return [
+			'caseId' => $caseId,
+			'newId' => $newId,
+			'newNumber' => trim((string)($newCase['identifier'] ?? $newId)),
+			'references' => $references,
+		];
+	}//end splitOf()
 
 	/**
 	 * Refuse a selection the case type forbids, or that cannot be carried out.
@@ -229,15 +264,15 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException Carrying the policy's own sentence.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-type-declares-what-a-split-may-divide-req-cm-52
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-type-declares-what-a-split-may-divide-req-cm-52
 	 */
 	private function refuseSelection(array $chosen, ?array $caseType): void {
-		$selected = [];
-		foreach (CaseSplitPolicy::PARTS as $part) {
-			if ($this->idsFor(chosen: $chosen, part: $part) !== []) {
-				$selected[] = $part;
-			}
-		}
+		$selected = array_values(
+			array_filter(
+				CaseSplitPolicy::PARTS,
+				fn (string $part): bool => $this->idsFor(chosen: $chosen, part: $part) !== []
+			)
+		);
 
 		// THE POLICY'S OWN SENTENCE, not a second one written here. It names
 		// what is still possible as well as what is not, and a refusal written
@@ -251,24 +286,50 @@ class CaseSplitExecutor {
 			);
 		}
 
-		foreach ($selected as $part) {
-			if (array_key_exists($part, self::PART_SOURCES) === false) {
-				throw new RefusedException(
-					rule: self::UNMOVABLE,
-					sentence: 'A task cannot be moved to another case yet: the engine has no verb for it, '
-						. 'so nothing was split rather than the task being silently left behind.',
-					status: RefusedException::STATUS_REFUSED,
-				);
-			}
+		if (array_diff($selected, array_keys(self::PART_SOURCES)) !== []) {
+			throw new RefusedException(
+				rule: self::UNMOVABLE,
+				sentence: 'A task cannot be moved to another case yet: the engine has no verb for it, '
+					. 'so nothing was split rather than the task being silently left behind.',
+				status: RefusedException::STATUS_REFUSED,
+			);
 		}
 	}//end refuseSelection()
+
+	/**
+	 * The stored rows to move and the parties to put on both halves.
+	 *
+	 * @param string               $caseId The case being split.
+	 * @param array<string, mixed> $chosen What the handler picked.
+	 *
+	 * @return array{rows: array<string, array<int, array<string, mixed>>>, onBoth: array<int, array<string, mixed>>}
+	 *         The rows by part, and the parties for both halves.
+	 *
+	 * @throws RefusedException When neither holds anything.
+	 */
+	private function selectionOf(string $caseId, array $chosen): array {
+		$rows = $this->rowsFor(caseId: $caseId, chosen: $chosen);
+		$onBoth = ($this->rowsFor(caseId: $caseId, chosen: ['parties' => ($chosen['partiesOnBoth'] ?? [])])['parties'] ?? []);
+
+		if ($rows === [] && $onBoth === []) {
+			throw new RefusedException(
+				rule: self::NOTHING_CHOSEN,
+				sentence: 'Choose what goes to the new case, so the split divides something.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return ['rows' => $rows, 'onBoth' => $onBoth];
+	}//end selectionOf()
 
 	/**
 	 * The stored rows behind the chosen ids, by part.
 	 *
 	 * The rows carry their own `case`, which is what lets the plan refuse an
 	 * item that belongs to another case. Handing it the client's ids instead
-	 * would give it back exactly what the client claimed.
+	 * would give it back exactly what the client claimed. An id the register
+	 * does not answer for this case is left out here AND refused by the plan,
+	 * which sees it only when the register answered a row naming another case.
 	 *
 	 * @param string               $caseId The case being split.
 	 * @param array<string, mixed> $chosen What the handler picked.
@@ -278,42 +339,30 @@ class CaseSplitExecutor {
 	private function rowsFor(string $caseId, array $chosen): array {
 		$rows = [];
 		foreach (array_keys(self::PART_SOURCES) as $part) {
-			$found = $this->rowsForPart(
-				caseId: $caseId,
-				part: $part,
-				wanted: $this->idsFor(chosen: $chosen, part: $part),
-			);
-			if ($found !== []) {
-				$rows[$part] = $found;
+			$wanted = $this->idsFor(chosen: $chosen, part: $part);
+			if ($wanted !== []) {
+				$rows[$part] = $this->rowsWithIds(rows: $this->rowsForPart(caseId: $caseId, part: $part), ids: $wanted);
 			}
 		}
 
-		return $rows;
+		return array_filter($rows, fn (array $found): bool => $found !== []);
 	}//end rowsFor()
 
 	/**
-	 * The stored rows of one part whose ids the handler chose.
+	 * Every stored row of one part on the case.
 	 *
-	 * An id the register does not answer for this case is left out here AND
-	 * refused by the plan, which sees it only when the register answered a row
-	 * naming another case. Both paths end in something the caller can read.
+	 * @param string $caseId The case being split.
+	 * @param string $part   A part of PART_SOURCES.
 	 *
-	 * @param string             $caseId The case being split.
-	 * @param string             $part   The part.
-	 * @param array<int, string> $wanted The chosen ids.
-	 *
-	 * @return array<int, array<string, mixed>> The rows.
+	 * @return array<int, array<string, mixed>> The rows, or none when the register cannot be read.
 	 */
-	private function rowsForPart(string $caseId, string $part, array $wanted): array {
-		if ($wanted === [] || array_key_exists($part, self::PART_SOURCES) === false) {
-			return [];
-		}
-
+	private function rowsForPart(string $caseId, string $part): array {
 		$source = self::PART_SOURCES[$part];
 
 		try {
 			[$objectService, $register] = $this->store->context();
-			$rows = $this->searchObjectsAsArrays(
+
+			return $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
 				schema: $this->store->schema(key: $source['schema']),
@@ -327,18 +376,27 @@ class CaseSplitExecutor {
 
 			return [];
 		}
+	}//end rowsForPart()
 
+	/**
+	 * The rows whose id is one of these, each carrying that id.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The stored rows.
+	 * @param array<int, string>               $ids  The chosen ids.
+	 *
+	 * @return array<int, array<string, mixed>> The chosen rows.
+	 */
+	private function rowsWithIds(array $rows, array $ids): array {
 		$chosen = [];
 		foreach ($rows as $row) {
-			$id = $this->store->uuidOf(row: $row);
-			if ($id !== '' && in_array($id, $wanted, true) === true) {
-				$row['id'] = $id;
+			$row['id'] = $this->store->uuidOf(row: $row);
+			if ($row['id'] !== '' && in_array($row['id'], $ids, true) === true) {
 				$chosen[] = $row;
 			}
 		}
 
 		return $chosen;
-	}//end rowsForPart()
+	}//end rowsWithIds()
 
 	/**
 	 * Apply one planned move.
@@ -351,24 +409,25 @@ class CaseSplitExecutor {
 	private function apply(array $move, array $rows): bool {
 		$part = (string)($move['part'] ?? '');
 		$id = (string)($move['id'] ?? '');
-		$source = (self::PART_SOURCES[$part] ?? null);
-		if ($source === null || $id === '') {
-			return false;
-		}
-
-		$row = null;
-		foreach (($rows[$part] ?? []) as $candidate) {
-			if ($this->store->uuidOf(row: $candidate) === $id) {
-				$row = $candidate;
-				break;
+		foreach (($rows[$part] ?? []) as $row) {
+			if ($id !== '' && $this->store->uuidOf(row: $row) === $id) {
+				return $this->moveRow(row: $row, move: ['part' => $part, 'id' => $id, 'changes' => ($move['changes'] ?? [])]);
 			}
 		}
 
-		if ($row === null) {
-			return false;
-		}
+		return false;
+	}//end apply()
 
-		$payload = array_merge($row, (array)($move['changes'] ?? []));
+	/**
+	 * Write one row with the move's changes.
+	 *
+	 * @param array<string, mixed>                                $row  The stored row.
+	 * @param array{part: string, id: string, changes: mixed} $move The planned move.
+	 *
+	 * @return bool True when the row moved.
+	 */
+	private function moveRow(array $row, array $move): bool {
+		$payload = array_merge($row, (array)$move['changes']);
 		unset($payload['@self'], $payload['id'], $payload['uuid']);
 
 		try {
@@ -376,20 +435,20 @@ class CaseSplitExecutor {
 			$objectService->saveObject(
 				object: $payload,
 				register: $register,
-				schema: $this->store->schema(key: $source['schema']),
-				uuid: $id,
+				schema: $this->store->schema(key: self::PART_SOURCES[$move['part']]['schema']),
+				uuid: $move['id'],
 			);
 
 			return true;
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq split: an item did not move',
-				['part' => $part, 'id' => $id, 'exception' => $e->getMessage()],
+				['part' => $move['part'], 'id' => $move['id'], 'exception' => $e->getMessage()],
 			);
 
 			return false;
 		}
-	}//end apply()
+	}//end moveRow()
 
 	/**
 	 * Put a copy of one party on the new case, leaving the original where it is.
@@ -425,11 +484,6 @@ class CaseSplitExecutor {
 	/**
 	 * Open the second case, naming the first.
 	 *
-	 * The relation is written as `relatedCases`, a JSON-ENCODED string of typed
-	 * relations, because that is what the schema declares and what
-	 * `CaseRelationCodec` reads. An array there stores a shape nothing reads
-	 * and the Related tab is empty on every split.
-	 *
 	 * @param array<string, mixed> $source The case being split.
 	 * @param string               $title  The new case's title.
 	 * @param string               $actor  Who split it.
@@ -438,35 +492,114 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException When the write is refused.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	private function openSecondCase(array $source, string $title, string $actor): array {
-		$sourceId = $this->store->uuidOf(row: $source);
+		$this->store->refuseUnreachableStatus(source: $source);
+		$payload = $this->secondCaseOf(source: $source, title: $title);
+		$payload['relatedCases'] = $this->relationBack(sourceId: $payload['splitFrom'], actor: $actor);
+
+		return $this->takeOverStatus(
+			newCase: $this->saveSecondCase(payload: $payload),
+			move: ['source' => $source, 'actor' => $actor],
+		);
+	}//end openSecondCase()
+
+	/**
+	 * Move the second case from its initial status into the status of the first.
+	 *
+	 * OpenRegister opens a case in its case type's initial status, so the
+	 * status the original held is entered as a recorded move afterwards.
+	 *
+	 * @param array<string, mixed> $newCase The second case as stored.
+	 * @param array<string, mixed> $move    The case being split (`source`) and who split it (`actor`).
+	 *
+	 * @return array<string, mixed> The second case, in the status of the first.
+	 *
+	 * @throws RefusedException When the move cannot be saved or recorded.
+	 */
+	private function takeOverStatus(array $newCase, array $move): array {
+		$source = $move['source'];
+		$status = trim((string)($source['status'] ?? ''));
+		if ($status === '' || $status === trim((string)($newCase['status'] ?? ''))) {
+			return $newCase;
+		}
+
+		$origin = trim((string)($source['identifier'] ?? $this->store->uuidOf(row: $source)));
+		try {
+			return $this->store->enterStatus(
+				case: $newCase,
+				move: ['toStatus' => $status, 'label' => 'Split from ' . $origin, 'actor' => (string)$move['actor']],
+			);
+		} catch (Throwable $e) {
+			throw new RefusedException(
+				rule: self::UNWRITABLE,
+				sentence: $this->store->undoSecondCase(newCase: $newCase),
+				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $e,
+			);
+		}
+	}//end takeOverStatus()
+
+	/**
+	 * The second case's fields, taken from the first.
+	 *
+	 * @param array<string, mixed> $source The case being split.
+	 * @param string               $title  The new case's title.
+	 *
+	 * @return array<string, string> The fields.
+	 */
+	private function secondCaseOf(array $source, string $title): array {
 		$title = trim($title);
 		if ($title === '') {
 			$title = 'Split from ' . (string)($source['title'] ?? '');
 		}
 
-		$payload = [
+		return [
 			'title' => $title,
 			'caseType' => (string)($source['caseType'] ?? ''),
-			'status' => (string)($source['status'] ?? ''),
 			'assignedGroup' => (string)($source['assignedGroup'] ?? ''),
 			'assignee' => (string)($source['assignee'] ?? ''),
 			'impact' => (string)($source['impact'] ?? 'medium'),
 			'urgency' => (string)($source['urgency'] ?? 'medium'),
-			'splitFrom' => $sourceId,
-			'relatedCases' => (string)json_encode(
-				[
-					[
-						'caseId' => $sourceId,
-						'aardRelatie' => CaseSplitPlan::RELATION,
-						'toelichting' => 'Split from this case by ' . $actor,
-					],
-				]
-			),
+			'splitFrom' => $this->store->uuidOf(row: $source),
+		];
+	}//end secondCaseOf()
+
+	/**
+	 * The second case's relation back to the first.
+	 *
+	 * Written as `relatedCases`, a JSON-ENCODED string of typed relations,
+	 * because that is what the schema declares and what `CaseRelationCodec`
+	 * reads. An array there stores a shape nothing reads and the Related tab
+	 * is empty on every split.
+	 *
+	 * @param string $sourceId The case being split.
+	 * @param string $actor    Who split it.
+	 *
+	 * @return string The encoded relations.
+	 */
+	private function relationBack(string $sourceId, string $actor): string {
+		$relation = [
+			'caseId' => $sourceId,
+			'aardRelatie' => CaseSplitPlan::RELATION,
+			'toelichting' => 'Split from this case by ' . $actor,
 		];
 
+		return (string)json_encode([$relation]);
+	}//end relationBack()
+
+	/**
+	 * Write the second case.
+	 *
+	 * @param array<string, string> $payload The new case.
+	 *
+	 * @return array<string, mixed> The stored case.
+	 *
+	 * @throws RefusedException When the write throws or answers no case.
+	 */
+	private function saveSecondCase(array $payload): array {
+		$failure = null;
 		try {
 			[$objectService, $register] = $this->store->context();
 			$saved = $this->saveObjectAsArray(
@@ -476,12 +609,7 @@ class CaseSplitExecutor {
 				object: $payload,
 			);
 		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: self::UNWRITABLE,
-				sentence: 'The second case could not be opened, so nothing was moved.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
+			[$saved, $failure] = [null, $e];
 		}
 
 		if ($saved === null) {
@@ -489,63 +617,76 @@ class CaseSplitExecutor {
 				rule: self::UNWRITABLE,
 				sentence: 'The second case could not be opened, so nothing was moved.',
 				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $failure,
 			);
 		}
 
 		return $saved;
-	}//end openSecondCase()
+	}//end saveSecondCase()
 
 	/**
 	 * Write onto the original what left it, and where it went.
 	 *
-	 * @param string                           $caseId     The case that was split.
-	 * @param array<string, mixed>             $case       The case as it was read.
-	 * @param string                           $newId      The case the material went to.
-	 * @param array<int, array<string, mixed>> $references The plan's reference entries.
-	 * @param string                           $note       The plan's one-line note.
+	 * @param array<string, mixed>                $case  The case as it was read.
+	 * @param array<string, string|array<mixed>> $split The case that was split (caseId), the case the material
+	 *        went to (newId), its number (newNumber), and the plan's reference entries (references).
 	 *
-	 * @return void
+	 * @return string The plan's one-line note, as recorded.
 	 */
-	private function recordOnOriginal(string $caseId, array $case, string $newId, array $references, string $note): void {
-		$now = (new DateTimeImmutable())->format('c');
-
-		$existing = [];
-		foreach ((array)($case['splitMovedItems'] ?? []) as $row) {
-			if (is_array($row) === true) {
-				$existing[] = $row;
-			}
-		}
-
-		$recorded = [];
-		foreach ($references as $reference) {
-			$recorded[] = array_merge((array)$reference, ['movedAt' => $now]);
-		}
-
+	private function recordOnOriginal(array $case, array $split): string {
+		$note = $this->plan->noteFor(references: $split['references'], newNumber: $split['newNumber']);
 		$payload = array_merge(
 			$case,
 			[
-				'splitInto' => $newId,
-				'splitMovedItems' => array_merge($existing, $recorded),
+				'splitInto' => $split['newId'],
+				'splitMovedItems' => $this->movedItems(case: $case, references: $split['references']),
 				'splitNote' => $note,
 			]
 		);
 		unset($payload['@self'], $payload['id'], $payload['uuid']);
 
+		$this->saveOriginal(payload: $payload, caseId: $split['caseId']);
+
+		return $note;
+	}//end recordOnOriginal()
+
+	/**
+	 * Save the original with what left it; a failed write is logged, not thrown.
+	 *
+	 * @param array<string, mixed> $payload The original, without its ids.
+	 * @param string               $caseId  The original's uuid.
+	 *
+	 * @return void
+	 */
+	private function saveOriginal(array $payload, string $caseId): void {
 		try {
 			[$objectService, $register] = $this->store->context();
-			$objectService->saveObject(
-				object: $payload,
-				register: $register,
-				schema: $this->store->schema(key: 'case_schema'),
-				uuid: $caseId,
-			);
+			$objectService->saveObject(object: $payload, register: $register, schema: $this->store->schema(key: 'case_schema'), uuid: $caseId);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq split: the reference to what moved could not be written',
 				['case' => $caseId, 'exception' => $e->getMessage()],
 			);
 		}
-	}//end recordOnOriginal()
+	}//end saveOriginal()
+
+	/**
+	 * The original's earlier moved items followed by these, stamped now.
+	 *
+	 * @param array<string, mixed>             $case       The case as it was read.
+	 * @param array<int, array<string, mixed>> $references The plan's reference entries.
+	 *
+	 * @return array<int, array<string, mixed>> The moved items.
+	 */
+	private function movedItems(array $case, array $references): array {
+		$now = ['movedAt' => (new DateTimeImmutable())->format('c')];
+		$existing = array_filter((array)($case['splitMovedItems'] ?? []), 'is_array');
+
+		return array_merge(
+			array_values($existing),
+			array_map(static fn (mixed $reference): array => array_merge((array)$reference, $now), array_values($references))
+		);
+	}//end movedItems()
 
 	/**
 	 * The chosen ids of one part.
@@ -566,7 +707,6 @@ class CaseSplitExecutor {
 
 		return $ids;
 	}//end idsFor()
-
 
 	/**
 	 * Which parts a split may divide on this case.
@@ -590,7 +730,7 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/split-picker-asks-the-policy/specs/case-management/spec.md#requirement-the-picker-says-what-may-be-divided-before-the-handler-chooses-req-cm-49
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-picker-says-what-may-be-divided-before-the-handler-chooses-req-cm-49
 	 */
 	public function divisibleParts(string $caseId): array {
 		$case = $this->store->requireCase(caseId: trim($caseId));
@@ -629,7 +769,5 @@ class CaseSplitExecutor {
 			return null;
 		}
 	}//end caseTypeOf()
-
-
 
 }//end class

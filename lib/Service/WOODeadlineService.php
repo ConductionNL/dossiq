@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-4
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
  * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -32,11 +32,13 @@ namespace OCA\Dossiq\Service;
 
 use DateTime;
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\Termijn\TermDefinitions;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WOODeadlineServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCP\Notification\IManager as INotificationManager;
+use OCP\Notification\INotification;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -44,9 +46,9 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-4
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
  */
-class WOODeadlineService {
+class WOODeadlineService implements WOODeadlineServiceInterface {
 
 	use SearchesObjects;
 
@@ -160,23 +162,10 @@ class WOODeadlineService {
 	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function extendDeadline(string $caseId, string $reason): array {
-		if (trim($reason) === '') {
-			throw new RefusedException(
-				rule: 'woo-extension-reason-missing',
-				sentence: 'A reason is required to extend the term of a Woo request.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$this->refuseWithoutReason(reason: $reason);
 
 		$definition = $this->wooDefinition();
-		$period = (int)($definition['extensionCapacity'] ?? 0);
-		if ($period <= 0 || $this->extensions === null) {
-			throw new RefusedException(
-				rule: 'woo-extension-unavailable',
-				sentence: 'The Woo term cannot be extended: no extension is declared, or the term engine is not available.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$period = $this->extensionPeriod(definition: $definition);
 
 		// The ceiling (one extension, Woo art. 4.4 lid 2) is the term engine's,
 		// and refuses with 409 and its own rule.
@@ -187,20 +176,14 @@ class WOODeadlineService {
 			caseId: $caseId,
 			rationale: $reason,
 			days: $period,
-			baseOf: fn (array $term): string => $this->dates->formatCalendarDate(
-				$this->definitions->countedEndDateFor(
-					start: $this->dates->parse((string)($term['startDate'] ?? ''), 'startDate'),
-					days: (int)($definition['standardDurationDays'] ?? 0),
-					definitie: $definition
-				)
-			),
+			baseOf: $this->countedEndOf(definition: $definition),
 		);
 
 		$term = $extended['instance'];
 		$deadline = (string)($term['endDateCurrent'] ?? '');
 		$this->logger->info(
 			'WOO deadline extended for case ' . $caseId . ' to ' . $deadline,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return [
@@ -216,6 +199,64 @@ class WOODeadlineService {
 	}//end extendDeadline()
 
 	/**
+	 * Refuse an extension without a reason.
+	 *
+	 * @param string $reason The reason given.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the reason is empty.
+	 */
+	private function refuseWithoutReason(string $reason): void {
+		if (trim($reason) === '') {
+			throw new RefusedException(
+				rule: 'woo-extension-reason-missing',
+				sentence: 'A reason is required to extend the term of a Woo request.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end refuseWithoutReason()
+
+	/**
+	 * The days the Woo term may be extended by, refused when none is declared or there is no term engine.
+	 *
+	 * @param array<string, mixed> $definition The Woo term definition.
+	 *
+	 * @return int
+	 *
+	 * @throws RefusedException When the term cannot be extended.
+	 */
+	private function extensionPeriod(array $definition): int {
+		$period = (int)($definition['extensionCapacity'] ?? 0);
+		if ($period <= 0 || $this->extensions === null) {
+			throw new RefusedException(
+				rule: 'woo-extension-unavailable',
+				sentence: 'The Woo term cannot be extended: no extension is declared, or the term engine is not available.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $period;
+	}//end extensionPeriod()
+
+	/**
+	 * The day an extension runs from: the term's original end, as counted and unrolled.
+	 *
+	 * @param array<string, mixed> $definition The Woo term definition.
+	 *
+	 * @return \Closure(array): string
+	 */
+	private function countedEndOf(array $definition): \Closure {
+		return fn (array $term): string => $this->dates->formatCalendarDate(
+			$this->definitions->countedEndDateFor(
+				start: $this->dates->parse((string)($term['startDate'] ?? ''), 'startDate'),
+				days: (int)($definition['standardDurationDays'] ?? 0),
+				definitie: $definition
+			)
+		);
+	}//end countedEndOf()
+
+	/**
 	 * Check case deadline and emit T-7 warning notifications.
 	 *
 	 * Should be called from a nightly background job. Emits a Nextcloud
@@ -226,7 +267,7 @@ class WOODeadlineService {
 	 *
 	 * @return array<string, mixed> Warning status with daysRemaining and isOverdue flags
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-4
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
 	 */
 	public function checkAndWarn(string $caseId, string $handler): array {
 		$resolved = $this->resolveWarningDeadline(caseId: $caseId);
@@ -289,6 +330,19 @@ class WOODeadlineService {
 			return ['deadline' => null, 'reason' => 'Case not found'];
 		}
 
+		return $this->deadlineOf(case: $case);
+	}//end resolveWarningDeadline()
+
+	/**
+	 * The parsed deadline of a loaded case.
+	 *
+	 * @param array<string, mixed> $case The case
+	 *
+	 * @return array{deadline: \DateTimeImmutable|null, reason: string} The parsed deadline, or null with the blocking reason
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	private function deadlineOf(array $case): array {
 		$caseData = (array)$case;
 
 		// `deadline` only. It follows the statutory term, extension included
@@ -305,7 +359,7 @@ class WOODeadlineService {
 		}
 
 		return ['deadline' => $deadline, 'reason' => ''];
-	}//end resolveWarningDeadline()
+	}//end deadlineOf()
 
 	/**
 	 * Count the days between today and a deadline, negative once the deadline has passed.
@@ -334,38 +388,65 @@ class WOODeadlineService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-4
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
 	 */
-	private function sendDeadlineNotification(
-		string $userId,
-		string $caseId,
-		int $daysRemaining,
-		bool $isOverdue,
-	): void {
+	private function sendDeadlineNotification(string $userId, string $caseId, int $daysRemaining, bool $isOverdue): void {
 		try {
-			$subject = 'woo_deadline_warning';
-			if ($isOverdue === true) {
-				$subject = 'woo_deadline_overdue';
-			}
+			$subject = $this->deadlineSubject(isOverdue: $isOverdue);
 
-			$notification = $this->notificationManager->createNotification();
-			$notification->setApp(Application::APP_ID)
-				->setUser($userId)
-				->setDateTime(new DateTime())
-				->setObject('woo_deadline', $caseId)
-				->setSubject(
-					$subject,
-					['caseId' => $caseId, 'daysRemaining' => $daysRemaining]
-				);
+			$notification = $this->deadlineNotification(userId: $userId, caseId: $caseId, subject: $subject, daysRemaining: $daysRemaining);
 
 			$this->notificationManager->notify($notification);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Failed to send WOO deadline notification: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'caseId' => $caseId],
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId],
 			);
 		}//end try
 	}//end sendDeadlineNotification()
 
+	/**
+	 * The notification subject: overdue, or a warning.
+	 *
+	 * @param bool $isOverdue Whether the deadline has passed
+	 *
+	 * @return string The subject.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
+	 */
+	private function deadlineSubject(bool $isOverdue): string {
+		$subject = 'woo_deadline_warning';
+		if ($isOverdue === true) {
+			$subject = 'woo_deadline_overdue';
+		}
+
+		return $subject;
+	}//end deadlineSubject()
+
+	/**
+	 * The deadline notification for the behandelaar.
+	 *
+	 * @param string $userId The user to notify
+	 * @param string $caseId The case UUID
+	 * @param string $subject The notification subject
+	 * @param int $daysRemaining Days remaining (negative if overdue)
+	 *
+	 * @return INotification The notification.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
+	 */
+	private function deadlineNotification(string $userId, string $caseId, string $subject, int $daysRemaining): INotification {
+		$notification = $this->notificationManager->createNotification();
+		$notification->setApp(AppIdentity::APP_ID)
+			->setUser($userId)
+			->setDateTime(new DateTime())
+			->setObject('woo_deadline', $caseId)
+			->setSubject(
+				$subject,
+				['caseId' => $caseId, 'daysRemaining' => $daysRemaining]
+			);
+
+		return $notification;
+	}//end deadlineNotification()
 
 }//end class

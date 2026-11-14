@@ -68,6 +68,40 @@ class DsoIntakeCasePayload {
 	 * @spec openspec/specs/vth-dso-integration/spec.md
 	 */
 	public function payloadFor(string $permitApplicationId, array $permitApplication): array {
+		$caseType = $this->resolvedCaseType(permitApplicationId: $permitApplicationId, permitApplication: $permitApplication);
+		$procedureType = $this->determineProcedureType(activiteiten: $this->activitiesOf(permitApplication: $permitApplication));
+		$submitted = (string)($permitApplication['submissionDate'] ?? ($permitApplication['indieningsdatum'] ?? ''));
+		$name = $this->nameOf(permitApplicationId: $permitApplicationId, permitApplication: $permitApplication);
+
+		$case = [
+			'title' => mb_substr('Omgevingsvergunning: ' . $name, 0, 255),
+			'caseType' => $this->caseTypes->idOf(caseType: $caseType),
+			'dsoStatus' => 'submitted',
+			'procedureType' => $procedureType,
+			'permitApplicationRef' => $permitApplicationId,
+			'startDate' => $this->startOf(submitted: $submitted),
+		]
+			+ $this->receivedAtField(submitted: $submitted)
+			+ $this->descriptionField(permitApplication: $permitApplication)
+			+ $this->statusField(caseType: $caseType);
+
+		return $this->journal->append(
+			case: $case,
+			entry: ['type' => 'dsoIntake', 'note' => 'Zaak aangemaakt vanuit DSO vergunningaanvraag ' . $permitApplicationId . '.']
+		);
+	}//end payloadFor()
+
+	/**
+	 * The case type the record's activity mapping resolves to.
+	 *
+	 * @param string               $permitApplicationId The record's UUID
+	 * @param array<string, mixed> $permitApplication   The record
+	 *
+	 * @return array<string, mixed> The case type row
+	 *
+	 * @throws \RuntimeException When the record names no case type that resolves
+	 */
+	private function resolvedCaseType(string $permitApplicationId, array $permitApplication): array {
 		$caseType = $this->caseTypeFor(permitApplication: $permitApplication);
 		if ($caseType === []) {
 			throw new RuntimeException(
@@ -76,52 +110,95 @@ class DsoIntakeCasePayload {
 			);
 		}
 
+		return $caseType;
+	}//end resolvedCaseType()
+
+	/**
+	 * The record's activities, or those of the raw request it came with.
+	 *
+	 * @param array<string, mixed> $permitApplication The record
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function activitiesOf(array $permitApplication): array {
 		$activiteiten = $this->listAt(record: $permitApplication, key: 'activiteiten');
 		if ($activiteiten === []) {
-			$activiteiten = $this->listAt(record: $this->listAt(record: $permitApplication, key: 'rawRequest'), key: 'activiteiten');
+			return $this->listAt(record: $this->listAt(record: $permitApplication, key: 'rawRequest'), key: 'activiteiten');
 		}
 
-		$procedureType = $this->determineProcedureType(activiteiten: $activiteiten);
+		return $activiteiten;
+	}//end activitiesOf()
 
-		$submitted = (string)($permitApplication['submissionDate'] ?? ($permitApplication['indieningsdatum'] ?? ''));
+	/**
+	 * The day the case starts: the day the application was submitted, today
+	 * when the record carries no readable one.
+	 *
+	 * @param string $submitted The submission moment as the record holds it
+	 *
+	 * @return string `Y-m-d`
+	 */
+	private function startOf(string $submitted): string {
 		$submissionDate = substr($submitted, 0, 10);
 		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $submissionDate) !== 1) {
-			$submissionDate = date('Y-m-d');
+			return date('Y-m-d');
 		}
 
+		return $submissionDate;
+	}//end startOf()
+
+	/**
+	 * The name the case is titled after: the mapped title, the record's own,
+	 * or its UUID.
+	 *
+	 * @param string               $permitApplicationId The record's UUID
+	 * @param array<string, mixed> $permitApplication   The record
+	 *
+	 * @return string
+	 */
+	private function nameOf(string $permitApplicationId, array $permitApplication): string {
 		$name = trim((string)($permitApplication['mappedTitle'] ?? ''));
 		if ($name === '') {
 			$name = trim((string)($permitApplication['title'] ?? ''));
 		}
 
 		if ($name === '') {
-			$name = $permitApplicationId;
+			return $permitApplicationId;
 		}
 
-		$case = [
-			'title' => mb_substr('Omgevingsvergunning: ' . $name, 0, 255),
-			'caseType' => $this->caseTypes->idOf(caseType: $caseType),
-			'dsoStatus' => 'submitted',
-			'procedureType' => $procedureType,
-			'permitApplicationRef' => $permitApplicationId,
-			'startDate' => $submissionDate,
-		] + $this->receivedAtField(submitted: $submitted);
+		return $name;
+	}//end nameOf()
 
+	/**
+	 * The description, when the activity mapping wrote a summary.
+	 *
+	 * @param array<string, mixed> $permitApplication The record
+	 *
+	 * @return array<string, string>
+	 */
+	private function descriptionField(array $permitApplication): array {
 		$summary = trim((string)($permitApplication['mappedSummary'] ?? ''));
-		if ($summary !== '') {
-			$case['description'] = $summary;
+		if ($summary === '') {
+			return [];
 		}
 
+		return ['description' => $summary];
+	}//end descriptionField()
+
+	/**
+	 * The case type's initial status, when it declares one.
+	 *
+	 * @param array<string, mixed> $caseType The case type row
+	 *
+	 * @return array<string, string>
+	 */
+	private function statusField(array $caseType): array {
 		$initial = $this->caseTypes->initialStatusOf(caseType: $caseType);
-		if ($initial !== '') {
-			$case['status'] = $initial;
+		if ($initial === '') {
+			return [];
 		}
 
-		return $this->journal->append(
-			case: $case,
-			entry: ['type' => 'dsoIntake', 'note' => 'Zaak aangemaakt vanuit DSO vergunningaanvraag ' . $permitApplicationId . '.']
-		);
-	}//end payloadFor()
+		return ['status' => $initial];
+	}//end statusField()
 
 	/**
 	 * The first case type the record's activity mapping names that resolves.
@@ -231,7 +308,7 @@ class DsoIntakeCasePayload {
 	 *
 	 * @return array<string, string> `['receivedAt' => moment]`, or [].
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-an-intake-channel-passes-on-when-the-request-arrived-req-term-043
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-an-intake-channel-passes-on-when-the-request-arrived-req-term-043
 	 */
 	private function receivedAtField(string $submitted): array {
 		$submitted = trim($submitted);

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\LinkedDocumentsReaderInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\Folder;
@@ -30,7 +31,7 @@ use Throwable;
  *
  * @spec openspec/specs/document-projection/spec.md
  */
-class LinkedDocumentsReader {
+class LinkedDocumentsReader implements LinkedDocumentsReaderInterface {
 	use SearchesObjects;
 
 	/**
@@ -93,6 +94,42 @@ class LinkedDocumentsReader {
 	 * @return array<string, mixed>|null The item.
 	 */
 	private function itemFor(string $recordId, string $caseId, ?Folder $caseFolder): ?array {
+		$found = $this->recordWithFile(recordId: $recordId);
+		if ($found === null) {
+			return null;
+		}
+
+		[$record, $fileId] = $found;
+		if ($this->inCaseFolder(caseFolder: $caseFolder, fileId: $fileId) === true) {
+			return null;
+		}
+
+		$owner = $this->owningCase(recordId: $recordId, notCaseId: $caseId);
+		$item = $this->itemOf(recordId: $recordId, record: $record, fileId: $fileId);
+
+		return $this->withOwnerNote(item: $item, owner: $owner);
+	}//end itemFor()
+
+	/**
+	 * Whether the file is in this case's own folder.
+	 *
+	 * @param Folder|null $caseFolder This case's folder, when it has one.
+	 * @param int $fileId The file id.
+	 *
+	 * @return bool True when the case folder holds the file.
+	 */
+	private function inCaseFolder(?Folder $caseFolder, int $fileId): bool {
+		return $caseFolder !== null && $this->holds(folder: $caseFolder, fileId: $fileId) === true;
+	}//end inCaseFolder()
+
+	/**
+	 * The record and its file id, or null when there is no record or it has no file.
+	 *
+	 * @param string $recordId The record uuid.
+	 *
+	 * @return array{0: array<string, mixed>, 1: int}|null The record and its file id.
+	 */
+	private function recordWithFile(string $recordId): ?array {
 		if ($recordId === '') {
 			return null;
 		}
@@ -103,12 +140,20 @@ class LinkedDocumentsReader {
 			return null;
 		}
 
-		if ($caseFolder !== null && $this->holds(folder: $caseFolder, fileId: $fileId) === true) {
-			return null;
-		}
+		return [$record, $fileId];
+	}//end recordWithFile()
 
-		$owner = $this->owningCase(recordId: $recordId, notCaseId: $caseId);
-		$item = [
+	/**
+	 * The linked row for a record and its file.
+	 *
+	 * @param string $recordId The record uuid.
+	 * @param array<string, mixed> $record The record.
+	 * @param int $fileId The record's file id.
+	 *
+	 * @return array<string, mixed> The item, with no note.
+	 */
+	private function itemOf(string $recordId, array $record, int $fileId): array {
+		return [
 			'id' => $recordId,
 			'name' => (string)($record['fileName'] ?? ($record['title'] ?? $recordId)),
 			'mime' => (string)($record['format'] ?? ''),
@@ -118,13 +163,24 @@ class LinkedDocumentsReader {
 			'note' => '',
 			'noteHref' => '',
 		];
+	}//end itemOf()
+
+	/**
+	 * The item with a note naming the case that owns the record, when another case does.
+	 *
+	 * @param array<string, mixed> $item The item.
+	 * @param array<string, mixed>|null $owner The owning case, or null.
+	 *
+	 * @return array<string, mixed> The item.
+	 */
+	private function withOwnerNote(array $item, ?array $owner): array {
 		if ($owner !== null) {
 			$item['note'] = 'In ' . (string)($owner['identifier'] ?? ($owner['title'] ?? $owner['id']));
 			$item['noteHref'] = rtrim($this->urlGenerator->linkToRoute('dossiq.dashboard.page'), '/') . '/cases/' . (string)$owner['id'];
 		}
 
 		return $item;
-	}//end itemFor()
+	}//end withOwnerNote()
 
 	/**
 	 * Whether a folder holds a file id, anywhere beneath it.

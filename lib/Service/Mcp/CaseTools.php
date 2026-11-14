@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Mcp;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseToolsInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseAssignmentService;
 use OCA\Dossiq\Service\StatusTransitionService;
@@ -46,7 +47,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-202-curated-aggregation-reads
  */
-class CaseTools {
+class CaseTools implements CaseToolsInterface {
 
 	use ToolEnvelopes;
 
@@ -236,6 +237,21 @@ class CaseTools {
 			return $this->error(code: 'task_not_found', message: 'That task could not be found on a case.');
 		}
 
+		return $this->completeAsMutator(task: $task, caseId: $caseId, outcome: $outcome);
+	}//end completeTask()
+
+	/**
+	 * Complete a task on a case as the caller, when they may change the case.
+	 *
+	 * @param array<string, mixed> $task    The task.
+	 * @param string               $caseId  The case it is on.
+	 * @param string               $outcome The outcome to complete with, `done` when blank.
+	 *
+	 * @return array<string, mixed> The completed task, or an error envelope.
+	 *
+	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-204-guard-enforcing-write-tools-one-per-action-on-the-owning-service
+	 */
+	private function completeAsMutator(array $task, string $caseId, string $outcome): array {
 		$user = $this->mutator(caseId: $caseId);
 		if (is_array($user) === true) {
 			return $user;
@@ -246,16 +262,11 @@ class CaseTools {
 		}
 
 		try {
-			return $this->tasks->complete(
-				taskId: (string)$task['id'],
-				data: [],
-				outcome: $outcome,
-				actor: $user->getUID(),
-			);
+			return $this->tasks->complete(taskId: (string)$task['id'], data: [], outcome: $outcome, actor: $user->getUID());
 		} catch (RuntimeException $e) {
 			return $this->refusal(e: $e);
 		}
-	}//end completeTask()
+	}//end completeAsMutator()
 
 	/**
 	 * An optional tool argument as the service expects it: null when empty.

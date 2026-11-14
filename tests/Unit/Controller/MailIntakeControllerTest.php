@@ -57,10 +57,12 @@ use PHPUnit\Framework\TestCase;
  * Covers the role guard, the log read, the release and the junk correction.
  *
  * @covers \OCA\Dossiq\Controller\MailIntakeController
+ * @covers \OCA\Dossiq\Controller\ManualFiling
  * @uses \OCA\Dossiq\Service\Email\Filters\FilterVerdict
  * @uses \OCA\Dossiq\Service\Email\InboundMessage
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @uses \OCA\Dossiq\Controller\Support\IntakeRoleGate
  */
 final class MailIntakeControllerTest extends TestCase {
 
@@ -432,4 +434,99 @@ final class MailIntakeControllerTest extends TestCase {
 		$this->assertSame('Hoort bij de dakkapel.', $this->amended['reason']);
 		$this->assertSame('intaker', $this->amended['filedBy']);
 	}//end testFileOnCaseMovesTheMessageAndRecordsTheOverride()
+
+	/**
+	 * Bounce and move answer 404 for a missing entry, and nothing is sent or moved.
+	 *
+	 * @return void
+	 */
+	public function testBounceAndMoveOfAMissingEntryAreNotFound(): void {
+		$this->log->method('find')->willReturn(null);
+		$this->log->expects(self::never())->method('amend');
+
+		self::assertSame(
+			['message' => 'not_found'],
+			$this->controller()->bounce(entryId: 'gone', address: 'info@elders.nl')->getData()
+		);
+		self::assertSame(Http::STATUS_NOT_FOUND, $this->controller()->move(entryId: 'gone', target: 'Archief')->getStatus());
+	}//end testBounceAndMoveOfAMissingEntryAreNotFound()
+
+	/**
+	 * Filing by hand needs a case, then a reason, then a session, then the entry.
+	 *
+	 * @return void
+	 */
+	public function testFileOnCaseChecksInOrder(): void {
+		$this->intake->expects(self::never())->method('fileOnCase');
+		$this->log->method('find')->willReturn(null);
+
+		$noCase = $this->controller()->fileOnCase('entry-1', '  ', '');
+		self::assertSame(Http::STATUS_BAD_REQUEST, $noCase->getStatus());
+		self::assertSame(['message' => 'case_required'], $noCase->getData());
+
+		$missing = $this->controller()->fileOnCase('gone', ' case-114 ', 'Hoort hier.');
+		self::assertSame(Http::STATUS_NOT_FOUND, $missing->getStatus());
+		self::assertSame(['message' => 'not_found'], $missing->getData());
+	}//end testFileOnCaseChecksInOrder()
+
+	/**
+	 * Without a session, filing by hand answers 401 before the case guard is asked.
+	 *
+	 * @return void
+	 */
+	public function testFileOnCaseWithoutASessionIsUnauthenticated(): void {
+		$guard = $this->getMockBuilder(CaseAccessGuard::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['hasCaseReadAccess'])
+			->getMock();
+		$guard->expects(self::never())->method('hasCaseReadAccess');
+		$session = $this->createMock(IUserSession::class);
+		$session->method('getUser')->willReturn(null);
+		$time = $this->createMock(ITimeFactory::class);
+		$controller = new MailIntakeController(
+			$this->createMock(IRequest::class),
+			$this->log,
+			$this->policy,
+			$this->createMock(FilterPipeline::class),
+			$this->createMock(JunkRules::class),
+			$this->createMock(BounceAction::class),
+			$this->createMock(MoveAction::class),
+			$this->intake,
+			$session,
+			$time,
+			$guard,
+		);
+
+		$response = $controller->fileOnCase('entry-1', 'case-114', 'Hoort hier.');
+
+		self::assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		self::assertSame(['message' => 'unauthenticated'], $response->getData());
+	}//end testFileOnCaseWithoutASessionIsUnauthenticated()
+
+	/**
+	 * The filed message's full log amendment and answer.
+	 *
+	 * @return void
+	 */
+	public function testFileOnCaseAmendsTheEntryExactly(): void {
+		$this->log->method('find')->willReturn($this->entry(['outcome' => IntakeLog::OUTCOME_CASE]));
+		$this->intake->expects(self::once())->method('fileOnCase')
+			->with(self::anything(), self::anything(), self::anything(), 'case-114')
+			->willReturn('case');
+
+		$response = $this->controller()->fileOnCase('entry-1', ' case-114 ', 'Hoort hier.');
+
+		self::assertSame(['filed' => true, 'case' => 'case-114', 'previousCase' => '', 'outcome' => 'case'], $response->getData());
+		self::assertSame(
+			[
+				'outcome' => IntakeLog::OUTCOME_CASE,
+				'case' => 'case-114',
+				'reason' => 'Hoort hier.',
+				'filedBy' => 'intaker',
+				'filedAt' => '2026-09-14T12:00:00+00:00',
+				'previousCase' => '',
+			],
+			$this->amended
+		);
+	}//end testFileOnCaseAmendsTheEntryExactly()
 }//end class

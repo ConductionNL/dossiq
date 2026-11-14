@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCP\EventDispatcher\Event;
@@ -71,12 +71,12 @@ class WooRefusalGroundDeleteGuard implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister plus app config.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister plus app config.
 	 * @param IL10N           $l10n            Translation service, for the refusal sentence.
 	 * @param LoggerInterface $logger          Structured logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
@@ -96,26 +96,67 @@ class WooRefusalGroundDeleteGuard implements IEventListener {
 			return;
 		}
 
-		try {
-			$payload = $event->getObject()->jsonSerialize();
-		} catch (Throwable $e) {
-			return;
-		}
-
-		if ($this->isGuardedSchema(object: $payload) === false) {
-			return;
-		}
-
-		$code = trim((string)($payload['code'] ?? ''));
+		$code = $this->guardedCode(event: $event);
 		if ($code === '') {
 			return;
 		}
 
+		$this->holdIfCited(event: $event, code: $code);
+	}//end handle()
+
+	/**
+	 * The code of the refusal ground being deleted, or '' when the delete is not one this guard holds.
+	 *
+	 * @param ObjectDeletingEvent $event The delete.
+	 *
+	 * @return string
+	 */
+	private function guardedCode(ObjectDeletingEvent $event): string {
+		try {
+			$payload = $event->getObject()->jsonSerialize();
+		} catch (Throwable $e) {
+			return '';
+		}
+
+		if ($this->isGuardedSchema(object: $payload) === false) {
+			return '';
+		}
+
+		return trim((string)($payload['code'] ?? ''));
+	}//end guardedCode()
+
+	/**
+	 * Refuse the delete when the ground is cited, or when what cites it cannot be checked.
+	 *
+	 * @param ObjectDeletingEvent $event The delete.
+	 * @param string              $code  The ground's code.
+	 *
+	 * @return void
+	 */
+	private function holdIfCited(ObjectDeletingEvent $event, string $code): void {
 		$citations = $this->citations(code: $code);
 		if ($citations === 0) {
 			return;
 		}
 
+		$event->setErrors(['error' => 'woo-refusal-ground-cited', 'message' => $this->refusalSentence(code: $code, citations: $citations)]);
+		$event->stopPropagation();
+
+		$this->logger->info(
+			'Dossiq: refused the delete of a cited Woo refusal ground (REQ-WRG-002)',
+			['code' => $code, 'citations' => $citations]
+		);
+	}//end holdIfCited()
+
+	/**
+	 * Why the delete is refused: the ground is cited, or what cites it could not be checked.
+	 *
+	 * @param string $code      The ground's code.
+	 * @param int    $citations The citing rows, or -1.
+	 *
+	 * @return string
+	 */
+	private function refusalSentence(string $code, int $citations): string {
 		$sentence = $this->l10n->t(
 			'Ground %1$s is cited on an assessment or a decision, so it cannot be deleted. Retire it instead.',
 			[$code]
@@ -127,14 +168,8 @@ class WooRefusalGroundDeleteGuard implements IEventListener {
 			);
 		}
 
-		$event->setErrors(['error' => 'woo-refusal-ground-cited', 'message' => $sentence]);
-		$event->stopPropagation();
-
-		$this->logger->info(
-			'Dossiq: refused the delete of a cited Woo refusal ground (REQ-WRG-002)',
-			['code' => $code, 'citations' => $citations]
-		);
-	}//end handle()
+		return $sentence;
+	}//end refusalSentence()
 
 	/**
 	 * How many rows cite the code, or -1 when that cannot be read.
@@ -153,37 +188,55 @@ class WooRefusalGroundDeleteGuard implements IEventListener {
 			return -1;
 		}
 
-		$count = 0;
-		foreach (self::CITING_SCHEMA_CONFIG_KEYS as $key) {
-			$schema = $this->settingsService->getConfigValue($key);
-			if ($schema === '') {
-				continue;
-			}
+		$count = new CitationCount();
+		$count->objectService = $objectService;
+		$count->register = $register;
+		$count->code = $code;
 
-			try {
-				$rows = $this->searchObjectsAsArraysUnscoped(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					filters: ['_limit' => self::PAGE_SIZE],
-				);
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: could not read what cites a Woo refusal ground',
-					['code' => $code, 'schema' => $key, 'error' => $e->getMessage()]
-				);
+		$total = 0;
+		foreach (self::CITING_SCHEMA_CONFIG_KEYS as $key) {
+			$found = $this->citationsUnder(count: $count, key: $key);
+			if ($found < 0) {
 				return -1;
 			}
 
-			foreach ($rows as $row) {
-				if (in_array($code, (array)($row['weigeringsgronden'] ?? []), true) === true) {
-					$count++;
-				}
-			}
-		}//end foreach
+			$total += $found;
+		}
 
-		return $count;
+		return $total;
 	}//end citations()
+
+	/**
+	 * How many rows of one citing schema cite the code, 0 when the schema is not configured, -1 when it cannot be read.
+	 *
+	 * @param CitationCount $count The count.
+	 * @param string        $key   The setting that names the citing schema.
+	 *
+	 * @return int
+	 */
+	private function citationsUnder(CitationCount $count, string $key): int {
+		$schema = $this->settingsService->getConfigValue($key);
+		if ($schema === '') {
+			return 0;
+		}
+
+		try {
+			$rows = $this->searchObjectsAsArraysUnscoped(
+				objectService: $count->objectService,
+				register: $count->register,
+				schema: $schema,
+				filters: ['_limit' => self::PAGE_SIZE],
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not read what cites a Woo refusal ground',
+				['code' => $count->code, 'schema' => $key, 'error' => $e->getMessage()]
+			);
+			return -1;
+		}
+
+		return count(array_filter($rows, static fn (array $row): bool => in_array($count->code, (array)($row['weigeringsgronden'] ?? []), true)));
+	}//end citationsUnder()
 
 	/**
 	 * Whether the payload belongs to the guarded schema.
@@ -193,12 +246,7 @@ class WooRefusalGroundDeleteGuard implements IEventListener {
 	 * @return bool True for a Woo refusal ground.
 	 */
 	private function isGuardedSchema(array $object): bool {
-		$self = ($object['@self'] ?? []);
-		$candidate = '';
-		if (is_array($self) === true && is_scalar(($self['schema'] ?? null)) === true) {
-			$candidate = (string)$self['schema'];
-		}
-
+		$candidate = $this->selfSchemaOf(object: $object);
 		if ($candidate === '') {
 			return false;
 		}
@@ -212,4 +260,20 @@ class WooRefusalGroundDeleteGuard implements IEventListener {
 
 		return false;
 	}//end isGuardedSchema()
+
+	/**
+	 * The schema the payload's `@self` names, or ''.
+	 *
+	 * @param array<string, mixed> $object Object payload (incl. `@self`).
+	 *
+	 * @return string
+	 */
+	private function selfSchemaOf(array $object): string {
+		$self = ($object['@self'] ?? []);
+		if (is_array($self) === true && is_scalar(($self['schema'] ?? null)) === true) {
+			return (string)$self['schema'];
+		}
+
+		return '';
+	}//end selfSchemaOf()
 }//end class

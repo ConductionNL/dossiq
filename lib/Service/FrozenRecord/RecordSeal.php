@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service\FrozenRecord;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Kernel\Contracts\RecordSealInterface;
 
 /**
  * A SHA-256 over a canonical form of the sealed fields.
@@ -43,7 +44,7 @@ use DateTimeInterface;
  *
  * @spec openspec/specs/frozen-record/spec.md
  */
-class RecordSeal {
+class RecordSeal implements RecordSealInterface {
 
 	/**
 	 * The hash algorithm, stored with the seal so a later change of algorithm can still verify old seals.
@@ -112,11 +113,13 @@ class RecordSeal {
 	 * @param array<string, mixed> $record The record.
 	 *
 	 * @return string The hex digest.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) CanonicalValue is the one stateless canonical form shared with the guard.
 	 */
 	private function hash(array $fields, array $record): string {
 		$sealed = [];
 		foreach ($fields as $field) {
-			$sealed[$field] = $this->canonical(value: ($record[$field] ?? null));
+			$sealed[$field] = CanonicalValue::formOf(value: ($record[$field] ?? null));
 		}
 
 		ksort($sealed, SORT_STRING);
@@ -126,24 +129,4 @@ class RecordSeal {
 			(string)json_encode($sealed, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION)
 		);
 	}//end hash()
-
-	/**
-	 * Sort object keys at every depth; leave lists in order.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return mixed The canonical value.
-	 */
-	private function canonical(mixed $value): mixed {
-		if (is_array($value) === false) {
-			return $value;
-		}
-
-		$canonical = array_map(fn (mixed $item): mixed => $this->canonical(value: $item), $value);
-		if (array_is_list($canonical) === false) {
-			ksort($canonical, SORT_STRING);
-		}
-
-		return $canonical;
-	}//end canonical()
 }//end class

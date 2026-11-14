@@ -31,8 +31,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\ConcludedDelivery;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\EventDispatcher\Event;
@@ -60,14 +61,14 @@ class DeliveryConcludedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Resolves the ObjectService + register config.
+	 * @param SettingsServiceInterface $settingsService Resolves the ObjectService + register config.
 	 * @param LoggerInterface $logger Logger.
 	 * @param BackgroundServiceAccount $serviceAccount Writes for integriq's background work, which has no user.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
@@ -115,7 +116,7 @@ class DeliveryConcludedListener implements IEventListener {
 		}
 
 		try {
-			if ((string)$event->getSourceApp() !== Application::APP_ID) {
+			if ((string)$event->getSourceApp() !== AppIdentity::APP_ID) {
 				return;
 			}
 
@@ -124,24 +125,38 @@ class DeliveryConcludedListener implements IEventListener {
 				return;
 			}
 
-			$this->projectOntoCase(
-				caseId: (string)$event->getSubjectId(),
-				correlationId: (string)$event->getCorrelationId(),
-				channel: (string)$event->getChannel(),
-				status: $status,
-				attempts: (int)$event->getAttempts(),
-				error: $event->getError(),
-				concludedAt: (string)$event->getConcludedAt()
-			);
+			$this->projectOntoCase(delivery: $this->deliveryOf(event: $event, status: $status));
 		} catch (\Throwable $e) {
 			// A projection failure must never bubble into integriq's delivery
 			// bookkeeping — its message record stays the source of truth.
 			$this->logger->error(
 				'Dossiq DeliveryConcludedListener failed to project delivery outcome',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 			);
 		}//end try
 	}//end answer()
+
+	/**
+	 * The case, correlation id, channel and outcome a concluded delivery carries.
+	 *
+	 * @param \OCA\Integriq\Event\DeliveryConcludedEvent $event  The event.
+	 * @param string                                     $status The terminal status, lower case.
+	 *
+	 * @return ConcludedDelivery The delivery.
+	 */
+	private function deliveryOf(\OCA\Integriq\Event\DeliveryConcludedEvent $event, string $status): ConcludedDelivery {
+		return new ConcludedDelivery(
+			caseId: (string)$event->getSubjectId(),
+			correlationId: (string)$event->getCorrelationId(),
+			channel: (string)$event->getChannel(),
+			outcome: [
+				'status' => $status,
+				'attempts' => (int)$event->getAttempts(),
+				'error' => $event->getError(),
+				'concludedAt' => (string)$event->getConcludedAt(),
+			]
+		);
+	}//end deliveryOf()
 
 	/**
 	 * Write the terminal delivery status onto the case's publication record.
@@ -151,26 +166,12 @@ class DeliveryConcludedListener implements IEventListener {
 	 * one. Idempotent: re-delivering the same terminal state is a no-op
 	 * write.
 	 *
-	 * @param string $caseId The case id.
-	 * @param string $correlationId The delivery correlation id.
-	 * @param string $channel The publication channel.
-	 * @param string $status Terminal status: `delivered` or `abandoned`.
-	 * @param int $attempts Delivery attempts made.
-	 * @param string|null $error The last delivery error, or null.
-	 * @param string $concludedAt ISO 8601 terminal timestamp.
+	 * @param ConcludedDelivery $delivery The case, the correlation id, the channel and the terminal outcome.
 	 *
 	 * @return void
 	 */
-	private function projectOntoCase(
-		string $caseId,
-		string $correlationId,
-		string $channel,
-		string $status,
-		int $attempts,
-		?string $error,
-		string $concludedAt,
-	): void {
-		if ($caseId === '' || $correlationId === '') {
+	private function projectOntoCase(ConcludedDelivery $delivery): void {
+		if ($delivery->caseId === '' || $delivery->correlationId === '') {
 			return;
 		}
 
@@ -179,50 +180,92 @@ class DeliveryConcludedListener implements IEventListener {
 			return;
 		}
 
+		$this->projectWith(objectService: $objectService, delivery: $delivery);
+	}//end projectOntoCase()
+
+	/**
+	 * Load the delivery's case, apply the outcome to its publication and save it.
+	 *
+	 * @param object            $objectService The OpenRegister ObjectService.
+	 * @param ConcludedDelivery $delivery      The case, the correlation id, the channel and the terminal outcome.
+	 *
+	 * @return void
+	 */
+	private function projectWith(object $objectService, ConcludedDelivery $delivery): void {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
 
-		$case = $this->loadCase(objectService: $objectService, caseId: $caseId, register: $register, schema: $schema);
+		$case = $this->concludedCase(objectService: $objectService, delivery: $delivery, register: $register, schema: $schema);
 		if ($case === null) {
-			$this->logger->warning(
-				'Dossiq DeliveryConcludedListener: case not found for concluded delivery',
-				['caseId' => $caseId, 'correlationId' => $correlationId]
-			);
 			return;
 		}
 
-		$publications = $case['publications'] ?? [];
-		if (is_array($publications) === false) {
-			return;
-		}
-
-		$outcome = [
-			'status' => $status,
-			'attempts' => $attempts,
-			'error' => $error,
-			'concludedAt' => $concludedAt,
-		];
-		$applied = $this->applyOutcome(publications: $publications, correlationId: $correlationId, outcome: $outcome);
+		$applied = $this->publicationsWith(case: $case, delivery: $delivery);
 		if ($applied === null) {
-			$this->logger->warning(
-				'Dossiq DeliveryConcludedListener: no publication matches the concluded delivery',
-				['caseId' => $caseId, 'correlationId' => $correlationId, 'channel' => $channel]
-			);
-			return;
-		}
-
-		if ($applied === []) {
-			// Idempotent: this terminal state is already projected.
 			return;
 		}
 
 		$case['publications'] = $applied;
-		$objectService->saveObject(
-			object: $case,
-			register: $register,
-			schema: $schema,
-		);
-	}//end projectOntoCase()
+		$objectService->saveObject(object: $case, register: $register, schema: $schema);
+	}//end projectWith()
+
+	/**
+	 * Load the delivery's case, logging when it is not found.
+	 *
+	 * @param object            $objectService The OpenRegister ObjectService.
+	 * @param ConcludedDelivery $delivery      The concluded delivery.
+	 * @param mixed             $register      The configured register id.
+	 * @param mixed             $schema        The configured case schema id.
+	 *
+	 * @return array<string, mixed>|null The case data, or null when not found.
+	 */
+	private function concludedCase(object $objectService, ConcludedDelivery $delivery, mixed $register, mixed $schema): ?array {
+		$case = $this->loadCase(objectService: $objectService, caseId: $delivery->caseId, register: $register, schema: $schema);
+		if ($case === null) {
+			$this->logger->warning(
+				'Dossiq DeliveryConcludedListener: case not found for concluded delivery',
+				['caseId' => $delivery->caseId, 'correlationId' => $delivery->correlationId]
+			);
+		}
+
+		return $case;
+	}//end concludedCase()
+
+	/**
+	 * The case's publications with the outcome on the matching delivery, or
+	 * null when there is nothing to write.
+	 *
+	 * Nothing is written when the publications are not a list, when no
+	 * publication carries the correlation id (logged), and when the matching
+	 * delivery already has this terminal state (idempotent).
+	 *
+	 * @param array<string, mixed> $case     The case.
+	 * @param ConcludedDelivery    $delivery The outcome.
+	 *
+	 * @return array<int|string, mixed>|null The publications to save.
+	 */
+	private function publicationsWith(array $case, ConcludedDelivery $delivery): ?array {
+		$publications = $case['publications'] ?? [];
+		if (is_array($publications) === false) {
+			return null;
+		}
+
+		$applied = $this->applyOutcome(publications: $publications, delivery: $delivery);
+		if ($applied === null) {
+			$this->logger->warning(
+				'Dossiq DeliveryConcludedListener: no publication matches the concluded delivery',
+				['caseId' => $delivery->caseId, 'correlationId' => $delivery->correlationId, 'channel' => $delivery->channel]
+			);
+			return null;
+		}
+
+		if ($applied === []) {
+			// Idempotent: this terminal state is already projected.
+			return null;
+		}
+
+		return $applied;
+	}//end publicationsWith()
 
 	/**
 	 * Load a case from OpenRegister and normalise it to its array form.
@@ -252,30 +295,29 @@ class DeliveryConcludedListener implements IEventListener {
 	 * Apply a terminal delivery outcome to the matching publication entry.
 	 *
 	 * @param array<int, mixed> $publications The case's publications list.
-	 * @param string $correlationId The delivery correlation id to match.
-	 * @param array<string, mixed> $outcome The terminal outcome fields (status, attempts, error, concludedAt).
+	 * @param ConcludedDelivery $delivery The correlation id to match and the terminal outcome.
 	 *
 	 * @return array<int, mixed>|null The updated list; an empty array when the
 	 *                                terminal state is already projected
 	 *                                (idempotent no-op); null when nothing
 	 *                                matches.
 	 */
-	private function applyOutcome(array $publications, string $correlationId, array $outcome): ?array {
+	private function applyOutcome(array $publications, ConcludedDelivery $delivery): ?array {
 		foreach ($publications as $i => $pub) {
 			if (is_array($pub) === false) {
 				continue;
 			}
 
-			$delivery = (array)($pub['delivery'] ?? []);
-			if ((string)($delivery['correlationId'] ?? '') !== $correlationId) {
+			$stored = (array)($pub['delivery'] ?? []);
+			if ((string)($stored['correlationId'] ?? '') !== $delivery->correlationId) {
 				continue;
 			}
 
-			if ((string)($delivery['status'] ?? '') === (string)$outcome['status']) {
+			if ((string)($stored['status'] ?? '') === $delivery->outcome['status']) {
 				return [];
 			}
 
-			$publications[$i]['delivery'] = array_merge($delivery, $outcome);
+			$publications[$i]['delivery'] = array_merge($stored, $delivery->outcome);
 			return $publications;
 		}//end foreach
 

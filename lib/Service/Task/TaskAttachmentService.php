@@ -49,6 +49,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Task;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\TaskAttachmentServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -58,9 +59,9 @@ use Throwable;
 /**
  * Holds a file against an open task and publishes it to the case on completion.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
-class TaskAttachmentService {
+class TaskAttachmentService implements TaskAttachmentServiceInterface {
 
 	use SearchesObjects;
 
@@ -91,7 +92,7 @@ class TaskAttachmentService {
 	 *
 	 * @return array<int, array<string, mixed>> The held files, in upload order.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function heldFor(array $case, string $taskId): array {
 		$wanted = trim($taskId);
@@ -116,7 +117,7 @@ class TaskAttachmentService {
 	 *
 	 * @throws RuntimeException When the case cannot be read or written.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function bind(string $caseId, string $taskId, array $file, string $uploader): array {
 		$fileId = trim((string)($file['file'] ?? ''));
@@ -151,7 +152,7 @@ class TaskAttachmentService {
 	 *
 	 * @throws RuntimeException When the case cannot be read or written.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function release(string $caseId, string $taskId, string $fileId): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -182,7 +183,7 @@ class TaskAttachmentService {
 	 *
 	 * @return integer How many files were published.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function publish(string $caseId, string $taskId): int {
 		try {
@@ -196,88 +197,196 @@ class TaskAttachmentService {
 			return 0;
 		}
 
-		$held = self::allHeld(case: $case);
-		$publishing = $this->heldFor(case: $case, taskId: $taskId);
+		return $this->publishHeld(at: new CaseTask(caseId: $caseId, taskId: $taskId), case: $case);
+	}//end publish()
+
+	/**
+	 * Publish the files held against the task, and release the ones published from the hold.
+	 *
+	 * @param CaseTask             $at   The case and the completed task.
+	 * @param array<string, mixed> $case The case as read.
+	 *
+	 * @return int How many files were published.
+	 */
+	private function publishHeld(CaseTask $at, array $case): int {
+		$publishing = $this->heldFor(case: $case, taskId: $at->taskId);
 		if ($publishing === []) {
 			return 0;
 		}
 
-		$published = 0;
-		foreach ($publishing as $file) {
-			if ($this->asCaseDocument(caseId: $caseId, taskId: $taskId, file: $file) === true) {
-				$published++;
-			}
-		}
+		$published = $this->publishFiles(at: $at, files: $publishing);
 
 		// Only what was actually published leaves the hold. A file whose
 		// document write failed stays held rather than disappearing from both
 		// places, which is the one outcome a person cannot recover from.
-		$publishedFiles = array_map(
-			static fn (array $file): string => trim((string)($file['file'] ?? '')),
-			array_slice($publishing, 0, $published)
-		);
-		$this->writeHold(
-			caseId: $caseId,
-			held: array_values(
-				array_filter(
-					$held,
-					static fn (array $entry): bool => (
-						trim((string)($entry['task'] ?? '')) !== trim($taskId)
-						|| in_array(trim((string)($entry['file'] ?? '')), $publishedFiles, true) === false
-					)
+		$released = ['task' => trim($at->taskId), 'files' => self::fileIds(files: array_slice($publishing, 0, $published))];
+		$this->writeHold(caseId: $at->caseId, held: self::withoutReleased(held: self::allHeld(case: $case), released: $released));
+
+		return $published;
+	}//end publishHeld()
+
+	/**
+	 * Write each file as a case document, counting the ones written.
+	 *
+	 * @param CaseTask                         $at    The case and the completed task.
+	 * @param array<int, array<string, mixed>> $files The files held against the task.
+	 *
+	 * @return int How many were written.
+	 */
+	private function publishFiles(CaseTask $at, array $files): int {
+		$published = 0;
+		foreach ($files as $file) {
+			if ($this->asCaseDocument(at: $at, file: $file) === true) {
+				$published++;
+			}
+		}
+
+		return $published;
+	}//end publishFiles()
+
+	/**
+	 * The trimmed file ids of held entries.
+	 *
+	 * @param array<int, array<string, mixed>> $files The held entries.
+	 *
+	 * @return array<int, string> The file ids.
+	 */
+	private static function fileIds(array $files): array {
+		return array_map(static fn (array $file): string => trim((string)($file['file'] ?? '')), $files);
+	}//end fileIds()
+
+	/**
+	 * The hold without the released files of the released task.
+	 *
+	 * @param array<int, array<string, mixed>>               $held     The whole hold.
+	 * @param array{task: string, files: array<int, string>} $released The task and its released file ids.
+	 *
+	 * @return array<int, array<string, mixed>> The hold that stays.
+	 */
+	private static function withoutReleased(array $held, array $released): array {
+		return array_values(
+			array_filter(
+				$held,
+				static fn (array $entry): bool => (
+					trim((string)($entry['task'] ?? '')) !== $released['task']
+					|| in_array(trim((string)($entry['file'] ?? '')), $released['files'], true) === false
 				)
 			)
 		);
-
-		return $published;
-	}//end publish()
+	}//end withoutReleased()
 
 	/**
 	 * Write one held file to the case as a document of its own.
 	 *
-	 * @param string               $caseId The case.
-	 * @param string               $taskId The task that produced it.
-	 * @param array<string, mixed> $file   The held file.
+	 * @param CaseTask             $at   The case and the task that produced it.
+	 * @param array<string, mixed> $file The held file.
 	 *
 	 * @return boolean Whether it was written.
 	 */
-	private function asCaseDocument(string $caseId, string $taskId, array $file): bool {
-		$objectService = $this->settings->getObjectService();
-		$register = $this->settings->getConfigValue(key: 'register');
-		$schema = $this->settings->getConfigValue(key: 'case_document_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			$this->logger->error(
-				'Dossiq: no case document schema is configured, so a completed task cannot publish its file',
-				['case' => $caseId, 'task' => $taskId]
-			);
-
+	private function asCaseDocument(CaseTask $at, array $file): bool {
+		$store = $this->documentStore(at: $at);
+		if ($store === null) {
 			return false;
 		}
 
 		try {
-			$this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: [
-					'case' => $caseId,
-					'document' => trim((string)($file['file'] ?? '')),
-					'title' => trim((string)($file['title'] ?? '')),
-					'registrationDate' => (new DateTimeImmutable())->format('c'),
-					'sourceTask' => $taskId,
-				],
-			);
-
+			$this->saveDocument(store: $store, object: self::documentOf(at: $at, file: $file));
 			return true;
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: a completed task could not publish its file to the case',
-				['case' => $caseId, 'task' => $taskId, 'error' => $e->getMessage()]
-			);
+			$context = ['case' => $at->caseId, 'task' => $at->taskId, 'error' => $e->getMessage()];
+			$this->logger->error('Dossiq: a completed task could not publish its file to the case', $context);
 
 			return false;
 		}//end try
 	}//end asCaseDocument()
+
+	/**
+	 * Where case documents are stored, or null (logged) when that is not configured.
+	 *
+	 * @param CaseTask $at The case and the task that would publish.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|null The store.
+	 */
+	private function documentStore(CaseTask $at): ?array {
+		$store = $this->storeFor(schemaKey: 'case_document_schema');
+		if ($store === null) {
+			$this->logger->error(
+				'Dossiq: no case document schema is configured, so a completed task cannot publish its file',
+				['case' => $at->caseId, 'task' => $at->taskId]
+			);
+		}
+
+		return $store;
+	}//end documentStore()
+
+	/**
+	 * Save one case document.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store  The document store.
+	 * @param array<string, mixed>                                            $object The document.
+	 *
+	 * @return void
+	 */
+	private function saveDocument(array $store, array $object): void {
+		$this->saveObjectAsArray(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			object: $object,
+		);
+	}//end saveDocument()
+
+	/**
+	 * The case document a held file becomes.
+	 *
+	 * @param CaseTask             $at   The case and the task that produced it.
+	 * @param array<string, mixed> $file The held file.
+	 *
+	 * @return array<string, mixed> The document.
+	 */
+	private static function documentOf(CaseTask $at, array $file): array {
+		return [
+			'case' => $at->caseId,
+			'document' => trim((string)($file['file'] ?? '')),
+			'title' => trim((string)($file['title'] ?? '')),
+			'registrationDate' => (new DateTimeImmutable())->format('c'),
+			'sourceTask' => $at->taskId,
+		];
+	}//end documentOf()
+
+	/**
+	 * The object service, register and schema for one schema key, null when any is missing.
+	 *
+	 * @param string $schemaKey The settings key of the schema.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|null The store.
+	 */
+	private function storeFor(string $schemaKey): ?array {
+		$objectService = $this->settings->getObjectService();
+		$register      = $this->settings->getConfigValue(key: 'register');
+		$schema        = $this->settings->getConfigValue(key: $schemaKey);
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
+	}//end storeFor()
+
+	/**
+	 * Where cases are stored, or refuse by name.
+	 *
+	 * @return array{objectService: object, register: string, schema: string} The store.
+	 *
+	 * @throws RuntimeException When it is not configured.
+	 */
+	private function caseStore(): array {
+		$store = $this->storeFor(schemaKey: 'case_schema');
+		if ($store === null) {
+			throw new RuntimeException('storage_unavailable');
+		}
+
+		return $store;
+	}//end caseStore()
 
 	/**
 	 * Every held file on a case, whatever task it waits on.
@@ -316,17 +425,11 @@ class TaskAttachmentService {
 	 * @throws RuntimeException When it cannot be read.
 	 */
 	private function readCase(string $caseId): array {
-		$objectService = $this->settings->getObjectService();
-		$register = $this->settings->getConfigValue(key: 'register');
-		$schema = $this->settings->getConfigValue(key: 'case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			throw new RuntimeException('storage_unavailable');
-		}
-
-		$case = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+		$store = $this->caseStore();
+		$case  = $this->findObjectAsArray(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
 			id: trim($caseId)
 		);
 		if ($case === null) {
@@ -347,17 +450,11 @@ class TaskAttachmentService {
 	 * @throws RuntimeException When the case cannot be written.
 	 */
 	private function writeHold(string $caseId, array $held): void {
-		$objectService = $this->settings->getObjectService();
-		$register = $this->settings->getConfigValue(key: 'register');
-		$schema = $this->settings->getConfigValue(key: 'case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			throw new RuntimeException('storage_unavailable');
-		}
-
+		$store = $this->caseStore();
 		$this->patchObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
 			id: trim($caseId),
 			changes: [self::HOLD => array_values($held)],
 		);

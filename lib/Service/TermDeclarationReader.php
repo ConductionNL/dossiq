@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 /**
  * The term declarations on a case type and on its phases.
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 class TermDeclarationReader {
 	use SearchesObjects;
@@ -78,7 +78,7 @@ class TermDeclarationReader {
 	 *               statutoryWarningDays: int, plannedWarningDays: int, chainTermDays: int,
 	 *               suspensionAllowed: bool, extensionAllowed: bool}
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function forCaseType(string $caseTypeId): array {
 		$row = $this->findRow(schemaKey: 'case_type_schema', id: $caseTypeId);
@@ -110,7 +110,7 @@ class TermDeclarationReader {
 	 *
 	 * @return array<string, mixed> The same shape {@see forCaseType()} answers.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function forCase(string $caseId): array {
 		$context = $this->caseContext(caseId: $caseId);
@@ -130,7 +130,7 @@ class TermDeclarationReader {
 	 *
 	 * @return array{caseType: string, status: string} The two references, empty when unreadable.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function caseContext(string $caseId): array {
 		$case = $this->findRow(schemaKey: 'case_schema', id: $caseId);
@@ -163,7 +163,7 @@ class TermDeclarationReader {
 	 *
 	 * @return array{termDays: int, share: float, order: int, name: string}
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function forStatusType(string $statusTypeId): array {
 		$row = $this->findRow(schemaKey: 'status_type_schema', id: $statusTypeId);
@@ -181,7 +181,7 @@ class TermDeclarationReader {
 	 *
 	 * @return array<int, array{id: string, termDays: int, share: float, order: int, name: string}>
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function phasesOf(string $caseTypeId): array {
 		$rows = $this->statusRowsOf(caseTypeId: $caseTypeId);
@@ -209,35 +209,61 @@ class TermDeclarationReader {
 	 * @return array<int, array<string, mixed>> The rows, empty when unreadable.
 	 */
 	private function statusRowsOf(string $caseTypeId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null || $caseTypeId === '') {
+		$source = $this->configuredSource(schemaKey: 'status_type_schema', id: $caseTypeId);
+		if ($source === null) {
 			return [];
 		}
 
-		$register = (string)$this->settingsService->getConfigValue(key: 'register');
-		$schema = (string)$this->settingsService->getConfigValue(key: 'status_type_schema');
-		if ($register === '' || $schema === '') {
-			return [];
-		}
-
+		[$objectService, $register, $schema] = $source;
 		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['caseType' => $caseTypeId]
-			);
+			$filters = ['caseType' => $caseTypeId];
+			return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 		} catch (\Throwable $e) {
 			// "This type declares no phases" and "we could not ask" are opposite
 			// answers, and the first one silently gives every phase zero days.
-			throw new RefusedException(
-				rule: 'term-declarations-unreadable',
-				sentence: 'The phases of this case type could not be read, so its terms were not resolved.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}//end try
+			throw $this->unreadable(sentence: 'The phases of this case type could not be read, so its terms were not resolved.', previous: $e);
+		}
 	}//end statusRowsOf()
+
+	/**
+	 * The object service, register and one configured schema, when all are in hand.
+	 *
+	 * @param string $schemaKey The app-config key naming the schema.
+	 * @param string $id        The id the caller will read by.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null Null when the service, the id, the register or the schema is missing.
+	 */
+	private function configuredSource(string $schemaKey, string $id): array|null {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null || $id === '') {
+			return null;
+		}
+
+		$register = (string)$this->settingsService->getConfigValue(key: 'register');
+		$schema = (string)$this->settingsService->getConfigValue(key: $schemaKey);
+		if ($register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end configuredSource()
+
+	/**
+	 * The refusal for a case type whose declarations could not be read.
+	 *
+	 * @param string     $sentence What could not be read.
+	 * @param \Throwable $previous Why.
+	 *
+	 * @return RefusedException
+	 */
+	private function unreadable(string $sentence, \Throwable $previous): RefusedException {
+		return new RefusedException(
+			rule: 'term-declarations-unreadable',
+			sentence: $sentence,
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $previous,
+		);
+	}//end unreadable()
 
 	/**
 	 * One status row as a phase declaration.
@@ -268,7 +294,7 @@ class TermDeclarationReader {
 	 *
 	 * @return int The length in days, 0 when nothing is declared.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function days(mixed $value): int {
 		if (is_int($value) === true) {
@@ -336,36 +362,21 @@ class TermDeclarationReader {
 	 * @return array<string, mixed> The row, empty when unresolvable.
 	 */
 	private function findRow(string $schemaKey, string $id): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null || $id === '') {
+		$source = $this->configuredSource(schemaKey: $schemaKey, id: $id);
+		if ($source === null) {
 			return [];
 		}
 
-		$register = (string)$this->settingsService->getConfigValue(key: 'register');
-		$schema = (string)$this->settingsService->getConfigValue(key: $schemaKey);
-		if ($register === '' || $schema === '') {
-			return [];
-		}
-
+		[$objectService, $register, $schema] = $source;
 		try {
-			$row = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $id
-			);
+			$row = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
 		} catch (\Throwable $e) {
 			// A row that is not there comes back as null from the finder, which
 			// is a read miss and an ordinary answer. Reaching this catch means
 			// the store could not be asked, and answering "declares nothing"
 			// to that would let an unreadable case type allow every suspension.
-			throw new RefusedException(
-				rule: 'term-declarations-unreadable',
-				sentence: 'This case type could not be read, so its terms were not resolved.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}//end try
+			throw $this->unreadable(sentence: 'This case type could not be read, so its terms were not resolved.', previous: $e);
+		}
 
 		return ($row ?? []);
 	}//end findRow()

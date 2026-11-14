@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -172,6 +172,29 @@ class DemoCaseloadGateway {
 	}//end create()
 
 	/**
+	 * Run an operation inside OpenRegister's system-operation scope.
+	 *
+	 * Refuses rather than running the operation as the signed-in user, so a
+	 * seed never reports success for writes that were not the system's.
+	 *
+	 * @param object   $objectService The OpenRegister ObjectService.
+	 * @param callable $operation     The operation.
+	 *
+	 * @return mixed Whatever the operation returns.
+	 *
+	 * @throws RuntimeException When this OpenRegister cannot run an operation as the system.
+	 *
+	 * @spec openspec/specs/dossiq-app-scaffold/spec.md
+	 */
+	public function asSystem(object $objectService, callable $operation): mixed {
+		if (method_exists($objectService, 'runAsSystem') === false) {
+			throw new RuntimeException('The demo caseload needs an OpenRegister that can write as the system, and this one cannot.');
+		}
+
+		return $objectService->runAsSystem(operation: $operation);
+	}//end asSystem()
+
+	/**
 	 * Whether an object matching the filters already exists.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService.
@@ -311,6 +334,6 @@ class DemoCaseloadGateway {
 	 * @return string The value, or '' when unset.
 	 */
 	private function config(string $key): string {
-		return $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 	}//end config()
 }//end class

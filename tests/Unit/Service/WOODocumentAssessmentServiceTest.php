@@ -62,6 +62,18 @@ interface RedactionProposalObjectServiceStub {
 	 * @return array
 	 */
 	public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null): array;
+
+	/**
+	 * Write some fields of a stored object (OpenRegister's PATCH seam).
+	 *
+	 * @param string      $objectId The object uuid.
+	 * @param array       $data     The fields to write.
+	 * @param string|null $register Register id/slug.
+	 * @param string|null $schema   Schema id/slug.
+	 *
+	 * @return array
+	 */
+	public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array;
 }//end interface
 
 /**
@@ -76,6 +88,7 @@ interface RedactionProposalObjectServiceStub {
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
  * @uses \OCA\Dossiq\Review\DocumentRelevance
  * @uses \OCA\Dossiq\Review\PagesSeen
+ * @uses   \OCA\Dossiq\Service\WooAssessmentLocation
  */
 class WOODocumentAssessmentServiceTest extends TestCase {
 
@@ -382,6 +395,66 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 	}//end testFindAssessmentReturnsExistingRecord()
 
 	/**
+	 * FindAssessment asks once for the pair, answers the first match or null, and asks nothing unconfigured.
+	 *
+	 * @return void
+	 */
+	public function testFindAssessmentAsksForThePair(): void {
+		$store = new class {
+
+			/**
+			 * The searches asked.
+			 *
+			 * @var array<int, string>
+			 */
+			public array $asked = [];
+
+			/**
+			 * The rows answered.
+			 *
+			 * @var array<int, array<string, mixed>>
+			 */
+			public array $rows = [];
+
+			/**
+			 * Record the search and answer the rows.
+			 *
+			 * @param string               $register The register.
+			 * @param string               $schema   The schema.
+			 * @param array<string, mixed> $filters  The filters.
+			 *
+			 * @return array<int, array<string, mixed>> The rows.
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->asked[] = $register.'/'.$schema.' '.json_encode($filters);
+				return $this->rows;
+			}
+		};
+		$service = function (array $config) use ($store): WOODocumentAssessmentService {
+			$settings = $this->createMock(SettingsService::class);
+			$settings->method('getObjectService')->willReturn($store);
+			$settings->method('getConfigValue')->willReturnCallback(
+				static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
+			);
+
+			return new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, new WooRefusalGrounds(settingsService: $settings, logger: $this->logger));
+		};
+		$config = ['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment'];
+
+		$this->assertNull($service(['register' => 'dossiq'])->findAssessment('case-1', 'doc-1'));
+		$this->assertNull($service(['woo_assessment_schema' => 'wooDocumentAssessment'])->findAssessment('case-1', 'doc-1'));
+		$this->assertSame([], $store->asked);
+
+		$this->assertNull($service($config)->findAssessment('case-1', 'doc-1'));
+		$store->rows = [['id' => 'a-1'], ['id' => 'a-2']];
+		$this->assertSame(['id' => 'a-1'], $service($config)->findAssessment('case-1', 'doc-1'));
+		$this->assertSame(
+			array_fill(0, 2, 'dossiq/wooDocumentAssessment {"caseRef":"case-1","documentRef":"doc-1","_limit":1}'),
+			$store->asked
+		);
+	}//end testFindAssessmentAsksForThePair()
+
+	/**
 	 * SaveRedactionProposal throws when OpenRegister is unavailable.
 	 *
 	 * @return void
@@ -440,10 +513,10 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$objectServiceMock->method('searchObjectsBySlug')->willReturn([$existing]);
 
 		$capturedObject = null;
-		$objectServiceMock->method('saveObject')->willReturnCallback(
-			function (array $object) use (&$capturedObject) {
-				$capturedObject = $object;
-				return $object;
+		$objectServiceMock->method('patchObject')->willReturnCallback(
+			function (string $objectId, array $data) use (&$capturedObject, $existing) {
+				$capturedObject = array_merge($existing, $data);
+				return $capturedObject;
 			}
 		);
 
@@ -543,6 +616,47 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$this->assertSame('niet_openbaar', $register->row('wooDocumentAssessment', 'a-7')['classification']);
 		$this->assertCount(1, $register->all('wooDocumentAssessment'), 'no second assessment for the same document');
 	}//end testASecondReviewerCannotOverwrite()
+
+	/**
+	 * The author re-assessing their own document updates that record in place and nothing is created.
+	 *
+	 * @return void
+	 */
+	public function testTheAuthorUpdatesTheirAssessmentInPlace(): void {
+		$register = new InMemoryRegister();
+		$register->seed('wooDocumentAssessment', 'a-7', ['caseRef' => 'case-1', 'documentRef' => 'doc-7', 'classification' => 'niet_openbaar', '@self' => ['owner' => 'j.devries']]);
+		$access = $this->createMock(CaseReviewerAccess::class);
+		$access->method('refusalFor')->willReturn(null);
+		$access->expects($this->once())->method('reconcileAfterCreate')->with('case-1', 0);
+
+		$result = $this->serviceWithAccess(register: $register, access: $access, userId: 'j.devries')
+			->bulkUpsert('case-1', [['documentRef' => 'doc-7', 'classification' => 'openbaar', 'assessedBy' => 'forged']]);
+
+		$this->assertSame([], $result['errors']);
+		$this->assertCount(1, $result['saved']);
+		$this->assertCount(1, $register->all('wooDocumentAssessment'), 'no second assessment for the same document');
+		$row = $register->row('wooDocumentAssessment', 'a-7');
+		$this->assertSame('openbaar', $row['classification']);
+		$this->assertSame('case-1', $row['caseRef']);
+		$this->assertSame('j.devries', $row['assessedBy']);
+	}//end testTheAuthorUpdatesTheirAssessmentInPlace()
+
+	/**
+	 * Without a register or an assessment schema nothing is assessed.
+	 *
+	 * @return void
+	 */
+	public function testBulkUpsertThrowsWhenTheSchemaIsNotConfigured(): void {
+		$this->settingsService->method('getObjectService')->willReturn(new InMemoryRegister());
+		$this->settingsService->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => ['register' => 'dossiq'][$key] ?? $default
+		);
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('WOO assessment schema not configured');
+
+		$this->service->bulkUpsert('case-1', [['documentRef' => 'doc-1', 'classification' => 'openbaar']]);
+	}//end testBulkUpsertThrowsWhenTheSchemaIsNotConfigured()
 
 	/**
 	 * REQ-CRA-002: a created assessment is reconciled to the people on the case at once.
@@ -827,4 +941,36 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$this->assertSame([], $store->all('documentReview'));
 		$this->assertSame(2, $result['outstanding']['count']);
 	}//end testARefusedVerdictMarksNothing()
+
+	/**
+	 * The partly public documents of a case are counted, and those without a redacted copy named.
+	 *
+	 * @return void
+	 */
+	public function testPartlyPublicDocumentsWithoutACopyAreNamed(): void {
+		$register = new InMemoryRegister();
+		$register->seed('wooDocumentAssessment', 'a-1', ['caseRef' => 'case-1', 'classification' => 'deels_openbaar', 'documentRef' => 'doc-1']);
+		$register->seed('wooDocumentAssessment', 'a-2', ['caseRef' => 'case-1', 'classification' => 'deels_openbaar', 'documentRef' => 'doc-2', 'redactedDocumentRef' => 'red-2']);
+		$register->seed('wooDocumentAssessment', 'a-3', ['caseRef' => 'case-1', 'classification' => 'openbaar', 'documentRef' => 'doc-3']);
+		$register->seed('wooDocumentAssessment', 'a-4', ['caseRef' => 'case-2', 'classification' => 'deels_openbaar', 'documentRef' => 'doc-4']);
+		$register->seed('wooDocumentAssessment', 'a-5', ['caseRef' => 'case-1', 'classification' => 'deels_openbaar', 'redactedDocumentRef' => '']);
+
+		$config = ['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment'];
+		$service = function (?object $objects, array $config): WOODocumentAssessmentService {
+			$settings = $this->createMock(SettingsService::class);
+			$settings->method('getObjectService')->willReturn($objects);
+			$settings->method('getConfigValue')->willReturnCallback(
+				static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
+			);
+
+			return new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, new WooRefusalGrounds(settingsService: $settings, logger: $this->logger));
+		};
+
+		$this->assertSame(['partlyPublic' => 3, 'waiting' => ['doc-1', '']], $service($register, $config)->partlyPublicWithoutCopy('case-1'));
+		$this->assertSame(['partlyPublic' => 0, 'waiting' => []], $service($register, ['register' => 'dossiq'])->partlyPublicWithoutCopy('case-1'));
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('OpenRegister is not available');
+		$service(null, $config)->partlyPublicWithoutCopy('case-1');
+	}//end testPartlyPublicDocumentsWithoutACopyAreNamed()
 }//end class

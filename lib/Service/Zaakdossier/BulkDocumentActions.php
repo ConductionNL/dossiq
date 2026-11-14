@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use Throwable;
 /**
  * One act over many informatieobjecten.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 class BulkDocumentActions {
 
@@ -70,7 +70,7 @@ class BulkDocumentActions {
 	 *
 	 * @return bool True when all ids pass the clearance gate.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function allReadable(IUser $user, array $ids): bool {
 		foreach ($ids as $id) {
@@ -91,7 +91,7 @@ class BulkDocumentActions {
 	 *
 	 * @return array<int, array<string, mixed>> One result entry per id, in order.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function updateAll(IUser $user, array $ids, array $metadata): array {
 		$results = [];
@@ -111,7 +111,7 @@ class BulkDocumentActions {
 	 *
 	 * @return array<string, mixed> The per-id result entry.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	private function updateOne(IUser $user, string $id, array $metadata): array {
 		if ($this->reader->guardReadable(user: $user, infoObjectId: $id) !== null) {

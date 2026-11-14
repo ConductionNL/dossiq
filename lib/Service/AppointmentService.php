@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\AppointmentServiceInterface;
 use OCA\Dossiq\Service\AppointmentBackend\AppointmentBackendInterface;
 use OCA\Dossiq\Service\AppointmentBackend\JccBackend;
 use OCA\Dossiq\Service\AppointmentBackend\QmaticBackend;
@@ -48,9 +49,9 @@ use RuntimeException;
  * appointment records in OpenRegister. There is no local fallback — internal
  * scheduling lives in the OR calendar leaf.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
-class AppointmentService {
+class AppointmentService implements AppointmentServiceInterface {
 	/**
 	 * Constructor.
 	 *
@@ -94,9 +95,11 @@ class AppointmentService {
 	 *
 	 * @return array<string, mixed> The stored appointment record or an error payload.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function bookAppointment(string $caseId, array $data): array {
+		// The keys of Support\CallerIdentity::KEYS, written out to keep this class's coupling down.
+		$data = array_diff_key($data, ['id' => true, 'uuid' => true, '@self' => true]);
 		$objectService = $this->getObjectService();
 		if ($objectService === null) {
 			return ['error' => 'OpenRegister is not available'];
@@ -109,7 +112,28 @@ class AppointmentService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('appointment_schema');
 
-		$appointmentData = array_merge(
+		$appointmentData = $this->appointmentRecord(caseId: $caseId, data: $data, backendResult: $backendResult);
+
+		$result = $objectService->saveObject(object: $appointmentData, register: (int)$register, schema: (int)$schema);
+
+		$this->logBooked(caseId: $caseId, result: $result);
+
+		return $result->jsonSerialize();
+	}//end bookAppointment()
+
+	/**
+	 * The appointment record to store: the submitted data, linked to the case and the backend booking.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param array<string, mixed> $data Appointment data.
+	 * @param array<string, mixed> $backendResult What the booking backend answered.
+	 *
+	 * @return array<string, mixed> The record.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function appointmentRecord(string $caseId, array $data, array $backendResult): array {
+		return array_merge(
 			$data,
 			[
 				'caseId' => $caseId,
@@ -118,13 +142,19 @@ class AppointmentService {
 				'cancelToken' => bin2hex(random_bytes(16)),
 			]
 		);
+	}//end appointmentRecord()
 
-		$result = $objectService->saveObject(
-			object: $appointmentData,
-			register: (int)$register,
-			schema: (int)$schema,
-		);
-
+	/**
+	 * Log the booked appointment.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param object $result The stored appointment.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function logBooked(string $caseId, $result): void {
 		$this->logger->info(
 			'Dossiq: Appointment booked',
 			[
@@ -132,9 +162,7 @@ class AppointmentService {
 				'appointmentId' => $result->getUuid(),
 			]
 		);
-
-		return $result->jsonSerialize();
-	}//end bookAppointment()
+	}//end logBooked()
 
 	/**
 	 * Resolve the case an appointment belongs to.
@@ -166,7 +194,7 @@ class AppointmentService {
 	 *
 	 * @return array<string, mixed> The updated appointment record.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function cancelAppointment(string $appointmentId): array {
 		$objectService = $this->getObjectService();
@@ -198,7 +226,7 @@ class AppointmentService {
 	 *
 	 * @return array<string, mixed> The updated appointment record.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function markNoShow(string $appointmentId): array {
 		$objectService = $this->getObjectService();
@@ -224,7 +252,7 @@ class AppointmentService {
 	 *
 	 * @return array<int, mixed> List of appointments for the case.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getAppointmentsForCase(string $caseId): array {
 		$objectService = $this->getObjectService();
@@ -247,7 +275,7 @@ class AppointmentService {
 	 *
 	 * @return array<string, mixed>|null The appointment data, or null if not found.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getAppointmentByToken(string $token): ?array {
 		$objectService = $this->getObjectService();

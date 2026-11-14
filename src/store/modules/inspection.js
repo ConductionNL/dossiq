@@ -33,6 +33,52 @@ export function flattenTemplate(template) {
 	return { ...template, items }
 }
 
+/**
+ * The body a recorded run is posted with; an absent date is now.
+ *
+ * @param {object} reportData Run data: `checklist`, `items`, optional `remarks`, `location`, `inspectionDate`.
+ * @return {object} The body.
+ */
+function runBody(reportData) {
+	return {
+		checklistId: reportData.checklist,
+		items: reportData.items || [],
+		remarks: reportData.remarks,
+		location: reportData.location,
+		inspectionDate: reportData.inspectionDate || new Date().toISOString(),
+	}
+}
+
+/**
+ * Post one run, keep it on the store, and open a follow-up task when items failed.
+ *
+ * @param {object} store The inspection store.
+ * @param {object} reportData Run data: `case`, `checklist`, `items`, optional `remarks`, `location`.
+ * @return {Promise<object>} The recorded run.
+ */
+async function recordRun(store, reportData) {
+	const response = await axios.post(
+		generateUrl('/apps/dossiq/api/cases/{id}/checklist-results', { id: reportData.case }),
+		runBody(reportData),
+	)
+	const saved = response.data
+	store.reports.push(saved)
+	if (saved.failedItems > 0) {
+		await store.createFollowUpTask(reportData.case, saved.failedItems, saved.id)
+	}
+	return saved
+}
+
+/**
+ * The message a failed request carries: the server's own, else the error's.
+ *
+ * @param {Error} error The failure.
+ * @return {string} The message.
+ */
+function refusalOf(error) {
+	return error?.response?.data?.message || error.message
+}
+
 export const useInspectionStore = defineStore('inspection', {
 	state: () => ({
 		/** @type {Array} Checklists for the current case type */
@@ -53,7 +99,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 *
 		 * @param {object} state Store state
 		 * @return {Array} Active checklists
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		activeChecklists(state) {
 			return state.checklists.filter((c) => c.status === 'active')
@@ -64,7 +110,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 *
 		 * @param {object} state Store state
 		 * @return {number} Number of completed reports
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		completedReportsCount(state) {
 			return state.reports.length
@@ -75,7 +121,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 *
 		 * @param {object} state Store state
 		 * @return {Array} Reports with failed items
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		nonConformReports(state) {
 			return state.reports.filter(
@@ -138,7 +184,7 @@ export const useInspectionStore = defineStore('inspection', {
 			try {
 				const response = await axios.get(
 					generateUrl(
-						'/apps/dossiq/api/vth/cases/{id}/inspection-results',
+						'/apps/dossiq/api/cases/{id}/checklist-results',
 						{ id: caseId },
 					),
 				)
@@ -168,34 +214,9 @@ export const useInspectionStore = defineStore('inspection', {
 			this.loading = true
 			this.error = null
 			try {
-				const response = await axios.post(
-					generateUrl(
-						'/apps/dossiq/api/vth/cases/{id}/inspection-result',
-						{ id: reportData.case },
-					),
-					{
-						checklistId: reportData.checklist,
-						items: reportData.items || [],
-						remarks: reportData.remarks,
-						location: reportData.location,
-						inspectionDate:
-							reportData.inspectionDate || new Date().toISOString(),
-					},
-				)
-				const saved = response.data
-				this.reports.push(saved)
-
-				if (saved.failedItems > 0) {
-					await this.createFollowUpTask(
-						reportData.case,
-						saved.failedItems,
-						saved.id,
-					)
-				}
-
-				return saved
+				return await recordRun(this, reportData)
 			} catch (error) {
-				this.error = error?.response?.data?.message || error.message
+				this.error = refusalOf(error)
 				console.error('Error creating report:', error)
 				return null
 			} finally {
@@ -213,7 +234,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {string} caseId  UUID of the parent case
 		 * @param {File}   file    The photo file
 		 * @return {Promise<string|null>} Nextcloud file ID
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		async uploadPhoto(caseId, file) {
 			try {
@@ -240,7 +261,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {number} failedCount Number of failed items
 		 * @param {string} reportId    UUID of the inspection report
 		 * @return {Promise<object|null>} Created task
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		async createFollowUpTask(caseId, failedCount, reportId) {
 			try {

@@ -37,7 +37,6 @@ import { contextOf } from '@conduction/nextcloud-vue/src/utils/sentinelTokens.js
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-import { buildRelatedFilters } from '../../src/utils/caseTypeFieldFilters.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 
@@ -142,10 +141,15 @@ describe('row 11.9: a case type layout survives the library that reads it', () =
 })
 
 describe('row 9.2: the field filters have to leave the browser', () => {
-	const compiled = buildRelatedFilters([
-		{ definitionId: 'pd-1', value: { gte: '100000' } },
-		{ definitionId: 'pd-4', value: { eq: 'Noord' } },
-	])
+	// What CnRelatedFieldFilters compiles for two filled fields under the
+	// Cases page's `relatedFieldFilters` (asserted in the library's own
+	// tests/utils/relatedFieldFilters.spec.js).
+	const compiled = {
+		'_related[caseProperty][case][0][propertyDefinition]': 'pd-1',
+		'_related[caseProperty][case][0][value][gte]': '100000',
+		'_related[caseProperty][case][1][propertyDefinition]': 'pd-4',
+		'_related[caseProperty][case][1][value]': 'Noord',
+	}
 
 	it('is dropped by the route-query reader, so the route cannot be the transport', () => {
 		const query = { caseType: 'ct-1', ...compiled }
@@ -199,20 +203,19 @@ describe('row 10.1: a dashboard needs more than the one key', () => {
 	)
 
 	it.each(DASHBOARD_PAGES.map((id, index) => [id, pages[index]]))(
-		'%s declares the app id and page id its layout is stored under',
+		'%s declares its app id and a page id that does not follow the title',
 		(id, page) => {
-			expect(page.config.userLayout).toBe(true)
 			expect(page.config.appId).toBe('dossiq')
 			expect(page.config.pageId).toBe(id)
 		},
 	)
 
-	it('is the whole set: no other page asks for a user layout', () => {
+	it('asks for no user layout on any page: the layout is buildiq\'s', () => {
 		const asking = manifest.pages
-			.filter((page) => page.config && page.config.userLayout)
+			.filter((page) => page.config && 'userLayout' in page.config)
 			.map((page) => page.id)
 
-		expect(asking.sort()).toEqual([...DASHBOARD_PAGES].sort())
+		expect(asking).toEqual([])
 	})
 
 	it('names a page id that cannot move when somebody edits a title', () => {
@@ -227,25 +230,6 @@ describe('row 10.1: a dashboard needs more than the one key', () => {
 		)
 
 		expect(slugs).not.toEqual(pages.map((page) => page.config.pageId))
-	})
-
-	it('guards both the load and the save on the app id', () => {
-		// Read out of the installed library rather than asserted from memory:
-		// this is the line that makes `appId` load-bearing, and a release that
-		// changes it should be read again before this test is edited.
-		const source = fs.readFileSync(
-			path.join(
-				ROOT,
-				'node_modules/@conduction/nextcloud-vue/src/components',
-				'CnDashboardPage/CnDashboardPage.vue',
-			),
-			'utf8',
-		)
-
-		expect(source).toContain('if (!this.userLayout || !this.appId)')
-		expect(
-			source.match(/if \(!this\.userLayout \|\| !this\.appId/g).length,
-		).toBeGreaterThanOrEqual(2)
 	})
 
 	it('offers the two preset lists through the library that reads them', () => {

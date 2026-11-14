@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Kernel\Contracts\ConnectionTestServiceInterface;
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -45,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
  */
-class ConnectionTestService {
+class ConnectionTestService implements ConnectionTestServiceInterface {
 
 	/**
 	 * Nobody has probed this connection.
@@ -56,11 +57,6 @@ class ConnectionTestService {
 	 * The endpoint answered.
 	 */
 	public const REACHABLE = 'reachable';
-
-	/**
-	 * The endpoint did not answer, or answered an error.
-	 */
-	public const FAILED = 'failed';
 
 	/**
 	 * How long to wait, in seconds, before calling it a timeout.
@@ -114,59 +110,116 @@ class ConnectionTestService {
 		$result = ($this->untested(endpoint: $endpoint) + ['responseTimeMs' => 0]);
 
 		if (filter_var($endpoint, FILTER_VALIDATE_URL) === false) {
-			$result['state'] = self::FAILED;
-			$result['reason'] = 'The endpoint is not a URL.';
-			$result['measuredAt'] = gmdate('c');
-
-			return $result;
+			return self::notAUrl(result: $result);
 		}
 
 		$started = microtime(true);
 
 		try {
-			$response = $this->clients->newClient()->get(
-				$endpoint,
-				[
-					'timeout' => self::TIMEOUT,
-					'connect_timeout' => self::TIMEOUT,
-					// The probe asks whether the endpoint answers, not whether
-					// it likes us. A 401 from a broker that is up is a
-					// different problem from a broker that is down, and
-					// throwing on it would report them the same way.
-					'http_errors' => false,
-				]
-			);
-
-			$status = (int)$response->getStatusCode();
-			$result['status'] = $status;
-			$result['responseTimeMs'] = (int)round(((microtime(true) - $started) * 1000));
-			$result['measuredAt'] = gmdate('c');
-
-			// A 4xx from a broker that is up is a different problem from a
-			// broker that is down, so only a 5xx or no status at all reads as
-			// the connection failing.
-			$result['state'] = self::FAILED;
-			if ($status > 0 && $status < 500) {
-				$result['state'] = self::REACHABLE;
-			}
-
-			if ($result['state'] === self::FAILED) {
-				$result['reason'] = ('The endpoint answered ' . $status . '.');
-			}
-
-			return $result;
+			$status = $this->callEndpoint(endpoint: $endpoint);
+			return self::answered(result: self::timed(result: $result, started: $started), status: $status);
 		} catch (Throwable $e) {
-			$result['state'] = self::FAILED;
-			$result['reason'] = $e->getMessage();
-			$result['responseTimeMs'] = (int)round(((microtime(true) - $started) * 1000));
-			$result['measuredAt'] = gmdate('c');
-
-			$this->logger->info(
-				'Dossiq starter: a connection test failed',
-				['endpoint' => $endpoint, 'reason' => $e->getMessage()]
-			);
-
-			return $result;
+			return $this->thrown(result: self::timed(result: $result, started: $started), error: $e);
 		}//end try
 	}//end probe()
+
+	/**
+	 * The answer for an endpoint that is not a URL, measured without a call.
+	 *
+	 * @param array<string, mixed> $result The answer so far.
+	 *
+	 * @return array<string, mixed> The failed answer.
+	 */
+	private static function notAUrl(array $result): array {
+		$result['state'] = self::FAILED;
+		$result['reason'] = 'The endpoint is not a URL.';
+		$result['measuredAt'] = gmdate('c');
+
+		return $result;
+	}//end notAUrl()
+
+	/**
+	 * Call the endpoint and read the status it answers with.
+	 *
+	 * @param string $endpoint The URL to call.
+	 *
+	 * @return int The status.
+	 */
+	private function callEndpoint(string $endpoint): int {
+		$response = $this->clients->newClient()->get(
+			$endpoint,
+			[
+				'timeout' => self::TIMEOUT,
+				'connect_timeout' => self::TIMEOUT,
+				// The probe asks whether the endpoint answers, not whether
+				// it likes us. A 401 from a broker that is up is a
+				// different problem from a broker that is down, and
+				// throwing on it would report them the same way.
+				'http_errors' => false,
+			]
+		);
+
+		return (int)$response->getStatusCode();
+	}//end callEndpoint()
+
+	/**
+	 * The probe's answer with how long it took and when it was measured.
+	 *
+	 * @param array<string, mixed> $result  The answer so far.
+	 * @param float                $started When the call started.
+	 *
+	 * @return array<string, mixed> The answer, timed.
+	 */
+	private static function timed(array $result, float $started): array {
+		$result['responseTimeMs'] = (int)round(((microtime(true) - $started) * 1000));
+		$result['measuredAt'] = gmdate('c');
+
+		return $result;
+	}//end timed()
+
+	/**
+	 * The answer for an endpoint that answered with a status.
+	 *
+	 * @param array<string, mixed> $result The answer so far.
+	 * @param int                  $status The status.
+	 *
+	 * @return array<string, mixed> The answer.
+	 */
+	private static function answered(array $result, int $status): array {
+		$result['status'] = $status;
+
+		// A 4xx from a broker that is up is a different problem from a
+		// broker that is down, so only a 5xx or no status at all reads as
+		// the connection failing.
+		$result['state'] = self::FAILED;
+		if ($status > 0 && $status < 500) {
+			$result['state'] = self::REACHABLE;
+		}
+
+		if ($result['state'] === self::FAILED) {
+			$result['reason'] = ('The endpoint answered ' . $status . '.');
+		}
+
+		return $result;
+	}//end answered()
+
+	/**
+	 * The answer for a call that threw, logged.
+	 *
+	 * @param array<string, mixed> $result The answer so far.
+	 * @param Throwable            $error  What the call threw.
+	 *
+	 * @return array<string, mixed> The failed answer.
+	 */
+	private function thrown(array $result, Throwable $error): array {
+		$result['state'] = self::FAILED;
+		$result['reason'] = $error->getMessage();
+
+		$this->logger->info(
+			'Dossiq starter: a connection test failed',
+			['endpoint' => $result['endpoint'], 'reason' => $error->getMessage()]
+		);
+
+		return $result;
+	}//end thrown()
 }//end class

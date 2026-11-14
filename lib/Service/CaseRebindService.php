@@ -43,19 +43,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseRebindServiceInterface;
 use OCA\Dossiq\Service\Cases\CaseRebindGate;
 use OCA\Dossiq\Service\Cases\CaseRebindImpact;
 use OCA\Dossiq\Service\Cases\CaseRebindTerms;
+use OCA\Dossiq\Service\Cases\RebindMove;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
+use OCA\Dossiq\Service\CaseType\WorkflowTemplateBinding;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use Psr\Log\LoggerInterface;
@@ -66,9 +68,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
-class CaseRebindService {
+class CaseRebindService implements CaseRebindServiceInterface {
 
 	use RefusesWhenIndeterminate;
 
@@ -84,6 +86,13 @@ class CaseRebindService {
 	 * @var string
 	 */
 	public const COORDINATOR_GROUP = CaseRebindGate::COORDINATOR_GROUP;
+
+	/**
+	 * Binds a moved case to the workflow template of its new case type.
+	 *
+	 * @var WorkflowTemplateBinding
+	 */
+	private readonly WorkflowTemplateBinding $templates;
 
 	/**
 	 * Constructor.
@@ -111,6 +120,7 @@ class CaseRebindService {
 		private readonly LoggerInterface $logger,
 		private readonly TranslatedText $text,
 	) {
+		$this->templates = new WorkflowTemplateBinding(store: $store);
 	}//end __construct()
 
 	/**
@@ -124,7 +134,7 @@ class CaseRebindService {
 	 *
 	 * @return boolean True when they may.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function mayRebind(string $uid): bool {
 		return $this->gate->mayRebind(uid: $uid);
@@ -144,39 +154,18 @@ class CaseRebindService {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function options(string $caseId): array {
 		$case = $this->readCase(caseId: $caseId);
 		$sourceId = $this->store->referenceId(value: ($case['caseType'] ?? ''));
-
-		$targets = [];
-		foreach ($this->store->everyCaseType() as $row) {
-			$id = $this->store->rowId(row: $row);
-			if ($id === '' || $id === $sourceId || ($row['isDraft'] ?? false) === true) {
-				continue;
-			}
-
-			$targets[] = [
-				'id' => $id,
-				'title' => $this->text->forReader(value: ($row['title'] ?? null)),
-				'identifier' => (string)($row['identifier'] ?? ''),
-				'version' => ($row['version'] ?? null),
-				'sameChain' => ($this->identifierOf(caseTypeId: $sourceId) !== ''
-					&& $this->identifierOf(caseTypeId: $sourceId) === (string)($row['identifier'] ?? '')),
-			];
-		}
-
-		usort(
-			$targets,
-			static fn (array $a, array $b): int => strcmp($a['title'], $b['title'])
-		);
+		$targets = $this->targetsFor(sourceId: $sourceId);
 
 		return [
 			'current' => [
 				'caseType' => $sourceId,
-				'title' => $this->text->forReader(value: ($this->store->readCaseType(caseTypeId: $sourceId)['title'] ?? null)),
+				'title' => $this->titleOf(caseTypeId: $sourceId),
 				'status' => $this->statusNameOf(caseTypeId: $sourceId, statusId: $this->store->referenceId(value: ($case['status'] ?? ''))),
 			],
 			'targets' => $targets,
@@ -201,9 +190,9 @@ class CaseRebindService {
 	 *
 	 * @throws RefusedException When the case or the target cannot be read, or a remap cannot be made.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function preview(
 		string $caseId,
@@ -215,14 +204,7 @@ class CaseRebindService {
 		$case = $this->readCase(caseId: $caseId);
 		$this->gate->assertTarget(caseId: $caseId, case: $case, targetCaseTypeId: $targetCaseTypeId);
 
-		$statuses = [];
-		foreach ($this->resolver->statusTypesFor(caseTypeId: $targetCaseTypeId) as $status) {
-			$id = $this->store->rowId(row: $status);
-			if ($id !== '') {
-				$statuses[] = ['id' => $id, 'name' => $this->text->forReader(value: ($status['name'] ?? null))];
-			}
-		}
-
+		$statuses = $this->statusChoices(caseTypeId: $targetCaseTypeId);
 		$impact = $this->impact->compute(
 			case: $case,
 			targetCaseTypeId: $targetCaseTypeId,
@@ -232,17 +214,8 @@ class CaseRebindService {
 		);
 
 		return [
-			'from' => [
-				'caseType' => $this->store->referenceId(value: ($case['caseType'] ?? '')),
-				'status' => $this->statusNameOf(
-					caseTypeId: $this->store->referenceId(value: ($case['caseType'] ?? '')),
-					statusId: $this->store->referenceId(value: ($case['status'] ?? ''))
-				),
-			],
-			'to' => [
-				'caseType' => $targetCaseTypeId,
-				'title' => $this->text->forReader(value: ($this->store->readCaseType(caseTypeId: $targetCaseTypeId)['title'] ?? null)),
-			],
+			'from' => $this->bindingOf(case: $case),
+			'to' => ['caseType' => $targetCaseTypeId, 'title' => $this->titleOf(caseTypeId: $targetCaseTypeId)],
 			'statuses' => $statuses,
 			'missingProperties' => $this->unanswered(impact: $impact),
 			'impact' => $impact,
@@ -251,7 +224,7 @@ class CaseRebindService {
 			// a coordinator deciding whether to rebind should read what happens
 			// to the run before pressing the button, not afterwards.
 			'run' => ['moved' => false, 'reason' => EngineRunMigration::RUN_NOT_MOVED],
-			'canRebind' => ($targetStatusId !== '' && $impact['complete'] === true),
+			'canRebind' => $this->canRebind(targetStatusId: $targetStatusId, impact: $impact),
 		];
 	}//end preview()
 
@@ -271,7 +244,7 @@ class CaseRebindService {
 	 *
 	 * @throws RefusedException When the rebind is refused, or a write fails.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function rebind(
@@ -284,82 +257,33 @@ class CaseRebindService {
 		array $remap = [],
 		array $confirmDropped = [],
 	): array {
-		$reason = $this->gate->assertMayRebind(actorUid: $actorUid, reason: $reason);
+		$move = new RebindMove(
+			caseId: $caseId,
+			targetCaseTypeId: $targetCaseTypeId,
+			targetStatusId: $targetStatusId,
+			reason: $this->gate->assertMayRebind(actorUid: $actorUid, reason: $reason),
+		);
 
 		$case = $this->readCase(caseId: $caseId);
 		$sourceId = $this->store->referenceId(value: ($case['caseType'] ?? ''));
-		$this->gate->assertTarget(caseId: $caseId, case: $case, targetCaseTypeId: $targetCaseTypeId);
-		$this->gate->assertStatus(targetCaseTypeId: $targetCaseTypeId, targetStatusId: $targetStatusId);
-
-		// The SAME computation the preview showed, recomputed from the case as
-		// it is now: a case that changed since the preview is refused below
-		// rather than rebound on a picture that no longer holds.
-		$impact = $this->impact->compute(
-			case: $case,
-			targetCaseTypeId: $targetCaseTypeId,
-			targetStatusId: $targetStatusId,
-			remap: $remap,
-			answers: $properties
+		$impact = $this->checkedImpact(
+			move: $move,
+			asked: ['case' => $case, 'remap' => $remap, 'answers' => $properties, 'confirmDropped' => $confirmDropped]
 		);
-		$this->gate->assertDropConfirmed(dropped: array_column($impact['dropped'], 'name'), confirmed: $confirmDropped);
-		$this->gate->assertNothingMissing(missing: $this->unanswered(impact: $impact));
 
 		// D-2 step 2, BEFORE any write: a run that refuses to move leaves a
 		// case whose blueprint and whose process disagree.
-		$run = $this->engine->migrate(
-			caseId: $caseId,
-			targetCaseTypeId: $targetCaseTypeId,
-			actorUid: $actorUid
-		);
+		$run = $this->engine->migrate(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId, actorUid: $actorUid);
 
-		$case = $this->impact->apply(case: $case, impact: $impact);
-		$case['caseType'] = $targetCaseTypeId;
-		$case['status'] = $targetStatusId;
-		$case = $this->rebindTemplate(case: $case, targetCaseTypeId: $targetCaseTypeId);
-		$case = $this->journal(
-			case: $case,
-			sourceId: $sourceId,
-			targetCaseTypeId: $targetCaseTypeId,
-			targetStatusId: $targetStatusId,
-			reason: $reason,
-			actorUid: $actorUid,
-			impact: $impact
-		);
-
-		$this->write(caseId: $caseId, case: $case);
+		$applied = ['case' => $case, 'sourceId' => $sourceId, 'actorUid' => $actorUid, 'impact' => $impact, 'run' => $run];
+		$this->write(caseId: $caseId, case: $this->reboundCase(move: $move, applied: $applied));
 
 		// THE SLUG, NOT THE UUID: {@see CaseRebindTerms::rearm()} keys the
 		// re-arm by the target's slug, because a uuid matches no definition.
-		$terms = $this->terms->rearm(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId, reason: $reason);
+		$applied['terms'] = $this->terms->rearm(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId, reason: $move->reason);
+		$this->logRebound(move: $move, applied: $applied);
 
-		$this->logger->info(
-			'CaseRebindService: a running case was rebound to another case type',
-			[
-				'case' => $caseId,
-				'from' => $sourceId,
-				'to' => $targetCaseTypeId,
-				'actor' => $actorUid,
-				'runMigrated' => $run['migrated'],
-			]
-		);
-
-		return [
-			'rebound' => true,
-			'from' => $sourceId,
-			'to' => $targetCaseTypeId,
-			'status' => $targetStatusId,
-			'reason' => $reason,
-			'run' => ['moved' => $run['migrated'], 'reason' => $run['reason']],
-			'terms' => $terms,
-			'properties' => [
-				'dropped' => array_column($impact['dropped'], 'name'),
-				'ported' => array_map(
-					static fn (array $row): array => ['from' => $row['source'], 'to' => $row['target']],
-					$impact['ported']
-				),
-				'answered' => array_column($impact['required'], 'name'),
-			],
-		];
+		return $move->outcome(applied: $applied);
 	}//end rebind()
 
 	/**
@@ -392,110 +316,205 @@ class CaseRebindService {
 	 *
 	 * @return array<string, mixed> The case, re-pinned.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function rebindTemplate(array $case, string $targetCaseTypeId): array {
-		$rows = $this->store->rowsOfType(
-			schemaKey: 'workflow_template_schema',
-			caseTypeId: $targetCaseTypeId
-		);
-
-		$chosen = [];
-		foreach ($rows as $row) {
-			if (($row['isActive'] ?? false) === true) {
-				$chosen = $row;
-				break;
-			}
-
-			if ($chosen === []) {
-				$chosen = $row;
-			}
-		}
-
-		if ($chosen === []) {
-			$case['workflowTemplate'] = null;
-			$case['workflowVersion'] = null;
-
-			return $case;
-		}
-
-		$case['workflowTemplate'] = $this->store->rowId(row: $chosen);
-		$case['workflowVersion'] = (int)($chosen['version'] ?? 1);
-
-		return $case;
+		return $this->templates->bind(case: $case, targetCaseTypeId: $targetCaseTypeId);
 	}//end rebindTemplate()
 
 	/**
-	 * Record the rebind on the case's own journal, with both bindings.
+	 * Whether the write would take this: a status is chosen and the impact is complete.
 	 *
-	 * @param array<string, mixed> $case             The case.
-	 * @param string               $sourceId         The case type it leaves.
-	 * @param string               $targetCaseTypeId The case type it joins.
-	 * @param string               $targetStatusId   The status it lands in.
-	 * @param string               $reason           Why.
-	 * @param string               $actorUid         Who.
-	 * @param array<string, mixed> $impact           What happened to the answers.
+	 * @param string               $targetStatusId The status picked, or ''.
+	 * @param array<string, mixed> $impact         The impact.
 	 *
-	 * @return array<string, mixed> The case, with the entry appended.
-	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @return boolean True when the rebind can be done.
 	 */
-	private function journal(
-		array $case,
-		string $sourceId,
-		string $targetCaseTypeId,
-		string $targetStatusId,
-		string $reason,
-		string $actorUid,
-		array $impact,
-	): array {
-		$entries = [];
-		$raw = ($case['activity'] ?? null);
-		if (is_string($raw) === true && trim($raw) !== '') {
-			$decoded = json_decode($raw, true);
-			if (is_array($decoded) === true) {
-				$entries = $decoded;
+	private function canRebind(string $targetStatusId, array $impact): bool {
+		return $targetStatusId !== '' && $impact['complete'] === true;
+	}//end canRebind()
+
+	/**
+	 * Every published case type other than the source, by title.
+	 *
+	 * @param string $sourceId The case type the case is on.
+	 *
+	 * @return array<int, array<string, mixed>> The targets.
+	 */
+	private function targetsFor(string $sourceId): array {
+		$targets = [];
+		foreach ($this->store->everyCaseType() as $row) {
+			$target = $this->targetEntry(row: $row, sourceId: $sourceId);
+			if ($target !== null) {
+				$targets[] = $target;
 			}
 		}
 
-		if (is_array($raw) === true) {
-			$entries = $raw;
+		usort(
+			$targets,
+			static fn (array $a, array $b): int => strcmp($a['title'], $b['title'])
+		);
+
+		return $targets;
+	}//end targetsFor()
+
+	/**
+	 * One case type as a rebind target, or null when it cannot be one.
+	 *
+	 * @param array<string, mixed> $row      The case type.
+	 * @param string               $sourceId The case type the case is on.
+	 *
+	 * @return array<string, mixed>|null The target.
+	 */
+	private function targetEntry(array $row, string $sourceId): ?array {
+		$id = $this->store->rowId(row: $row);
+		if ($id === '' || $id === $sourceId || ($row['isDraft'] ?? false) === true) {
+			return null;
 		}
 
-		$entries[] = [
-			'type' => 'case-type-rebind',
-			'fromCaseType' => $sourceId,
-			'fromCaseTypeTitle' => $this->text->forReader(value: ($this->store->readCaseType(caseTypeId: $sourceId)['title'] ?? null)),
-			'toCaseType' => $targetCaseTypeId,
-			'toCaseTypeTitle' => $this->text->forReader(value: ($this->store->readCaseType(caseTypeId: $targetCaseTypeId)['title'] ?? null)),
-			'status' => $targetStatusId,
-			'reason' => $reason,
-			'actor' => $actorUid,
-			// THE DROPPED VALUES ARE KEPT HERE, value and all. They leave the
-			// case's `properties` in this same write, and this entry is where
-			// a reader finds what the case said before it moved.
-			'droppedProperties' => array_map(
-				static fn (array $row): array => ['name' => $row['name'], 'value' => $row['value']],
-				$impact['dropped']
-			),
-			'portedProperties' => array_map(
-				static fn (array $row): array => [
-					'from' => $row['source'],
-					'to' => $row['target'],
-					'value' => $row['value'],
-					'newValue' => $row['newValue'],
-				],
-				$impact['ported']
-			),
-			'answeredProperties' => array_column($impact['required'], 'name'),
-			'timestamp' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+		return [
+			'id' => $id,
+			'title' => $this->text->forReader(value: ($row['title'] ?? null)),
+			'identifier' => (string)($row['identifier'] ?? ''),
+			'version' => ($row['version'] ?? null),
+			'sameChain' => $this->sameChain(sourceId: $sourceId, row: $row),
 		];
+	}//end targetEntry()
 
-		$case['activity'] = json_encode($entries);
+	/**
+	 * Whether a case type carries the same identifier as the source, as another version of it.
+	 *
+	 * @param string               $sourceId The case type the case is on.
+	 * @param array<string, mixed> $row      The other case type.
+	 *
+	 * @return boolean True when both carry the same, non-empty identifier.
+	 */
+	private function sameChain(string $sourceId, array $row): bool {
+		return $this->identifierOf(caseTypeId: $sourceId) !== ''
+			&& $this->identifierOf(caseTypeId: $sourceId) === (string)($row['identifier'] ?? '');
+	}//end sameChain()
 
-		return $case;
-	}//end journal()
+	/**
+	 * The statuses of a case type a rebind may land in.
+	 *
+	 * @param string $caseTypeId The case type.
+	 *
+	 * @return array<int, array{id: string, name: string}> The statuses.
+	 */
+	private function statusChoices(string $caseTypeId): array {
+		$statuses = [];
+		foreach ($this->resolver->statusTypesFor(caseTypeId: $caseTypeId) as $status) {
+			$id = $this->store->rowId(row: $status);
+			if ($id !== '') {
+				$statuses[] = ['id' => $id, 'name' => $this->text->forReader(value: ($status['name'] ?? null))];
+			}
+		}
+
+		return $statuses;
+	}//end statusChoices()
+
+	/**
+	 * The case type a case is on, and the name of its status.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return array{caseType: string, status: string} The binding.
+	 */
+	private function bindingOf(array $case): array {
+		return [
+			'caseType' => $this->store->referenceId(value: ($case['caseType'] ?? '')),
+			'status' => $this->statusNameOf(
+				caseTypeId: $this->store->referenceId(value: ($case['caseType'] ?? '')),
+				statusId: $this->store->referenceId(value: ($case['status'] ?? ''))
+			),
+		];
+	}//end bindingOf()
+
+	/**
+	 * The impact of the move, refused unless the target, status, drops and answers all hold.
+	 *
+	 * The SAME computation the preview showed, recomputed from the case as it
+	 * is now: a case that changed since the preview is refused here rather
+	 * than rebound on a picture that no longer holds.
+	 *
+	 * @param RebindMove           $move  The move.
+	 * @param array<string, mixed> $asked The case, the remap, the answers and the confirmed drops.
+	 *
+	 * @return array<string, mixed> The impact.
+	 *
+	 * @throws RefusedException When any of them does not hold.
+	 */
+	private function checkedImpact(RebindMove $move, array $asked): array {
+		$this->gate->assertTarget(caseId: $move->caseId, case: $asked['case'], targetCaseTypeId: $move->targetCaseTypeId);
+		$this->gate->assertStatus(targetCaseTypeId: $move->targetCaseTypeId, targetStatusId: $move->targetStatusId);
+
+		$impact = $this->impact->compute(
+			case: $asked['case'],
+			targetCaseTypeId: $move->targetCaseTypeId,
+			targetStatusId: $move->targetStatusId,
+			remap: $asked['remap'],
+			answers: $asked['answers']
+		);
+		$this->gate->assertDropConfirmed(dropped: array_column($impact['dropped'], 'name'), confirmed: $asked['confirmDropped']);
+		$this->gate->assertNothingMissing(missing: $this->unanswered(impact: $impact));
+
+		return $impact;
+	}//end checkedImpact()
+
+	/**
+	 * The case as it reads on its new case type, with the rebind journaled.
+	 *
+	 * @param RebindMove           $move    The move.
+	 * @param array<string, mixed> $applied The case, the source case type, the actor and the impact.
+	 *
+	 * @return array<string, mixed> The case to write.
+	 */
+	private function reboundCase(RebindMove $move, array $applied): array {
+		$case = $this->impact->apply(case: $applied['case'], impact: $applied['impact']);
+		$case['caseType'] = $move->targetCaseTypeId;
+		$case['status'] = $move->targetStatusId;
+		$case = $this->rebindTemplate(case: $case, targetCaseTypeId: $move->targetCaseTypeId);
+
+		return $move->journal(
+			case: $case,
+			applied: [
+				'fromTitle' => $this->titleOf(caseTypeId: $applied['sourceId']),
+				'toTitle' => $this->titleOf(caseTypeId: $move->targetCaseTypeId),
+			] + $applied
+		);
+	}//end reboundCase()
+
+	/**
+	 * Log that a running case was rebound.
+	 *
+	 * @param RebindMove           $move    The move.
+	 * @param array<string, mixed> $applied The source case type, the actor and the run.
+	 *
+	 * @return void
+	 */
+	private function logRebound(RebindMove $move, array $applied): void {
+		$this->logger->info(
+			'CaseRebindService: a running case was rebound to another case type',
+			[
+				'case' => $move->caseId,
+				'from' => $applied['sourceId'],
+				'to' => $move->targetCaseTypeId,
+				'actor' => $applied['actorUid'],
+				'runMigrated' => $applied['run']['migrated'],
+			]
+		);
+	}//end logRebound()
+
+	/**
+	 * The title of one case type, in the reader's language.
+	 *
+	 * @param string $caseTypeId The case type.
+	 *
+	 * @return string The title.
+	 */
+	private function titleOf(string $caseTypeId): string {
+		return $this->text->forReader(value: ($this->store->readCaseType(caseTypeId: $caseTypeId)['title'] ?? null));
+	}//end titleOf()
 
 	/**
 	 * The identifier of one case type, or ''.
@@ -578,7 +597,7 @@ class CaseRebindService {
 		[$objectService, $register, $schema] = $this->scope();
 
 		try {
-			$objectService->updateObject($register, $schema, $caseId, $case);
+			$objectService->updateObject(objectId: $caseId, data: $case);
 		} catch (Throwable $e) {
 			$this->refuseIndeterminate(
 				rule: 'rebind-not-written',

@@ -46,6 +46,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Relation\RoleLinkDefinition
  * @covers \OCA\Dossiq\Service\Relation\RoleLinkDefinitionReader
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Support\CaseRegisterReads
  */
 class RoleLinkServiceTest extends TestCase {
 
@@ -250,4 +251,123 @@ class RoleLinkServiceTest extends TestCase {
 		self::assertSame([], $errors);
 		self::assertSame('decision_schema', (new RoleLinkDefinition(config: self::REVIEWS))->targetSchema);
 	}//end testTheRoleFitsTheRealCaseTypeSchema()
+	/**
+	 * The case reads refuse with their sentences: no case, no case type, no store, no schema.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseReadsRefuseWithTheirSentences(): void {
+		$this->store->seed(schema: 'case', uuid: 'case-untyped', row: ['title' => 'No type']);
+		$this->store->seed(schema: 'case', uuid: 'case-lost', row: ['title' => 'Lost type', 'caseType' => ['uuid' => 'ct-gone']]);
+		$this->assertSame(['roles' => [], 'missing' => []], $this->service->rolesFor('case-untyped'));
+
+		foreach (['case-none' => 'Case not found', 'case-lost' => 'Case type not found'] as $caseId => $sentence) {
+			try {
+				$this->service->rolesFor($caseId);
+				$this->fail('refused');
+			} catch (\RuntimeException $e) {
+				$this->assertSame($sentence, $e->getMessage());
+			}
+		}
+
+		$bare = $this->createMock(SettingsService::class);
+		$bare->method('getObjectService')->willReturn(null);
+		$service = new RoleLinkService(settingsService: $bare, relations: $this->relations, userSession: $this->createMock(IUserSession::class));
+		try {
+			$service->rolesFor('case-c');
+			$this->fail('refused');
+		} catch (\RuntimeException $e) {
+			$this->assertSame('OpenRegister is not available', $e->getMessage());
+		}
+
+		$noSchema = $this->createMock(SettingsService::class);
+		$noSchema->method('getObjectService')->willReturn($this->store);
+		$noSchema->method('getConfigValue')->willReturn('');
+		$service = new RoleLinkService(settingsService: $noSchema, relations: $this->relations, userSession: $this->createMock(IUserSession::class));
+		$this->expectExceptionMessage("The schema 'case_schema' is not configured.");
+		$service->rolesFor('case-c');
+	}//end testTheCaseReadsRefuseWithTheirSentences()
+	/**
+	 * A link names its case and its target; blank ones are refused before anything is read.
+	 *
+	 * @return void
+	 */
+	public function testABlankCaseOrTargetIsRefused(): void {
+		$this->relations->expects($this->never())->method('addRelation');
+
+		foreach ([['  ', 'dec-d'], ['case-c', ' ']] as [$caseId, $targetId]) {
+			try {
+				$this->service->link(caseId: $caseId, role: 'reviews', targetId: $targetId);
+				$this->fail(message: 'refused');
+			} catch (InvalidArgumentException $e) {
+				$this->assertSame(expected: 'Name the case and what it is linked to.', actual: $e->getMessage());
+			}
+		}
+
+		self::assertSame(expected: [], actual: $this->store->all(schema: 'review'));
+	}//end testABlankCaseOrTargetIsRefused()
+
+	/**
+	 * A role that points at a case links that case itself and opens no record; it
+	 * counts as linked once the case carries a relation of its nature.
+	 *
+	 * @return void
+	 */
+	public function testACaseRoleLinksTheCaseAndIsReadFromTheRelations(): void {
+		$this->store->seed(
+			schema: 'caseType',
+			uuid: 'ct-2',
+			row: [
+				'title'     => 'fixture-follow-up',
+				'relations' => [['role' => 'continues', 'target' => 'case', 'requiredAtIntake' => true, 'natureRelationship' => 'vervolg']],
+			]
+		);
+		$this->store->seed(schema: 'case', uuid: 'case-x', row: ['title' => 'Follow-up', 'caseType' => 'ct-2']);
+		$this->relations->expects($this->once())
+			->method('addRelation')
+			->with(caseId: 'case-x', targetId: 'case-p', natureRelationship: 'vervolg')
+			->willReturn(['ok' => true]);
+		$this->relations->method('listRelations')->willReturnOnConsecutiveCalls(
+			[['aardRelatie' => 'bijdrage']],
+			[['aardRelatie' => 'bijdrage'], ['aardRelatie' => 'vervolg']]
+		);
+
+		$before = $this->service->rolesFor(caseId: 'case-x');
+		$result = $this->service->link(caseId: 'case-x', role: 'continues', targetId: 'case-p');
+		$after  = $this->service->rolesFor(caseId: 'case-x');
+
+		self::assertSame(expected: ['continues'], actual: $before['missing']);
+		self::assertSame(expected: ['linkedCase' => 'case-p', 'record' => null], actual: $result);
+		self::assertSame(expected: [], actual: $after['missing']);
+		self::assertTrue(condition: $after['roles'][0]['linked']);
+	}//end testACaseRoleLinksTheCaseAndIsReadFromTheRelations()
+
+	/**
+	 * With nobody signed in the record names the system as the one who registered it.
+	 *
+	 * @return void
+	 */
+	public function testWithoutAUserTheSystemRegistersTheRecord(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->store);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register'         => 'dossiq',
+				'case_schema'      => 'case',
+				'case_type_schema' => 'caseType',
+				'decision_schema'  => 'decision',
+				'review_schema'    => 'review',
+				default            => '',
+			}
+		);
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn(null);
+		$this->relations->method('addRelation')->willReturn(['ok' => true]);
+		$service = new RoleLinkService(settingsService: $settings, relations: $this->relations, userSession: $session);
+
+		$service->link(caseId: 'case-c', role: 'reviews', targetId: 'dec-d');
+
+		$records = array_values(array: $this->store->all(schema: 'review'));
+		self::assertSame(expected: 'system', actual: $records[0]['registeredBy']);
+	}//end testWithoutAUserTheSystemRegistersTheRecord()
 }//end class

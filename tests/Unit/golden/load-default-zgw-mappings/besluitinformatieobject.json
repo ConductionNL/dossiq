@@ -1,0 +1,27 @@
+{
+    "zgwResource": "besluitinformatieobject",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "decision": "{{ _baseUrl | replace({\"besluiten/v1/besluitinformatieobjecten\": \"besluiten/v1/besluiten\"}) }}/{{ decision }}",
+        "informatieobject": "{{ document }}"
+    },
+    "reverseMapping": {
+        "decision": "{{ besluit | zgw_extract_uuid }}",
+        "document": "{{ informatieobject }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "decision": {
+            "field": "decision",
+            "extractUuid": true
+        },
+        "informatieobject": {
+            "field": "document"
+        }
+    }
+}

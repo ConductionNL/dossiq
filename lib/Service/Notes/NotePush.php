@@ -67,7 +67,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Notes;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\NotePushInterface;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -80,7 +81,7 @@ use Throwable;
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
-class NotePush {
+class NotePush implements NotePushInterface {
 
 	/**
 	 * The app-config key naming the reserved informatieobjecttype for a note.
@@ -187,83 +188,64 @@ class NotePush {
 	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function push(string $caseId, array $note): array {
-		if (class_exists('\\' . self::DELIVERY_EVENT) === false) {
+		if ($this->deliveryAvailable() === false) {
 			// No marker: see the class docblock. This is the outcome a case
 			// bound to nothing has, and it is not a failure.
 			return $this->unbound();
 		}
 
+		$attempt = new NoteAttempt(caseId: $caseId, note: $note);
 		if ($this->isExternal(note: $note) === false) {
 			// The DEFAULT, and deliberately so: nothing leaves by accident.
 			// It is still recorded: somebody asked for this note to go out and
 			// it stayed, and an answer only the caller's tab saw is an answer
 			// nobody finds again.
 			return $this->answer(
-				caseId: $caseId,
-				note: $note,
-				message: 'Note kept here rather than sent to the neighbouring register',
-				outcome: self::OUTCOME_NOT_SENT,
-				reason: 'This note is internal, so it stays here. Make it external to send it.',
+				attempt: $attempt,
+				verdict: new NoteVerdict(
+					message: 'Note kept here rather than sent to the neighbouring register',
+					outcome: self::OUTCOME_NOT_SENT,
+					reason: 'This note is internal, so it stays here. Make it external to send it.',
+				)
 			);
 		}
 
+		return $this->deliver(attempt: $attempt);
+	}//end push()
+
+	/**
+	 * Whether integriq's delivery request exists on this instance.
+	 *
+	 * @return bool True when integriq is installed.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
+	 */
+	protected function deliveryAvailable(): bool {
+		return class_exists('\\' . self::DELIVERY_EVENT);
+	}//end deliveryAvailable()
+
+	/**
+	 * Hand an external note to integriq, and answer how that went.
+	 *
+	 * @param NoteAttempt $attempt The case and the note.
+	 *
+	 * @return array{outcome: string, reason: string, receiverUrl: string, caseRecord: string} What happened.
+	 */
+	private function deliver(NoteAttempt $attempt): array {
 		try {
-			$envelope = $this->envelope->build(
-				note: $note,
-				caseId: $caseId,
-				informatieobjecttype: trim($this->config->getValueString('dossiq', self::TYPE_CONFIG_KEY, '')),
-				bronorganisatie: trim($this->config->getValueString('dossiq', self::RSIN_CONFIG_KEY, '')),
-			);
+			$envelope = $this->envelopeFor(attempt: $attempt);
 		} catch (InvalidArgumentException $e) {
-			return $this->recordFailure(caseId: $caseId, note: $note, reason: $e->getMessage());
+			return $this->recordFailure(attempt: $attempt, reason: $e->getMessage());
 		}
 
-		$eventClass = '\\' . self::DELIVERY_EVENT;
-		$event = new $eventClass(
-			sourceApp: Application::APP_ID,
-			subjectRegister: '',
-			subjectSchema: '',
-			subjectId: $caseId,
-			subjectLabel: (string)($envelope['titel'] ?? $caseId),
-			deliveryKind: self::DELIVERY_KIND,
-			channel: self::DELIVERY_CHANNEL,
-			payload: $envelope,
-			correlationId: bin2hex(random_bytes(16)),
-			externalReference: (string)($envelope['identificatie'] ?? ''),
-		);
-
-		try {
-			$this->dispatcher->dispatchTyped($event);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: a case note could not be handed to integriq',
-				['caseId' => $caseId, 'error' => $e->getMessage()]
-			);
-
-			return $this->recordFailure(
-				caseId: $caseId,
-				note: $note,
-				reason: 'integriq could not take the note.'
-			);
+		$event = $this->deliveryEvent(attempt: $attempt, envelope: $envelope);
+		if ($this->dispatched(attempt: $attempt, event: $event) === false) {
+			return $this->recordFailure(attempt: $attempt, reason: 'integriq could not take the note.');
 		}
 
-		if ($event->isHandled() === false) {
-			// The integriq listener is installed and did not take the request:
-			// it logged why. The note did not leave, so this is a failure.
-			return $this->recordFailure(
-				caseId: $caseId,
-				note: $note,
-				reason: 'integriq could not take the note. Check the integriq log.'
-			);
-		}
-
-		$refusal = $event->getRefusal();
-		if (is_array($refusal) === true) {
-			return $this->recordFailure(
-				caseId: $caseId,
-				note: $note,
-				reason: $this->reasonOf(refusal: $refusal)
-			);
+		$refused = $this->refusalOf(event: $event);
+		if ($refused !== null) {
+			return $this->recordFailure(attempt: $attempt, reason: $refused);
 		}
 
 		if ((int)$event->getMatchedSubscriptions() === 0) {
@@ -273,13 +255,98 @@ class NotePush {
 		}
 
 		return $this->answer(
-			caseId: $caseId,
-			note: $note,
-			message: 'Note handed to integriq for the neighbouring register',
-			outcome: self::OUTCOME_SENT,
-			reason: ''
+			attempt: $attempt,
+			verdict: new NoteVerdict(message: 'Note handed to integriq for the neighbouring register', outcome: self::OUTCOME_SENT, reason: '')
 		);
-	}//end push()
+	}//end deliver()
+
+	/**
+	 * The note shaped as a document, filed under the reserved type and RSIN.
+	 *
+	 * @param NoteAttempt $attempt The case and the note.
+	 *
+	 * @return array<string, mixed> The envelope.
+	 *
+	 * @throws InvalidArgumentException When the note cannot be sent as it is.
+	 */
+	private function envelopeFor(NoteAttempt $attempt): array {
+		return $this->envelope->build(
+			note: $attempt->note,
+			caseId: $attempt->caseId,
+			informatieobjecttype: trim($this->config->getValueString('dossiq', self::TYPE_CONFIG_KEY, '')),
+			bronorganisatie: trim($this->config->getValueString('dossiq', self::RSIN_CONFIG_KEY, '')),
+		);
+	}//end envelopeFor()
+
+	/**
+	 * The delivery request for one envelope.
+	 *
+	 * @param NoteAttempt          $attempt  The case.
+	 * @param array<string, mixed> $envelope The envelope.
+	 *
+	 * @return object The integriq delivery request.
+	 */
+	private function deliveryEvent(NoteAttempt $attempt, array $envelope): object {
+		$eventClass = '\\' . self::DELIVERY_EVENT;
+
+		return new $eventClass(
+			sourceApp: AppIdentity::APP_ID,
+			subjectRegister: '',
+			subjectSchema: '',
+			subjectId: $attempt->caseId,
+			subjectLabel: (string)($envelope['titel'] ?? $attempt->caseId),
+			deliveryKind: self::DELIVERY_KIND,
+			channel: self::DELIVERY_CHANNEL,
+			payload: $envelope,
+			correlationId: bin2hex(random_bytes(16)),
+			externalReference: (string)($envelope['identificatie'] ?? ''),
+		);
+	}//end deliveryEvent()
+
+	/**
+	 * Dispatch the delivery request; false, and logged, when the dispatcher throws.
+	 *
+	 * @param NoteAttempt $attempt The case.
+	 * @param object      $event   The delivery request.
+	 *
+	 * @return bool True when the request was dispatched.
+	 */
+	private function dispatched(NoteAttempt $attempt, object $event): bool {
+		try {
+			$this->dispatcher->dispatchTyped($event);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: a case note could not be handed to integriq',
+				['caseId' => $attempt->caseId, 'error' => $e->getMessage()]
+			);
+
+			return false;
+		}
+
+		return true;
+	}//end dispatched()
+
+	/**
+	 * Why integriq did not take the request, or null when it did.
+	 *
+	 * @param object $event The dispatched delivery request.
+	 *
+	 * @return string|null The reason.
+	 */
+	private function refusalOf(object $event): ?string {
+		if ($event->isHandled() === false) {
+			// The integriq listener is installed and did not take the request:
+			// it logged why. The note did not leave, so this is a failure.
+			return 'integriq could not take the note. Check the integriq log.';
+		}
+
+		$refusal = $event->getRefusal();
+		if (is_array($refusal) === true) {
+			return $this->reasonOf(refusal: $refusal);
+		}
+
+		return null;
+	}//end refusalOf()
 
 	/**
 	 * Whether this note is one that may leave.
@@ -330,19 +397,15 @@ class NotePush {
 	/**
 	 * Record a failure on the case and answer it.
 	 *
-	 * @param string               $caseId The case.
-	 * @param array<string, mixed> $note   The note.
-	 * @param string               $reason Why it failed.
+	 * @param NoteAttempt $attempt The case and the note.
+	 * @param string      $reason  Why it failed.
 	 *
 	 * @return array{outcome: string, reason: string, receiverUrl: string, caseRecord: string} The outcome.
 	 */
-	private function recordFailure(string $caseId, array $note, string $reason): array {
+	private function recordFailure(NoteAttempt $attempt, string $reason): array {
 		return $this->answer(
-			caseId: $caseId,
-			note: $note,
-			message: 'Note not sent to the neighbouring register',
-			outcome: self::OUTCOME_FAILED,
-			reason: $reason
+			attempt: $attempt,
+			verdict: new NoteVerdict(message: 'Note not sent to the neighbouring register', outcome: self::OUTCOME_FAILED, reason: $reason)
 		);
 	}//end recordFailure()
 
@@ -359,60 +422,31 @@ class NotePush {
 	 * this change exists to prevent is a note that did not travel looking like
 	 * one that did, and a lost record is that same failure one day later.
 	 *
-	 * @param string               $caseId      The case.
-	 * @param array<string, mixed> $note        The note.
-	 * @param string               $message     The sentence.
-	 * @param string               $outcome     The outcome code.
-	 * @param string               $reason      The reason, when there is one.
-	 * @param string               $receiverUrl The receiver's url, on a send.
+	 * @param NoteAttempt $attempt The case and the note.
+	 * @param NoteVerdict $verdict How the push ended.
 	 *
 	 * @return array{outcome: string, reason: string, receiverUrl: string, caseRecord: string} The outcome.
 	 */
-	private function answer(
-		string $caseId,
-		array $note,
-		string $message,
-		string $outcome,
-		string $reason,
-		string $receiverUrl = '',
-	): array {
-		$written = $this->record(
-			caseId: $caseId,
-			note: $note,
-			message: $message,
-			outcome: $outcome,
-			reason: $reason
-		);
-
-		if ($written === true) {
-			return $this->outcome(
-				outcome: $outcome,
-				reason: $reason,
-				receiverUrl: $receiverUrl,
-				caseRecord: self::RECORD_WRITTEN
-			);
+	private function answer(NoteAttempt $attempt, NoteVerdict $verdict): array {
+		if ($this->record(attempt: $attempt, verdict: $verdict) === true) {
+			return $this->outcome(outcome: $verdict->outcome, reason: $verdict->reason, caseRecord: self::RECORD_WRITTEN);
 		}
 
 		$this->logger->error(
 			'Dossiq: the outcome of a note push could not be recorded on the case',
 			[
-				'caseId' => $caseId,
-				'noteId' => (string)($note['id'] ?? ''),
-				'outcome' => $outcome,
+				'caseId' => $attempt->caseId,
+				'noteId' => (string)($attempt->note['id'] ?? ''),
+				'outcome' => $verdict->outcome,
 			]
 		);
 
 		$told = self::RECORD_LOST_REASON;
-		if ($reason !== '') {
-			$told = ($reason . ' ' . self::RECORD_LOST_REASON);
+		if ($verdict->reason !== '') {
+			$told = ($verdict->reason . ' ' . self::RECORD_LOST_REASON);
 		}
 
-		return $this->outcome(
-			outcome: $outcome,
-			reason: $told,
-			receiverUrl: $receiverUrl,
-			caseRecord: self::RECORD_LOST
-		);
+		return $this->outcome(outcome: $verdict->outcome, reason: $told, caseRecord: self::RECORD_LOST);
 	}//end answer()
 
 	/**
@@ -421,27 +455,19 @@ class NotePush {
 	 * INTERNAL, always: whether our push to another organisation worked is
 	 * about our sending and not about what the citizen was told.
 	 *
-	 * @param string               $caseId  The case.
-	 * @param array<string, mixed> $note    The note.
-	 * @param string               $message The sentence.
-	 * @param string               $outcome The outcome code.
-	 * @param string               $reason  The reason, when there is one.
+	 * @param NoteAttempt $attempt The case and the note.
+	 * @param NoteVerdict $verdict How the push ended.
 	 *
 	 * @return bool True when an entry reached the case.
 	 */
-	private function record(string $caseId, array $note, string $message, string $outcome, string $reason): bool {
-		$sentence = $message;
-		if ($reason !== '') {
-			$sentence = ($message . ': ' . $reason);
-		}
-
+	private function record(NoteAttempt $attempt, NoteVerdict $verdict): bool {
 		$entryId = $this->timeline->record(
-			caseId: $caseId,
+			caseId: $attempt->caseId,
 			kind: TimelineKinds::MAIL_OUT,
-			message: $sentence,
+			message: $verdict->sentence(),
 			fields: [
-				'noteId' => (string)($note['id'] ?? ''),
-				'status' => $outcome,
+				'noteId' => (string)($attempt->note['id'] ?? ''),
+				'status' => $verdict->outcome,
 			],
 			visibility: CaseTimeline::INTERNAL,
 		);

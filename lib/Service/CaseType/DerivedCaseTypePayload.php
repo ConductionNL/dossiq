@@ -66,6 +66,7 @@ class DerivedCaseTypePayload {
 	 * @return array<string, mixed> The payload to save as a new object.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/case-types/spec.md#requirement-a-case-type-a-package-placed-reads-as-shipped
 	 */
 	public function duplicate(array $source): array {
 		$payload = $this->stripIdentity(data: $source);
@@ -76,6 +77,9 @@ class DerivedCaseTypePayload {
 			sourceIdentifier: (string)($source['identifier'] ?? '')
 		);
 		$payload['publicationRequired'] = false;
+		// A copy is the organisation's own, whatever package placed the source.
+		$payload['shipped'] = false;
+		$payload['package'] = '';
 		if (array_key_exists('publicationText', $payload) === true) {
 			$payload['publicationText'] = '';
 		}
@@ -126,7 +130,7 @@ class DerivedCaseTypePayload {
 	 *
 	 * @return array<string, mixed> The payload to save as a new object.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function nextVersion(array $source, string $sourceId): array {
 		$payload = $this->stripIdentity(data: $source);

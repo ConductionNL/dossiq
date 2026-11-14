@@ -54,6 +54,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Controller\CaseHandoverController
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Controller\Support\CaseCaller
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
  */
@@ -329,7 +330,6 @@ class CaseHandoverControllerTest extends TestCase {
 	 */
 	private function controller(): CaseHandoverController {
 		return new CaseHandoverController(
-			appName: 'dossiq',
 			request: $this->request,
 			transfers: $this->transfers,
 			accessGuard: $this->guard,

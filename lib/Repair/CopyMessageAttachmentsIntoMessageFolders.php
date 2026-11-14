@@ -13,12 +13,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentProjectionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -65,17 +65,17 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 	private const PAGE_SIZE = 200;
 
 	/**
-	 * @param SettingsService $settingsService OpenRegister access and the configured register.
-	 * @param DocumentRecordStore $store Document records, to resolve a record id to its file.
-	 * @param DocumentProjectionService $projection Object folders.
+	 * @param SettingsServiceInterface $settingsService OpenRegister access and the configured register.
+	 * @param DocumentRecordStoreInterface $store Document records, to resolve a record id to its file.
+	 * @param DocumentProjectionServiceInterface $projection Object folders.
 	 * @param IRootFolder $rootFolder Files by id.
 	 * @param IAppConfig $appConfig The version gate.
 	 * @param LoggerInterface $logger Where each attachment without a file is named.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly DocumentRecordStore $store,
-		private readonly DocumentProjectionService $projection,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly DocumentRecordStoreInterface $store,
+		private readonly DocumentProjectionServiceInterface $projection,
 		private readonly IRootFolder $rootFolder,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
@@ -103,7 +103,7 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
 			return;
 		}
 
@@ -137,32 +137,57 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 			return;
 		}
 
-		$tally = ['copied' => 0, 'skipped' => 0, 'missing' => 0];
-		$page = 1;
-		$full = true;
-		while ($full === true) {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::PAGE_SIZE, '_page' => $page],
-			);
-			$full = (count($rows) === self::PAGE_SIZE);
-			foreach ($rows as $row) {
-				foreach ($this->copyMessage(row: $row) as $outcome) {
-					$tally[$outcome]++;
-				}
-			}
+		$tally = $this->tallyAll(objectService: $objectService, register: $register, schema: $schema);
 
-			$page++;
-		}
-
-		$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::DONE_VERSION);
 		$output->info(
 			'Dossiq portal messages: copied ' . $tally['copied'] . ' file(s) into their message, left '
 			. $tally['skipped'] . ' already there, ' . $tally['missing'] . ' named in the log.'
 		);
 	}//end copyAll()
+
+	/**
+	 * Page through every message, copy its attachments and count the outcomes.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register The register.
+	 * @param string $schema The portal message schema.
+	 *
+	 * @return array<string, int> The tally per outcome.
+	 */
+	private function tallyAll(object $objectService, string $register, string $schema): array {
+		$tally = ['copied' => 0, 'skipped' => 0, 'missing' => 0];
+		$page = 1;
+		$full = true;
+		while ($full === true) {
+			$filters = ['_limit' => self::PAGE_SIZE, '_page' => $page];
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
+			$full = (count($rows) === self::PAGE_SIZE);
+			$tally = $this->tallyPage(rows: $rows, tally: $tally);
+
+			$page++;
+		}
+
+		return $tally;
+	}//end tallyAll()
+
+	/**
+	 * Copy the attachments of one page of messages and add the outcomes to the tally.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The message rows.
+	 * @param array<string, int> $tally The tally so far.
+	 *
+	 * @return array<string, int> The tally.
+	 */
+	private function tallyPage(array $rows, array $tally): array {
+		foreach ($rows as $row) {
+			foreach ($this->copyMessage(row: $row) as $outcome) {
+				$tally[$outcome]++;
+			}
+		}
+
+		return $tally;
+	}//end tallyPage()
 
 	/**
 	 * Copy one message's attachments into its folder.
@@ -187,7 +212,7 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 		if ($folder === null) {
 			$this->logger->warning(
 				'Dossiq portal messages: ' . $messageId . ' has no folder; its ' . count($ids) . ' attachment(s) were not copied',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 
 			return array_fill(0, count($ids), 'missing');
@@ -215,7 +240,7 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 		if ($file === null) {
 			$this->logger->warning(
 				'Dossiq portal messages: attachment ' . $attachmentId . ' of ' . $messageId . ' has no file; it was not copied',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 
 			return 'missing';
@@ -231,7 +256,7 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq portal messages: ' . $name . ' could not be copied into ' . $messageId . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'exception' => $e],
+				['app' => AppIdentity::APP_ID, 'exception' => $e],
 			);
 
 			return 'missing';

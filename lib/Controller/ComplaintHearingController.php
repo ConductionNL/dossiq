@@ -26,15 +26,16 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
-use OCA\Dossiq\Service\ComplaintService;
+use OCA\Dossiq\Controller\Support\ComplaintMutationGate;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ComplaintServiceInterface;
 use OCA\Dossiq\Service\HearingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -46,7 +47,7 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 class ComplaintHearingController extends Controller {
 	/**
@@ -54,18 +55,18 @@ class ComplaintHearingController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param ComplaintService $complaintService Complaint service
+	 * @param ComplaintServiceInterface $complaintService Complaint service
 	 * @param HearingService $hearingService Hearing service
-	 * @param ComplaintAccessGuard $accessGuard Shared complaint authorization guard
+	 * @param ComplaintAccessGuardInterface $accessGuard Shared complaint authorization guard
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ComplaintService $complaintService,
+		private readonly ComplaintServiceInterface $complaintService,
 		private readonly HearingService $hearingService,
-		private readonly ComplaintAccessGuard $accessGuard,
+		private readonly ComplaintAccessGuardInterface $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -79,7 +80,7 @@ class ComplaintHearingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function hearings(string $id): JSONResponse {
 		if ($this->accessGuard->currentUid() === '') {
@@ -99,20 +100,13 @@ class ComplaintHearingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function scheduleHearing(string $id): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
+		$refusal = $this->mutationGate()->refusal(id: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
-
-		$complaint = $this->complaintService->getComplaint($id);
-		if ($complaint === null) {
-			return new JSONResponse(['error' => 'Complaint not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$this->accessGuard->authorizeMutation(complaint: $complaint, userId: $userId);
 
 		try {
 			$data = $this->accessGuard->parseBody();
@@ -135,20 +129,13 @@ class ComplaintHearingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function recordHearingOutcome(string $id, string $hearingId): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
+		$refusal = $this->mutationGate()->refusal(id: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
-
-		$complaint = $this->complaintService->getComplaint($id);
-		if ($complaint === null) {
-			return new JSONResponse(['error' => 'Complaint not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$this->accessGuard->authorizeMutation(complaint: $complaint, userId: $userId);
 
 		try {
 			$data = $this->accessGuard->parseBody();
@@ -160,4 +147,15 @@ class ComplaintHearingController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end recordHearingOutcome()
+
+	/**
+	 * Refuses a complaint write the caller may not make.
+	 *
+	 * @return ComplaintMutationGate
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
+	 */
+	private function mutationGate(): ComplaintMutationGate {
+		return new ComplaintMutationGate(accessGuard: $this->accessGuard, complaintService: $this->complaintService);
+	}//end mutationGate()
 }//end class

@@ -34,17 +34,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+ * @spec openspec/specs/avg-processing-surface/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\CaseCaller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Gdpr\DataSubjectRequestCase;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DataSubjectRequestCaseInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -60,7 +61,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass Registered through appinfo/routes.php.
  *
- * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+ * @spec openspec/specs/avg-processing-surface/spec.md
  */
 class DataSubjectRequestController extends Controller {
 
@@ -71,20 +72,20 @@ class DataSubjectRequestController extends Controller {
 	 *
 	 * @param string                 $appName     The app name.
 	 * @param IRequest               $request     The request.
-	 * @param DataSubjectRequestCase $requests    The case side of a data subject request.
-	 * @param CaseAccessGuard        $accessGuard Per-case authorization, failing closed.
+	 * @param DataSubjectRequestCaseInterface $requests    The case side of a data subject request.
+	 * @param CaseAccessGuardInterface        $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession           $userSession The session.
 	 * @param LoggerInterface        $logger      The logger.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DataSubjectRequestCase $requests,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly DataSubjectRequestCaseInterface $requests,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -98,7 +99,7 @@ class DataSubjectRequestController extends Controller {
 	 *
 	 * @return JSONResponse The preview with its counts and protected items, or the refusal.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md#requirement-a-data-subject-request-is-a-case-and-the-platform-does-the-erasing-req-avg-dsr-01
+	 * @spec openspec/specs/avg-processing-surface/spec.md#requirement-a-data-subject-request-is-a-case-and-the-platform-does-the-erasing-req-avg-dsr-01
 	 */
 	#[NoAdminRequired]
 	public function preview(string $caseId): JSONResponse {
@@ -122,7 +123,7 @@ class DataSubjectRequestController extends Controller {
 	 *
 	 * @return JSONResponse What the platform destroyed, pseudonymised and withheld, or the refusal.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md#requirement-an-erasure-runs-only-after-a-second-person-approves-it-req-avg-dsr-02
+	 * @spec openspec/specs/avg-processing-surface/spec.md#requirement-an-erasure-runs-only-after-a-second-person-approves-it-req-avg-dsr-02
 	 */
 	#[NoAdminRequired]
 	public function run(string $caseId): JSONResponse {
@@ -146,7 +147,7 @@ class DataSubjectRequestController extends Controller {
 	 *
 	 * @return JSONResponse The export record, or the refusal.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md#requirement-a-data-subject-request-is-a-case-and-the-platform-does-the-erasing-req-avg-dsr-01
+	 * @spec openspec/specs/avg-processing-surface/spec.md#requirement-a-data-subject-request-is-a-case-and-the-platform-does-the-erasing-req-avg-dsr-01
 	 */
 	#[NoAdminRequired]
 	public function requestExport(string $caseId): JSONResponse {
@@ -174,7 +175,7 @@ class DataSubjectRequestController extends Controller {
 	 *
 	 * @return JSONResponse `{exportId, downloadable, expiresAt, expired}`, or the refusal.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md#requirement-an-incomplete-erasure-keeps-the-case-open-and-says-what-is-left-req-avg-dsr-03
+	 * @spec openspec/specs/avg-processing-surface/spec.md#requirement-an-incomplete-erasure-keeps-the-case-open-and-says-what-is-left-req-avg-dsr-03
 	 */
 	#[NoAdminRequired]
 	public function exportState(string $caseId): JSONResponse {
@@ -198,19 +199,10 @@ class DataSubjectRequestController extends Controller {
 	 *
 	 * @return IUser|null The caller, or null.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function writerOf(string $caseId): ?IUser {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return null;
-		}
-
-		if ($this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return null;
-		}
-
-		return $user;
+		return (new CaseCaller(userSession: $this->userSession, accessGuard: $this->accessGuard))->writer(caseId: $caseId);
 	}//end writerOf()
 
 	/**
@@ -218,7 +210,7 @@ class DataSubjectRequestController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function notYours(): JSONResponse {
 		return new JSONResponse(
@@ -235,7 +227,7 @@ class DataSubjectRequestController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function broke(string $op, Throwable $e): JSONResponse {
 		$this->logger->error(

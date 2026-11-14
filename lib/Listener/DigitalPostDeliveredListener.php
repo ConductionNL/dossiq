@@ -47,7 +47,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\BerichtenboxService;
+use OCA\Dossiq\Kernel\Contracts\BerichtenboxServiceInterface;
+use OCA\Dossiq\Listener\Support\EventGetters;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -74,11 +75,11 @@ class DigitalPostDeliveredListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param BerichtenboxService $berichtenbox Owns the stored message and the timeline entry.
+	 * @param BerichtenboxServiceInterface $berichtenbox Owns the stored message and the timeline entry.
 	 * @param LoggerInterface     $logger       Logger.
 	 */
 	public function __construct(
-		private readonly BerichtenboxService $berichtenbox,
+		private readonly BerichtenboxServiceInterface $berichtenbox,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -121,17 +122,7 @@ class DigitalPostDeliveredListener implements IEventListener {
 	 * @return string The value, or ''.
 	 */
 	private function stringFrom(Event $event, string $method): string {
-		if (method_exists($event, $method) === false) {
-			return '';
-		}
-
-		$value = $event->$method();
-
-		if (is_scalar($value) === true) {
-			return trim((string)$value);
-		}
-
-		return '';
+		return (new EventGetters())->stringFrom(event: $event, method: $method);
 	}//end stringFrom()
 
 	/**

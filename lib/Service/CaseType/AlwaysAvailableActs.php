@@ -49,7 +49,7 @@ use OCA\Dossiq\Service\Transitions\RoleGuard;
  * Reads a case type's always-available acts and says which of them this
  * reader may take.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+ * @spec openspec/specs/process-step-configuration/spec.md
  */
 class AlwaysAvailableActs {
 
@@ -82,7 +82,7 @@ class AlwaysAvailableActs {
 	 *
 	 * @return array<int, array{id: string, label: string, description: string, alwaysAvailable: bool, available: bool, reason: string}> The acts.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function forCase(string $caseId, string $userId): array {
 		$case = $this->readObject(schemaKey: 'case_schema', id: $caseId);
@@ -101,60 +101,11 @@ class AlwaysAvailableActs {
 		}
 
 		return $this->decided(
-			declared: self::declaredOn(caseType: $caseType),
+			declared: (new AlwaysAvailableActDeclaration())->actsOn(caseType: $caseType),
 			case: $case,
 			userId: $userId
 		);
 	}//end forCase()
-
-	/**
-	 * The acts a case type declares, normalised and in declared order.
-	 *
-	 * An act with no id names nothing a surface can invoke and is dropped: an
-	 * unidentifiable button is one that fails when pressed.
-	 *
-	 * @param array<string, mixed> $caseType The case type.
-	 *
-	 * @return array<int, array<string, mixed>> The declared acts.
-	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
-	 */
-	public static function declaredOn(array $caseType): array {
-		$raw = ($caseType[self::DECLARATION] ?? []);
-		if (is_string($raw) === true) {
-			$decoded = json_decode($raw, true);
-			$raw = [];
-			if (is_array($decoded) === true) {
-				$raw = $decoded;
-			}
-		}
-
-		if (is_array($raw) === false) {
-			return [];
-		}
-
-		$acts = [];
-		foreach ($raw as $act) {
-			if (is_array($act) === false) {
-				continue;
-			}
-
-			$id = trim((string)($act['id'] ?? ''));
-			if ($id === '') {
-				continue;
-			}
-
-			$acts[] = [
-				'id' => $id,
-				'label' => trim((string)($act['label'] ?? $id)),
-				'description' => trim((string)($act['description'] ?? '')),
-				'effect' => trim((string)($act['effect'] ?? '')),
-				'requiredRole' => trim((string)($act['requiredRole'] ?? '')),
-			];
-		}
-
-		return $acts;
-	}//end declaredOn()
 
 	/**
 	 * Decide each act's availability for this reader.
@@ -168,21 +119,7 @@ class AlwaysAvailableActs {
 	private function decided(array $declared, array $case, string $userId): array {
 		$acts = [];
 		foreach ($declared as $act) {
-			$role = (string)$act['requiredRole'];
-			$available = true;
-			$reason = '';
-
-			if ($role !== '') {
-				$verdict = $this->roles->evaluate(
-					guardConfig: ['allowedRoles' => [$role]],
-					case: $case,
-					userId: $userId
-				);
-				$available = $verdict->passed;
-				if ($available === false) {
-					$reason = (string)($verdict->failureMessage ?? '');
-				}
-			}
+			[$available, $reason] = $this->roleVerdict(role: (string)$act['requiredRole'], caseData: $case, userId: $userId);
 
 			$acts[] = [
 				'id' => (string)$act['id'],
@@ -199,6 +136,30 @@ class AlwaysAvailableActs {
 
 		return $acts;
 	}//end decided()
+
+	/**
+	 * Whether the reader holds the act's required role, and why not when they do not.
+	 *
+	 * @param string               $role     The required role, or '' for none.
+	 * @param array<string, mixed> $caseData The case.
+	 * @param string               $userId   Who is asking.
+	 *
+	 * @return array{0: bool, 1: string} Available, and the reason when it is not.
+	 */
+	private function roleVerdict(string $role, array $caseData, string $userId): array {
+		$available = true;
+		$reason = '';
+
+		if ($role !== '') {
+			$verdict = $this->roles->evaluate(guardConfig: ['allowedRoles' => [$role]], case: $caseData, userId: $userId);
+			$available = $verdict->passed;
+			if ($available === false) {
+				$reason = (string)($verdict->failureMessage ?? '');
+			}
+		}
+
+		return [$available, $reason];
+	}//end roleVerdict()
 
 	/**
 	 * Read one configured object by id, or null when there is none.

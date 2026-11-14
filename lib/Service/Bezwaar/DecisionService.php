@@ -54,9 +54,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Bezwaar;
 
+use OCA\Dossiq\Kernel\Contracts\DecisionServiceInterface;
 use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -69,7 +71,7 @@ use Throwable;
  *
  * @spec openspec/specs/bezwaar-decision/spec.md
  */
-class DecisionService {
+class DecisionService implements DecisionServiceInterface {
 
 	use SearchesObjects;
 
@@ -95,6 +97,18 @@ class DecisionService {
 	 * "Decision on objection".
 	 */
 	private const TRANSITION_ID = 'beslissing-op-bezwaar';
+
+	/**
+	 * The decision fields that name a recipient, and the role each is listed under.
+	 *
+	 * @var array<string, string>
+	 */
+	private const RECIPIENT_FIELDS = [
+		'bezwaarmaker' => 'bezwaarmaker',
+		'authorisedRepresentative' => 'gemachtigde',
+		'primairBeslisser' => 'primair-beslisser',
+		'advisoryOpinion' => 'bac-secretaris',
+	];
 
 	/**
 	 * Constructor.
@@ -143,24 +157,11 @@ class DecisionService {
 	 *                          are unconfigured, or the payload is
 	 *                          invalid at draft time.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function draft(string $objectionId, array $payload): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$decisionSchema = $this->settingsService->getConfigValue(
-			key: 'bezwaar_decision_schema'
-		);
-		if ($register === '' || $decisionSchema === '') {
-			throw new RuntimeException(
-				'BezwaarDecision schema is not configured'
-			);
-		}
-
+		$payload = array_diff_key($payload, CallerIdentity::KEYS);
+		$store = $this->requireDecisionStore();
 		$this->validator->assertDraftable(payload: $payload);
 
 		// 🔴 `bezwaar`, NOT `objectionProceeding`. The schema declares the link
@@ -184,9 +185,9 @@ class DecisionService {
 
 		try {
 			return ($this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $decisionSchema,
+				objectService: $store['objectService'],
+				register: $store['register'],
+				schema: $store['schema'],
 				object: $record
 			) ?? $record);
 		} catch (Throwable $e) {
@@ -298,6 +299,39 @@ class DecisionService {
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-dossiq
 	 */
 	public function publish(string $decisionId): array {
+		$store = $this->requireDecisionStore() + ['decisionId' => $decisionId];
+		$current = $this->findObjectAsArray(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			id: $decisionId
+		);
+		if ($current === null) {
+			throw new RuntimeException('BezwaarDecision not found');
+		}
+
+		// REQ-PDRD-004: the Awb validity matrix (7:11 disposition set, 7:12
+		// motivering, proceskosten, replacement/appeal guards) stays in dossiq
+		// and runs BEFORE the Decision is raised, so no Decision can ever be
+		// raised on an Awb-invalid payload.
+		$this->validator->assertPublishable(decision: $current);
+
+		$patch = $this->delegationPatch(
+			decision: $current,
+			decisionRef: $this->raiseDecision(store: $store, decision: $current)
+		);
+
+		return $this->recordDelegation(store: $store, change: ['current' => $current, 'patch' => $patch]);
+	}//end publish()
+
+	/**
+	 * Where decisions live, or why they cannot be written.
+	 *
+	 * @return array{objectService: object, register: string, schema: string} The object service, register and decision schema.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable or the schema is not configured.
+	 */
+	private function requireDecisionStore(): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -313,41 +347,30 @@ class DecisionService {
 			);
 		}
 
-		$current = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $decisionSchema, id: $decisionId);
-		if ($current === null) {
-			throw new RuntimeException('BezwaarDecision not found');
-		}
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $decisionSchema];
+	}//end requireDecisionStore()
 
-		// REQ-PDRD-004: the Awb validity matrix (7:11 disposition set, 7:12
-		// motivering, proceskosten, replacement/appeal guards) stays in dossiq
-		// and runs BEFORE the Decision is raised, so no Decision can ever be
-		// raised on an Awb-invalid payload.
-		$this->validator->assertPublishable(decision: $current);
-
-		$objectionId = (string)($current['bezwaar'] ?? '');
-
-		// REQ-PDRD-001 / REQ-PDRD-002: delegate the deciding to decidesk via the
-		// decidesk DecisionRequestedEvent. Fail closed — never author the besluit
-		// locally as a fallback. The decisionRef returned is persisted on the
-		// record so the outcome can be materialised later from the concluded event.
-		$objectionRef = $decisionId;
-		if ($objectionId !== '') {
-			$objectionRef = $objectionId;
-		}
+	/**
+	 * Raise the decision with the deciding app and answer its reference.
+	 *
+	 * REQ-PDRD-001 / REQ-PDRD-002: the deciding is delegated to decidesk via
+	 * its DecisionRequestedEvent. Fail closed: never author the besluit
+	 * locally as a fallback.
+	 *
+	 * @param array<string, mixed> $store    The register, decision schema and decision id.
+	 * @param array<string, mixed> $decision The stored decision.
+	 *
+	 * @return string The decision reference.
+	 *
+	 * @throws RuntimeException When the deciding app is unavailable.
+	 */
+	private function raiseDecision(array $store, array $decision): string {
+		$objectionRef = $this->objectionRefOf(store: $store, decision: $decision);
 
 		try {
-			$decisionRef = $this->decisionDelegation->raiseBezwaarDecision(
+			return $this->decisionDelegation->raiseBezwaarDecision(
 				objectionId: $objectionRef,
-				payload: [
-					'subjectRegister' => $register,
-					'subjectSchema' => $decisionSchema,
-					'subjectId' => $decisionId,
-					'subjectLabel' => (string)($current['title'] ?? ($current['onderwerp'] ?? '')),
-					'dispositionType' => (string)($current['dispositionType'] ?? ''),
-					'reasoning' => (string)($current['reasoning'] ?? ''),
-					'legalBasis' => (string)($current['legalBasis'] ?? ''),
-					'replacementDecision' => (string)($current['replacementDecision'] ?? ''),
-				],
+				payload: $this->decisionPayload(store: $store, decision: $decision),
 			);
 		} catch (RuntimeException $e) {
 			// REQ-PDRD-002: surface the fail-closed error; do NOT set any local
@@ -358,30 +381,93 @@ class DecisionService {
 			);
 			throw new RuntimeException('Decision service unavailable: ' . $e->getMessage(), 0, $e);
 		}//end try
+	}//end raiseDecision()
 
-		// Persist the decisionRef + notification audit list ONLY — no local
-		// "published" decision state; the besluit is the decidesk outcome.
+	/**
+	 * The objection the decision answers: its own `bezwaar`, or the decision id.
+	 *
+	 * @param array<string, mixed> $store    The register, decision schema and decision id.
+	 * @param array<string, mixed> $decision The stored decision.
+	 *
+	 * @return string
+	 */
+	private function objectionRefOf(array $store, array $decision): string {
+		$objectionRef = (string)$store['decisionId'];
+		$objectionId = (string)($decision['bezwaar'] ?? '');
+		if ($objectionId !== '') {
+			$objectionRef = $objectionId;
+		}
+
+		return $objectionRef;
+	}//end objectionRefOf()
+
+	/**
+	 * The payload the deciding app is asked to decide on.
+	 *
+	 * @param array<string, mixed> $store    The register, decision schema and decision id.
+	 * @param array<string, mixed> $decision The stored decision.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function decisionPayload(array $store, array $decision): array {
+		return [
+			'subjectRegister' => $store['register'],
+			'subjectSchema' => $store['schema'],
+			'subjectId' => $store['decisionId'],
+			'subjectLabel' => (string)($decision['title'] ?? ($decision['onderwerp'] ?? '')),
+			'dispositionType' => (string)($decision['dispositionType'] ?? ''),
+			'reasoning' => (string)($decision['reasoning'] ?? ''),
+			'legalBasis' => (string)($decision['legalBasis'] ?? ''),
+			'replacementDecision' => (string)($decision['replacementDecision'] ?? ''),
+		];
+	}//end decisionPayload()
+
+	/**
+	 * The fields publishing records: the reference and the notification audit
+	 * list only, plus the proceskosten total when one is awarded. There is no
+	 * local "published" decision state; the besluit is the decidesk outcome.
+	 *
+	 * @param array<string, mixed> $decision    The stored decision.
+	 * @param string               $decisionRef The decision reference.
+	 *
+	 * @return array<string, mixed> The patch.
+	 */
+	private function delegationPatch(array $decision, string $decisionRef): array {
 		$patch = [
 			'decisionRef' => $decisionRef,
 			'status' => 'awaiting-decidesk',
-			'notifiedRecipients' => $this->collectRecipients(decision: $current),
+			'notifiedRecipients' => $this->collectRecipients(decision: $decision),
 		];
 
-		$totalAmount = $this->validator->computeProceskostenTotal(decision: $current);
+		$totalAmount = $this->validator->computeProceskostenTotal(decision: $decision);
 		if ($totalAmount !== null) {
-			$proceskosten = (array)($current['legalCostsCompensation'] ?? []);
+			$proceskosten = (array)($decision['legalCostsCompensation'] ?? []);
 			$proceskosten['totalAmount'] = $totalAmount;
 			$patch['legalCostsCompensation'] = $proceskosten;
 		}
 
+		return $patch;
+	}//end delegationPatch()
+
+	/**
+	 * Write the delegation patch onto the decision.
+	 *
+	 * @param array<string, mixed>                                              $store  The object service, register, decision schema and decision id.
+	 * @param array{current: array<string, mixed>, patch: array<string, mixed>} $change The stored decision and the patch.
+	 *
+	 * @return array<string, mixed> The decision as written.
+	 *
+	 * @throws RuntimeException When the patch cannot be written.
+	 */
+	private function recordDelegation(array $store, array $change): array {
 		try {
-			$saved = ($this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $decisionSchema,
-				id: (string)$decisionId,
-				changes: $patch
-			) ?? array_merge($current, $patch));
+			return ($this->patchObjectAsArray(
+				objectService: $store['objectService'],
+				register: $store['register'],
+				schema: $store['schema'],
+				id: (string)$store['decisionId'],
+				changes: $change['patch']
+			) ?? array_merge($change['current'], $change['patch']));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq bezwaar-decision: failed to persist decisionRef: '
@@ -389,9 +475,7 @@ class DecisionService {
 			);
 			throw new RuntimeException('Could not record bezwaarDecision delegation');
 		}
-
-		return $saved;
-	}//end publish()
+	}//end recordDelegation()
 
 	/**
 	 * Apply the bezwaar status transition once decidesk has concluded.
@@ -408,31 +492,10 @@ class DecisionService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	public function applyToBezwaar(string $objectionId, string $decisionId): void {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return;
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$objectionSchema = $this->settingsService->getConfigValue(key: 'bezwaar_schema');
-		if ($register === '' || $objectionSchema === '') {
-			return;
-		}
-
-		$objection = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $objectionSchema,
-			id: $objectionId
-		);
-		if ($objection === null) {
-			return;
-		}
-
-		$caseId = (string)($objection['case'] ?? '');
+		$caseId = $this->caseOfObjection(objectionId: $objectionId);
 		if ($caseId === '') {
 			return;
 		}
@@ -450,6 +513,35 @@ class DecisionService {
 			);
 		}
 	}//end applyToBezwaar()
+
+	/**
+	 * The case an objection belongs to, as stored, or '' when it cannot be read.
+	 *
+	 * @param string $objectionId UUID of the bezwaar.
+	 *
+	 * @return string The case uuid, or ''.
+	 */
+	private function caseOfObjection(string $objectionId): string {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return '';
+		}
+
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$objectionSchema = $this->settingsService->getConfigValue(key: 'bezwaar_schema');
+		if ($register === '' || $objectionSchema === '') {
+			return '';
+		}
+
+		$objection = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $objectionSchema,
+			id: $objectionId
+		);
+
+		return (string)($objection['case'] ?? '');
+	}//end caseOfObjection()
 
 	/**
 	 * Build the recipient audit list for the publication notification
@@ -471,24 +563,11 @@ class DecisionService {
 			$recipients[] = 'actor:' . $acting->getUID();
 		}
 
-		$bezwaarmaker = (string)($decision['bezwaarmaker'] ?? '');
-		if ($bezwaarmaker !== '') {
-			$recipients[] = 'bezwaarmaker:' . $bezwaarmaker;
-		}
-
-		$representative = (string)($decision['authorisedRepresentative'] ?? '');
-		if ($representative !== '') {
-			$recipients[] = 'gemachtigde:' . $representative;
-		}
-
-		$primairBeslisser = (string)($decision['primairBeslisser'] ?? '');
-		if ($primairBeslisser !== '') {
-			$recipients[] = 'primair-beslisser:' . $primairBeslisser;
-		}
-
-		$advisory = (string)($decision['advisoryOpinion'] ?? '');
-		if ($advisory !== '') {
-			$recipients[] = 'bac-secretaris:' . $advisory;
+		foreach (self::RECIPIENT_FIELDS as $field => $role) {
+			$recipient = (string)($decision[$field] ?? '');
+			if ($recipient !== '') {
+				$recipients[] = $role . ':' . $recipient;
+			}
 		}
 
 		return array_values(array_unique($recipients));

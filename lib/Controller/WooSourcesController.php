@@ -29,11 +29,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Woo\WooCollectionQueries;
-use OCA\Dossiq\Woo\WooGatherAdd;
-use OCA\Dossiq\Woo\WooSearchPlans;
-use OCA\Dossiq\Woo\WooSources;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCollectionQueriesInterface;
+use OCA\Dossiq\Kernel\Contracts\WooGatherAddInterface;
+use OCA\Dossiq\Kernel\Contracts\WooSearchPlansInterface;
+use OCA\Dossiq\Kernel\Contracts\WooSourcesInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -55,24 +55,24 @@ class WooSourcesController extends Controller {
 	 *
 	 * @param string          $appName     The app name.
 	 * @param IRequest        $request     The request.
-	 * @param WooSources      $sources     The sources, and integriq's search.
-	 * @param WooGatherAdd    $gatherAdd   Adds picks to the case.
-	 * @param CaseAccessGuard $accessGuard Per-case read and change access, failing closed.
+	 * @param WooSourcesInterface      $sources     The sources, and integriq's search.
+	 * @param WooGatherAddInterface    $gatherAdd   Adds picks to the case.
+	 * @param CaseAccessGuardInterface $accessGuard Per-case read and change access, failing closed.
 	 * @param IUserSession    $userSession The caller.
 	 * @param IL10N           $l10n        Refusal sentences.
-	 * @param WooSearchPlans  $plans       The recorded search plan collection waits for (woo-request-corpus-collection).
-	 * @param WooCollectionQueries $queries Stores every search as a query someone else can re-run.
+	 * @param WooSearchPlansInterface  $plans       The recorded search plan collection waits for (woo-request-corpus-collection).
+	 * @param WooCollectionQueriesInterface $queries Stores every search as a query someone else can re-run.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly WooSources $sources,
-		private readonly WooGatherAdd $gatherAdd,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly WooSourcesInterface $sources,
+		private readonly WooGatherAddInterface $gatherAdd,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
-		private readonly WooSearchPlans $plans,
-		private readonly WooCollectionQueries $queries,
+		private readonly WooSearchPlansInterface $plans,
+		private readonly WooCollectionQueriesInterface $queries,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -120,22 +120,13 @@ class WooSourcesController extends Controller {
 			return $this->noPlan();
 		}
 
-		$source = (string)$this->request->getParam('source', '');
-		$terms = trim((string)$this->request->getParam('terms', ''));
-		if ($source !== WooSources::SOURCE_MICROSOFT365) {
-			return new JSONResponse(
-				['error' => 'unsupported_source', 'message' => $this->l10n->t('This source is searched through the Nextcloud search, not here.')],
-				Http::STATUS_BAD_REQUEST
-			);
+		$search = $this->requestedSearch(caseId: $id, user: $user);
+		$refusal = $this->searchRefusal(search: $search);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
-		if ($terms === '') {
-			return new JSONResponse(['error' => 'terms_required', 'message' => $this->l10n->t('Enter what to search for.')], Http::STATUS_BAD_REQUEST);
-		}
-
-		$from = $this->dateParam(name: 'from');
-		$until = $this->dateParam(name: 'to');
-		$answer = $this->sources->searchMicrosoft365(terms: $terms, from: $from, to: $until, userId: $user->getUID());
+		$answer = $this->sources->searchMicrosoft365(terms: $search->terms, from: $search->from, to: $search->until, userId: $search->userId);
 		if ($answer['refusal'] !== '') {
 			return new JSONResponse(
 				['error' => $answer['refusal'], 'message' => $this->l10n->t('SharePoint, Teams and mail cannot be searched now.')],
@@ -143,28 +134,88 @@ class WooSourcesController extends Controller {
 			);
 		}
 
+		return $this->searchAnswer(search: $search, answer: $answer);
+	}//end search()
+
+	/**
+	 * The search the request asks for.
+	 *
+	 * @param string $caseId The Woo case.
+	 * @param IUser  $user   Who searches.
+	 *
+	 * @return WooSourceSearch
+	 *
+	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+	 */
+	private function requestedSearch(string $caseId, IUser $user): WooSourceSearch {
+		$search = new WooSourceSearch();
+		$search->caseId = $caseId;
+		$search->source = (string)$this->request->getParam('source', '');
+		$search->terms = trim((string)$this->request->getParam('terms', ''));
+		$search->from = $this->dateParam(name: 'from');
+		$search->until = $this->dateParam(name: 'to');
+		$search->userId = $user->getUID();
+
+		return $search;
+	}//end requestedSearch()
+
+	/**
+	 * Refuse a search of a source searched elsewhere, or a search for nothing.
+	 *
+	 * @param WooSourceSearch $search The search.
+	 *
+	 * @return JSONResponse|null The 400, or null when the search may run.
+	 *
+	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+	 */
+	private function searchRefusal(WooSourceSearch $search): ?JSONResponse {
+		if ($search->source !== WooSourcesInterface::SOURCE_MICROSOFT365) {
+			return new JSONResponse(
+				['error' => 'unsupported_source', 'message' => $this->l10n->t('This source is searched through the Nextcloud search, not here.')],
+				Http::STATUS_BAD_REQUEST
+			);
+		}
+
+		if ($search->terms === '') {
+			return new JSONResponse(['error' => 'terms_required', 'message' => $this->l10n->t('Enter what to search for.')], Http::STATUS_BAD_REQUEST);
+		}
+
+		return null;
+	}//end searchRefusal()
+
+	/**
+	 * Record the search on the case and answer its rows.
+	 *
+	 * @param WooSourceSearch      $search The search.
+	 * @param array<string, mixed> $answer The source's answer: rows, remaining and notices.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+	 */
+	private function searchAnswer(WooSourceSearch $search, array $answer): JSONResponse {
 		$query = $this->queries->store(
-			caseId: $id,
+			caseId: $search->caseId,
 			search: [
-				'source' => $source,
-				'terms' => $terms,
-				'periodFrom' => (string)$from,
-				'periodTo' => (string)$until,
+				'source' => $search->source,
+				'terms' => $search->terms,
+				'periodFrom' => (string)$search->from,
+				'periodTo' => (string)$search->until,
 				'resultKeys' => array_column($answer['rows'], 'key'),
 			],
-			userId: $user->getUID(),
+			userId: $search->userId,
 		);
 
 		return new JSONResponse(
 			[
-				'source' => $source,
+				'source' => $search->source,
 				'queryId' => (string)($query['id'] ?? ''),
 				'rows' => $answer['rows'],
 				'remaining' => $answer['remaining'],
 				'notices' => $answer['notices'],
 			]
 		);
-	}//end search()
+	}//end searchAnswer()
 
 	/**
 	 * Add picked results to the case, each pick answered on its own.
@@ -188,12 +239,8 @@ class WooSourcesController extends Controller {
 			return $this->noPlan();
 		}
 
-		$picks = $this->request->getParam('picks', []);
-		if (is_string($picks) === true) {
-			$picks = (json_decode($picks, true) ?? []);
-		}
-
-		if (is_array($picks) === false || $picks === []) {
+		$picks = $this->requestedPicks();
+		if ($picks === null) {
 			return new JSONResponse(['error' => 'picks_required', 'message' => $this->l10n->t('Pick at least one result to add.')], Http::STATUS_BAD_REQUEST);
 		}
 
@@ -204,6 +251,40 @@ class WooSourcesController extends Controller {
 			user: $user,
 			custodians: $this->plans->custodianNames(plan: $plan),
 		);
+
+		return $this->addAnswer(results: $results);
+	}//end add()
+
+	/**
+	 * The results the handler picked, or null when they picked none.
+	 *
+	 * @return array<mixed>|null
+	 *
+	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+	 */
+	private function requestedPicks(): ?array {
+		$picks = $this->request->getParam('picks', []);
+		if (is_string($picks) === true) {
+			$picks = (json_decode($picks, true) ?? []);
+		}
+
+		if (is_array($picks) === false || $picks === []) {
+			return null;
+		}
+
+		return $picks;
+	}//end requestedPicks()
+
+	/**
+	 * Answer each pick; a 422 when none was added or excluded.
+	 *
+	 * @param array<int, array<string, mixed>> $results Each pick's result.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+	 */
+	private function addAnswer(array $results): JSONResponse {
 		$counts = array_count_values(array_column($results, 'status'));
 		$added = ($counts['added'] ?? 0);
 		$excluded = ($counts['excluded'] ?? 0);
@@ -214,7 +295,7 @@ class WooSourcesController extends Controller {
 		}
 
 		return new JSONResponse(['results' => $results, 'added' => $added, 'excluded' => $excluded, 'refused' => ($counts['refused'] ?? 0)], $status);
-	}//end add()
+	}//end addAnswer()
 
 	/**
 	 * The caller when they may change the case, otherwise the refusal to answer.

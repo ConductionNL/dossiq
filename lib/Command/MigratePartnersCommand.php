@@ -13,7 +13,7 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+ * @spec openspec/specs/partner-organisations/spec.md
  *
  * @link https://conduction.nl
  */
@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\PartnerMigrationService;
+use OCA\Dossiq\Kernel\Contracts\PartnerMigrationServiceInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,17 +31,17 @@ use Throwable;
 /**
  * Migrate dossiq `partnerOrganization` objects to OR Organisations.
  *
- * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+ * @spec openspec/specs/partner-organisations/spec.md
  */
 class MigratePartnersCommand extends Command {
 
 	/**
 	 * Wire the command against the migration service.
 	 *
-	 * @param PartnerMigrationService $migrationService Partner → Organisation migrator.
+	 * @param PartnerMigrationServiceInterface $migrationService Partner → Organisation migrator.
 	 */
 	public function __construct(
-		private readonly PartnerMigrationService $migrationService,
+		private readonly PartnerMigrationServiceInterface $migrationService,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -51,7 +51,7 @@ class MigratePartnersCommand extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:migrate-partners')
@@ -66,7 +66,7 @@ class MigratePartnersCommand extends Command {
 	 *
 	 * @return int Symfony command exit code.
 	 *
-	 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+	 * @spec openspec/specs/partner-organisations/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The command takes no input;
 	 * Symfony's signature requires the parameter regardless.

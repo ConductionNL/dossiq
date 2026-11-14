@@ -31,39 +31,38 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Lifecycle;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseActsOverviewInterface;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 
 /**
  * The state of a case and the menu that goes with it.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
-class CaseActsOverview {
+class CaseActsOverview implements CaseActsOverviewInterface {
 
 	/**
 	 * Constructor.
 	 *
 	 * @param CaseStatusStore $store Reads the case the overview is about.
-	 * @param CaseActsMenu $menu What the caller may do, and who the case waits on.
-	 * @param CaseEndingActs $endings Whether and how the case ended.
-	 * @param CaseHoldActs $holds Whether the case is held.
-	 * @param DraftCaseActs $drafts Whether the case is still a draft.
+	 * @param CaseActSources $acts The menu and the ending, hold and draft acts a case offers.
 	 * @param CaseIncompleteness $incompleteness What the case is knowingly missing.
 	 * @param ProcessOwnedStatusRule $processStatus Whether a status may be hand-set.
 	 * @param CaseArchiveState|null $archiveState Reads the platform's archive marker, so the
 	 *                                            menu can offer Restore instead of Archive.
 	 *                                            Optional, so an instance that predates the
 	 *                                            half still answers.
+	 * @param CaseArchiveReadiness|null $readiness The archive checklist, for the archive dialog.
+	 * @param CaseRemedyChoices|null    $remedies  The remedies the case type declares, for the lifecycle menu.
 	 */
 	public function __construct(
 		private readonly CaseStatusStore $store,
-		private readonly CaseActsMenu $menu,
-		private readonly CaseEndingActs $endings,
-		private readonly CaseHoldActs $holds,
-		private readonly DraftCaseActs $drafts,
+		private readonly CaseActSources $acts,
 		private readonly CaseIncompleteness $incompleteness,
 		private readonly ProcessOwnedStatusRule $processStatus,
 		private readonly ?CaseArchiveState $archiveState = null,
+		private readonly ?CaseArchiveReadiness $readiness = null,
+		private readonly ?CaseRemedyChoices $remedies = null,
 	) {
 	}//end __construct()
 
@@ -76,7 +75,8 @@ class CaseActsOverview {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
 	 */
 	public function overview(string $caseId): array {
 		$case = $this->store->loadCase(caseId: $caseId);
@@ -98,24 +98,105 @@ class CaseActsOverview {
 		$marker = ($this->archiveState?->markerOn(case: $case) ?? []);
 
 		return array_merge(
-			[
-				'caseId' => $caseId,
-				'archived' => ($marker !== []),
-				'archivedAt' => (string)($marker['at'] ?? ''),
-				'archivedBy' => (string)($marker['by'] ?? ''),
-				'archivedReason' => (string)($marker['reason'] ?? ''),
-				'held' => $this->holds->isHeld(case: $case),
-				'heldUntil' => (string)($case[CaseHoldActs::UNTIL_FIELD] ?? ''),
-				'draft' => $this->drafts->isDraft(case: $case),
-				'incomplete' => ($missing !== []),
-				'missingFields' => $missing,
-				'endingAct' => (string)($case[CaseEndingActs::ENDING_FIELD] ?? ''),
-				'ending' => $this->endings->endingOf(case: $case),
-				'statusIsHandSettable' => $this->processStatus->allowsHandSet(
-					caseTypeId: (string)($case['caseType'] ?? '')
-				),
-			],
-			$this->menu->forCase(caseId: $caseId, case: $case)
+			['caseId' => $caseId],
+			self::archiveFacts(marker: $marker),
+			$this->workFacts(openCase: $case, missing: $missing),
+			$this->endingFacts(openCase: $case),
+			$this->actionFacts(caseId: $caseId, openCase: $case)
 		);
 	}//end overview()
+
+	/**
+	 * Whether the case is archived, and when, by whom and why.
+	 *
+	 * @param array<string, mixed> $marker The archive marker on the case, empty when it is not archived.
+	 *
+	 * @return array<string, mixed> The archive facts.
+	 */
+	private static function archiveFacts(array $marker): array {
+		return [
+			'archived' => ($marker !== []),
+			'archivedAt' => (string)($marker['at'] ?? ''),
+			'archivedBy' => (string)($marker['by'] ?? ''),
+			'archivedReason' => (string)($marker['reason'] ?? ''),
+		];
+	}//end archiveFacts()
+
+	/**
+	 * Whether the case is held, a draft or incomplete.
+	 *
+	 * @param array<string, mixed> $openCase The case.
+	 * @param array<int, string>   $missing  The fields it misses.
+	 *
+	 * @return array<string, mixed> The facts.
+	 */
+	private function workFacts(array $openCase, array $missing): array {
+		return [
+			'held' => $this->acts->holds->isHeld(case: $openCase),
+			'heldUntil' => (string)($openCase[CaseHoldActs::UNTIL_FIELD] ?? ''),
+			'draft' => $this->acts->drafts->isDraft(case: $openCase),
+			'incomplete' => ($missing !== []),
+			'missingFields' => $missing,
+		];
+	}//end workFacts()
+
+	/**
+	 * How the case ended, the results it may end with, and whether its status may be set by hand.
+	 *
+	 * @param array<string, mixed> $openCase The case.
+	 *
+	 * @return array<string, mixed> The facts.
+	 */
+	private function endingFacts(array $openCase): array {
+		return [
+			'endingAct' => (string)($openCase[CaseEndingActs::ENDING_FIELD] ?? ''),
+			'ending' => $this->acts->endings->endingOf(case: $openCase),
+			'resultTypes' => $this->acts->endings->resultChoicesOn(case: $openCase),
+			'statusIsHandSettable' => $this->processStatus->allowsHandSet(
+				caseTypeId: (string)($openCase['caseType'] ?? '')
+			),
+		];
+	}//end endingFacts()
+
+	/**
+	 * The remedies the case offers, then the acts menu.
+	 *
+	 * @param string               $caseId   The case UUID.
+	 * @param array<string, mixed> $openCase The case.
+	 *
+	 * @return array<string, mixed> The remedies and the menu.
+	 */
+	private function actionFacts(string $caseId, array $openCase): array {
+		return array_merge(
+			['remedies' => ($this->remedies?->forCase(caseId: $caseId, case: $openCase) ?? [])],
+			$this->acts->menu->forCase(caseId: $caseId, case: $openCase)
+		);
+	}//end actionFacts()
+
+	/**
+	 * Whether the case is ready to be archived, item by item.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array{caseId: string, checklist: array<int, array<string, mixed>>} The checklist.
+	 *
+	 * @throws RefusedException When the case cannot be read.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function archiveReadiness(string $caseId): array {
+		$case = $this->store->loadCase(caseId: $caseId);
+		if ($case === null) {
+			throw new RefusedException(
+				rule: 'case-not-found',
+				sentence: 'This case could not be found.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return [
+			'caseId' => $caseId,
+			'checklist' => ($this->readiness?->checklist(caseId: $caseId, case: $case) ?? []),
+		];
+	}//end archiveReadiness()
 }//end class

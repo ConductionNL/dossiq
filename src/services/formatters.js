@@ -13,16 +13,22 @@
 // here. (`mapFormatters.js` is the separate registry for `type:"map"`
 // marker formatting.)
 
-import { translate as t } from '@nextcloud/l10n'
+import { getCanonicalLocale, translatePlural as n, translate as t } from '@nextcloud/l10n'
+import { reactive } from 'vue'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
-import { formatDuration } from '../utils/durationHelpers.js'
+import { formatDuration, parseDuration } from '../utils/durationHelpers.js'
+import { fieldFill, fieldInCaseList, fieldKind, fieldOrigin, fieldTitle } from '../utils/fieldDescription.js'
+import { portalName } from '../utils/portalName.js'
 import { approvalMarkerLabel } from './approvalMarker.js'
+import { caseAddress } from './caseAddress.js'
+import { caseAnswerText } from './caseAnswer.js'
+import { coveredForLabel } from './coveredFor.js'
+import { routingNoteLabel } from './routingNote.js'
 import { scanVerdictLabel } from './scanVerdict.js'
 
-// Guard so each lookup collection is fetched at most once per page load.
-const lookupFetchStarted = {}
+
 
 // Batch-fetch guard for sub-case counts: collect the UUIDs requested during a
 // render frame and flush them in a single round-trip on the next microtask,
@@ -31,6 +37,134 @@ const lookupFetchStarted = {}
 // subCaseCounts map, re-rendering the badge cells once it lands.
 const pendingCountIds = new Set()
 let countFlushScheduled = false
+
+
+/**
+ * An ISO duration's parts, with a number of days that is a whole number of
+ * weeks (and nothing else) counted in weeks.
+ *
+ * @param {string} iso The ISO duration.
+ * @return {{years: number, months: number, weeks: number, days: number}|null} The parts, or null when it is not one.
+ */
+function inWholeWeeks(iso) {
+	const parts = parseDuration(iso)
+	if (!parts) {
+		return null
+	}
+	if (isWholeWeeksOfDays(parts)) {
+		return { years: 0, months: 0, weeks: parts.days / 7, days: 0 }
+	}
+	return parts
+}
+
+/**
+ * Whether duration parts are only days, and a whole number of weeks of them.
+ *
+ * @param {{years: number, months: number, weeks: number, days: number}} parts The parts.
+ * @return {boolean} True for 7, 14, 21, ... days and nothing else.
+ */
+function isWholeWeeksOfDays(parts) {
+	return countsOnlyDays(parts) && parts.days > 0 && parts.days % 7 === 0
+}
+
+/**
+ * Whether duration parts count no years, months or weeks.
+ *
+ * @param {{years: number, months: number, weeks: number, days: number}} parts The parts.
+ * @return {boolean} True when only days can be set.
+ */
+function countsOnlyDays(parts) {
+	return !parts.years && !parts.months && !parts.weeks
+}
+
+/**
+ * The one unit a duration is counted in, or null when it uses several.
+ *
+ * @param {{years: number, months: number, weeks: number, days: number}} parts The parts.
+ * @return {{unit: string, count: number}|null} The unit and its count.
+ */
+function singleUnit(parts) {
+	const used = ['years', 'months', 'weeks', 'days'].filter((unit) => parts[unit] > 0)
+	return used.length === 1 ? { unit: used[0], count: parts[used[0]] } : null
+}
+
+/**
+ * The extension a case type allows, or '' when it allows none.
+ *
+ * @param {object|null|undefined} row The case type row.
+ * @return {string|undefined} The ISO extension period.
+ */
+function allowedExtension(row) {
+	return row?.extensionAllowed === false ? '' : row?.extensionPeriod
+}
+
+/**
+ * An extension in words after its processing time: a bare number when it is
+ * counted in the same unit as the term, else the duration in words.
+ *
+ * @param {object|null} base The term's parts in whole weeks, or null when it is not a duration.
+ * @param {string} extension The ISO extension period.
+ * @return {string} The words.
+ */
+function extensionWords(base, extension) {
+	const more = inWholeWeeks(extension)
+	if (!more) {
+		return formatDuration(extension)
+	}
+	const moreUnit = singleUnit(more)
+	return sharesUnit(base, moreUnit) ? String(moreUnit.count) : formatDuration(toIsoDuration(more))
+}
+
+/**
+ * Whether a term is counted in the one unit an extension is counted in.
+ *
+ * @param {object|null} base The term's parts, or null when it is not a duration.
+ * @param {{unit: string, count: number}|null} moreUnit The extension's one unit.
+ * @return {boolean} True when both use the same single unit.
+ */
+function sharesUnit(base, moreUnit) {
+	const baseUnit = base ? singleUnit(base) : null
+	return Boolean(baseUnit && moreUnit && baseUnit.unit === moreUnit.unit)
+}
+
+/**
+ * Duration parts back as an ISO duration.
+ *
+ * @param {{years: number, months: number, weeks: number, days: number}} parts The parts.
+ * @return {string} The ISO duration.
+ */
+function toIsoDuration(parts) {
+	return 'P'
+		+ (parts.years ? `${parts.years}Y` : '')
+		+ (parts.months ? `${parts.months}M` : '')
+		+ (parts.weeks ? `${parts.weeks}W` : '')
+		+ (parts.days ? `${parts.days}D` : '')
+}
+/**
+ * The deelzaak store, or null when no store can be had (no active pinia).
+ *
+ * @return {object|null} The store.
+ */
+function deelzaakStoreOrNull() {
+	try {
+		return useDeelzaakStore()
+	} catch {
+		return null
+	}
+}
+
+/**
+ * A case's sub-case badge from the counts the store holds, queueing the
+ * case for the next batch count when it is not counted yet.
+ *
+ * @param {object} store The deelzaak pinia store.
+ * @param {string} uuid The parent case UUID.
+ * @return {string} The badge label, or '' while uncounted or without sub-cases.
+ */
+function countedBadge(store, uuid) {
+	queueSubCaseCount(store, uuid)
+	return subCaseCountBadge(store.subCaseCounts[uuid] || 0)
+}
 
 /**
  * Queue a parent UUID for the next batch sub-case-count fetch and schedule
@@ -60,12 +194,19 @@ function queueSubCaseCount(store, uuid) {
 	})
 }
 
+// Labels of related objects by type, filled by a lookup of their own. The
+// store's shared collection for a type is the state of whatever list last
+// fetched it (a filtered picker, or a query a newer one replaced), so a label
+// read only from there stays a raw UUID.
+const relatedLabels = reactive({})
+const relatedFetchStarted = {}
+
 /**
- * Resolve a related object's UUID to its human label by reading the
- * (reactive) objectStore collection for `type`. Fires a one-off
- * fetchCollection when the collection is not loaded yet — the pinia
- * state access is tracked by the rendering component, so the cell
- * re-renders with the label once the collection arrives.
+ * Resolve a related object's UUID to its human label: from the store's
+ * collection for `type` when it holds the row, else from this module's own
+ * reactive label map, which one unfiltered lookup per type fills. The
+ * rendering component tracks the reactive read, so the cell re-renders with
+ * the label once it arrives.
  *
  * @param {string} type Registered object type ('caseType' / 'statusType').
  * @param {string} uuid The related object's UUID.
@@ -79,29 +220,394 @@ function lookupRelatedName(type, uuid) {
 	} catch {
 		return uuid
 	}
-	const collection = store.collections[type]
-	// `registerObjectType` seeds `collections[type] = []` (a truthy empty
-	// array) before any fetch, so a plain `!collection` guard treats a
-	// registered-but-unfetched type as already loaded and never fires the
-	// lookup — leaving reference cells stuck on the raw UUID. Fetch whenever
-	// the collection is empty; `lookupFetchStarted` still guards against
-	// re-fetching a type that genuinely resolved to zero rows.
-	if ((!collection || collection.length === 0) && !lookupFetchStarted[type]) {
-		// Only fetch once the type is registered (initializeStores done).
-		if (store.objectTypeRegistry && store.objectTypeRegistry[type]) {
-			lookupFetchStarted[type] = true
-			store.fetchCollection(type, { _limit: 500 }).catch(() => {
-				lookupFetchStarted[type] = false
-			})
-		}
+	const label = collectionLabel(store.collections[type], uuid)
+		|| (relatedLabels[type] && relatedLabels[type][uuid])
+	if (label) {
+		return label
 	}
+	if (!relatedFetchStarted[type] && canLookUp(store, type)) {
+		startRelatedLookup(store, type)
+	}
+	return uuid
+}
+
+/**
+ * The title or name of the row the shared collection holds for a uuid.
+ *
+ * @param {Array<object>|undefined} collection The store's collection for the type.
+ * @param {string} uuid The related object's UUID.
+ * @return {string|undefined} The label, when the row has one.
+ */
+function collectionLabel(collection, uuid) {
 	const hit = (collection || []).find(
 		(o) => o.id === uuid || (o['@self'] && o['@self'].id === uuid),
 	)
-	return hit ? hit.title || hit.name || uuid : uuid
+	return hit && (hit.title || hit.name) ? hit.title || hit.name : undefined
+}
+
+/**
+ * Whether the store can look up the labels of a type.
+ *
+ * @param {object} store The object store.
+ * @param {string} type Registered object type.
+ * @return {boolean} True when it has the lookup and knows the type.
+ */
+function canLookUp(store, type) {
+	return typeof store.fetchCollectionForOptions === 'function' && Boolean(store.objectTypeRegistry && store.objectTypeRegistry[type])
+}
+
+/**
+ * Look up every label of a type once, into the module's own label map. A
+ * lookup that answers nothing, or fails, may run again.
+ *
+ * @param {object} store The object store.
+ * @param {string} type Registered object type.
+ */
+function startRelatedLookup(store, type) {
+	relatedFetchStarted[type] = true
+	Promise.resolve(store.fetchCollectionForOptions(type, { _limit: 500 }))
+		.then((rows) => {
+			const labels = labelsById(rows)
+			relatedLabels[type] = labels
+			if (Object.keys(labels).length === 0) {
+				relatedFetchStarted[type] = false
+			}
+		})
+		.catch(() => {
+			relatedFetchStarted[type] = false
+		})
+}
+
+/**
+ * The label of each row, by its id; rows without either are skipped.
+ *
+ * @param {unknown} rows The looked-up rows.
+ * @return {Object<string, string>} The labels.
+ */
+function labelsById(rows) {
+	const labels = {}
+	for (const row of listOf(rows)) {
+		const id = lookedUpId(row)
+		const label = rowLabel(row)
+		if (id && label) {
+			labels[id] = label
+		}
+	}
+	return labels
+}
+
+/**
+ * A looked-up answer as a list of rows; anything else as no rows.
+ *
+ * @param {unknown} rows The looked-up rows.
+ * @return {Array} The rows.
+ */
+function listOf(rows) {
+	return Array.isArray(rows) ? rows : []
+}
+
+/**
+ * The label of a looked-up row: its title, else its name.
+ *
+ * @param {object|null} row A looked-up row.
+ * @return {string|undefined} The label.
+ */
+function rowLabel(row) {
+	return row && (row.title || row.name)
+}
+
+/**
+ * The id of a looked-up row, from the row or its `@self`.
+ *
+ * @param {object|null} row A looked-up row.
+ * @return {string|undefined} The id.
+ */
+function lookedUpId(row) {
+	return row && (row.id || (row['@self'] && row['@self'].id))
+}
+
+/**
+ * Forget the related labels (tests).
+ *
+ * @return {void}
+ */
+export function resetRelatedLabels() {
+	for (const key of Object.keys(relatedLabels)) {
+		delete relatedLabels[key]
+	}
+	for (const key of Object.keys(relatedFetchStarted)) {
+		delete relatedFetchStarted[key]
+	}
+}
+
+/**
+ * A stored count as a number, or null when it is unknown (empty) or not a
+ * count (negative, fractional or not a number).
+ *
+ * @param {unknown} value The stored count.
+ * @return {number|null} The count.
+ */
+function knownCount(value) {
+	if (isBlank(value)) {
+		return null
+	}
+	return asCount(Number(value))
+}
+
+/**
+ * Whether a stored value is empty: null, undefined or ''.
+ *
+ * @param {unknown} value The stored value.
+ * @return {boolean} True when nothing is stored.
+ */
+function isBlank(value) {
+	return value === null || value === undefined || value === ''
+}
+
+/**
+ * A number when it counts something (a whole number, zero or more), else null.
+ *
+ * @param {number} count The number.
+ * @return {number|null} The count.
+ */
+function asCount(count) {
+	return Number.isInteger(count) && count >= 0 ? count : null
+}
+
+/**
+ * A penalty's amount in whole euros, in the reader's locale ("€ 1.442").
+ *
+ * @param {object|null|undefined} row The row, with `penaltyEuros`.
+ * @return {string} The amount; an unreadable amount reads as zero.
+ */
+function penaltyAmount(row) {
+	return new Intl.NumberFormat(getCanonicalLocale(), { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(row?.penaltyEuros) || 0)
+}
+
+/**
+ * A day as "7 Aug" in the reader's locale, or '' when it is not a day.
+ *
+ * @param {unknown} value The day (YYYY-MM-DD).
+ * @return {string}
+ */
+function shortDay(value) {
+	const match = typeof value === 'string' ? value.match(/^(\d{4})-(\d{2})-(\d{2})/) : null
+	if (!match) {
+		return ''
+	}
+	const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])))
+	return new Intl.DateTimeFormat(getCanonicalLocale(), { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(date)
+}
+
+/**
+ * The words for each moment a case sends a message on.
+ *
+ * @return {Object<string, string>} The words by moment.
+ */
+function outboundMoments() {
+	return {
+		acknowledgement: t('dossiq', 'Receipt confirmation'),
+		'information-request': t('dossiq', 'Information request'),
+		stage: t('dossiq', 'Status update'),
+		extension: t('dossiq', 'Extension'),
+		decision: t('dossiq', 'Decision'),
+		transfer: t('dossiq', 'Transfer'),
+	}
+}
+
+/**
+ * The words for each channel a message goes through; the portal by the name
+ * portaliq gives it.
+ *
+ * @return {Object<string, string>} The words by channel.
+ */
+function outboundChannels() {
+	return {
+		'portal-inbox': portalName() || t('dossiq', 'the portal'),
+		'digital-post': t('dossiq', 'digital post'),
+		email: t('dossiq', 'email'),
+	}
+}
+
+/**
+ * The format a message's sending time is written in ("3 Oct 14:32").
+ *
+ * @return {Intl.DateTimeFormat} The format.
+ */
+function outboundTimeFormat() {
+	return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
+
+/**
+ * One outbound message as a line: what it was, the channel and when.
+ *
+ * @param {object} entry The outbound communication.
+ * @param {{moments: object, channels: object, when: Intl.DateTimeFormat}} labels The words and time format, built once per list.
+ * @return {string} The line.
+ */
+function outboundLine(entry, labels) {
+	const moment = momentWords(entry, labels.moments)
+	if (!entry.channel) {
+		return t('dossiq', '{moment}, not sent', { moment })
+	}
+	const time = sentTime(entry.sentAt, labels.when)
+	const channel = labels.channels[entry.channel] ?? entry.channel
+	return time
+		? t('dossiq', '{moment} via {channel}, {time}', { moment, channel, time })
+		: t('dossiq', '{moment} via {channel}', { moment, channel })
+}
+
+/**
+ * What an outbound message was, in words; an unknown moment as it is stored.
+ *
+ * @param {object} entry The outbound communication.
+ * @param {Object<string, string>} moments The words by moment.
+ * @return {string} The words.
+ */
+function momentWords(entry, moments) {
+	return moments[entry.moment] ?? String(entry.moment ?? '')
+}
+
+/**
+ * When a message was sent, in the given format, or '' when it has no
+ * readable time.
+ *
+ * @param {unknown} value The stored sending time.
+ * @param {Intl.DateTimeFormat} when The format.
+ * @return {string} The time.
+ */
+function sentTime(value, when) {
+	const sentAt = value ? new Date(value) : null
+	return sentAt && !Number.isNaN(sentAt.getTime()) ? when.format(sentAt) : ''
 }
 
 export default {
+	/**
+	 * A stored code by its label (`formatterOptions.labels`), translated; the
+	 * code itself when it has no label (DqZaakDocumenten verdict pill).
+	 *
+	 * @param {unknown} value The stored code.
+	 * @param {object} row The row.
+	 * @param {object} property The property.
+	 * @param {{labels?: object}} options The column's formatter options.
+	 * @return {string}
+	 * @spec openspec/specs/files-review-row-verdict/spec.md#requirement-a-document-is-assessed-from-its-row
+	 */
+	optionLabel: (value, row, property, options) => {
+		const code = value === null || value === undefined ? '' : String(value)
+		const label = options && options.labels && typeof options.labels[code] === 'string' ? options.labels[code] : ''
+		return label === '' ? code : t('dossiq', label)
+	},
+
+	/**
+	 * "Received 7 Aug": the day a notice came in, as the deadline dashboard
+	 * names it (DqTermijnen "Ontvangen 7 aug"); empty without a day.
+	 *
+	 * @param {unknown} value The day (YYYY-MM-DD).
+	 * @return {string}
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	receivedOn: (value) => {
+		const day = shortDay(value)
+		return day === '' ? '' : t('dossiq', 'Received {date}', { date: day })
+	},
+
+	/**
+	 * A notice's penalty in words: "€ 1.442, fixed", "€ 207, running since
+	 * 16 Oct" or "None" (DqTermijnen "Dwangsom").
+	 *
+	 * @param {unknown} value The penalty state: `definitive`, `running` or `none`.
+	 * @param {object} row The row, with `penaltyEuros` and `penaltySince`.
+	 * @return {string}
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	penaltyLine: (value, row) => {
+		if (value !== 'definitive' && value !== 'running') {
+			return t('dossiq', 'None')
+		}
+		const amount = penaltyAmount(row)
+		if (value === 'definitive') {
+			return t('dossiq', '{amount}, fixed', { amount })
+		}
+		const since = shortDay(row?.penaltySince)
+		return since === '' ? amount : t('dossiq', '{amount}, running since {date}', { amount, date: since })
+	},
+
+	/**
+	 * Whether a list value holds `formatterOptions.token`, as the translated
+	 * `yes` or `no` word (DqTenant Mandaten "Bezwaar beslissen"). A comma
+	 * separated text counts as a list.
+	 *
+	 * @param {unknown} value A list of codes, or a comma separated text.
+	 * @param {object} row The row.
+	 * @param {object} property The property.
+	 * @param {{token?: string, yes?: string, no?: string}} options The column's formatter options.
+	 * @return {string}
+	 * @spec openspec/specs/tenant-tables-in-words/spec.md#requirement-a-list-value-is-read-as-yes-or-no-by-a-token-it-holds
+	 */
+	containsLabel: (value, row, property, options) => {
+		const opts = options || {}
+		const list = Array.isArray(value) ? value : String(value ?? '').split(',')
+		const holds = list.some((entry) => String(entry).trim() === String(opts.token ?? ''))
+		return t('dossiq', holds ? (opts.yes || 'Yes') : (opts.no || 'No'))
+	},
+
+	/**
+	 * The outcome of a document checksum's last check, in words; the code
+	 * itself when it is not one of the four.
+	 *
+	 * @param {unknown} value `unchanged`, `changed`, `missing` or `unchecked`.
+	 * @return {string}
+	 * @spec openspec/specs/document-integrity-check/spec.md#requirement-the-checksum-card-says-when-and-how-the-file-was-last-checked
+	 */
+	integrityStatus: (value) => {
+		const labels = {
+			unchanged: t('dossiq', 'Unchanged'),
+			changed: t('dossiq', 'Changed since it was stored'),
+			missing: t('dossiq', 'File not found'),
+			unchecked: t('dossiq', 'Too large to check'),
+		}
+		const code = value === null || value === undefined ? '' : String(value)
+		return labels[code] ?? code
+	},
+
+	/**
+	 * Whom a covered case is covered for, and until when ("For Anouk Bakker,
+	 * until 10 Oct"); '' on the reader's own case.
+	 *
+	 * @param {object|null} value The case's `coveredFor`.
+	 * @return {string}
+	 */
+	coveredFor: (value) => coveredForLabel(value),
+
+	/**
+	 * A case's routing note, for the team queue row.
+	 *
+	 * @param {object|null} value The case's `routingNote`.
+	 * @return {string} The line.
+	 * @spec openspec/specs/kcc-routing/spec.md#requirement-the-team-queue-says-why-a-case-stands-there
+	 */
+	routingNote: (value) => routingNoteLabel(value),
+
+	/**
+	 * The urgency tier of a work queue row as its pill reads ("Late",
+	 * "Critical", "Soon", "In sight", "Normal"); '' for an unknown tier.
+	 *
+	 * @param {string} value The row's `deadlineTier`.
+	 * @return {string}
+	 * @spec openspec/specs/my-work/spec.md
+	 */
+	deadlineTierLabel: (value) => {
+		const labels = {
+			overdue: t('dossiq', 'Late'),
+			critical: t('dossiq', 'Critical'),
+			warning: t('dossiq', 'Soon'),
+			inSight: t('dossiq', 'In sight'),
+			normal: t('dossiq', 'Normal'),
+		}
+		return labels[value] ?? ''
+	},
+
 	/**
 	 * Human label for a case's `caseType` UUID reference.
 	 *
@@ -109,6 +615,118 @@ export default {
 	 * @return {string}
 	 */
 	caseTypeName: (value) => lookupRelatedName('caseType', value),
+
+	/**
+	 * A case's address, from its first `case-location` ('' while it loads or
+	 * when the case has none), for a list line such as the map list's.
+	 *
+	 * @param {string} value The case id.
+	 * @return {string}
+	 * @spec openspec/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
+	 */
+	caseAddress: (value) => caseAddress(value),
+
+	/**
+	 * A number of case types as a phrase ("3 case types"); '' when the count
+	 * is unknown (null) or not a count.
+	 *
+	 * @param {unknown} value The count.
+	 * @return {string} The phrase, or ''.
+	 * @spec openspec/specs/catalogue/spec.md
+	 */
+	caseTypeCount: (value) => {
+		const count = knownCount(value)
+		return count === null ? '' : n('dossiq', '%n case type', '%n case types', count)
+	},
+
+	/**
+	 * A number of cases as a phrase ("2 cases").
+	 *
+	 * @param {unknown} value The count.
+	 * @return {string} The phrase, or '' when the value is not a count.
+	 */
+	caseCount: (value) => {
+		const count = Number(value)
+		return Number.isInteger(count) && count >= 0 ? n('dossiq', '%n case', '%n cases', count) : ''
+	},
+
+	/**
+	 * The kind of answer a case type field holds ("Choice list, 6 options").
+	 *
+	 * @param {unknown} value The field's type.
+	 * @param {object} row The field.
+	 * @return {string} The kind.
+	 * @spec openspec/changes/case-type-fields-columns/specs/case-types/spec.md
+	 */
+	fieldKind: (value, row) => fieldKind(row),
+
+	/**
+	 * How a case type field is filled in (Required, Optional, Read only).
+	 *
+	 * @param {unknown} value Whether the field is required.
+	 * @param {object} row The field.
+	 * @return {string} The words.
+	 * @spec openspec/changes/case-type-fields-columns/specs/case-types/spec.md
+	 */
+	fieldFill: (value, row) => fieldFill(row),
+
+	/**
+	 * Where a case type field comes from ("Own field", "Inherited from …").
+	 *
+	 * @param {unknown} value The cell value (unused).
+	 * @param {object} row The field.
+	 * @return {string} The words.
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	fieldOrigin: (value, row) => fieldOrigin(row),
+
+	/**
+	 * What a person reads for a case type field: its title, else its name.
+	 *
+	 * @param {unknown} value The cell value (unused).
+	 * @param {object} row The field.
+	 * @return {string} The words.
+	 * @spec openspec/changes/case-type-fields-columns/specs/case-types/spec.md
+	 */
+	fieldTitle: (value, row) => fieldTitle(row),
+
+	/**
+	 * Whether the case type on the page shows the field as a case list column.
+	 *
+	 * @param {unknown} value The cell value (unused).
+	 * @param {object} row The field.
+	 * @param {object} property The column's property (unused).
+	 * @param {object} options The column's options (unused).
+	 * @param {{object: (object|null)}} context The page record (nextcloud-vue cell-formatter-page-record).
+	 * @return {string} Yes or No.
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	fieldInCaseList: (value, row, property, options, context) => fieldInCaseList(row, context && context.object),
+
+	/**
+	 * A schema's number of properties as a phrase ("9 properties"), empty
+	 * when the object type names no schema.
+	 *
+	 * @param {unknown} value The count.
+	 * @return {string} The phrase, or ''.
+	 * @spec openspec/specs/catalogue/spec.md
+	 */
+	propertyCount: (value) => {
+		const count = knownCount(value)
+		return count === null ? '' : n('dossiq', '%n property', '%n properties', count)
+	},
+
+	/**
+	 * The views an object type supports, in words ("Map, Table").
+	 *
+	 * @param {unknown} value The view keys, `map` and `table`.
+	 * @return {string} The views, or '' for none.
+	 * @spec openspec/specs/catalogue/spec.md
+	 */
+	objectViews: (value) => {
+		const labels = { map: t('dossiq', 'Map'), table: t('dossiq', 'Table') }
+		return (Array.isArray(value) ? value : []).map((view) => labels[view]).filter(Boolean).join(', ')
+	},
 
 	/**
 	 * Human label for a case object's `case` UUID reference.
@@ -155,9 +773,10 @@ export default {
 
 	/**
 	 * A case type's processing time with the extension it allows, as
-	 * DqZaaktypen draws it ("8 weeks, +6 weeks"). The extension shows only
-	 * when the case type allows one and names its length; otherwise this is
-	 * `isoDuration`.
+	 * DqZaaktypen draws it ("8 weeks, +6"). A whole number of weeks in days
+	 * reads as weeks, and an extension in the same unit as the term is a bare
+	 * number. The extension shows only when the case type allows one and
+	 * names its length.
 	 *
 	 * @param {string} value The ISO processing deadline.
 	 * @param {object} [row] The case type row.
@@ -165,15 +784,13 @@ export default {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	processingTime: (value, row) => {
-		const base = formatDuration(value)
-		const extension = row?.extensionAllowed === false ? '' : row?.extensionPeriod
-		if (!base || !extension) {
-			return base
+		const base = inWholeWeeks(value)
+		const time = base ? formatDuration(toIsoDuration(base)) : formatDuration(value)
+		const extension = allowedExtension(row)
+		if (!time || !extension) {
+			return time
 		}
-		return t('dossiq', '{time}, +{extension}', {
-			time: base,
-			extension: formatDuration(extension),
-		})
+		return t('dossiq', '{time}, +{extension}', { time, extension: extensionWords(base, extension) })
 	},
 
 	/**
@@ -208,6 +825,36 @@ export default {
 	statusTypeName: (value) => lookupRelatedName('statusType', value),
 
 	/**
+	 * A case's priority as a phrase for a list line ("prioriteit hoog",
+	 * DqTeamwachtrij); '' for an empty or unknown value.
+	 *
+	 * @param {string} value The stored priority (low, normal, high, urgent).
+	 * @return {string}
+	 */
+	priorityPhrase: (value) => {
+		const phrases = {
+			low: t('dossiq', 'priority low'),
+			normal: t('dossiq', 'priority normal'),
+			high: t('dossiq', 'priority high'),
+			urgent: t('dossiq', 'priority urgent'),
+		}
+		return phrases[value] ?? ''
+	},
+
+	/**
+	 * One case-type field of a case, named by the column's
+	 * `formatterOptions.name`, read off the case's `properties`.
+	 *
+	 * @param {Array<object>|null} value The case's `properties`.
+	 * @param {object} row The case.
+	 * @param {object} property The column's property.
+	 * @param {{name: string}} options The column's `formatterOptions`.
+	 * @return {string} The answer as text.
+	 * @spec openspec/specs/dossiq-sociaal-domein-participatiewet/spec.md
+	 */
+	caseAnswer: (value, row, property, options) => caseAnswerText(value, options),
+
+	/**
 	 * What the virus scanner recorded about a document row.
 	 *
 	 * Read, never inferred: the value is whatever `ScanVerdictReader`
@@ -216,7 +863,7 @@ export default {
 	 *
 	 * @param {object|string} value The verdict, or the bare state.
 	 * @return {string} The sentence.
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	scanVerdict: (value) => scanVerdictLabel(value),
 	// approval-chain-on-the-document REQ-BVL-005. The value is the marker the
@@ -224,6 +871,87 @@ export default {
 	// document nobody routed, which renders NOTHING rather than a word: an
 	// empty marker and "Approved" are different rows.
 	approvalChain: (value) => approvalMarkerLabel(value),
+
+	/**
+	 * A document's direction, by its label, for the Files tab's Direction
+	 * column. A row without one renders nothing.
+	 *
+	 * @param {string} value The direction (`incoming`, `outgoing`, `internal`).
+	 * @return {string} The label.
+	 * @spec openspec/changes/documents-on-the-case/tasks.md
+	 */
+	documentDirection: (value) => {
+		const labels = {
+			incoming: t('dossiq', 'Incoming'),
+			outgoing: t('dossiq', 'Outgoing'),
+			internal: t('dossiq', 'Internal'),
+		}
+		return labels[String(value ?? '')] ?? ''
+	},
+
+	/**
+	 * A document's confidentiality, by its label, for the Files tab's
+	 * Visible to column. The value is the stored level; a row without one
+	 * renders nothing.
+	 *
+	 * @param {string} value The confidentiality level.
+	 * @return {string} The label.
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	/**
+	 * Who a document's access exception names, as the Who can see this card reads it: "Only Pieter Jansen and
+	 * Woo team". The listing gives the display names, people first, then groups.
+	 *
+	 * @param {Array<string>} value The display names.
+	 * @return {string} The sentence, or '' when the document carries no exception.
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-the-who-can-see-this-card-shows-the-exception-and-changes-it
+	 */
+	accessExceptionNames: (value) => {
+		const names = (Array.isArray(value) ? value : []).map((name) => String(name ?? '').trim()).filter((name) => name !== '')
+		if (names.length === 0) {
+			return ''
+		}
+		if (names.length === 1) {
+			return t('dossiq', 'Only {name}', { name: names[0] })
+		}
+		return t('dossiq', 'Only {names} and {last}', { names: names.slice(0, -1).join(', '), last: names[names.length - 1] })
+	},
+
+	confidentialityLabel: (value) => {
+		const labels = {
+			openbaar: t('dossiq', 'Public'),
+			beperkt_openbaar: t('dossiq', 'Restricted public'),
+			intern: t('dossiq', 'Internal'),
+			zaakvertrouwelijk: t('dossiq', 'Case confidential'),
+			vertrouwelijk: t('dossiq', 'Confidential'),
+			confidentieel: t('dossiq', 'Classified confidential'),
+			geheim: t('dossiq', 'Secret'),
+			zeer_geheim: t('dossiq', 'Top secret'),
+		}
+		return labels[String(value ?? '')] ?? ''
+	},
+
+	/**
+	 * The messages a case sent on its own, one line each: what it was, the
+	 * channel it went through and when ("Receipt confirmation via the portal,
+	 * 3 Oct 14:32"). The portal is named as portaliq names it ("Mijn
+	 * Zuiddrecht"), else "the portal". A message no channel took reads
+	 * "not sent".
+	 *
+	 * @param {Array<object>} value The case's outbound communications.
+	 * @return {string} The lines joined with "; ", or '' without messages.
+	 * @spec openspec/specs/receipt-confirmation-card/spec.md#requirement-outbound-messages-read-as-lines
+	 */
+	outboundMessages: (value) => {
+		if (!Array.isArray(value)) {
+			return ''
+		}
+		const labels = { moments: outboundMoments(), channels: outboundChannels(), when: outboundTimeFormat() }
+		return value
+			.filter((entry) => entry && typeof entry === 'object')
+			.map((entry) => outboundLine(entry, labels))
+			.join('; ')
+	},
 
 	/**
 	 * Sub-case count badge for a case row in the case list. Returns "N
@@ -235,24 +963,21 @@ export default {
 	 * @param {unknown} value Unused (the column key is the case UUID via `row`).
 	 * @param {object} row The case object.
 	 * @return {string} Badge label, or '' when the case has no sub-cases.
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T10
 	 */
 	subCaseCount: (value, row) => {
-		const uuid = (row && (row.id || (row['@self'] && row['@self'].id))) || value
+		const uuid = lookedUpId(row) || value
 		if (!uuid) {
 			return ''
 		}
-		let store
-		try {
-			store = useDeelzaakStore()
-		} catch {
+		const store = deelzaakStoreOrNull()
+		if (store === null) {
 			return ''
 		}
 		// Sub-cases themselves never carry sub-cases (zrc-013c) — skip the count.
-		if (row && row.parentCase) {
+		if (row?.parentCase) {
 			return ''
 		}
-		queueSubCaseCount(store, uuid)
-		return subCaseCountBadge(store.subCaseCounts[uuid] || 0)
+		return countedBadge(store, uuid)
 	},
 }

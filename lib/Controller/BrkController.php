@@ -26,13 +26,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\SignedIn;
 use OCA\Dossiq\Service\External\Brk\BrkAdapterInterface;
 use OCA\Dossiq\Service\External\Brk\BrkLookupResult;
 use OCP\AppFramework\Controller;
@@ -46,7 +47,7 @@ use Throwable;
 /**
  * Controller for BRK parcel lookups.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  *
  * @psalm-suppress UnusedClass
  */
@@ -83,7 +84,7 @@ class BrkController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function parcel(): JSONResponse {
 		$unauthorized = $this->requireUser();
@@ -91,28 +92,68 @@ class BrkController extends Controller {
 			return $unauthorized;
 		}
 
-		$municipalityCode = (string)$this->request->getParam('kadastraleGemeenteCode', '');
-		$section = (string)$this->request->getParam('sectie', '');
-		$perceelnummer = (string)$this->request->getParam('perceelnummer', '');
-		if ($municipalityCode === '' || $section === '' || $perceelnummer === '') {
+		$aanduiding = $this->requestedAanduiding();
+		if ($aanduiding === null) {
 			return new JSONResponse(
 				['error' => 'kadastraleGemeenteCode, sectie and perceelnummer are required'],
 				Http::STATUS_BAD_REQUEST,
 			);
 		}
 
-		$sequenceNumberParam = $this->request->getParam('appartementsrechtVolgnummer');
-		$sequenceNumber = null;
-		if (is_string($sequenceNumberParam) === true && $sequenceNumberParam !== '') {
-			$sequenceNumber = $sequenceNumberParam;
+		return $this->lookUpParcel(aanduiding: $aanduiding);
+	}//end parcel()
+
+	/**
+	 * The kadastrale aanduiding the request names, or null when a part is missing.
+	 *
+	 * @return array{municipalityCode: string, section: string, perceelnummer: string, sequenceNumber: string|null}|null
+	 */
+	private function requestedAanduiding(): ?array {
+		$municipalityCode = (string)$this->request->getParam('kadastraleGemeenteCode', '');
+		$section = (string)$this->request->getParam('sectie', '');
+		$perceelnummer = (string)$this->request->getParam('perceelnummer', '');
+		if ($municipalityCode === '' || $section === '' || $perceelnummer === '') {
+			return null;
 		}
 
+		return [
+			'municipalityCode' => $municipalityCode,
+			'section' => $section,
+			'perceelnummer' => $perceelnummer,
+			'sequenceNumber' => $this->nonEmptyString(name: 'appartementsrechtVolgnummer'),
+		];
+	}//end requestedAanduiding()
+
+	/**
+	 * A request parameter when it is a non-empty string, else null.
+	 *
+	 * @param string $name The parameter.
+	 *
+	 * @return string|null
+	 */
+	private function nonEmptyString(string $name): ?string {
+		$value = $this->request->getParam($name);
+		if (is_string($value) === false || $value === '') {
+			return null;
+		}
+
+		return $value;
+	}//end nonEmptyString()
+
+	/**
+	 * Look the parcel up; an unexpected failure is a logged 500.
+	 *
+	 * @param array{municipalityCode: string, section: string, perceelnummer: string, sequenceNumber: string|null} $aanduiding The parcel.
+	 *
+	 * @return JSONResponse
+	 */
+	private function lookUpParcel(array $aanduiding): JSONResponse {
 		try {
 			$result = $this->brkAdapter->lookupByKadastraleAanduiding(
-				municipalityCode: $municipalityCode,
-				section: $section,
-				perceelnummer: $perceelnummer,
-				sequenceNumber: $sequenceNumber,
+				municipalityCode: $aanduiding['municipalityCode'],
+				section: $aanduiding['section'],
+				perceelnummer: $aanduiding['perceelnummer'],
+				sequenceNumber: $aanduiding['sequenceNumber'],
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq BRK parcel lookup failed: ' . $e->getMessage());
@@ -123,7 +164,7 @@ class BrkController extends Controller {
 		}
 
 		return $this->toResponse(result: $result);
-	}//end parcel()
+	}//end lookUpParcel()
 
 	/**
 	 * Look up a parcel by its Kadaster identificatie.
@@ -134,7 +175,7 @@ class BrkController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function object(string $id): JSONResponse {
 		$unauthorized = $this->requireUser();
@@ -169,14 +210,7 @@ class BrkController extends Controller {
 	 *                           null.
 	 */
 	private function requireUser(): ?JSONResponse {
-		if ($this->userSession->getUser() === null) {
-			return new JSONResponse(
-				['error' => 'Authentication required'],
-				Http::STATUS_UNAUTHORIZED,
-			);
-		}
-
-		return null;
+		return SignedIn::refusal(session: $this->userSession);
 	}//end requireUser()
 
 	/**

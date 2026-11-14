@@ -1,0 +1,1771 @@
+{
+    "no openregister": [
+        [
+            "output",
+            "warning",
+            "OpenRegister not available — skipping workflow backfill."
+        ]
+    ],
+    "no object service": [
+        [
+            "output",
+            "warning",
+            "OpenRegister ObjectService not resolvable — skipping workflow backfill."
+        ]
+    ],
+    "no register": [
+        [
+            "output",
+            "warning",
+            "Workflow backfill: required schema configuration missing — skipping."
+        ]
+    ],
+    "no case type schema": [
+        [
+            "output",
+            "warning",
+            "Workflow backfill: required schema configuration missing — skipping."
+        ]
+    ],
+    "no status schema": [
+        [
+            "output",
+            "warning",
+            "Workflow backfill: required schema configuration missing — skipping."
+        ]
+    ],
+    "no template schema": [
+        [
+            "output",
+            "warning",
+            "Workflow backfill: required schema configuration missing — skipping."
+        ]
+    ],
+    "case types cannot be listed": [
+        [
+            "system",
+            "enter"
+        ],
+        [
+            "search",
+            1,
+            {
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 28
+                }
+            }
+        ],
+        [
+            "log",
+            "error",
+            "Dossiq: workflow backfill failed to list caseTypes",
+            {
+                "app": "dossiq",
+                "exception": "store refused search:28"
+            }
+        ],
+        [
+            "output",
+            "warning",
+            "Could not list caseTypes — skipping workflow backfill."
+        ],
+        [
+            "system",
+            "leave"
+        ],
+        [
+            "output",
+            "info",
+            "Workflow backfill complete — migrated 0, skipped 0."
+        ]
+    ],
+    "every case type": [
+        [
+            "system",
+            "enter"
+        ],
+        [
+            "search",
+            1,
+            {
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 28
+                }
+            }
+        ],
+        [
+            "listVersions",
+            "ct-new"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-new",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Nieuw (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-new",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Zonder volgorde\",\"description\":\"\",\"status\":\"ct-new-s3\",\"order\":0,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]},{\"id\":\"<uuid>\",\"title\":\"Status ct-new-s1\",\"description\":\"Over ct-new-s1\",\"status\":\"ct-new-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]},{\"id\":\"<uuid>\",\"title\":\"Status ct-new-s2\",\"description\":\"Over ct-new-s2\",\"status\":\"ct-new-s2\",\"order\":2,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[{\"id\":\"<uuid>\",\"fromStatus\":\"ct-new-s3\",\"toStatus\":\"ct-new-s1\",\"label\":\"Status ct-new-s1\",\"guards\":[],\"automaticActions\":[],\"allowedRoles\":[]},{\"id\":\"<uuid>\",\"fromStatus\":\"ct-new-s1\",\"toStatus\":\"ct-new-s2\",\"label\":\"Status ct-new-s2\",\"guards\":[],\"automaticActions\":[],\"allowedRoles\":[]}]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "28",
+            "ct-new",
+            {
+                "title": {
+                    "nl": "Nieuw"
+                },
+                "workflowDefinition": "tpl-new-ct-new"
+            }
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-new",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 35
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "35",
+            "case-open",
+            {
+                "caseType": "ct-new",
+                "title": "Open",
+                "workflowTemplate": "tpl-new-ct-new",
+                "workflowVersion": 1
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "35",
+            "case-fail",
+            {
+                "caseType": "ct-new",
+                "workflowTemplate": "tpl-new-ct-new",
+                "workflowVersion": 1
+            }
+        ],
+        [
+            "log",
+            "error",
+            "Dossiq: workflow backfill failed to pin case",
+            {
+                "app": "dossiq",
+                "exception": "store refused save:35:case-fail"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-pinned"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-pinned",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "patch",
+            1,
+            "20",
+            "53",
+            "tpl-x",
+            {
+                "title": "Vast (basis)",
+                "steps": "[{\"id\":\"step-1\",\"title\":\"Stap\",\"description\":\"\",\"status\":\"ct-pinned-s1\"},{\"id\":\"step-2\",\"title\":\"Stap\",\"status\":\"\"}]",
+                "transitions": "[{\"id\":\"move-1\",\"fromStatus\":\"ct-pinned-s1\",\"toStatus\":\"ct-pinned-s2\",\"label\":\"Door\"}]"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-heal"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-heal",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "patch",
+            1,
+            "20",
+            "53",
+            "tpl-heal",
+            {
+                "title": "Heel (basis)",
+                "steps": "[{\"id\":\"step-1\",\"title\":\"Status ct-heal-s1\",\"description\":\"Over ct-heal-s1\",\"status\":\"ct-heal-s1\"},{\"id\":\"step-2\",\"title\":\"Stap\",\"status\":\"\"}]",
+                "transitions": "[{\"id\":\"move-1\",\"fromStatus\":\"ct-heal-s1\",\"toStatus\":\"ct-heal-s2\",\"label\":\"Status ct-heal-s2\"}]"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-drafts"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-drafts",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Concept (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-drafts",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-drafts-s1\",\"description\":\"Over ct-drafts-s1\",\"status\":\"ct-drafts-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "28",
+            "ct-drafts",
+            {
+                "title": "Concept",
+                "workflowDefinition": "tpl-new-ct-drafts"
+            }
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-drafts",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 35
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "35",
+            "case-drafts",
+            {
+                "caseType": "ct-drafts",
+                "workflowTemplate": "tpl-new-ct-drafts",
+                "workflowVersion": 1
+            }
+        ],
+        [
+            "listVersions",
+            "ct-none"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-none",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "listVersions",
+            "ct-noid-status"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-noid-status",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "listVersions",
+            "ct-statusfail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-statusfail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "log",
+            "error",
+            "Dossiq: workflow backfill failed to list statusTypes",
+            {
+                "app": "dossiq",
+                "exception": "store refused search:29:ct-statusfail"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-savefail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-savefail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Workflow (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-savefail",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-savefail-s1\",\"description\":\"Over ct-savefail-s1\",\"status\":\"ct-savefail-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "log",
+            "error",
+            "Dossiq: workflow backfill failed to save template",
+            {
+                "app": "dossiq",
+                "exception": "store refused save:53:ct-savefail"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-anon"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-anon",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Workflow (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-anon",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-anon-s1\",\"description\":\"Over ct-anon-s1\",\"status\":\"ct-anon-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "listVersions",
+            "ct-pinfail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-pinfail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Pin faalt (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-pinfail",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-pinfail-s1\",\"description\":\"Over ct-pinfail-s1\",\"status\":\"ct-pinfail-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "28",
+            "ct-pinfail",
+            {
+                "title": "Pin faalt",
+                "workflowDefinition": "tpl-new-ct-pinfail"
+            }
+        ],
+        [
+            "log",
+            "error",
+            "Dossiq: workflow backfill failed to pin caseType",
+            {
+                "app": "dossiq",
+                "exception": "store refused save:28:ct-pinfail"
+            }
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-pinfail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 35
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "35",
+            "case-pinfail",
+            {
+                "caseType": "ct-pinfail",
+                "workflowTemplate": "tpl-new-ct-pinfail",
+                "workflowVersion": 1
+            }
+        ],
+        [
+            "listVersions",
+            "ct-casefail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-casefail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Workflow (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-casefail",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-casefail-s1\",\"description\":\"Over ct-casefail-s1\",\"status\":\"ct-casefail-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "28",
+            "ct-casefail",
+            {
+                "workflowDefinition": "tpl-new-ct-casefail"
+            }
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-casefail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 35
+                }
+            }
+        ],
+        [
+            "log",
+            "error",
+            "Dossiq: workflow backfill failed to list cases",
+            {
+                "app": "dossiq",
+                "exception": "store refused search:35:ct-casefail"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-healfail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-healfail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "log",
+            "warning",
+            "Dossiq: workflow backfill could not read the statuses to heal a basis template",
+            {
+                "app": "dossiq",
+                "caseType": "ct-healfail",
+                "exception": "store refused search:29:ct-healfail"
+            }
+        ],
+        [
+            "patch",
+            1,
+            "20",
+            "53",
+            "tpl-healfail",
+            {
+                "title": "Workflow (basis)",
+                "steps": "[{\"id\":\"step-1\",\"title\":\"Stap\",\"description\":\"\",\"status\":\"ct-healfail-s1\"},{\"id\":\"step-2\",\"title\":\"Stap\",\"status\":\"\"}]",
+                "transitions": "[{\"id\":\"move-1\",\"fromStatus\":\"ct-healfail-s1\",\"toStatus\":\"ct-healfail-s2\",\"label\":\"Door\"}]"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-patchfail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-patchfail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "patch",
+            1,
+            "20",
+            "53",
+            "tpl-patchfail",
+            {
+                "title": "Workflow (basis)",
+                "steps": "[{\"id\":\"step-1\",\"title\":\"Stap\",\"description\":\"\",\"status\":\"ct-patchfail-s1\"},{\"id\":\"step-2\",\"title\":\"Stap\",\"status\":\"\"}]",
+                "transitions": "[{\"id\":\"move-1\",\"fromStatus\":\"ct-patchfail-s1\",\"toStatus\":\"ct-patchfail-s2\",\"label\":\"Door\"}]"
+            }
+        ],
+        [
+            "log",
+            "warning",
+            "Dossiq: workflow backfill could not heal the labels of a basis template",
+            {
+                "app": "dossiq",
+                "template": "tpl-patchfail",
+                "exception": "store refused patch:tpl-patchfail"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-pinned-only"
+        ],
+        [
+            "listVersions",
+            "ct-published"
+        ],
+        [
+            "listVersions",
+            "ct-noid-tpl"
+        ],
+        [
+            "system",
+            "leave"
+        ],
+        [
+            "output",
+            "info",
+            "Workflow backfill complete — migrated 5, skipped 7."
+        ]
+    ],
+    "every case type, no case schema": [
+        [
+            "system",
+            "enter"
+        ],
+        [
+            "search",
+            1,
+            {
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 28
+                }
+            }
+        ],
+        [
+            "listVersions",
+            "ct-new"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-new",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Nieuw (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-new",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Zonder volgorde\",\"description\":\"\",\"status\":\"ct-new-s3\",\"order\":0,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]},{\"id\":\"<uuid>\",\"title\":\"Status ct-new-s1\",\"description\":\"Over ct-new-s1\",\"status\":\"ct-new-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]},{\"id\":\"<uuid>\",\"title\":\"Status ct-new-s2\",\"description\":\"Over ct-new-s2\",\"status\":\"ct-new-s2\",\"order\":2,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[{\"id\":\"<uuid>\",\"fromStatus\":\"ct-new-s3\",\"toStatus\":\"ct-new-s1\",\"label\":\"Status ct-new-s1\",\"guards\":[],\"automaticActions\":[],\"allowedRoles\":[]},{\"id\":\"<uuid>\",\"fromStatus\":\"ct-new-s1\",\"toStatus\":\"ct-new-s2\",\"label\":\"Status ct-new-s2\",\"guards\":[],\"automaticActions\":[],\"allowedRoles\":[]}]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "28",
+            "ct-new",
+            {
+                "title": {
+                    "nl": "Nieuw"
+                },
+                "workflowDefinition": "tpl-new-ct-new"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-pinned"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-pinned",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "patch",
+            1,
+            "20",
+            "53",
+            "tpl-x",
+            {
+                "title": "Vast (basis)",
+                "steps": "[{\"id\":\"step-1\",\"title\":\"Stap\",\"description\":\"\",\"status\":\"ct-pinned-s1\"},{\"id\":\"step-2\",\"title\":\"Stap\",\"status\":\"\"}]",
+                "transitions": "[{\"id\":\"move-1\",\"fromStatus\":\"ct-pinned-s1\",\"toStatus\":\"ct-pinned-s2\",\"label\":\"Door\"}]"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-heal"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-heal",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "patch",
+            1,
+            "20",
+            "53",
+            "tpl-heal",
+            {
+                "title": "Heel (basis)",
+                "steps": "[{\"id\":\"step-1\",\"title\":\"Status ct-heal-s1\",\"description\":\"Over ct-heal-s1\",\"status\":\"ct-heal-s1\"},{\"id\":\"step-2\",\"title\":\"Stap\",\"status\":\"\"}]",
+                "transitions": "[{\"id\":\"move-1\",\"fromStatus\":\"ct-heal-s1\",\"toStatus\":\"ct-heal-s2\",\"label\":\"Status ct-heal-s2\"}]"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-drafts"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-drafts",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Concept (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-drafts",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-drafts-s1\",\"description\":\"Over ct-drafts-s1\",\"status\":\"ct-drafts-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "28",
+            "ct-drafts",
+            {
+                "title": "Concept",
+                "workflowDefinition": "tpl-new-ct-drafts"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-none"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-none",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "listVersions",
+            "ct-noid-status"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-noid-status",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "listVersions",
+            "ct-statusfail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-statusfail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "log",
+            "error",
+            "Dossiq: workflow backfill failed to list statusTypes",
+            {
+                "app": "dossiq",
+                "exception": "store refused search:29:ct-statusfail"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-savefail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-savefail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Workflow (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-savefail",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-savefail-s1\",\"description\":\"Over ct-savefail-s1\",\"status\":\"ct-savefail-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "log",
+            "error",
+            "Dossiq: workflow backfill failed to save template",
+            {
+                "app": "dossiq",
+                "exception": "store refused save:53:ct-savefail"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-anon"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-anon",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Workflow (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-anon",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-anon-s1\",\"description\":\"Over ct-anon-s1\",\"status\":\"ct-anon-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "listVersions",
+            "ct-pinfail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-pinfail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Pin faalt (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-pinfail",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-pinfail-s1\",\"description\":\"Over ct-pinfail-s1\",\"status\":\"ct-pinfail-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "28",
+            "ct-pinfail",
+            {
+                "title": "Pin faalt",
+                "workflowDefinition": "tpl-new-ct-pinfail"
+            }
+        ],
+        [
+            "log",
+            "error",
+            "Dossiq: workflow backfill failed to pin caseType",
+            {
+                "app": "dossiq",
+                "exception": "store refused save:28:ct-pinfail"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-casefail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-casefail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Workflow (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-casefail",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-casefail-s1\",\"description\":\"Over ct-casefail-s1\",\"status\":\"ct-casefail-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "28",
+            "ct-casefail",
+            {
+                "workflowDefinition": "tpl-new-ct-casefail"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-healfail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-healfail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "log",
+            "warning",
+            "Dossiq: workflow backfill could not read the statuses to heal a basis template",
+            {
+                "app": "dossiq",
+                "caseType": "ct-healfail",
+                "exception": "store refused search:29:ct-healfail"
+            }
+        ],
+        [
+            "patch",
+            1,
+            "20",
+            "53",
+            "tpl-healfail",
+            {
+                "title": "Workflow (basis)",
+                "steps": "[{\"id\":\"step-1\",\"title\":\"Stap\",\"description\":\"\",\"status\":\"ct-healfail-s1\"},{\"id\":\"step-2\",\"title\":\"Stap\",\"status\":\"\"}]",
+                "transitions": "[{\"id\":\"move-1\",\"fromStatus\":\"ct-healfail-s1\",\"toStatus\":\"ct-healfail-s2\",\"label\":\"Door\"}]"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-patchfail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-patchfail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "patch",
+            1,
+            "20",
+            "53",
+            "tpl-patchfail",
+            {
+                "title": "Workflow (basis)",
+                "steps": "[{\"id\":\"step-1\",\"title\":\"Stap\",\"description\":\"\",\"status\":\"ct-patchfail-s1\"},{\"id\":\"step-2\",\"title\":\"Stap\",\"status\":\"\"}]",
+                "transitions": "[{\"id\":\"move-1\",\"fromStatus\":\"ct-patchfail-s1\",\"toStatus\":\"ct-patchfail-s2\",\"label\":\"Door\"}]"
+            }
+        ],
+        [
+            "log",
+            "warning",
+            "Dossiq: workflow backfill could not heal the labels of a basis template",
+            {
+                "app": "dossiq",
+                "template": "tpl-patchfail",
+                "exception": "store refused patch:tpl-patchfail"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-pinned-only"
+        ],
+        [
+            "listVersions",
+            "ct-published"
+        ],
+        [
+            "listVersions",
+            "ct-noid-tpl"
+        ],
+        [
+            "system",
+            "leave"
+        ],
+        [
+            "output",
+            "info",
+            "Workflow backfill complete — migrated 5, skipped 7."
+        ]
+    ],
+    "every case type, nothing fails": [
+        [
+            "system",
+            "enter"
+        ],
+        [
+            "search",
+            1,
+            {
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 28
+                }
+            }
+        ],
+        [
+            "listVersions",
+            "ct-new"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-new",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Nieuw (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-new",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Zonder volgorde\",\"description\":\"\",\"status\":\"ct-new-s3\",\"order\":0,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]},{\"id\":\"<uuid>\",\"title\":\"Status ct-new-s1\",\"description\":\"Over ct-new-s1\",\"status\":\"ct-new-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]},{\"id\":\"<uuid>\",\"title\":\"Status ct-new-s2\",\"description\":\"Over ct-new-s2\",\"status\":\"ct-new-s2\",\"order\":2,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[{\"id\":\"<uuid>\",\"fromStatus\":\"ct-new-s3\",\"toStatus\":\"ct-new-s1\",\"label\":\"Status ct-new-s1\",\"guards\":[],\"automaticActions\":[],\"allowedRoles\":[]},{\"id\":\"<uuid>\",\"fromStatus\":\"ct-new-s1\",\"toStatus\":\"ct-new-s2\",\"label\":\"Status ct-new-s2\",\"guards\":[],\"automaticActions\":[],\"allowedRoles\":[]}]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "28",
+            "ct-new",
+            {
+                "title": {
+                    "nl": "Nieuw"
+                },
+                "workflowDefinition": "tpl-new-ct-new"
+            }
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-new",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 35
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "35",
+            "case-open",
+            {
+                "caseType": "ct-new",
+                "title": "Open",
+                "workflowTemplate": "tpl-new-ct-new",
+                "workflowVersion": 1
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "35",
+            "case-fail",
+            {
+                "caseType": "ct-new",
+                "workflowTemplate": "tpl-new-ct-new",
+                "workflowVersion": 1
+            }
+        ],
+        [
+            "listVersions",
+            "ct-pinned"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-pinned",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "patch",
+            1,
+            "20",
+            "53",
+            "tpl-x",
+            {
+                "title": "Vast (basis)",
+                "steps": "[{\"id\":\"step-1\",\"title\":\"Stap\",\"description\":\"\",\"status\":\"ct-pinned-s1\"},{\"id\":\"step-2\",\"title\":\"Stap\",\"status\":\"\"}]",
+                "transitions": "[{\"id\":\"move-1\",\"fromStatus\":\"ct-pinned-s1\",\"toStatus\":\"ct-pinned-s2\",\"label\":\"Door\"}]"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-heal"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-heal",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "patch",
+            1,
+            "20",
+            "53",
+            "tpl-heal",
+            {
+                "title": "Heel (basis)",
+                "steps": "[{\"id\":\"step-1\",\"title\":\"Status ct-heal-s1\",\"description\":\"Over ct-heal-s1\",\"status\":\"ct-heal-s1\"},{\"id\":\"step-2\",\"title\":\"Stap\",\"status\":\"\"}]",
+                "transitions": "[{\"id\":\"move-1\",\"fromStatus\":\"ct-heal-s1\",\"toStatus\":\"ct-heal-s2\",\"label\":\"Status ct-heal-s2\"}]"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-drafts"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-drafts",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Concept (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-drafts",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-drafts-s1\",\"description\":\"Over ct-drafts-s1\",\"status\":\"ct-drafts-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "28",
+            "ct-drafts",
+            {
+                "title": "Concept",
+                "workflowDefinition": "tpl-new-ct-drafts"
+            }
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-drafts",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 35
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "35",
+            "case-drafts",
+            {
+                "caseType": "ct-drafts",
+                "workflowTemplate": "tpl-new-ct-drafts",
+                "workflowVersion": 1
+            }
+        ],
+        [
+            "listVersions",
+            "ct-none"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-none",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "listVersions",
+            "ct-noid-status"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-noid-status",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "listVersions",
+            "ct-statusfail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-statusfail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "listVersions",
+            "ct-savefail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-savefail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Workflow (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-savefail",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-savefail-s1\",\"description\":\"Over ct-savefail-s1\",\"status\":\"ct-savefail-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "28",
+            "ct-savefail",
+            {
+                "workflowDefinition": "tpl-new-ct-savefail"
+            }
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-savefail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 35
+                }
+            }
+        ],
+        [
+            "listVersions",
+            "ct-anon"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-anon",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Workflow (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-anon",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-anon-s1\",\"description\":\"Over ct-anon-s1\",\"status\":\"ct-anon-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "listVersions",
+            "ct-pinfail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-pinfail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Pin faalt (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-pinfail",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-pinfail-s1\",\"description\":\"Over ct-pinfail-s1\",\"status\":\"ct-pinfail-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "28",
+            "ct-pinfail",
+            {
+                "title": "Pin faalt",
+                "workflowDefinition": "tpl-new-ct-pinfail"
+            }
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-pinfail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 35
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "35",
+            "case-pinfail",
+            {
+                "caseType": "ct-pinfail",
+                "workflowTemplate": "tpl-new-ct-pinfail",
+                "workflowVersion": 1
+            }
+        ],
+        [
+            "listVersions",
+            "ct-casefail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-casefail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "53",
+            null,
+            {
+                "title": "Workflow (basis)",
+                "description": "Backfilled from implicit statusType ordering.",
+                "caseType": "ct-casefail",
+                "version": 1,
+                "isActive": true,
+                "isDraft": false,
+                "lifecycleStatus": "published",
+                "steps": "[{\"id\":\"<uuid>\",\"title\":\"Status ct-casefail-s1\",\"description\":\"Over ct-casefail-s1\",\"status\":\"ct-casefail-s1\",\"order\":1,\"assigneeRole\":\"\",\"isRequired\":false,\"checklist\":[],\"automaticActions\":[]}]",
+                "transitions": "[]",
+                "nodePositions": ""
+            }
+        ],
+        [
+            "save",
+            1,
+            "20",
+            "28",
+            "ct-casefail",
+            {
+                "workflowDefinition": "tpl-new-ct-casefail"
+            }
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-casefail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 35
+                }
+            }
+        ],
+        [
+            "listVersions",
+            "ct-healfail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-healfail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "patch",
+            1,
+            "20",
+            "53",
+            "tpl-healfail",
+            {
+                "title": "Workflow (basis)",
+                "steps": "[{\"id\":\"step-1\",\"title\":\"Stap\",\"description\":\"\",\"status\":\"ct-healfail-s1\"},{\"id\":\"step-2\",\"title\":\"Stap\",\"status\":\"\"}]",
+                "transitions": "[{\"id\":\"move-1\",\"fromStatus\":\"ct-healfail-s1\",\"toStatus\":\"ct-healfail-s2\",\"label\":\"Door\"}]"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-patchfail"
+        ],
+        [
+            "search",
+            1,
+            {
+                "caseType": "ct-patchfail",
+                "_limit": 500,
+                "@self": {
+                    "register": 20,
+                    "schema": 29
+                }
+            }
+        ],
+        [
+            "patch",
+            1,
+            "20",
+            "53",
+            "tpl-patchfail",
+            {
+                "title": "Workflow (basis)",
+                "steps": "[{\"id\":\"step-1\",\"title\":\"Stap\",\"description\":\"\",\"status\":\"ct-patchfail-s1\"},{\"id\":\"step-2\",\"title\":\"Stap\",\"status\":\"\"}]",
+                "transitions": "[{\"id\":\"move-1\",\"fromStatus\":\"ct-patchfail-s1\",\"toStatus\":\"ct-patchfail-s2\",\"label\":\"Door\"}]"
+            }
+        ],
+        [
+            "listVersions",
+            "ct-pinned-only"
+        ],
+        [
+            "listVersions",
+            "ct-published"
+        ],
+        [
+            "listVersions",
+            "ct-noid-tpl"
+        ],
+        [
+            "system",
+            "leave"
+        ],
+        [
+            "output",
+            "info",
+            "Workflow backfill complete — migrated 6, skipped 7."
+        ]
+    ]
+}

@@ -1,0 +1,22 @@
+{
+  "_note": "Board DqOverdragen (decision 25 Oct): a team in the hand-over list reads \"6 leden · bezwaar, beroep en Woo-advies\". Nextcloud keeps no description for a group, so the organisation role that names the group (ncGroupId) carries it. Read by CnAssignDialog's assignee.describe on the case-hand-over action. Optional; the version moves so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "organisatieRol": {
+        "version": "1.5.0",
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Description",
+            "description": "What the team does, in a short line for pickers: \"bezwaar, beroep en Woo-advies\"."
+          }
+        }
+      }
+    }
+  }
+}

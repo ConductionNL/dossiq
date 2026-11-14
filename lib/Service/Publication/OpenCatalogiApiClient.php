@@ -49,9 +49,9 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
- * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d1
- * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d2
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d1
+ * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d2
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -61,7 +61,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Publication;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
@@ -73,7 +73,7 @@ use Throwable;
 /**
  * Writes OpenCatalogi's publication model through OpenRegister in process.
  *
- * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
 class OpenCatalogiApiClient {
 
@@ -135,10 +135,10 @@ class OpenCatalogiApiClient {
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' on any write failure.
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function createPublication(string $register, string $schema, array $payload): array {
-		return $this->storeObject(register: $register, schema: $schema, object: $payload, uuid: null);
+		return $this->storeObject(target: new PublicationTarget(register: $register, schema: $schema), object: $payload, uuid: null);
 	}//end createPublication()
 
 	/**
@@ -165,14 +165,14 @@ class OpenCatalogiApiClient {
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' on any read/write failure.
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function updatePublication(string $register, string $schema, string $id, array $payload): array {
-		$stored = $this->readObjectData(register: $register, schema: $schema, id: $id);
+		$target = new PublicationTarget(register: $register, schema: $schema);
+		$stored = $this->readObjectData(target: $target, id: $id);
 
 		return $this->storeObject(
-			register: $register,
-			schema: $schema,
+			target: $target,
 			object: array_merge($stored, $payload),
 			uuid: $id,
 		);
@@ -189,10 +189,10 @@ class OpenCatalogiApiClient {
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' on any write failure.
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function attachDocument(string $register, string $schema, array $payload): array {
-		return $this->storeObject(register: $register, schema: $schema, object: $payload, uuid: null);
+		return $this->storeObject(target: new PublicationTarget(register: $register, schema: $schema), object: $payload, uuid: null);
 	}//end attachDocument()
 
 	/**
@@ -226,7 +226,7 @@ class OpenCatalogiApiClient {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) register/schema/mimeType are call-shape compatibility — see the docblock.
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function attachFile(
 		string $register,
@@ -236,43 +236,90 @@ class OpenCatalogiApiClient {
 		string $base64Content,
 		string $mimeType,
 	): array {
+		$fileService = $this->availableFileService(objectId: $objectId);
+
+		$attachment = new FileAttachment(objectId: $objectId, fileName: $fileName, base64Content: $base64Content);
+
+		try {
+			return $this->addedFile(fileService: $fileService, attachment: $attachment);
+		} catch (Throwable $e) {
+			throw $this->attachFailed(attachment: $attachment, error: $e);
+		}//end try
+	}//end attachFile()
+
+	/**
+	 * OpenRegister's file service, or a domain error when it is not there.
+	 *
+	 * @param string $objectId The object id the file was meant for.
+	 *
+	 * @return object The file service.
+	 *
+	 * @throws RuntimeException 'opencatalogi_api_error' when the file service is unavailable.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	private function availableFileService(string $objectId): object {
 		$fileService = $this->settingsService->getFileService();
 		if ($fileService === null) {
 			$this->logger->warning(
 				'OpenCatalogiApiClient: OpenRegister FileService unavailable',
-				['app' => Application::APP_ID, 'objectId' => $objectId],
+				['app' => AppIdentity::APP_ID, 'objectId' => $objectId],
 			);
 			throw new RuntimeException(self::DOMAIN_ERROR);
 		}
 
-		try {
-			$file = $fileService->addFile(
-				objectEntity: $objectId,
-				fileName: $fileName,
-				content: $base64Content,
-				share: false,
-				tags: [],
-			);
+		return $fileService;
+	}//end availableFileService()
 
-			$formatted = $fileService->formatFile($file);
-			if (is_array($formatted) === true) {
-				return $formatted;
-			}
+	/**
+	 * Add the file to the object and return its formatted metadata.
+	 *
+	 * @param object         $fileService The OpenRegister file service.
+	 * @param FileAttachment $attachment  The object, file name and base64 content.
+	 *
+	 * @return array<string, mixed> The stored file's metadata, or an empty array.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	private function addedFile(object $fileService, FileAttachment $attachment): array {
+		$file = $fileService->addFile(
+			objectEntity: $attachment->objectId,
+			fileName: $attachment->fileName,
+			content: $attachment->base64Content,
+			share: false,
+			tags: [],
+		);
 
-			return [];
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'OpenCatalogiApiClient: file attach failed',
-				[
-					'app' => Application::APP_ID,
-					'objectId' => $objectId,
-					'fileName' => $fileName,
-					'error' => $e->getMessage(),
-				],
-			);
-			throw new RuntimeException(self::DOMAIN_ERROR, 0, $e);
-		}//end try
-	}//end attachFile()
+		$formatted = $fileService->formatFile($file);
+		if (is_array($formatted) === true) {
+			return $formatted;
+		}
+
+		return [];
+	}//end addedFile()
+
+	/**
+	 * Log a failed attach and describe it as the domain error.
+	 *
+	 * @param FileAttachment $attachment The object and file name the attach was for.
+	 * @param Throwable      $error      Why the attach failed.
+	 *
+	 * @return RuntimeException The domain error to throw.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	private function attachFailed(FileAttachment $attachment, Throwable $error): RuntimeException {
+		$this->logger->warning(
+			'OpenCatalogiApiClient: file attach failed',
+			[
+				'app' => AppIdentity::APP_ID,
+				'objectId' => $attachment->objectId,
+				'fileName' => $attachment->fileName,
+				'error' => $error->getMessage(),
+			],
+		);
+		return new RuntimeException(self::DOMAIN_ERROR, 0, $error);
+	}//end attachFailed()
 
 	/**
 	 * Best-effort discovery of a WOO-flagged OpenCatalogi catalog.
@@ -286,7 +333,7 @@ class OpenCatalogiApiClient {
 	 *
 	 * @return array<string, mixed>|null The first `hasWooSitemap: true` catalog, or null.
 	 *
-	 * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#fallback
+	 * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#fallback
 	 */
 	public function resolveCatalog(): ?array {
 		try {
@@ -294,20 +341,43 @@ class OpenCatalogiApiClient {
 		} catch (Throwable $e) {
 			$this->logger->info(
 				'OpenCatalogiApiClient::resolveCatalog: discovery call failed, continuing with defaults',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()],
 			);
 			return null;
 		}
 
+		$catalogs = $this->catalogList(result: $result);
+		if (is_array($catalogs) === false) {
+			return null;
+		}
+
+		return $this->firstWooCatalog(catalogs: $catalogs);
+	}//end resolveCatalog()
+
+	/**
+	 * The catalog list in a discovery answer: its `results`, its `data`, or the answer itself.
+	 *
+	 * @param mixed $result The discovery answer.
+	 *
+	 * @return mixed
+	 */
+	private function catalogList(mixed $result): mixed {
 		$catalogs = ($result['results'] ?? $result['data'] ?? null);
 		if ($catalogs === null) {
 			$catalogs = $result;
 		}
 
-		if (is_array($catalogs) === false) {
-			return null;
-		}
+		return $catalogs;
+	}//end catalogList()
 
+	/**
+	 * The first catalog flagged `hasWooSitemap: true`.
+	 *
+	 * @param array<mixed> $catalogs The catalogs.
+	 *
+	 * @return array<string, mixed>|null The catalog, or null when none is flagged.
+	 */
+	private function firstWooCatalog(array $catalogs): array|null {
 		foreach ($catalogs as $catalog) {
 			if (is_array($catalog) === true && ($catalog['hasWooSitemap'] ?? false) === true) {
 				return $catalog;
@@ -315,7 +385,7 @@ class OpenCatalogiApiClient {
 		}
 
 		return null;
-	}//end resolveCatalog()
+	}//end firstWooCatalog()
 
 	/**
 	 * Resolve OpenRegister's ObjectService, or fail with the domain error.
@@ -329,14 +399,14 @@ class OpenCatalogiApiClient {
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' when OpenRegister is unavailable.
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	private function requireObjectService(): object {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			$this->logger->warning(
 				'OpenCatalogiApiClient: OpenRegister ObjectService unavailable',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			throw new RuntimeException(self::DOMAIN_ERROR);
 		}
@@ -353,29 +423,28 @@ class OpenCatalogiApiClient {
 	 * contract defaults (both `true`), which is STRICTER than that route's
 	 * internal read: the merge cannot pull in an object the caller may not see.
 	 *
-	 * @param string $register The register slug.
-	 * @param string $schema The schema slug.
-	 * @param string $id The object id.
+	 * @param PublicationTarget $target The register and schema slugs.
+	 * @param string            $id     The object id.
 	 *
 	 * @return array<string, mixed> The stored property data.
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' when the object cannot be read.
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
-	private function readObjectData(string $register, string $schema, string $id): array {
+	private function readObjectData(PublicationTarget $target, string $id): array {
 		$objectService = $this->requireObjectService();
 
 		try {
 			$stored = $objectService->findSilent(
 				id: $id,
-				register: $register,
-				schema: $schema,
+				register: $target->register,
+				schema: $target->schema,
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'OpenCatalogiApiClient: could not read the object to patch',
-				['app' => Application::APP_ID, 'id' => $id, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'id' => $id, 'error' => $e->getMessage()],
 			);
 			throw new RuntimeException(self::DOMAIN_ERROR, 0, $e);
 		}
@@ -386,40 +455,18 @@ class OpenCatalogiApiClient {
 	/**
 	 * Persist an object through the published contract and return it as an array.
 	 *
-	 * @param string $register The register slug.
-	 * @param string $schema The schema slug.
+	 * @param PublicationTarget    $target The register and schema slugs.
 	 * @param array<string, mixed> $object The object data to store.
-	 * @param string|null $uuid The uuid to update, or null to create.
+	 * @param string|null          $uuid   The uuid to update, or null to create.
 	 *
 	 * @return array<string, mixed> The stored object, with its id.
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' on any write failure.
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
-	private function storeObject(string $register, string $schema, array $object, ?string $uuid): array {
-		$objectService = $this->requireObjectService();
-
-		try {
-			$saved = $objectService->saveObject(
-				object: $object,
-				register: $register,
-				schema: $schema,
-				uuid: $uuid,
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'OpenCatalogiApiClient: object write failed',
-				[
-					'app' => Application::APP_ID,
-					'register' => $register,
-					'schema' => $schema,
-					'uuid' => ($uuid ?? ''),
-					'error' => $e->getMessage(),
-				],
-			);
-			throw new RuntimeException(self::DOMAIN_ERROR, 0, $e);
-		}//end try
+	private function storeObject(PublicationTarget $target, array $object, ?string $uuid): array {
+		$saved = $this->saveOrFail(target: $target, object: $object, uuid: $uuid);
 
 		$data = $this->objectData(entity: $saved);
 		$identifier = $this->objectIdentifier(entity: $saved);
@@ -429,6 +476,35 @@ class OpenCatalogiApiClient {
 
 		return $data;
 	}//end storeObject()
+
+	/**
+	 * Save one object through OpenRegister, logging and wrapping any failure.
+	 *
+	 * @param PublicationTarget    $target The register and schema slugs.
+	 * @param array<string, mixed> $object The object data to store.
+	 * @param string|null          $uuid   The uuid to update, or null to create.
+	 *
+	 * @return mixed The saved entity.
+	 *
+	 * @throws RuntimeException 'opencatalogi_api_error' on any write failure.
+	 */
+	private function saveOrFail(PublicationTarget $target, array $object, ?string $uuid): mixed {
+		$objectService = $this->requireObjectService();
+		$register = $target->register;
+		$schema = $target->schema;
+
+		try {
+			$saved = $objectService->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'OpenCatalogiApiClient: object write failed',
+				['app' => AppIdentity::APP_ID, 'register' => $register, 'schema' => $schema, 'uuid' => ($uuid ?? ''), 'error' => $e->getMessage()],
+			);
+			throw new RuntimeException(self::DOMAIN_ERROR, 0, $e);
+		}//end try
+
+		return $saved;
+	}//end saveOrFail()
 
 	/**
 	 * The property data of whatever OpenRegister returned.
@@ -458,7 +534,7 @@ class OpenCatalogiApiClient {
 
 		$this->logger->warning(
 			'OpenCatalogiApiClient: OpenRegister returned an unreadable object shape',
-			['app' => Application::APP_ID, 'type' => get_debug_type($entity)],
+			['app' => AppIdentity::APP_ID, 'type' => get_debug_type($entity)],
 		);
 		throw new RuntimeException(self::DOMAIN_ERROR);
 	}//end objectData()
@@ -501,19 +577,7 @@ class OpenCatalogiApiClient {
 	private function fetchCatalogi(): array {
 		$url = rtrim($this->urlGenerator->getBaseUrl(), '/') . self::CATALOGI_PATH;
 
-		$options = [
-			'timeout' => self::TIMEOUT_SECONDS,
-			'headers' => [
-				'OCS-APIREQUEST' => 'true',
-				'Accept' => 'application/json',
-			],
-		];
-
-		$serviceUid = $this->appConfig->getValueString(Application::APP_ID, 'opencatalogi_service_uid', '');
-		$serviceAppPass = $this->appConfig->getValueString(Application::APP_ID, 'opencatalogi_service_app_password', '');
-		if ($serviceUid !== '' && $serviceAppPass !== '') {
-			$options['auth'] = [$serviceUid, $serviceAppPass];
-		}
+		$options = $this->catalogiRequestOptions();
 
 		try {
 			$client = $this->clientService->newClient();
@@ -530,9 +594,32 @@ class OpenCatalogiApiClient {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'OpenCatalogiApiClient: catalog discovery request failed',
-				['app' => Application::APP_ID, 'url' => $url, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'url' => $url, 'error' => $e->getMessage()],
 			);
 			throw new RuntimeException(self::DOMAIN_ERROR, 0, $e);
 		}//end try
 	}//end fetchCatalogi()
+
+	/**
+	 * The request options for the catalog listing, with the service account when one is configured.
+	 *
+	 * @return array<string, mixed> The HTTP client options.
+	 */
+	private function catalogiRequestOptions(): array {
+		$options = [
+			'timeout' => self::TIMEOUT_SECONDS,
+			'headers' => [
+				'OCS-APIREQUEST' => 'true',
+				'Accept' => 'application/json',
+			],
+		];
+
+		$serviceUid = $this->appConfig->getValueString(AppIdentity::APP_ID, 'opencatalogi_service_uid', '');
+		$serviceAppPass = $this->appConfig->getValueString(AppIdentity::APP_ID, 'opencatalogi_service_app_password', '');
+		if ($serviceUid !== '' && $serviceAppPass !== '') {
+			$options['auth'] = [$serviceUid, $serviceAppPass];
+		}
+
+		return $options;
+	}//end catalogiRequestOptions()
 }//end class

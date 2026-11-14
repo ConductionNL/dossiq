@@ -39,26 +39,27 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Notification\NotificationRouting;
 use InvalidArgumentException;
-use Throwable;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DigestPreferencesInterface;
+use OCA\Dossiq\Service\Notification\NotificationRouting;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * The reader's digest settings.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
-class DigestPreferences {
+class DigestPreferences implements DigestPreferencesInterface {
 	/**
 	 * Whether this person wants the digest.
 	 *
@@ -81,13 +82,6 @@ class DigestPreferences {
 	public const PREF_LAST_SENT = 'work_digest_last_sent';
 
 	/**
-	 * The hour a digest arrives when nobody chose one.
-	 *
-	 * @var int
-	 */
-	public const DEFAULT_HOUR = 8;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param IUserConfig         $userConfig Per-user preferences.
@@ -96,7 +90,7 @@ class DigestPreferences {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly IUserConfig $userConfig,
@@ -119,7 +113,7 @@ class DigestPreferences {
 	 *
 	 * @return array{enabled: bool, hour: int, source: string, scope: string} The settings.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function forUser(string $userId): array {
 		$enabled = true;
@@ -132,11 +126,11 @@ class DigestPreferences {
 		// silently flip every reader back to the local mirror. Here it is a
 		// caught fault with a named fallback instead, and the job keeps running.
 		try {
-			$enabled = $this->userConfig->getValueBool($userId, Application::APP_ID, self::PREF_ENABLED, true);
+			$enabled = $this->userConfig->getValueBool($userId, AppIdentity::APP_ID, self::PREF_ENABLED, true);
 			$hour = $this->hourInRange(
 				hour: $this->userConfig->getValueInt(
 					$userId,
-					Application::APP_ID,
+					AppIdentity::APP_ID,
 					self::PREF_HOUR,
 					self::DEFAULT_HOUR
 				)
@@ -175,13 +169,13 @@ class DigestPreferences {
 	 *
 	 * @return array{enabled: bool, hour: int, source: string, scope: string} The settings now stored.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function save(string $userId, bool $enabled, int $hour): array {
 		$hour = $this->hourInRange(hour: $hour);
 		$this->routing->setDigestEnabled(userId: $userId, enabled: $enabled);
-		$this->userConfig->setValueBool($userId, Application::APP_ID, self::PREF_ENABLED, $enabled);
-		$this->userConfig->setValueInt($userId, Application::APP_ID, self::PREF_HOUR, $hour);
+		$this->userConfig->setValueBool($userId, AppIdentity::APP_ID, self::PREF_ENABLED, $enabled);
+		$this->userConfig->setValueInt($userId, AppIdentity::APP_ID, self::PREF_HOUR, $hour);
 
 		$settings = $this->forUser(userId: $userId);
 		$settings['hour'] = $hour;
@@ -198,7 +192,7 @@ class DigestPreferences {
 	 *
 	 * @return bool TRUE when a digest should be composed for them now.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function isDue(string $userId, int $hour, string $today): bool {
 		$settings = $this->forUser(userId: $userId);
@@ -216,11 +210,11 @@ class DigestPreferences {
 	 *
 	 * @return string The day, `Y-m-d`, or an empty string.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function lastSentOn(string $userId): string {
 		try {
-			return $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_LAST_SENT, '');
+			return $this->userConfig->getValueString($userId, AppIdentity::APP_ID, self::PREF_LAST_SENT, '');
 		} catch (InvalidArgumentException $e) {
 			$this->logger->warning('Dossiq: the last digest day could not be read: ' . $e->getMessage());
 
@@ -236,10 +230,10 @@ class DigestPreferences {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function markSent(string $userId, string $today): void {
-		$this->userConfig->setValueString($userId, Application::APP_ID, self::PREF_LAST_SENT, $today);
+		$this->userConfig->setValueString($userId, AppIdentity::APP_ID, self::PREF_LAST_SENT, $today);
 	}//end markSent()
 
 	/**
@@ -249,7 +243,7 @@ class DigestPreferences {
 	 *
 	 * @return integer The hour, 0 to 23.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function hourInRange(int $hour): int {
 		if ($hour < 0 || $hour > 23) {

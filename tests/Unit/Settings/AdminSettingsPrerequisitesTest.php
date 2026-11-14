@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
+use OCA\Dossiq\Service\CaseDefinition\PackageAdminTabs;
 use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -31,7 +32,7 @@ use PHPUnit\Framework\TestCase;
  * version. This asserts the wiring from the CALLER: the form passes the
  * major version, so the Nextcloud row reads present on a supported instance.
  *
- * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 class AdminSettingsPrerequisitesTest extends TestCase {
 
@@ -60,6 +61,7 @@ class AdminSettingsPrerequisitesTest extends TestCase {
 			settingsService: $settingsService,
 			queueUrgency: new QueueUrgencySettings($settingsService),
 			serverVersion: $serverVersion,
+			packageTabs: $this->createMock(PackageAdminTabs::class),
 		);
 		$settings->getForm();
 
@@ -68,6 +70,40 @@ class AdminSettingsPrerequisitesTest extends TestCase {
 		$this->assertSame('34', $provided['prerequisites']['nextcloud']['running']);
 		$this->assertTrue($provided['prerequisites']['nextcloud']['present']);
 	}//end testTheFormPassesTheRunningNextcloud()
+
+	/**
+	 * The admin tables learn which owning apps are installed.
+	 *
+	 * @return void
+	 */
+	public function testTheFormSaysWhichOwningAppsAreInstalled(): void {
+		$provided = [];
+		$initialState = $this->createMock(originalClassName: IInitialState::class);
+		$initialState->method('provideInitialState')
+			->willReturnCallback(
+				static function (string $key, mixed $data) use (&$provided): void {
+					$provided[$key] = $data;
+				}
+			);
+
+		$appManager = $this->createMock(originalClassName: IAppManager::class);
+		$appManager->method('isInstalled')->willReturnCallback(
+			static fn (string $appId): bool => $appId === 'integriq'
+		);
+
+		$settingsService = $this->createMock(originalClassName: SettingsService::class);
+		$settings = new AdminSettings(
+			appManager: $appManager,
+			initialState: $initialState,
+			settingsService: $settingsService,
+			queueUrgency: new QueueUrgencySettings(settings: $settingsService),
+			serverVersion: $this->serverVersion(major: 34),
+			packageTabs: $this->createMock(PackageAdminTabs::class),
+		);
+		$settings->getForm();
+
+		$this->assertSame(expected: ['integriq' => true, 'shillinq' => false], actual: $provided['ownerApps']);
+	}//end testTheFormSaysWhichOwningAppsAreInstalled()
 
 	/**
 	 * A real ServerVersion that reports a given major.

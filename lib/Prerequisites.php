@@ -30,7 +30,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use OCP\App\IAppManager;
 /**
  * The declaration, and a live reading of it.
  *
- * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 final class Prerequisites {
 
@@ -131,8 +131,8 @@ final class Prerequisites {
 	 *
 	 * @var array<string, string>
 	 *
-	 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
-	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public const DISPLAY_NAMES = [
 		'openregister' => 'OpenRegister',
@@ -164,8 +164,8 @@ final class Prerequisites {
 	 *
 	 * @return array<string, mixed> The declaration with a `present` on every item.
 	 *
-	 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
-	 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function check(
 		IAppManager $appManager,
@@ -173,14 +173,69 @@ final class Prerequisites {
 		?int $phpVersionId = null,
 		?int $nextcloudMajor = null,
 	): array {
-		$loaded = $extensionLoaded ?? static fn (string $name): bool => extension_loaded($name);
-		$running = $phpVersionId ?? PHP_VERSION_ID;
+		return [
+			'php' => $this->phpCheck(phpVersionId: $phpVersionId),
+			'nextcloud' => $this->nextcloudCheck(nextcloudMajor: $nextcloudMajor),
+			'extensions' => $this->extensionChecks(extensionLoaded: $extensionLoaded),
+			'apps' => [
+				'required' => self::readApps(appManager: $appManager, declared: self::APPS_REQUIRED),
+				'optional' => self::readApps(appManager: $appManager, declared: self::APPS_OPTIONAL),
+			],
+		];
+	}//end check()
+
+	/**
+	 * Whether the running PHP is new enough.
+	 *
+	 * @param int|null $phpVersionId The PHP version id to judge; null for the running one.
+	 *
+	 * @return array{required: string, running: string, present: bool}
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function phpCheck(?int $phpVersionId): array {
+		return [
+			'required' => self::PHP_MIN,
+			'running' => PHP_VERSION,
+			'present' => ($phpVersionId ?? PHP_VERSION_ID) >= self::phpMinVersionId(),
+		];
+	}//end phpCheck()
+
+	/**
+	 * Whether the Nextcloud major is within the supported range.
+	 *
+	 * @param int|null $nextcloudMajor The Nextcloud major; null when unknown.
+	 *
+	 * @return array{min: string, max: string, running: string, present: bool}
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function nextcloudCheck(?int $nextcloudMajor): array {
 		$major = ($nextcloudMajor ?? 0);
 		$majorText = '';
 		if ($major > 0) {
 			$majorText = (string)$major;
 		}
 
+		return [
+			'min' => self::NEXTCLOUD_MIN,
+			'max' => self::NEXTCLOUD_MAX,
+			'running' => $majorText,
+			'present' => ($major >= (int)self::NEXTCLOUD_MIN && $major <= (int)self::NEXTCLOUD_MAX),
+		];
+	}//end nextcloudCheck()
+
+	/**
+	 * Which of the required PHP extensions are loaded, and why each is needed.
+	 *
+	 * @param callable|null $extensionLoaded Answers whether an extension is loaded; null for PHP's own.
+	 *
+	 * @return list<array{name: string, why: string, present: bool}>
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function extensionChecks(?callable $extensionLoaded): array {
+		$loaded = $extensionLoaded ?? static fn (string $name): bool => extension_loaded($name);
 		$extensions = [];
 		foreach (self::EXTENSIONS as $name => $why) {
 			$extensions[] = [
@@ -190,25 +245,8 @@ final class Prerequisites {
 			];
 		}
 
-		return [
-			'php' => [
-				'required' => self::PHP_MIN,
-				'running' => PHP_VERSION,
-				'present' => $running >= self::phpMinVersionId(),
-			],
-			'nextcloud' => [
-				'min' => self::NEXTCLOUD_MIN,
-				'max' => self::NEXTCLOUD_MAX,
-				'running' => $majorText,
-				'present' => ($major >= (int)self::NEXTCLOUD_MIN && $major <= (int)self::NEXTCLOUD_MAX),
-			],
-			'extensions' => $extensions,
-			'apps' => [
-				'required' => self::readApps(appManager: $appManager, declared: self::APPS_REQUIRED),
-				'optional' => self::readApps(appManager: $appManager, declared: self::APPS_OPTIONAL),
-			],
-		];
-	}//end check()
+		return $extensions;
+	}//end extensionChecks()
 
 	/**
 	 * PHP_VERSION_ID for the declared minimum.

@@ -19,14 +19,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/the-besluit-resolves-to-decidiqs-decision/specs/zgw-brc/spec.md#requirement-besluiten-move-onto-decidiq-only-when-asked-req-brc-021
+ * @spec openspec/specs/zgw-brc/spec.md#requirement-besluiten-move-onto-decidiq-only-when-asked-req-brc-021
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\BesluitMigrationService;
+use OCA\Dossiq\Kernel\Contracts\BesluitMigrationServiceInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -36,17 +36,17 @@ use Throwable;
 /**
  * Migrate this app's besluiten onto decidiq's `Decision` schema.
  *
- * @spec openspec/changes/the-besluit-resolves-to-decidiqs-decision/specs/zgw-brc/spec.md#requirement-besluiten-move-onto-decidiq-only-when-asked-req-brc-021
+ * @spec openspec/specs/zgw-brc/spec.md#requirement-besluiten-move-onto-decidiq-only-when-asked-req-brc-021
  */
 class MigrateBesluitenToDecidiqCommand extends Command {
 
 	/**
 	 * Wire the command against the migration service.
 	 *
-	 * @param BesluitMigrationService $migrationService Besluit → decidiq Decision migrator.
+	 * @param BesluitMigrationServiceInterface $migrationService Besluit → decidiq Decision migrator.
 	 */
 	public function __construct(
-		private readonly BesluitMigrationService $migrationService,
+		private readonly BesluitMigrationServiceInterface $migrationService,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -56,7 +56,7 @@ class MigrateBesluitenToDecidiqCommand extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-besluit-resolves-to-decidiqs-decision/specs/zgw-brc/spec.md#requirement-besluiten-move-onto-decidiq-only-when-asked-req-brc-021
+	 * @spec openspec/specs/zgw-brc/spec.md#requirement-besluiten-move-onto-decidiq-only-when-asked-req-brc-021
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:migrate-besluiten')
@@ -78,7 +78,7 @@ class MigrateBesluitenToDecidiqCommand extends Command {
 	 *
 	 * @return int Symfony command exit code.
 	 *
-	 * @spec openspec/changes/the-besluit-resolves-to-decidiqs-decision/specs/zgw-brc/spec.md#requirement-besluiten-move-onto-decidiq-only-when-asked-req-brc-021
+	 * @spec openspec/specs/zgw-brc/spec.md#requirement-besluiten-move-onto-decidiq-only-when-asked-req-brc-021
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$commit = ($input->getOption('commit') === true);

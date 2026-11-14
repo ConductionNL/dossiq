@@ -35,17 +35,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCP\IUserSession;
 use RuntimeException;
 
 /**
  * Trait providing the canonical OpenRegister object-search bridge.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
 trait SearchesObjects {
 	/**
@@ -65,7 +66,7 @@ trait SearchesObjects {
 	 * @throws \OCP\AppFramework\Db\DoesNotExistException When a slug cannot be resolved
 	 *                                                    in the caller's organisation.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function searchObjectsAsArrays(
 		object $objectService,
@@ -99,7 +100,7 @@ trait SearchesObjects {
 	 *
 	 * @throws \OCP\AppFramework\Db\DoesNotExistException When a slug cannot be resolved.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function searchObjectsAsArraysUnscoped(
 		object $objectService,
@@ -133,7 +134,7 @@ trait SearchesObjects {
 	 *
 	 * @throws \OCP\AppFramework\Db\DoesNotExistException When a slug cannot be resolved.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	private function searchObjectsWithin(
 		object $objectService,
@@ -188,7 +189,7 @@ trait SearchesObjects {
 	 * @return array<string, mixed>|null The object as an associative array, or
 	 *                                   null when it does not exist.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function findObjectAsArray(
 		object $objectService,
@@ -197,27 +198,12 @@ trait SearchesObjects {
 		string $id,
 	): ?array {
 		try {
-			$object = $objectService->find(
-				id: $id,
-				register: $register,
-				schema: $schema
-			);
+			$object = $objectService->find(id: $id, register: $register, schema: $schema);
 		} catch (\OCP\AppFramework\Db\DoesNotExistException $e) {
 			return null;
 		}
 
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
+		return $this->objectToArrayOrNull(value: $object);
 	}//end findObjectAsArray()
 
 	/**
@@ -238,7 +224,7 @@ trait SearchesObjects {
 	 *
 	 * @return array<string,mixed>|null The stored object, or null if it cannot be represented as one.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function saveObjectAsArray(
 		object $objectService,
@@ -297,7 +283,7 @@ trait SearchesObjects {
 	 * @throws RuntimeException When the object cannot be read on the fallback path,
 	 *                           or the service offers no seam that writes partially.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function patchObjectAsArray(
 		object $objectService,
@@ -392,7 +378,7 @@ trait SearchesObjects {
 	 *      Without the tag PHPStan carries the pre-call state across, and
 	 *      reported a counter incremented inside the closure as "always 0".
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function runAsSystemIfAvailable(object $objectService, callable $operation): mixed {
 		if (method_exists($objectService, 'runAsSystem') === true) {
@@ -401,6 +387,31 @@ trait SearchesObjects {
 
 		return $operation();
 	}//end runAsSystemIfAvailable()
+
+	/**
+	 * Run an operation as the system when nobody is signed in, else as the caller.
+	 *
+	 * An install, an import, an occ command or a cron job has no user, and
+	 * OpenRegister refuses every read by "Anonymous". A signed-in caller
+	 * keeps their own rights: this never elevates a request that has a user.
+	 *
+	 * @param object            $objectService The OpenRegister ObjectService instance.
+	 * @param IUserSession|null $userSession   The session; null runs the operation as it is.
+	 * @param callable          $operation     The operation.
+	 *
+	 * @return mixed Whatever the callable returns.
+	 *
+	 * @phpstan-impure Runs the caller's closure.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-read-or-write-with-nobody-signed-in-runs-as-the-system-req-cm-83
+	 */
+	protected function asSystemWithoutUser(object $objectService, ?IUserSession $userSession, callable $operation): mixed {
+		if ($userSession === null || $userSession->getUser() !== null) {
+			return $operation();
+		}
+
+		return $this->runAsSystemIfAvailable(objectService: $objectService, operation: $operation);
+	}//end asSystemWithoutUser()
 
 	/**
 	 * Coerce a searchObjects()/searchObjectsBySlug() return into a list of arrays.
@@ -413,7 +424,7 @@ trait SearchesObjects {
 	 *
 	 * @return array<int, array<string, mixed>> Normalised list of object arrays.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	private function normaliseObjectRows(mixed $rows): array {
 		if (is_array($rows) === false) {

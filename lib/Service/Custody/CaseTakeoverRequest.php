@@ -38,10 +38,10 @@ namespace OCA\Dossiq\Service\Custody;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseTakeoverRequestInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -49,7 +49,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseTakeoverRequest {
+class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 
 	use SearchesObjects;
 
@@ -145,6 +145,40 @@ class CaseTakeoverRequest {
 		$requestedBy = trim($requestedBy);
 		$reason = trim($reason);
 
+		$this->assertReasonGiven(reason: $reason);
+
+		$case = $this->store->requireCase(caseId: $caseId);
+		$holding = $this->holdingOf(caseId: $caseId, case: $case);
+		$holder = $holding['holder'];
+		$unit = $holding['unit'];
+
+		$this->assertNotHeldBy(holder: $holder, requestedBy: $requestedBy);
+
+		$record = $this->storeRequest(
+			case: $case,
+			ask: new TakeoverAsk(caseId: $caseId, requestedBy: $requestedBy, holder: $holder, unit: $unit, reason: $reason),
+		);
+
+		$this->logger->info(
+			'Dossiq takeover: a case was asked for',
+			['caseId' => $caseId, 'requestedBy' => $requestedBy, 'holder' => $holder, 'unit' => $unit],
+		);
+
+		return $record;
+	}//end request()
+
+	/**
+	 * Refuse a request without a reason.
+	 *
+	 * @param string $reason Why they should have it, trimmed.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When no reason is given.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function assertReasonGiven(string $reason): void {
 		if ($reason === '') {
 			throw new RefusedException(
 				rule: self::REASON_MISSING,
@@ -152,8 +186,41 @@ class CaseTakeoverRequest {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end assertReasonGiven()
 
-		$case = $this->store->requireCase(caseId: $caseId);
+	/**
+	 * Refuse a request by the person who already holds the case.
+	 *
+	 * @param string $holder      The current holder, or ''.
+	 * @param string $requestedBy Who wants it.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the asker already holds the case.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function assertNotHeldBy(string $holder, string $requestedBy): void {
+		if ($holder !== '' && $holder === $requestedBy) {
+			throw new RefusedException(
+				rule: self::ALREADY_YOURS,
+				sentence: 'You already hold this case, so there is nobody to ask.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertNotHeldBy()
+
+	/**
+	 * Who holds the case and in which unit, the open holding winning over the case fields.
+	 *
+	 * @param string               $caseId The case being asked for.
+	 * @param array<string, mixed> $case   The case.
+	 *
+	 * @return array{holder: string, unit: string} The holder and the holding unit.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function holdingOf(string $caseId, array $case): array {
 		$holder = trim((string)($case['assignee'] ?? ''));
 		$unit = trim((string)($case['assignedGroup'] ?? ''));
 
@@ -163,22 +230,30 @@ class CaseTakeoverRequest {
 			$holder = trim((string)($open['handler'] ?? $holder));
 		}
 
-		if ($holder !== '' && $holder === $requestedBy) {
-			throw new RefusedException(
-				rule: self::ALREADY_YOURS,
-				sentence: 'You already hold this case, so there is nobody to ask.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		return ['holder' => $holder, 'unit' => $unit];
+	}//end holdingOf()
 
+	/**
+	 * Write the pending request, and again with its task when one was raised.
+	 *
+	 * @param array<string, mixed> $case The case being asked for.
+	 * @param TakeoverAsk          $ask  The case id, who wants it, who holds it, the holding unit and why.
+	 *
+	 * @return array<string, mixed> The request as stored.
+	 *
+	 * @throws RefusedException When the record cannot be written.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function storeRequest(array $case, TakeoverAsk $ask): array {
 		$now = (new DateTimeImmutable())->format('c');
 		$record = $this->store->write(
 			record: [
-				'caseId' => $caseId,
-				'requestedBy' => $requestedBy,
-				'holder' => $holder,
-				'holdingUnit' => $unit,
-				'reason' => $reason,
+				'caseId' => $ask->caseId,
+				'requestedBy' => $ask->requestedBy,
+				'holder' => $ask->holder,
+				'holdingUnit' => $ask->unit,
+				'reason' => $ask->reason,
 				'status' => 'pending',
 				'requestedAt' => $now,
 			],
@@ -190,13 +265,8 @@ class CaseTakeoverRequest {
 			$record = $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
 		}
 
-		$this->logger->info(
-			'Dossiq takeover: a case was asked for',
-			['caseId' => $caseId, 'requestedBy' => $requestedBy, 'holder' => $holder, 'unit' => $unit],
-		);
-
 		return $record;
-	}//end request()
+	}//end storeRequest()
 
 	/**
 	 * The holder accepts: the case moves to the asker and a holding opens.
@@ -287,34 +357,70 @@ class CaseTakeoverRequest {
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function escalateOverdue(string $now = ''): array {
-		$moment = $this->instant(value: $now) ?? new DateTimeImmutable();
+		$moment = (new StoredInstant())->parse(value: $now) ?? new DateTimeImmutable();
 		$escalated = [];
 
 		foreach ($this->pending() as $record) {
-			$asked = $this->instant(value: (string)($record['requestedAt'] ?? ''));
-			if ($asked === null) {
+			$due = $this->answerDue(record: $record);
+			if ($due === null || $due > $moment) {
 				continue;
 			}
 
-			$days = $this->answerPeriodDays(caseId: (string)($record['caseId'] ?? ''));
-			$due = $asked->add(new DateInterval('P' . $days . 'D'));
-			if ($due > $moment) {
-				continue;
-			}
-
-			$record['status'] = 'escalated';
-			$record['escalatedAt'] = $moment->format('c');
-			$escalated[] = $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
-
-			$unit = trim((string)($record['holdingUnit'] ?? ''));
-			$taskId = trim((string)($record['taskId'] ?? ''));
-			if ($taskId !== '' && $unit !== '') {
-				$this->tasks->reassign(taskId: $taskId, assignee: $unit, actor: null);
-			}
+			$escalated[] = $this->escalate(record: $record, moment: $moment);
 		}
 
 		return $escalated;
 	}//end escalateOverdue()
+
+	/**
+	 * When the holder's answer to a request is due.
+	 *
+	 * @param array<string, mixed> $record The pending request.
+	 *
+	 * @return DateTimeImmutable|null The moment, or null when the request carries no readable date.
+	 */
+	private function answerDue(array $record): ?DateTimeImmutable {
+		$asked = (new StoredInstant())->parse(value: (string)($record['requestedAt'] ?? ''));
+		if ($asked === null) {
+			return null;
+		}
+
+		$days = $this->answerPeriodDays(caseId: (string)($record['caseId'] ?? ''));
+
+		return $asked->add(new DateInterval('P' . $days . 'D'));
+	}//end answerDue()
+
+	/**
+	 * Mark one overdue request escalated, store it, and hand its task to the holding unit.
+	 *
+	 * @param array<string, mixed> $record The overdue request.
+	 * @param DateTimeImmutable    $moment The moment it escalates.
+	 *
+	 * @return array<string, mixed> The stored request.
+	 */
+	private function escalate(array $record, DateTimeImmutable $moment): array {
+		$record['status'] = 'escalated';
+		$record['escalatedAt'] = $moment->format('c');
+		$stored = $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
+		$this->handTaskToUnit(record: $record);
+
+		return $stored;
+	}//end escalate()
+
+	/**
+	 * Reassign the request's engine task to the holding unit, when it has both.
+	 *
+	 * @param array<string, mixed> $record The escalated request.
+	 *
+	 * @return void
+	 */
+	private function handTaskToUnit(array $record): void {
+		$unit = trim((string)($record['holdingUnit'] ?? ''));
+		$taskId = trim((string)($record['taskId'] ?? ''));
+		if ($taskId !== '' && $unit !== '') {
+			$this->tasks->reassign(taskId: $taskId, assignee: $unit, actor: null);
+		}
+	}//end handTaskToUnit()
 
 	/**
 	 * Every request on a case, newest first.
@@ -370,14 +476,21 @@ class CaseTakeoverRequest {
 			return self::DEFAULT_ANSWER_DAYS;
 		}
 
+		return $this->declaredAnswerDays(caseTypeId: $caseTypeId);
+	}//end answerPeriodDays()
+
+	/**
+	 * The answer period the case type declares, or the default.
+	 *
+	 * @param string $caseTypeId The case type.
+	 *
+	 * @return int The number of days.
+	 */
+	private function declaredAnswerDays(string $caseTypeId): int {
 		try {
 			[$objectService, $register] = $this->store->context();
-			$caseType = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->store->schema(key: 'case_type_schema'),
-				id: $caseTypeId,
-			);
+			$schema = $this->store->schema(key: 'case_type_schema');
+			$caseType = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseTypeId);
 		} catch (Throwable $e) {
 			return self::DEFAULT_ANSWER_DAYS;
 		}
@@ -388,7 +501,7 @@ class CaseTakeoverRequest {
 		}
 
 		return $declared;
-	}//end answerPeriodDays()
+	}//end declaredAnswerDays()
 
 	/**
 	 * Raise the engine task that carries the request to the holder.
@@ -440,25 +553,62 @@ class CaseTakeoverRequest {
 	 * @throws RefusedException When it is unknown, on another case, or already answered.
 	 */
 	private function requireOpenRequest(string $takeoverId, string $caseId): array {
-		$takeoverId = trim($takeoverId);
+		$record = $this->requireOnCase(record: $this->readRequest(takeoverId: trim($takeoverId)), caseId: $caseId);
+		$this->requireUnanswered(record: $record);
 
+		return $record;
+	}//end requireOpenRequest()
+
+	/**
+	 * Read a request by its uuid, refusing when the store cannot be read.
+	 *
+	 * @param string $takeoverId The request's uuid, trimmed.
+	 *
+	 * @return array<string, mixed>|null The request, or null when there is none.
+	 *
+	 * @throws RefusedException When the request could not be read.
+	 */
+	private function readRequest(string $takeoverId): ?array {
 		try {
 			[$objectService, $register] = $this->store->context();
-			$record = $this->findObjectAsArray(
+			return $this->findObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $this->store->schema(key: 'case_takeover_schema'),
 				id: $takeoverId,
 			);
 		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: self::REQUEST_UNKNOWN,
-				sentence: 'We could not read that request, so nothing was changed.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
+			throw $this->unreadableRequest(previous: $e);
 		}
+	}//end readRequest()
 
+	/**
+	 * The refusal for a request the store could not read.
+	 *
+	 * @param Throwable $previous The read failure.
+	 *
+	 * @return RefusedException The refusal.
+	 */
+	private function unreadableRequest(Throwable $previous): RefusedException {
+		return new RefusedException(
+			rule: self::REQUEST_UNKNOWN,
+			sentence: 'We could not read that request, so nothing was changed.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $previous,
+		);
+	}//end unreadableRequest()
+
+	/**
+	 * The request, when it exists and is on the case the caller was authorised on.
+	 *
+	 * @param array<string, mixed>|null $record The request read, or null.
+	 * @param string                    $caseId The case the request must be on.
+	 *
+	 * @return array<string, mixed> The request.
+	 *
+	 * @throws RefusedException When it is unknown or on another case.
+	 */
+	private function requireOnCase(?array $record, string $caseId): array {
 		// A request on ANOTHER case reads as unknown. The caller was
 		// authorised on the case in the URL, and nothing else: answering a
 		// request by its id alone let anyone who may change one case move a
@@ -471,6 +621,19 @@ class CaseTakeoverRequest {
 			);
 		}
 
+		return $record;
+	}//end requireOnCase()
+
+	/**
+	 * Refuse a request that was already answered; pending and escalated are still open.
+	 *
+	 * @param array<string, mixed> $record The request.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When it was already answered.
+	 */
+	private function requireUnanswered(array $record): void {
 		$status = trim((string)($record['status'] ?? ''));
 		if ($status !== 'pending' && $status !== 'escalated') {
 			throw new RefusedException(
@@ -479,34 +642,6 @@ class CaseTakeoverRequest {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
-
-		return $record;
-	}//end requireOpenRequest()
-
-
-
-
-
-
-	/**
-	 * A moment, or null when the value is empty or unreadable.
-	 *
-	 * @param string $value The candidate.
-	 *
-	 * @return DateTimeImmutable|null The moment.
-	 */
-	private function instant(string $value): ?DateTimeImmutable {
-		$value = trim($value);
-		if ($value === '') {
-			return null;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end instant()
-
+	}//end requireUnanswered()
 
 }//end class

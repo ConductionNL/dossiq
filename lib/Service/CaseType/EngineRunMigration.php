@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -58,7 +58,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class EngineRunMigration {
 
@@ -121,7 +121,7 @@ class EngineRunMigration {
 	 *
 	 * @throws RefusedException When the engine was asked and refused.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function migrate(string $caseId, string $targetCaseTypeId, string $actorUid): array {
 		$service = $this->resolve();
@@ -166,7 +166,7 @@ class EngineRunMigration {
 	 *
 	 * @return string The reason, or '' when the migration can be asked for.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function reasonFor(): string {
 		if ($this->settings->isOpenRegisterAvailable() === false) {
@@ -190,11 +190,7 @@ class EngineRunMigration {
 	 * @return object|null The service.
 	 */
 	private function resolve(): ?object {
-		if ($this->settings->isOpenRegisterAvailable() === false) {
-			return null;
-		}
-
-		if (class_exists(self::MIGRATION_SERVICE) === false) {
+		if ($this->migrationClassAvailable() === false) {
 			return null;
 		}
 
@@ -202,14 +198,41 @@ class EngineRunMigration {
 			$service = $this->container->get(self::MIGRATION_SERVICE);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'EngineRunMigration: openregister has ' . self::MIGRATION_SERVICE
-					. ' but the container could not construct it, so no run is being migrated',
+				'EngineRunMigration: openregister has ' . self::MIGRATION_SERVICE . ' but the container could not construct it, so no run is being migrated',
 				['exception' => $e->getMessage()]
 			);
 
 			return null;
 		}
 
+		return $this->withMigrationVerb(service: $service);
+	}//end resolve()
+
+	/**
+	 * Whether OpenRegister is available and ships the migration service class.
+	 *
+	 * @return bool
+	 */
+	private function migrationClassAvailable(): bool {
+		if ($this->settings->isOpenRegisterAvailable() === false) {
+			return false;
+		}
+
+		if (class_exists(self::MIGRATION_SERVICE) === false) {
+			return false;
+		}
+
+		return true;
+	}//end migrationClassAvailable()
+
+	/**
+	 * The service when it has the migration verb, null and an error when the verb moved.
+	 *
+	 * @param mixed $service The constructed migration service.
+	 *
+	 * @return object|null The service.
+	 */
+	private function withMigrationVerb(mixed $service): object|null {
 		if (method_exists($service, self::MIGRATION_METHOD) === false) {
 			// A RENAME, NOT A CONFIGURATION. The class is there and the verb is
 			// not, which means the capability moved and every rebind from here
@@ -223,7 +246,7 @@ class EngineRunMigration {
 		}
 
 		return $service;
-	}//end resolve()
+	}//end withMigrationVerb()
 
 	/**
 	 * Whether the engine says it moved the run.

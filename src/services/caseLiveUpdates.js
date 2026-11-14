@@ -6,7 +6,7 @@
  *
  * `openspec/specs/realtime-updates-ui/spec.md` has required this since it was
  * written, and the page did not do it: `liveUpdatesPlugin` was reached from
- * `WorkflowBoard` and `DeelzaakDetail` and from nowhere else, so the one page
+ * the old workflow board and `DeelzaakDetail` and from nowhere else, so the one page
  * a handler keeps open all day was the one that refreshed when they did.
  *
  * WHY THIS IS A ROUTER SUBSCRIPTION AND NOT A COMPONENT'S `mounted()`.
@@ -23,9 +23,8 @@
  * HINT, and `liveUpdatesPlugin` answers it by re-running `fetchObject('case',
  * id)` through the store's existing path, coalesced so a burst collapses into
  * one trailing refetch. The header, the panels and the terms read that store
- * entry, so they follow. That is the same contract `DeelzaakDetail` documents
- * at its own call site, and the reason neither of them ever reads the event
- * body: a payload applied locally is a second copy of the record that
+ * entry, so they follow. Nothing here reads the event body either: a payload
+ * applied locally is a second copy of the record that
  * eventually disagrees with the register.
  *
  * WHAT THIS DOES NOT COVER, said out loud. A FLOW RUN IS NOT AN OPENREGISTER
@@ -38,7 +37,7 @@
  * own it, openregister emitting for a run and nextcloud-vue refetching on the
  * hint, and not to a poll on this page.
  *
- * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+ * @spec openspec/specs/realtime-updates-ui/spec.md
  * @spec openspec/specs/realtime-updates-ui/spec.md
  */
 
@@ -57,7 +56,7 @@ export const CASE_PAGE_ROUTE = 'CaseDetail'
  * @param {object|null} route The resolved route.
  *
  * @return {string} The case id, or ''.
- * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+ * @spec openspec/specs/realtime-updates-ui/spec.md
  */
 export function caseIdOfRoute(route) {
 	if (route?.name !== CASE_PAGE_ROUTE) {
@@ -69,19 +68,18 @@ export function caseIdOfRoute(route) {
 /**
  * Keeps exactly one live subscription pointed at the case on screen.
  *
- * The shape is `DeelzaakDetail`'s, for the reasons its own comments give and
- * one more: `subscribe()` is asynchronous, so between asking and being handed a
+ * `subscribe()` is asynchronous, so between asking and being handed a
  * handle the reader can have opened another case or left the page entirely. An
  * epoch counter is what makes that safe. Without it the late handle is stored
  * for a case nobody is looking at, and it keeps refetching until the tab
  * closes.
  *
- * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+ * @spec openspec/specs/realtime-updates-ui/spec.md
  */
 export class CaseLiveSubscription {
 	/**
 	 * @param {object} store The object store (createObjectStore instance).
-	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
 	 */
 	constructor(store) {
 		this.store = store
@@ -101,18 +99,17 @@ export class CaseLiveSubscription {
 	 * @param {string} caseId The case to subscribe to, or '' for none.
 	 *
 	 * @return {Promise<void>}
-	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
 	 */
 	async sync(caseId) {
-		const store = this.store
-		if (typeof store?.subscribe !== 'function') {
+		if (typeof this.store?.subscribe !== 'function') {
 			// An older library, or a store built without the plugin. Doing
 			// nothing is right: the page keeps working, it simply does not
 			// refresh on its own.
 			return
 		}
 
-		if (!caseId || !store.objectTypeRegistry?.case) {
+		if (!caseId || !this.store.objectTypeRegistry?.case) {
 			// `case` unregistered means the settings read has not landed or
 			// this instance has no case schema configured. Subscribing anyway
 			// throws inside the plugin, so release and wait to be called again.
@@ -120,35 +117,44 @@ export class CaseLiveSubscription {
 			return
 		}
 
-		if (
-			(this.handle !== null && this.key === caseId)
-			|| this.pendingKey === caseId
-		) {
+		if (this.holdsOrAwaits(caseId)) {
 			return
 		}
 
 		this.release()
+		await this.subscribeTo(caseId)
+	}
+
+	/**
+	 * Whether this case is already held, or its subscribe is in flight.
+	 *
+	 * @param {string} caseId The case.
+	 * @return {boolean} True when there is nothing to do.
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
+	 */
+	holdsOrAwaits(caseId) {
+		return (this.handle !== null && this.key === caseId)
+			|| this.pendingKey === caseId
+	}
+
+	/**
+	 * Subscribe to one case, and keep the handle only when nothing released
+	 * the subscription while it was being asked for.
+	 *
+	 * @param {string} caseId The case.
+	 * @return {Promise<void>}
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
+	 */
+	async subscribeTo(caseId) {
 		const epoch = this.epoch
 		this.pendingKey = caseId
 		this.key = caseId
 
 		try {
-			const handle = await store.subscribe('case', caseId)
-			if (this.epoch !== epoch) {
-				// Released while awaiting: another case was opened, or the
-				// reader left the page. Drop the handle rather than storing it.
-				store.unsubscribe(handle)
-				return
-			}
-			this.handle = handle
+			const handle = await this.store.subscribe('case', caseId)
+			this.keepHandle({ handle, epoch })
 		} catch (err) {
-			this.handle = null
-			this.key = ''
-			// Recorded rather than printed, and never rethrown. A failed
-			// subscription must not break the page: the case still renders,
-			// it simply does not refresh on its own, and a navigation calls
-			// sync() again so a transport that comes back is picked up.
-			this.lastError = String(err?.message ?? err)
+			this.forgetFailedSubscribe(err)
 		} finally {
 			if (this.pendingKey === caseId) {
 				this.pendingKey = ''
@@ -157,10 +163,45 @@ export class CaseLiveSubscription {
 	}
 
 	/**
+	 * Forget a subscribe that failed, so the next sync tries again.
+	 *
+	 * Recorded rather than printed, and never rethrown. A failed
+	 * subscription must not break the page: the case still renders,
+	 * it simply does not refresh on its own, and a navigation calls
+	 * sync() again so a transport that comes back is picked up.
+	 *
+	 * @param {unknown} err What the subscribe threw.
+	 * @return {void}
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
+	 */
+	forgetFailedSubscribe(err) {
+		this.handle = null
+		this.key = ''
+		this.lastError = String(err?.message ?? err)
+	}
+
+	/**
+	 * Keep a handle the store answered, or drop it when the subscription was
+	 * released while awaiting: another case was opened, or the reader left
+	 * the page.
+	 *
+	 * @param {{handle: object, epoch: number}} answered The handle and the epoch it was asked in.
+	 * @return {void}
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
+	 */
+	keepHandle(answered) {
+		if (this.epoch !== answered.epoch) {
+			this.store.unsubscribe(answered.handle)
+			return
+		}
+		this.handle = answered.handle
+	}
+
+	/**
 	 * Drop the subscription, and invalidate any subscribe still in flight.
 	 *
 	 * @return {void}
-	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
 	 */
 	release() {
 		this.epoch = this.epoch + 1
@@ -185,7 +226,7 @@ export class CaseLiveSubscription {
  * @param {() => object} storeFactory Resolves the object store, lazily.
  *
  * @return {CaseLiveSubscription} The subscription, so a caller can release it.
- * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+ * @spec openspec/specs/realtime-updates-ui/spec.md
  */
 export function installCaseLiveUpdates(router, storeFactory) {
 	let subscription = null

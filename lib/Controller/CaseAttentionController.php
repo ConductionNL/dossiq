@@ -38,21 +38,23 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseAttentionFlagService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAttentionFlagServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -60,7 +62,7 @@ use RuntimeException;
 /**
  * Raise and clear the attention flag, and read what a case is saying.
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseAttentionController extends Controller {
 
@@ -79,24 +81,22 @@ class CaseAttentionController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string                   $appName         The app name.
 	 * @param IRequest                 $request         The HTTP request.
-	 * @param CaseAttentionFlagService $flags           Raise and clear.
-	 * @param CaseAccessGuard          $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAttentionFlagServiceInterface $flags           Raise and clear.
+	 * @param CaseAccessGuardInterface          $caseAccessGuard Per-case authorization (fails closed).
 	 * @param IUserSession             $userSession     The current session.
 	 * @param IL10N                    $l10n            The translations.
 	 * @param LoggerInterface          $logger          The logger.
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
-		private readonly CaseAttentionFlagService $flags,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAttentionFlagServiceInterface $flags,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -106,7 +106,7 @@ class CaseAttentionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function state(string $caseId): JSONResponse {
@@ -128,17 +128,13 @@ class CaseAttentionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function raise(string $caseId, string $reason = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return $this->notSignedIn();
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return $this->notYours();
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return $this->answer(
@@ -159,17 +155,13 @@ class CaseAttentionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function clear(string $caseId, string $reason = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return $this->notSignedIn();
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return $this->notYours();
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return $this->answer(
@@ -181,6 +173,26 @@ class CaseAttentionController extends Controller {
 			),
 		);
 	}//end clear()
+
+	/**
+	 * The signed-in user when they may change the case, else the refusal.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return IUser|JSONResponse The user, or 401 without a session user, or 403 without mutation access.
+	 */
+	private function caseMutator(string $caseId): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->notSignedIn();
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return $this->notYours();
+		}
+
+		return $user;
+	}//end caseMutator()
 
 	/**
 	 * Run a gesture and answer it, turning a refusal into its status.

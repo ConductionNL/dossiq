@@ -215,28 +215,28 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		selectedTenant() {
 			return this.tenantOptions.find((o) => o.id === this.tenantId) || null
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		steps() {
 			if (!this.progress) return []
 			return this.progress.steps || this.progress.tasks || []
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		totalSteps() {
 			return this.steps.length || 7
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		completedSteps() {
 			return this.steps.filter((s) => s.status === 'completed').length
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		progressPercent() {
 			if (!this.totalSteps) return 0
 			return Math.round((this.completedSteps / this.totalSteps) * 100)
@@ -254,7 +254,7 @@ export default {
 		 *
 		 * @param {string} step The step key.
 		 * @return {string} The translated label, falling back to the key.
-		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		stepLabel(step) {
 			return t('dossiq', STEP_LABELS[step] || step)
@@ -265,7 +265,7 @@ export default {
 		 *
 		 * @param {object|null} opt The selected tenant option, or null to clear.
 		 * @return {void}
-		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		onTenantChange(opt) {
 			this.tenantId = opt ? opt.id : ''
@@ -309,7 +309,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async loadProgress() {
 			if (!this.tenantId) return
 			this.loading = true
@@ -338,7 +338,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async initialise() {
 			try {
 				await axios.post(
@@ -369,7 +369,7 @@ export default {
 		 *
 		 * @param {string} step The step key to complete.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		async markComplete(step) {
 			this.markingStep = step
@@ -394,7 +394,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async checkGoLive() {
 			this.checkingGoLive = true
 			try {
@@ -427,7 +427,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async activate() {
 			this.activating = true
 			try {
@@ -454,23 +454,26 @@ export default {
 </script>
 
 <style scoped>
+/* A section of the admin card: no frame of its own. The tenant field and
+   Refresh stack at the content edge, as board DqBeheerGeavanceerd draws them. */
 .tenant-onboarding {
-	padding: 16px;
-	max-width: 1000px;
-	margin: 0 auto;
+	padding: 0;
 }
 
 .tenant-onboarding__header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
 	margin-bottom: 16px;
 }
 
 .tenant-onboarding__controls {
 	display: flex;
-	gap: 8px;
-	align-items: center;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 16px;
+	max-width: 560px;
+}
+
+.tenant-onboarding__controls > :first-child {
+	align-self: stretch;
 }
 
 .tenant-onboarding__progress {

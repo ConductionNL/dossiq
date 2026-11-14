@@ -38,7 +38,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -46,20 +46,17 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Kernel\Contracts\CaseAttentionFlagServiceInterface;
+use OCA\Dossiq\Service\Support\CaseReadAndPatch;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use Throwable;
 
 /**
  * Raise and clear the attention flag, and keep every reason.
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
-class CaseAttentionFlagService {
-
-	use SearchesObjects;
+class CaseAttentionFlagService implements CaseAttentionFlagServiceInterface {
 
 	/**
 	 * The two acts a history row can record.
@@ -79,15 +76,28 @@ class CaseAttentionFlagService {
 	public const MINIMUM_REASON_LENGTH = 3;
 
 	/**
+	 * Reads and patches the case, naming this service in its warnings.
+	 *
+	 * @var CaseReadAndPatch
+	 */
+	private readonly CaseReadAndPatch $cases;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings service (OpenRegister access).
 	 * @param LoggerInterface $logger          The logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly LoggerInterface $logger,
+		SettingsService $settingsService,
+		LoggerInterface $logger,
 	) {
+		$this->cases = new CaseReadAndPatch(
+			settingsService: $settingsService,
+			logger: $logger,
+			owner: 'CaseAttentionFlagService',
+			act: 'attention'
+		);
 	}//end __construct()
 
 	/**
@@ -101,7 +111,7 @@ class CaseAttentionFlagService {
 	 *
 	 * @throws RuntimeException With code `case_not_found`.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function state(string $caseId): array {
 		return $this->describe(caseId: $caseId, case: $this->read(caseId: $caseId));
@@ -120,7 +130,7 @@ class CaseAttentionFlagService {
 	 *
 	 * @throws RuntimeException With code `case_not_found`, `reason_required` or `already_raised`.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function raise(string $caseId, string $userId, string $reason): array {
 		$reason = $this->requireReason(reason: $reason);
@@ -171,7 +181,7 @@ class CaseAttentionFlagService {
 	 *
 	 * @throws RuntimeException With code `case_not_found`, `reason_required` or `not_raised`.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function clear(string $caseId, string $userId, string $reason): array {
 		$reason = $this->requireReason(reason: $reason);
@@ -209,7 +219,7 @@ class CaseAttentionFlagService {
 	 *
 	 * @throws RuntimeException With code `reason_required`.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function requireReason(string $reason): string {
 		$reason = trim($reason);
@@ -233,7 +243,7 @@ class CaseAttentionFlagService {
 	 *               history: array<int, array<string, mixed>>, raisings: int,
 	 *               clearings: int} The flag, its history and the two counts.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function describe(string $caseId, array $case): array {
 		$history = $this->history(case: $case);
@@ -261,7 +271,7 @@ class CaseAttentionFlagService {
 	 *
 	 * @return boolean True when the flag is raised.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isRaised(array $case): bool {
 		$history = $this->history(case: $case);
@@ -283,7 +293,7 @@ class CaseAttentionFlagService {
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function history(array $case): array {
 		$rows = ($case['attentionFlagHistory'] ?? []);
@@ -293,26 +303,53 @@ class CaseAttentionFlagService {
 
 		$readable = [];
 		foreach ($rows as $row) {
-			if (is_array($row) === false) {
-				continue;
+			$entry = $this->readableRow(row: $row);
+			if ($entry !== null) {
+				$readable[] = $entry;
 			}
-
-			$act = trim((string)($row['act'] ?? ''));
-			$reason = trim((string)($row['reason'] ?? ''));
-			if (in_array($act, self::ACTS, true) === false || $reason === '') {
-				continue;
-			}
-
-			$readable[] = [
-				'act' => $act,
-				'reason' => $reason,
-				'actor' => trim((string)($row['actor'] ?? '')),
-				'moment' => trim((string)($row['moment'] ?? '')),
-			];
 		}
 
 		return $readable;
 	}//end history()
+
+	/**
+	 * One history row, trimmed, or null when it misses its act or its reason.
+	 *
+	 * @param mixed $row The stored row.
+	 *
+	 * @return array<string, string>|null The row, or null.
+	 */
+	private function readableRow(mixed $row): array|null {
+		if (is_array($row) === false) {
+			return null;
+		}
+
+		$act = trim((string)($row['act'] ?? ''));
+		$reason = trim((string)($row['reason'] ?? ''));
+		if (in_array($act, self::ACTS, true) === false || $reason === '') {
+			return null;
+		}
+
+		return $this->historyEntry(row: $row, act: $act, reason: $reason);
+	}//end readableRow()
+
+	/**
+	 * One readable history row, trimmed.
+	 *
+	 * @param array<string, mixed> $row    The stored row.
+	 * @param string               $act    Its act.
+	 * @param string               $reason Its reason.
+	 *
+	 * @return array<string, string> The row.
+	 */
+	private function historyEntry(array $row, string $act, string $reason): array {
+		return [
+			'act' => $act,
+			'reason' => $reason,
+			'actor' => trim((string)($row['actor'] ?? '')),
+			'moment' => trim((string)($row['moment'] ?? '')),
+		];
+	}//end historyEntry()
 
 	/**
 	 * Read the stored case, as the signed-in user.
@@ -328,28 +365,7 @@ class CaseAttentionFlagService {
 	 * @throws RuntimeException With code `case_not_found`.
 	 */
 	private function read(string $caseId): array {
-		[$objectService, $register, $schema] = $this->openRegister();
-
-		try {
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $caseId
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq CaseAttentionFlagService: case lookup failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'caseId' => $caseId]
-			);
-			throw new RuntimeException('case_not_found');
-		}
-
-		if ($case === null) {
-			throw new RuntimeException('case_not_found');
-		}
-
-		return $case;
+		return $this->cases->read(caseId: $caseId);
 	}//end read()
 
 	/**
@@ -367,52 +383,6 @@ class CaseAttentionFlagService {
 	 * @throws RuntimeException With code `attention_write_failed`.
 	 */
 	private function write(string $caseId, array $changes): void {
-		[$objectService, $register, $schema] = $this->openRegister();
-
-		try {
-			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $caseId,
-				changes: $changes
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq CaseAttentionFlagService: attention write failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'caseId' => $caseId]
-			);
-			throw new RuntimeException('attention_write_failed');
-		}
+		$this->cases->patch(caseId: $caseId, changes: $changes);
 	}//end write()
-
-	/**
-	 * The OpenRegister seam and the case schema, or a refusal.
-	 *
-	 * @return array{0: object, 1: string, 2: string} The object service, register and schema.
-	 *
-	 * @throws RuntimeException With code `case_not_found` when OpenRegister or the schema is absent.
-	 */
-	private function openRegister(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			$this->logger->warning(
-				'Dossiq CaseAttentionFlagService: OpenRegister unavailable',
-				['app' => Application::APP_ID]
-			);
-			throw new RuntimeException('case_not_found');
-		}
-
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($register === '' || $schema === '') {
-			$this->logger->warning(
-				'Dossiq CaseAttentionFlagService: case schema not configured',
-				['app' => Application::APP_ID]
-			);
-			throw new RuntimeException('case_not_found');
-		}
-
-		return [$objectService, $register, $schema];
-	}//end openRegister()
 }//end class

@@ -49,7 +49,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
@@ -57,12 +57,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Pause;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PauseChaseServiceInterface;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
@@ -72,14 +72,16 @@ use Throwable;
 /**
  * Chasing while a case waits on somebody else (REQ-TERM-011).
  *
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The act joins five things that
  * already exist: the term store, the outbound route, the reason vocabulary, the
  * schedule and the case timeline. Splitting it would put the count that keeps
  * two triggers apart in one class and the send that increments it in another.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class PauseChaseService {
+class PauseChaseService implements PauseChaseServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -114,9 +116,7 @@ class PauseChaseService {
 	 * Constructor.
 	 *
 	 * @param TermijnService                 $termService    The instances, their patches and their events.
-	 * @param PauseReasonReader              $reasons        What the case type declared.
-	 * @param ChaseSchedule                  $schedule       When the next reminder is due.
-	 * @param TermijnNotificationService     $notifications  The one route a citizen letter leaves by.
+	 * @param PauseChaseSources $chase The pause reasons, the chase schedule and the notification service.
 	 * @param CaseTimeline                   $timeline       The one log a handler reads.
 	 * @param SettingsService                $settings       The OpenRegister seam.
 	 * @param LoggerInterface                $logger         Logger.
@@ -126,9 +126,7 @@ class PauseChaseService {
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
-		private readonly PauseReasonReader $reasons,
-		private readonly ChaseSchedule $schedule,
-		private readonly TermijnNotificationService $notifications,
+		private readonly PauseChaseSources $chase,
 		private readonly CaseTimeline $timeline,
 		private readonly SettingsService $settings,
 		private readonly LoggerInterface $logger,
@@ -143,7 +141,7 @@ class PauseChaseService {
 	 *
 	 * @return array{chased: int, escalated: int} What the sweep did.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function sweep(?DateTimeImmutable $now = null): array {
 		$done = ['chased' => 0, 'escalated' => 0];
@@ -170,7 +168,7 @@ class PauseChaseService {
 	 *
 	 * @return bool True when a reminder actually went out.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function chaseIfDue(array $instance, ?DateTimeImmutable $now = null): bool {
 		$moment = ($now ?? new DateTimeImmutable());
@@ -180,7 +178,7 @@ class PauseChaseService {
 		}
 
 		[$fresh, $reason] = $context;
-		if ($this->schedule->chaseDue(instance: $fresh, reason: $reason, now: $moment) === false) {
+		if ($this->chase->schedule->chaseDue(instance: $fresh, reason: $reason, now: $moment) === false) {
 			return false;
 		}
 
@@ -196,7 +194,7 @@ class PauseChaseService {
 	 *
 	 * @return bool True when the escalation was recorded.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function escalateIfDue(array $instance, ?DateTimeImmutable $now = null): bool {
 		$moment = ($now ?? new DateTimeImmutable());
@@ -206,7 +204,7 @@ class PauseChaseService {
 		}
 
 		[$fresh, $reason] = $context;
-		if ($this->schedule->escalationDue(instance: $fresh, reason: $reason, now: $moment) === false) {
+		if ($this->chase->schedule->escalationDue(instance: $fresh, reason: $reason, now: $moment) === false) {
 			return false;
 		}
 
@@ -237,16 +235,40 @@ class PauseChaseService {
 			return null;
 		}
 
+		return $this->contextOfPaused(fresh: $fresh);
+	}//end contextFor()
+
+	/**
+	 * The still-paused row with its reason in force, or null when it names no reason or case.
+	 *
+	 * @param array<string, mixed> $fresh The row as it stands now.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>}|null The fresh row and its reason.
+	 */
+	private function contextOfPaused(array $fresh): array|null {
 		$key = trim((string)($fresh['pauseReason'] ?? ''));
 		$caseId = trim((string)($fresh['case'] ?? ''));
 		if ($key === '' || $caseId === '') {
 			return null;
 		}
 
+		return $this->contextOnCase(fresh: $fresh, key: $key, caseId: $caseId);
+	}//end contextOfPaused()
+
+	/**
+	 * The still-paused row with the case type's reason for its key, or null when the case type does not chase it.
+	 *
+	 * @param array<string, mixed> $fresh  The row as it stands now.
+	 * @param string               $key    The pause reason key.
+	 * @param string               $caseId The case the row belongs to.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>}|null The fresh row and its reason.
+	 */
+	private function contextOnCase(array $fresh, string $key, string $caseId): array|null {
 		// ONE READ of the case type answers both questions: which reasons it
 		// declares, and whether it sends this message at all. Reading it twice
 		// would let the two answers come from different rows.
-		$caseType = $this->reasons->caseTypeForCase(caseId: $caseId);
+		$caseType = $this->chase->reasons->caseTypeForCase(caseId: $caseId);
 		if ((new CaseTypeHandling())->sends(caseType: $caseType, message: self::TEMPLATE) === false) {
 			// The case type turned the reminder off. That is a switch an
 			// administrator set, so it is honoured here rather than overridden
@@ -254,14 +276,14 @@ class PauseChaseService {
 			return null;
 		}
 
-		foreach ($this->reasons->reasonsIn(caseTypeRow: $caseType) as $reason) {
+		foreach ($this->chase->reasons->reasonsIn(caseTypeRow: $caseType) as $reason) {
 			if ($reason['key'] === $key) {
 				return [$fresh, $reason];
 			}
 		}//end foreach
 
 		return null;
-	}//end contextFor()
+	}//end contextOnCase()
 
 	/**
 	 * Send one reminder and write down that it went.
@@ -273,32 +295,101 @@ class PauseChaseService {
 	 * @return bool True when the reminder went out.
 	 */
 	private function chase(array $instance, array $reason, DateTimeImmutable $moment): bool {
-		$instanceId = (string)($instance['id'] ?? '');
-		$caseId = trim((string)($instance['case'] ?? ''));
-		$recipient = $this->recipientFor(caseId: $caseId);
-		if ($recipient === '') {
-			$this->logger->warning(
-				'Dossiq pause: a reminder was due but the case carries no address to send it to',
-				['app' => Application::APP_ID, 'instance' => $instanceId, 'case' => $caseId]
-			);
+		$step = $this->stepFor(instance: $instance, reason: $reason);
+		$step->moment = $moment;
+		$step->recipient = $this->recipientFor(caseId: $step->caseId);
+		if ($step->recipient === '') {
+			$this->warnNoRecipient(step: $step);
 			return false;
 		}
 
-		$number = ($this->schedule->sent(instance: $instance) + 1);
+		$step->number = ($this->chase->schedule->sent(instance: $instance) + 1);
+		if ($this->sendReminder(step: $step) === false) {
+			return false;
+		}
 
+		$this->recordChased(step: $step, reason: $reason);
+
+		return true;
+	}//end chase()
+
+	/**
+	 * Log that a reminder was due but the case has no address to send it to.
+	 *
+	 * @param PauseStep $step The step.
+	 *
+	 * @return void
+	 */
+	private function warnNoRecipient(PauseStep $step): void {
+		$this->logger->warning(
+			'Dossiq pause: a reminder was due but the case carries no address to send it to',
+			['app' => AppIdentity::APP_ID, 'instance' => $step->instanceId, 'case' => $step->caseId]
+		);
+	}//end warnNoRecipient()
+
+	/**
+	 * Write down that a reminder went: on the instance, as a step, on the case and in the log.
+	 *
+	 * @param PauseStep            $step   The step, numbered, carrying when this is happening.
+	 * @param array<string, mixed> $reason The normalised reason in force.
+	 *
+	 * @return void
+	 */
+	private function recordChased(PauseStep $step, array $reason): void {
+		$this->termService->updateTermijnInstance(
+			$step->instanceId,
+			[
+				'chasesSent' => $step->number,
+				'lastChasedAt' => $step->moment->format('c'),
+			]
+		);
+
+		$step->event = self::EVENT_CHASED;
+		$step->sentence = $this->chasedSentence(reason: $reason, number: $step->number);
+		$this->recordStep(step: $step);
+		$this->projectOntoCase(step: $step);
+		$this->logChased(step: $step);
+	}//end recordChased()
+
+	/**
+	 * The step for one paused row and its reason.
+	 *
+	 * @param array<string, mixed> $instance The fresh, still-paused row.
+	 * @param array<string, mixed> $reason   The normalised reason in force.
+	 *
+	 * @return PauseStep
+	 */
+	private function stepFor(array $instance, array $reason): PauseStep {
+		$step = new PauseStep();
+		$step->instance = $instance;
+		$step->reason = $reason;
+		$step->instanceId = (string)($instance['id'] ?? '');
+		$step->caseId = trim((string)($instance['case'] ?? ''));
+
+		return $step;
+	}//end stepFor()
+
+	/**
+	 * Send the reminder; one that did not leave is logged and counts nothing.
+	 *
+	 * @param PauseStep $step The reminder, with its recipient and number.
+	 *
+	 * @return bool Whether the reminder left.
+	 */
+	private function sendReminder(PauseStep $step): bool {
 		try {
-			$this->notifications->sendTermijnNotification(
+			$this->chase->notifications->sendTermijnNotification(
 				self::TEMPLATE,
-				$instanceId,
-				$recipient,
+				$step->instanceId,
+				$step->recipient,
 				[
-					'case' => $caseId,
-					'chaseText' => (string)$reason['chaseText'],
-					'pauseDeadline' => (string)($instance['pauseDeadline'] ?? ''),
+					'case' => $step->caseId,
+					'chaseText' => (string)$step->reason['chaseText'],
+					'pauseDeadline' => (string)($step->instance['pauseDeadline'] ?? ''),
 					// One name per reminder: the engine rung and the daily sweep
 					// asking for reminder N on this term ask for the same notice,
 					// and the sender sends it once.
-					'dedupeKey' => $instanceId . ':chase:' . $number,
+					'dedupeKey' => $step->instanceId . ':chase:' . $step->number,
 				],
 			);
 		} catch (Throwable $e) {
@@ -307,55 +398,33 @@ class PauseChaseService {
 			// budget on a letter nobody received.
 			$this->logger->warning(
 				'Dossiq pause: a reminder could not be sent, so nothing was counted',
-				['app' => Application::APP_ID, 'instance' => $instanceId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'instance' => $step->instanceId, 'error' => $e->getMessage()]
 			);
 			return false;
 		}//end try
 
-		$this->termService->updateTermijnInstance(
-			$instanceId,
-			[
-				'chasesSent' => $number,
-				'lastChasedAt' => $moment->format('c'),
-			]
-		);
+		return true;
+	}//end sendReminder()
 
-		$this->termService->recordEvent(
-			termInstanceId: $instanceId,
-			type: self::EVENT_CHASED,
-			basis: $this->basisOf(reason: $reason),
-			rationale: $this->chasedSentence(reason: $reason, number: $number),
-			daysImpact: 0,
-			moment: $moment,
-		);
-
-		$this->timeline->record(
-			caseId: $caseId,
-			kind: TimelineKinds::TERM_EVENT,
-			message: $this->chasedSentence(reason: $reason, number: $number),
-			fields: [
-				'event' => self::EVENT_CHASED,
-				'term' => (string)$reason['name'],
-				'dueAt' => (string)($instance['pauseDeadline'] ?? ''),
-				'termijnId' => $instanceId,
-			],
-		);
-
-		$this->projectOntoCase(caseId: $caseId, reason: $reason, instance: $instance, chases: $number);
-
+	/**
+	 * Log that a reminder went out.
+	 *
+	 * @param PauseStep $step The reminder.
+	 *
+	 * @return void
+	 */
+	private function logChased(PauseStep $step): void {
 		$this->logger->info(
 			'Dossiq pause: a reminder went out on a suspended term',
 			[
-				'app' => Application::APP_ID,
-				'instance' => $instanceId,
-				'case' => $caseId,
-				'reason' => (string)$reason['key'],
-				'chase' => $number,
+				'app' => AppIdentity::APP_ID,
+				'instance' => $step->instanceId,
+				'case' => $step->caseId,
+				'reason' => (string)$step->reason['key'],
+				'chase' => $step->number,
 			]
 		);
-
-		return true;
-	}//end chase()
+	}//end logChased()
 
 	/**
 	 * Record that the reminders ran out without an answer.
@@ -367,42 +436,23 @@ class PauseChaseService {
 	 * @return bool True when the escalation was recorded.
 	 */
 	private function escalate(array $instance, array $reason, DateTimeImmutable $moment): bool {
-		$instanceId = (string)($instance['id'] ?? '');
-		$caseId = trim((string)($instance['case'] ?? ''));
-		$sentence = $this->escalatedSentence(reason: $reason, sent: $this->schedule->sent(instance: $instance));
+		$step = $this->stepFor(instance: $instance, reason: $reason);
+		$step->moment = $moment;
+		$step->event = self::EVENT_ESCALATED;
+		$step->sentence = $this->escalatedSentence(reason: $reason, sent: $this->chase->schedule->sent(instance: $instance));
 
 		$this->termService->updateTermijnInstance(
-			$instanceId,
+			$step->instanceId,
 			['chaseEscalatedAt' => $moment->format('c')]
 		);
 
-		$this->termService->recordEvent(
-			termInstanceId: $instanceId,
-			type: self::EVENT_ESCALATED,
-			basis: $this->basisOf(reason: $reason),
-			rationale: $sentence,
-			daysImpact: 0,
-			moment: $moment,
-		);
-
-		$this->timeline->record(
-			caseId: $caseId,
-			kind: TimelineKinds::TERM_EVENT,
-			message: $sentence,
-			fields: [
-				'event' => self::EVENT_ESCALATED,
-				'term' => (string)$reason['name'],
-				'dueAt' => (string)($instance['pauseDeadline'] ?? ''),
-				'termijnId' => $instanceId,
-			],
-		);
-
+		$this->recordStep(step: $step);
 		$this->logger->info(
 			'Dossiq pause: the reminders ran out without an answer',
 			[
-				'app' => Application::APP_ID,
-				'instance' => $instanceId,
-				'case' => $caseId,
+				'app' => AppIdentity::APP_ID,
+				'instance' => $step->instanceId,
+				'case' => $step->caseId,
 				'reason' => (string)$reason['key'],
 				'escalateTo' => (string)$reason['escalateTo'],
 			]
@@ -410,6 +460,36 @@ class PauseChaseService {
 
 		return true;
 	}//end escalate()
+
+	/**
+	 * Record the step as an event on the term and an entry on the case timeline.
+	 *
+	 * @param PauseStep $step The reminder or escalation, with its event and sentence.
+	 *
+	 * @return void
+	 */
+	private function recordStep(PauseStep $step): void {
+		$this->termService->recordEvent(
+			termInstanceId: $step->instanceId,
+			type: $step->event,
+			basis: $this->basisOf(reason: $step->reason),
+			rationale: $step->sentence,
+			daysImpact: 0,
+			moment: $step->moment,
+		);
+
+		$this->timeline->record(
+			caseId: $step->caseId,
+			kind: TimelineKinds::TERM_EVENT,
+			message: $step->sentence,
+			fields: [
+				'event' => $step->event,
+				'term' => (string)$step->reason['name'],
+				'dueAt' => (string)($step->instance['pauseDeadline'] ?? ''),
+				'termijnId' => $step->instanceId,
+			],
+		);
+	}//end recordStep()
 
 	/**
 	 * What one reminder reads as, on the term and on the timeline.
@@ -484,7 +564,7 @@ class PauseChaseService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq pause: the open request behind a suspended term could not be read',
-				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 			);
 			return '';
 		}
@@ -501,29 +581,19 @@ class PauseChaseService {
 	 * without reading every term instance of every case, and a failure here
 	 * leaves a stale sentence beside a term that is still correct.
 	 *
-	 * @param string               $caseId   The case UUID.
-	 * @param array<string, mixed> $reason   The normalised reason in force.
-	 * @param array<string, mixed> $instance The instance the pause is on.
-	 * @param int                  $chases   How many reminders have gone out.
+	 * @param PauseStep $step The reminder that went out: its case, reason, instance and number.
 	 *
 	 * @return void
 	 */
-	private function projectOntoCase(string $caseId, array $reason, array $instance, int $chases): void {
-		$objectService = $this->settings->getObjectService();
-		$register = (string)$this->settings->getConfigValue('register');
-		$schema = (string)$this->settings->getConfigValue('case_schema');
-		if ($objectService === null || $caseId === '' || $register === '' || $schema === '') {
+	private function projectOntoCase(PauseStep $step): void {
+		$caseId = $step->caseId;
+		$store = $this->caseStore();
+		if ($store === null || $caseId === '') {
 			return;
 		}
 
-		$changes = [
-			'pauseWaitingOn' => (string)$reason['waitingOn'],
-			'chasesSent' => $chases,
-		];
-		$since = $this->schedule->pauseStartMoment(date: (string)($instance['pauzeStartDatum'] ?? ''));
-		if ($since !== null) {
-			$changes['waitingSince'] = $since;
-		}
+		[$objectService, $register, $schema] = $store;
+		$changes = $this->waitingChanges(step: $step);
 
 		try {
 			$this->patchObjectAsArray(
@@ -536,10 +606,46 @@ class PauseChaseService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq pause: the waiting sentence on the case could not be written; the term is correct',
-				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 			);
 		}
 	}//end projectOntoCase()
+
+	/**
+	 * The object service, register and case schema, or null when any of them is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The case store.
+	 */
+	private function caseStore(): ?array {
+		$objectService = $this->settings->getObjectService();
+		$register = (string)$this->settings->getConfigValue('register');
+		$schema = (string)$this->settings->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end caseStore()
+
+	/**
+	 * The waiting facts to write onto the case for a reminder.
+	 *
+	 * @param PauseStep $step The reminder that went out.
+	 *
+	 * @return array<string, mixed> The case changes.
+	 */
+	private function waitingChanges(PauseStep $step): array {
+		$changes = [
+			'pauseWaitingOn' => (string)$step->reason['waitingOn'],
+			'chasesSent' => $step->number,
+		];
+		$since = $this->chase->schedule->pauseStartMoment(date: (string)($step->instance['pauzeStartDatum'] ?? ''));
+		if ($since !== null) {
+			$changes['waitingSince'] = $since;
+		}
+
+		return $changes;
+	}//end waitingChanges()
 
 	/**
 	 * Every suspended term instance.

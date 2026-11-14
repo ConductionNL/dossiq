@@ -1,0 +1,4 @@
+- [x] StorePackageController and routes
+- [x] CaseTypePackageChoice::shipped and isOffered
+- [x] Summaries in lib/Settings/packages
+- [x] `config.shipped` on the Store page

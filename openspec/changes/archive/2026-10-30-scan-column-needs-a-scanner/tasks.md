@@ -1,0 +1,2 @@
+- [x] case-files Scan result column requiredApp files_antivirus (manifest)
+- [x] vitest filesTabColumns (red first)

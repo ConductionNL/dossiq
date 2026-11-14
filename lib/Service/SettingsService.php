@@ -26,7 +26,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Settings\ConfigKeys;
 use OCA\Dossiq\Service\Settings\ConfigurationImport;
 use OCA\Dossiq\Service\Settings\OpenRegisterBridge;
@@ -42,7 +44,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
-class SettingsService {
+class SettingsService implements SettingsServiceInterface {
 	/**
 	 * Configuration keys that contain secrets and must be redacted for non-admin callers.
 	 *
@@ -55,8 +57,8 @@ class SettingsService {
 		'appointment_backend_api_key',
 		// AI model URL reveals internal infrastructure topology; redact for non-admins.
 		'ai_model_url',
-		// Dwangsom callback HMAC secret — never expose to non-admin callers.
-		'dwangsom_callback_secret',
+		// Payout callback HMAC secret: never expose to non-admin callers.
+		'payout_callback_secret',
 	];
 
 	/**
@@ -70,6 +72,36 @@ class SettingsService {
 	 * @var string[]
 	 */
 	private const CONFIG_KEYS = ConfigKeys::ALL;
+
+	/**
+	 * The bounds and choices of the settings the admin tabs save
+	 * ({@see \OCA\Dossiq\Service\Settings\SettingValueRules}). A string and
+	 * not a `::class` reference: this class sits at PHPMD's coupling ceiling.
+	 * SettingValueRulesTest asserts the name resolves.
+	 *
+	 * @var string
+	 */
+	public const VALUE_RULES = 'OCA\\Dossiq\\Service\\Settings\\SettingValueRules';
+
+	/**
+	 * Current key => the procedure-named key it replaces, read while the current key is missing.
+	 *
+	 * @var array<string, string>
+	 */
+	private const RENAMED_KEYS = MoneyConfigKeys::LEGACY_KEYS;
+
+	/**
+	 * Keys that are written and never read back, to anyone.
+	 *
+	 * A settings read answers `<key>Set` (whether one is stored) in their
+	 * place, so a form can say "ingesteld" without the key leaving the server.
+	 *
+	 * @var string[]
+	 */
+	private const WRITE_ONLY_KEYS = [
+		'integration.brk.apiKey',
+		'integration.woz.apiKey',
+	];
 
 	/**
 	 * Default values for KCC-werkplek bridge behaviour settings.
@@ -98,7 +130,7 @@ class SettingsService {
 	 * `publication`/`document`) so publishing works out of the box on a
 	 * default install; overridable per instance via getWooPublicationConfigValue().
 	 *
-	 * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d1
+	 * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d1
 	 */
 	public const WOO_PUBLICATION_DEFAULTS = [
 		'woo_publication_register' => 'publication',
@@ -151,7 +183,7 @@ class SettingsService {
 	 * The three collaborators are constructed here rather than injected so the
 	 * container-facing signature stays `(appConfig, appManager, container,
 	 * logger)` — the shape the bespoke factory in
-	 * {@see \OCA\Dossiq\AppInfo\Registrar\BespokeServiceRegistrar} and ~180
+	 * {@see \OCA\Dossiq\Service\Registrar\BespokeServiceRegistrar} and ~180
 	 * injection sites already use.
 	 *
 	 * @param IAppConfig $appConfig The app configuration service
@@ -211,7 +243,7 @@ class SettingsService {
 	 *
 	 * @return object|null The OpenRegister ObjectService or null when unavailable
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getObjectService(): ?object {
 		return $this->openRegister->objectService();
@@ -237,7 +269,7 @@ class SettingsService {
 	 *
 	 * @return object|null OpenRegister's ObjectGrantResolver, or null when unavailable.
 	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	public function getObjectGrantResolver(): ?object {
 		return $this->openRegister->objectGrantResolver();
@@ -255,38 +287,18 @@ class SettingsService {
 	 * rather than worked around with a self-addressed HTTP call, which is what
 	 * ADR-080 D2/D3 forbids.
 	 *
-	 * Same lazy-resolve contract as {@see self::getObjectService()} and
-	 * {@see self::getApprovalService()}: OpenRegister is an optional runtime
-	 * dependency, so the class is resolved through the container at call time
-	 * rather than type-hinted in the constructor, and callers MUST handle null.
+	 * Same lazy-resolve contract as {@see self::getObjectService()}: OpenRegister is an
+	 * optional runtime dependency, so the class is resolved through the
+	 * container at call time rather than type-hinted in the constructor, and
+	 * callers MUST handle null.
 	 *
 	 * @return object|null The OpenRegister FileService or null when unavailable
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function getFileService(): ?object {
 		return $this->openRegister->fileService();
 	}//end getFileService()
-
-	/**
-	 * Lazily resolve OpenRegister's ApprovalService for parafering chain delegation.
-	 *
-	 * Per ADR-022 (apps consume OpenRegister abstractions) the parafering
-	 * (sign-off routing) chain-state backend is OpenRegister's
-	 * `approval-workflow` capability, exposed through
-	 * `OCA\OpenRegister\Service\ApprovalService`. OpenRegister is an optional
-	 * runtime dependency, so — exactly like getObjectService() — the class is
-	 * resolved through the container at call time rather than type-hinted in the
-	 * constructor. Callers MUST handle the null case (graceful degradation to
-	 * the legacy in-array path during the migration window).
-	 *
-	 * @return object|null The OpenRegister ApprovalService or null when unavailable
-	 *
-	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
-	 */
-	public function getApprovalService(): ?object {
-		return $this->openRegister->approvalService();
-	}//end getApprovalService()
 
 	/**
 	 * Lazily resolve an OpenRegister DI class by fully-qualified name.
@@ -299,7 +311,7 @@ class SettingsService {
 	 *
 	 * @return object|null The resolved service, or null when unavailable
 	 *
-	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
+	 * @spec openspec/changes/archive/2026-06-14-migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
 	 */
 	public function getOpenRegisterClass(string $class): ?object {
 		return $this->openRegister->classNamed(class: $class);
@@ -314,7 +326,7 @@ class SettingsService {
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $force is a simple re-import toggle
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function loadConfiguration(bool $force = false): array {
 		return $this->import->loadConfiguration(force: $force);
@@ -323,17 +335,23 @@ class SettingsService {
 	/**
 	 * Get all current settings as an associative array.
 	 *
-	 * Returns full (unredacted) settings including secrets. Callers MUST
+	 * Returns full (unredacted) settings including secrets, except the
+	 * write-only keys, which read as `<key>Set`. Callers MUST
 	 * ensure only admin users receive this response.
 	 *
 	 * @return array
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getSettings(): array {
 		$config = [];
 		foreach (self::CONFIG_KEYS as $key) {
-			$config[$key] = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+			if (in_array(needle: $key, haystack: self::WRITE_ONLY_KEYS, strict: true) === true) {
+				$config[$key.'Set'] = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '') !== '';
+				continue;
+			}
+
+			$config[$key] = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 		}
 
 		return $config;
@@ -370,11 +388,16 @@ class SettingsService {
 	 *
 	 * @throws \OCA\Dossiq\Exception\RefusedException When the throughput report would go on without an existing reader group.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function updateSettings(array $data): array {
+		$data = $this->withCurrentReportKeys(data: $data);
 		// Refused before anything is written, so a refused save changes nothing.
+		if ($this->container->has(self::VALUE_RULES) === true) {
+			$this->container->get(self::VALUE_RULES)->assertValid(data: $data);
+		}
+
 		// Only a save that touches the throughput switch or its readers is checked.
 		if (array_key_exists(WooReportSwitches::THROUGHPUT, $data) === true
 			|| array_key_exists(WooReportSwitches::READERS, $data) === true
@@ -384,7 +407,7 @@ class SettingsService {
 
 		foreach (self::CONFIG_KEYS as $key) {
 			if (isset($data[$key]) === true) {
-				$this->appConfig->setValueString(Application::APP_ID, $key, (string)$data[$key]);
+				$this->appConfig->setValueString(AppIdentity::APP_ID, $key, (string)$data[$key]);
 			}
 		}
 
@@ -392,6 +415,29 @@ class SettingsService {
 
 		return $this->getSettings();
 	}//end updateSettings()
+
+	/**
+	 * A save with each report switch posted under its earlier key carried onto its current key.
+	 *
+	 * A value posted under the current key wins. Written here rather than through
+	 * {@see \OCA\Dossiq\Service\Settings\RenamedSettingKeys} to keep this class's
+	 * coupling at phpmd's limit.
+	 *
+	 * @param array<string, mixed> $data The settings as posted.
+	 *
+	 * @return array<string, mixed> The settings, current keys filled in.
+	 *
+	 * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
+	 */
+	private function withCurrentReportKeys(array $data): array {
+		foreach (array_diff_key(WooReportSwitches::LEGACY_KEYS, $data) as $current => $earlier) {
+			if (array_key_exists($earlier, $data) === true) {
+				$data[$current] = $data[$earlier];
+			}
+		}
+
+		return $data;
+	}//end withCurrentReportKeys()
 
 	/**
 	 * The Woo review report switches, built on the group manager the container holds.
@@ -411,6 +457,18 @@ class SettingsService {
 	}//end wooReportSwitches()
 
 	/**
+	 * The resident portal's name as portaliq holds it ("Mijn Zuiddrecht"),
+	 * or '' when portaliq names none.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/requester-identified-at-intake/spec.md#requirement-a-portal-intake-records-how-the-requester-logged-in-and-where
+	 */
+	public function getPortalName(): string {
+		return mb_substr(trim($this->appConfig->getValueString('portaliq', 'portalName', '')), 0, 255);
+	}//end getPortalName()
+
+	/**
 	 * Get a single configuration value by key.
 	 *
 	 * @param string $key The configuration key
@@ -421,7 +479,13 @@ class SettingsService {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getConfigValue(string $key, string $default = ''): string {
-		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, $default);
+
+		// A renamed money key reads its legacy key until CarryRenamedSettingKeys has run.
+		$legacy = (self::RENAMED_KEYS[$key] ?? null);
+		if ($value === '' && $legacy !== null && $this->appConfig->hasKey(AppIdentity::APP_ID, $key) === false) {
+			$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $legacy, $default);
+		}
 
 		// LAST, and only when nothing local answered.
 		//
@@ -460,7 +524,7 @@ class SettingsService {
 	 *
 	 * @return string The schema id, or '' when decidiq or its schema is absent.
 	 *
-	 * @spec openspec/changes/the-besluit-resolves-to-decidiqs-decision/specs/zgw-brc/spec.md#requirement-the-besluit-resolves-to-decidiqs-decision-req-brc-020
+	 * @spec openspec/specs/zgw-brc/spec.md#requirement-the-besluit-resolves-to-decidiqs-decision-req-brc-020
 	 */
 	private function decidiqDecisionSchemaId(): string {
 		if ($this->appManager->isInstalled(self::DECIDIQ_APP_ID) === false) {
@@ -504,7 +568,7 @@ class SettingsService {
 	 */
 	public function getKccConfigValue(string $key): string {
 		$default = (self::KCC_DEFAULTS[$key] ?? '');
-		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, $default);
 		if ($value === '') {
 			return $default;
 		}
@@ -525,11 +589,11 @@ class SettingsService {
 	 *
 	 * @return string The configured value, or the documented default.
 	 *
-	 * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d1
+	 * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d1
 	 */
 	public function getWooPublicationConfigValue(string $key): string {
 		$default = (self::WOO_PUBLICATION_DEFAULTS[$key] ?? '');
-		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, $default);
 		if ($value === '') {
 			return $default;
 		}
@@ -548,7 +612,7 @@ class SettingsService {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function setConfigValue(string $key, string $value): void {
-		$this->appConfig->setValueString(Application::APP_ID, $key, $value);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, $key, $value);
 	}//end setConfigValue()
 
 	/**
@@ -559,7 +623,7 @@ class SettingsService {
 	 * idempotent re-import returns an empty `schemas` list, so the per-schema
 	 * config keys (case_type_schema, status_type_schema, status_record_schema,
 	 * workflow_template_schema, …) were never written — the status-name lookup
-	 * and the WorkflowBoard then silently broke on a fresh deploy.
+	 * and the workflow board then silently broke on a fresh deploy.
 	 *
 	 * This method closes that gap: for each schema slug Dossiq knows about it
 	 * resolves the LIVE schema ID via OpenRegister's SchemaMapper (slug-aware

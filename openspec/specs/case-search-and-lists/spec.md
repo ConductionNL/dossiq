@@ -210,6 +210,133 @@ Built by `task-search-fields`, requirement REQ-TASK-021.
 - **THEN** the list SHALL hold their tasks due in that window
 - **AND** the lens SHALL still be active
 
+### Requirement: The Cases list filters from its column headers (REQ-CSL-07)
+
+The Cases list in the simple structure SHALL show a filter funnel in the
+header of each of its columns, as the DqZaken board draws them on Zaak, Type,
+Status, Behandelaar and Termijn. A header filter SHALL write into the same
+active filters as the filter panel, so the list, its count and the panel
+agree.
+
+#### Scenario: Every column of the Cases list has a funnel
+@e2e exclude The page and column configuration is asserted in tests/vitest/simpleListAndDashboard.spec.js; the funnel itself is the library's CnIndexPage, covered by nextcloud-vue's own tests.
+
+- **GIVEN** the simple structure is on
+- **WHEN** a handler opens the Cases list
+- **THEN** the Case, Type, Status, Handler and Deadline columns SHALL each show a filter funnel in the header
+- **AND** neither the page nor any of those columns SHALL opt out of header filters
+
+### Requirement: The case list offers the orders the board draws
+
+The Cases page SHALL offer, in this order, sorting by deadline, case title, handler and last change (newest first),
+followed by urgency and newest. A list sorted by deadline SHALL show "Termijn" as the chosen order.
+
+#### Scenario: DqZakenSorteren
+
+- GIVEN the Cases cards sorted by deadline, ascending, with the side panel open
+- THEN "Sorteren op" reads "Termijn" and the line under the direction reads the order in words, not the field name
+
+### Requirement: The case cards fit three beside the side panel
+
+In the board look dossiq's index pages SHALL set the card track minimum to 232px, so the case cards fit three beside the
+open side panel and four at full width.
+
+#### Scenario: DqZakenSorteren
+
+- GIVEN the Cases cards with the side panel open
+- THEN three cards of about 240px stand in a row
+
+### Requirement: The open-cases list opens on open cases
+
+A case list whose count line speaks of open cases in the reader's teams SHALL open on those cases (`isFinalStatus: false`
+and `assignedGroup: @myTeam`) as removable filters, unless the address carries filters of its own or a saved view is
+opened. A reader in no team SHALL get no team filter. When the address carries filters of its own, the list and board
+views SHALL still hide closed cases (`heldDefaultFilters: ["isFinalStatus"]`) unless the address names `isFinalStatus`
+itself (Ruben, 29 October).
+
+#### Scenario: DqZaken
+
+- GIVEN /apps/dossiq/cases opened from the menu
+- THEN no closed case and no other team's case is listed, and the Active line reads "Status: lopend" and "Team: Woo en informatie"
+
+#### Scenario: DqWerkbord from a link with its own filters
+
+- GIVEN the Cases board opened from a link that names a case type and a team
+- THEN no closed case is listed, and no "Elders" column holds one
+
+### Requirement: The case list shows three lens chips, the rest behind More
+
+In the simple profile the Cases list SHALL show its first three lenses (All, Mine, Due this week) as chips on the row and
+every other lens, in its order, behind the More chip.
+
+#### Scenario: DqZaken
+
+- GIVEN the Cases list
+- THEN the row reads "Alles · Mijn zaken · Termijn deze week · ⋯"
+
+### Requirement: A board card's owner reads as the handler's name
+
+The Cases board view SHALL draw a card's owner as the handler's display name and its initials.
+
+#### Scenario: DqWerkbord
+
+- GIVEN a case assigned to pieter (Pieter Jansen)
+- THEN its card shows the owner "PJ", titled "Pieter Jansen"
+
+### Requirement: Assigned to me explains its order under the list
+
+The Assigned to me view MUST say on its footer that it is sorted by urgency, and MUST explain under the list, as an info
+notice, what the urgency follows from and that covered work carries the colleague's name.
+
+#### Scenario: A handler opens Assigned to me
+
+- GIVEN a handler with open cases in their name
+- WHEN they open Assigned to me
+- THEN the footer reads "{shown} of {total} · sorted by urgency"
+- AND an info notice under the list explains the urgency and covered work
+
+### Requirement: The team queue's list columns are the board's
+
+The team queue's list view MUST draw the wait 60px, the case type 172px and the deadline 96px wide, leaving the rest to
+the title column.
+
+#### Scenario: A long meta line
+
+- GIVEN a queue row whose meta line is wider than the title column
+- WHEN the list renders in the board look
+- THEN the title column is the row less the three fixed columns, and the meta line wraps in it
+
+### Requirement: Cases with the same deadline keep one order
+
+Every deadline order the case list declares MUST order cases with the same deadline by when they were received,
+earliest first.
+
+#### Scenario: Two cases due the same day
+
+- GIVEN 2026-4865 received 23 Oct and 2026-4866 received 24 Oct, both due 3 Nov
+- WHEN the list is sorted by deadline
+- THEN 2026-4865 comes first
+
+### Requirement: The team queue deadline reads late under five days
+
+The team queue MUST read a deadline fewer than five days away as late and one up to seven days away as soon.
+
+#### Scenario: Four and six days left
+
+- GIVEN queue rows due in four and in six days
+- WHEN the team queue renders
+- THEN the first reads late and the second soon
+
+### Requirement: A saved view sorted by deadline keeps equal deadlines in the order they came in
+
+A saved view whose sort starts with the deadline SHALL sort cases with the same deadline by `receivedAt`, oldest first, as the case list's own deadline orders do.
+
+#### Scenario: DqFilterInMenu "Termijn deze week"
+
+- GIVEN Pieter's cases Parkeervergunningen binnenstad (received 28 days ago) and Bezwaar parkeerboete Havenstraat (received 16 days ago) fall due the same day
+- WHEN he opens his saved view "Termijn deze week"
+- THEN Parkeervergunningen binnenstad is listed first
+
 ## What this capability does not cover
 
 Stated here rather than left for a reader to discover.

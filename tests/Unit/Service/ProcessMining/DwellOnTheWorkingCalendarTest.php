@@ -39,9 +39,14 @@ use RuntimeException;
  * Two numbers per interval, and the same intervals keyed by actor.
  *
  * @covers \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer
+ * @uses \OCA\Dossiq\Service\ProcessMining\DwellWindow
+ * @uses \OCA\Dossiq\Service\ProcessMining\CaseDwell
+ * @uses \OCA\Dossiq\Service\ProcessMining\StatusVisit
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\ProcessMining\WorkingClock
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\ProcessMining\StatusLabels
  */
 class DwellOnTheWorkingCalendarTest extends TestCase {
 	use MakesCaseDateNormaliser;

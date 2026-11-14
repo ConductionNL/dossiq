@@ -1,0 +1,104 @@
+<?php
+
+/**
+ * Dossiq service registrar.
+ *
+ * The composite over everything Application::register() binds into the
+ * container: the AppHost engine, the bespoke Settings plumbing, the SaaS
+ * middleware chain and its config-driven services, the beschikking adapters, the
+ * auth brokers and the external base registers. It owns no registration itself —
+ * only the order in which the specialised registrars run.
+ *
+ * @category AppInfo
+ * @package  OCA\Dossiq\Service\Registrar
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @spec openspec/specs/beschikking-generatie/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\Registrar;
+
+use OCA\Dossiq\Listener\Registrar\SaasServiceRegistrar;
+use OCA\Dossiq\Middleware\MiddlewareRegistrar;
+use OCA\Dossiq\Repair\RepairPortRegistrar;
+use OCA\Dossiq\Service\ComplaintService;
+use OCA\Dossiq\Service\ContractBindings;
+use OCA\Dossiq\Service\Mcp\AppointmentTools;
+use OCA\Dossiq\Service\Mcp\BeschikkingTools;
+use OCA\Dossiq\Service\Mcp\CaseTools;
+use OCA\Dossiq\Service\Mcp\IntakeTools;
+use OCA\Dossiq\Service\Mcp\ReportingTools;
+use OCA\Dossiq\Service\Mcp\TaskTools;
+use OCA\Dossiq\Service\Mcp\TermTools;
+use OCP\AppFramework\Bootstrap\IRegistrationContext;
+
+/**
+ * Runs every container-binding registrar in dependency order.
+ *
+ * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/specs/beschikking-generatie/spec.md
+ */
+class ServiceRegistrar {
+	/**
+	 * The services whose `#[McpTool]`-attributed methods the AI Chat Companion
+	 * reflects (see Mcp\DossiqScannableServices), in scan order.
+	 *
+	 * @var array<int, class-string>
+	 */
+	public const MCP_SCANNABLE_SERVICES = [
+		ReportingTools::class,
+		CaseTools::class,
+		ComplaintService::class,
+		TermTools::class,
+		AppointmentTools::class,
+		BeschikkingTools::class,
+		IntakeTools::class,
+		TaskTools::class,
+	];
+
+	/**
+	 * Register every dossiq service binding.
+	 *
+	 * Order matters at exactly one point: the AppHost engine aliases dossiq's
+	 * Settings plumbing to its generics, so BespokeServiceRegistrar must run
+	 * after it to override those keys back onto the concrete dossiq classes.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function register(IRegistrationContext $context): void {
+		(new ContractBindings())->register(context: $context);
+
+		(new AppHostRegistrar())->register(context: $context);
+		(new BespokeServiceRegistrar())->register(context: $context);
+
+		(new MiddlewareRegistrar())->register(context: $context);
+		(new SaasServiceRegistrar())->register(context: $context);
+
+		(new BeschikkingAdapterRegistrar())->register(context: $context);
+		(new SubstitutableAdapterRegistrar())->register(context: $context);
+		(new ExternalRegisterRegistrar())->register(context: $context);
+
+		// The inbound mail gateway, the filter order and the synchronisation
+		// listener. The pipeline cannot be autowired: an autowired one would be
+		// EMPTY, which accepts every message and looks exactly like one that ran.
+		(new MailIntakeRegistrar())->register(context: $context);
+		(new RepairPortRegistrar())->register(context: $context);
+	}//end register()
+}//end class

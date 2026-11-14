@@ -31,12 +31,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\EngineInboxQueryInterface;
+use OCA\Dossiq\Kernel\Contracts\InspectionRunServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Inspection\InspectionRunCarryOver;
-use OCA\Dossiq\Service\Inspection\InspectionRunService;
 use OCA\Dossiq\Service\Inspection\InspectionTemplateMapper;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Task\EngineInboxQuery;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -88,13 +88,13 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService Bridge to OpenRegister and config.
-	 * @param EngineInboxQuery $inbox           The task inbox read.
+	 * @param SettingsServiceInterface  $settingsService Bridge to OpenRegister and config.
+	 * @param EngineInboxQueryInterface $inbox           The task inbox read.
 	 * @param LoggerInterface  $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly EngineInboxQuery $inbox,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly EngineInboxQueryInterface $inbox,
 		private readonly LoggerInterface $logger,
 	) {
 		$this->carry = new InspectionRunCarryOver();
@@ -122,7 +122,7 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 	 */
 	public function run(IOutput $output): void {
 		$objects = $this->settingsService->getObjectService();
-		$tasks = $this->settingsService->getOpenRegisterClass(class: InspectionRunService::TASK_SERVICE);
+		$tasks = $this->settingsService->getOpenRegisterClass(class: InspectionRunServiceInterface::TASK_SERVICE);
 		$register = $this->settingsService->getConfigValue('register');
 		if ($objects === null || $tasks === null || $register === '') {
 			$output->warning('OpenRegister, its task layer or the register is not available. Skipping the inspection run carry-over.');
@@ -136,7 +136,8 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 				$this->loadTemplates(objects: $objects, register: $register);
 				foreach (array_keys(InspectionRunCarryOver::SOURCES) as $schema) {
 					foreach ($this->read(objects: $objects, register: $register, schema: $schema) as $object) {
-						$this->carryOne(tasks: $tasks, schema: $schema, object: $object, counts: $counts, output: $output);
+						$outcome = $this->carryOne(tasks: $tasks, schema: $schema, object: $object, output: $output);
+						$counts[$outcome]++;
 					}
 				}
 			}
@@ -153,31 +154,28 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 	 * @param object               $tasks  OpenRegister's TaskService.
 	 * @param string               $schema The source schema slug.
 	 * @param array<string, mixed> $object The source run.
-	 * @param array<string, int>   $counts The running counts.
 	 * @param IOutput              $output The output.
 	 *
-	 * @return void
+	 * @return string The count it adds to: `already`, `failed` or `carried`.
 	 */
-	private function carryOne(object $tasks, string $schema, array $object, array &$counts, IOutput $output): void {
+	private function carryOne(object $tasks, string $schema, array $object, IOutput $output): string {
 		$ref = $this->carry->legacyRef(schema: $schema, object: $object);
 		$caseId = (string)($object['case'] ?? '');
 		if (isset($this->carriedFor(caseId: $caseId)[$ref]) === true) {
-			$counts['already']++;
-			return;
+			return 'already';
 		}
 
 		$template = ($this->templates[$this->carry->templateRef(schema: $schema, object: $object)] ?? null);
 		try {
 			$tasks->import(data: $this->withLocation(data: $this->carry->taskData(schema: $schema, object: $object, template: $template)), actor: self::ACTOR);
 		} catch (Throwable $e) {
-			$counts['failed']++;
 			$this->logger->warning('Inspection run carry-over refused', ['source' => $ref, 'exception' => $e->getMessage()]);
 			$output->warning(sprintf('Inspection run %s was not carried over: %s', $ref, $e->getMessage()));
-			return;
+			return 'failed';
 		}
 
 		$this->carried[$caseId][$ref] = true;
-		$counts['carried']++;
+		return 'carried';
 	}//end carryOne()
 
 	/**
@@ -199,7 +197,7 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 				'isAdmin' => true,
 				'scope' => $this->inbox->scope(name: 'SCOPE_ALL'),
 				'objectUuid' => $caseId,
-				'kind' => InspectionRunService::KIND,
+				'kind' => InspectionRunServiceInterface::KIND,
 			],
 			limit: self::LIMIT,
 			failure: ['Dossiq: could not read the inspection tasks of a case', ['case' => $caseId]]

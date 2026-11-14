@@ -1,0 +1,42 @@
+{
+    "plain event": [],
+    "acted on": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ],
+    "another app": [],
+    "another source": [],
+    "no source": [],
+    "a warning rung": [],
+    "no rung": [],
+    "no account": [
+        {
+            "runAsWhenNobodyIsSignedIn": "unavailable"
+        }
+    ],
+    "a failing operation": [
+        {
+            "runAsWhenNobodyIsSignedIn": "failed"
+        },
+        {
+            "error": "Dossiq milestone: timer fire handling failed",
+            "context": {
+                "case": "case-1",
+                "error": "store down"
+            }
+        }
+    ],
+    "without caseId": [],
+    "an empty caseId": [],
+    "without milestoneIdentifier": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ],
+    "an empty milestoneIdentifier": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ]
+}

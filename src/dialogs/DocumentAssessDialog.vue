@@ -112,7 +112,7 @@
 								</span>
 							</td>
 							<td>
-								<span class="document-assess__pill">{{
+								<span class="document-assess__pill cn-status-badge cn-status-badge--default">{{
 									t('dossiq', 'No assessment yet')
 								}}</span>
 							</td>
@@ -174,7 +174,7 @@
 				data-testid="document-assess-save"
 				:disabled="!canSave"
 				@click="save">
-				{{ t('dossiq', 'Save assessment') }}
+				{{ busy ? t('dossiq', 'Saving…') : t('dossiq', 'Save assessment') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -202,6 +202,27 @@ const SPEC_NOTE = 'document-assessment REQ-DAS-002'
 function sentenceOf(failure, fallback) {
 	const data = failure?.response?.data
 	return String(data?.message || data?.error || fallback)
+}
+
+/**
+ * What to say when the assessment was not saved: that each refused document
+ * says why, or the server's own sentence.
+ *
+ * @param {object} refusals The refusal sentence per document.
+ * @param {object} failure The axios error.
+ * @return {string} The sentence.
+ */
+function assessmentFailureSentence(refusals, failure) {
+	if (Object.keys(refusals).length > 0) {
+		return t(
+			'dossiq',
+			'The server refused part of this assessment. What it said is shown with each document.',
+		)
+	}
+	return sentenceOf(
+		failure,
+		t('dossiq', 'The assessment could not be saved.'),
+	)
 }
 
 export default {
@@ -253,6 +274,18 @@ export default {
 			type: Object,
 			default: () => ({}),
 		},
+
+		/**
+		 * The document to start with chosen, when the dialog is opened from a
+		 * document's row ("Beoordelen", DqZaakDocumenten). Ignored when it is
+		 * not outstanding.
+		 *
+		 * @spec openspec/specs/files-review-row-verdict/spec.md#requirement-a-document-is-assessed-from-its-row
+		 */
+		documentId: {
+			type: String,
+			default: '',
+		},
 	},
 
 	emits: ['close'],
@@ -273,6 +306,7 @@ export default {
 			error: '',
 			notice: '',
 			refusals: {},
+			stored: [],
 		}
 	},
 
@@ -337,8 +371,11 @@ export default {
 		},
 	},
 
-	mounted() {
-		this.load()
+	async mounted() {
+		if (this.documentId !== '') {
+			this.selected = [this.documentId]
+		}
+		await this.load()
 	},
 
 	methods: {
@@ -385,10 +422,16 @@ export default {
 			this.loadError = ''
 			try {
 				const { data } = await axios.get(this.urlOf(this.outstandingUrl))
-				this.documents = (data?.documents || []).map((row) => ({
-					id: String(row?.id ?? ''),
-					title: String(row?.title ?? ''),
-				}))
+				// A document the server answered as saved is not outstanding,
+				// even when the list is read before the search sees the save.
+				this.documents = (data?.documents || [])
+					.map((row) => ({
+						id: String(row?.id ?? ''),
+						title: String(row?.title ?? ''),
+					}))
+					.filter(
+						(document) => this.stored.includes(document.id) === false,
+					)
 				const still = this.documents.map((document) => document.id)
 				this.selected = this.selected.filter((id) => still.includes(id))
 			} catch (failure) {
@@ -507,68 +550,137 @@ export default {
 		},
 
 		/**
+		 * The documents an answer says were saved.
+		 *
+		 * @param {object} answer The server's answer, with `saved`.
+		 * @param {string} fieldOfDocument What the document field of an assessment is called.
+		 * @return {Array<string>} Their ids.
+		 * @spec openspec/specs/document-assessment/spec.md
+		 */
+		savedIdsOf(answer, fieldOfDocument) {
+			return (Array.isArray(answer?.saved) ? answer.saved : [])
+				.map((row) =>
+					String(row?.[fieldOfDocument] ?? row?.documentRef ?? ''),
+				)
+				.filter((id) => id !== '')
+		},
+
+		/**
 		 * Post the assessment of the selection once, and show what the server said.
 		 *
 		 * @return {Promise<void>}
 		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-handler-assesses-several-documents-in-one-dialog-req-das-002
 		 */
 		async save() {
-			const names = {
-				document: this.fields?.document || 'documentRef',
-				classification: this.fields?.classification || 'classification',
-				grounds: this.fields?.grounds || 'grounds',
-			}
-			const grounds =
-				this.needsGrounds === true
-					? this.pickedGrounds.map((option) => option.id)
-					: []
-			const asked = [...this.selected]
-			const assessments = asked.map((id) => ({
-				[names.document]: id,
-				[names.classification]: this.classification.id,
-				[names.grounds]: grounds,
-			}))
+			const names = this.assessmentFieldNames()
+			const assessments = this.assessmentsFor(names)
 
 			this.busy = true
 			this.error = ''
 			this.notice = ''
 			this.refusals = {}
-			let answer
-			try {
-				answer = (
-					await axios.post(this.urlOf(this.assessUrl), { assessments })
-				).data
-			} catch (failure) {
-				const data = failure?.response?.data
-				this.refusals = this.refusalsOf(data)
-				this.error =
-					Object.keys(this.refusals).length > 0
-						? t(
-								'dossiq',
-								'The server refused part of this assessment. What it said is shown with each document.',
-							)
-						: sentenceOf(
-								failure,
-								t('dossiq', 'The assessment could not be saved.'),
-							)
-				answer = data
-			}
-
-			const stored = Array.isArray(answer?.saved) ? answer.saved.length : 0
-			if (stored > 0) {
-				this.notice = n(
-					'dossiq',
-					'%n document assessed.',
-					'%n documents assessed.',
-					stored,
-				)
-				emit(PAGE_REFRESH, { source: SPEC_NOTE })
-			}
+			const answer = await this.postAssessments(assessments)
+			this.keepStored(answer, names.document)
 
 			// Read the list again rather than trusting the selection: what the
 			// server did not store is still outstanding, and stays on screen.
 			await this.load()
 			this.busy = false
+		},
+
+		/**
+		 * The field names an assessment is written under.
+		 *
+		 * @return {{document: string, classification: string, grounds: string}} The names.
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-handler-assesses-several-documents-in-one-dialog-req-das-002
+		 */
+		assessmentFieldNames() {
+			return {
+				document: this.fields?.document || 'documentRef',
+				classification: this.fields?.classification || 'classification',
+				grounds: this.fields?.grounds || 'grounds',
+			}
+		},
+
+		/**
+		 * One assessment per selected document, with the grounds when they are needed.
+		 *
+		 * @param {{document: string, classification: string, grounds: string}} names The field names.
+		 * @return {Array<object>} The assessments.
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-handler-assesses-several-documents-in-one-dialog-req-das-002
+		 */
+		assessmentsFor(names) {
+			const grounds =
+				this.needsGrounds === true
+					? this.pickedGrounds.map((option) => option.id)
+					: []
+			const asked = [...this.selected]
+			return asked.map((id) => ({
+				[names.document]: id,
+				[names.classification]: this.classification.id,
+				[names.grounds]: grounds,
+			}))
+		},
+
+		/**
+		 * Post the assessments, and keep what a refusal said.
+		 *
+		 * @param {Array<object>} assessments The assessments.
+		 * @return {Promise<object|undefined>} What the server answered, also on a refusal.
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-handler-assesses-several-documents-in-one-dialog-req-das-002
+		 */
+		async postAssessments(assessments) {
+			try {
+				return (
+					await axios.post(this.urlOf(this.assessUrl), { assessments })
+				).data
+			} catch (failure) {
+				const data = failure?.response?.data
+				this.refusals = this.refusalsOf(data)
+				this.error = assessmentFailureSentence(this.refusals, failure)
+				return data
+			}
+		},
+
+		/**
+		 * Keep documents as assessed: no longer listed or selected.
+		 *
+		 * @param {Array<string>} saved The stored document ids.
+		 * @return {void}
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-handler-assesses-several-documents-in-one-dialog-req-das-002
+		 */
+		markAssessed(saved) {
+			this.stored = [...new Set([...this.stored, ...saved])]
+			this.documents = this.documents.filter(
+				(document) => saved.includes(document.id) === false,
+			)
+			this.selected = this.selected.filter(
+				(id) => saved.includes(id) === false,
+			)
+		},
+
+		/**
+		 * Keep the documents the server stored as assessed, and say how many.
+		 *
+		 * @param {object|undefined} answer What the server answered.
+		 * @param {string} fieldOfDocument The field naming a document.
+		 * @return {void}
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-handler-assesses-several-documents-in-one-dialog-req-das-002
+		 */
+		keepStored(answer, fieldOfDocument) {
+			const saved = this.savedIdsOf(answer, fieldOfDocument)
+			const stored = Array.isArray(answer?.saved) ? answer.saved.length : 0
+			if (stored === 0) {
+				return
+			}
+			this.markAssessed(saved)
+			this.notice = n(
+				'dossiq',
+				'%n document assessed.',
+				'%n documents assessed.',
+				stored,
+			)
+			emit(PAGE_REFRESH, { source: SPEC_NOTE })
 		},
 	},
 }
@@ -594,6 +706,16 @@ export default {
 		span {
 			color: var(--color-text-maxcontrast);
 		}
+	}
+
+	// A label breaks between words, and a long word at a hyphenation point of
+	// the page language; "Deels openbaar" and a ground's name never split
+	// inside a word.
+	:deep(.vs__selected),
+	&__table td {
+		overflow-wrap: break-word;
+		word-break: normal;
+		hyphens: auto;
 	}
 
 	&__table-wrap {
@@ -632,10 +754,9 @@ export default {
 
 	&__pill {
 		display: inline-block;
-		padding: 2px 10px;
-		border-radius: var(--border-radius-pill);
 		background: var(--color-background-dark);
-		color: var(--color-main-text);
+		--cn-status-badge-ink: var(--color-main-text);
+		color: var(--cn-status-badge-ink);
 		white-space: nowrap;
 	}
 

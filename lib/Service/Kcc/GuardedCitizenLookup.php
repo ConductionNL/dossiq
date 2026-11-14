@@ -24,22 +24,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+ * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Kcc;
 
+use OCA\Dossiq\Kernel\Contracts\GuardedCitizenLookupInterface;
 use OCA\Dossiq\Service\CitizenLookupGuard;
 use OCP\IUser;
 
 /**
  * The citizen-lookup guard and its audit row, together.
  *
- * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+ * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
  */
-class GuardedCitizenLookup {
+class GuardedCitizenLookup implements GuardedCitizenLookupInterface {
 	/**
 	 * Constructor.
 	 *
@@ -59,7 +60,7 @@ class GuardedCitizenLookup {
 	 *
 	 * @return bool True when the lookup may go ahead.
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	public function isAllowed(IUser $user): bool {
 		return $this->guard->isCitizenLookupAllowed(user: $user);
@@ -73,7 +74,7 @@ class GuardedCitizenLookup {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	public function recordRefusal(string $uid, string $burgerId): void {
 		$this->recorder->record(
@@ -93,7 +94,7 @@ class GuardedCitizenLookup {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	public function recordAnswer(IUser $user, string $burgerId): void {
 		$this->recorder->record(
@@ -113,7 +114,7 @@ class GuardedCitizenLookup {
 	 *
 	 * @return array<string, mixed> What the caller may see.
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	public function redactForCaller(IUser $user, array $payload): array {
 		return $this->guard->redactForCaller(user: $user, payload: $payload);

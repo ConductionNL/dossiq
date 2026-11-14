@@ -29,11 +29,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantMigrationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\TenantMigrationService;
-use OCA\Dossiq\Service\TenantService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -55,16 +55,16 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param TenantMigrationService $migration       The migration, shared with the occ command.
-	 * @param SettingsService        $settingsService Provides the ObjectService to run as system.
+	 * @param TenantMigrationServiceInterface $migration       The migration, shared with the occ command.
+	 * @param SettingsServiceInterface        $settingsService Provides the ObjectService to run as system.
 	 * @param LoggerInterface        $logger          Logger.
-	 * @param TenantService          $tenants         Creates the audit anchor of a member organisation that has none.
+	 * @param TenantServiceInterface          $tenants         Creates the audit anchor of a member organisation that has none.
 	 */
 	public function __construct(
-		private readonly TenantMigrationService $migration,
-		private readonly SettingsService $settingsService,
+		private readonly TenantMigrationServiceInterface $migration,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
-		private readonly TenantService $tenants,
+		private readonly TenantServiceInterface $tenants,
 	) {
 	}//end __construct()
 
@@ -92,20 +92,49 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 		$summary = null;
 		$anchors = ['members' => 0, 'anchored' => 0];
 		try {
-			$this->withSystemIdentity(
-				objectService: $this->settingsService->getObjectService(),
-				work: function () use (&$summary, &$anchors): void {
-					$summary = $this->migration->migrate();
-					$anchors = $this->anchorMemberOrganisations();
-				}
-			);
+			$this->withSystemIdentity(objectService: $this->settingsService->getObjectService(), work: function () use (&$summary, &$anchors): void {
+				$summary = $this->migration->migrate();
+				$anchors = $this->anchorMemberOrganisations();
+			});
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: tenant migration repair step failed', ['exception' => $e->getMessage()]);
 			$output->warning('Dossiq: the tenant migration could not run: '.$e->getMessage());
 			return;
 		}
 
+		$this->report(output: $output, summary: $summary, anchors: $anchors);
+	}//end run()
+
+	/**
+	 * Report what the migration did, and warn when tenants are left unmigrated.
+	 *
+	 * @param IOutput                          $output  Repair output.
+	 * @param array<string, mixed>|null        $summary The migration's summary.
+	 * @param array{members: int, anchored: int} $anchors The member organisations, and how many have an anchor.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
+	 */
+	private function report(IOutput $output, ?array $summary, array $anchors): void {
 		$unmigrated = (int)($summary['unmigrated'] ?? 0);
+		$this->reportMigrated(output: $output, summary: $summary, unmigrated: $unmigrated);
+		$this->reportAnchors(output: $output, anchors: $anchors);
+		$this->warnUnmigrated(output: $output, summary: $summary, unmigrated: $unmigrated);
+	}//end report()
+
+	/**
+	 * Report how many tenants the migration moved, skipped, repaired, refused and failed.
+	 *
+	 * @param IOutput                   $output     Repair output.
+	 * @param array<string, mixed>|null $summary    The migration's summary.
+	 * @param int                       $unmigrated The tenants left unmigrated.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
+	 */
+	private function reportMigrated(IOutput $output, ?array $summary, int $unmigrated): void {
 		$output->info(
 			sprintf(
 				'Dossiq: tenants migrated %d, already present %d, repaired %d, refused %d, failed %d, of %d. unmigrated = %d.',
@@ -118,7 +147,19 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 				$unmigrated
 			)
 		);
+	}//end reportMigrated()
 
+	/**
+	 * Report how many member organisations have their tenant audit anchor.
+	 *
+	 * @param IOutput                            $output  Repair output.
+	 * @param array{members: int, anchored: int} $anchors The member organisations, and how many have an anchor.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
+	 */
+	private function reportAnchors(IOutput $output, array $anchors): void {
 		$output->info(
 			sprintf(
 				'Dossiq: %d of %d organisations with members have their tenant audit anchor.',
@@ -126,7 +167,20 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 				$anchors['members']
 			)
 		);
+	}//end reportAnchors()
 
+	/**
+	 * Log and warn when stored tenants are left with no Organisation of the same uuid.
+	 *
+	 * @param IOutput                   $output     Repair output.
+	 * @param array<string, mixed>|null $summary    The migration's summary.
+	 * @param int                       $unmigrated The tenants left unmigrated.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
+	 */
+	private function warnUnmigrated(IOutput $output, ?array $summary, int $unmigrated): void {
 		if ($unmigrated > 0) {
 			$this->logger->warning(
 				'Dossiq: stored tenants are left with no Organisation of the same uuid',
@@ -134,7 +188,7 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 			);
 			$output->warning('Dossiq: '.$unmigrated.' tenants are not migrated yet; run occ dossiq:migrate-tenants --dry-run to see which.');
 		}
-	}//end run()
+	}//end warnUnmigrated()
 
 	/**
 	 * Give every Organisation a tenantUser row points at its audit anchor (decision Q6).
@@ -173,24 +227,8 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 		$refs = [];
 		$offset = 0;
 		do {
-			$rows = (array) $objectService->findAll(
-				[
-					'filters' => ['register' => Application::REGISTER_SLUG, 'schema' => 'tenantUser'],
-					'limit' => self::PAGE,
-					'offset' => $offset,
-				]
-			);
-			foreach ($rows as $row) {
-				$data = $row;
-				if (is_object($row) === true && method_exists($row, 'getObject') === true) {
-					$data = (array) $row->getObject();
-				}
-
-				$ref = trim((string) (((array) $data)['tenantRef'] ?? ''));
-				if ($ref !== '') {
-					$refs[$ref] = true;
-				}
-			}
+			$rows = $this->tenantUserPage(objectService: $objectService, offset: $offset);
+			$refs = self::withTenantRefs(refs: $refs, rows: $rows);
 
 			$offset += self::PAGE;
 			$full = (count($rows) === self::PAGE);
@@ -198,4 +236,46 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 
 		return array_keys($refs);
 	}//end memberOrganisations()
+
+	/**
+	 * One page of tenantUser rows.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param int    $offset        The page's offset.
+	 *
+	 * @return array<int, mixed> The rows.
+	 */
+	private function tenantUserPage(object $objectService, int $offset): array {
+		return (array) $objectService->findAll(
+			[
+				'filters' => ['register' => AppIdentity::REGISTER_SLUG, 'schema' => 'tenantUser'],
+				'limit' => self::PAGE,
+				'offset' => $offset,
+			]
+		);
+	}//end tenantUserPage()
+
+	/**
+	 * The organisation references seen so far, with those of a page of rows added.
+	 *
+	 * @param array<string, bool> $refs The references seen so far.
+	 * @param array<int, mixed>   $rows The tenantUser rows.
+	 *
+	 * @return array<string, bool> The references.
+	 */
+	private static function withTenantRefs(array $refs, array $rows): array {
+		foreach ($rows as $row) {
+			$data = $row;
+			if (is_object($row) === true && method_exists($row, 'getObject') === true) {
+				$data = (array) $row->getObject();
+			}
+
+			$ref = trim((string) (((array) $data)['tenantRef'] ?? ''));
+			if ($ref !== '') {
+				$refs[$ref] = true;
+			}
+		}
+
+		return $refs;
+	}//end withTenantRefs()
 }//end class

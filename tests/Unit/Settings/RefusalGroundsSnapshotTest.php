@@ -97,7 +97,7 @@ class RefusalGroundsSnapshotTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/refusal-grounds-check-test-needs-no-writable-tree/proposal.md
+	 * @spec openspec/changes/archive/2026-10-30-refusal-grounds-check-test-needs-no-writable-tree/proposal.md
 	 */
 	public function testTheCheckNamesAGroundThatDiffers(): void {
 		$root = dirname(__DIR__, 3);

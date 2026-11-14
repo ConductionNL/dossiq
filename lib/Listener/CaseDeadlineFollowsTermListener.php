@@ -40,8 +40,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
+use OCA\Dossiq\Kernel\Contracts\CaseDeadlineMirrorInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -59,13 +60,13 @@ class CaseDeadlineFollowsTermListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService Schema id bridge.
-	 * @param CaseDeadlineMirror $mirror          Which term decides the deadline.
+	 * @param SettingsServiceInterface    $settingsService Schema id bridge.
+	 * @param CaseDeadlineMirrorInterface $mirror          Which term decides the deadline.
 	 * @param LoggerInterface    $logger          Structured logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseDeadlineMirror $mirror,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseDeadlineMirrorInterface $mirror,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -84,21 +85,54 @@ class CaseDeadlineFollowsTermListener implements IEventListener {
 			return;
 		}
 
+		$caseId = $this->savedCaseId(event: $event);
+		if ($caseId === '') {
+			return;
+		}
+
+		$deadline = $this->termDeadline(caseId: $caseId);
+		if ($deadline === null || $deadline === '') {
+			// No statutory term: the calculated fallback stands (REQ-TERM-001).
+			return;
+		}
+
+		$this->keepDeadline(event: $event, deadline: $deadline);
+	}//end handle()
+
+	/**
+	 * The id of the case being saved, or '' when the payload is unreadable, has no id or is not a case.
+	 *
+	 * @param ObjectUpdatingEvent $event The update.
+	 *
+	 * @return string
+	 */
+	private function savedCaseId(ObjectUpdatingEvent $event): string {
 		try {
 			$entity = $event->getNewObject();
 			$payload = $entity->jsonSerialize();
 			$caseId = trim((string)($entity->getUuid() ?? ''));
 		} catch (Throwable $e) {
 			$this->logger->debug('Dossiq: the term deadline listener could not read the payload: ' . $e->getMessage());
-			return;
+			return '';
 		}
 
 		if (is_array($payload) === false || $caseId === '' || $this->isCaseSchema(object: $payload) === false) {
-			return;
+			return '';
 		}
 
+		return $caseId;
+	}//end savedCaseId()
+
+	/**
+	 * The statutory term's current end, or null when the terms cannot be read.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return string|null
+	 */
+	private function termDeadline(string $caseId): ?string {
 		try {
-			$deadline = $this->mirror->deadlineFor(caseId: $caseId);
+			return $this->mirror->deadlineFor(caseId: $caseId);
 		} catch (RefusedException $e) {
 			// The save goes on with what it carried; it is not refused for a
 			// read of the terms that failed. The next save puts it right.
@@ -106,21 +140,26 @@ class CaseDeadlineFollowsTermListener implements IEventListener {
 				'Dossiq termijn: the terms of a case could not be read, so its deadline was left as the save carried it',
 				['case' => $caseId, 'error' => $e->getSentence()]
 			);
-			return;
+			return null;
 		}
+	}//end termDeadline()
 
-		if ($deadline === null || $deadline === '') {
-			// No statutory term: the calculated fallback stands (REQ-TERM-001).
-			return;
-		}
-
+	/**
+	 * Put the term's date on the save, keeping what earlier listeners set.
+	 *
+	 * @param ObjectUpdatingEvent $event    The update.
+	 * @param string              $deadline The term's current end.
+	 *
+	 * @return void
+	 */
+	private function keepDeadline(ObjectUpdatingEvent $event, string $deadline): void {
 		$event->setModifiedData(
 			array_merge(
 				$event->getModifiedData(),
-				['deadline' => $deadline, CaseDeadlineMirror::FIELD => $deadline]
+				['deadline' => $deadline, CaseDeadlineMirrorInterface::FIELD => $deadline]
 			)
 		);
-	}//end handle()
+	}//end keepDeadline()
 
 	/**
 	 * Whether the supplied payload belongs to the `case` schema.
@@ -130,16 +169,6 @@ class CaseDeadlineFollowsTermListener implements IEventListener {
 	 * @return bool True when this is a case.
 	 */
 	private function isCaseSchema(array $object): bool {
-		$expected = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
+		return SchemaMembership::belongsTo(object: $object, expected: (string)$this->settingsService->getConfigValue('case_schema'));
 	}//end isCaseSchema()
 }//end class

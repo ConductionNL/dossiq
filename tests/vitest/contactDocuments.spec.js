@@ -97,8 +97,9 @@ describe('the contact 360 shows documents', () => {
 		// page for a uuid no case has, which reads as a deleted case rather
 		// than as a bug.
 		expect(content.rowRoute).toBeUndefined()
-		expect(content.rowActions).toHaveLength(1)
-		expect(content.rowActions[0]).toMatchObject({
+		// open-document comes first (REQ-CRS-04); open-case follows it.
+		expect(content.rowActions).toHaveLength(2)
+		expect(content.rowActions[1]).toMatchObject({
 			id: 'open-case',
 			type: 'handler',
 			handler: 'openCaseOfDocument',

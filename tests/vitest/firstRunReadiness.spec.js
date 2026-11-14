@@ -94,8 +94,8 @@ describe('nothing in the readiness list gates the app', () => {
 		// And that block reaches the status payload at the top level. Building
 		// it and never merging it is the silent half of this failure: the
 		// method reads correct and the endpoint reports nothing.
-		expect(controller).toContain(
-			'$response = array_merge($response, $this->firstRun())',
+		expect(controller).toMatch(
+			/array_merge\(\s*\$response,[^;]*\$this->firstRun\(\)/,
 		)
 		// Not folded into `steps`: an unreported step is UNKNOWN to CnAppRoot
 		// and a reported one it cannot prompt for is worse.
@@ -108,7 +108,7 @@ describe('the screen an administrator reads it on', () => {
 		expect(adminRoot).toContain('id="section-first-run"')
 		expect(adminRoot).toContain('<FirstRunTab')
 		expect(adminRoot.indexOf('section-first-run')).toBeLessThan(
-			adminRoot.indexOf('<CaseTypeAdmin'),
+			adminRoot.indexOf(':href="caseTypesUrl"'),
 		)
 	})
 
@@ -125,5 +125,16 @@ describe('the screen an administrator reads it on', () => {
 
 	it('links each item to the screen it names', () => {
 		expect(tab).toContain(':href="item.screen"')
+	})
+
+	it('draws each item as the board does: title and hint, the badge at the end, in Dutch', () => {
+		expect(tab).toContain("{{ t('dossiq', item.title) }}")
+		expect(tab).toContain("{{ t('dossiq', item.body) }}")
+		expect(tab.indexOf('first-run-tab__body')).toBeLessThan(tab.indexOf('class="first-run-tab__state"'))
+		const nl = JSON.parse(read('l10n', 'nl.json')).translations
+		for (const item of readiness.items) {
+			expect(nl[item.title], item.id).toBeTruthy()
+			expect(nl[item.body], item.id).toBeTruthy()
+		}
 	})
 })

@@ -1,0 +1,82 @@
+[
+    {
+        "search": {
+            "register": "dossiq",
+            "schema": "caseType",
+            "filters": {
+                "_limit": 500
+            }
+        }
+    },
+    {
+        "find": {
+            "id": "flow-a",
+            "register": "dossiq",
+            "schema": "workflowTemplate"
+        }
+    },
+    {
+        "search": {
+            "register": "dossiq",
+            "schema": "case",
+            "filters": {
+                "caseType": "type-a",
+                "_limit": 500
+            }
+        }
+    },
+    {
+        "error": "Dossiq: the basis flow rebind could not list cases",
+        "context": {
+            "app": "dossiq",
+            "caseType": "type-a",
+            "exception": "search case failed"
+        }
+    },
+    {
+        "find": {
+            "id": "flow-b",
+            "register": "dossiq",
+            "schema": "workflowTemplate"
+        }
+    },
+    {
+        "search": {
+            "register": "dossiq",
+            "schema": "case",
+            "filters": {
+                "caseType": "type-b",
+                "_limit": 500
+            }
+        }
+    },
+    {
+        "error": "Dossiq: the basis flow rebind could not list cases",
+        "context": {
+            "app": "dossiq",
+            "caseType": "type-b",
+            "exception": "search case failed"
+        }
+    },
+    {
+        "search": {
+            "register": "dossiq",
+            "schema": "case",
+            "filters": {
+                "caseType": "type-d",
+                "_limit": 500
+            }
+        }
+    },
+    {
+        "error": "Dossiq: the basis flow rebind could not list cases",
+        "context": {
+            "app": "dossiq",
+            "caseType": "type-d",
+            "exception": "search case failed"
+        }
+    },
+    {
+        "info": "Basis flow rebind: 0 open case(s) moved onto the flow their case type names."
+    }
+]

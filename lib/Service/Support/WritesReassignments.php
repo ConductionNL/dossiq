@@ -38,7 +38,7 @@ trait WritesReassignments {
 	 *
 	 * @throws RuntimeException When OpenRegister is unavailable.
 	 *
-	 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md
+	 * @spec openspec/specs/reassignment-bulk-action/spec.md
 	 */
 	private function context(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -55,7 +55,6 @@ trait WritesReassignments {
 	 * Reassign one item and append the audit entry.
 	 *
 	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register.
 	 * @param string               $schema        The schema.
 	 * @param string               $id            The object id.
 	 * @param array<string, mixed> $item          The stored object.
@@ -63,11 +62,10 @@ trait WritesReassignments {
 	 *
 	 * @return boolean Whether the write succeeded.
 	 *
-	 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md
+	 * @spec openspec/specs/reassignment-bulk-action/spec.md
 	 */
 	private function reassignItem(
 		object $objectService,
-		string $register,
 		string $schema,
 		string $id,
 		array $item,
@@ -79,27 +77,11 @@ trait WritesReassignments {
 
 		try {
 			$item['assignee'] = $batch->toUser;
-
-			// Append a batch audit entry onto the activity log when present
-			// (cases carry an activity property; tasks may not).
-			$activity = $this->extractActivityLog(item: $item);
-
-			$activity[] = [
-				'type' => 'reassignment',
-				'reassignedFrom' => $batch->fromUser,
-				'reassignedTo' => $batch->toUser,
-				'reassignedBy' => $batch->actorId,
-				'batchId' => $batch->batchId,
-				'timestamp' => $batch->now,
-			];
-
-			if (array_key_exists('activity', $item) === true
-				|| $schema === (string)$this->settingsService->getConfigValue('case_schema')
-			) {
-				$item['activity'] = json_encode($activity);
+			if ($this->keepsActivityLog(item: $item, schema: $schema) === true) {
+				$item['activity'] = json_encode($this->withReassignmentEntry(item: $item, batch: $batch));
 			}
 
-			$objectService->updateObject($register, $schema, $id, $item);
+			$objectService->updateObject(objectId: $id, data: $item);
 
 			return true;
 		} catch (Throwable $e) {
@@ -114,13 +96,56 @@ trait WritesReassignments {
 	}//end reassignItem()
 
 	/**
+	 * Whether the item carries an activity log: it has one, or it is a case.
+	 *
+	 * @param array<string, mixed> $item   The stored object.
+	 * @param string               $schema The schema.
+	 *
+	 * @return boolean
+	 *
+	 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md
+	 */
+	private function keepsActivityLog(array $item, string $schema): bool {
+		// Cases carry an activity property; tasks may not.
+		return array_key_exists('activity', $item) === true
+			|| $schema === (string)$this->settingsService->getConfigValue('case_schema');
+
+	}//end keepsActivityLog()
+
+	/**
+	 * The item's activity log with the batch audit entry appended.
+	 *
+	 * @param array<string, mixed> $item  The stored object.
+	 * @param ReassignmentBatch    $batch Who, to whom, and under which batch.
+	 *
+	 * @return array<int, array<string, mixed>> The entries.
+	 *
+	 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md
+	 */
+	private function withReassignmentEntry(array $item, ReassignmentBatch $batch): array {
+		$activity = $this->extractActivityLog(item: $item);
+
+		$activity[] = [
+			'type' => 'reassignment',
+			'reassignedFrom' => $batch->fromUser,
+			'reassignedTo' => $batch->toUser,
+			'reassignedBy' => $batch->actorId,
+			'batchId' => $batch->batchId,
+			'timestamp' => $batch->now,
+		];
+
+		return $activity;
+
+	}//end withReassignmentEntry()
+
+	/**
 	 * Read the item's activity log, tolerating the JSON-string form.
 	 *
 	 * @param array<string, mixed> $item The stored object.
 	 *
 	 * @return array<int, array<string, mixed>> The entries.
 	 *
-	 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md
+	 * @spec openspec/specs/reassignment-bulk-action/spec.md
 	 */
 	private function extractActivityLog(array $item): array {
 		$raw = ($item['activity'] ?? null);
@@ -146,7 +171,7 @@ trait WritesReassignments {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md
+	 * @spec openspec/specs/reassignment-bulk-action/spec.md
 	 */
 	private function generateBatchId(): string {
 		try {

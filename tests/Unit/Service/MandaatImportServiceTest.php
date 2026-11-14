@@ -34,6 +34,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\MandaatImportService
  * @covers \OCA\Dossiq\Service\Mandaat\MandaatRepository
  * @covers \OCA\Dossiq\Service\Mandaat\MandaatCsvParser
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaWriter
  */
 class MandaatImportServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
@@ -146,4 +147,53 @@ class MandaatImportServiceTest extends TestCase {
 		self::assertContains('description', $diff['fields']);
 		self::assertContains('plafondCents', $diff['fields']);
 	}
+	/**
+	 * A re-import answers the whole diff in row order then the removed ones, and its
+	 * approval lapses the prior decision; refusals keep their sentences.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeDiffAndTheApprovalOfAReimport(): void {
+		$csv1 = "mandaatNummer,omschrijving,rolNaam,plafondCents\nA-1,Same,Consulent,100\nA-2,Old,Consulent,200\nA-3,Gone,Consulent,300\n";
+		$r1   = $this->service->importFromCsv('B-9', 'V1', 'uuid-9', $csv1);
+		$this->service->approveImport((string)$r1['mandateDecisionId']);
+
+		$csv2 = "mandaatNummer,omschrijving,rolNaam,plafondCents\nA-1,Same,Consulent,100\nA-2,New,Afdelingsmanager,200\nA-4,Fresh,Consulent,400\n";
+		$r2   = $this->service->importFromCsv('B-9', 'V2', 'uuid-9', $csv2);
+
+		self::assertSame(
+			[
+				'mandateDecisionId' => $r2['mandateDecisionId'],
+				'totalMandaten' => 3,
+				'newCount' => 1,
+				'changedCount' => 1,
+				'removedCount' => 1,
+				'unchangedCount' => 1,
+				'diff' => [
+					['mandaatNummer' => 'A-1', 'change' => 'UNCHANGED'],
+					['mandaatNummer' => 'A-2', 'change' => 'CHANGED', 'fields' => ['description', 'mandateeRole']],
+					['mandaatNummer' => 'A-4', 'change' => 'NEW'],
+					['mandaatNummer' => 'A-3', 'change' => 'REMOVED'],
+				],
+			],
+			$r2
+		);
+
+		$approved = $this->service->approveImport((string)$r2['mandateDecisionId']);
+		$prior    = $this->objects->store['mandateDecision'][$r1['mandateDecisionId']];
+		self::assertSame('lapsed', $prior['status']);
+		self::assertSame($approved['effectiveFrom'], $prior['expiryDate']);
+
+		foreach (['does-not-exist' => 'Besluit not found: does-not-exist', (string)$r2['mandateDecisionId'] => 'Besluit is not in concept status'] as $id => $sentence) {
+			try {
+				$this->service->approveImport((string)$id);
+				self::fail('refused');
+			} catch (RuntimeException $e) {
+				self::assertSame($sentence, $e->getMessage());
+			}
+		}
+
+		$this->expectExceptionMessage('CSV is empty or missing data rows');
+		$this->service->importFromCsv('B-9', 'V3', 'uuid-9', "mandaatNummer,omschrijving,rolNaam,plafondCents\n");
+	}//end testTheWholeDiffAndTheApprovalOfAReimport()
 }

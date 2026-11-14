@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md
+ * @spec openspec/specs/beschikking-generatie/spec.md
  */
 
 declare(strict_types=1);
@@ -48,9 +48,14 @@ use Psr\Log\LoggerInterface;
 /**
  * Answers the clause a case's decisions print and binds the clock they start.
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md
+ * @spec openspec/specs/beschikking-generatie/spec.md
  */
 class CaseRemedy {
+
+	/**
+	 * The case field holding the day its decision was sent.
+	 */
+	public const SENT_FIELD = 'decisionSentOn';
 
 	/**
 	 * Constructor.
@@ -77,7 +82,7 @@ class CaseRemedy {
 	 *
 	 * @return string The clause, '' when the case type declares no remedy.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
+	 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
 	 */
 	public function clauseFor(string $caseId): string {
 		return $this->declaration->clauseFor(caseType: $this->caseTypeOf(caseId: $caseId));
@@ -90,7 +95,7 @@ class CaseRemedy {
 	 *
 	 * @return int The term in days.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#requirement-sending-a-decision-starts-the-remedy-term-req-dec-04
+	 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-sending-a-decision-starts-the-remedy-term-req-dec-04
 	 */
 	public function termDaysFor(string $caseId): int {
 		return $this->declaration->termDaysFor(caseType: $this->caseTypeOf(caseId: $caseId));
@@ -101,7 +106,8 @@ class CaseRemedy {
 	 *
 	 * @param string $caseId The case UUID.
 	 *
-	 * @return array{kind: string, termDays: int, body: string, enabled: bool, caseType: string} The declaration.
+	 * @return array{kind: string, termDays: int, body: string, enabled: bool, caseType: string, id: string, label: string, description: string}
+	 *         The declaration.
 	 *
 	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-against-a-decided-case-req-rml-001
 	 */
@@ -122,7 +128,7 @@ class CaseRemedy {
 	 *
 	 * @return array<string, mixed>|null The bound instance, or null when nothing is declared.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#requirement-sending-a-decision-starts-the-remedy-term-req-dec-04
+	 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-sending-a-decision-starts-the-remedy-term-req-dec-04
 	 */
 	public function bindTerm(string $caseId, string $decisionId, ?DateTimeImmutable $sentOn = null): ?array {
 		$days = $this->termDaysFor(caseId: $caseId);
@@ -141,6 +147,34 @@ class CaseRemedy {
 			extra: ['decision' => $decisionId],
 		);
 	}//end bindTerm()
+
+	/**
+	 * Write the day a decision went out on its case.
+	 *
+	 * The portal reads it as the start of the bezwaar window on the case page,
+	 * so a resident sees the action close without anybody counting days.
+	 *
+	 * @param string            $caseId The case UUID; '' writes nothing.
+	 * @param DateTimeImmutable $sentOn When the decision went out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-records-the-day-its-decision-was-sent-req-cap-001
+	 */
+	public function recordSent(string $caseId, DateTimeImmutable $sentOn): void {
+		$caseId = trim($caseId);
+		if ($caseId === '') {
+			return;
+		}
+
+		$case = $this->store->loadCase(caseId: $caseId);
+		if ($case === null) {
+			return;
+		}
+
+		$case[self::SENT_FIELD] = $sentOn->format('Y-m-d');
+		$this->store->saveCase(case: $case);
+	}//end recordSent()
 
 	/**
 	 * The effective case type of a case, or an empty array.

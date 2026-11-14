@@ -27,12 +27,12 @@ affordance is nextcloud-vue's and is not in yet.
   (D-1): `tests/Unit/Architecture/NoLocalReadStateTest.php`, scanning the
   whole of `lib/` and carrying a control so its silence means something.
 - [x] 2.1 Per-panel unread counts on the case, cleared by reading the
-  panel (D-3, D-7). On a strip above the tab bar, not on the tab itself.
-  - `tests/vitest/caseTabBadges.spec.js`
-- [ ] 2.1b The count ON the tab. Waits on `@conduction/nextcloud-vue`:
-  `CnTabsWidget` takes no badge per tab and emits no tab change, so an app
-  can neither decorate a tab nor learn that one was opened. Clusters 58
-  and 15 own that. The strip goes the day it lands.
+  panel (D-3, D-7). First on a strip above the tab bar; the strip went when 2.1b landed.
+- [x] 2.1b The count ON the tab: `case-panels` declares `badgeSource: "readState"`
+  and the Files and Notes tabs their `unreadKey`, so `CnTabsWidget` draws each
+  part's unread count on its tab ("3 new") and marks the part read when the tab
+  opens. The strip is gone.
+  - `tests/vitest/recordPageLibraryWidgets.spec.js`, `tests/vitest/caseTabMarkers.spec.js`
 - [x] 2.2 Clear a notification when its subject is opened (D-4). One
   write: the read-state PUT clears the notices about the object, and a
   PUT carrying `subResource` clears only that panel's.

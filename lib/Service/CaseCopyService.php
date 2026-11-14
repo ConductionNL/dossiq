@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseCopyServiceInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -44,8 +45,10 @@ use RuntimeException;
  * Copies one case into a new case of the same type.
  *
  * @spec openspec/specs/case-management/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class CaseCopyService {
+class CaseCopyService implements CaseCopyServiceInterface {
 
 	/**
 	 * The properties a copy carries over from its source.
@@ -129,19 +132,61 @@ class CaseCopyService {
 	 */
 	public function copy(string $caseId, array $options = []): array {
 		$context = $this->context();
-		$source = $this->fetch(
-			objectService: $context['objectService'],
-			register: $context['register'],
-			schema: $context['caseSchema'],
-			id: $caseId
+		$source = $this->requireSource(context: $context, caseId: $caseId);
+
+		$payload = $this->buildPayload(source: $source, caseId: $caseId, options: $options);
+
+		$created = $this->writeCopy(context: $context, payload: $payload, caseId: $caseId);
+		$newId = (string)($created['id'] ?? '');
+
+		$linked = $this->linkIfAsked(context: $context, caseId: $caseId, newId: $newId, options: $options);
+
+		$this->logger->info(
+			'CaseCopyService: copied a case',
+			['source' => $caseId, 'copy' => $newId, 'documents' => $linked]
 		);
+
+		$created['documentsLinked'] = $linked;
+
+		return $created;
+	}//end copy()
+
+	/**
+	 * The source case.
+	 *
+	 * @param array{objectService: object, register: string, caseSchema: string} $context The object service, register and case schema.
+	 * @param string               $caseId  The source case's OpenRegister id.
+	 *
+	 * @return array<string, mixed> The source case.
+	 *
+	 * @throws RuntimeException `case_not_found` when the source does not resolve.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function requireSource(array $context, string $caseId): array {
+		$source = $this->fetch(context: $context, schema: $context['caseSchema'], id: $caseId);
 
 		if ($source === null) {
 			throw new RuntimeException('case_not_found');
 		}
 
-		$payload = $this->buildPayload(source: $source, caseId: $caseId, options: $options);
+		return $source;
+	}//end requireSource()
 
+	/**
+	 * Write the copy.
+	 *
+	 * @param array{objectService: object, register: string, caseSchema: string} $context The object service, register and case schema.
+	 * @param array<string, mixed> $payload The new case's properties.
+	 * @param string               $caseId  The source case's id.
+	 *
+	 * @return array<string, mixed> The new case.
+	 *
+	 * @throws RuntimeException `copy_failed` when the write is refused or answers no id.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function writeCopy(array $context, array $payload, string $caseId): array {
 		try {
 			$created = $this->toArray(
 				value: $context['objectService']->saveObject(
@@ -164,25 +209,29 @@ class CaseCopyService {
 			throw new RuntimeException('copy_failed');
 		}
 
+		return $created;
+	}//end writeCopy()
+
+	/**
+	 * Link the source's documents to the copy when the caller asked for them.
+	 *
+	 * @param array{objectService: object, register: string, caseSchema: string} $context The object service, register and case schema.
+	 * @param string                                  $caseId  The source case's id.
+	 * @param string                                  $newId   The copy's id.
+	 * @param array{title?: string, documents?: bool} $options The caller's options.
+	 *
+	 * @return int The number of documents linked.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function linkIfAsked(array $context, string $caseId, string $newId, array $options): int {
 		$linked = 0;
 		if (($options['documents'] ?? false) === true) {
-			$linked = $this->linkDocuments(
-				objectService: $context['objectService'],
-				register: $context['register'],
-				sourceId: $caseId,
-				newId: $newId
-			);
+			$linked = $this->linkDocuments(context: $context, sourceId: $caseId, newId: $newId);
 		}
 
-		$this->logger->info(
-			'CaseCopyService: copied a case',
-			['source' => $caseId, 'copy' => $newId, 'documents' => $linked]
-		);
-
-		$created['documentsLinked'] = $linked;
-
-		return $created;
-	}//end copy()
+		return $linked;
+	}//end linkIfAsked()
 
 	/**
 	 * The payload the copy is written from.
@@ -259,12 +308,7 @@ class CaseCopyService {
 			return '';
 		}
 
-		$type = $this->fetch(
-			objectService: $context['objectService'],
-			register: $context['register'],
-			schema: $schema,
-			id: $caseType
-		);
+		$type = $this->fetch(context: $context, schema: $schema, id: $caseType);
 
 		return (string)($type['initialStatus'] ?? '');
 	}//end initialStatusOf()
@@ -320,81 +364,95 @@ class CaseCopyService {
 	 * so a document the copier may not read is not among them and is therefore
 	 * never linked onto a case they can write.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register The register slug.
+	 * @param array{objectService: object, register: string, caseSchema: string} $context  The object service and register.
 	 * @param string $sourceId The source case's id.
-	 * @param string $newId The copy's id.
+	 * @param string $newId    The copy's id.
 	 *
 	 * @return integer How many documents were linked.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function linkDocuments(object $objectService, string $register, string $sourceId, string $newId): int {
+	private function linkDocuments(array $context, string $sourceId, string $newId): int {
 		$schema = $this->settingsService->getConfigValue('case_document_schema');
 		if ($schema === '') {
 			return 0;
 		}
 
+		$store  = new DocumentLinkStore(objectService: $context['objectService'], register: $context['register'], schema: $schema);
 		$linked = 0;
-		$links = $this->documentsOf(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			caseId: $sourceId
-		);
-
-		foreach ($links as $link) {
-			$document = (string)($link['document'] ?? '');
-			if ($document === '') {
-				continue;
-			}
-
-			try {
-				$objectService->saveObject(
-					object: [
-						'case' => $newId,
-						'document' => $document,
-						'title' => (string)($link['title'] ?? ''),
-						'description' => (string)($link['description'] ?? ''),
-						'registrationDate' => date('Y-m-d'),
-					],
-					register: $register,
-					schema: $schema,
-				);
+		$links  = $this->documentsOf(store: $store, caseId: $sourceId);
+		foreach ($this->linkRows(links: $links, newId: $newId) as $row) {
+			if ($this->saveLink(store: $store, row: $row) === true) {
 				$linked++;
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'CaseCopyService: could not link a document onto the copy',
-					['case' => $newId, 'exception' => $e->getMessage()]
-				);
-			}//end try
-		}//end foreach
+			}
+		}
 
 		return $linked;
 	}//end linkDocuments()
 
 	/**
+	 * The new link rows for the copy, one per source link that names a document.
+	 *
+	 * @param array<int, array<string, mixed>> $links The source case's link rows.
+	 * @param string                           $newId The copy's id.
+	 *
+	 * @return array<int, array<string, string>> The rows to save.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function linkRows(array $links, string $newId): array {
+		$rows = [];
+		foreach ($links as $link) {
+			if ((string)($link['document'] ?? '') === '') {
+				continue;
+			}
+
+			$rows[] = [
+				'case' => $newId,
+				'document' => (string)($link['document'] ?? ''),
+				'title' => (string)($link['title'] ?? ''),
+				'description' => (string)($link['description'] ?? ''),
+			];
+		}
+
+		return $rows;
+	}//end linkRows()
+
+	/**
+	 * Save one link row onto the copy, logging when it cannot be saved.
+	 *
+	 * @param DocumentLinkStore     $store Where the link rows are written.
+	 * @param array<string, string> $row   The link row.
+	 *
+	 * @return bool Whether the row was saved.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function saveLink(DocumentLinkStore $store, array $row): bool {
+		$row['registrationDate'] = date('Y-m-d');
+		try {
+			$store->objectService->saveObject(object: $row, register: $store->register, schema: $store->schema);
+			return true;
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'CaseCopyService: could not link a document onto the copy',
+				['case' => $row['case'], 'exception' => $e->getMessage()]
+			);
+			return false;
+		}
+	}//end saveLink()
+
+	/**
 	 * The source case's document links.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register The register slug.
-	 * @param string $schema The caseDocument schema.
-	 * @param string $caseId The source case's id.
+	 * @param DocumentLinkStore $store  Where the link rows are read.
+	 * @param string            $caseId The source case's id.
 	 *
 	 * @return array<int, array<string, mixed>> The link rows.
 	 */
-	private function documentsOf(object $objectService, string $register, string $schema, string $caseId): array {
+	private function documentsOf(DocumentLinkStore $store, string $caseId): array {
 		try {
-			$results = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => $register,
-						'schema' => $schema,
-						'case' => $caseId,
-					],
-					'limit' => 200,
-				],
-			);
+			$results = $store->objectService->findAll($this->documentsQuery(store: $store, caseId: $caseId));
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'CaseCopyService: could not read the source case documents',
@@ -404,6 +462,36 @@ class CaseCopyService {
 			return [];
 		}
 
+		return $this->rowsOf(results: $results);
+	}//end documentsOf()
+
+	/**
+	 * The findAll query for one case's document links.
+	 *
+	 * @param DocumentLinkStore $store  The register and caseDocument schema.
+	 * @param string            $caseId The source case's id.
+	 *
+	 * @return array<string, mixed> The query.
+	 */
+	private function documentsQuery(DocumentLinkStore $store, string $caseId): array {
+		return [
+			'filters' => [
+				'register' => $store->register,
+				'schema' => $store->schema,
+				'case' => $caseId,
+			],
+			'limit' => 200,
+		];
+	}//end documentsQuery()
+
+	/**
+	 * The link rows of a findAll answer, unwrapped and normalised to arrays.
+	 *
+	 * @param mixed $results The findAll answer.
+	 *
+	 * @return array<int, array<string, mixed>> The link rows.
+	 */
+	private function rowsOf(mixed $results): array {
 		if (is_array($results) === true && isset($results['results']) === true) {
 			$results = $results['results'];
 		}
@@ -413,7 +501,7 @@ class CaseCopyService {
 		}
 
 		return array_map(fn ($row): array => $this->toArray(value: $row), $results);
-	}//end documentsOf()
+	}//end rowsOf()
 
 	/**
 	 * The OpenRegister seam and the two slugs this service writes through.
@@ -437,20 +525,19 @@ class CaseCopyService {
 	/**
 	 * Fetch one object, tolerating a fail-closed miss.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register The register slug.
-	 * @param string $schema The schema slug.
-	 * @param string $id The object id.
+	 * @param array{objectService: object, register: string, caseSchema: string} $context The object service and register.
+	 * @param string $schema  The schema slug.
+	 * @param string $id      The object id.
 	 *
 	 * @return array<string, mixed>|null The object, or null.
 	 */
-	private function fetch(object $objectService, string $register, string $schema, string $id): ?array {
+	private function fetch(array $context, string $schema, string $id): ?array {
 		if ($id === '') {
 			return null;
 		}
 
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $context['objectService']->find($id, register: $context['register'], schema: $schema);
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'CaseCopyService: object lookup failed',

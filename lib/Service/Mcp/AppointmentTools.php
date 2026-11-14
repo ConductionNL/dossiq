@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Mcp;
 
+use OCA\Dossiq\Kernel\Contracts\AppointmentToolsInterface;
 use OCA\Dossiq\Service\AppointmentService;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
@@ -38,7 +39,7 @@ use OCP\IUserSession;
  *
  * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-204-guard-enforcing-write-tools-one-per-action-on-the-owning-service
  */
-class AppointmentTools {
+class AppointmentTools implements AppointmentToolsInterface {
 
 	use ToolEnvelopes;
 
@@ -94,15 +95,9 @@ class AppointmentTools {
 		string $citizenPhone = '',
 		string $notes = '',
 	): array {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return $this->error(code: 'not_authenticated', message: 'No user session.');
-		}
-
-		// AppointmentController::create() runs the same check: a booking
-		// writes onto the case and stores the resident's contact details.
-		if ($this->caseAccess->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return $this->error(code: 'forbidden', message: 'You may not change this case.');
+		$refusal = $this->bookingRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		if (trim($productId) === '' || trim($locationId) === '' || trim($dateTime) === '') {
@@ -125,6 +120,30 @@ class AppointmentTools {
 
 		return $this->answer(result: $result);
 	}//end scheduleAppointment()
+
+	/**
+	 * Why the current user may not book on a case, or null when they may.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, mixed>|null The error envelope, or null.
+	 *
+	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-204-guard-enforcing-write-tools-one-per-action-on-the-owning-service
+	 */
+	private function bookingRefusal(string $caseId): ?array {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->error(code: 'not_authenticated', message: 'No user session.');
+		}
+
+		// AppointmentController::create() runs the same check: a booking
+		// writes onto the case and stores the resident's contact details.
+		if ($this->caseAccess->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return $this->error(code: 'forbidden', message: 'You may not change this case.');
+		}
+
+		return null;
+	}//end bookingRefusal()
 
 	/**
 	 * Cancel an appointment.

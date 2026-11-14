@@ -23,22 +23,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseObjectReferenceInterface;
 use OCA\Dossiq\Service\SettingsService;
 
 /**
  * Recognises a reference to a dossiq case.
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
-class CaseObjectReference {
+class CaseObjectReference implements CaseObjectReferenceInterface {
 
 	/**
 	 * The case schema's shipped slug.
@@ -65,7 +66,7 @@ class CaseObjectReference {
 	 *
 	 * @return bool True when it is a case in dossiq's register.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function isCase(?string $register, ?string $schema): bool {
 		$register = strtolower(trim((string)$register));
@@ -77,7 +78,7 @@ class CaseObjectReference {
 		$ownRegister = strtolower($this->settingsService->getConfigValue(key: 'register'));
 		$ownSchema = strtolower($this->settingsService->getConfigValue(key: 'case_schema'));
 
-		$registerMatches = ($this->same(candidate: $register, configured: $ownRegister) === true || $register === Application::APP_ID);
+		$registerMatches = ($this->same(candidate: $register, configured: $ownRegister) === true || $register === AppIdentity::APP_ID);
 		if ($registerMatches === false) {
 			return false;
 		}

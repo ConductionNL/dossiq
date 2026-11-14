@@ -22,6 +22,16 @@ function getHeaders() {
 }
 
 /**
+ * The app priority per range of iCalendar priorities, as `[min, max, priority]`.
+ */
+const PRIORITY_RANGES = [
+	[1, 3, 'urgent'],
+	[4, 4, 'high'],
+	[5, 6, 'normal'],
+	[7, 9, 'low'],
+]
+
+/**
  * Map iCalendar priority (0-9) to app priority string.
  * 1-3 → 'urgent', 4 → 'high', 5-6 → 'normal', 7-9 → 'low', 0 → 'normal'
  *
@@ -30,11 +40,8 @@ function getHeaders() {
  */
 function mapCalDavPriority(icalPriority) {
 	const p = Number(icalPriority) || 0
-	if (p >= 1 && p <= 3) return 'urgent'
-	if (p === 4) return 'high'
-	if (p >= 5 && p <= 6) return 'normal'
-	if (p >= 7 && p <= 9) return 'low'
-	return 'normal'
+	const range = PRIORITY_RANGES.find(([min, max]) => p >= min && p <= max)
+	return range ? range[2] : 'normal'
 }
 
 /**
@@ -46,50 +53,123 @@ function mapCalDavPriority(icalPriority) {
  * @spec openspec/specs/task-management/spec.md
  */
 export function normalizeCalDavTask(task) {
-	const due = task.due || null
-	const isCompleted = task.status === 'completed'
-	const isCancelled = task.status === 'cancelled'
-	const isTerminal = isCompleted || isCancelled
-
-	let isOverdue = false
-	let daysText = '—'
-
-	if (due && !isTerminal) {
-		const dueDate = new Date(due)
-		const today = new Date()
-		today.setHours(0, 0, 0, 0)
-		dueDate.setHours(0, 0, 0, 0)
-		const diffDays = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24))
-
-		if (diffDays < 0) {
-			isOverdue = true
-			const absDays = Math.abs(diffDays)
-			daysText =
-				absDays === 1
-					? t('dossiq', '1 day overdue')
-					: t('dossiq', '{days} days overdue', { days: absDays })
-		} else if (diffDays === 0) {
-			daysText = t('dossiq', 'Due today')
-		} else {
-			daysText = t('dossiq', '{days} days', { days: diffDays })
-		}
-	}
-
 	return {
 		type: 'task',
-		id: task.uid || task.id,
-		calendarId: task.calendarId || null,
-		taskUri: task.id || null,
-		title: task.summary || '—',
-		reference: task.objectUuid ? `Object: ${task.objectUuid}` : '',
-		objectUuid: task.objectUuid || null,
-		deadline: due,
-		daysText,
-		isOverdue,
-		isCompleted,
+		...taskIdentity(task),
+		...taskTiming(task),
 		priority: mapCalDavPriority(task.priority),
 		status: task.status || 'needs-action',
 	}
+}
+
+/**
+ * Which task this is, and the object it belongs to.
+ *
+ * @param {object} task CalDAV task object from API
+ * @return {object} The id, calendar, uri, title, reference and object fields.
+ */
+function taskIdentity(task) {
+	return {
+		id: task.uid || task.id,
+		calendarId: orNull(task.calendarId),
+		taskUri: orNull(task.id),
+		title: task.summary || '—',
+		reference: objectReference(task.objectUuid),
+		objectUuid: orNull(task.objectUuid),
+	}
+}
+
+/**
+ * A task field as read from CalDAV, or null when it is empty.
+ *
+ * @param {string|null|undefined} value The field's value.
+ * @return {string|null} The value, or null when it is empty.
+ */
+function orNull(value) {
+	return value || null
+}
+
+/**
+ * The statuses of a task that is no longer open.
+ */
+const TERMINAL_STATUSES = ['completed', 'cancelled']
+
+/**
+ * When the task is due, how many days it has left, and whether it is done.
+ * A finished or cancelled task says nothing about its days.
+ *
+ * @param {object} task CalDAV task object from API
+ * @return {{deadline: string|null, daysText: string, isOverdue: boolean, isCompleted: boolean}} The timing fields.
+ */
+function taskTiming(task) {
+	const due = orNull(task.due)
+	const diffDays = daysLeft(due, task.status)
+	const isOverdue = diffDays !== null && diffDays < 0
+
+	return {
+		deadline: due,
+		daysText: diffDays === null ? '—' : daysText(diffDays),
+		isOverdue,
+		isCompleted: task.status === 'completed',
+	}
+}
+
+/**
+ * The whole days an open task has left; null for a finished or cancelled
+ * task, or one without a due date.
+ *
+ * @param {string|null} due The due date.
+ * @param {string|undefined} status The task's CalDAV status.
+ * @return {number|null} The days, negative when it has passed.
+ */
+function daysLeft(due, status) {
+	if (!due || TERMINAL_STATUSES.includes(status)) {
+		return null
+	}
+	return daysUntil(due)
+}
+
+/**
+ * The line naming the object a task belongs to, '' without one.
+ *
+ * @param {string|undefined} objectUuid The object's uuid.
+ * @return {string} The reference.
+ */
+function objectReference(objectUuid) {
+	return objectUuid ? `Object: ${objectUuid}` : ''
+}
+
+/**
+ * Whole days from today to a due date, negative when it has passed.
+ *
+ * @param {string} due The due date.
+ * @return {number} The days.
+ */
+function daysUntil(due) {
+	const dueDate = new Date(due)
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+	dueDate.setHours(0, 0, 0, 0)
+	return Math.floor((dueDate - today) / (1000 * 60 * 60 * 24))
+}
+
+/**
+ * How many days a task has left, in words.
+ *
+ * @param {number} diffDays The days left, negative when overdue.
+ * @return {string} The text.
+ */
+function daysText(diffDays) {
+	if (diffDays < 0) {
+		const absDays = Math.abs(diffDays)
+		return absDays === 1
+			? t('dossiq', '1 day overdue')
+			: t('dossiq', '{days} days overdue', { days: absDays })
+	}
+	if (diffDays === 0) {
+		return t('dossiq', 'Due today')
+	}
+	return t('dossiq', '{days} days', { days: diffDays })
 }
 
 /**
@@ -150,12 +230,21 @@ export async function fetchTasksForCases(cases) {
 
 	const results = await Promise.allSettled(taskPromises)
 
+	return fulfilledTasks(results)
+}
+
+/**
+ * The tasks of every per-case fetch that came back with a list, in order.
+ *
+ * @param {PromiseSettledResult<object[]>[]} results The settled fetches.
+ * @return {object[]} The tasks.
+ */
+function fulfilledTasks(results) {
 	const allTasks = []
 	for (const result of results) {
 		if (result.status === 'fulfilled' && Array.isArray(result.value)) {
 			allTasks.push(...result.value)
 		}
 	}
-
 	return allTasks
 }

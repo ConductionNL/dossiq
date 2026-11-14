@@ -59,15 +59,19 @@ class NoBulkLoopOverCasesTest extends TestCase {
 	 * @var array<string, string>
 	 */
 	private const READERS = [
-		'lib/Service/Bulk/CaseTypeVersionGuard.php::caseTypeIdsOf' =>
+		'lib/Service/Bulk/CaseTypeVersionGuard.php::countCaseTypes' =>
 			'Reads each selected case type so the refusal can name both versions. '
 			. 'It happens BEFORE any job exists, which is the point of the refusal, '
 			. 'so there is no job to do it inside.',
-		'lib/Service/Cases/IncidentStore.php::openCountsFor' =>
+		'lib/Service/Cases/IncidentStore.php::trimmedIds' =>
 			'Counts the open incidents on each case of a list so the list can '
 			. 'draw a badge. It writes nothing and changes nothing, and the '
 			. 'loop is over rows already read in ONE search rather than one '
 			. 'search per case, which is the cost a job would exist to avoid.',
+		'lib/Service/Export/AnonymisedCaseExport.php::listedIds' =>
+			'Normalises the ids of an anonymised list export, which then READS each listed case '
+			. 'once and answers it with its identifying fields removed. It changes no case; its '
+			. 'one write is a single processing-log entry for the whole export (REQ-SDC-ANON-01).',
 		'lib/Woo/WooReportReadLog.php::recordThroughputRead' =>
 			'Records a READ: one audit entry on each Woo case a throughput report counted, '
 			. 'in the request of the reader, before the answer is sent. It changes no case, '

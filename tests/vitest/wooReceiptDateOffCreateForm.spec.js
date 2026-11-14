@@ -12,7 +12,7 @@
  * seeded from carry the flag, and the propertyDefinition schema declares it,
  * because OpenRegister drops a property the schema does not know.
  *
- * @spec openspec/changes/adopt-nextcloud-vue-2-79/specs/property-definition-management/spec.md
+ * @spec openspec/specs/property-definition-management/spec.md
  */
 import { propertiesFromDefinitions } from '@conduction/nextcloud-vue/src/utils/dynamicProperties.js'
 import fs from 'fs'

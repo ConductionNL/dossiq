@@ -46,6 +46,7 @@ class ShippedPackageRules {
 		'case-type' => 'case-type',
 		'flows' => 'flow',
 		'seed' => 'seed',
+		'examples' => 'seed',
 		'settings' => 'settings',
 	];
 
@@ -124,6 +125,11 @@ class ShippedPackageRules {
 		if (in_array($install, self::INSTALL_MODES, true) === false) {
 			$this->errors[] = "package.json: install must be 'auto' or 'on-request'.";
 		}
+
+		$this->errors = array_merge(
+			$this->errors,
+			(new PackageAdminTab())->errors(adminTab: ($manifest[PackageAdminTab::KEY] ?? null))
+		);
 	}//end checkManifest()
 
 	/**
@@ -178,6 +184,7 @@ class ShippedPackageRules {
 				'settings' => $owned['settings.json'] = true,
 				'flows' => $prefixes[] = 'flows/',
 				'seed' => $prefixes[] = 'seed/',
+				'examples' => $prefixes[] = 'examples/',
 				default => null,
 			};
 		}

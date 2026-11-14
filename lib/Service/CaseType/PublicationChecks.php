@@ -40,12 +40,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
-use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
-use OCA\Dossiq\Service\CaseTypeAcknowledgement;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Email\SenderIdentity;
-use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use Throwable;
@@ -56,6 +53,28 @@ use Throwable;
  * @spec openspec/specs/case-type-publish-validation/spec.md
  */
 class PublicationChecks {
+
+	/**
+	 * The fields a case type must state before it is published, each with the
+	 * words that complete "Give the case type ...".
+	 *
+	 * These are not `required` in the schema on purpose: a draft is authored
+	 * over several sittings, and the shipped templates cannot carry an
+	 * organisation's own responsible unit. Publishing is when they must be
+	 * there.
+	 *
+	 * @var array<string, string>
+	 */
+	public const REQUIRED_FIELDS = [
+		'title'              => 'a title',
+		'purpose'            => 'a purpose',
+		'trigger'            => 'a trigger',
+		'subject'            => 'a subject',
+		'processingDeadline' => 'a processing deadline',
+		'origin'             => 'an origin',
+		'confidentiality'    => 'a confidentiality level',
+		'responsibleUnit'    => 'a responsible unit',
+	];
 
 	/**
 	 * Reads a translatable title or name as one string.
@@ -69,22 +88,16 @@ class PublicationChecks {
 	 *
 	 * @param CaseTypeResolver        $caseTypeResolver The effective blueprint.
 	 * @param CaseTypeStore           $store            Reads for the resolver's schemas.
-	 * @param CaseTypeAcknowledgement $acknowledgement  What this type declares about confirming receipt.
+	 * @param CaseTypeDeclarationChecks $declarations The acknowledgement, admissibility, remedy clause and handling declarations.
 	 * @param UnreadTriggerService    $unreadTriggers   What this type declares about what makes a case unread.
-	 * @param AdmissibilityJudgement  $admissibility    Whether intake ends with a verdict, and what it closes on.
-	 * @param RemedyClauseDeclaration $remedy           The remedy open against this case type's decisions.
-	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
 	 * @param CaseTypeReachability    $reachability     What this type's moves can and cannot reach.
 	 * @param SenderIdentity          $senders          Whether the mail account this type names exists.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $caseTypeResolver,
 		private readonly CaseTypeStore $store,
-		private readonly CaseTypeAcknowledgement $acknowledgement,
+		private readonly CaseTypeDeclarationChecks $declarations,
 		private readonly UnreadTriggerService $unreadTriggers,
-		private readonly AdmissibilityJudgement $admissibility,
-		private readonly RemedyClauseDeclaration $remedy,
-		private readonly CaseTypeHandling $handling,
 		private readonly CaseTypeReachability $reachability,
 		private readonly SenderIdentity $senders,
 	) {
@@ -106,7 +119,7 @@ class PublicationChecks {
 	 *
 	 * @return array<int, string> The warnings, empty when nothing is off.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function warnings(string $caseTypeId): array {
 		$caseType = $this->caseTypeResolver->effectiveCaseType(caseTypeId: $caseTypeId);
@@ -115,16 +128,16 @@ class PublicationChecks {
 		}
 
 		return array_merge(
-			$this->acknowledgement->publicationWarnings(caseType: $caseType),
+			$this->declarations->acknowledgement->publicationWarnings(caseType: $caseType),
 			$this->unreadTriggers->publicationWarnings(caseType: $caseType),
 			// Decision outcomes on the case: a case type that judges
 			// admissibility with no result to close on, or closes an
 			// inadmissible aanvraag without telling the applicant.
-			$this->admissibility->publicationWarnings(caseType: $caseType),
+			$this->declarations->admissibility->publicationWarnings(caseType: $caseType),
 			// A case type whose decisions declare no remedy. Its besluit would
 			// print no bezwaarclausule, which is a decision going out without
 			// saying how to object to it.
-			$this->remedy->publicationWarnings(caseType: $caseType)
+			$this->declarations->remedy->publicationWarnings(caseType: $caseType)
 		);
 	}//end warnings()
 
@@ -147,9 +160,50 @@ class PublicationChecks {
 			return ['This case type could not be read.'];
 		}
 
-		$findings = [];
 		$statuses = $this->caseTypeResolver->statusTypesFor(caseTypeId: $caseTypeId);
+		$findings = $this->structureFindings(caseTypeId: $caseTypeId, caseType: $caseType, statuses: $statuses);
 
+		return array_merge(
+			$findings,
+			$this->missingFieldFindings(caseType: $caseType),
+			$this->handlingFindings(caseType: $caseType),
+			// A case type naming a mail account Nextcloud Mail does not hold
+			// would send its team's mail nowhere (REQ-IMF-12).
+			$this->senders->publicationFindings(caseType: $caseType),
+			$this->reachabilityFindings(caseTypeId: $caseTypeId, caseType: $caseType, statuses: $statuses)
+		);
+	}//end validate()
+
+	/**
+	 * The status and cycle findings of a case type.
+	 *
+	 * @param string                           $caseTypeId CaseType UUID.
+	 * @param array<string, mixed>             $caseType   The effective case type.
+	 * @param array<int, array<string, mixed>> $statuses   Its status types.
+	 *
+	 * @return array<int, string> The findings.
+	 */
+	private function structureFindings(string $caseTypeId, array $caseType, array $statuses): array {
+		$findings = $this->statusFindings(caseType: $caseType, statuses: $statuses);
+
+		$cycle = $this->cycleFinding(caseTypeId: $caseTypeId, caseType: $caseType);
+		if ($cycle !== '') {
+			$findings[] = $cycle;
+		}
+
+		return $findings;
+	}//end structureFindings()
+
+	/**
+	 * The findings about the case type's statuses.
+	 *
+	 * @param array<string, mixed>             $caseType The effective case type.
+	 * @param array<int, array<string, mixed>> $statuses Its status types.
+	 *
+	 * @return array<int, string> The findings.
+	 */
+	private function statusFindings(array $caseType, array $statuses): array {
+		$findings = [];
 		if ($statuses === []) {
 			$findings[] = 'Give the case type at least one status.';
 		}
@@ -162,24 +216,8 @@ class PublicationChecks {
 			$findings[] = 'Pick the status a new case of this type starts in.';
 		}
 
-		if ($this->text->textOf(value: ($caseType['title'] ?? null)) === '') {
-			$findings[] = 'Give the case type a title.';
-		}
-
-		$cycle = $this->cycleFinding(caseTypeId: $caseTypeId, caseType: $caseType);
-		if ($cycle !== '') {
-			$findings[] = $cycle;
-		}
-
-		return array_merge(
-			$findings,
-			$this->handlingFindings(caseType: $caseType),
-			// A case type naming a mail account Nextcloud Mail does not hold
-			// would send its team's mail nowhere (REQ-IMF-12).
-			$this->senders->publicationFindings(caseType: $caseType),
-			$this->reachabilityFindings(caseTypeId: $caseTypeId, caseType: $caseType, statuses: $statuses)
-		);
-	}//end validate()
+		return $findings;
+	}//end statusFindings()
 
 	/**
 	 * What this case type's moves could never reach.
@@ -258,6 +296,28 @@ class PublicationChecks {
 	}//end moves()
 
 	/**
+	 * One finding per required field this case type leaves empty.
+	 *
+	 * A translatable field counts as filled when any language holds text.
+	 *
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return array<int, string> The findings, in the order of REQUIRED_FIELDS.
+	 *
+	 * @spec openspec/specs/case-type-publish-validation/spec.md
+	 */
+	private function missingFieldFindings(array $caseType): array {
+		$findings = [];
+		foreach (self::REQUIRED_FIELDS as $field => $phrase) {
+			if ($this->text->textOf(value: ($caseType[$field] ?? null)) === '') {
+				$findings[] = 'Give the case type ' . $phrase . '.';
+			}
+		}
+
+		return $findings;
+	}//end missingFieldFindings()
+
+	/**
 	 * The findings the handling block produces, if it produces any.
 	 *
 	 * A switch declared on a case type and read by nothing is a promise the
@@ -273,7 +333,7 @@ class PublicationChecks {
 	 */
 	private function handlingFindings(array $caseType): array {
 		$findings = [];
-		foreach ($this->handling->unreadSwitches(caseType: $caseType) as $switch) {
+		foreach ($this->declarations->handling->unreadSwitches(caseType: $caseType) as $switch) {
 			$findings[] = ('Nothing reads the handling switch "' . $switch . '". Remove it, or name a switch that is read.');
 		}
 

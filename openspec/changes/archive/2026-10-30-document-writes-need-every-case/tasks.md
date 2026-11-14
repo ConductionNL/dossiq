@@ -1,0 +1,3 @@
+- [x] DocumentRecordStore::caseIdsOf (unscoped, ids only)
+- [x] DocumentCaseWriteGuard + PHPUnit
+- [x] ZaakdossierController: updateMetadata, transitionStatus, bulkTransitionStatus, bulkUpdateMetadata check first + PHPUnit

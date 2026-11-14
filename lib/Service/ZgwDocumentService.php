@@ -25,12 +25,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use RuntimeException;
+use OCA\Dossiq\Kernel\Contracts\ZgwDocumentServiceInterface;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for managing binary document storage in the DRC.
@@ -62,9 +63,9 @@ use Psr\Log\LoggerInterface;
  * document from the case folder is the follow-up, and it is OpenRegister's to
  * offer: see the DQ1 PR body.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  */
-class ZgwDocumentService {
+class ZgwDocumentService implements ZgwDocumentServiceInterface {
 	/**
 	 * The account documents were stored under before this service moved to the
 	 * OpenRegister object folder. Read-only, and nothing writes here any more.
@@ -101,7 +102,7 @@ class ZgwDocumentService {
 	 *
 	 * @return int The file size in bytes
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function storeBase64(string $uuid, string $fileName, string $content): int {
 		$decoded = base64_decode(string: $content, strict: true);
@@ -125,7 +126,7 @@ class ZgwDocumentService {
 	 *
 	 * @return int The file size in bytes
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function storeRaw(string $uuid, string $fileName, string $content): int {
 		$folder = $this->getDocumentFolder(uuid: $uuid);
@@ -145,7 +146,7 @@ class ZgwDocumentService {
 	 *
 	 * @throws NotFoundException If the file does not exist.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getContent(string $uuid, string $fileName): string {
 		return $this->locateFile(uuid: $uuid, fileName: $fileName)->getContent();
@@ -179,7 +180,7 @@ class ZgwDocumentService {
 	 *
 	 * @return bool True if the file exists
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function fileExists(string $uuid, string $fileName): bool {
 		try {
@@ -197,7 +198,7 @@ class ZgwDocumentService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function deleteFiles(string $uuid): void {
 		try {
@@ -232,7 +233,7 @@ class ZgwDocumentService {
 	 *
 	 * @throws NotFoundException If the file does not exist.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getMimeType(string $uuid, string $fileName): string {
 		return $this->locateFile(uuid: $uuid, fileName: $fileName)->getMimeType();
@@ -250,7 +251,7 @@ class ZgwDocumentService {
 	 *
 	 * @return int The chunk size in bytes
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function storeChunk(string $uuid, int $sequenceNumber, string $content): int {
 		$folder = $this->getDocumentFolder(uuid: $uuid);
@@ -269,7 +270,7 @@ class ZgwDocumentService {
 	 *
 	 * @return array<int> List of volgnummers that have been uploaded
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getUploadedChunks(string $uuid, int $totalParts): array {
 		$folder = $this->getDocumentFolder(uuid: $uuid);
@@ -301,33 +302,60 @@ class ZgwDocumentService {
 	 *
 	 * @throws InvalidArgumentException If not all chunks are present.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function mergeChunks(string $uuid, string $fileName, int $totalParts): int {
 		$folder = $this->getDocumentFolder(uuid: $uuid);
+		$content = $this->readChunks(folder: $folder, uuid: $uuid, totalParts: $totalParts);
+
+		// Write the merged file.
+		$file = $folder->newFile(path: $fileName);
+		$file->putContent(data: $content);
+
+		$this->deleteChunks(folder: $folder, totalParts: $totalParts);
+
+		return strlen(string: $content);
+	}//end mergeChunks()
+
+	/**
+	 * Concatenate every `_part_{n}` file in order.
+	 *
+	 * @param Folder $folder     The document folder.
+	 * @param string $uuid       The document UUID.
+	 * @param int    $totalParts The total number of parts.
+	 *
+	 * @return string The merged content.
+	 *
+	 * @throws InvalidArgumentException If not all chunks are present.
+	 */
+	private function readChunks(Folder $folder, string $uuid, int $totalParts): string {
 		$content = '';
 
 		for ($i = 1; $i <= $totalParts; $i++) {
-			$partName = '_part_' . $i;
 			try {
-				$part = $folder->get(path: $partName);
+				$part = $folder->get(path: '_part_' . $i);
 				if ($part instanceof File === false) {
 					throw new InvalidArgumentException('Chunk ' . $i . ' is not a file');
 				}
 
 				$content .= $part->getContent();
 			} catch (NotFoundException $e) {
-				throw new InvalidArgumentException(
-					'Missing chunk ' . $i . ' of ' . $totalParts . ' for document ' . $uuid
-				);
+				throw new InvalidArgumentException('Missing chunk ' . $i . ' of ' . $totalParts . ' for document ' . $uuid);
 			}
 		}
 
-		// Write the merged file.
-		$file = $folder->newFile(path: $fileName);
-		$file->putContent(data: $content);
+		return $content;
+	}//end readChunks()
 
-		// Clean up chunk files.
+	/**
+	 * Delete the chunk files, skipping any that are already gone.
+	 *
+	 * @param Folder $folder     The document folder.
+	 * @param int    $totalParts The total number of parts.
+	 *
+	 * @return void
+	 */
+	private function deleteChunks(Folder $folder, int $totalParts): void {
 		for ($i = 1; $i <= $totalParts; $i++) {
 			try {
 				$folder->get(path: '_part_' . $i)->delete();
@@ -335,9 +363,7 @@ class ZgwDocumentService {
 				// Already gone.
 			}
 		}
-
-		return strlen(string: $content);
-	}//end mergeChunks()
+	}//end deleteChunks()
 
 	/**
 	 * Get or create the storage folder a document is WRITTEN to.

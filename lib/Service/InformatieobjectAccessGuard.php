@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCP\Files\NotPermittedException;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -42,7 +43,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Enforces vertrouwelijkheidaanduiding-based access control on informatieobjecten.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
  */
 class InformatieobjectAccessGuard {
 	/**
@@ -75,11 +76,13 @@ class InformatieobjectAccessGuard {
 	 * @param SettingsService $settingsService Settings service (config + groups map).
 	 * @param IGroupManager $groupManager Nextcloud group manager.
 	 * @param LoggerInterface $logger Logger.
+	 * @param DocumentAccessExceptionRule $exceptions The access exception a document may carry: only named people and groups, and the case's handler.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
+		private readonly DocumentAccessExceptionRule $exceptions,
 	) {
 	}//end __construct()
 
@@ -93,7 +96,7 @@ class InformatieobjectAccessGuard {
 	 *
 	 * @return int Ordinal index (0 = openbaar … 7 = zeer_geheim).
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
 	 */
 	public function ordinalOf(string $level): int {
 		$index = array_search($level, self::HIERARCHY, true);
@@ -115,7 +118,7 @@ class InformatieobjectAccessGuard {
 	 *
 	 * @return int Clearance ordinal.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
 	 */
 	public function getUserClearanceOrdinal(IUser $user): int {
 		$uid = $user->getUID();
@@ -124,18 +127,40 @@ class InformatieobjectAccessGuard {
 			return (count(self::HIERARCHY) - 1);
 		}
 
-		$defaultLevel = $this->settingsService->getConfigValue('dossier_default_clearance', self::FALLBACK_CLEARANCE);
-		if (in_array($defaultLevel, self::HIERARCHY, true) === false) {
-			$defaultLevel = self::FALLBACK_CLEARANCE;
-		}
-
-		$clearance = $this->ordinalOf(level: $defaultLevel);
+		$clearance = $this->defaultClearanceOrdinal();
 
 		$groupMap = $this->parseGroupMap(raw: $this->settingsService->getConfigValue('dossier_clearance_group_map', ''));
 		if (empty($groupMap) === true) {
 			return $clearance;
 		}
 
+		return $this->highestGroupClearance(user: $user, groupMap: $groupMap, clearance: $clearance);
+	}//end getUserClearanceOrdinal()
+
+	/**
+	 * The ordinal of the configured default clearance, `intern` when it is not a known level.
+	 *
+	 * @return int Clearance ordinal.
+	 */
+	private function defaultClearanceOrdinal(): int {
+		$defaultLevel = $this->settingsService->getConfigValue('dossier_default_clearance', self::FALLBACK_CLEARANCE);
+		if (in_array($defaultLevel, self::HIERARCHY, true) === false) {
+			$defaultLevel = self::FALLBACK_CLEARANCE;
+		}
+
+		return $this->ordinalOf(level: $defaultLevel);
+	}//end defaultClearanceOrdinal()
+
+	/**
+	 * The highest clearance among the user's mapped groups and the one given.
+	 *
+	 * @param IUser                 $user      The user whose clearance is resolved.
+	 * @param array<string, string> $groupMap  Group id to clearance level.
+	 * @param int                   $clearance The clearance so far.
+	 *
+	 * @return int Clearance ordinal.
+	 */
+	private function highestGroupClearance(IUser $user, array $groupMap, int $clearance): int {
 		$userGroups = $this->groupManager->getUserGroupIds($user);
 		foreach ($userGroups as $groupId) {
 			if (isset($groupMap[$groupId]) === false) {
@@ -149,7 +174,7 @@ class InformatieobjectAccessGuard {
 		}
 
 		return $clearance;
-	}//end getUserClearanceOrdinal()
+	}//end highestGroupClearance()
 
 	/**
 	 * Determine whether a user may read an informatieobject.
@@ -157,15 +182,18 @@ class InformatieobjectAccessGuard {
 	 * @param IUser $user The requesting user.
 	 * @param array<string, mixed> $informatieobject The informatieobject record.
 	 *
-	 * @return bool True when the user's clearance meets or exceeds the document's classification.
+	 * @return bool True when the user's clearance meets or exceeds the document's classification
+	 *              and the document's access exception, if any, admits the user.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-with-an-exception-is-readable-only-by-its-listed-people-the-cases-handler-and-administrators
 	 */
 	public function canRead(IUser $user, array $informatieobject): bool {
 		$docOrdinal = $this->ordinalOf(level: (string)($informatieobject['vertrouwelijkheidaanduiding'] ?? ''));
 		$userOrdinal = $this->getUserClearanceOrdinal(user: $user);
 
-		return $userOrdinal >= $docOrdinal;
+		return $userOrdinal >= $docOrdinal
+			&& $this->exceptions->admits(user: $user, record: $informatieobject) === true;
 	}//end canRead()
 
 	/**
@@ -178,7 +206,7 @@ class InformatieobjectAccessGuard {
 	 *
 	 * @throws NotPermittedException When the user lacks sufficient clearance.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
 	 */
 	public function assertCanRead(IUser $user, array $informatieobject): void {
 		if ($this->canRead(user: $user, informatieobject: $informatieobject) === false) {
@@ -200,7 +228,7 @@ class InformatieobjectAccessGuard {
 	 *
 	 * @return bool True when public publication is allowed.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
 	 */
 	public function canPublish(array $informatieobject): bool {
 		$docOrdinal = $this->ordinalOf(level: (string)($informatieobject['vertrouwelijkheidaanduiding'] ?? ''));
@@ -217,7 +245,8 @@ class InformatieobjectAccessGuard {
 	 *
 	 * @return array<int, array<string, mixed>> Records the user may read (re-indexed).
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-with-an-exception-is-readable-only-by-its-listed-people-the-cases-handler-and-administrators
 	 */
 	public function filterDossierForUser(IUser $user, array $informatieobjecten): array {
 		$userOrdinal = $this->getUserClearanceOrdinal(user: $user);
@@ -225,7 +254,7 @@ class InformatieobjectAccessGuard {
 		$allowed = [];
 		foreach ($informatieobjecten as $record) {
 			$docOrdinal = $this->ordinalOf(level: (string)($record['vertrouwelijkheidaanduiding'] ?? ''));
-			if ($userOrdinal >= $docOrdinal) {
+			if ($userOrdinal >= $docOrdinal && $this->exceptions->admits(user: $user, record: $record) === true) {
 				$allowed[] = $record;
 			}
 		}
@@ -245,7 +274,7 @@ class InformatieobjectAccessGuard {
 	 *
 	 * @return bool True when the requested level is allowed (equal or more restrictive).
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
 	 */
 	public function isClassificationAllowed(string $defaultLevel, string $requestedLevel): bool {
 		if ($requestedLevel === '') {

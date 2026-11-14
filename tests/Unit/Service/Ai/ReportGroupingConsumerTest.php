@@ -41,6 +41,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Ai\CaseTypeAiFeatures
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\Assistant\HermiqAssistantException
+ * @uses \OCA\Dossiq\Repair\RetiredActionReport
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class ReportGroupingConsumerTest extends TestCase {
 

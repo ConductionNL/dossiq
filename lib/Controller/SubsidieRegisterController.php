@@ -28,9 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Subsidie\SubsidieRegisterExporter;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SubsidieRegisterExporterInterface;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -42,22 +43,22 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-39
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-39
  */
 class SubsidieRegisterController extends Controller {
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param SettingsService $settingsService Schema/register bridge.
-	 * @param SubsidieRegisterExporter $exporter Feed builder.
+	 * @param SettingsServiceInterface $settingsService Schema/register bridge.
+	 * @param SubsidieRegisterExporterInterface $exporter Feed builder.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly SettingsService $settingsService,
-		private readonly SubsidieRegisterExporter $exporter,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly SubsidieRegisterExporterInterface $exporter,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -71,7 +72,7 @@ class SubsidieRegisterController extends Controller {
 	 * @PublicPage
 	 * @NoCSRFRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-39
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-39
 	 */
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function export(): JSONResponse {
@@ -101,10 +102,40 @@ class SubsidieRegisterController extends Controller {
 			return [];
 		}
 
+		return $this->feedEntries(objectService: $objectService, config: $config);
+	}//end collectEntries()
+
+	/**
+	 * The feed entries of every granted beschikking that names an aanvraag.
+	 *
+	 * @param object $objectService The ObjectService.
+	 * @param array{register: string, beschikkingSchema: string, aanvraagSchema: string, regelingSchema: string} $config The feed configuration.
+	 *
+	 * @return array The feed entries.
+	 */
+	private function feedEntries(object $objectService, array $config): array {
+		$entries = [];
+		foreach ($this->grantedDecisions(objectService: $objectService, config: $config) as $decision) {
+			$entry = $this->feedEntryOf(objectService: $objectService, config: $config, decision: $decision);
+			if ($entry !== null) {
+				$entries[] = $entry;
+			}
+		}
+
+		return $entries;
+	}//end feedEntries()
+
+	/**
+	 * The granted beschikkingen, [] when they cannot be read.
+	 *
+	 * @param object $objectService The ObjectService.
+	 * @param array{register: string, beschikkingSchema: string, aanvraagSchema: string, regelingSchema: string} $config The feed configuration.
+	 *
+	 * @return iterable<mixed> The granted beschikkingen.
+	 */
+	private function grantedDecisions(object $objectService, array $config): iterable {
 		$register = $config['register'];
 		$decisionSchema = $config['beschikkingSchema'];
-		$requestSchema = $config['aanvraagSchema'];
-		$regelingSchema = $config['regelingSchema'];
 
 		try {
 			$beschikkingen = $objectService->findAll(
@@ -114,26 +145,38 @@ class SubsidieRegisterController extends Controller {
 			return [];
 		}
 
-		$entries = [];
-		foreach ($beschikkingen as $decision) {
-			$decision = $this->toArray(value: $decision);
-			$requestId = (string)($decision['subsidieaanvraag'] ?? '');
-			if ($requestId === '') {
-				continue;
-			}
+		return $beschikkingen;
+	}//end grantedDecisions()
 
-			$request = $this->safeFind(objectService: $objectService, register: $register, schema: $requestSchema, id: $requestId);
-			$regeling = [];
-			$regelingId = (string)($request['subsidyScheme'] ?? '');
-			if ($regelingId !== '') {
-				$regeling = $this->safeFind(objectService: $objectService, register: $register, schema: $regelingSchema, id: $regelingId);
-			}
+	/**
+	 * The feed entry of one beschikking with its aanvraag and regeling, or null when it names no aanvraag.
+	 *
+	 * @param object $objectService The ObjectService.
+	 * @param array{register: string, beschikkingSchema: string, aanvraagSchema: string, regelingSchema: string} $config The feed configuration.
+	 * @param mixed $decision The beschikking.
+	 *
+	 * @return array|null The feed entry.
+	 */
+	private function feedEntryOf(object $objectService, array $config, mixed $decision): ?array {
+		$register = $config['register'];
+		$requestSchema = $config['aanvraagSchema'];
+		$regelingSchema = $config['regelingSchema'];
 
-			$entries[] = $this->exporter->toFeedEntry($request, $regeling, $decision);
-		}//end foreach
+		$decision = $this->toArray(value: $decision);
+		$requestId = (string)($decision['subsidieaanvraag'] ?? '');
+		if ($requestId === '') {
+			return null;
+		}
 
-		return $entries;
-	}//end collectEntries()
+		$request = $this->safeFind(objectService: $objectService, register: $register, schema: $requestSchema, id: $requestId);
+		$regeling = [];
+		$regelingId = (string)($request['subsidyScheme'] ?? '');
+		if ($regelingId !== '') {
+			$regeling = $this->safeFind(objectService: $objectService, register: $register, schema: $regelingSchema, id: $regelingId);
+		}
+
+		return $this->exporter->toFeedEntry($request, $regeling, $decision);
+	}//end feedEntryOf()
 
 	/**
 	 * Resolve and validate the register/schema configuration for the feed.
@@ -187,17 +230,6 @@ class SubsidieRegisterController extends Controller {
 	 * @return array<string, mixed> The array form.
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

@@ -9,6 +9,12 @@
  * package is valid is {@see PackageValidator}'s question, and whether it may
  * be installed here is {@see PackageInstaller}'s.
  *
+ * The manifest keys are `id`, `title`, `summary`, `version`, `requires`,
+ * `parts`, `install` and `description`, checked by {@see ShippedPackageRules},
+ * plus the optional `adminTab` ({@see PackageAdminTab}): a package may declare
+ * a tab of its own in the app's Nextcloud admin settings, with a `title` and
+ * the `lists` of configuration it shows.
+ *
  * @category Service
  * @package  OCA\Dossiq\Service\CaseDefinition
  *
@@ -120,14 +126,17 @@ class PackageDirectory {
 	}//end ids()
 
 	/**
-	 * Read one package: its manifest and every file it carries, raw.
+	 * Read one package: its manifest and every file it carries, raw, and a
+	 * digest of those files by path, so a change to any of them is seen even
+	 * at the same version.
 	 *
 	 * @param string $id The package id, which is its directory name.
 	 *
-	 * @return array{id: string, files: array<string, string>}|null The package,
+	 * @return array{id: string, files: array<string, string>, digest: string}|null The package,
 	 *         or null when no such package directory exists.
 	 *
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
 	 */
 	public function read(string $id): ?array {
 		if (preg_match(self::ID_PATTERN, $id) !== 1) {
@@ -139,9 +148,16 @@ class PackageDirectory {
 			return null;
 		}
 
+		$files = $this->filesUnder(dir: $dir, prefix: '');
+		$digest = hash_init('sha256');
+		foreach ($files as $path => $content) {
+			hash_update($digest, $path . "\0" . $content . "\0");
+		}
+
 		return [
 			'id' => $id,
-			'files' => $this->filesUnder(dir: $dir, prefix: ''),
+			'files' => $files,
+			'digest' => hash_final($digest),
 		];
 	}//end read()
 
@@ -177,4 +193,25 @@ class PackageDirectory {
 
 		return $files;
 	}//end filesUnder()
+
+	/**
+	 * The decoded .json files under one directory of a package, in name order.
+	 *
+	 * @param array<string, string> $files The package files, as read() gives them.
+	 * @param string                $dir   The directory prefix.
+	 *
+	 * @return array<int, array<string, mixed>> The decoded files.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function rowsUnder(array $files, string $dir): array {
+		$rows = [];
+		foreach ($files as $path => $content) {
+			if (str_starts_with($path, $dir) === true && str_ends_with($path, '.json') === true) {
+				$rows[] = (array)json_decode($content, true);
+			}
+		}
+
+		return $rows;
+	}//end rowsUnder()
 }//end class

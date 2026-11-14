@@ -85,9 +85,11 @@ describe('sibling leaves on the case page', () => {
 		expect(caseDetail.config.schema).toBe('case')
 	})
 
-	// @spec openspec/specs/case-linked-projects/spec.md#a-handler-starts-a-project-from-a-case
-	it('places planninq-projects on the case page, in the grid', () => {
-		expect(placedInTheGrid('planninq-projects').title).toBe('Projects')
+	// @spec openspec/specs/case-linked-card/spec.md#requirement-the-case-page-lists-its-links-in-one-side-card
+	it('lists planninq-projects in the Linked side card, not as a grid widget', () => {
+		expect(
+			allWidgets().filter((w) => w.integrationId === 'planninq-projects'),
+		).toHaveLength(0)
 	})
 
 	// @spec openspec/specs/case-documents-merge-via-filinq-leaf/spec.md#a-handler-merges-a-cases-documents-into-one-pdf

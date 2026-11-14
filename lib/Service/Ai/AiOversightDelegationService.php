@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Ai;
 
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AiOversightDelegationServiceInterface;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -39,7 +41,7 @@ use Throwable;
  *
  * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
  */
-class AiOversightDelegationService {
+class AiOversightDelegationService implements AiOversightDelegationServiceInterface {
 
 	/**
 	 * Hermiq's published event class. Resolved by name so procest stays
@@ -61,6 +63,7 @@ class AiOversightDelegationService {
 		'accepted' => 'accepted',
 		'rejected' => 'rejected',
 		'modified' => 'overridden',
+		'ignored' => 'ignored',
 	];
 
 	/**
@@ -97,21 +100,14 @@ class AiOversightDelegationService {
 			return false;
 		}
 
-		$eventClass = self::OVERSIGHT_EVENT;
-		if (class_exists($eventClass) === false) {
+		if (class_exists(self::OVERSIGHT_EVENT) === false) {
 			// Hermiq not installed. Not an error: the caller keeps its local copy
 			// and the instance simply has no central oversight surface.
 			return false;
 		}
 
-		$subjectType = 'case';
-		$subjectId = (string)($entry['caseId'] ?? '');
-		if ($subjectId === '' && (string)($entry['documentId'] ?? '') !== '') {
-			$subjectType = 'document';
-			$subjectId = (string)$entry['documentId'];
-		}
-
-		if ($subjectId === '') {
+		$subject = $this->subjectOf(entry: $entry);
+		if ($subject[1] === '') {
 			$this->logger->warning(
 				'AI oversight: entry has neither caseId nor documentId; not delegated',
 				['type' => (string)($entry['type'] ?? '')]
@@ -119,41 +115,107 @@ class AiOversightDelegationService {
 			return false;
 		}
 
+		return $this->dispatchOversight(entry: $entry, subject: $subject);
+	}//end delegate()
+
+	/**
+	 * What the decision was about: the case, or the document when the entry
+	 * names no case.
+	 *
+	 * @param array<string, mixed> $entry The audit entry.
+	 *
+	 * @return array{0: string, 1: string} `[subjectType, subjectId]`, the id empty when it names neither.
+	 */
+	private function subjectOf(array $entry): array {
+		$subjectId = (string)($entry['caseId'] ?? '');
+		if ($subjectId === '' && (string)($entry['documentId'] ?? '') !== '') {
+			return ['document', (string)$entry['documentId']];
+		}
+
+		return ['case', $subjectId];
+	}//end subjectOf()
+
+	/**
+	 * Hand the decision to hermiq; a failure is logged and reported as false.
+	 *
+	 * @param array<string, mixed>        $entry   The audit entry.
+	 * @param array{0: string, 1: string} $subject `[subjectType, subjectId]`.
+	 *
+	 * @return boolean True when hermiq recorded it.
+	 */
+	private function dispatchOversight(array $entry, array $subject): bool {
+		// The caller already returned when hermiq is absent; the check is
+		// restated here so the class instantiated below is one this scope has
+		// seen exist.
+		$eventClass = self::OVERSIGHT_EVENT;
+		if (class_exists($eventClass) === false) {
+			return false;
+		}
+
 		try {
-			$event = new $eventClass(
-				[
-					'originApp' => 'procest',
-					'subjectType' => $subjectType,
-					'subjectId' => $subjectId,
-					'humanAction' => self::ACTION_MAP[$userAction],
-					'userId' => (string)($entry['userId'] ?? ''),
-					'decidedAt' => (string)($entry['timestamp'] ?? ''),
-					'suggestionType' => (string)($entry['type'] ?? ''),
-					'action' => (string)($entry['action'] ?? ''),
-					'model' => (string)($entry['model'] ?? ''),
-					'prompt' => (string)($entry['prompt'] ?? ''),
-					'suggestion' => $this->flatten(value: ($entry['suggestion'] ?? '')),
-					'confidence' => ($entry['confidence'] ?? null),
-					'actualValue' => $this->flatten(value: ($entry['actualValue'] ?? '')),
-					'reason' => (string)($entry['reason'] ?? ''),
-					'responseTimeMs' => ($entry['responseTimeMs'] ?? null),
-					// Idempotency: replaying the same entry through the repair
-					// step must not double-record it.
-					'externalRef' => $this->reference(entry: $entry, subjectId: $subjectId),
-				]
-			);
+			$event = new $eventClass($this->oversightRecord(entry: $entry, subject: $subject));
 
 			$this->eventDispatcher->dispatchTyped($event);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'AI oversight: delegation to hermiq failed',
-				['error' => $e->getMessage(), 'subjectId' => $subjectId]
+				['error' => $e->getMessage(), 'subjectId' => $subject[1]]
 			);
 			return false;
-		}//end try
+		}
 
 		return (bool)$event->isHandled();
-	}//end delegate()
+	}//end dispatchOversight()
+
+	/**
+	 * The record hermiq is handed: who decided what about which subject, then
+	 * what the model suggested, then the idempotency reference.
+	 *
+	 * @param array<string, mixed>        $entry   The audit entry.
+	 * @param array{0: string, 1: string} $subject `[subjectType, subjectId]`.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function oversightRecord(array $entry, array $subject): array {
+		$record = [
+			'originApp' => AppIdentity::APP_ID,
+			'subjectType' => $subject[0],
+			'subjectId' => $subject[1],
+			'humanAction' => self::ACTION_MAP[(string)($entry['userAction'] ?? '')],
+			'userId' => (string)($entry['userId'] ?? ''),
+			'decidedAt' => (string)($entry['timestamp'] ?? ''),
+		];
+
+		// Idempotency: replaying the same entry through the repair step must
+		// not double-record it.
+		return array_merge(
+			$record,
+			$this->suggestionFields(entry: $entry),
+			['externalRef' => $this->reference(entry: $entry, subjectId: $subject[1])]
+		);
+	}//end oversightRecord()
+
+	/**
+	 * What the model suggested and how the human used it.
+	 *
+	 * @param array<string, mixed> $entry The audit entry.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function suggestionFields(array $entry): array {
+		return [
+			'suggestionType' => (string)($entry['type'] ?? ''),
+			'action' => (string)($entry['action'] ?? ''),
+			'model' => (string)($entry['model'] ?? ''),
+			'prompt' => (string)($entry['prompt'] ?? ''),
+			'suggestion' => $this->flatten(value: ($entry['suggestion'] ?? '')),
+			'confidence' => ($entry['confidence'] ?? null),
+			'actualValue' => $this->flatten(value: ($entry['actualValue'] ?? '')),
+			'reason' => (string)($entry['reason'] ?? ''),
+			'responseTimeMs' => ($entry['responseTimeMs'] ?? null),
+			'unusedBecause' => (string)($entry['unusedBecause'] ?? ''),
+		];
+	}//end suggestionFields()
 
 	/**
 	 * Render a suggestion or applied value as a string.
@@ -191,6 +253,11 @@ class AiOversightDelegationService {
 	 * @return string The reference.
 	 */
 	private function reference(array $entry, string $subjectId): string {
+		$suggestionRef = (string)($entry['suggestionRef'] ?? '');
+		if ($suggestionRef !== '') {
+			return 'dossiq:suggestion:' . $suggestionRef;
+		}
+
 		$uuid = (string)($entry['id'] ?? ($entry['uuid'] ?? ''));
 		if ($uuid !== '') {
 			return 'procest:aiAuditEntry:' . $uuid;

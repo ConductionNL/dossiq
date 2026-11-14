@@ -118,7 +118,6 @@ class StarterContentControllerTest extends TestCase {
 		);
 
 		$this->controller = new StarterContentController(
-			appName: 'dossiq',
 			request: $request,
 			shipped: $this->shipped,
 			retirement: $this->retirement,
@@ -307,4 +306,103 @@ class StarterContentControllerTest extends TestCase {
 		self::assertSame(expected: 'Bezwaar', actual: $data['items'][0]['title']);
 	}//end testStepUsedByComesBackAsACountedList()
 
+
+	/**
+	 * A controller over a shipped-configuration double that records both adopt acts.
+	 *
+	 * @param array<int, array<string, mixed>> $calls   Where the calls land.
+	 * @param array<string, mixed>             $answers The answer per act.
+	 *
+	 * @return StarterContentController
+	 */
+	private function adoptingController(array &$calls, array $answers): StarterContentController {
+		$shipped = $this->getMockBuilder(ShippedConfigurationService::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['adopt', 'adoptOverLocalChange'])
+			->getMock();
+		foreach (['adopt', 'adoptOverLocalChange'] as $act) {
+			$shipped->method($act)->willReturnCallback(
+				static function (string $targetSchema, string $objectsKey, string $targetObject, string $set, array $newShipped) use (&$calls, $answers, $act): array {
+					$calls[] = [$act, $targetSchema, $objectsKey, $targetObject, $set, $newShipped];
+					return $answers[$act];
+				}
+			);
+		}
+
+		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(
+			fn (string $key, mixed $default = null): mixed => ($this->params[$key] ?? $default)
+		);
+
+		return new StarterContentController(
+			request: $request,
+			shipped: $shipped,
+			retirement: $this->retirement,
+			domains: $this->domains,
+			steps: $this->steps,
+			logger: new NullLogger(),
+		);
+	}//end adoptingController()
+
+	/**
+	 * An unreported schema is a 404 and adopts nothing.
+	 *
+	 * @return void
+	 */
+	public function testAdoptingOnAnUnreportedSchemaIsNotFound(): void {
+		$calls = [];
+
+		$response = $this->adoptingController(calls: $calls, answers: [])->adoptShipped(schema: 'case', id: 'c-1');
+
+		self::assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
+		self::assertSame(expected: ['error' => 'Unknown schema'], actual: $response->getData());
+		self::assertSame(expected: [], actual: $calls);
+	}//end testAdoptingOnAnUnreportedSchemaIsNotFound()
+
+	/**
+	 * The safe act is the default: it is asked with the set and the object (a non-list object is none), and a clean adopt is a 200.
+	 *
+	 * @return void
+	 */
+	public function testTheSafeAdoptIsTheDefault(): void {
+		$calls = [];
+		$this->params = ['set' => 'vth', 'object' => 'not a list'];
+
+		$response = $this->adoptingController(calls: $calls, answers: ['adopt' => ['adopted' => true]])->adoptShipped(schema: 'caseType', id: 'ct-1');
+
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		self::assertSame(expected: [['adopt', 'caseType', 'case_type_schema', 'ct-1', 'vth', []]], actual: $calls);
+	}//end testTheSafeAdoptIsTheDefault()
+
+	/**
+	 * A shipped object that is not there is a 404.
+	 *
+	 * @return void
+	 */
+	public function testAdoptingAMissingObjectIsNotFound(): void {
+		$calls = [];
+
+		$response = $this->adoptingController(calls: $calls, answers: ['adopt' => ['adopted' => false, 'reason' => 'not_found']])->adoptShipped(schema: 'caseType', id: 'gone');
+
+		self::assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
+	}//end testAdoptingAMissingObjectIsNotFound()
+
+	/**
+	 * Accepting the loss asks both acts, the safe one first, and answers the destructive one.
+	 *
+	 * @return void
+	 */
+	public function testAcceptingTheLossAnswersTheDestructiveAct(): void {
+		$calls = [];
+		$this->params = ['set' => 'vth', 'object' => ['title' => 'x'], 'acceptLocalChangeLoss' => true];
+
+		$response = $this->adoptingController(
+			calls: $calls,
+			answers: ['adopt' => ['adopted' => false, 'reason' => 'changed_locally'], 'adoptOverLocalChange' => ['adopted' => true, 'overwrote' => true]]
+		)->adoptShipped(schema: 'caseType', id: 'ct-1');
+
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		self::assertSame(expected: ['adopted' => true, 'overwrote' => true], actual: $response->getData());
+		self::assertSame(expected: ['adopt', 'adoptOverLocalChange'], actual: array_column($calls, 0));
+	}//end testAcceptingTheLossAnswersTheDestructiveAct()
 }//end class

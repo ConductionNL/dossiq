@@ -95,7 +95,7 @@ class NotificatieService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function publish(
 		string $channel,
@@ -148,6 +148,19 @@ class NotificatieService {
 			return;
 		}
 
+		$subscriptions = $this->subscriptions(abonnementMapping: $abonnementMapping);
+
+		$this->deliverToAll(subscriptions: $subscriptions, notification: $notification);
+	}//end deliver()
+
+	/**
+	 * Every stored subscription.
+	 *
+	 * @param array $abonnementMapping The abonnement mapping (`sourceRegister`, `sourceSchema`)
+	 *
+	 * @return array The subscriptions, as stored
+	 */
+	private function subscriptions(array $abonnementMapping): array {
 		$query = $this->objectService->buildSearchQuery(
 			requestParams: [],
 			register: $abonnementMapping['sourceRegister'],
@@ -155,8 +168,18 @@ class NotificatieService {
 		);
 		$result = $this->objectService->searchObjectsPaginated(query: $query);
 
-		$subscriptions = $result['results'] ?? [];
+		return $result['results'] ?? [];
+	}//end subscriptions()
 
+	/**
+	 * Deliver the notification to each subscription.
+	 *
+	 * @param array $subscriptions The subscriptions, as stored
+	 * @param array $notification  The notification payload
+	 *
+	 * @return void
+	 */
+	private function deliverToAll(array $subscriptions, array $notification): void {
 		foreach ($subscriptions as $subscription) {
 			$subData = $subscription;
 			if (is_array($subscription) === false) {
@@ -168,7 +191,7 @@ class NotificatieService {
 				notification: $notification
 			);
 		}
-	}//end deliver()
+	}//end deliverToAll()
 
 	/**
 	 * Deliver notification to a single subscription if it matches.
@@ -179,24 +202,11 @@ class NotificatieService {
 	 * @return void
 	 */
 	private function deliverToSubscription(array $subscription, array $notification): void {
-		$kanalen = $subscription['kanalen'] ?? [];
-
-		// Check if this subscription listens to the notification channel.
-		$matches = false;
-		foreach ($kanalen as $channelConfig) {
-			if (($channelConfig['name'] ?? '') === $notification['notificationChannel']) {
-				$matches = true;
-				break;
-			}
-		}
-
-		if ($matches === false) {
+		if ($this->listensTo(subscription: $subscription, notification: $notification) === false) {
 			return;
 		}
 
 		$callbackUrl = $subscription['callbackUrl'] ?? '';
-		$auth = $subscription['auth'] ?? '';
-
 		if ($callbackUrl === '') {
 			return;
 		}
@@ -213,27 +223,71 @@ class NotificatieService {
 			return;
 		}
 
-		try {
-			$headers = ['Content-Type' => 'application/json'];
-			if ($auth !== '') {
-				$headers['Authorization'] = $auth;
-			}
+		// Delivered to the address that was inspected, without following a
+		// redirect: a redirect is a second URL that nobody inspected.
+		$this->postNotification(
+			callbackUrl: $callbackUrl,
+			options: ($this->deliveryOptions(subscription: $subscription, notification: $notification)
+				+ $this->outboundGuard->requestOptions(url: $callbackUrl, address: $address))
+		);
+	}//end deliverToSubscription()
 
-			// Delivered to the address that was inspected, without following a
-			// redirect: a redirect is a second URL that nobody inspected.
-			$this->httpPost(
-				url: $callbackUrl,
-				options: ([
-					'json' => $notification,
-					'headers' => $headers,
-					'timeout' => 10,
-				] + $this->outboundGuard->requestOptions(url: $callbackUrl, address: $address))
-			);
+	/**
+	 * Whether the subscription listens to the notification's channel.
+	 *
+	 * @param array $subscription The subscription.
+	 * @param array $notification The notification.
+	 *
+	 * @return bool
+	 */
+	private function listensTo(array $subscription, array $notification): bool {
+		foreach (($subscription['kanalen'] ?? []) as $channelConfig) {
+			if (($channelConfig['name'] ?? '') === $notification['notificationChannel']) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end listensTo()
+
+	/**
+	 * The body, headers and timeout of one delivery; the subscription's auth goes along when set.
+	 *
+	 * @param array $subscription The subscription.
+	 * @param array $notification The notification.
+	 *
+	 * @return array
+	 */
+	private function deliveryOptions(array $subscription, array $notification): array {
+		$headers = ['Content-Type' => 'application/json'];
+		$auth = $subscription['auth'] ?? '';
+		if ($auth !== '') {
+			$headers['Authorization'] = $auth;
+		}
+
+		return [
+			'json' => $notification,
+			'headers' => $headers,
+			'timeout' => 10,
+		];
+	}//end deliveryOptions()
+
+	/**
+	 * POST the notification to the inspected callback; a failure is logged.
+	 *
+	 * @param string $callbackUrl The inspected callback URL.
+	 * @param array  $options     The request options, with the guard's pinning.
+	 *
+	 * @return void
+	 */
+	private function postNotification(string $callbackUrl, array $options): void {
+		try {
+			$this->httpPost(url: $callbackUrl, options: $options);
 
 			$this->logger->info(
 				'Notification delivered',
 				[
-					'notificationChannel' => $notification['notificationChannel'],
+					'notificationChannel' => $options['json']['notificationChannel'],
 					'callbackUrl' => $callbackUrl,
 				]
 			);
@@ -246,7 +300,7 @@ class NotificatieService {
 				]
 			);
 		}//end try
-	}//end deliverToSubscription()
+	}//end postNotification()
 
 	/**
 	 * Make the POST request of one delivery.

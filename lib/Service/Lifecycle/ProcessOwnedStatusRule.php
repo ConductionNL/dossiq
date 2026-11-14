@@ -46,7 +46,7 @@ use OCA\Dossiq\Exception\RefusedException;
 /**
  * Refuses a direct status write where the case type says the process owns it.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+ * @spec openspec/specs/case-status-machinery/spec.md
  */
 class ProcessOwnedStatusRule {
 
@@ -74,7 +74,7 @@ class ProcessOwnedStatusRule {
 	 * @throws RefusedException When the process owns the status, or when the
 	 *                          declaration cannot be evaluated.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function requireHandSetAllowed(string $caseTypeId): void {
 		if ($this->rules->processOwnsStatus(caseTypeId: $caseTypeId) === false) {
@@ -112,7 +112,7 @@ class ProcessOwnedStatusRule {
 	 *
 	 * @return bool True when a status may be written directly.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function allowsHandSet(string $caseTypeId): bool {
 		return ($this->rules->processOwnsStatus(caseTypeId: $caseTypeId) === false);

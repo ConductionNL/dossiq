@@ -37,7 +37,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Assistant;
 
 use Exception;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAssistantServiceInterface;
 use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IConfig;
@@ -49,7 +50,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
  */
-class CaseAssistantService {
+class CaseAssistantService implements CaseAssistantServiceInterface {
 	/**
 	 * Maximum accepted `message` length (characters).
 	 *
@@ -115,17 +116,79 @@ class CaseAssistantService {
 		$caseData = $this->loadReadableCase(caseId: $caseId);
 		$summary = $this->buildCaseSummary(caseData: $caseData);
 
-		$sessionKey = self::SESSION_CONFIG_PREFIX . $caseId;
-		$sessionId = $this->config->getUserValue($userId, Application::APP_ID, $sessionKey, '');
+		return $this->runTurn(turn: new AssistantTurn(userId: $userId, caseId: $caseId, message: $message), summary: $summary);
+	}//end converse()
+
+	/**
+	 * Run the Hermiq turn, remember its session and audit it.
+	 *
+	 * @param AssistantTurn $turn    Who asks, about which case, and the message.
+	 * @param array         $summary The case summary Hermiq receives as context.
+	 *
+	 * @return array{reply: string, usage: array<string, int|float>}
+	 *
+	 * @throws HermiqAssistantException When Hermiq is unavailable or refuses the turn.
+	 *
+	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
+	 */
+	private function runTurn(AssistantTurn $turn, array $summary): array {
+		$userId = $turn->userId;
+		$sessionKey = self::SESSION_CONFIG_PREFIX . $turn->caseId;
+		$sessionId = $this->storedSessionId(userId: $userId, sessionKey: $sessionKey);
+
+		$startTime = microtime(true);
+
+		$result = $this->askHermiq(sessionId: $sessionId, turn: $turn, summary: $summary);
+
+		$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
+
+		if ($result['sessionId'] !== '') {
+			$this->config->setUserValue($userId, AppIdentity::APP_ID, $sessionKey, $result['sessionId']);
+		}
+
+		$entry = $this->auditEntry(turn: $turn, reply: $result['reply']);
+		$entry['responseTimeMs'] = $responseTimeMs;
+		$this->auditService->recordAssistantAuditEntry(entry: $entry);
+
+		return ['reply' => $result['reply'], 'usage' => $result['usage']];
+	}//end runTurn()
+
+	/**
+	 * The Hermiq session the caller holds for this case, or null for a new one.
+	 *
+	 * @param string $userId The authenticated caller's user id.
+	 * @param string $sessionKey The user-config key the session id is kept under.
+	 *
+	 * @return string|null The session id, or null when none is stored.
+	 *
+	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
+	 */
+	private function storedSessionId(string $userId, string $sessionKey): ?string {
+		$sessionId = $this->config->getUserValue($userId, AppIdentity::APP_ID, $sessionKey, '');
 		if ($sessionId === '') {
 			$sessionId = null;
 		}
 
-		$startTime = microtime(true);
+		return $sessionId;
+	}//end storedSessionId()
 
-		$result = $this->hermiqClient->converse(
+	/**
+	 * Send the message to Hermiq with the case as context.
+	 *
+	 * @param string|null   $sessionId The Hermiq session, or null for a new one.
+	 * @param AssistantTurn $turn      The case and the message.
+	 * @param array         $summary   The case summary.
+	 *
+	 * @return array Hermiq's answer.
+	 *
+	 * @throws HermiqAssistantException When Hermiq is unavailable or refuses the turn.
+	 *
+	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
+	 */
+	private function askHermiq(?string $sessionId, AssistantTurn $turn, array $summary): array {
+		return $this->hermiqClient->converse(
 			sessionId: $sessionId,
-			message: $message,
+			message: $turn->message,
 			context: [
 				// FROZEN at `procest`: this is this app's id AS HERMIQ KNOWS IT,
 				// not our own app id. hermiq is not being renamed and matches this
@@ -134,35 +197,36 @@ class CaseAssistantService {
 				// coordinated pass that moves sender and receiver together.
 				'app' => 'procest',
 				'objectType' => 'case',
-				'objectRef' => $caseId,
+				'objectRef' => $turn->caseId,
 				'contextData' => $summary,
 			]
 		);
+	}//end askHermiq()
 
-		$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
-
-		if ($result['sessionId'] !== '') {
-			$this->config->setUserValue($userId, Application::APP_ID, $sessionKey, $result['sessionId']);
-		}
-
-		$this->auditService->recordAssistantAuditEntry(
-			entry: [
-				'type' => 'assistant',
-				'action' => 'conversation',
-				'caseId' => $caseId,
-				'documentId' => '',
-				'model' => 'hermiq',
-				'prompt' => $message,
-				'suggestion' => ['reply' => $result['reply']],
-				'confidence' => 0.0,
-				'userId' => $userId,
-				'timestamp' => date('c'),
-				'responseTimeMs' => $responseTimeMs,
-			]
-		);
-
-		return ['reply' => $result['reply'], 'usage' => $result['usage']];
-	}//end converse()
+	/**
+	 * The audit entry for a turn, without its response time.
+	 *
+	 * @param AssistantTurn $turn  Who asked, about which case, and the message.
+	 * @param string        $reply Hermiq's reply.
+	 *
+	 * @return array<string, mixed> The audit entry.
+	 *
+	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
+	 */
+	private function auditEntry(AssistantTurn $turn, string $reply): array {
+		return [
+			'type' => 'assistant',
+			'action' => 'conversation',
+			'caseId' => $turn->caseId,
+			'documentId' => '',
+			'model' => 'hermiq',
+			'prompt' => $turn->message,
+			'suggestion' => ['reply' => $reply],
+			'confidence' => 0.0,
+			'userId' => $turn->userId,
+			'timestamp' => date('c'),
+		];
+	}//end auditEntry()
 
 	/**
 	 * Validate the `message` field.
@@ -210,26 +274,58 @@ class CaseAssistantService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
 
+		$found = $this->findCase(objectService: $objectService, caseId: $caseId, register: $register, schema: $schema);
+
+		return $this->casePayload(found: $found, caseId: $caseId);
+	}//end loadReadableCase()
+
+	/**
+	 * Read the case through the caller-scoped object service.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $caseId        The case id.
+	 * @param string $register      The register.
+	 * @param string $schema        The case schema.
+	 *
+	 * @return mixed What the object service answered.
+	 *
+	 * @throws Exception (code 404) When the read fails.
+	 */
+	private function findCase(object $objectService, string $caseId, string $register, string $schema): mixed {
 		try {
 			$case = $objectService->find(id: $caseId, register: $register, schema: $schema);
 		} catch (Throwable $e) {
 			$this->logger->info(
 				'CaseAssistantService: case load failed',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
 			);
 			throw new Exception('Case not found: ' . $caseId, 404);
 		}
 
-		if ($case === null) {
+		return $case;
+	}//end findCase()
+
+	/**
+	 * The found case as a payload.
+	 *
+	 * @param mixed  $found  What the object service answered.
+	 * @param string $caseId The case id.
+	 *
+	 * @return array<string, mixed> The case payload.
+	 *
+	 * @throws Exception (code 404) When nothing was found.
+	 */
+	private function casePayload(mixed $found, string $caseId): array {
+		if ($found === null) {
 			throw new Exception('Case not found: ' . $caseId, 404);
 		}
 
-		if (is_object($case) === true && method_exists($case, 'jsonSerialize') === true) {
-			return $case->jsonSerialize();
+		if (is_object($found) === true && method_exists($found, 'jsonSerialize') === true) {
+			return $found->jsonSerialize();
 		}
 
-		return (array)$case;
-	}//end loadReadableCase()
+		return (array)$found;
+	}//end casePayload()
 
 	/**
 	 * Build a bounded, safe case-context summary — ONLY fields already shown

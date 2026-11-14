@@ -1,3 +1,5 @@
 # Screens
 
-- No screen in this change: the capability returns what to write and refuses what may not happen. The decision screens move onto it with each procedure, in later refactor PRs.
+- dossiq/DqZaakBesluiten besluitdocument en versiegeschiedenis https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBesluiten
+
+Components: CnActionButtons, CnActionDialog, CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnChoiceCards, CnDetailCard, CnDetailGrid, CnDetailPage, CnFormDialog, CnNextStepCard, CnNoteCard, CnProgressBar, CnRecordListWidget, CnRelatedCollections, CnStatusBadge, CnTabs, CnTimelineStages

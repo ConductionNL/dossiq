@@ -42,6 +42,13 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 	private array $saved = [];
 
 	/**
+	 * The app config the step reads and writes; the instance opted into demo data.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $appConfig = ['demo_data_decided' => 'installed'];
+
+	/**
 	 * A store that records every save and hands back an id.
 	 *
 	 * @param string|null $failsOnSchema A schema whose writes throw, modelling a
@@ -67,6 +74,22 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 				private ?string $failsOnSchema,
 				private string $shape,
 			) {
+			}
+
+			/**
+			 * Record a partial write.
+			 *
+			 * @param string               $objectId The object id.
+			 * @param array<string, mixed> $data     The fields written.
+			 * @param string               $register The register.
+			 * @param string               $schema   The schema.
+			 *
+			 * @return array<string, mixed> The written fields with the id.
+			 */
+			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+				$this->saved[] = ['schema' => $schema, 'object' => $data + ['id' => $objectId], 'patch' => true];
+
+				return $data + ['id' => $objectId];
 			}
 
 			public function saveObject(array $object, string $register, string $schema): mixed {
@@ -123,21 +146,41 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 		array $statuses = [],
 		bool $configured = true,
 		bool $titleFindsIt = true,
+		array $rows = [],
 	): CaseFlowSeedDataRepairStep {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('isOpenRegisterAvailable')->willReturn(true);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key): string => ($configured === true ? $key : '')
+			function (string $key) use ($configured): string {
+				if (isset($this->appConfig[$key]) === true) {
+					return $this->appConfig[$key];
+				}
+
+				if ($configured === true) {
+					return $key;
+				}
+
+				return '';
+			}
+		);
+		$settings->method('setConfigValue')->willReturnCallback(
+			function (string $key, string $value): void {
+				$this->appConfig[$key] = $value;
+			}
 		);
 
-		$index = $this->createMock(CaseFlowSeedIndex::class);
+		$index = $this->getMockBuilder(CaseFlowSeedIndex::class)
+			->setConstructorArgs([$settings])
+			->onlyMethods(['caseTypeBySlug', 'caseTypeByTitle', 'caseTitlesFor'])
+			->getMock();
 		$index->method('caseTypeBySlug')->willReturn($caseType);
 		$index->method('caseTypeByTitle')->willReturn($titleFindsIt === true ? $caseType : null);
 		$index->method('caseTitlesFor')->willReturn($cases);
 
 		$lookup = $this->createMock(StatusTypeLookup::class);
 		$lookup->method('statusesOf')->willReturn($statuses);
+		$lookup->method('rowsOf')->willReturn($rows);
 
 		return new CaseFlowSeedDataRepairStep($settings, $lookup, $index, new NullLogger());
 	}//end step()
@@ -230,7 +273,7 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 	 * created "Omgevingsvergunning kleine bouwactiviteit" again, and the New
 	 * case picker offered it twice (review-check, 11 October 2026, N-5).
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function testACaseTypeStoredByAnEarlierRunIsFoundBySlug(): void {
 		$step = $this->step($this->store(), caseType: ['id' => 'ct-existing'], titleFindsIt: false);
@@ -261,6 +304,63 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 
 		$this->assertSame([], $this->savedTo('status_type_schema'), 'all statuses were already present');
 	}//end testAStatusThatAlreadyExistsIsNotRecreated()
+
+	/**
+	 * A status an earlier run stored without a phase gets the seed's phase; a
+	 * phase already set and another case type's status are left alone.
+	 *
+	 * @return void
+	 */
+	public function testAStoredStatusWithoutAPhaseGetsTheSeedsPhase(): void {
+		$step = $this->step(
+			store: $this->store(),
+			caseType: ['id' => 'ct-existing'],
+			statuses: ['st-1' => 'Bij commissie', 'st-2' => 'In behandeling', 'st-3' => 'Ontvangen'],
+			rows: [
+				['id' => 'st-1', 'name' => 'Bij commissie', 'caseType' => 'ct-existing', 'phase' => null],
+				['id' => 'st-2', 'name' => 'In behandeling', 'caseType' => 'ct-existing', 'phase' => 'Beoordeling'],
+				['id' => 'st-3', 'name' => 'Ontvangen', 'caseType' => 'ct-parent'],
+			]
+		);
+		$step->run(output: $this->createMock(originalClassName: IOutput::class));
+
+		$patches = array_values(array_filter($this->saved, static fn (array $s): bool => ($s['patch'] ?? false) === true));
+		$this->assertSame(
+			expected: [['schema' => 'status_type_schema', 'object' => ['phase' => 'Advies', 'id' => 'st-1'], 'patch' => true]],
+			actual: $patches
+		);
+	}//end testAStoredStatusWithoutAPhaseGetsTheSeedsPhase()
+
+	/**
+	 * The demo cases are seeded once per seed version: a demo case an operator
+	 * deleted is not created again by the next repair or upgrade, while the
+	 * case type and its statuses are still checked on every run.
+	 *
+	 * @return void
+	 */
+	public function testADeletedSeedCaseIsNotRecreatedOnASecondRun(): void {
+		$this->step(store: $this->store())->run(output: $this->createMock(originalClassName: IOutput::class));
+		$this->assertNotSame(expected: [], actual: $this->savedTo(schema: 'case_schema'), message: 'the first run seeds the cases');
+
+		// Every case was deleted: the index finds none, the case type is there.
+		$this->step(store: $this->store(), caseType: ['id' => 'ct-existing'])->run(output: $this->createMock(originalClassName: IOutput::class));
+
+		$this->assertSame(expected: [], actual: $this->savedTo(schema: 'case_schema'), message: 'a deleted demo case stays deleted');
+	}//end testADeletedSeedCaseIsNotRecreatedOnASecondRun()
+
+	/**
+	 * An instance that did not opt into demo data gets the case type and its
+	 * statuses, and no demo cases.
+	 *
+	 * @return void
+	 */
+	public function testNoDemoCasesWithoutTheDemoDataDecision(): void {
+		$this->appConfig = ['demo_data_decided' => 'skipped'];
+		$this->step(store: $this->store())->run(output: $this->createMock(originalClassName: IOutput::class));
+
+		$this->assertNotSame(expected: [], actual: $this->savedTo(schema: 'status_type_schema'));
+		$this->assertSame(expected: [], actual: $this->savedTo(schema: 'case_schema'));
+	}//end testNoDemoCasesWithoutTheDemoDataDecision()
 
 	/**
 	 * A case whose title is already present is not created again.

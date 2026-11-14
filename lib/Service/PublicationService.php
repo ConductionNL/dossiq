@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-besluitvorming-workflow/tasks.md#task-7
  */
 
 declare(strict_types=1);
@@ -31,7 +31,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PublicationServiceInterface;
+use OCA\Dossiq\Service\Publication\PublicationDateRule;
+use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -42,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
-class PublicationService {
+class PublicationService implements PublicationServiceInterface {
 	/**
 	 * Supported publication channels.
 	 */
@@ -101,7 +104,7 @@ class PublicationService {
 	 * @throws \InvalidArgumentException When the requested publication channel is not supported.
 	 * @throws \RuntimeException When OR is unavailable or the case can't be loaded.
 	 *
-	 * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
+	 * @spec openspec/changes/archive/2026-06-13-besluitvorming-workflow/tasks.md#task-7
 	 * @spec openspec/specs/contract-decision-delegation/spec.md
 	 */
 	public function publish(string $caseId, array $payload): array {
@@ -115,65 +118,92 @@ class PublicationService {
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-
-		$case = $this->loadCase(
-			objectService: $objectService,
-			caseId: $caseId,
-			register: $register,
-			schema: $schema
-		);
-
-		$publications = $this->extractPublications(case: $case);
-
-		$publishedAt = (string)($payload['publishedAt'] ?? date(format: 'c'));
-		$notes = null;
-		if (isset($payload['notes']) === true) {
-			$notes = (string)$payload['notes'];
-		}
-
-		// Upsert by channel — same channel publishing twice updates the timestamp.
-		$publications = $this->upsertPublication(
-			publications: $publications,
-			channel: $channel,
-			publishedAt: $publishedAt,
-			notes: $notes
-		);
+		$entry = $this->entryFor(caseId: $caseId, channel: $channel);
+		$case = $this->loadCase(objectService: $objectService, caseId: $caseId, register: $entry['register'], schema: $entry['schema']);
+		$entry += $this->stampOf(payload: $payload);
 
 		// Hand the outbound leg to integriq (ADR-041 seam): dossiq composes
 		// WHAT is published; integriq owns HOW it travels. The outcome —
 		// including a refusal when integriq is absent or unrouted — is
 		// recorded on the publication record so the case shows the delivery
 		// status, and it never rolls back the publication itself.
-		$delivery = $this->requestDelivery(
-			caseId: $caseId,
-			channel: $channel,
-			publishedAt: $publishedAt,
-			notes: $notes,
-			case: $case,
-			register: $register,
-			schema: $schema
-		);
-		$publications = $this->attachDelivery(publications: $publications, channel: $channel, delivery: $delivery);
+		$entry['delivery'] = $this->requestDelivery(case: $case, entry: $entry);
+		$case['publications'] = $this->publicationsWith(case: $case, entry: $entry);
+		$case['publishedAt'] = $entry['publishedAt'];
 
-		$case['publications'] = $publications;
-		$case['publishedAt'] = $publishedAt;
-
-		$objectService->saveObject(
-			object: $case,
-			register: $register,
-			schema: $schema,
-		);
+		$objectService->saveObject(object: $case, register: $entry['register'], schema: $entry['schema']);
 
 		return [
 			'caseId' => $caseId,
 			'channel' => $channel,
-			'publishedAt' => $publishedAt,
-			'publications' => $publications,
-			'delivery' => $delivery,
+			'publishedAt' => $entry['publishedAt'],
+			'publications' => $case['publications'],
+			'delivery' => $entry['delivery'],
 		];
 	}//end publish()
+
+	/**
+	 * The publication entry's identity and where its case is stored.
+	 *
+	 * @param string $caseId The case id.
+	 * @param string $channel The publication channel.
+	 *
+	 * @return array{caseId: string, channel: string, register: mixed, schema: mixed} The entry so far.
+	 */
+	private function entryFor(string $caseId, string $channel): array {
+		return [
+			'caseId' => $caseId,
+			'channel' => $channel,
+			'register' => $this->settingsService->getConfigValue('register'),
+			'schema' => $this->settingsService->getConfigValue('case_schema'),
+		];
+	}//end entryFor()
+
+	/**
+	 * The publication moment and notes from the publish payload.
+	 *
+	 * @param array<string, mixed> $payload The publish payload.
+	 *
+	 * @return array{publishedAt: string, notes: string|null, template: string} The moment (by the
+	 *         publication date rule when absent), the notes and the notice template.
+	 */
+	private function stampOf(array $payload): array {
+		$notes = null;
+		if (isset($payload['notes']) === true) {
+			$notes = (string)$payload['notes'];
+		}
+
+		$publishedAt = (string)($payload['publishedAt'] ?? '');
+		if ($publishedAt === '') {
+			$rule = $this->settingsService->getConfigValue('publication_date_rule', '');
+			$publishedAt = (new PublicationDateRule())->publishOn(rule: $rule)->format('c');
+		}
+
+		return [
+			'publishedAt' => $publishedAt,
+			'notes' => $notes,
+			'template' => $this->settingsService->getConfigValue('publication_template', ''),
+		];
+	}//end stampOf()
+
+	/**
+	 * The case's publications with this entry upserted by channel and its delivery attached.
+	 *
+	 * @param array<string, mixed> $case The loaded case data.
+	 * @param array<string, mixed> $entry The entry: channel, publishedAt, notes and delivery.
+	 *
+	 * @return array<int, array<string, mixed>> The updated publications list.
+	 */
+	private function publicationsWith(array $case, array $entry): array {
+		$publications = $this->upsertPublication(
+			publications: $this->extractPublications(case: $case),
+			channel: $entry['channel'],
+			publishedAt: $entry['publishedAt'],
+			notes: $entry['notes']
+		);
+
+		return $this->attachDelivery(publications: $publications, channel: $entry['channel'], delivery: $entry['delivery']);
+	}//end publicationsWith()
 
 	/**
 	 * Request cross-app delivery of the publication via integriq's ADR-041
@@ -185,105 +215,95 @@ class PublicationService {
 	 * Terminal status later arrives through integriq's DeliveryConcludedEvent
 	 * and is projected by {@see \OCA\Dossiq\Listener\DeliveryConcludedListener}.
 	 *
-	 * @param string $caseId The case id.
-	 * @param string $channel The publication channel.
-	 * @param string $publishedAt The publication timestamp.
-	 * @param string|null $notes Optional publication notes.
 	 * @param array<string, mixed> $case The loaded case data.
-	 * @param mixed $register The configured register id.
-	 * @param mixed $schema The configured case schema id.
+	 * @param array<string, mixed> $entry The entry: caseId, channel, register, schema, publishedAt and notes.
 	 *
 	 * @return array<string, mixed> The delivery record for the publication entry.
 	 *
 	 * @spec openspec/changes/dossiq-delivers-nothing/specs/besluitvorming-delivery/spec.md
 	 */
-	private function requestDelivery(
-		string $caseId,
-		string $channel,
-		string $publishedAt,
-		?string $notes,
-		array $case,
-		mixed $register,
-		mixed $schema,
-	): array {
+	private function requestDelivery(array $case, array $entry): array {
 		$requestedAt = date(format: 'c');
+		$where = ['app' => AppIdentity::APP_ID, 'caseId' => $entry['caseId'], 'channel' => $entry['channel']];
 		if (class_exists('\\' . self::DELIVERY_EVENT) === false) {
-			$this->logger->warning(
-				'Publication delivery refused: integriq is not installed',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'channel' => $channel]
-			);
-			return [
-				'status' => 'refused',
-				'reason' => 'integriq_not_installed',
-				'requestedAt' => $requestedAt,
-			];
+			$this->logger->warning('Publication delivery refused: integriq is not installed', $where);
+			return ['status' => 'refused', 'reason' => 'integriq_not_installed', 'requestedAt' => $requestedAt];
 		}
 
-		$correlationId = bin2hex(string: random_bytes(length: 16));
-		$eventClass = '\\' . self::DELIVERY_EVENT;
-		$event = new $eventClass(
-			sourceApp: Application::APP_ID,
-			subjectRegister: (string)$register,
-			subjectSchema: (string)$schema,
-			subjectId: $caseId,
-			subjectLabel: (string)($case['title'] ?? $caseId),
-			deliveryKind: self::DELIVERY_KIND,
-			channel: $channel,
-			payload: [
-				'caseId' => $caseId,
-				'channel' => $channel,
-				'publishedAt' => $publishedAt,
-				'notes' => $notes,
-				'besluitDocument' => ($case['besluitDocument'] ?? null),
-				'identifier' => ($case['identifier'] ?? null),
-			],
-			correlationId: $correlationId,
-			externalReference: (string)($case['identifier'] ?? ''),
-		);
+		$entry['correlationId'] = bin2hex(string: random_bytes(length: 16));
+		$event = $this->deliveryEvent(case: $case, entry: $entry);
+		$stamp = ['correlationId' => $entry['correlationId'], 'requestedAt' => $requestedAt];
 
 		try {
 			$this->eventDispatcher->dispatchTyped($event);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Publication delivery dispatch failed',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'channel' => $channel, 'error' => $e->getMessage()]
-			);
-			return [
-				'status' => 'refused',
-				'reason' => 'dispatch_failed',
-				'correlationId' => $correlationId,
-				'requestedAt' => $requestedAt,
-			];
+			$this->logger->error('Publication delivery dispatch failed', $where + ['error' => $e->getMessage()]);
+			return ['status' => 'refused', 'reason' => 'dispatch_failed'] + $stamp;
 		}
 
+		return $this->deliveryOutcome(event: $event, stamp: $stamp);
+	}//end requestDelivery()
+
+	/**
+	 * The integriq delivery request for one publication entry.
+	 *
+	 * @param array<string, mixed> $case The loaded case data.
+	 * @param array<string, mixed> $entry The entry, with its correlationId.
+	 *
+	 * @return Event The DeliveryRequestedEvent.
+	 */
+	private function deliveryEvent(array $case, array $entry): Event {
+		$eventClass = '\\' . self::DELIVERY_EVENT;
+
+		return new $eventClass(
+			sourceApp: AppIdentity::APP_ID,
+			subjectRegister: (string)$entry['register'],
+			subjectSchema: (string)$entry['schema'],
+			subjectId: $entry['caseId'],
+			subjectLabel: (string)($case['title'] ?? $entry['caseId']),
+			deliveryKind: self::DELIVERY_KIND,
+			channel: $entry['channel'],
+			payload: [
+				'caseId' => $entry['caseId'],
+				'channel' => $entry['channel'],
+				'publishedAt' => $entry['publishedAt'],
+				'notes' => $entry['notes'],
+				'template' => ($entry['template'] ?? ''),
+				'besluitDocument' => ($case['besluitDocument'] ?? null),
+				'identifier' => ($case['identifier'] ?? null),
+			],
+			correlationId: $entry['correlationId'],
+			externalReference: (string)($case['identifier'] ?? ''),
+		);
+	}//end deliveryEvent()
+
+	/**
+	 * The delivery record for a dispatched request.
+	 *
+	 * @param object $event The dispatched DeliveryRequestedEvent.
+	 * @param array{correlationId: string, requestedAt: string} $stamp The correlation id and request moment.
+	 *
+	 * @return array<string, mixed> Refused when not handled, unrouted when no route matched, else requested.
+	 */
+	private function deliveryOutcome(object $event, array $stamp): array {
 		if ($event->isHandled() === false) {
-			return [
-				'status' => 'refused',
-				'reason' => 'not_handled',
-				'correlationId' => $correlationId,
-				'requestedAt' => $requestedAt,
-			];
+			return ['status' => 'refused', 'reason' => 'not_handled'] + $stamp;
 		}
 
 		if ((int)$event->getMatchedSubscriptions() === 0) {
 			// Accepted by integriq, but no delivery route is configured —
 			// fail closed rather than implying the publication travelled.
-			return [
-				'status' => 'unrouted',
-				'eventId' => (string)$event->getResultId(),
-				'correlationId' => $correlationId,
-				'requestedAt' => $requestedAt,
-			];
+			return ['status' => 'unrouted', 'eventId' => (string)$event->getResultId()] + $stamp;
 		}
 
 		return [
 			'status' => 'requested',
 			'eventId' => (string)$event->getResultId(),
-			'correlationId' => $correlationId,
+			'correlationId' => $stamp['correlationId'],
 			'matchedSubscriptions' => (int)$event->getMatchedSubscriptions(),
-			'requestedAt' => $requestedAt,
+			'requestedAt' => $stamp['requestedAt'],
 		];
-	}//end requestDelivery()
+	}//end deliveryOutcome()
 
 	/**
 	 * Attach a delivery record to the publication entry for a channel.
@@ -323,7 +343,7 @@ class PublicationService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'PublicationService::publish find failed',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
 			);
 			throw new RuntimeException('Case not found: ' . $caseId);
 		}

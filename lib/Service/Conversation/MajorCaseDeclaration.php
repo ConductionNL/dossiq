@@ -27,22 +27,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Conversation;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\MajorCaseDeclarationInterface;
 use Psr\Log\LoggerInterface;
 
 /**
  * Declares a case major, and closes the channel that declaration opened.
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
-class MajorCaseDeclaration {
+class MajorCaseDeclaration implements MajorCaseDeclarationInterface {
 
 	/**
 	 * What a major case's working channel is called when the case names itself
@@ -77,7 +78,7 @@ class MajorCaseDeclaration {
 	 * @return array{ok: bool, reason?: string, unresolved?: array<string>, channel?: array<string, mixed>, alreadyMajor?: bool}
 	 *         The channel, or a refusal naming its reason and the group that failed.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function declareMajor(string $caseId, ?string $declaredBy = null): array {
 		$case = $this->cases->read(caseId: $caseId);
@@ -90,7 +91,21 @@ class MajorCaseDeclaration {
 			return ['ok' => true, 'alreadyMajor' => true, 'channel' => $standing];
 		}
 
-		$resolution = $this->responders->resolve(caseTypeId: $this->cases->caseTypeIdOf(case: $case));
+		$run = new MajorCaseRun(caseId: $caseId, declaredBy: ($declaredBy ?? ''));
+		$run->case = $case;
+
+		return $this->pullInResponders(run: $run);
+	}//end declareMajor()
+
+	/**
+	 * Resolve the case type's responders and open their channel.
+	 *
+	 * @param MajorCaseRun $run The declaration.
+	 *
+	 * @return array<string, mixed> The answer.
+	 */
+	private function pullInResponders(MajorCaseRun $run): array {
+		$resolution = $this->responders->resolve(caseTypeId: $this->cases->caseTypeIdOf(case: $run->case));
 		if ($resolution['ok'] === false) {
 			return [
 				'ok' => false,
@@ -99,39 +114,64 @@ class MajorCaseDeclaration {
 			];
 		}
 
-		$room = $this->openChannel(case: $case, moderators: $resolution['users']);
+		$run->responders = $resolution['users'];
+		$room = $this->openChannel(case: $run->case, moderators: $run->responders);
 		if ($room === null) {
 			return ['ok' => false, 'reason' => CaseConversationService::REASON_NO_TALK];
 		}
 
+		return $this->recordMajor(run: $run, room: $room);
+	}//end pullInResponders()
+
+	/**
+	 * Store the case as major with its channel, and log it.
+	 *
+	 * @param MajorCaseRun         $run  The declaration.
+	 * @param array<string, mixed> $room The Talk room opened for it.
+	 *
+	 * @return array<string, mixed> The answer.
+	 */
+	private function recordMajor(MajorCaseRun $run, array $room): array {
 		$channel = [
 			'roomId' => $room['id'],
 			'roomUrl' => $room['url'],
 			'openedAt' => $this->cases->now(),
 			'closedAt' => '',
 		];
-
-		// The responders are notified by the declared `caseDeclaredMajor` rule
-		// on the case schema, which fires on this write because `isMajor`
-		// changes to true here. dossiq dispatches nothing itself, per ADR-031.
-		$this->cases->write(
-			caseId: $caseId,
-			changes: [
-				'isMajor' => true,
-				'majorChannel' => $channel,
-				'majorDeclaredBy' => ($declaredBy ?? ''),
-				'majorDeclaredAt' => $this->cases->now(),
-				'majorResponders' => $resolution['users'],
-			],
-		);
+		$this->markMajor(run: $run, channel: $channel);
 
 		$this->logger->info(
-			'Case ' . $caseId . ' declared major, ' . count($resolution['users']) . ' responders pulled in',
-			['app' => Application::APP_ID],
+			'Case ' . $run->caseId . ' declared major, ' . count($run->responders) . ' responders pulled in',
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return ['ok' => true, 'alreadyMajor' => false, 'channel' => $channel];
-	}//end declareMajor()
+	}//end recordMajor()
+
+	/**
+	 * Write the declaration onto the case.
+	 *
+	 * The responders are notified by the declared `caseDeclaredMajor` rule on
+	 * the case schema, which fires on this write because `isMajor` changes to
+	 * true here. dossiq dispatches nothing itself, per ADR-031.
+	 *
+	 * @param MajorCaseRun         $run     The declaration.
+	 * @param array<string, mixed> $channel The channel opened.
+	 *
+	 * @return void
+	 */
+	private function markMajor(MajorCaseRun $run, array $channel): void {
+		$this->cases->write(
+			caseId: $run->caseId,
+			changes: [
+				'isMajor' => true,
+				'majorChannel' => $channel,
+				'majorDeclaredBy' => $run->declaredBy,
+				'majorDeclaredAt' => $this->cases->now(),
+				'majorResponders' => $run->responders,
+			],
+		);
+	}//end markMajor()
 
 	/**
 	 * Close a major case's channel and keep what was said with the case.
@@ -141,7 +181,7 @@ class MajorCaseDeclaration {
 	 * @return array{ok: bool, reason?: string, closed?: bool}
 	 *         Whether a channel was closed, or a refusal naming its reason.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function closeMajorChannel(string $caseId): array {
 		$case = $this->cases->read(caseId: $caseId);
@@ -154,7 +194,33 @@ class MajorCaseDeclaration {
 			return ['ok' => true, 'closed' => false];
 		}
 
-		$closedAt = $this->cases->now();
+		$channel['closedAt'] = $this->cases->now();
+
+		// Filed BEFORE the room is closed: a room Talk has deleted can no
+		// longer be read, so a write that failed after the delete would lose
+		// what was said rather than merely fail.
+		$this->cases->write(
+			caseId: $caseId,
+			changes: [
+				'majorChannel' => $channel,
+				'conversations' => $this->conversationsClosing(case: $case, channel: $channel),
+			],
+		);
+
+		$this->broker->closeRoom(roomId: (string)$channel['roomId']);
+
+		return ['ok' => true, 'closed' => true];
+	}//end closeMajorChannel()
+
+	/**
+	 * The case's conversations with the closing channel filed after them.
+	 *
+	 * @param array<string, mixed> $case    The case.
+	 * @param array<string, mixed> $channel The channel, with its `closedAt`.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function conversationsClosing(array $case, array $channel): array {
 		$conversations = $this->cases->conversationsOf(case: $case);
 		$conversations[] = [
 			'kind' => 'majorChannel',
@@ -165,26 +231,11 @@ class MajorCaseDeclaration {
 			'startedBy' => (string)($case['majorDeclaredBy'] ?? ''),
 			'participants' => array_values((array)($case['majorResponders'] ?? [])),
 			'durationSeconds' => 0,
-			'endedAt' => $closedAt,
+			'endedAt' => $channel['closedAt'],
 		];
 
-		$channel['closedAt'] = $closedAt;
-
-		// Filed BEFORE the room is closed: a room Talk has deleted can no
-		// longer be read, so a write that failed after the delete would lose
-		// what was said rather than merely fail.
-		$this->cases->write(
-			caseId: $caseId,
-			changes: [
-				'majorChannel' => $channel,
-				'conversations' => $conversations,
-			],
-		);
-
-		$this->broker->closeRoom(roomId: (string)$channel['roomId']);
-
-		return ['ok' => true, 'closed' => true];
-	}//end closeMajorChannel()
+		return $conversations;
+	}//end conversationsClosing()
 
 	/**
 	 * The channel this case already has, when it has one that is still open.
@@ -198,7 +249,7 @@ class MajorCaseDeclaration {
 	 *
 	 * @return array<string, mixed>|null The open channel, or null.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function openChannelOf(array $case): ?array {
 		$channel = ($case['majorChannel'] ?? []);
@@ -221,7 +272,7 @@ class MajorCaseDeclaration {
 	 *
 	 * @return array{id: string, url: string}|null The room, or null when Talk cannot give one.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function openChannel(array $case, array $moderators): ?array {
 		if ($this->broker->isAvailable() === false) {

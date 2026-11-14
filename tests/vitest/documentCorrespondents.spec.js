@@ -13,10 +13,11 @@
  * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
  */
 
+import fs from 'fs'
+import path from 'path'
 import { describe, expect, it } from 'vitest'
 import {
 	allowedFor,
-	documentsOfParty,
 	identifiersOf,
 	partyIdentifier,
 	partyOptions,
@@ -128,32 +129,19 @@ describe('the direction narrows what the dialog offers', () => {
 })
 
 describe("a party's own documents", () => {
-	const DOCUMENTS = [
-		{ id: 'doc-a', sender: 'party-jan', recipients: [] },
-		{ id: 'doc-b', sender: '', recipients: ['party-council', 'party-jan'] },
-		{ id: 'doc-c', sender: 'party-council', recipients: [] },
-		{ id: 'doc-d' },
-	]
-
-	it('separates what a party sent from what it received', () => {
-		const jan = documentsOfParty(DOCUMENTS, 'party-jan')
-
-		expect(jan.sent.map((row) => row.id)).toEqual(['doc-a'])
-		expect(jan.received.map((row) => row.id)).toEqual(['doc-b'])
-	})
-
-	it('shows nothing for a party nobody corresponded with', () => {
-		expect(documentsOfParty(DOCUMENTS, 'uid-ouder')).toEqual({
-			sent: [],
-			received: [],
-		})
-	})
-
-	it('shows nothing rather than everything when no party is named', () => {
-		// The mirror of the server's filter, which treats the empty value as
-		// "no filter". A widget asking for one party's documents with no party
-		// has nothing to show, and listing the whole dossier under somebody's
-		// name would be a lie about who they wrote to.
-		expect(documentsOfParty(DOCUMENTS, '')).toEqual({ sent: [], received: [] })
+	// Counting what a party sent and what it received is the library parties
+	// widget's now (nextcloud-vue objectParties.documentsOfParty, with these
+	// cases ported to its spec). The fields it reads are the ones the picker
+	// above stores.
+	it('names the fields the Roles section counts on', () => {
+		const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../../src/manifest.json'), 'utf8'))
+		const roles = manifest.pages
+			.find((page) => page.id === 'CaseDetail')
+			.config.widgets.find((widget) => widget.id === 'case-people-panel')
+			.content.sections.map((section) => section.widget)
+			.find((widget) => widget.id === 'case-party-roles')
+		// The library reads `sender` and `recipients` unless told otherwise.
+		expect(roles.content.correspondence.senderField).toBeUndefined()
+		expect(roles.content.correspondence.recipientsField).toBeUndefined()
 	})
 })

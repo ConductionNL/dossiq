@@ -66,7 +66,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WorkflowDefinitionServiceInterface;
 use OCA\Dossiq\Service\Workflow\TransitionAuthorizationStamper;
 use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
 use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
@@ -78,7 +79,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
  */
-class WorkflowDefinitionService {
+class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 
 	/**
 	 * Lifecycle states. Mirrors the enum on the workflowTemplate schema.
@@ -88,7 +89,6 @@ class WorkflowDefinitionService {
 	 * keep reading the single source of truth.
 	 */
 	public const STATUS_DRAFT = WorkflowLifecycleGuard::STATUS_DRAFT;
-	public const STATUS_PUBLISHED = WorkflowLifecycleGuard::STATUS_PUBLISHED;
 	public const STATUS_DEPRECATED = WorkflowLifecycleGuard::STATUS_DEPRECATED;
 
 	/**
@@ -206,7 +206,7 @@ class WorkflowDefinitionService {
 		if ($this->guard->statusOf(row: $row) !== self::STATUS_PUBLISHED || $caseTypeId === '') {
 			$this->logger->warning(
 				'Dossiq: setDefaultDefinition() refused, the definition is not a published definition of a case type',
-				['app' => Application::APP_ID, 'id' => $id, 'caseType' => $caseTypeId]
+				['app' => AppIdentity::APP_ID, 'id' => $id, 'caseType' => $caseTypeId]
 			);
 			return false;
 		}
@@ -238,7 +238,7 @@ class WorkflowDefinitionService {
 	 *
 	 * @return array<string, mixed>|null The definition or null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getDefinitionForCase(string $caseId): ?array {
 		$case = $this->repository->findCase(caseId: $caseId);
@@ -267,7 +267,7 @@ class WorkflowDefinitionService {
 	 *
 	 * @return array<int, array<string, mixed>> The versions
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function listVersions(string $caseTypeId): array {
 		return $this->repository->listVersionsForCaseType(caseTypeId: $caseTypeId);
@@ -286,32 +286,15 @@ class WorkflowDefinitionService {
 	 *
 	 * @return array<string, mixed>|null Updated definition or null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function publish(string $id): ?array {
-		$current = $this->repository->findById(id: $id);
-		if ($current === null) {
-			$this->logger->warning(
-				'Dossiq: publish() — definition not found',
-				['app' => Application::APP_ID, 'id' => $id]
-			);
+		$current = $this->publishableDraft(id: $id);
+		if ($current === null || $this->bothSchemasConfigured() === false) {
 			return null;
 		}
 
 		$transitions = $this->json->decodeList(raw: ($current['transitions'] ?? ''));
-		if ($this->guard->isPublishableDraft(current: $current, transitions: $transitions, id: $id) === false) {
-			return null;
-		}
-
-		// Both the definition schema and the caseType schema must be
-		// configured before anything is written: publishing without the
-		// caseType schema would deprecate the predecessor and leave the
-		// caseType pointing at a version it can no longer pin.
-		$configured = ($this->repository->isConfiguredFor(schemaKey: WorkflowDefinitionRepository::SCHEMA_DEFINITION) === true
-			&& $this->repository->isConfiguredFor(schemaKey: WorkflowDefinitionRepository::SCHEMA_CASE_TYPE) === true);
-		if ($configured === false) {
-			return null;
-		}
 
 		$caseTypeId = (string)($current['caseType'] ?? '');
 		$variant = $this->guard->variantOf(row: $current);
@@ -343,6 +326,45 @@ class WorkflowDefinitionService {
 	}//end publish()
 
 	/**
+	 * The stored definition when it is a draft that may be published, or null.
+	 *
+	 * @param string $id The definition UUID.
+	 *
+	 * @return array<string, mixed>|null The definition.
+	 */
+	private function publishableDraft(string $id): ?array {
+		$current = $this->repository->findById(id: $id);
+		if ($current === null) {
+			$this->logger->warning(
+				'Dossiq: publish() — definition not found',
+				['app' => AppIdentity::APP_ID, 'id' => $id]
+			);
+			return null;
+		}
+
+		$transitions = $this->json->decodeList(raw: ($current['transitions'] ?? ''));
+		if ($this->guard->isPublishableDraft(current: $current, transitions: $transitions, id: $id) === false) {
+			return null;
+		}
+
+		return $current;
+	}//end publishableDraft()
+
+	/**
+	 * Whether both the definition schema and the caseType schema are configured.
+	 *
+	 * Both must be configured before anything is written: publishing without
+	 * the caseType schema would deprecate the predecessor and leave the
+	 * caseType pointing at a version it can no longer pin.
+	 *
+	 * @return bool True when both are configured.
+	 */
+	private function bothSchemasConfigured(): bool {
+		return ($this->repository->isConfiguredFor(schemaKey: WorkflowDefinitionRepository::SCHEMA_DEFINITION) === true
+			&& $this->repository->isConfiguredFor(schemaKey: WorkflowDefinitionRepository::SCHEMA_CASE_TYPE) === true);
+	}//end bothSchemasConfigured()
+
+	/**
 	 * Deprecate a published definition. Refuses (returns null + logs) if
 	 * doing so would leave the caseType with no published definition while
 	 * open cases remain pinned to it.
@@ -351,7 +373,7 @@ class WorkflowDefinitionService {
 	 *
 	 * @return array<string, mixed>|null Updated definition or null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function deprecate(string $id): ?array {
 		$current = $this->repository->findById(id: $id);
@@ -380,7 +402,7 @@ class WorkflowDefinitionService {
 	 *
 	 * @return array<string, mixed>|null New draft definition or null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function cloneDefinition(string $id): ?array {
 		$source = $this->repository->findById(id: $id);
@@ -433,32 +455,80 @@ class WorkflowDefinitionService {
 	 *
 	 * @return array<string, mixed>|null The created draft or null on failure
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function createDraft(array $payload): ?array {
 		$caseTypeId = (string)($payload['caseType'] ?? '');
 		if ($caseTypeId === '' || (string)($payload['title'] ?? '') === '') {
 			$this->logger->warning(
 				'Dossiq: createDraft() — missing caseType or title',
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}
 
+		$version = $this->draftVersion(payload: $payload, caseTypeId: $caseTypeId);
+		$draft = $this->draftRow(payload: $payload, caseTypeId: $caseTypeId, version: $version);
+
+		return $this->repository->save(payload: $draft);
+	}//end createDraft()
+
+	/**
+	 * The version the draft is created as: the payload's, or the next for its case type.
+	 *
+	 * @param array<string, mixed> $payload    The draft payload
+	 * @param string               $caseTypeId The case type
+	 *
+	 * @return int The version
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function draftVersion(array $payload, string $caseTypeId): int {
 		$version = (int)($payload['version'] ?? 0);
 		if ($version <= 0) {
 			$version = $this->repository->nextVersionFor(caseTypeId: $caseTypeId);
 		}
 
+		return $version;
+	}//end draftVersion()
+
+	/**
+	 * The draft row to store.
+	 *
+	 * @param array<string, mixed> $payload    The draft payload
+	 * @param string               $caseTypeId The case type
+	 * @param int                  $version    The version
+	 *
+	 * @return array<string, mixed> The row
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function draftRow(array $payload, string $caseTypeId, int $version): array {
 		$stepsValue = $this->json->encode(value: ($payload['steps'] ?? []));
 		$transitionsValue = $this->json->encode(value: ($payload['transitions'] ?? []));
 
-		$draft = [
+		return [
 			'title' => (string)$payload['title'],
 			'description' => (string)($payload['description'] ?? ''),
 			'caseType' => $caseTypeId,
 			'variant' => $this->guard->variantOf(row: $payload),
 			'version' => $version,
+		] + $this->draftState(stepsValue: $stepsValue, transitionsValue: $transitionsValue, payload: $payload);
+	}//end draftRow()
+
+	/**
+	 * The draft's lifecycle flags and its content.
+	 *
+	 * @param string|false         $stepsValue       The encoded steps
+	 * @param string|false         $transitionsValue The encoded transitions
+	 * @param array<string, mixed> $payload          The draft payload
+	 *
+	 * @return array<string, mixed> The fields
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function draftState(string|false $stepsValue, string|false $transitionsValue, array $payload): array {
+		return [
 			'isActive' => false,
 			'isDraft' => true,
 			'lifecycleStatus' => self::STATUS_DRAFT,
@@ -466,9 +536,7 @@ class WorkflowDefinitionService {
 			'transitions' => $transitionsValue,
 			'nodePositions' => (string)($payload['nodePositions'] ?? ''),
 		];
-
-		return $this->repository->save(payload: $draft);
-	}//end createDraft()
+	}//end draftState()
 
 	// -----------------------------------------------------------------
 	// Internal helpers.
@@ -506,7 +574,7 @@ class WorkflowDefinitionService {
 				$this->logger->info(
 					'Dossiq: publish() left the default route alone, this definition is on another route',
 					[
-						'app' => Application::APP_ID,
+						'app' => AppIdentity::APP_ID,
 						'id' => $id,
 						'caseType' => $caseTypeId,
 						'route' => $variant,

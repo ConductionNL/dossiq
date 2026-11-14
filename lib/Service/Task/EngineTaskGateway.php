@@ -18,7 +18,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Task;
 
+use OCA\Dossiq\Kernel\Contracts\EngineTaskGatewayInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Task\TaskAnswer;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -67,7 +69,6 @@ use Throwable;
  * WHY THE PUBLIC SURFACE IS WIDE, AND STAYS ONE CLASS
  * ---------------------------------------------------
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  *
  * Not a concession: the invariant at the top of this file is that NOTHING
  * ELSE in dossiq talks to the engine's task API, so that when the engine
@@ -78,11 +79,14 @@ use Throwable;
  *
  * The suppression is NARROW on purpose: the complexity rules that catch a
  * method doing too much still apply, and did — `toEnginePayload()` was split
- * rather than suppressed.
+ * rather than suppressed. The two translations that are not verbs live
+ * beside it and talk to nothing: {@see EngineTaskPayload} builds what the
+ * engine is sent, {@see EngineTaskRow} reads a task back. They are pure, so
+ * the seam stays one place that calls the engine.
  *
  * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
  */
-class EngineTaskGateway {
+class EngineTaskGateway implements EngineTaskGatewayInterface {
 
     /**
      * OpenRegister's task service, by name.
@@ -102,6 +106,13 @@ class EngineTaskGateway {
      * @var string
      */
     private const COMPLETION_SERVICE = 'OCA\OpenRegister\Service\Task\TaskFormCompletion';
+
+    /**
+     * The prefix of {@see sourceKey()}; see there for why it is frozen.
+     *
+     * @var string
+     */
+    public const SOURCE_KEY_PREFIX = 'dossiq:caseTask:';
 
     /**
      * The external key an engine task carries for a dossiq register task.
@@ -124,12 +135,35 @@ class EngineTaskGateway {
      * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
      */
     public static function sourceKey(string $registerTaskId): string {
-        return 'dossiq:caseTask:' . $registerTaskId;
+        return self::SOURCE_KEY_PREFIX . $registerTaskId;
     }//end sourceKey()
 
+    /**
+     * Whether a task with this key exists, or null when the engine cannot say.
+     *
+     * Null is not "no": a caller that adds a task once per case must not add
+     * it when the engine cannot answer whether it is there already.
+     *
+     * @param string $key The engine task key.
+     *
+     * @return bool|null True when taken, false when free, null when the engine has no key lookup.
+     *
+     * @throws Throwable When the engine cannot read the key.
+     *
+     * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+     */
+    public function keyTaken(string $key): ?bool {
+        $service = $this->resolveService();
+        if ($service === null || method_exists($service, 'findByKey') === false) {
+            $this->lastError = 'the task engine cannot look a task up by its key';
 
+            return null;
+        }
 
-
+        // A failing lookup is not "free": it reaches the caller as an
+        // exception, which refuses to add the task.
+        return $service->findByKey($key) !== [];
+    }//end keyTaken()
 
     /**
      * The most recent engine failure, for callers that report rather than log.
@@ -137,6 +171,20 @@ class EngineTaskGateway {
      * @var string
      */
     private string $lastError = '';
+
+    /**
+     * Builds what the engine is sent for one dossiq task.
+     *
+     * @var EngineTaskPayload
+     */
+    private readonly EngineTaskPayload $payload;
+
+    /**
+     * Reads one engine task back in the register's vocabulary.
+     *
+     * @var EngineTaskRow
+     */
+    private readonly EngineTaskRow $row;
 
     /**
      * The most recent engine failure message, or ''.
@@ -168,6 +216,8 @@ class EngineTaskGateway {
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
     ) {
+        $this->payload = new EngineTaskPayload();
+        $this->row     = new EngineTaskRow();
     }//end __construct()
 
     /**
@@ -224,7 +274,7 @@ class EngineTaskGateway {
             return 'openregister is not installed or not enabled';
         }
 
-        if (class_exists(self::TASK_SERVICE) === false) {
+        if ($this->taskServiceExists() === false) {
             return sprintf(
                 'openregister is installed but %s does not exist: the namespace moved and dossiq tasks are NOT reaching the engine',
                 self::TASK_SERVICE
@@ -411,102 +461,8 @@ class EngineTaskGateway {
      * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
      */
     public function toEnginePayload(array $task, string $caseId): array {
-        $payload = [
-            'title'   => (string)($task['title'] ?? ''),
-            'appId'   => 'dossiq',
-            'state'   => (string)($task['status'] ?? 'available'),
-        ];
-
-        // The engine's external-reference field, stamped with the register
-        // row this task came from. It is what makes the backfill idempotent
-        // and what lets the two stores be reconciled while both exist.
-        $sourceId = trim((string)($task['id'] ?? $task['uuid'] ?? ''));
-        if ($sourceId !== '') {
-            $payload['key'] = self::sourceKey(registerTaskId: $sourceId);
-        }
-
-        // The case IS the object. No typed case reference exists engine-side.
-        if ($caseId !== '') {
-            $payload['objectUuid'] = $caseId;
-        }
-
-        foreach (
-            [
-                'description'    => 'description',
-                'assignee'       => 'assignee',
-                'dueDate'        => 'dueAt',
-                // NOTE: `completedDate` is deliberately absent. TaskBuilder
-                // reads no `completedAt`, because the engine sets it through
-                // the complete verb rather than accepting it as an assertion.
-                // Mapping it would be a silent no-op, which is worse than a
-                // stated gap: a backfilled completed task keeps its state but
-                // loses the date it was completed on, and reconciliation has
-                // to read that from the register row while both stores exist.
-                'priority'       => 'priority',
-                'workflowStepId' => 'workflowStepId',
-                'flowRun'        => 'runUuid',
-                'flowNode'       => 'nodeId',
-            ] as $from => $to
-        ) {
-            $value = trim((string)($task[$from] ?? ''));
-            if ($value !== '') {
-                $payload[$to] = $value;
-            }
-        }
-
-        // One value into a list.
-        $group = trim((string)($task['assigneeGroup'] ?? ''));
-        if ($group !== '') {
-            $payload['candidateGroups'] = [$group];
-        }
-
-        $payload = $this->withDeclaration(payload: $payload, task: $task);
-
-        $checklist = $this->decodeChecklist(value: ($task['checklist'] ?? null));
-        if ($checklist !== null) {
-            $payload['checklist'] = $checklist;
-        }
-
-        return $payload;
+        return $this->payload->build(task: $task, caseId: $caseId);
     }//end toEnginePayload()
-
-    /**
-     * Carry the case type's per-task declaration into the engine payload.
-     *
-     * The DECLARED candidates are a different thing from the case's team: the
-     * team is where work falls back to, the candidates are who the task is
-     * offered to before anybody has it. A declared list wins, because an
-     * administrator who named a team for this task meant that team and not
-     * the case's.
-     *
-     * `metadata.form` is the engine's own room for a run-less task's form
-     * declaration, read by its TaskFormResolver. `metadata.dossiq` is
-     * dossiq's, read back when the task completes. Both are passed through
-     * whole: translating them here would be a second description of the same
-     * declaration, and the two would drift.
-     *
-     * @param array<string, mixed> $payload The payload so far.
-     * @param array<string, mixed> $task    The dossiq task.
-     *
-     * @return array<string, mixed> The payload, with whatever was declared.
-     *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
-     */
-    private function withDeclaration(array $payload, array $task): array {
-        foreach (['candidateGroups', 'candidateUsers'] as $key) {
-            $declared = ($task[$key] ?? null);
-            if (is_array($declared) === true && $declared !== []) {
-                $payload[$key] = array_values($declared);
-            }
-        }
-
-        $metadata = ($task['metadata'] ?? null);
-        if (is_array($metadata) === true && $metadata !== []) {
-            $payload['metadata'] = $metadata;
-        }
-
-        return $payload;
-    }//end withDeclaration()
 
     /**
      * Read one engine task, as a plain array, or null when it is gone.
@@ -525,7 +481,7 @@ class EngineTaskGateway {
      */
     public function find(string $taskId): ?array {
         $id = trim($taskId);
-        if ($id === '' || $this->isEnabled() === false) {
+        if ($this->isLookupPossible(taskId: $id) === false) {
             return null;
         }
 
@@ -541,85 +497,19 @@ class EngineTaskGateway {
             return null;
         }
 
-        if ($task === null) {
-            return null;
-        }
-
-        return [
-            'id' => (string) $task->getUuid(),
-            'title' => (string) $task->getTitle(),
-            // The register's vocabulary, because the node speaks it. The
-            // VALUES need no translation: Task::STATES is the same CMMN set
-            // caseTask declared.
-            'status' => (string) $task->getState(),
-            'flowRun' => (string) ($task->getRunUuid() ?? ''),
-            'flowNode' => (string) ($task->getNodeId() ?? ''),
-            'assignee' => (string) ($task->getAssignee() ?? ''),
-            // A typed list of {id, label, description, checked}, NOT a
-            // string. `caseTask` held JSON in a string and the checklist
-            // guard had to decode it; the entity removed that shape, so
-            // this arrives ready to read.
-            'checklist' => (($task->getChecklist() ?? [])),
-            // The case IS the object, and a completion has to know which
-            // case it is on to run the effects the task declared against it
-            // and to publish the files it was holding.
-            //
-            // 🔴 EACH GETTER IS ASKED FOR BEFORE IT IS CALLED. The engine's
-            // task is resolved by string from an app that need not be
-            // installed, and an OLDER openregister has fewer of these
-            // columns: calling one it does not have is a fatal
-            // `Call to undefined method`, in the middle of a read that was
-            // working. Absent reads as "the engine does not answer that",
-            // which is exactly what the surfaces already state.
-            'objectUuid' => self::stringFrom(task: $task, getter: 'getObjectUuid'),
-            'dueDate' => self::dateFrom(task: $task, getter: 'getDueAt'),
-            // Who the task is OFFERED to, which is a different question from
-            // who has it. An empty assignee with a candidate list is a task
-            // waiting to be claimed; an empty assignee with no candidates is
-            // a task waiting for somebody to notice it.
-            'candidateGroups' => self::listFrom(task: $task, getter: 'getCandidateGroups'),
-            'candidateUsers' => self::listFrom(task: $task, getter: 'getCandidateUsers'),
-            // What dossiq declared on this task: `form` for the engine to
-            // render, `dossiq.effects` for dossiq to run on completion.
-            'metadata' => self::listFrom(task: $task, getter: 'getMetadata'),
-        ];
+        return $this->row->toArray(task: $task);
     }//end find()
 
     /**
-     * Decode dossiq's JSON-string checklist into the typed array the engine
-     * validates, or null when there is nothing usable.
+     * Whether a task id can be looked up at all: it is not blank and the engine answers.
      *
-     * Null rather than an empty array: the engine treats an explicitly empty
-     * checklist as a real value, and a task that never had one should not
-     * arrive carrying one.
+     * @param string $taskId The trimmed engine task uuid.
      *
-     * @param mixed $value The stored checklist.
-     *
-     * @return array<int, mixed>|null The decoded checklist, or null.
-     *
-     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
+     * @return bool True when the engine can be asked.
      */
-    private function decodeChecklist(mixed $value): ?array {
-        if (is_array($value) === true) {
-            if ($value === []) {
-                return null;
-            }
-
-            return $value;
-        }
-
-        $raw = trim((string)($value ?? ''));
-        if ($raw === '') {
-            return null;
-        }
-
-        $decoded = json_decode($raw, true);
-        if (is_array($decoded) === false || $decoded === []) {
-            return null;
-        }
-
-        return $decoded;
-    }//end decodeChecklist()
+    private function isLookupPossible(string $taskId): bool {
+        return $taskId !== '' && $this->isEnabled() === true;
+    }//end isLookupPossible()
 
     /**
      * Whether the task engine answers a claim act at all.
@@ -640,7 +530,7 @@ class EngineTaskGateway {
      *
      * @return boolean True when a task can be claimed.
      *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     * @spec openspec/specs/task-management/spec.md
      */
     public function supportsClaim(): bool {
         $service = $this->resolveService();
@@ -664,7 +554,7 @@ class EngineTaskGateway {
      *
      * @return boolean Whether the engine accepted it.
      *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     * @spec openspec/specs/task-management/spec.md
      */
     public function claim(string $taskId, ?string $actor): bool {
         $id = trim($taskId);
@@ -717,7 +607,7 @@ class EngineTaskGateway {
      *
      * @return boolean Whether the engine accepted it.
      *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     * @spec openspec/specs/task-management/spec.md
      */
     public function complete(string $taskId, array $data, string $outcome, ?string $actor): bool {
         $id = trim($taskId);
@@ -736,11 +626,7 @@ class EngineTaskGateway {
             // that would report "no service" as "nothing to do".
             $completion = $this->container->get(self::COMPLETION_SERVICE);
 
-            // Positional, not named: this object is resolved by string from
-            // an app that need not be installed, and a named argument here
-            // would bind dossiq to OpenRegister's parameter NAMES as well as
-            // its order.
-            $completion->complete($id, $outcome, null, null, $data, $actor);
+            $completion->complete(uuid: $id, answer: new TaskAnswer(outcome: $outcome), data: $data, actor: $actor);
 
             return true;
         } catch (Throwable $e) {
@@ -758,68 +644,60 @@ class EngineTaskGateway {
     }//end complete()
 
     /**
-     * One string column of an engine task, or '' when the engine has none.
+     * Cancel one open task through the engine, which rules on whether this
+     * caller may and whether the task is in a state that can be cancelled.
      *
-     * @param object $task   The engine task.
-     * @param string $getter The accessor.
+     * @param string      $taskId The task to cancel.
+     * @param string|null $reason Why, recorded on the task and its audit.
+     * @param string|null $actor  The identity cancelling it.
      *
-     * @return string The value.
+     * @return boolean Whether the engine accepted it; on false `lastError()` holds the engine's reason.
      *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
      */
-    private static function stringFrom(object $task, string $getter): string {
-        if (method_exists($task, $getter) === false) {
-            return '';
+    public function cancel(string $taskId, ?string $reason, ?string $actor): bool {
+        $id = trim($taskId);
+        $service = null;
+        if ($id !== '') {
+            $service = $this->resolveService();
         }
 
-        return (string) ($task->{$getter}() ?? '');
-    }//end stringFrom()
+        if ($service === null) {
+            $this->lastError = 'The task engine cannot cancel a task on this instance.';
+
+            return false;
+        }
+
+        try {
+            // Positional, as for complete(): the service is resolved by name.
+            $service->cancel($id, $reason, $actor);
+
+            return true;
+        } catch (Throwable $e) {
+            $this->lastError = $e->getMessage();
+
+            $this->logger->warning(
+                'Dossiq: the engine refused a task cancellation',
+                ['exception' => $e->getMessage(), 'task' => $id]
+            );
+
+            return false;
+        }
+    }//end cancel()
 
     /**
-     * One date column of an engine task, ISO-formatted, or ''.
+     * Whether OpenRegister's task service class is declared.
      *
-     * @param object $task   The engine task.
-     * @param string $getter The accessor.
+     * Protected, as a testing seam: in dossiq's unit suite whether
+     * OpenRegister loads depends on the run, and a test fixes the answer here.
      *
-     * @return string The value.
+     * @return boolean True when the class exists.
      *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
      */
-    private static function dateFrom(object $task, string $getter): string {
-        if (method_exists($task, $getter) === false) {
-            return '';
-        }
-
-        $value = $task->{$getter}();
-        if (($value instanceof \DateTimeInterface) === false) {
-            return (string) ($value ?? '');
-        }
-
-        return $value->format('c');
-    }//end dateFrom()
-
-    /**
-     * One array column of an engine task, or [] when the engine has none.
-     *
-     * @param object $task   The engine task.
-     * @param string $getter The accessor.
-     *
-     * @return array<mixed> The value.
-     *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
-     */
-    private static function listFrom(object $task, string $getter): array {
-        if (method_exists($task, $getter) === false) {
-            return [];
-        }
-
-        $value = $task->{$getter}();
-        if (is_array($value) === false) {
-            return [];
-        }
-
-        return $value;
-    }//end listFrom()
+    protected function taskServiceExists(): bool {
+        return class_exists(self::TASK_SERVICE);
+    }//end taskServiceExists()
 
     /**
      * Resolve OpenRegister's task service, or null.
@@ -841,7 +719,7 @@ class EngineTaskGateway {
             return null;
         }
 
-        if (class_exists(self::TASK_SERVICE) === false) {
+        if ($this->taskServiceExists() === false) {
             return null;
         }
 

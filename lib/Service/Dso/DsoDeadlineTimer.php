@@ -46,10 +46,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Dso;
 
-use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\DsoDeadlineTimerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\DayCount;
+use OCA\OpenRegister\Kernel\Contracts\TimerChange;
+use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -58,7 +60,7 @@ use Throwable;
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class DsoDeadlineTimer {
+class DsoDeadlineTimer implements DsoDeadlineTimerInterface {
 
 	/**
 	 * The engine class, resolved lazily so dossiq runs without OpenRegister.
@@ -68,46 +70,11 @@ class DsoDeadlineTimer {
 	public const ENGINE_CLASS = 'OCA\\OpenRegister\\Service\\Flow\\Timer\\FlowTimerService';
 
 	/**
-	 * The metadata source the fired listener recognises the timer by.
-	 *
-	 * @var string
-	 */
-	public const METADATA_SOURCE = 'dossiq-dso';
-
-	/**
 	 * The suffix that keeps the timer's subject apart from the case's own timers.
 	 *
 	 * @var string
 	 */
 	public const SUBJECT_SUFFIX = ':dso';
-
-	/**
-	 * The DSO statuses whose decision term runs.
-	 *
-	 * @var string[]
-	 */
-	public const OPEN_STATUSES = ['submitted', 'in_handling'];
-
-	/**
-	 * The rung message of the warning band.
-	 *
-	 * @var string
-	 */
-	public const MESSAGE_WARNING = 'dso-termijn-waarschuwing';
-
-	/**
-	 * The rung message of the critical band.
-	 *
-	 * @var string
-	 */
-	public const MESSAGE_CRITICAL = 'dso-termijn-kritiek';
-
-	/**
-	 * Outcome: a timer is armed.
-	 *
-	 * @var string
-	 */
-	public const ARMED = 'armed';
 
 	/**
 	 * Outcome: the case is no longer open for DSO and its timer is cancelled.
@@ -117,25 +84,11 @@ class DsoDeadlineTimer {
 	public const CANCELLED = 'cancelled';
 
 	/**
-	 * Outcome: the deadline is today or past; the caller marks it overdue now.
-	 *
-	 * @var string
-	 */
-	public const DUE = 'due';
-
-	/**
 	 * Outcome: nothing to time.
 	 *
 	 * @var string
 	 */
 	public const SKIPPED = 'skipped';
-
-	/**
-	 * Outcome: the engine is absent or refused.
-	 *
-	 * @var string
-	 */
-	public const UNAVAILABLE = 'unavailable';
 
 	/**
 	 * Build the service.
@@ -185,49 +138,79 @@ class DsoDeadlineTimer {
 			return self::DUE;
 		}
 
-		return $this->arm(case: $case, caseId: $caseId, anchor: $today, slaDays: $this->days->between(from: $today, to: $deadline));
+		return $this->arm(
+			span: new DsoTermSpan(case: $case, caseId: $caseId, anchor: $today, slaDays: $this->days->between(from: $today, to: $deadline))
+		);
 	}//end sync()
 
 	/**
 	 * Arm the timer.
 	 *
-	 * @param array<string, mixed> $case    The case.
-	 * @param string               $caseId  Its id.
-	 * @param DateTimeImmutable    $anchor  Midnight today.
-	 * @param int                  $slaDays Calendar days to the deadline day.
+	 * @param DsoTermSpan $span The case, its id, midnight today and the days to the deadline day.
 	 *
 	 * @return string ARMED, or UNAVAILABLE.
 	 */
-	private function arm(array $case, string $caseId, DateTimeImmutable $anchor, int $slaDays): string {
+	private function arm(DsoTermSpan $span): string {
 		$engine = $this->engine();
 		if ($engine === null) {
 			return self::UNAVAILABLE;
 		}
 
-		$warning  = $this->lead(key: 'dso_deadline_warning_weeks_warning', fallback: 14);
-		$critical = $this->lead(key: 'dso_deadline_warning_weeks_critical', fallback: 5);
+		$config = $this->timerConfig(span: $span);
 
-		$config = [
+		return $this->armOn(engine: $engine, config: $config, caseId: $span->caseId);
+	}//end arm()
+
+	/**
+	 * The timer configuration for the engine.
+	 *
+	 * @param DsoTermSpan $span The case, its id, midnight today and the days to the deadline day.
+	 *
+	 * @return array<string, mixed> The timer configuration.
+	 */
+	private function timerConfig(DsoTermSpan $span): array {
+		$caseId = $span->caseId;
+		return [
 			'subjectType'     => 'object',
 			'subjectUuid'     => $caseId.self::SUBJECT_SUFFIX,
 			'appId'           => 'dossiq',
-			'title'           => 'DSO-beslistermijn '.(string) ($case['identifier'] ?? $caseId),
+			'title'           => 'DSO-beslistermijn '.(string) ($span->case['identifier'] ?? $caseId),
 			'purpose'         => 'due',
 			'legalEffect'     => 'none',
-			'sla'             => ['value' => $slaDays, 'unit' => 'calendarDays'],
-			'escalationRules' => [
-				$this->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'dso-termijn-overschreden'),
-				$this->rule(trigger: 'preBreach', offset: $warning, unit: 'businessDays', message: self::MESSAGE_WARNING),
-				$this->rule(trigger: 'preBreach', offset: $critical, unit: 'businessDays', message: self::MESSAGE_CRITICAL),
-			],
+			'sla'             => ['value' => $span->slaDays, 'unit' => 'calendarDays'],
+			'escalationRules' => $this->escalationRules(),
 			'anchorEvent'     => 'dso_term_running',
-			'anchorEventAt'   => $anchor,
-			'metadata'        => [
-				'source' => self::METADATA_SOURCE,
-				'caseId' => $caseId,
-			],
+			'anchorEventAt'   => $span->anchor,
+			'metadata'        => ['source' => self::METADATA_SOURCE, 'caseId' => $caseId],
 		];
+	}//end timerConfig()
 
+	/**
+	 * The escalation rules: the breach, and the warning and critical leads before it.
+	 *
+	 * @return array<int, array<string, mixed>> The escalation rules.
+	 */
+	private function escalationRules(): array {
+		$warning  = $this->lead(key: 'dso_deadline_warning_weeks_warning', fallback: 14);
+		$critical = $this->lead(key: 'dso_deadline_warning_weeks_critical', fallback: 5);
+
+		return [
+			$this->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'dso-termijn-overschreden'),
+			$this->rule(trigger: 'preBreach', offset: $warning, unit: 'businessDays', message: self::MESSAGE_WARNING),
+			$this->rule(trigger: 'preBreach', offset: $critical, unit: 'businessDays', message: self::MESSAGE_CRITICAL),
+		];
+	}//end escalationRules()
+
+	/**
+	 * Hand the configuration to the engine.
+	 *
+	 * @param object               $engine The timer engine.
+	 * @param array<string, mixed> $config The timer configuration.
+	 * @param string               $caseId The case id, for the log.
+	 *
+	 * @return string ARMED, or UNAVAILABLE.
+	 */
+	private function armOn(object $engine, array $config, string $caseId): string {
 		try {
 			$engine->arm(config: $config, actor: null);
 		} catch (Throwable $e) {
@@ -236,7 +219,7 @@ class DsoDeadlineTimer {
 		}
 
 		return self::ARMED;
-	}//end arm()
+	}//end armOn()
 
 	/**
 	 * One escalation rule.
@@ -293,7 +276,10 @@ class DsoDeadlineTimer {
 		}
 
 		try {
-			$engine->cancelForSubject(subjectType: 'object', subjectUuid: $caseId.self::SUBJECT_SUFFIX, reason: $reason, actor: null);
+			$engine->cancelForSubject(
+				subject: new TimerSubjectRef(type: 'object', uuid: $caseId.self::SUBJECT_SUFFIX),
+				change: new TimerChange(reason: $reason, actor: null)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq DSO: the engine refused to cancel the DSO term timer', ['case' => $caseId, 'error' => $e->getMessage()]);
 			return self::UNAVAILABLE;

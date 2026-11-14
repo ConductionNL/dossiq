@@ -31,7 +31,7 @@ use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 /**
  * Single-role strategy.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T03
  */
 class SingleRoleStrategy implements RoutingStrategyInterface {
 	/**
@@ -66,14 +66,22 @@ class SingleRoleStrategy implements RoutingStrategyInterface {
 			return [];
 		}
 
+		return self::byCreation(matches: self::matchesFor(roles: $roles, target: $target));
+	}//end resolve()
+
+	/**
+	 * The participants holding the target role type, with the moment their role was created.
+	 *
+	 * @param array<int, array<string, mixed>> $roles  The case's roles.
+	 * @param string                           $target The role type.
+	 *
+	 * @return array<int, array{participant: string, sortKey: string}> The matches.
+	 */
+	private static function matchesFor(array $roles, string $target): array {
 		$matches = [];
 		foreach ($roles as $role) {
-			if ((string)($role['roleType'] ?? '') !== $target) {
-				continue;
-			}
-
 			$participant = (string)($role['participant'] ?? '');
-			if ($participant === '') {
+			if ((string)($role['roleType'] ?? '') !== $target || $participant === '') {
 				continue;
 			}
 
@@ -85,6 +93,17 @@ class SingleRoleStrategy implements RoutingStrategyInterface {
 			];
 		}
 
+		return $matches;
+	}//end matchesFor()
+
+	/**
+	 * The participants, the earliest-created role first.
+	 *
+	 * @param array<int, array{participant: string, sortKey: string}> $matches The matches.
+	 *
+	 * @return array<int, string> The participants.
+	 */
+	private static function byCreation(array $matches): array {
 		usort(
 			$matches,
 			static function (array $left, array $right): int {
@@ -99,5 +118,5 @@ class SingleRoleStrategy implements RoutingStrategyInterface {
 			static fn (array $match): string => (string)$match['participant'],
 			$matches,
 		);
-	}//end resolve()
+	}//end byCreation()
 }//end class

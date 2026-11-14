@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
  */
 
 declare(strict_types=1);
@@ -31,13 +31,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
-use OCA\Dossiq\Service\CaseTermsService;
-use OCA\Dossiq\Service\CaseTypeSlugResolver;
-use OCA\Dossiq\Service\Intake\IntakeTermStart;
+use OCA\Dossiq\Kernel\Contracts\CaseTermsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeTermStartInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermResolutionInterface;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\Term\TermResolution;
-use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\Support\ReferencedUuid;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -53,18 +54,18 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param TermijnService $termService TermijnService.
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
-	 * @param CaseTypeSlugResolver $caseTypeSlugs Case-type uuid-to-slug resolver.
+	 * @param TermijnServiceInterface $termService TermijnService.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Schema id-to-slug resolver.
+	 * @param CaseTypeSlugResolverInterface $caseTypeSlugs Case-type uuid-to-slug resolver.
 	 * @param LoggerInterface $logger Logger.
-	 * @param CaseTermsService|null $caseTerms The clocks beside the statutory one: the
+	 * @param CaseTermsServiceInterface|null $caseTerms The clocks beside the statutory one: the
 	 *        planned end, the internal target, and the fixed closing date when the case
 	 *        type declares one instead of a lead time. Optional so a container that
 	 *        cannot build it leaves the statutory bind exactly as it was.
-	 * @param TermResolution|null $resolution The case type's own first-response term,
+	 * @param TermResolutionInterface|null $resolution The case type's own first-response term,
 	 *        which wins over the Awb default when one is declared. Optional for the
 	 *        same reason as the parameter above it.
-	 * @param IntakeTermStart|null $intake When the request arrived and when its clock
+	 * @param IntakeTermStartInterface|null $intake When the request arrived and when its clock
 	 *        starts, on the calendar the term counts on. The term starts there, not at
 	 *        the moment the case row was written (REQ-OTE-02). Optional so a build
 	 *        without it starts the term at creation exactly as before.
@@ -74,13 +75,13 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
 	 */
 	public function __construct(
-		private readonly TermijnService $termService,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
-		private readonly CaseTypeSlugResolver $caseTypeSlugs,
+		private readonly TermijnServiceInterface $termService,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
+		private readonly CaseTypeSlugResolverInterface $caseTypeSlugs,
 		private readonly LoggerInterface $logger,
-		private readonly ?CaseTermsService $caseTerms = null,
-		private readonly ?TermResolution $resolution = null,
-		private readonly ?IntakeTermStart $intake = null,
+		private readonly ?CaseTermsServiceInterface $caseTerms = null,
+		private readonly ?TermResolutionInterface $resolution = null,
+		private readonly ?IntakeTermStartInterface $intake = null,
 		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {
 	}//end __construct()
@@ -93,15 +94,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @return string The uuid, empty when there is none.
 	 */
 	private function referenced(mixed $value): string {
-		if (is_string($value) === true) {
-			return trim($value);
-		}
-
-		if (is_array($value) === true) {
-			return trim((string)($value['id'] ?? ''));
-		}
-
-		return '';
+		return ReferencedUuid::inReference(value: $value);
 	}//end referenced()
 
 	/**
@@ -111,27 +104,157 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function handle(Event $event): void {
-		// The create of a case that is not a draft, or the moment a draft is
-		// sent. A draft binds no statutory term (decision 180).
-		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
+		$payload = $this->createdCase(event: $event);
 		if ($payload === null) {
 			return;
 		}
 
-		if ($this->resolveSchemaSlug(payload: $payload) !== 'case') {
+		$identity = $this->caseIdentity(payload: $payload);
+		if ($identity === null) {
 			return;
 		}
 
+		$this->bindTerms(identity: $identity, payload: $payload);
+	}//end handle()
+
+	/**
+	 * Bind the statutory term and the other clocks to a new case.
+	 *
+	 * @param NewCaseIdentity      $identity The case id, case type reference and slug.
+	 * @param array<string, mixed> $payload  The case payload.
+	 *
+	 * @return void
+	 */
+	private function bindTerms(NewCaseIdentity $identity, array $payload): void {
+		$caseType = $identity->caseType;
+
+		$context = $this->termContext(payload: $payload);
+		$resolution = $this->resolution?->resolve(caseType: $caseType, context: $context);
+
+		// The service norm, resolved by the same rule. A case type with no
+		// statutory term (a melding, a demo type) still has a clock the team
+		// works to, and it is bound beside the statutory term rather than as it.
+		$plannedDefinition = $this->resolution?->plannedDefinitionFor(caseType: $caseType, context: $context);
+
+		try {
+			// The term counts from receipt, not from the moment this row was
+			// written (REQ-OTE-02). Null only when no intake reader is wired,
+			// which is the old behaviour: the term starts now.
+			$this->createTerm(identity: $identity, payload: $payload, resolution: $resolution);
+			$this->bindTheOtherClocks(identity: $identity, payload: $payload, plannedDefinition: $plannedDefinition);
+		} catch (NoTermijnDefinitieException $e) {
+			// NOT debug. A case that matched no definition at all has no
+			// statutory clock running, which is exactly the state that hid a
+			// fleet-wide key mismatch behind a quiet log line. It is a valid
+			// configuration for a case type with no beslistermijn, so it is a
+			// warning rather than an error — but it is visible.
+			$this->warnNoDefinition(identity: $identity);
+
+			// A subsidy round declares a closing DATE and no lead time, so it
+			// has no TermijnDefinitie and a refusal here is the ordinary path
+			// rather than the broken one. The other clocks still bind, and the
+			// fixed date still becomes the statutory term.
+			$this->bindTheOtherClocks(identity: $identity, payload: $payload, plannedDefinition: $plannedDefinition);
+		} catch (\Throwable $e) {
+			$this->logBindFailure(identity: $identity, error: $e);
+		}//end try
+	}//end bindTerms()
+
+	/**
+	 * Create the case's term instance, counting from receipt when an intake reader is wired.
+	 *
+	 * @param NewCaseIdentity           $identity   The case id and case type slug.
+	 * @param array<string, mixed>      $payload    The case payload.
+	 * @param array<string, mixed>|null $resolution The resolved term, if any.
+	 *
+	 * @return void
+	 *
+	 * @throws NoTermijnDefinitieException When no definition matches the case.
+	 */
+	private function createTerm(NewCaseIdentity $identity, array $payload, ?array $resolution): void {
+		$this->termService->createTermijnInstance(
+			$identity->caseId,
+			$identity->caseType,
+			$this->intake?->termStartFor(case: $payload),
+			$resolution
+		);
+	}//end createTerm()
+
+	/**
+	 * Log, visibly, that a case runs without a statutory term.
+	 *
+	 * @param NewCaseIdentity $identity The case id, case type reference and slug.
+	 *
+	 * @return void
+	 */
+	private function warnNoDefinition(NewCaseIdentity $identity): void {
+		$caseId = $identity->caseId;
+		$caseType = $identity->caseType;
+		$caseTypeRef = $identity->caseTypeRef;
+		$this->logger->warning(
+			'Dossiq termijn: no active TermijnDefinitie for case type "' . $caseType . '", '
+			. 'so case ' . $caseId . ' runs without a statutory term',
+			['case' => $caseId, 'caseType' => $caseType, 'caseTypeId' => $caseTypeRef]
+		);
+	}//end warnNoDefinition()
+
+	/**
+	 * Log that a term could not be bound to a case.
+	 *
+	 * @param NewCaseIdentity $identity The case id and case type slug.
+	 * @param \Throwable      $error    What went wrong.
+	 *
+	 * @return void
+	 */
+	private function logBindFailure(NewCaseIdentity $identity, \Throwable $error): void {
+		$caseId = $identity->caseId;
+		$caseType = $identity->caseType;
+		$this->logger->error(
+			'Dossiq termijn: could not bind a term to case ' . $caseId . ': ' . $error->getMessage(),
+			['case' => $caseId, 'caseType' => $caseType, 'exception' => $error->getMessage()]
+		);
+	}//end logBindFailure()
+
+	/**
+	 * The payload of a created (or sent) case, or null for anything else.
+	 *
+	 * @param Event $event Event.
+	 *
+	 * @return array<string, mixed>|null The case payload.
+	 */
+	private function createdCase(Event $event): ?array {
+		// The create of a case that is not a draft, or the moment a draft is
+		// sent. A draft binds no statutory term (decision 180).
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
+		if ($payload === null) {
+			return null;
+		}
+
+		if ($this->resolveSchemaSlug(payload: $payload) !== 'case') {
+			return null;
+		}
+
+		return $payload;
+	}//end createdCase()
+
+	/**
+	 * The case id, case type reference and case type slug of a new case.
+	 *
+	 * @param array<string, mixed> $payload The case payload.
+	 *
+	 * @return NewCaseIdentity|null Null when the case cannot bind a term.
+	 */
+	private function caseIdentity(array $payload): ?NewCaseIdentity {
 		$caseId = (string)($payload['id'] ?? ($payload['uuid'] ?? ''));
 		$caseTypeRef = (string)($payload['caseType'] ?? '');
 		if ($caseId === '' || $caseTypeRef === '') {
-			return;
+			return null;
 		}
 
 		// 🔴 A `case` carries its case type as a UUID; a deadlineDefinition
@@ -146,62 +269,32 @@ class DeadlineCaseCreatedListener implements IEventListener {
 				['case' => $caseId, 'caseType' => $caseTypeRef]
 			);
 
-			return;
+			return null;
 		}
 
+		return new NewCaseIdentity(caseId: $caseId, caseTypeRef: $caseTypeRef, caseType: $caseType);
+	}//end caseIdentity()
+
+	/**
+	 * The resolution context of a new case's term.
+	 *
+	 * @param array<string, mixed> $payload The case payload.
+	 *
+	 * @return array<string, mixed> The organisation, service and priority.
+	 */
+	private function termContext(array $payload): array {
 		// Which term this case actually gets. One case type can carry several:
 		// one per participating organisation, per service and per priority,
 		// which is what lets a gemeenschappelijke regeling run one case type
 		// for five municipalities with five agreed norms. The resolution is
 		// made here, where the case's own values are in hand, and is recorded
 		// on the instance so a disputed date can be explained a year later.
-		$context = [
+		return [
 			'organisation' => $this->referenced(value: ($payload['competentAuthority'] ?? null)),
 			'service' => $this->referenced(value: ($payload['procedureType'] ?? null)),
 			'priority' => $this->referenced(value: ($payload['priority'] ?? null)),
 		];
-		$resolution = $this->resolution?->resolve(caseType: $caseType, context: $context);
-
-		// The service norm, resolved by the same rule. A case type with no
-		// statutory term (a melding, a demo type) still has a clock the team
-		// works to, and it is bound beside the statutory term rather than as it.
-		$plannedDefinition = $this->resolution?->plannedDefinitionFor(caseType: $caseType, context: $context);
-
-		try {
-			// The term counts from receipt, not from the moment this row was
-			// written (REQ-OTE-02). Null only when no intake reader is wired,
-			// which is the old behaviour: the term starts now.
-			$this->termService->createTermijnInstance(
-				$caseId,
-				$caseType,
-				$this->intake?->termStartFor(case: $payload),
-				$resolution
-			);
-			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload, plannedDefinition: $plannedDefinition);
-		} catch (NoTermijnDefinitieException $e) {
-			// NOT debug. A case that matched no definition at all has no
-			// statutory clock running, which is exactly the state that hid a
-			// fleet-wide key mismatch behind a quiet log line. It is a valid
-			// configuration for a case type with no beslistermijn, so it is a
-			// warning rather than an error — but it is visible.
-			$this->logger->warning(
-				'Dossiq termijn: no active TermijnDefinitie for case type "' . $caseType . '", '
-				. 'so case ' . $caseId . ' runs without a statutory term',
-				['case' => $caseId, 'caseType' => $caseType, 'caseTypeId' => $caseTypeRef]
-			);
-
-			// A subsidy round declares a closing DATE and no lead time, so it
-			// has no TermijnDefinitie and a refusal here is the ordinary path
-			// rather than the broken one. The other clocks still bind, and the
-			// fixed date still becomes the statutory term.
-			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload, plannedDefinition: $plannedDefinition);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq termijn: could not bind a term to case ' . $caseId . ': ' . $e->getMessage(),
-				['case' => $caseId, 'caseType' => $caseType, 'exception' => $e->getMessage()]
-			);
-		}//end try
-	}//end handle()
+	}//end termContext()
 
 	/**
 	 * Bind the planned end, the internal target and the fixed closing date.
@@ -211,8 +304,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * created, and the warning is what says the case is carrying fewer clocks
 	 * than its type declares.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param string $caseTypeRef The case type as the case carries it.
+	 * @param NewCaseIdentity $identity The case UUID, and the case type as the case carries it.
 	 * @param array<string, mixed> $payload The created case. Its clocks start where the
 	 *        statutory term starts, so the three clocks of one case count from one day.
 	 * @param array<string, mixed>|null $plannedDefinition The `planned` definition that resolved
@@ -220,19 +312,17 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
-	private function bindTheOtherClocks(
-		string $caseId,
-		string $caseTypeRef,
-		array $payload,
-		?array $plannedDefinition = null,
-	): void {
+	private function bindTheOtherClocks(NewCaseIdentity $identity, array $payload, ?array $plannedDefinition = null): void {
 		if ($this->caseTerms === null) {
 			return;
 		}
+
+		$caseId = $identity->caseId;
+		$caseTypeRef = $identity->caseTypeRef;
 
 		try {
 			$this->caseTerms->bindForCase(

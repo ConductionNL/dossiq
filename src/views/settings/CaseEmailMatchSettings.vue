@@ -7,7 +7,7 @@
   the caller's own; the server takes the user from the session and refuses an
   account that is not theirs.
 
-  @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+  @spec openspec/specs/email-case-matching/spec.md
 -->
 <template>
 	<div class="case-email-match">
@@ -108,7 +108,7 @@ const SETTINGS_URL = '/apps/dossiq/api/settings/email-case-matching'
 /**
  * What each refusal code the matcher records means to the user.
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  * @return {{[key: string]: string}} The messages, by code.
  */
 export function refusalMessages() {
@@ -171,7 +171,7 @@ export default {
 		/**
 		 * The caller's Mail accounts as select options.
 		 *
-		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 * @spec openspec/specs/email-case-matching/spec.md
 		 * @return {Array<object>} The options.
 		 */
 		accountOptions() {
@@ -184,11 +184,11 @@ export default {
 		/**
 		 * The chosen account as an option, or null.
 		 *
-		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 * @spec openspec/specs/email-case-matching/spec.md
 		 */
 		accountOption: {
 			/**
-			 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+			 * @spec openspec/specs/email-case-matching/spec.md
 			 * @return {object|null} The option.
 			 */
 			get() {
@@ -196,7 +196,7 @@ export default {
 			},
 
 			/**
-			 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+			 * @spec openspec/specs/email-case-matching/spec.md
 			 * @param {object|null} option The option.
 			 * @return {void}
 			 */
@@ -208,7 +208,7 @@ export default {
 		/**
 		 * One line saying what the last check did, or why it did nothing.
 		 *
-		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 * @spec openspec/specs/email-case-matching/spec.md
 		 * @return {string} The line.
 		 */
 		statusText() {
@@ -242,7 +242,7 @@ export default {
 	/**
 	 * Read the caller's settings.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 * @return {Promise<void>}
 	 */
 	async mounted() {
@@ -253,7 +253,7 @@ export default {
 		/**
 		 * Take the server's answer as the state on screen.
 		 *
-		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 * @spec openspec/specs/email-case-matching/spec.md
 		 * @param {object} data The settings payload.
 		 * @return {void}
 		 */
@@ -268,7 +268,7 @@ export default {
 		/**
 		 * Read the caller's settings, accounts and last run.
 		 *
-		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 * @spec openspec/specs/email-case-matching/spec.md
 		 * @return {Promise<void>}
 		 */
 		async load() {
@@ -292,7 +292,7 @@ export default {
 		/**
 		 * Save the caller's choice.
 		 *
-		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 * @spec openspec/specs/email-case-matching/spec.md
 		 * @return {Promise<void>}
 		 */
 		async save() {

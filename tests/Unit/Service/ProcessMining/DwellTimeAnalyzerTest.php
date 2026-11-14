@@ -32,19 +32,28 @@ namespace OCA\Dossiq\Tests\Unit\Service\ProcessMining;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
+use OCA\Dossiq\Service\ProcessMining\StatusVisit;
 use OCA\Dossiq\Service\Status\StatusDwellService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer
+ * @covers \OCA\Dossiq\Service\ProcessMining\DwellWindow
+ * @covers \OCA\Dossiq\Service\ProcessMining\CaseDwell
+ * @covers \OCA\Dossiq\Service\ProcessMining\StatusVisit
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Status\StatusDwellService
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\ProcessMining\StatusLabels
  */
 class DwellTimeAnalyzerTest extends TestCase {
 	use MakesCaseDateNormaliser;
+	use MatchesGoldenFiles;
 
 
 	private DwellTimeAnalyzer $analyzer;
@@ -422,4 +431,118 @@ class DwellTimeAnalyzerTest extends TestCase {
 
 	}//end testWithoutTheHeldReaderTheTotalsAreEmpty()
 
+	/**
+	 * A status name is translatable, so a row read through searchObjects()
+	 * carries it as a language map. The stats read it as text rather than
+	 * falling back to the raw status id (DqProcesanalyse, "fase 3c0f…b007").
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 */
+	public function testATranslatableStatusNameIsReadAsText(): void {
+		$stats = $this->analyzer->aggregateDwellStats(
+			[['caseId' => 'c1', 'statusId' => 'st-publish', 'hours' => 8.0]],
+			['st-publish' => ['name' => ['nl' => 'Publicatie']]]
+		);
+
+		self::assertSame('Publicatie', $stats[0]['statusName']);
+	}//end testATranslatableStatusNameIsReadAsText()
+
+	/**
+	 * A status carries the phase its type names (translated), or '' without one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/status-type-phase/specs/process-mining/spec.md#requirement-days-per-phase-groups-statuses-by-their-phase
+	 */
+	public function testAStatusCarriesItsPhase(): void {
+		$stats = $this->analyzer->aggregateDwellStats(
+			intervals: [
+				['caseId' => 'c1', 'statusId' => 'st-search', 'hours' => 8.0],
+				['caseId' => 'c1', 'statusId' => 'st-done', 'hours' => 1.0],
+			],
+			statusTypeIndex: [
+				'st-search' => ['name' => 'Zoeken documenten', 'phase' => ['nl' => 'Beoordeling']],
+				'st-done' => ['name' => 'Afgehandeld', 'isFinal' => true],
+			]
+		);
+
+		self::assertSame(expected: ['Beoordeling', ''], actual: array_column(array: $stats, column_key: 'statusPhase'));
+		self::assertSame(expected: [false, true], actual: array_column(array: $stats, column_key: 'statusFinal'));
+	}//end testAStatusCarriesItsPhase()
+
+	/**
+	 * One mixed world, pinned whole: open, closed, unparseable-closed and
+	 * empty cases; records without a status, without or with an unparseable
+	 * timestamp, with the `@self` timestamps, out of order, equal, before and
+	 * after the window, and with and without an actor.
+	 *
+	 * @return void
+	 */
+	public function testGoldenDwellIntervals(): void {
+		$records = [
+			'open' => [
+				['statusType' => 'intake', 'createdAt' => '2025-12-31T23:00:00+00:00', 'actor' => 'early'],
+				['statusType' => 'intake', 'createdAt' => '2026-01-01T00:00:00+00:00', 'actor' => ' ann '],
+				['statusType' => '', 'createdAt' => '2026-01-02T00:00:00+00:00'],
+				['statusType' => 'review', '@self' => ['created' => '2026-01-03T06:00:00+00:00']],
+				['statusType' => 'review', 'createdAt' => 'not a date'],
+				['statusType' => 'decide', '@self' => ['createdAt' => '2026-01-05T00:00:00+00:00'], 'actor' => 'bob'],
+				['statusType' => 'decide', 'createdAt' => '2026-01-04T00:00:00+00:00'],
+				['statusType' => 'wait', 'createdAt' => '2026-01-04T00:00:00+00:00'],
+				['statusType' => 'last', 'createdAt' => '2026-06-30T12:00:00+00:00'],
+			],
+			'closed' => [
+				['statusType' => 'intake', 'createdAt' => '2026-03-01T10:00:00+00:00'],
+				['statusType' => 'done', 'createdAt' => '2026-03-02T10:00:00+00:00'],
+			],
+			'closed-garbled' => [
+				['statusType' => 'intake', 'createdAt' => '2026-12-31T23:59:59+00:00'],
+			],
+			'closed-empty-end' => [
+				['statusType' => 'intake', 'createdAt' => '2026-05-01T00:00:00+00:00'],
+				['statusType' => 'next'],
+			],
+			'after' => [
+				['statusType' => 'intake', 'createdAt' => '2027-01-01T00:00:00+00:00'],
+			],
+			'blank-end' => [
+				['statusType' => 'intake', 'createdAt' => '2026-06-30T00:00:00+00:00'],
+			],
+			'none' => [],
+			'no-row' => [
+				['statusType' => 'intake', 'createdAt' => '2026-02-01T00:00:00+00:00'],
+			],
+		];
+		$cases = [
+			'open' => ['endDate' => null],
+			'closed' => ['endDate' => '2026-03-05T10:00:00+00:00'],
+			'closed-garbled' => ['endDate' => 'garbled'],
+			'closed-empty-end' => ['endDate' => ''],
+			'after' => [],
+			'blank-end' => ['endDate' => ''],
+			'none' => [],
+		];
+
+		$this->assertMatchesGolden('dwell-intervals', $this->intervals($records, $cases));
+	}//end testGoldenDwellIntervals()
+
+	/**
+	 * A visit pairs its record with the next one and reads both timestamps;
+	 * the last visit has no next moment.
+	 *
+	 * @return void
+	 */
+	public function testAVisitReadsItsOwnAndTheNextMoment(): void {
+		$records = [
+			['statusType' => 'intake', '@self' => ['created' => '2026-01-01T00:00:00+00:00']],
+			['statusType' => 'review', 'createdAt' => '2026-01-02T00:00:00+00:00'],
+		];
+		$first = new StatusVisit(records: $records, index: 0);
+		$last = new StatusVisit(records: $records, index: 1);
+
+		self::assertSame(['2026-01-01T00:00:00+00:00', '2026-01-02T00:00:00+00:00'], [$first->enteredMoment(), $first->nextMoment()]);
+		self::assertSame(['2026-01-02T00:00:00+00:00', null, null], [$last->enteredMoment(), $last->nextMoment(), $last->next]);
+	}//end testAVisitReadsItsOwnAndTheNextMoment()
 }//end class

@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 
 declare(strict_types=1);
@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\People;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CoordinatorRequirementInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -52,9 +53,9 @@ use Throwable;
 /**
  * Says whether a case needs a coordinator before signing, and refuses when it does.
  *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
-class CoordinatorRequirement {
+class CoordinatorRequirement implements CoordinatorRequirementInterface {
 
 	use SearchesObjects;
 
@@ -80,7 +81,7 @@ class CoordinatorRequirement {
 	 * @param CaseSeats        $seats           The seats on the case.
 	 * @param LoggerInterface  $logger          Says why the declaration could not be read.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+	 * @spec openspec/specs/people-on-the-case/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -97,7 +98,7 @@ class CoordinatorRequirement {
 	 *
 	 * @return bool True when the case type declares the requirement.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-type-may-require-a-coordinator-before-signing-req-hand-06
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-type-may-require-a-coordinator-before-signing-req-hand-06
 	 */
 	public function applies(string $caseId): bool {
 		$case = $this->caseOf(caseId: $caseId);
@@ -133,7 +134,7 @@ class CoordinatorRequirement {
 	 *
 	 * @throws RefusedException When the case type asks for a coordinator and none is named.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-type-may-require-a-coordinator-before-signing-req-hand-06
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-type-may-require-a-coordinator-before-signing-req-hand-06
 	 */
 	public function requireSeatFilled(string $caseId): void {
 		if ($this->applies(caseId: $caseId) === false) {

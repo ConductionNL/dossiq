@@ -31,7 +31,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -39,14 +39,15 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Http\RangeStreamResponse;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Zaakdossier\DossierZipExporter;
-use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DossierZipExporterInterface;
+use OCA\Dossiq\Kernel\Contracts\InformatieobjectReaderInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -55,7 +56,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 class ZaakdossierDownloadController extends Controller {
 	/**
@@ -63,22 +64,22 @@ class ZaakdossierDownloadController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param InformatieobjectReader $reader The clearance-gated document reader.
-	 * @param DossierZipExporter $zipExporter The ZIP export collaborator.
+	 * @param InformatieobjectReaderInterface $reader The clearance-gated document reader.
+	 * @param DossierZipExporterInterface $zipExporter The ZIP export collaborator.
 	 * @param IUserSession $userSession The user session.
 	 * @param LoggerInterface $logger The logger.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly InformatieobjectReader $reader,
-		private readonly DossierZipExporter $zipExporter,
+		private readonly InformatieobjectReaderInterface $reader,
+		private readonly DossierZipExporterInterface $zipExporter,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -110,16 +111,12 @@ class ZaakdossierDownloadController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function downloadZip(string $caseId): DataDownloadResponse|JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$user = $this->readerOf(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		try {
@@ -146,6 +143,28 @@ class ZaakdossierDownloadController extends Controller {
 	}//end downloadZip()
 
 	/**
+	 * The caller when they may read the case, or the 401/403 refusal.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return IUser|JSONResponse
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
+	 */
+	private function readerOf(string $caseId): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
+		return $user;
+	}//end readerOf()
+
+	/**
 	 * Download a single dossier file, gated by clearance.
 	 *
 	 * @param string $register The register slug (kept for ZGW DRC path parity).
@@ -157,7 +176,7 @@ class ZaakdossierDownloadController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $register, $schema and $fileId are
 	 * URL segments of the route
@@ -195,7 +214,7 @@ class ZaakdossierDownloadController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function downloadZgwDocumenten(string $uuid): RangeStreamResponse|JSONResponse {
 		$user = $this->userSession->getUser();

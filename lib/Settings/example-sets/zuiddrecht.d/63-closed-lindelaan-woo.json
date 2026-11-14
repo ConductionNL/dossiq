@@ -1,0 +1,520 @@
+{
+	"$comment": "A second, closed Lindelaan Woo request for DqArchiveren (coordinator 29 Oct, as for DqBesluit on 22 Oct), so portaliq's 2026-0110 stays open on every other board. Sanne de Vries asked through Mijn Zuiddrecht with DigiD; Pieter decided it yesterday (deels openbaar: 4 openbaar, 2 deels, 1 niet openbaar on 5.2.1), it was published the same day, every document is assessed and final, no task is open, and it waits to be archived (vernietigen after 5 jaar). It names Sanne the way a portal request does (initiatorDisplayName, portalSubject, DigiD) and has no requester row: the Woo type blocks a duplicate on requester and title, and with Sanne's person record as requester this case and 2026-0110 (same title, same requester) would refuse each other. Without it the pair scores 0.5 against the threshold of 0.6. Once its result and decision exist, a change names both on the case (`result`, `decisions`, as for woo-zaaksysteem): the archive dialog reads them for its result pill and its Resultaat and Besluit lines.",
+	"objects": [
+		{
+			"key": "woo-fietspad-afgehandeld",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"behandeling": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"besluit": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluit"
+					}
+				},
+				"publicatie": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Publiceren"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"intakeIdentification": "digid",
+				"intakeSourceName": "Mijn Zuiddrecht",
+				"title": "Verlichting fietspad Lindelaan",
+				"description": "Sanne de Vries vroeg alle adviezen en mails over de verlichting van het fietspad aan de Lindelaan. Het besluit is genomen en gepubliceerd.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:sanne.displayName}}",
+				"portalSubject": "{{cast:sanne.uid}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "openbaar",
+				"urgency": "high",
+				"legalBasis": "Woo art 4.4",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
+				"startDate": "{{date:-26}}",
+				"endDate": "{{date:-1}}",
+				"deadline": "{{date:3}}",
+				"receivedAt": "{{datetime:-26 14:30}}",
+				"lastActivityAt": "{{datetime:-1 14:05}}",
+				"currentStatusEnteredAt": "{{datetime:-1 14:05}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-26 14:30}}"
+					},
+					{
+						"status": "{{lookup:behandeling}}",
+						"enteredAt": "{{datetime:-25 09:15}}"
+					},
+					{
+						"status": "{{lookup:besluit}}",
+						"enteredAt": "{{datetime:-1 11:40}}"
+					},
+					{
+						"status": "{{lookup:publicatie}}",
+						"enteredAt": "{{datetime:-1 13:30}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-1 14:05}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Verlichting fietspad Lindelaan",
+					"omschrijving": "Alle adviezen en mails over de verlichting van het fietspad aan de Lindelaan, uit 2025 en 2026.",
+					"periodeVan": "{{date:-400}}",
+					"periodeTot": "{{date:-27}}",
+					"origin": "portal",
+					"documentSoorten": [
+						"correspondentie",
+						"rapporten"
+					],
+					"verzoekerNaam": "{{cast:sanne.displayName}}",
+					"verzoekerEmail": "{{cast:sanne.email}}",
+					"verzoekerType": "burger"
+				},
+				"wooPublicationStatus": "published",
+				"wooWithheldNote": "Eén document is niet openbaar gemaakt. De publicatie noemt het nummer op de inventarislijst en de weigeringsgrond.",
+				"tags": [
+					"woo",
+					"verlichting"
+				],
+				"endingAct": "finish",
+				"archiveNomination": "vernietigen",
+				"archiveActionDate": "{{date:1825}}",
+				"archiveStatus": "nog_te_archiveren"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-termijn",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:woo-fietspad-afgehandeld.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-26 14:30}}",
+				"endDateCalculated": "{{date:3}}",
+				"endDateCurrent": "{{date:3}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-1}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-locatie",
+			"register": "dossiq",
+			"schema": "case-location",
+			"data": {
+				"case": "{{object:woo-fietspad-afgehandeld.id}}",
+				"label": "Fietspad Lindelaan, tussen nummer 2 en 40",
+				"latitude": 51.81,
+				"longitude": 4.65,
+				"accuracyRadius": 250,
+				"source": "free"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-resultaat",
+			"register": "dossiq",
+			"schema": "result",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"resultType": {
+					"schema": "resultType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Deels openbaar gemaakt"
+					}
+				}
+			},
+			"data": {
+				"name": "Deels openbaar gemaakt",
+				"case": "{{object:woo-fietspad-afgehandeld.id}}",
+				"resultType": "{{lookup:resultType}}",
+				"description": "Vier documenten openbaar, twee deels openbaar en één niet openbaar.",
+				"publicExplanation": "Wij hebben de meeste stukken openbaar gemaakt. In de klachtenlijst en de offerte zijn namen en prijzen weggelakt. De interne notitie over het budget blijft geheim. In het besluit leest u waarom."
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-besluit",
+			"register": "dossiq",
+			"schema": "decision",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"decisionType": {
+					"schema": "decisionType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "WOO-besluit"
+					}
+				}
+			},
+			"data": {
+				"title": "Woo-besluit verlichting fietspad Lindelaan",
+				"case": "{{object:woo-fietspad-afgehandeld.id}}",
+				"description": "Besluit op het Woo-verzoek van Sanne de Vries over de verlichting van het fietspad aan de Lindelaan.",
+				"decisionType": "{{lookup:decisionType}}",
+				"responsibleOrganisation": "Gemeente Zuiddrecht",
+				"governingBody": "Het college van burgemeester en wethouders",
+				"decisionDate": "{{date:-1}}",
+				"effectiveDate": "{{date:-1}}",
+				"publicationDate": "{{date:-1}}",
+				"explanation": "Vier documenten zijn openbaar en twee deels. Uit de klachtenlijst zijn de namen van bewoners gelakt, uit de offerte de prijzen van de aannemer. De interne notitie over het budget blijft geheim.",
+				"wooSummary": {
+					"openbaar": 4,
+					"deels_openbaar": 2,
+					"niet_openbaar": 1
+				},
+				"weigeringsgronden": [
+					"5.1.1.c",
+					"5.1.2.e",
+					"5.2.1"
+				],
+				"decidedBy": "{{cast:pieter.uid}}",
+				"wooPublication": {
+					"status": "published",
+					"category": "infocat014",
+					"publishedAt": "{{datetime:-1 14:05}}"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-doc-advies",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Advies verlichting fietspad",
+				"fileName": "advies-verlichting-fietspad.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-zio-advies",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-afgehandeld.id}}",
+				"informatieobject": "{{object:woo-fietspad-afgehandeld-doc-advies.id}}",
+				"registrationDate": "{{datetime:-22 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-beoordeling-advies",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-afgehandeld.id}}",
+				"documentRef": "{{object:woo-fietspad-afgehandeld-doc-advies.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-doc-mail-aannemer",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Mail aannemer over planning",
+				"fileName": "mail-aannemer-planning.eml",
+				"format": "message/rfc822",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "incoming",
+				"creatiedatum": "{{date:-45}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-zio-mail-aannemer",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-afgehandeld.id}}",
+				"informatieobject": "{{object:woo-fietspad-afgehandeld-doc-mail-aannemer.id}}",
+				"registrationDate": "{{datetime:-22 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-beoordeling-mail-aannemer",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-afgehandeld.id}}",
+				"documentRef": "{{object:woo-fietspad-afgehandeld-doc-mail-aannemer.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-doc-raadsvoorstel",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Raadsvoorstel fietspad Lindelaan",
+				"fileName": "raadsvoorstel-fietspad-lindelaan.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-90}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-zio-raadsvoorstel",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-afgehandeld.id}}",
+				"informatieobject": "{{object:woo-fietspad-afgehandeld-doc-raadsvoorstel.id}}",
+				"registrationDate": "{{datetime:-22 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-beoordeling-raadsvoorstel",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-afgehandeld.id}}",
+				"documentRef": "{{object:woo-fietspad-afgehandeld-doc-raadsvoorstel.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-doc-plattegrond",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Plattegrond lichtmasten",
+				"fileName": "plattegrond-lichtmasten.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-70}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-zio-plattegrond",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-afgehandeld.id}}",
+				"informatieobject": "{{object:woo-fietspad-afgehandeld-doc-plattegrond.id}}",
+				"registrationDate": "{{datetime:-22 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-beoordeling-plattegrond",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-afgehandeld.id}}",
+				"documentRef": "{{object:woo-fietspad-afgehandeld-doc-plattegrond.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-doc-klachtenlijst",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Klachtenlijst bewoners Lindelaan",
+				"fileName": "klachtenlijst-bewoners-lindelaan.csv",
+				"format": "text/csv",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "incoming",
+				"creatiedatum": "{{date:-40}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-zio-klachtenlijst",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-afgehandeld.id}}",
+				"informatieobject": "{{object:woo-fietspad-afgehandeld-doc-klachtenlijst.id}}",
+				"registrationDate": "{{datetime:-22 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-beoordeling-klachtenlijst",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-afgehandeld.id}}",
+				"documentRef": "{{object:woo-fietspad-afgehandeld-doc-klachtenlijst.id}}",
+				"classification": "deels_openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}",
+				"weigeringsgronden": [
+					"5.1.2.e"
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-doc-offerte",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Offerte verlichting",
+				"fileName": "offerte-verlichting.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "incoming",
+				"creatiedatum": "{{date:-50}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-zio-offerte",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-afgehandeld.id}}",
+				"informatieobject": "{{object:woo-fietspad-afgehandeld-doc-offerte.id}}",
+				"registrationDate": "{{datetime:-22 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-beoordeling-offerte",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-afgehandeld.id}}",
+				"documentRef": "{{object:woo-fietspad-afgehandeld-doc-offerte.id}}",
+				"classification": "deels_openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}",
+				"weigeringsgronden": [
+					"5.1.1.c"
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-doc-interne-notitie",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Interne notitie budget",
+				"fileName": "interne-notitie-budget.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-35}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-zio-interne-notitie",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-afgehandeld.id}}",
+				"informatieobject": "{{object:woo-fietspad-afgehandeld-doc-interne-notitie.id}}",
+				"registrationDate": "{{datetime:-22 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-afgehandeld-beoordeling-interne-notitie",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-afgehandeld.id}}",
+				"documentRef": "{{object:woo-fietspad-afgehandeld-doc-interne-notitie.id}}",
+				"classification": "niet_openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}",
+				"weigeringsgronden": [
+					"5.2.1"
+				]
+			}
+		}
+	],
+	"changes": [
+		{
+			"key": "woo-fietspad-afgehandeld-uitkomst",
+			"register": "dossiq",
+			"schema": "case",
+			"object": "woo-fietspad-afgehandeld",
+			"set": {
+				"result": "{{object:woo-fietspad-afgehandeld-resultaat.id}}",
+				"decisions": [
+					"{{object:woo-fietspad-afgehandeld-besluit.id}}"
+				]
+			}
+		}
+	]
+}

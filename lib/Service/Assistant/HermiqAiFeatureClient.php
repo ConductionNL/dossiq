@@ -37,7 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Assistant;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\HermiqAiFeatureClientInterface;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md
  */
-class HermiqAiFeatureClient {
+class HermiqAiFeatureClient implements HermiqAiFeatureClientInterface {
 
 	/**
 	 * Which provider each registered feature will use, and where that provider
@@ -143,12 +144,23 @@ class HermiqAiFeatureClient {
 		} catch (HermiqAssistantException $e) {
 			$this->logger->warning(
 				'HermiqAiFeatureClient: could not read the AI feature residency',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 			);
 
 			return [];
 		}
 
+		return $this->rowsBySlug(decoded: $decoded);
+	}//end featureResidency()
+
+	/**
+	 * The residency rows that name a feature slug, keyed by it.
+	 *
+	 * @param array<string, mixed> $decoded The decoded residency answer.
+	 *
+	 * @return array<string, array<string, mixed>> The rows, by feature slug.
+	 */
+	private function rowsBySlug(array $decoded): array {
 		$rows = [];
 		foreach (($decoded['results'] ?? []) as $row) {
 			if (is_array($row) === false) {
@@ -164,7 +176,7 @@ class HermiqAiFeatureClient {
 		}
 
 		return $rows;
-	}//end featureResidency()
+	}//end rowsBySlug()
 
 	/**
 	 * The prompts hermiq holds for one record type, in the administrator's order.
@@ -189,7 +201,7 @@ class HermiqAiFeatureClient {
 		} catch (HermiqAssistantException $e) {
 			$this->logger->warning(
 				'HermiqAiFeatureClient: could not read the prompt library',
-				['app' => Application::APP_ID, 'scope' => $scope, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'scope' => $scope, 'error' => $e->getMessage()]
 			);
 
 			return [];
@@ -301,15 +313,31 @@ class HermiqAiFeatureClient {
 	 * @throws HermiqAssistantException When hermiq is absent, unconfigured or unreachable.
 	 */
 	private function send(string $path, ?array $payload): IResponse {
-		if ($this->isAvailable() === false) {
-			throw new HermiqAssistantException(
-				message: 'Hermiq is not installed or enabled on this instance',
-				statusCode: 503
-			);
-		}
+		$call = new HermiqServiceCall(logger: $this->logger, caller: 'HermiqAiFeatureClient');
+		$call->requireAvailable(available: $this->isAvailable());
+		[$uid, $password] = $this->serviceCredentials(call: $call);
 
-		$uid = $this->appConfig->getValueString(Application::APP_ID, 'hermiq_service_uid', '');
-		$password = $this->appConfig->getValueString(Application::APP_ID, 'hermiq_service_app_password', '');
+		$url = rtrim($this->urlGenerator->getBaseUrl(), '/') . $path;
+		$options = self::requestOptions(credentials: [$uid, $password], payload: $payload);
+
+		try {
+			return $this->dispatch(url: $url, options: $options, payload: $payload);
+		} catch (Throwable $e) {
+			throw $call->unreachable(url: $url, failure: $e);
+		}
+	}//end send()
+
+	/**
+	 * The service-account credentials, or an exception when they are not configured.
+	 *
+	 * @param HermiqServiceCall $call The call being made.
+	 *
+	 * @return array{0: string, 1: string} The uid and the password.
+	 *
+	 * @throws HermiqAssistantException When the credentials are not configured.
+	 */
+	private function serviceCredentials(HermiqServiceCall $call): array {
+		[$uid, $password] = $call->credentialsFrom(appConfig: $this->appConfig);
 
 		if ($uid === '' || $password === '') {
 			throw new HermiqAssistantException(
@@ -318,11 +346,21 @@ class HermiqAiFeatureClient {
 			);
 		}
 
-		$url = rtrim($this->urlGenerator->getBaseUrl(), '/') . $path;
+		return [$uid, $password];
+	}//end serviceCredentials()
 
+	/**
+	 * The request options: the timeout, the credentials, the headers and the body when there is one.
+	 *
+	 * @param array{0: string, 1: string} $credentials The uid and the password.
+	 * @param array<string, mixed>|null   $payload     The body, or null for a GET.
+	 *
+	 * @return array<string, mixed> The options.
+	 */
+	private static function requestOptions(array $credentials, ?array $payload): array {
 		$options = [
 			'timeout' => self::TIMEOUT_SECONDS,
-			'auth' => [$uid, $password],
+			'auth' => $credentials,
 			// The body and the status are needed on EVERY response, including a
 			// 4xx: hermiq's refusals carry the step that refused, and a transport
 			// that swallows them into a generic throw loses the only part a
@@ -335,24 +373,27 @@ class HermiqAiFeatureClient {
 			$options['json'] = $payload;
 		}
 
-		try {
-			$client = $this->clientService->newClient();
+		return $options;
+	}//end requestOptions()
 
-			if ($payload === null) {
-				return $client->get($url, $options);
-			}
+	/**
+	 * Send the request: a GET without a body, a POST with one.
+	 *
+	 * @param string                    $url     The full URL.
+	 * @param array<string, mixed>      $options The request options.
+	 * @param array<string, mixed>|null $payload The body, or null for a GET.
+	 *
+	 * @return IResponse The response.
+	 */
+	private function dispatch(string $url, array $options, ?array $payload): IResponse {
+		$client = $this->clientService->newClient();
 
-			return $client->post($url, $options);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'HermiqAiFeatureClient: request failed',
-				['app' => Application::APP_ID, 'url' => $url, 'error' => $e->getMessage()]
-			);
+		if ($payload === null) {
+			return $client->get($url, $options);
+		}
 
-			throw new HermiqAssistantException(message: 'hermiq_unreachable', statusCode: 503, previous: $e);
-		}//end try
-
-	}//end send()
+		return $client->post($url, $options);
+	}//end dispatch()
 
 	/**
 	 * Decode a response, keeping hermiq's own wording on a refusal.

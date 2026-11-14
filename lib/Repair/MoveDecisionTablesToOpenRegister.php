@@ -30,9 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StoredDecisionTablesInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -57,13 +57,13 @@ class MoveDecisionTablesToOpenRegister implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The register and the old schema.
-	 * @param StoredDecisionTables $tables OpenRegister's register.
+	 * @param SettingsServiceInterface $settingsService The register and the old schema.
+	 * @param StoredDecisionTablesInterface $tables OpenRegister's register.
 	 * @param LoggerInterface $logger Names every table that did not move.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly StoredDecisionTables $tables,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly StoredDecisionTablesInterface $tables,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -113,24 +113,64 @@ class MoveDecisionTablesToOpenRegister implements IRepairStep {
 			return;
 		}
 
+		if ($this->registerReadable(output: $output) === false) {
+			return;
+		}
+
+		$counts = $this->moveAll(rows: $rows);
+
+		$this->reportCounts(output: $output, counts: $counts);
+	}//end move()
+
+	/**
+	 * Probe OpenRegister's decision-tables register before writing to it.
+	 *
+	 * @param IOutput $output The upgrade output.
+	 *
+	 * @return bool Whether the register answers.
+	 */
+	private function registerReadable(IOutput $output): bool {
 		try {
 			// Probe before writing: an OpenRegister that has not imported the
 			// register yet answers a throw here, and the next upgrade retries.
-			$this->tables->idOf(storedKey: StoredDecisionTables::KEY_PREFIX . 'probe');
+			$this->tables->idOf(storedKey: StoredDecisionTablesInterface::KEY_PREFIX . 'probe');
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'MoveDecisionTablesToOpenRegister: OpenRegister\'s decision-tables register is not readable; the tables stay in dossiq until the next upgrade.',
 				['exception' => $e->getMessage()]
 			);
 			$output->warning('MoveDecisionTablesToOpenRegister: OpenRegister\'s decision-tables register is not there yet; nothing moved.');
-			return;
+			return false;
 		}
 
+		return true;
+	}//end registerReadable()
+
+	/**
+	 * Move every table, counting the outcomes.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The stored dossiq tables.
+	 *
+	 * @return array<string, int> The count per outcome.
+	 */
+	private function moveAll(array $rows): array {
 		$counts = ['moved' => 0, 'kept' => 0, 'disabled' => 0, 'failed' => 0];
 		foreach ($rows as $row) {
 			++$counts[$this->moveOne(row: $row)];
 		}
 
+		return $counts;
+	}//end moveAll()
+
+	/**
+	 * Report the outcome counts.
+	 *
+	 * @param IOutput            $output The upgrade output.
+	 * @param array<string, int> $counts The count per outcome.
+	 *
+	 * @return void
+	 */
+	private function reportCounts(IOutput $output, array $counts): void {
 		$output->info(
 			sprintf(
 				'MoveDecisionTablesToOpenRegister: %d moved, %d already in OpenRegister, %d disabled and left in dossiq, %d refused.',
@@ -143,7 +183,7 @@ class MoveDecisionTablesToOpenRegister implements IRepairStep {
 		if ($counts['failed'] > 0) {
 			$output->warning('MoveDecisionTablesToOpenRegister: ' . $counts['failed'] . ' table(s) were refused (see the log); they stay in dossiq.');
 		}
-	}//end move()
+	}//end reportCounts()
 
 	/**
 	 * Move one table.

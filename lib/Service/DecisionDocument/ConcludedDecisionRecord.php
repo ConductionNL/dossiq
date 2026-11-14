@@ -22,14 +22,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md
+ * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\DecisionDocument;
 
-use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
+use OCA\Dossiq\Kernel\Contracts\AdvisoryCommitteeServiceInterface;
 use OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Resolves the record and case of a concluded decision, and records an advice deviation.
  *
- * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md
+ * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 class ConcludedDecisionRecord {
 
@@ -47,11 +47,11 @@ class ConcludedDecisionRecord {
 	/**
 	 * Constructor.
 	 *
-	 * @param AdvisoryCommitteeService $bacService Advice-request audit writer (Awb art. 7:13 lid 7).
+	 * @param AdvisoryCommitteeServiceInterface $bacService Advice-request audit writer (Awb art. 7:13 lid 7).
 	 * @param LoggerInterface          $logger     Logger.
 	 */
 	public function __construct(
-		private readonly AdvisoryCommitteeService $bacService,
+		private readonly AdvisoryCommitteeServiceInterface $bacService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -68,7 +68,7 @@ class ConcludedDecisionRecord {
 	 *
 	 * @return array{0:string,1:string,2:array<string,mixed>|null} [caseId, besluitId, decisionRecord].
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	public function resolveCaseAndDecision(
 		object $objectService,
@@ -78,6 +78,37 @@ class ConcludedDecisionRecord {
 		string $subjectId,
 		string $externalRef,
 	): array {
+		$record = $this->decisionRecord(objectService: $objectService, register: $register, schema: $schema, decisionId: $decisionId);
+
+		if (is_array($record) === true) {
+			$caseId = (string)($record['case'] ?? $record['caseRef'] ?? $externalRef);
+			$besluitId = (string)($record['besluitRef'] ?? '');
+			return [$caseId, $besluitId, $record];
+		}
+
+		// No record matched: use the external reference (then subjectId) as the
+		// case identifier; no existing besluit is known.
+		$caseId = $subjectId;
+		if ($externalRef !== '') {
+			$caseId = $externalRef;
+		}
+
+		return [$caseId, '', null];
+	}//end resolveCaseAndDecision()
+
+	/**
+	 * The record that stores this decision as its `decisionRef`, when one is found.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register      The subject register (numeric ID or slug, may be empty).
+	 * @param string $schema        The subject schema (numeric ID or slug, may be empty).
+	 * @param string $decisionId    The decidesk decisionId.
+	 *
+	 * @return mixed The first match, or null when there is none or the lookup failed.
+	 *
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 */
+	private function decisionRecord(object $objectService, string $register, string $schema, string $decisionId): mixed {
 		$record = null;
 		if ($register !== '' && $schema !== '' && $decisionId !== '') {
 			try {
@@ -95,21 +126,8 @@ class ConcludedDecisionRecord {
 			}
 		}
 
-		if (is_array($record) === true) {
-			$caseId = (string)($record['case'] ?? $record['caseRef'] ?? $externalRef);
-			$besluitId = (string)($record['besluitRef'] ?? '');
-			return [$caseId, $besluitId, $record];
-		}
-
-		// No record matched: use the external reference (then subjectId) as the
-		// case identifier; no existing besluit is known.
-		$caseId = $subjectId;
-		if ($externalRef !== '') {
-			$caseId = $externalRef;
-		}
-
-		return [$caseId, '', null];
-	}//end resolveCaseAndDecision()
+		return $record;
+	}//end decisionRecord()
 
 	/**
 	 * Mirror an Awb art. 7:13 lid 7 council deviation onto the linked BAC
@@ -141,17 +159,8 @@ class ConcludedDecisionRecord {
 		string $decisionId,
 		string $subjectId,
 	): void {
-		if ($decision === null) {
-			return;
-		}
-
-		$requestId = (string)($decision['advisoryOpinion'] ?? '');
-		if ($requestId === '') {
-			// Never referred to a committee — there is no advice to deviate from.
-			return;
-		}
-
-		if ((bool)($decision['followsAdvice'] ?? true) === true) {
+		$requestId = $this->deviatedRequestId(decision: $decision);
+		if ($decision === null || $requestId === '') {
 			return;
 		}
 
@@ -164,6 +173,48 @@ class ConcludedDecisionRecord {
 			$reference = (string)($decision['@self']['id'] ?? ($decision['id'] ?? $subjectId));
 		}
 
+		$this->writeDeviation(requestId: $requestId, reference: $reference, rationale: $rationale);
+	}//end recordCouncilDeviation()
+
+	/**
+	 * The advice request a decision deviates from, or '' when there is no deviation to record.
+	 *
+	 * @param array<string,mixed>|null $decision The bezwaarDecision record, when one matched.
+	 *
+	 * @return string The advice request id, or ''.
+	 *
+	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
+	 */
+	private function deviatedRequestId(?array $decision): string {
+		if ($decision === null) {
+			return '';
+		}
+
+		$requestId = (string)($decision['advisoryOpinion'] ?? '');
+		if ($requestId === '') {
+			// Never referred to a committee — there is no advice to deviate from.
+			return '';
+		}
+
+		if ((bool)($decision['followsAdvice'] ?? true) === true) {
+			return '';
+		}
+
+		return $requestId;
+	}//end deviatedRequestId()
+
+	/**
+	 * Write the deviation on the advice request's audit trail, logging a failed entry.
+	 *
+	 * @param string $requestId The advice request id.
+	 * @param string $reference The besluit reference.
+	 * @param string $rationale The deviation rationale.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
+	 */
+	private function writeDeviation(string $requestId, string $reference, string $rationale): void {
 		try {
 			$this->bacService->recordCouncilDeviation(
 				requestId: $requestId,
@@ -178,5 +229,5 @@ class ConcludedDecisionRecord {
 				$notWritten->logContext()
 			);
 		}
-	}//end recordCouncilDeviation()
+	}//end writeDeviation()
 }//end class

@@ -34,13 +34,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Term;
 
+use OCA\Dossiq\Kernel\Contracts\TermStatusClockInterface;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
@@ -49,9 +50,9 @@ use Throwable;
 /**
  * Suspends and resumes a term's engine timer from the case's status.
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-term-declares-the-statuses-its-clock-runs-in-with-thresholds-as-days-or-shares-req-tcf-03
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-declares-the-statuses-its-clock-runs-in-with-thresholds-as-days-or-shares-req-tcf-03
  */
-class TermStatusClock {
+class TermStatusClock implements TermStatusClockInterface {
 	/**
 	 * Nothing was needed.
 	 */
@@ -101,7 +102,7 @@ class TermStatusClock {
 	 *
 	 * @return string One of UNCHANGED, SUSPENDED or RESUMED.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-term-declares-the-statuses-its-clock-runs-in-with-thresholds-as-days-or-shares-req-tcf-03
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-declares-the-statuses-its-clock-runs-in-with-thresholds-as-days-or-shares-req-tcf-03
 	 */
 	public function reconcile(string $caseId, string $statusId, string $caseType): string {
 		$instance = $this->terms->getTermijnInstanceForZaak(caseId: $caseId);

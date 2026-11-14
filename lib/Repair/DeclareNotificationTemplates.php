@@ -43,8 +43,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Notification\PlatformEventTemplates;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PlatformEventTemplatesInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -143,11 +143,22 @@ class DeclareNotificationTemplates implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq notifications: the template gap list was not read, {reason}',
-				['app' => Application::APP_ID, 'reason' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'reason' => $e->getMessage()]
 			);
 			return [];
 		}
 
+		return $this->gapNames(gaps: $gaps);
+	}//end gaps()
+
+	/**
+	 * The non-empty event names a gap list holds.
+	 *
+	 * @param mixed $gaps What the registry answered.
+	 *
+	 * @return array<int, string> The event names.
+	 */
+	private function gapNames(mixed $gaps): array {
 		if (is_array($gaps) === false) {
 			return [];
 		}
@@ -160,7 +171,7 @@ class DeclareNotificationTemplates implements IRepairStep {
 		}
 
 		return $names;
-	}//end gaps()
+	}//end gapNames()
 
 	/**
 	 * Write dossiq's Dutch text for each gap it can answer.
@@ -177,7 +188,7 @@ class DeclareNotificationTemplates implements IRepairStep {
 
 		$written = [];
 		foreach ($gaps as $event) {
-			$dutch = (PlatformEventTemplates::DUTCH[$event] ?? null);
+			$dutch = (PlatformEventTemplatesInterface::DUTCH[$event] ?? null);
 			if ($dutch === null) {
 				// Nothing dossiq can say about this event. Leaving it in the
 				// gap list is the point: it stays finishable by somebody else.
@@ -191,7 +202,7 @@ class DeclareNotificationTemplates implements IRepairStep {
 				$this->logger->warning(
 					'Dossiq notifications: template {event} was not written, {reason}',
 					[
-						'app' => Application::APP_ID,
+						'app' => AppIdentity::APP_ID,
 						'event' => $event,
 						'reason' => $e->getMessage(),
 					]

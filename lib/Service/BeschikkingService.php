@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T14
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T14
  */
 
 declare(strict_types=1);
@@ -41,26 +41,29 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\BeschikkingServiceInterface;
 use OCA\Dossiq\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
 use OCA\Dossiq\Service\Beschikking\BeschikkingDelivery;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
+use OCA\Dossiq\Service\Beschikking\BeschikkingSendRecorder;
+use OCA\Dossiq\Service\Beschikking\BeschikkingSendRun;
 use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
-use OCA\Dossiq\Service\DocumentSeries\DocumentSeriesNumberer;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
 use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
+use OCA\Dossiq\Service\Beschikking\SuccessorRequest;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
+use OCA\Dossiq\Service\DocumentSeries\DocumentSeriesNumberer;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
 use OCA\Dossiq\Service\People\CoordinatorRequirement;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use RuntimeException;
 
 /**
  * Beschikking lifecycle orchestrator.
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T14
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T14
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Fourteen, two over the
  * threshold. The last to join is `DocumentSeriesNumberer` (decision 167): the
@@ -75,8 +78,10 @@ use RuntimeException;
  * trade. The fourteen are each injected and each named, so the class is
  * readable even where it is wide.
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) Same list, same reason.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class BeschikkingService {
+class BeschikkingService implements BeschikkingServiceInterface {
 
 	/**
 	 * The document series beschikkingen are numbered in (decision 167).
@@ -99,6 +104,13 @@ class BeschikkingService {
 	 * @var array<int, string>
 	 */
 	public const SUCCESSOR_KINDS = ['amendment', 'withdrawal'];
+
+	/**
+	 * The recorder of a send's outcome, see {@see sendRecorder()}.
+	 *
+	 * @var BeschikkingSendRecorder|null
+	 */
+	private ?BeschikkingSendRecorder $sendRecorder = null;
 
 	/**
 	 * Constructor.
@@ -147,7 +159,7 @@ class BeschikkingService {
 	 *
 	 * @throws RefusedException 503 when no number can be reserved for it.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function compose(string $caseId, ?string $templateId = null, array $overrides = []): array {
@@ -159,12 +171,34 @@ class BeschikkingService {
 		$resolvedTemplate = ($templateId ?? 'tpl-default');
 		$version = $this->templateAdapter->resolveVersion($resolvedTemplate, $effectiveDate);
 
+		$decision = $this->newDecision(caseId: $caseId, version: $version, overrides: $overrides);
+		$decision = $this->withOverrideFields(decision: $decision, overrides: $overrides);
+
+		$saved = $this->repository->save(decision: $decision);
+		return $this->markRequiredFields(decision: $saved);
+	}//end compose()
+
+	/**
+	 * Render the chosen template version and build the beschikking draft around it.
+	 *
+	 * @param string               $caseId    The case UUID.
+	 * @param array<string, mixed> $version   The resolved template version.
+	 * @param array<string, mixed> $overrides Optional geadresseerde/field overrides.
+	 *
+	 * @return array<string, mixed> The beschikking to save.
+	 *
+	 * @throws RefusedException 503 when no number can be reserved for it.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function newDecision(string $caseId, array $version, array $overrides): array {
 		$composition = $this->templateAdapter->render(
 			$version['templateId'],
 			['caseId' => $caseId, 'overrides' => $overrides],
 		);
 
-		$decision = [
+		return [
 			'caseId' => $caseId,
 			// THE NUMBER IS WRITTEN HERE, AT BIRTH (decision 167). It was
 			// declared and never written, so the first beschikking served would
@@ -198,7 +232,20 @@ class BeschikkingService {
 			// has to act on.
 			'legalRemediesClause' => $this->remedy->clauseFor(caseId: $caseId),
 		];
+	}//end newDecision()
 
+	/**
+	 * Copy the non-empty object fields and the successor pointer from the overrides.
+	 *
+	 * @param array<string, mixed> $decision  The beschikking to save.
+	 * @param array<string, mixed> $overrides Optional geadresseerde/field overrides.
+	 *
+	 * @return array<string, mixed> The beschikking to save.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function withOverrideFields(array $decision, array $overrides): array {
 		// Only when there is something in them. Both are `type: object`, and
 		// an empty PHP array is saved as the JSON LIST `[]`, which the
 		// schema refuses: a compose with no addressee yet was a failed save.
@@ -216,9 +263,8 @@ class BeschikkingService {
 			$decision['supersedes'] = $supersedes;
 		}
 
-		$saved = $this->repository->save(decision: $decision);
-		return $this->markRequiredFields(decision: $saved);
-	}//end compose()
+		return $decision;
+	}//end withOverrideFields()
 
 	/**
 	 * Load a single beschikking by id. [T06]
@@ -229,7 +275,7 @@ class BeschikkingService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T06
 	 */
 	public function find(string $decisionId): ?array {
 		return $this->repository->find(decisionId: $decisionId);
@@ -246,34 +292,16 @@ class BeschikkingService {
 	 * @throws RuntimeException On a missing beschikking, invalid transition, or insufficient mandaat.
 	 * @throws RefusedException When the mandate scheme could not be read, so the mandate cannot be checked.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T07
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T07
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function akkoord(string $decisionId, string $approvedBy): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
 		$current = (string)($decision['currentStatus'] ?? '');
 
-		if ($this->stateMachine->validateTransition($current, 'approved-mandate') === false) {
-			throw new RuntimeException('invalid_transition');
-		}
+		$this->requireTransition(current: $current, target: 'approved-mandate');
 
-		$regeling = $this->mandateVerifier->resolveMandaatRegeling(caseType: (string)($decision['caseType'] ?? ''));
-		$level = $this->mandateVerifier->resolveNiveauForUser(
-			regeling: $regeling,
-			decision: $decision,
-			approvedBy: $approvedBy
-		);
-
-		if ($level === null) {
-			throw new RuntimeException('mandaat_insufficient');
-		}
-
-		$decision['mandateGranted'] = [
-			'mandateSchemeId' => (string)($regeling['id'] ?? ($regeling['@self']['slug'] ?? '')),
-			'mandateLevel' => $level,
-			'approvedBy' => $approvedBy,
-			'approvedDate' => (new DateTimeImmutable())->format('c'),
-		];
+		$decision['mandateGranted'] = $this->grantedMandate(decision: $decision, approvedBy: $approvedBy);
 		$decision['currentStatus'] = 'approved-mandate';
 
 		$saved = $this->repository->save(decision: $decision);
@@ -288,6 +316,53 @@ class BeschikkingService {
 	}//end akkoord()
 
 	/**
+	 * Refuse a transition the state machine does not allow.
+	 *
+	 * @param string $current The current status.
+	 * @param string $target  The status to move to.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException On an invalid transition.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T07
+	 */
+	private function requireTransition(string $current, string $target): void {
+		if ($this->stateMachine->validateTransition($current, $target) === false) {
+			throw new RuntimeException('invalid_transition');
+		}
+	}//end requireTransition()
+
+	/**
+	 * The mandate the approver holds for this beschikking.
+	 *
+	 * @param array<string, mixed> $decision   The beschikking.
+	 * @param string               $approvedBy The approver's Nextcloud UID.
+	 *
+	 * @return array<string, mixed> The `mandateGranted` record.
+	 *
+	 * @throws RuntimeException When the approver's mandaat is insufficient.
+	 * @throws RefusedException When the mandate scheme could not be read, so the mandate cannot be checked.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T07
+	 */
+	private function grantedMandate(array $decision, string $approvedBy): array {
+		$regeling = $this->mandateVerifier->resolveMandaatRegeling(caseType: (string)($decision['caseType'] ?? ''));
+		$level = $this->mandateVerifier->resolveNiveauForUser(regeling: $regeling, decision: $decision, approvedBy: $approvedBy);
+
+		if ($level === null) {
+			throw new RuntimeException('mandaat_insufficient');
+		}
+
+		return [
+			'mandateSchemeId' => (string)($regeling['id'] ?? ($regeling['@self']['slug'] ?? '')),
+			'mandateLevel' => $level,
+			'approvedBy' => $approvedBy,
+			'approvedDate' => (new DateTimeImmutable())->format('c'),
+		];
+	}//end grantedMandate()
+
+	/**
 	 * Sign the beschikking via the TSP and transition to ondertekend. [T08]
 	 *
 	 * @param string $decisionId The beschikking UUID.
@@ -298,15 +373,13 @@ class BeschikkingService {
 	 *
 	 * @throws RuntimeException On a missing beschikking or invalid transition.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T08
 	 */
 	public function onderteken(string $decisionId, string $tspProvider, string $signatory): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
 		$current = (string)($decision['currentStatus'] ?? '');
 
-		if ($this->stateMachine->validateTransition($current, 'signed') === false) {
-			throw new RuntimeException('invalid_transition');
-		}
+		$this->requireTransition(current: $current, target: 'signed');
 
 		// BEFORE THE TSP IS CALLED, not after. A signature is minted at a
 		// provider and countersigned onto the file; refusing afterwards would
@@ -317,36 +390,71 @@ class BeschikkingService {
 		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
 		$signature = $this->signingAdapter->sign($fileId, $signatory, $tspProvider);
 
+		$decision = $this->withSignature(
+			decision: $decision,
+			signature: $signature,
+			signer: ['tspProvider' => $tspProvider, 'signatory' => $signatory],
+		);
+		$decision['currentStatus'] = 'signed';
+
+		$saved = $this->repository->save(decision: $decision);
+		$this->logSigned(decisionId: $decisionId, current: $current, signed: $decision['signature']);
+
+		return $saved;
+	}//end onderteken()
+
+	/**
+	 * The beschikking with the TSP's signature written onto it.
+	 *
+	 * @param array<string, mixed> $decision    The beschikking.
+	 * @param array<string, mixed>                          $signature What the TSP answered.
+	 * @param array{tspProvider: string, signatory: string} $signer    The TSP provider slug and the signer's Nextcloud UID.
+	 *
+	 * @return array<string, mixed> The signed beschikking, not yet saved.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T08
+	 */
+	private function withSignature(array $decision, array $signature, array $signer): array {
+		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
+
 		$decision['signature'] = [
-			'tspProvider' => $tspProvider,
+			'tspProvider' => $signer['tspProvider'],
 			'tspProviderEidasId' => (string)($signature['tspProviderEidasId'] ?? ''),
-			'signatory' => $signatory,
+			'signatory' => $signer['signatory'],
 			'signingMoment' => (string)($signature['signingMoment'] ?? ''),
 			'kind' => 'gekwalificeerde-elektronische-handtekening',
 			'certificateSerialNumber' => (string)($signature['certificateSerialNumber'] ?? ''),
 			'validationRapportId' => (string)($signature['validationRapportId'] ?? ''),
 		];
 		$decision['compositeContent']['fileId'] = (string)($signature['signedBestandId'] ?? $fileId);
-		$decision['currentStatus'] = 'signed';
 
-		$saved = $this->repository->save(decision: $decision);
+		return $decision;
+	}//end withSignature()
+
+	/**
+	 * Log the transition to signed, with the TSP's report as evidence.
+	 *
+	 * @param string                                                  $decisionId The beschikking UUID.
+	 * @param string                                                  $current    The status before signing.
+	 * @param array{signatory: string, validationRapportId: string}   $signed     The signature written onto the beschikking.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T08
+	 */
+	private function logSigned(string $decisionId, string $current, array $signed): void {
 		$this->stateMachine->logTransition(
 			$decisionId,
 			$current,
 			'signed',
 			[
-				'actor' => $signatory,
+				'actor' => $signed['signatory'],
 				'actorType' => 'employee',
 				'trigger' => 'manual',
-				'evidenceMaterial' => [
-					'kind' => 'tsp-handtekening-rapport',
-					'rapportId' => (string)($signature['validationRapportId'] ?? ''),
-				],
+				'evidenceMaterial' => ['kind' => 'tsp-handtekening-rapport', 'rapportId' => $signed['validationRapportId']],
 			],
 		);
-
-		return $saved;
-	}//end onderteken()
+	}//end logSigned()
 
 	/**
 	 * Send the beschikking to the requester and, only when a transport took it, transition to sent. [T09]
@@ -364,14 +472,44 @@ class BeschikkingService {
 	 * @throws RuntimeException On a missing beschikking or invalid transition.
 	 * @throws RefusedException When no transport took the beschikking.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T09
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-records-the-day-its-decision-was-sent-req-cap-001
 	 */
 	public function verzend(string $decisionId, string $actor): array {
-		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
-		$current = (string)($decision['currentStatus'] ?? '');
+		$run = new BeschikkingSendRun(decisionId: $decisionId, actor: $actor);
+		$this->prepareSending(run: $run);
+		$this->dispatch(run: $run);
 
-		if ($this->stateMachine->validateTransition($current, 'sent') === false) {
+		$saved = $this->markSent(run: $run);
+		$this->startObjectionTerm(run: $run);
+
+		$this->stateMachine->logTransition(
+			$decisionId,
+			$run->current,
+			'sent',
+			['actor' => $actor, 'actorType' => 'employee', 'trigger' => 'manual'],
+		);
+
+		$this->sendRecorder()->delivered(run: $run, saved: $saved);
+
+		return $saved;
+	}//end verzend()
+
+	/**
+	 * Read the beschikking, refuse a send its status does not allow, and read the declared term.
+	 *
+	 * @param BeschikkingSendRun $run The send.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException On a missing beschikking or invalid transition.
+	 */
+	private function prepareSending(BeschikkingSendRun $run): void {
+		$run->decision = $this->repository->requireBeschikking(decisionId: $run->decisionId);
+		$run->current = (string)($run->decision['currentStatus'] ?? '');
+
+		if ($this->stateMachine->validateTransition($run->current, 'sent') === false) {
 			throw new RuntimeException('invalid_transition');
 		}
 
@@ -380,154 +518,102 @@ class BeschikkingService {
 		// out would leave a sent decision with no stored term. Falling back to
 		// the scheduler's six weeks keeps every case type that declares nothing
 		// behaving exactly as it did.
-		$declaredDays = $this->remedy->termDaysFor(caseId: (string)($decision['caseId'] ?? ''));
+		$run->declaredDays = $this->remedy->termDaysFor(caseId: (string)($run->decision['caseId'] ?? ''));
+	}//end prepareSending()
 
-		$dispatch = $this->delivery->deliver(decision: $decision, decisionId: $decisionId);
-		if (($dispatch['status'] ?? '') !== RequesterNoticeSender::STATUS_SENT) {
-			throw $this->notSent(decision: $decision, dispatch: $dispatch, decisionId: $decisionId);
+	/**
+	 * Hand the beschikking to the transport; refuse when no transport took it.
+	 *
+	 * @param BeschikkingSendRun $run The send, its beschikking read.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When no transport took the beschikking.
+	 */
+	private function dispatch(BeschikkingSendRun $run): void {
+		$run->dispatch = $this->delivery->deliver(decision: $run->decision, decisionId: $run->decisionId);
+		if (($run->dispatch['status'] ?? '') !== RequesterNoticeSender::STATUS_SENT) {
+			throw $this->sendRecorder()->notSent(run: $run);
 		}
+	}//end dispatch()
 
-		$bekendmaking = (new DateTimeImmutable())->format('Y-m-d');
-		$term = $this->bezwaarScheduler->computeTermijn(
-			bekendmaking: $bekendmaking,
-			termDays: $declaredDays,
+	/**
+	 * Store the beschikking as sent today, with the objection term that day starts.
+	 *
+	 * @param BeschikkingSendRun $run The send, its beschikking dispatched.
+	 *
+	 * @return array<string, mixed> The saved beschikking.
+	 */
+	private function markSent(BeschikkingSendRun $run): array {
+		$run->announcedOn = (new DateTimeImmutable())->format('Y-m-d');
+		$run->term = $this->bezwaarScheduler->computeTermijn(
+			bekendmaking: $run->announcedOn,
+			termDays: $run->declaredDays,
 		);
+
+		return $this->repository->save(decision: $this->sentDecision(run: $run));
+	}//end markSent()
+
+	/**
+	 * The beschikking as sent: what the transport answered, the day and the term.
+	 *
+	 * @param BeschikkingSendRun $run The send, its term computed.
+	 *
+	 * @return array<string, mixed> The beschikking to save.
+	 */
+	private function sentDecision(BeschikkingSendRun $run): array {
+		$decision = $run->decision;
 
 		// What the transport answered, not a channel we picked: the channel
 		// that took it and the message id it gave back.
 		$decision['dispatch'] = [
-			'notificationChannel' => (string)($dispatch['channel'] ?? ''),
-			'messageId' => (string)($dispatch['messageId'] ?? ''),
-			'sentAt' => (string)($dispatch['sentAt'] ?? ''),
+			'notificationChannel' => (string)($run->dispatch['channel'] ?? ''),
+			'messageId' => (string)($run->dispatch['messageId'] ?? ''),
+			'sentAt' => (string)($run->dispatch['sentAt'] ?? ''),
 		];
-		$decision['announcementDate'] = $bekendmaking;
-		$decision['objectionTermEndDate'] = $term['endDate'];
-		$decision['reminderDate'] = $term['herinnering'];
+		$decision['announcementDate'] = $run->announcedOn;
+		$decision['objectionTermEndDate'] = $run->term['endDate'];
+		$decision['reminderDate'] = $run->term['herinnering'];
 		$decision['currentStatus'] = 'sent';
 
-		$saved = $this->repository->save(decision: $decision);
-
-		$this->bezwaarScheduler->createBezwaarTrigger(
-			decisionId: $decisionId,
-			bekendmaking: $bekendmaking,
-			endDate: $term['endDate'],
-			herinnering: $term['herinnering'],
-		);
-
-		// The clock, beside the trigger. The trigger is the scheduling record
-		// that fires a reminder; the term instance is what the CASE answers
-		// "is this decision still open to bezwaar" from, without anybody doing
-		// arithmetic against a date on a document (REQ-DEC-04).
-		$this->remedy->bindTerm(
-			caseId: (string)($decision['caseId'] ?? ''),
-			decisionId: $decisionId,
-			sentOn: new DateTimeImmutable($bekendmaking),
-		);
-
-		$this->stateMachine->logTransition(
-			$decisionId,
-			$current,
-			'sent',
-			['actor' => $actor, 'actorType' => 'employee', 'trigger' => 'manual'],
-		);
-
-		$this->recordDelivery(decision: $saved, channel: (string)($dispatch['channel'] ?? ''), decisionId: $decisionId);
-
-		return $saved;
-	}//end verzend()
+		return $decision;
+	}//end sentDecision()
 
 	/**
-	 * Put the delivered beschikking on the case timeline, for both readers.
+	 * Start the objection term: the trigger that fires the reminder, and the clock on the case.
 	 *
-	 * PUBLIC BY CONSTRUCTION, NOT BY A TICKED BOX. The applicant is holding
-	 * this letter: a transport took it and answered with its own message id,
-	 * and the weeks they have to object started the day it went. A timeline
-	 * that showed them everything except the decision they are objecting to
-	 * would be the one entry worth hiding least.
+	 * The trigger is the scheduling record that fires a reminder; the term
+	 * instance is what the CASE answers "is this decision still open to
+	 * bezwaar" from, without anybody doing arithmetic against a date on a
+	 * document (REQ-DEC-04).
 	 *
-	 * The entry carries the channel and the day it went, and nothing about the
-	 * addressee. Who it was sent to is on the beschikking; a public line is the
-	 * last place to repeat it.
-	 *
-	 * @param array<string, mixed> $decision   The saved beschikking.
-	 * @param string               $channel    The channel whose transport took it.
-	 * @param string               $decisionId The beschikking uuid.
+	 * @param BeschikkingSendRun $run The send, its beschikking saved.
 	 *
 	 * @return void
-	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
 	 */
-	private function recordDelivery(array $decision, string $channel, string $decisionId): void {
-		$caseId = trim((string)($decision['caseId'] ?? ''));
-		if ($caseId === '') {
-			return;
-		}
-
-		$this->timeline->record(
-			caseId: $caseId,
-			kind: TimelineKinds::DECISION_SENT,
-			message: 'Beschikking verzonden',
-			fields: [
-				'channel' => $channel,
-				'sentOn' => (string)($decision['announcementDate'] ?? ''),
-				'decisionType' => (string)($decision['decisionType'] ?? ''),
-				'reference' => (string)($decision['reference'] ?? ''),
-				'beschikkingId' => $decisionId,
-			],
-			visibility: CaseTimeline::PUBLIC_ENTRY,
+	private function startObjectionTerm(BeschikkingSendRun $run): void {
+		$this->bezwaarScheduler->createBezwaarTrigger(
+			decisionId: $run->decisionId,
+			bekendmaking: $run->announcedOn,
+			endDate: $run->term['endDate'],
+			herinnering: $run->term['herinnering'],
 		);
-	}//end recordDelivery()
+
+		$caseId = (string)($run->decision['caseId'] ?? '');
+		$this->remedy->bindTerm(caseId: $caseId, decisionId: $run->decisionId, sentOn: new DateTimeImmutable($run->announcedOn));
+		$this->remedy->recordSent(caseId: $caseId, sentOn: new DateTimeImmutable($run->announcedOn));
+	}//end startObjectionTerm()
 
 	/**
-	 * The refusal for a beschikking no transport took, after an internal line says so.
+	 * The recorder of a send's outcome on the case timeline, built on first use.
 	 *
-	 * INTERNAL, never public: the citizen's timeline must not read that the
-	 * decision was sent. The handler reads why on the case.
-	 *
-	 * @param array<string, mixed> $decision   The beschikking.
-	 * @param array<string, mixed> $dispatch   The sender's not-sent result.
-	 * @param string               $decisionId The beschikking uuid.
-	 *
-	 * @return RefusedException The refusal, carrying the transport's sentence.
-	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 * @return BeschikkingSendRecorder
 	 */
-	private function notSent(array $decision, array $dispatch, string $decisionId): RefusedException {
-		$code = (string)($dispatch['reasonCode'] ?? 'not-sent');
-		$reason = (string)($dispatch['reason'] ?? 'No transport took the beschikking, so it was not sent.');
+	private function sendRecorder(): BeschikkingSendRecorder {
+		$this->sendRecorder ??= new BeschikkingSendRecorder(timeline: $this->timeline);
 
-		$caseId = trim((string)($decision['caseId'] ?? ''));
-		if ($caseId !== '') {
-			$this->timeline->record(
-				caseId: $caseId,
-				kind: TimelineKinds::DECISION_SENT,
-				message: 'Beschikking niet verzonden',
-				fields: [
-					'reasonCode' => $code,
-					'reason' => $reason,
-					'channelsTried' => count((array)($dispatch['channelsTried'] ?? [])),
-					'reference' => (string)($decision['reference'] ?? ''),
-					'beschikkingId' => $decisionId,
-				],
-				visibility: CaseTimeline::INTERNAL,
-			);
-		}
-
-		if ($code === 'no-channel') {
-			return new RefusedException(
-				rule: 'beschikking-no-address',
-				sentence: 'This case has no address for the requester, so the beschikking was not sent. '
-					. 'Add an address, then send it again.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return new RefusedException(
-			rule: 'beschikking-not-sent',
-			sentence: $reason,
-			status: RefusedException::STATUS_INDETERMINATE,
-		);
-	}//end notSent()
+		return $this->sendRecorder;
+	}//end sendRecorder()
 
 	/**
 	 * Field-edit a beschikking, honouring the immutability contract. [T11]
@@ -539,7 +625,7 @@ class BeschikkingService {
 	 *
 	 * @throws RuntimeException 'immutable' when the beschikking is ondertekend or later and a content field is touched.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T11
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T11
 	 */
 	public function updateFields(string $decisionId, array $updates): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
@@ -568,7 +654,7 @@ class BeschikkingService {
 	 *
 	 * @return bool True when the level may sign this decision within its limit.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T14
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T14
 	 */
 	public function verifyMandaat(
 		array $regeling,
@@ -597,7 +683,7 @@ class BeschikkingService {
 	 *
 	 * @throws RuntimeException On a missing beschikking or when ZIP support is unavailable.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T10
 	 */
 	public function exportAuditPacket(string $decisionId): string {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
@@ -614,17 +700,39 @@ class BeschikkingService {
 	 *
 	 * @throws RuntimeException On a missing beschikking or invalid transition.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T13
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T13
 	 */
 	public function archive(string $decisionId): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
 		$current = (string)($decision['currentStatus'] ?? '');
 
-		if ($this->stateMachine->validateTransition($current, 'archived') === false) {
-			throw new RuntimeException('invalid_transition');
-		}
+		$this->requireTransition(current: $current, target: 'archived');
 
-		$metadata = [
+		$metadata = $this->tmloMetadata(decision: $decision);
+
+		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
+		$result = $this->archivalAdapter->ingest($decisionId, $fileId, $metadata);
+
+		$decision['archive'] = $this->archiveRecord(result: $result, metadata: $metadata);
+		$decision['currentStatus'] = 'archived';
+
+		$saved = $this->repository->save(decision: $decision);
+		$this->stateMachine->logTransition($decisionId, $current, 'archived', ['actor' => 'systeem', 'actorType' => 'systeem', 'trigger' => 'automatic']);
+
+		return $saved;
+	}//end archive()
+
+	/**
+	 * The TMLO metadata the beschikking is archived with.
+	 *
+	 * @param array<string, mixed> $decision The beschikking.
+	 *
+	 * @return array<string, string> The TMLO metadata.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T13
+	 */
+	private function tmloMetadata(array $decision): array {
+		return [
 			'schema' => 'TMLO-1.2',
 			'identificatieKenmerk' => (string)($decision['reference'] ?? ''),
 			'aggregatieniveau' => 'Archiefstuk',
@@ -633,28 +741,26 @@ class BeschikkingService {
 			'vertrouwelijkheid' => 'vertrouwelijk',
 			'bewaartermijn' => 'P15Y',
 		];
+	}//end tmloMetadata()
 
-		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
-		$result = $this->archivalAdapter->ingest($decisionId, $fileId, $metadata);
-
-		$decision['archive'] = [
+	/**
+	 * The `archive` record of an ingested beschikking.
+	 *
+	 * @param array<string, mixed>  $result   What the archive answered.
+	 * @param array<string, string> $metadata The TMLO metadata.
+	 *
+	 * @return array<string, mixed> The archive record.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T13
+	 */
+	private function archiveRecord(array $result, array $metadata): array {
+		return [
 			'archivedOn' => (new DateTimeImmutable())->format('c'),
 			'archiveId' => (string)$result['archiveId'],
 			'tmloMetadata' => $metadata,
 			'destructionDate' => (string)$result['destructionDate'],
 		];
-		$decision['currentStatus'] = 'archived';
-
-		$saved = $this->repository->save(decision: $decision);
-		$this->stateMachine->logTransition(
-			$decisionId,
-			$current,
-			'archived',
-			['actor' => 'systeem', 'actorType' => 'systeem', 'trigger' => 'automatic'],
-		);
-
-		return $saved;
-	}//end archive()
+	}//end archiveRecord()
 
 	/**
 	 * Issue a successor to a signed beschikking.
@@ -674,6 +780,52 @@ class BeschikkingService {
 	 * @spec openspec/specs/numbered-document-series/spec.md
 	 */
 	public function issueSuccessor(string $originalId, string $kind, array $overrides = [], ?string $templateId = null): array {
+		return $this->issue(
+			request: new SuccessorRequest(originalId: $originalId, kind: $kind, overrides: $overrides, templateId: $templateId)
+		);
+	}//end issueSuccessor()
+
+	/**
+	 * Issue the successor a request describes, as issueSuccessor() does.
+	 *
+	 * @param SuccessorRequest $request The original, the kind, the written content and the template.
+	 *
+	 * @return array<string, mixed> The successor, a draft with its own number.
+	 *
+	 * @throws RefusedException 422 for an unknown kind; 409 when the original is
+	 *                          still a draft or has already been replaced.
+	 * @throws \RuntimeException 'not_found' when the original does not exist.
+	 */
+	private function issue(SuccessorRequest $request): array {
+		$this->refuseAnUnknownKind(kind: $request->kind);
+
+		$original = $this->repository->requireBeschikking(decisionId: $request->originalId);
+		$this->refuseASuccessorOfADraft(original: $original);
+		$this->refuseASecondSuccessor(original: $original);
+
+		$successor = $this->compose(
+			caseId: $this->successorCaseIdOf(original: $original),
+			templateId: ($request->templateId ?? $this->successorTemplateOf(original: $original)),
+			overrides: $this->successorFields(original: $original, request: $request),
+		);
+
+		$original['id'] = $request->originalId;
+		$original['supersededBy'] = (string)($successor['id'] ?? '');
+		$this->repository->save(decision: $original);
+
+		return $successor;
+	}//end issue()
+
+	/**
+	 * Refuse a kind that is neither a wijzigings- nor an intrekkingsbeschikking.
+	 *
+	 * @param string $kind The successor kind.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException 422 for an unknown kind.
+	 */
+	private function refuseAnUnknownKind(string $kind): void {
 		if (in_array($kind, self::SUCCESSOR_KINDS, true) === false) {
 			throw new RefusedException(
 				rule: 'successor-kind-unknown',
@@ -681,30 +833,25 @@ class BeschikkingService {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end refuseAnUnknownKind()
 
-		$original = $this->repository->requireBeschikking(decisionId: $originalId);
-
+	/**
+	 * Refuse a successor to a beschikking that has not been signed.
+	 *
+	 * @param array<string, mixed> $original The stored original.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException 409 when the original is still a draft.
+	 */
+	private function refuseASuccessorOfADraft(array $original): void {
 		if ($this->stateMachine->isImmutable(status: (string)($original['currentStatus'] ?? '')) === false) {
 			throw new RefusedException(
 				rule: 'successor-of-a-draft',
 				sentence: 'This beschikking has not been signed yet. Change the draft instead of issuing a correction.',
 			);
 		}
-
-		$this->refuseASecondSuccessor(original: $original);
-
-		$successor = $this->compose(
-			caseId: $this->successorCaseIdOf(original: $original),
-			templateId: ($templateId ?? $this->successorTemplateOf(original: $original)),
-			overrides: $this->successorFields(original: $original, kind: $kind, overrides: $overrides, originalId: $originalId),
-		);
-
-		$original['id'] = $originalId;
-		$original['supersededBy'] = (string)($successor['id'] ?? '');
-		$this->repository->save(decision: $original);
-
-		return $successor;
-	}//end issueSuccessor()
+	}//end refuseASuccessorOfADraft()
 
 	/**
 	 * Refuse when the original already names a successor, and name that one.
@@ -739,17 +886,16 @@ class BeschikkingService {
 	 * The addressee carries over unless the correction names another: the
 	 * person who received the original is who the correction is for.
 	 *
-	 * @param array<string, mixed> $original   The stored original.
-	 * @param string               $kind       The successor kind.
-	 * @param array<string, mixed> $overrides  What the handler wrote.
-	 * @param string               $originalId The original's id.
+	 * @param array<string, mixed> $original The stored original.
+	 * @param SuccessorRequest     $request  The kind, the original's id and what the handler wrote.
 	 *
 	 * @return array<string, mixed> The compose overrides.
 	 */
-	private function successorFields(array $original, string $kind, array $overrides, string $originalId): array {
+	private function successorFields(array $original, SuccessorRequest $request): array {
+		$overrides = $request->overrides;
 		$fields = [
-			'decisionType' => $kind,
-			'supersedes' => $originalId,
+			'decisionType' => $request->kind,
+			'supersedes' => $request->originalId,
 			'addressee' => (array)($overrides['addressee'] ?? ($original['addressee'] ?? [])),
 		];
 

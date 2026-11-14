@@ -16,8 +16,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Flow;
 
-use OCA\Dossiq\Service\Bezwaar\CommitteeDelegationService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CommitteeDelegationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCP\IL10N;
 use OCP\WorkflowEngine\IManager;
@@ -69,8 +70,8 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
     /**
      * Constructor.
      *
-     * @param CommitteeDelegationService $delegation Raises the body in the decision app.
-     * @param SettingsService            $settings   Resolves OpenRegister and the schema slugs.
+     * @param CommitteeDelegationServiceInterface $delegation Raises the body in the decision app.
+     * @param SettingsServiceInterface            $settings   Resolves OpenRegister and the schema slugs.
      * @param IL10N                      $l10n       The localisation service.
      * @param LoggerInterface            $logger     The logger.
      *
@@ -79,8 +80,8 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
      * @spec openspec/changes/migrate-committees-to-decidiq/specs/migrate-committees-to-decidiq/spec.md
      */
     public function __construct(
-        private readonly CommitteeDelegationService $delegation,
-        private readonly SettingsService $settings,
+        private readonly CommitteeDelegationServiceInterface $delegation,
+        private readonly SettingsServiceInterface $settings,
         private readonly IL10N $l10n,
         private readonly LoggerInterface $logger,
     ) {
@@ -183,9 +184,7 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
     /**
      * Resolve each item's committee and stamp the governance-body id on it.
      *
-     * @param array $items   The input items.
-     * @param array $config  The step configuration.
-     * @param array $context Run-level metadata.
+     * @param FlowNodeCall $call The items, the step config and the run context.
      *
      * @return array The items, each carrying the resolved id.
      *
@@ -197,7 +196,9 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
      * contract; the run's acting identity in it is applied by the engine's
      * dispatcher now (openregister#3332), not read here.
      */
-    public function execute(array $items, array $config, array $context): array {
+    public function execute(FlowNodeCall $call): array {
+        $items = $call->items;
+        $config = $call->config;
         $this->validateConfig(config: $config);
 
         $field     = $this->configString(config: $config, key: 'committeeField', fallback: self::DEFAULT_COMMITTEE_FIELD);
@@ -315,25 +316,15 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
      * @return void
      */
     private function recordMapping(array $committee, string $bodyId): void {
-        $objectService = $this->settings->getObjectService();
-        if ($objectService === null) {
+        $target = $this->committeeTarget(committee: $committee);
+        if ($target === null) {
             return;
         }
 
-        $register = $this->settings->getConfigValue(key: 'register');
-        $schema   = $this->settings->getConfigValue(key: 'bezwaaradviescommissie_schema');
-        $id       = $this->referenceOf(value: ($committee['id'] ?? ($committee['@self']['id'] ?? null)));
-        if ($register === '' || $schema === '' || $id === '') {
-            return;
-        }
-
+        [$objectService, $register, $schema, $id] = $target;
         try {
-            $objectService->saveObject(
-                object: array_merge($committee, ['governanceBodyId' => $bodyId]),
-                register: $register,
-                schema: $schema,
-                uuid: $id,
-            );
+            $object = array_merge($committee, ['governanceBodyId' => $bodyId]);
+            $objectService->saveObject(object: $object, register: $register, schema: $schema, uuid: $id);
         } catch (Throwable $e) {
             $this->logger->warning(
                 'Dossiq ensureCommittee: could not record the governance-body id; the next run will re-resolve it',
@@ -342,6 +333,31 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
         }
 
     }//end recordMapping()
+
+
+    /**
+     * The object service, register, schema and id to write a committee row to.
+     *
+     * @param array $committee The committee row.
+     *
+     * @return array{0: object, 1: string, 2: string, 3: string}|null Null when one is unavailable.
+     */
+    private function committeeTarget(array $committee): array|null {
+        $objectService = $this->settings->getObjectService();
+        if ($objectService === null) {
+            return null;
+        }
+
+        $register = $this->settings->getConfigValue(key: 'register');
+        $schema   = $this->settings->getConfigValue(key: 'bezwaaradviescommissie_schema');
+        $id       = $this->referenceOf(value: ($committee['id'] ?? ($committee['@self']['id'] ?? null)));
+        if ($register === '' || $schema === '' || $id === '') {
+            return null;
+        }
+
+        return [$objectService, $register, $schema, $id];
+
+    }//end committeeTarget()
 
 
     /**

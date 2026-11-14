@@ -85,7 +85,7 @@ The system SHALL manage hearing participants with appropriate access rights as d
 
 - **WHEN** the bezwaarmaker is invited to a hearing
 - **THEN** the invitation SHALL state that they may bring a gemachtigde (authorized representative)
-- **AND** the system SHALL allow adding a "Vertegenwoordiger" role to the case for the gemachtigde
+- **AND** the system SHALL allow adding a "Gemachtigde" role to the case for the gemachtigde
 
 #### Scenario: Bezwaarmaker may inspect case documents before hearing
 

@@ -26,7 +26,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Controller\Support\ApplicatieDirectory;
+use OCA\Dossiq\Controller\Support\ApplicatieRepresentation;
+use OCA\Dossiq\Controller\Support\ApplicatieRules;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -47,24 +50,32 @@ use OCP\IRequest;
  * @spec openspec/specs/zgw-autorisaties-api/spec.md
  *
  * @psalm-suppress UnusedClass
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.CyclomaticComplexity)
- * @SuppressWarnings(PHPMD.NPathComplexity)
  */
 class AcController extends ZgwController {
+	/**
+	 * The consumer fields an update body may set (L2: no mass-assignment).
+	 *
+	 * @var array<int, string>
+	 */
+	private const UPDATABLE_CONSUMER_FIELDS = [
+		'name',
+		'description',
+		'authorizationType',
+		'authorizationConfiguration',
+	];
+
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The incoming request.
-	 * @param ZgwService $zgwService The shared ZGW service.
+	 * @param ZgwServiceInterface $zgwService The shared ZGW service.
 	 * @param IL10N $l10n The localization service.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ZgwService $zgwService,
+		private readonly ZgwServiceInterface $zgwService,
 		private readonly IL10N $l10n,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -116,51 +127,13 @@ class AcController extends ZgwController {
 				'status' => Http::STATUS_FORBIDDEN,
 				'detail' => sprintf(
 					'Consumer %s heeft scope %s niet.',
-					$this->clientIdOf(presentedToken: $presentedToken),
+					$this->directory()->clientIdOf(presentedToken: $presentedToken),
 					$scope
 				),
 			],
 			statusCode: Http::STATUS_FORBIDDEN
 		);
 	}//end requireAcScope()
-
-	/**
-	 * Read the client_id out of the token the caller presented.
-	 *
-	 * Only for the refusal message. A 403 that says nothing but "scope X is
-	 * required" leaves an integrator guessing which of their consumers made the
-	 * call, and `consumerHasScope()` answers false for four different reasons
-	 * without distinguishing them.
-	 *
-	 * Nothing here is trusted: the signature was already verified by
-	 * {@see ZgwService::validateJwtAuth()} before this runs, and a token this
-	 * cannot read yields "onbekend" rather than an error.
-	 *
-	 * @param string $presentedToken The bearer token, without its scheme
-	 *
-	 * @return string The client_id, or 'onbekend' when it cannot be read
-	 *
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 */
-	private function clientIdOf(string $presentedToken): string {
-		$parts = explode('.', $presentedToken);
-		if (count($parts) !== 3) {
-			return 'onbekend';
-		}
-
-		$payload = json_decode((string)base64_decode($parts[1], true), true);
-		if (is_array($payload) === false) {
-			return 'onbekend';
-		}
-
-		$clientId = ($payload['client_id'] ?? ($payload['iss'] ?? null));
-
-		if (is_string($clientId) === false || $clientId === '') {
-			return 'onbekend';
-		}
-
-		return $clientId;
-	}//end clientIdOf()
 
 	/**
 	 * List all applicaties, optionally filtered by clientId.
@@ -176,66 +149,27 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
 			return $authError;
 		}
 
-		if ($this->zgwService->getConsumerMapper() === null) {
-			return new JSONResponse(
-				data: ['detail' => 'Consumer service not available'],
-				statusCode: Http::STATUS_SERVICE_UNAVAILABLE
-			);
+		$unavailable = $this->consumerServiceUnavailable();
+		if ($unavailable !== null) {
+			return $unavailable;
 		}
 
 		try {
-			$clientId = $this->request->getParam('clientId');
-			$clientIds = $this->request->getParam('clientIds');
-			$filterClientId = null;
-
-			if ($clientId !== null && $clientId !== '') {
-				$filterClientId = $clientId;
-			} elseif ($clientIds !== null && $clientIds !== '') {
-				$filterClientId = $clientIds;
-			}
-
-			$consumers = $this->zgwService->getConsumerMapper()->findAll();
-
-			if ($filterClientId !== null) {
-				// Search by name (primary clientId) first.
-				$consumers = $this->zgwService->getConsumerMapper()->findAll(
-					filters: ['name' => $filterClientId]
-				);
-
-				// Also search all consumers for extra clientIds stored in authConfig.
-				if (count($consumers) === 0) {
-					$allConsumers = $this->zgwService->getConsumerMapper()->findAll();
-					foreach ($allConsumers as $consumer) {
-						$authConfig = $consumer->getAuthorizationConfiguration() ?? [];
-						$extraClientIds = $authConfig['clientIds'] ?? [];
-						if (in_array($filterClientId, $extraClientIds, true) === true) {
-							$consumers[] = $consumer;
-						}
-					}
-				}
-			}
-
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, 'autorisaties', 'applicaties');
-			$results = [];
-			foreach ($consumers as $consumer) {
-				$results[] = $this->consumerToApplicatie(consumer: $consumer, baseUrl: $baseUrl);
-			}
-
-			return new JSONResponse(
-				data: [
-					'count' => count($results),
-					'next' => null,
-					'previous' => null,
-					'results' => $results,
-				]
+			$directory = $this->directory();
+			$filterClientId = $directory->requestedClientId(
+				clientId: $this->request->getParam('clientId'),
+				clientIds: $this->request->getParam('clientIds')
 			);
+			$consumers = $directory->listConsumers(filterClientId: $filterClientId);
+
+			return $this->applicatieList(consumers: $consumers);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error('AC list error: ' . $e->getMessage(), ['exception' => $e]);
 
@@ -245,6 +179,32 @@ class AcController extends ZgwController {
 			);
 		}//end try
 	}//end index()
+
+	/**
+	 * Answer with consumers as a ZGW list of applicaties.
+	 *
+	 * @param array $consumers The consumers listed
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
+	 */
+	private function applicatieList(array $consumers): JSONResponse {
+		$baseUrl = $this->applicatieBaseUrl();
+		$results = [];
+		foreach ($consumers as $consumer) {
+			$results[] = $this->representation()->toApplicatie(consumer: $consumer, baseUrl: $baseUrl);
+		}
+
+		return new JSONResponse(
+			data: [
+				'count' => count($results),
+				'next' => null,
+				'previous' => null,
+				'results' => $results,
+			]
+		);
+	}//end applicatieList()
 
 	/**
 	 * Create a new applicatie.
@@ -261,11 +221,11 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function create(): JSONResponse {
 		// C2: Gate writes on the ac.aanmaken scope. The credential, the refusal and
 		// the ZGW error body all live in requireAcScope().
-		$refused = $this->requireAcScope(
+		$refused = $this->guardWrite(
 			scope: 'ac.aanmaken',
 			title: 'U heeft geen toestemming om autorisaties aan te maken.'
 		);
@@ -273,54 +233,22 @@ class AcController extends ZgwController {
 			return $refused;
 		}
 
-		if ($this->zgwService->getConsumerMapper() === null) {
-			return new JSONResponse(
-				data: ['detail' => 'Consumer service not available'],
-				statusCode: Http::STATUS_SERVICE_UNAVAILABLE
-			);
-		}
-
 		try {
 			$body = $this->zgwService->getRequestBody($this->request);
 
 			// C2: Block setting superuser=true unless the requesting consumer is itself a superuser.
-			if (($body['heeftAlleAutorisaties'] ?? false) === true
-				&& $this->zgwService->consumerHasScope($this->request, 'ac', 'ac.superuser') === false
-			) {
-				return new JSONResponse(
-					data: [
-						'invalidParams' => [
-							[
-								'name' => 'heeftAlleAutorisaties',
-								'code' => 'permission_denied',
-								'reason' => 'Alleen superuser-consumers mogen heeftAlleAutorisaties op true zetten.',
-							],
-						],
-					],
-					statusCode: Http::STATUS_FORBIDDEN
-				);
+			// Then run the AC business rules validation.
+			$invalid = ($this->refuseSuperuserEscalation(body: $body) ?? $this->rules()->validateApplicatieBody(body: $body));
+			if ($invalid !== null) {
+				return $invalid;
 			}
 
-			// Run AC business rules validation.
-			$validationError = $this->validateApplicatieBody(body: $body);
-			if ($validationError !== null) {
-				return $validationError;
-			}
-
-			$consumerData = $this->applicatieToConsumer(body: $body);
+			$consumerData = $this->representation()->toConsumer(body: $body);
 			$consumer = $this->zgwService->getConsumerMapper()->createFromArray(object: $consumerData);
 
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, 'autorisaties', 'applicaties');
-			$mapped = $this->consumerToApplicatie(consumer: $consumer, baseUrl: $baseUrl);
-
-			return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
+			return $this->applicatieResponse(consumer: $consumer, statusCode: Http::STATUS_CREATED);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error('AC create error: ' . $e->getMessage(), ['exception' => $e]);
-
-			return new JSONResponse(
-				data: ['detail' => $e->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->failedWrite(context: 'AC create error: ', exception: $e);
 		}//end try
 	}//end create()
 
@@ -340,7 +268,7 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function show(string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -351,33 +279,22 @@ class AcController extends ZgwController {
 			return $this->index();
 		}
 
-		if ($this->zgwService->getConsumerMapper() === null) {
-			return new JSONResponse(
-				data: ['detail' => 'Consumer service not available'],
-				statusCode: Http::STATUS_SERVICE_UNAVAILABLE
-			);
+		$unavailable = $this->consumerServiceUnavailable();
+		if ($unavailable !== null) {
+			return $unavailable;
 		}
 
 		try {
 			$consumer = $this->findConsumerByUuid(uuid: $uuid);
 			if ($consumer === null) {
-				return new JSONResponse(
-					data: ['detail' => 'Not found'],
-					statusCode: Http::STATUS_NOT_FOUND
-				);
+				return $this->notFound();
 			}
 
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, 'autorisaties', 'applicaties');
-			$mapped = $this->consumerToApplicatie(consumer: $consumer, baseUrl: $baseUrl);
-
-			return new JSONResponse(data: $mapped);
+			return $this->applicatieResponse(consumer: $consumer, statusCode: Http::STATUS_OK);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error('AC show error: ' . $e->getMessage(), ['exception' => $e]);
 
-			return new JSONResponse(
-				data: ['detail' => 'Not found'],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
+			return $this->notFound();
 		}//end try
 	}//end show()
 
@@ -395,11 +312,11 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $uuid): JSONResponse {
 		// C2: Gate writes on the ac.bijwerken scope. The credential, the refusal and
 		// the ZGW error body all live in requireAcScope().
-		$refused = $this->requireAcScope(
+		$refused = $this->guardWrite(
 			scope: 'ac.bijwerken',
 			title: 'U heeft geen toestemming om autorisaties bij te werken.'
 		);
@@ -407,78 +324,56 @@ class AcController extends ZgwController {
 			return $refused;
 		}
 
-		if ($this->zgwService->getConsumerMapper() === null) {
-			return new JSONResponse(
-				data: ['detail' => 'Consumer service not available'],
-				statusCode: Http::STATUS_SERVICE_UNAVAILABLE
-			);
-		}
-
 		try {
 			$consumer = $this->findConsumerByUuid(uuid: $uuid);
 			if ($consumer === null) {
-				return new JSONResponse(
-					data: ['detail' => 'Not found'],
-					statusCode: Http::STATUS_NOT_FOUND
-				);
+				return $this->notFound();
 			}
 
 			$body = $this->zgwService->getRequestBody($this->request);
 
 			// C1: Block setting heeftAlleAutorisaties=true unless caller has ac.superuser scope.
-			if (($body['heeftAlleAutorisaties'] ?? false) === true
-				&& $this->zgwService->consumerHasScope($this->request, 'ac', 'ac.superuser') === false
-			) {
-				return new JSONResponse(
-					data: [
-						'invalidParams' => [
-							[
-								'name' => 'heeftAlleAutorisaties',
-								'code' => 'permission_denied',
-								'reason' => 'Alleen superuser-consumers mogen heeftAlleAutorisaties op true zetten.',
-							],
-						],
-					],
-					statusCode: Http::STATUS_FORBIDDEN
-				);
+			$escalation = $this->refuseSuperuserEscalation(body: $body);
+			if ($escalation !== null) {
+				return $escalation;
 			}
 
-			$consumerData = $this->applicatieToConsumer(body: $body);
-
-			// L2: Only apply setters for known consumer fields to prevent reflection-based
-			// mass-assignment from arbitrary body keys.
-			$allowedSetterKeys = [
-				'name',
-				'description',
-				'authorizationType',
-				'authorizationConfiguration',
-			];
-
-			foreach ($consumerData as $key => $value) {
-				if (in_array($key, $allowedSetterKeys, true) === false) {
-					continue;
-				}
-
-				$setter = 'set' . ucfirst($key);
-				if (method_exists($consumer, $setter) === true) {
-					$consumer->$setter($value);
-				}
-			}
+			$consumerData = $this->representation()->toConsumer(body: $body);
+			$this->applyConsumerFields(consumer: $consumer, consumerData: $consumerData);
 
 			$updated = $this->zgwService->getConsumerMapper()->update(entity: $consumer);
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, 'autorisaties', 'applicaties');
-			$mapped = $this->consumerToApplicatie(consumer: $updated, baseUrl: $baseUrl);
 
-			return new JSONResponse(data: $mapped);
+			return $this->applicatieResponse(consumer: $updated, statusCode: Http::STATUS_OK);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error('AC update error: ' . $e->getMessage(), ['exception' => $e]);
-
-			return new JSONResponse(
-				data: ['detail' => $e->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->failedWrite(context: 'AC update error: ', exception: $e);
 		}//end try
 	}//end update()
+
+	/**
+	 * Apply the known consumer fields of an applicatie body to a consumer.
+	 *
+	 * L2: Only apply setters for known consumer fields to prevent reflection-based
+	 * mass-assignment from arbitrary body keys.
+	 *
+	 * @param object $consumer     The consumer entity being updated
+	 * @param array  $consumerData The consumer data built from the body
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
+	 */
+	private function applyConsumerFields(object $consumer, array $consumerData): void {
+		foreach ($consumerData as $key => $value) {
+			if (in_array($key, self::UPDATABLE_CONSUMER_FIELDS, true) === false) {
+				continue;
+			}
+
+			$setter = 'set' . ucfirst($key);
+			if (method_exists($consumer, $setter) === true) {
+				$consumer->$setter($value);
+			}
+		}
+	}//end applyConsumerFields()
 
 	/**
 	 * Partial update (PATCH) an applicatie by UUID.
@@ -494,7 +389,7 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $uuid): JSONResponse {
 		return $this->update(uuid: $uuid);
 	}//end patch()
@@ -513,11 +408,11 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $uuid): JSONResponse {
 		// C2: Gate writes on the ac.verwijderen scope. The credential, the refusal and
 		// the ZGW error body all live in requireAcScope().
-		$refused = $this->requireAcScope(
+		$refused = $this->guardWrite(
 			scope: 'ac.verwijderen',
 			title: 'U heeft geen toestemming om autorisaties te verwijderen.'
 		);
@@ -525,34 +420,175 @@ class AcController extends ZgwController {
 			return $refused;
 		}
 
-		if ($this->zgwService->getConsumerMapper() === null) {
-			return new JSONResponse(
-				data: ['detail' => 'Consumer service not available'],
-				statusCode: Http::STATUS_SERVICE_UNAVAILABLE
-			);
-		}
-
 		try {
 			$consumer = $this->findConsumerByUuid(uuid: $uuid);
 			if ($consumer === null) {
-				return new JSONResponse(
-					data: ['detail' => 'Not found'],
-					statusCode: Http::STATUS_NOT_FOUND
-				);
+				return $this->notFound();
 			}
 
 			$this->zgwService->getConsumerMapper()->delete(entity: $consumer);
 
 			return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error('AC delete error: ' . $e->getMessage(), ['exception' => $e]);
-
-			return new JSONResponse(
-				data: ['detail' => $e->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->failedWrite(context: 'AC delete error: ', exception: $e);
 		}
 	}//end destroy()
+
+	/**
+	 * Refuse a write the caller may not make, or that cannot be served.
+	 *
+	 * The scope check runs first; only a caller holding the scope learns
+	 * whether the consumer service is available.
+	 *
+	 * @param string $scope The ac.* scope this action requires
+	 * @param string $title The ZGW error title for this action
+	 *
+	 * @return JSONResponse|null The refusal, or null when the write may proceed
+	 *
+	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
+	 */
+	private function guardWrite(string $scope, string $title): ?JSONResponse {
+		return ($this->requireAcScope(scope: $scope, title: $title) ?? $this->consumerServiceUnavailable());
+	}//end guardWrite()
+
+	/**
+	 * Answer 503 when OpenRegister's consumer mapper is not available.
+	 *
+	 * @return JSONResponse|null The 503 response, or null when the mapper is there
+	 *
+	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
+	 */
+	private function consumerServiceUnavailable(): ?JSONResponse {
+		if ($this->zgwService->getConsumerMapper() !== null) {
+			return null;
+		}
+
+		return new JSONResponse(
+			data: ['detail' => 'Consumer service not available'],
+			statusCode: Http::STATUS_SERVICE_UNAVAILABLE
+		);
+	}//end consumerServiceUnavailable()
+
+	/**
+	 * Refuse heeftAlleAutorisaties=true from a caller without the ac.superuser scope.
+	 *
+	 * @param array $body The request body
+	 *
+	 * @return JSONResponse|null The 403 refusal, or null when the body may be applied
+	 *
+	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
+	 */
+	private function refuseSuperuserEscalation(array $body): ?JSONResponse {
+		if (($body['heeftAlleAutorisaties'] ?? false) !== true
+			|| $this->zgwService->consumerHasScope($this->request, 'ac', 'ac.superuser') === true
+		) {
+			return null;
+		}
+
+		return $this->rules()->invalidParams(
+			params: [
+				[
+					'name' => 'heeftAlleAutorisaties',
+					'code' => 'permission_denied',
+					'reason' => 'Alleen superuser-consumers mogen heeftAlleAutorisaties op true zetten.',
+				],
+			],
+			statusCode: Http::STATUS_FORBIDDEN
+		);
+	}//end refuseSuperuserEscalation()
+
+	/**
+	 * The 404 every lookup by UUID answers with.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
+	 */
+	private function notFound(): JSONResponse {
+		return new JSONResponse(
+			data: ['detail' => 'Not found'],
+			statusCode: Http::STATUS_NOT_FOUND
+		);
+	}//end notFound()
+
+	/**
+	 * Log a failed write and answer 400 with its message.
+	 *
+	 * @param string     $context   The log message prefix
+	 * @param \Throwable $exception The failure
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
+	 */
+	private function failedWrite(string $context, \Throwable $exception): JSONResponse {
+		$this->zgwService->getLogger()->error($context . $exception->getMessage(), ['exception' => $exception]);
+
+		return new JSONResponse(
+			data: ['detail' => $exception->getMessage()],
+			statusCode: Http::STATUS_BAD_REQUEST
+		);
+	}//end failedWrite()
+
+	/**
+	 * The base URL applicatie URLs are built on.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
+	 */
+	private function applicatieBaseUrl(): string {
+		return $this->zgwService->buildBaseUrl($this->request, 'autorisaties', 'applicaties');
+	}//end applicatieBaseUrl()
+
+	/**
+	 * Answer with one consumer as a ZGW applicatie.
+	 *
+	 * @param object $consumer   The consumer entity
+	 * @param int    $statusCode The HTTP status
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
+	 */
+	private function applicatieResponse(object $consumer, int $statusCode): JSONResponse {
+		$mapped = $this->representation()->toApplicatie(consumer: $consumer, baseUrl: $this->applicatieBaseUrl());
+
+		return new JSONResponse(data: $mapped, statusCode: $statusCode);
+	}//end applicatieResponse()
+
+	/**
+	 * The AC business rules an applicatie body is validated against.
+	 *
+	 * @return ApplicatieRules
+	 *
+	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
+	 */
+	private function rules(): ApplicatieRules {
+		return new ApplicatieRules(zgwService: $this->zgwService, l10n: $this->l10n);
+	}//end rules()
+
+	/**
+	 * The consumer lookups the applicatie list and refusals read.
+	 *
+	 * @return ApplicatieDirectory
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	private function directory(): ApplicatieDirectory {
+		return new ApplicatieDirectory(consumerMapper: $this->zgwService->getConsumerMapper());
+	}//end directory()
+
+	/**
+	 * The mapping between OpenRegister consumers and ZGW applicaties.
+	 *
+	 * @return ApplicatieRepresentation
+	 *
+	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
+	 */
+	private function representation(): ApplicatieRepresentation {
+		return new ApplicatieRepresentation();
+	}//end representation()
 
 	/**
 	 * Find a consumer entity by its UUID.
@@ -572,404 +608,4 @@ class AcController extends ZgwController {
 		return $consumers[0];
 	}//end findConsumerByUuid()
 
-	/**
-	 * Validate an applicatie request body against AC business rules.
-	 *
-	 * Checks ac-001 (clientId uniqueness), ac-002 (heeftAlleAutorisaties
-	 * consistency), and ac-003 (scope-based field requirements).
-	 *
-	 * @param array $body The request body.
-	 * @param string|null $excludeUuid UUID to exclude from uniqueness check (for updates).
-	 *
-	 * @return JSONResponse|null Validation error response or null if valid.
-	 *
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 */
-	private function validateApplicatieBody(array $body, ?string $excludeUuid = null): ?JSONResponse {
-		// Ac-002: Check heeftAlleAutorisaties consistency (before uniqueness).
-		$authConsistencyError = $this->validateAutorisatieConsistency(body: $body);
-		if ($authConsistencyError !== null) {
-			return $authConsistencyError;
-		}
-
-		// Ac-003: Check scope-based field requirements (before uniqueness).
-		$scopeError = $this->validateAutorisatieScopes(body: $body);
-		if ($scopeError !== null) {
-			return $scopeError;
-		}
-
-		// Ac-001: Check clientId uniqueness (after content validation).
-		$clientIdError = $this->validateClientIdUniqueness(body: $body, excludeUuid: $excludeUuid);
-		if ($clientIdError !== null) {
-			return $clientIdError;
-		}
-
-		return null;
-	}//end validateApplicatieBody()
-
-	/**
-	 * Validate that clientIds are not already used by another applicatie (ac-001).
-	 *
-	 * @param array $body The request body.
-	 * @param string|null $excludeUuid UUID to exclude from check (for updates).
-	 *
-	 * @return JSONResponse|null Error response or null if valid.
-	 *
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 */
-	private function validateClientIdUniqueness(array $body, ?string $excludeUuid = null): ?JSONResponse {
-		$clientIds = $body['clientIds'] ?? [];
-		if (is_array($clientIds) === false || count($clientIds) === 0) {
-			return null;
-		}
-
-		// Enforce a reasonable maximum to prevent DoS via large arrays.
-		if (count($clientIds) > 100) {
-			return new JSONResponse(
-				data: [
-					'invalidParams' => [
-						[
-							'name' => 'clientIds',
-							'code' => 'max-items',
-							'reason' => 'A maximum of 100 clientIds per applicatie is allowed.',
-						],
-					],
-				],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
-		}
-
-		$allConsumers = $this->zgwService->getConsumerMapper()->findAll();
-
-		foreach ($allConsumers as $consumer) {
-			$data = $consumer->jsonSerialize();
-
-			// Skip self when updating.
-			if ($excludeUuid !== null && ($data['uuid'] ?? '') === $excludeUuid) {
-				continue;
-			}
-
-			// Check if any of the existing consumer's clientIds overlap.
-			$existingClientIds = $this->getConsumerClientIds(consumer: $consumer);
-
-			foreach ($clientIds as $requestedId) {
-				if (in_array($requestedId, $existingClientIds, true) === true) {
-					return new JSONResponse(
-						data: [
-							'invalidParams' => [
-								[
-									'name' => 'clientIds',
-									'code' => 'clientId-exists',
-									'reason' => "clientId \"{$requestedId}\" is already used by another applicatie.",
-								],
-							],
-						],
-						statusCode: Http::STATUS_BAD_REQUEST
-					);
-				}
-			}
-		}//end foreach
-
-		return null;
-	}//end validateClientIdUniqueness()
-
-	/**
-	 * Validate heeftAlleAutorisaties consistency with autorisaties (ac-002).
-	 *
-	 * If heeftAlleAutorisaties=true, autorisaties must be empty.
-	 * If heeftAlleAutorisaties=false, autorisaties must be non-empty.
-	 *
-	 * @param array $body The request body.
-	 *
-	 * @return JSONResponse|null Error response or null if valid.
-	 *
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 */
-	private function validateAutorisatieConsistency(array $body): ?JSONResponse {
-		$heeftAlle = $body['heeftAlleAutorisaties'] ?? false;
-		$autorisaties = $body['autorisaties'] ?? [];
-
-		// Normalize boolean.
-		if ($heeftAlle === 'true' || $heeftAlle === '1' || $heeftAlle === 1) {
-			$heeftAlle = true;
-		} elseif ($heeftAlle === 'false' || $heeftAlle === '0' || $heeftAlle === 0) {
-			$heeftAlle = false;
-		}
-
-		// Ac-002a: heeftAlleAutorisaties=true + non-empty autorisaties.
-		if ($heeftAlle === true && is_array($autorisaties) === true && count($autorisaties) > 0) {
-			return new JSONResponse(
-				data: [
-					'invalidParams' => [
-						[
-							'name' => 'nonFieldErrors',
-							'code' => 'ambiguous-authorizations-specified',
-							// phpcs:ignore Generic.Files.LineLength.MaxExceeded
-							'reason' => $this->l10n->t('When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified.'),
-						],
-					],
-				],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
-		}
-
-		// Ac-002b: heeftAlleAutorisaties=false + empty autorisaties.
-		if ($heeftAlle === false
-			&& is_array($autorisaties) === true
-			&& count($autorisaties) === 0
-			&& array_key_exists('autorisaties', $body) === true
-		) {
-			return new JSONResponse(
-				data: [
-					'invalidParams' => [
-						[
-							'name' => 'nonFieldErrors',
-							'code' => 'missing-authorizations',
-							'reason' => $this->l10n->t('When heeftAlleAutorisaties is false, autorisaties must be specified.'),
-						],
-					],
-				],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
-		}
-
-		return null;
-	}//end validateAutorisatieConsistency()
-
-	/**
-	 * Validate autorisatie entries have required fields based on component and scope (ac-003).
-	 *
-	 * For zrc with scope containing "zaken": requires zaaktype and maxVertrouwelijkheidaanduiding.
-	 * For drc with scope containing "documenten": requires informatieobjecttype and maxVertrouwelijkheidaanduiding.
-	 * For brc with scope containing "besluiten": requires besluittype.
-	 *
-	 * @param array $body The request body.
-	 *
-	 * @return JSONResponse|null Error response or null if valid.
-	 *
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 */
-	private function validateAutorisatieScopes(array $body): ?JSONResponse {
-		$autorisaties = $body['autorisaties'] ?? [];
-		if (is_array($autorisaties) === false) {
-			return null;
-		}
-
-		$invalidParams = [];
-
-		foreach ($autorisaties as $index => $autorisatie) {
-			$component = $autorisatie['component'] ?? '';
-			$scopes = $autorisatie['scopes'] ?? [];
-
-			// Check if any scope relates to the component's domain.
-			$hasCasesScope = $this->scopesContain(scopes: $scopes, keyword: 'zaken');
-			$hasDocumentenScope = $this->scopesContain(scopes: $scopes, keyword: 'documenten');
-
-			// Ac-003a/003b: ZRC with zaken-related scope.
-			if ($component === 'zrc' && $hasCasesScope === true) {
-				$caseType = $autorisatie['caseType'] ?? null;
-				$maxVertr = $autorisatie['maxVertrouwelijkheidaanduiding'] ?? null;
-
-				if ($caseType === null || $caseType === '') {
-					$invalidParams[] = [
-						'name' => "autorisaties.{$index}.zaaktype",
-						'code' => 'required',
-						'reason' => $this->l10n->t('zaaktype is required when a scope related to zaken is specified.'),
-					];
-				}
-
-				if ($maxVertr === null || $maxVertr === '') {
-					$invalidParams[] = [
-						'name' => "autorisaties.{$index}.maxVertrouwelijkheidaanduiding",
-						'code' => 'required',
-						'reason' => $this->l10n->t('maxVertrouwelijkheidaanduiding is required when a scope related to zaken is specified.'),
-					];
-				}
-			}//end if
-
-			// Ac-003c/003d: DRC with documenten-related scope.
-			if ($component === 'drc' && $hasDocumentenScope === true) {
-				$infoType = $autorisatie['informatieobjecttype'] ?? null;
-				$maxVertr = $autorisatie['maxVertrouwelijkheidaanduiding'] ?? null;
-
-				if ($infoType === null || $infoType === '') {
-					$invalidParams[] = [
-						'name' => "autorisaties.{$index}.informatieobjecttype",
-						'code' => 'required',
-						'reason' => $this->l10n->t('informatieobjecttype is required when a scope related to documenten is specified.'),
-					];
-				}
-
-				if ($maxVertr === null || $maxVertr === '') {
-					$invalidParams[] = [
-						'name' => "autorisaties.{$index}.maxVertrouwelijkheidaanduiding",
-						'code' => 'required',
-						// phpcs:ignore Generic.Files.LineLength.TooLong
-						'reason' => $this->l10n->t('maxVertrouwelijkheidaanduiding is required when a scope related to documenten is specified.'),
-					];
-				}
-			}//end if
-
-			// Ac-003e (not tested but included): BRC with besluiten-related scope.
-			$hasDecisionsScope = $this->scopesContain(scopes: $scopes, keyword: 'besluiten');
-			if ($component === 'brc' && $hasDecisionsScope === true) {
-				$besluittype = $autorisatie['besluittype'] ?? null;
-				if ($besluittype === null || $besluittype === '') {
-					$invalidParams[] = [
-						'name' => "autorisaties.{$index}.besluittype",
-						'code' => 'required',
-						'reason' => $this->l10n->t('besluittype is required when a scope related to besluiten is specified.'),
-					];
-				}
-			}
-		}//end foreach
-
-		if (count($invalidParams) > 0) {
-			return new JSONResponse(
-				data: ['invalidParams' => $invalidParams],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
-		}
-
-		return null;
-	}//end validateAutorisatieScopes()
-
-	/**
-	 * Check whether any scope in the array contains the given keyword.
-	 *
-	 * @param array $scopes The scopes array.
-	 * @param string $keyword The keyword to search for (e.g. 'zaken', 'documenten').
-	 *
-	 * @return bool True if any scope contains the keyword.
-	 *
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 */
-	private function scopesContain(array $scopes, string $keyword): bool {
-		foreach ($scopes as $scope) {
-			if (is_string($scope) === true && str_contains($scope, $keyword) === true) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end scopesContain()
-
-	/**
-	 * Get all clientIds for a consumer (primary name + any extras).
-	 *
-	 * @param object $consumer The consumer entity.
-	 *
-	 * @return array List of all clientIds.
-	 *
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 */
-	private function getConsumerClientIds(object $consumer): array {
-		$data = $consumer->jsonSerialize();
-		$clientIds = [];
-
-		// Primary clientId is the consumer name.
-		if (isset($data['name']) === true && $data['name'] !== '') {
-			$clientIds[] = $data['name'];
-		}
-
-		// Extra clientIds stored in authorizationConfiguration.
-		$authConfig = $consumer->getAuthorizationConfiguration() ?? [];
-		$extraClientIds = $authConfig['clientIds'] ?? [];
-		if (is_array($extraClientIds) === true) {
-			$clientIds = array_merge($clientIds, $extraClientIds);
-		}
-
-		return $clientIds;
-	}//end getConsumerClientIds()
-
-	/**
-	 * Convert a consumer entity to a ZGW applicatie representation.
-	 *
-	 * @param object $consumer The consumer entity.
-	 * @param string $baseUrl The base URL for building resource URLs.
-	 *
-	 * @return array The ZGW applicatie array.
-	 *
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 */
-	private function consumerToApplicatie(object $consumer, string $baseUrl): array {
-		$authConfig = [];
-		if (method_exists($consumer, 'getAuthorizationConfiguration') === true) {
-			$authConfig = $consumer->getAuthorizationConfiguration() ?? [];
-		}
-
-		$data = $consumer->jsonSerialize();
-
-		// Build clientIds: primary name + any extras from authConfig.
-		$clientIds = [];
-		if (isset($data['name']) === true && $data['name'] !== '') {
-			$clientIds[] = $data['name'];
-		}
-
-		$extraClientIds = $authConfig['clientIds'] ?? [];
-		if (is_array($extraClientIds) === true) {
-			$clientIds = array_merge($clientIds, $extraClientIds);
-		}
-
-		// Ensure clientIds is never empty.
-		if (count($clientIds) === 0) {
-			$clientIds = [$data['name'] ?? ''];
-		}
-
-		return [
-			'url' => $baseUrl . '/' . $data['uuid'],
-			'uuid' => $data['uuid'],
-			'clientIds' => $clientIds,
-			'label' => ($data['description'] ?? ''),
-			'heeftAlleAutorisaties' => ($authConfig['superuser'] ?? false),
-			'autorisaties' => ($authConfig['scopes'] ?? []),
-		];
-	}//end consumerToApplicatie()
-
-	/**
-	 * Convert a ZGW applicatie request body to consumer data.
-	 *
-	 * Stores the first clientId as the consumer name and any additional
-	 * clientIds in the authorizationConfiguration.
-	 *
-	 * @param array $body The request body.
-	 *
-	 * @return array The consumer data array.
-	 *
-	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 */
-	private function applicatieToConsumer(array $body): array {
-		$clientIds = $body['clientIds'] ?? [];
-		$name = ($body['label'] ?? 'unknown');
-		$extraClientIds = [];
-
-		if (is_array($clientIds) === true && count($clientIds) > 0) {
-			$name = $clientIds[0];
-			$extraClientIds = array_slice($clientIds, 1);
-		}
-
-		$authConfig = [
-			'superuser' => ($body['heeftAlleAutorisaties'] ?? false),
-			'scopes' => ($body['autorisaties'] ?? []),
-			'algorithm' => 'HS256',
-		];
-
-		// Store extra clientIds beyond the first.
-		if (count($extraClientIds) > 0) {
-			$authConfig['clientIds'] = $extraClientIds;
-		}
-
-		if (isset($body['secret']) === true) {
-			$authConfig['publicKey'] = $body['secret'];
-		}
-
-		return [
-			'name' => $name,
-			'description' => ($body['label'] ?? ''),
-			'authorizationType' => 'jwt-zgw',
-			'authorizationConfiguration' => $authConfig,
-		];
-	}//end applicatieToConsumer()
 }//end class

@@ -37,7 +37,7 @@ All dashboard data comes from OpenRegister queries against the `dossiq` register
 
 ## Requirements
 
-### REQ-DASH-001: KPI Cards Row [MVP]
+### Requirement: REQ-DASH-001: KPI Cards Row [MVP]
 
 The dashboard MUST display a row of five KPI cards at the top, providing headline metrics for the current user's case management workload. The fifth card shows SLA Compliance.
 
@@ -53,7 +53,7 @@ The dashboard MUST display a row of five KPI cards at the top, providing headlin
 #### Scenario DASH-001b: Overdue cases count with action indicator
 - GIVEN there are 3 cases where `deadline < today` and status is not final
 - WHEN the user views the dashboard
-- THEN the system MUST display a KPI card titled "Overdue"
+- THEN the system MUST display a KPI card titled "Late" ("Te laat" in Dutch, as boards DqDashboard and DqMijnTeam name it)
 - AND the card MUST show the count "3"
 - AND the card MUST show a warning sub-label "action needed" to indicate urgency
 - AND clicking the card MUST navigate to the Cases view filtered by `overdue=true`
@@ -98,7 +98,7 @@ The main dashboard SHALL provide a visible navigation element to access the door
 - THEN the system MUST display a tab or button labeled "Doorlooptijd" in the dashboard header area
 - AND clicking it MUST navigate to the `/doorlooptijd` route
 
-### REQ-DASH-002: Cases by Status Chart [MVP]
+### Requirement: REQ-DASH-002: Cases by Status Chart [MVP]
 
 The dashboard MUST display a horizontal bar chart showing the distribution of open cases across status types.
 
@@ -274,7 +274,7 @@ The dashboard MUST display a feed of the last 10 case management events.
 - THEN events SHOULD be grouped under date headers ("Today", "Yesterday", date labels)
 - AND within each group events MUST be ordered by timestamp descending
 
-### REQ-DASH-007: Quick Actions [MVP]
+### Requirement: REQ-DASH-007: Quick Actions [MVP]
 
 The dashboard MUST provide quick action buttons for common case management tasks.
 
@@ -457,7 +457,7 @@ The dashboard MUST follow a configurable grid layout using `CnDashboardPage` fro
 - GIVEN the user views the dashboard for the first time
 - THEN the page MUST display the following sections in the default layout:
   1. Header with quick action buttons (New Case, New Task, Refresh)
-  2. KPI cards row (4 cards: Open Cases, Overdue, Completed This Month, My Tasks) each spanning 3 grid columns
+  2. KPI cards row (4 cards: Open Cases, Late, Completed This Month, My Tasks) each spanning 3 grid columns
   3. Two-column layout below the KPI row:
      - Left column (6 cols): Cases by Status chart, My Work preview
      - Right column (6 cols): Overdue Cases panel, Recent Activity feed
@@ -531,6 +531,8 @@ The dashboard SHALL provide an "Analytics" navigation item in the left sidebar (
 
 ### Requirement: REQ-DASH-V1-001 Signalering: Deadline Alerts Widget [V1]
 
+The widget is titled "Termijnsignalen" in Dutch, as board DqNextcloudDashboard draws it; a late case reads "N dagen te laat".
+
 `DeadlineAlertsWidget.vue` SHALL display cases approaching or past their processing deadline. The warning threshold MUST be 3 days (configurable via `IAppConfig` in V2). It integrates `getDeadlineAlerts()` from `signaleringHelpers.js`.
 
 #### Scenario DASH-V1-001a: Cases approaching deadline within warning threshold
@@ -553,7 +555,7 @@ The dashboard SHALL provide an "Analytics" navigation item in the left sidebar (
 #### Scenario DASH-V1-001c: No deadline alerts
 - GIVEN all open cases have deadlines more than 3 days away or have no deadline
 - WHEN the user views the Deadline Alerts widget
-- THEN the widget MUST display the message "No deadline alerts"
+- THEN the widget MUST display the message "Geen termijnsignalen" (en "No deadline alerts"), as board DqNextcloudDashboard draws it
 - AND the widget MUST NOT show an error state or broken layout
 
 #### Scenario DASH-V1-001d: Click on alert row navigates to case detail
@@ -562,6 +564,8 @@ The dashboard SHALL provide an "Analytics" navigation item in the left sidebar (
 - THEN the system MUST navigate to the case detail view for that case
 
 ### Requirement: REQ-DASH-V1-002 Signalering: Task Due Reminders Widget [V1]
+
+The widget is titled "Taakherinneringen" in Dutch, as board DqNextcloudDashboard draws it.
 
 `TaskDueRemindersWidget.vue` SHALL show the current user's tasks with due dates within 3 days or past due. It integrates `getTaskReminders()` from `signaleringHelpers.js`. Tasks without a `dueDate` MUST be excluded.
 
@@ -590,6 +594,8 @@ The dashboard SHALL provide an "Analytics" navigation item in the left sidebar (
 
 ### Requirement: REQ-DASH-V1-003 Signalering: Stalled Cases Widget [V1]
 
+The widget is titled "Stilstaande zaken" in Dutch, and a row reads "N dagen stil", as board DqNextcloudDashboard draws "31 dagen stil".
+
 `StalledCasesWidget.vue` SHALL identify open cases with no `updatedAt` change in 7+ calendar days. It integrates `getStalledCases()` from `signaleringHelpers.js`.
 
 #### Scenario DASH-V1-003a: Stalled cases identified by inactivity
@@ -608,7 +614,7 @@ The dashboard SHALL provide an "Analytics" navigation item in the left sidebar (
 #### Scenario DASH-V1-003c: No stalled cases
 - GIVEN all open cases were updated within the last 7 days
 - WHEN the user views the Stalled Cases widget
-- THEN the widget MUST display "No stalled cases"
+- THEN the widget MUST display "Geen stilstaande zaken" (en "No stalled cases")
 
 ### Requirement: REQ-DASH-V1-004 Woo Deadline Tracking Panel [V1]
 
@@ -678,10 +684,16 @@ The dashboard SHALL provide an "Analytics" navigation item in the left sidebar (
 
 ### Requirement: REQ-DASH-V1-006 Workflow Board View [V1]
 
-`WorkflowBoard.vue` at `/workflow-board` SHALL provide a Kanban board with one column per
-non-final status type, case cards in each column, and a status transition control that MUST be
-operable by both drag-and-drop AND keyboard alone — drag-and-drop MUST NOT be the only path to
-advance a case's status.
+The Cases list in board view (`/cases?_view=board`, the library's CnBoardView, board DqWerkbord)
+SHALL provide a Kanban board with one column per non-final status type, case cards in each column,
+and a status transition control that MUST be operable by both drag-and-drop AND keyboard alone —
+drag-and-drop MUST NOT be the only path to advance a case's status. The former `/workflow-board`
+address MUST redirect there, so a bookmark never lands elsewhere.
+
+> Amended when the bespoke `WorkflowBoard.vue` retired in favour of the Cases board. The columns
+> come from the statusType rows (`columnFields[].source`), merged by name, narrowed to one case type
+> while the list is filtered on one; a move goes through `moveCaseStatus` and the targets through
+> `caseStatusTargets`.
 
 #### Scenario DASH-V1-006a: Board columns reflect status types
 
@@ -702,10 +714,10 @@ advance a case's status.
 - WHEN the user drags the card to the "In behandeling" column and drops it
 - THEN the system MUST update the case's `status` to the "In behandeling" statusType ID
 - AND the card MUST move to the "In behandeling" column
-- AND while the card is in the air the board MUST show it moving: a ghost under the pointer and a
-  placeholder in the column it is held over
 - AND a column the case cannot reach MUST refuse the card while it is in the air, faded, and when a
   guard is what holds the case the column MUST show the guard's reason under its header
+- AND a column whose status type declares a `capacity` and is full MUST refuse the card before
+  anything is posted, and its header MUST read the count against the limit
 - AND if the update fails (e.g., permission denied), the card MUST return to its original column
 
 #### Scenario DASH-V1-006d: Click on case card navigates to detail
@@ -723,16 +735,16 @@ advance a case's status.
 
 - GIVEN case "2026-0042" is in the "Ontvangen" column and the user is navigating with only a
   keyboard (no mouse/touch)
-- WHEN the user focuses the case card and presses `M`, then picks "In behandeling" from the move
-  dialog
+- WHEN the user focuses the case card and presses `M` (or opens the card's menu button), then picks
+  "In behandeling" from the card's menu
 - THEN the system MUST update the case's `status` to the "In behandeling" statusType ID via the
   same persistence path as the drag-and-drop scenario (optimistic move, the offered transition
   posted to the status-transition engine, revert-and-toast on failure)
 - AND the card MUST move to the "In behandeling" column
-- AND the card's existing "open case detail" keyboard activation (Enter/Space on the card body)
+- AND the card's existing "open case detail" keyboard activation (Enter on the card's title)
   MUST remain unaffected by the move gesture
-- AND the card MUST announce the `M` gesture in its accessible name, because the gesture has no
-  visible control to discover
+- AND the move MUST be discoverable without the `M` gesture: the card carries a focusable menu
+  button that opens the same menu
 
 > Superseded the tabbable "Move to…" menu this scenario originally specified. That menu listed
 > every board column, and columns are merged by status NAME across every case type on the
@@ -740,14 +752,13 @@ advance a case's status.
 > reach. The keyboard path is preserved as the `M` key; the list is now the engine's offer for
 > that one case.
 
-#### Scenario DASH-V1-006h: The move dialog offers only what the case can reach (NEW)
+#### Scenario DASH-V1-006h: The card menu says what the case can reach (NEW)
 
 - GIVEN a case whose workflow offers two transitions, one of them held by a failing guard
-- WHEN the user opens the move dialog, by right-clicking the card or pressing `M` on it
-- THEN the dialog MUST list exactly the statuses `/api/case/{id}/available-transitions` offers,
-  never the board's columns
+- WHEN the user opens the card's menu, with its menu button or by pressing `M` on the card
+- THEN only the statuses `/api/case/{id}/available-transitions` offers MUST be selectable; every
+  other column MUST be marked not allowed
 - AND a transition whose guards failed MUST be listed, unselectable, showing the guard's reason
-- AND a failure to read the offer MUST be reported as a failure, never as an empty list
 
 #### Scenario DASH-V1-006g: Drag path shares the move (NEW)
 
@@ -758,10 +769,8 @@ advance a case's status.
 - AND the card's click (Scenario DASH-V1-006d) and its selection checkbox MUST keep working: a
   press without movement is a click, and the checkbox is never a drag handle
 
-> Reworded when the drag moved from the browser's HTML5 drag events to Sortable (vue-draggable-plus).
-> The native drag showed a grab cursor and nothing else until the drop; this scenario used to ask
-> for that behaviour to stay identical, which is not what anybody wanted kept. What is kept is the
-> write path.
+> What is kept across the board's rewrites is the write path: one move, whichever gesture asks for
+> it.
 
 ### Requirement: REQ-DASH-FIX-001 Application.php Widget Registration [FIX]
 
@@ -930,44 +939,19 @@ to visible.
 - **WHEN** an administrator reads the configuration report
 - **THEN** it SHALL name the widget and the missing role
 
-### Requirement: The simple dashboard opens with the handler's own day (REQ-DASH-025)
-In the simple structure the dashboard MUST first show a greeting, a card for
-deadlines that end today, four counts of the handler's own cases, the deadlines
-of this week, the handler's cases per step and the handler's tasks. Every
-widget the dashboard held before MUST still be on the page. The full structure
-MUST keep the dashboard unchanged.
+### Requirement: The simple cases list leads with three counted views and six columns (REQ-DASH-026)
+In the simple structure the cases list MUST lead with the views Alles, Mijn
+zaken and Termijn deze week, each with a count, as board DqZaken draws them, and
+MUST keep every other lens reachable behind the overflow chip after them. It
+MUST show the columns Zaak (the title with the case number under it), Type,
+Status, Behandelaar, Team and Termijn.
 
-#### Scenario: A handler with a deadline today
-@e2e exclude Needs seeded cases with today's deadline on a live instance; the widgets, their filters and the layout are asserted in simpleListAndDashboard.spec.js, and the coordinator checks the page live.
-- **GIVEN** the simple structure and a handler with an open case whose deadline is today
-- **WHEN** they open the dashboard
-- **THEN** the card "First today" MUST be shown and MUST link to those cases
-- **AND** the week strip MUST mark that case as late
-
-#### Scenario: A handler without a deadline today
-@e2e exclude Same reason; the card's condition is asserted in simpleListAndDashboard.spec.js.
-- **GIVEN** the simple structure and a handler with no case past its deadline or ending today
-- **WHEN** they open the dashboard
-- **THEN** the card "First today" MUST NOT be shown
-
-#### Scenario: Nothing the dashboard held is lost
-@e2e exclude A comparison of the built page with the manifest, asserted in simpleListAndDashboard.spec.js.
-- **GIVEN** the simple structure
-- **WHEN** the dashboard is built
-- **THEN** every widget and every layout entry it had MUST still be there
-
-### Requirement: The simple cases list leads with five counted views and six columns (REQ-DASH-026)
-In the simple structure the cases list MUST lead with the views All, Mine, Due
-this week, Waiting on the applicant and Woo requests, each with a count, and
-MUST keep every other lens reachable. It MUST show the columns number, title,
-type, status, handler and deadline.
-
-#### Scenario: Five views and the rest behind the chip
+#### Scenario: Three views and the rest behind the chip
 @e2e exclude The counts need library 2.60.0 on a live instance; the lenses, their order and their filters are asserted in simpleListAndDashboard.spec.js.
 - **GIVEN** the simple structure
 - **WHEN** a handler opens the cases list
-- **THEN** the strip MUST show the five views with a count each
-- **AND** the other fifteen lenses MUST be offered behind the overflow chip
+- **THEN** the strip MUST show Alles, Mijn zaken and Termijn deze week with a count each
+- **AND** every other lens MUST be offered behind the overflow chip, which names how many it holds ("Nog 18 filters")
 
 ### Requirement: A deadline that ends today is late in the simple structure (REQ-DASH-027)
 In the simple structure a case whose deadline is today MUST be marked late on
@@ -1018,50 +1002,29 @@ only. The full structure MUST keep every one of these pages as it was.
 - **THEN** the dashboard, the case page, the list and the board MUST equal what the manifest declares
 
 ### Requirement: My open work is a start page widget that any dashboard can render (REQ-DASH-023)
-dossiq MUST offer a dashboard widget "My open work" that lists the signed-in
-person's open cases and work items from the one personal queue, soonest due
-first, each linking to its case or task. The widget MUST answer through
-Nextcloud's widget item API, so a host that renders items shows it without
-dossiq's JavaScript. It MUST offer a button "Open my work" that leads to the My
-work page.
+dossiq MUST offer one dashboard widget "Mijn werk" (English source "My work") that summarises the signed-in person's open work from the one personal queue, as board DqNextcloudDashboard draws it: a row counting the open cases on their name, with how many they hold as substitute, and a row counting their open tasks, with how many are late and how many are due today. A kind with nothing open MUST be left out. Each row MUST link to the My work page. The widget MUST answer through Nextcloud's widget item API, so a host that renders items shows it without dossiq's JavaScript. It MUST offer a button "Naar Mijn werk" (English source "Go to My work") that leads to the My work page. dossiq MUST NOT offer separate My tasks or Overdue cases widgets beside it.
 
 #### Scenario: The start page shows my cases and leads to my work
 @e2e tests/e2e/my-open-work-widget.spec.ts
 
 - **GIVEN** a handler with two open cases assigned to them and one open task
-- **WHEN** they open a start page that holds the widget "My open work"
-- **THEN** the widget MUST list the two cases and the task, soonest due first
-- **AND** "Open my work" MUST open the My work page
+- **WHEN** they open a start page that holds the widget "Mijn werk"
+- **THEN** the widget MUST read "2 open zaken op uw naam" and "1 open taak"
+- **AND** "Naar Mijn werk" MUST open the My work page
 
 #### Scenario: Items reach a host without dossiq's bundle
 @e2e tests/e2e/my-open-work-widget.spec.ts
 
 - **GIVEN** the same handler
-- **WHEN** a client calls `/ocs/v2.php/apps/dashboard/api/v2/widget-items` for
-  the widget
-- **THEN** the response MUST carry the three items with their titles and links
+- **WHEN** a client calls `/ocs/v2.php/apps/dashboard/api/v2/widget-items` for the widget
+- **THEN** the response MUST carry the cases row and the tasks row, each linking to My work
 
 #### Scenario: More work than fits
-@e2e exclude Twelve items on the admin's shared queue cannot be seeded stably; covered by tests/Unit/Dashboard/QueueWidgetItemsTest.php and tests/Unit/Dashboard/MyOpenWorkWidgetTest.php.
+@e2e exclude The summary has at most two rows; tests/Unit/Dashboard/MyOpenWorkWidgetTest.php counts late, today and substitute work.
 
-- **GIVEN** a handler with twelve open items and a host that asks for seven
+- **GIVEN** a handler with twelve open items
 - **WHEN** the widget answers
-- **THEN** it MUST list six items and a seventh reading "6 more in My work"
-  that links to the My work page
-
-### Requirement: My tasks renders through the item API as well (REQ-DASH-024)
-The widget "My tasks" MUST keep its id and its dashboard rendering and MUST also
-answer its open tasks through Nextcloud's widget item API.
-
-#### Scenario: A start page that reads items shows my tasks
-@e2e tests/e2e/my-open-work-widget.spec.ts
-
-- **GIVEN** a handler with two open tasks
-- **WHEN** a client asks the widget item API for "My tasks"
-- **THEN** it MUST answer both tasks with a link to each
-<!-- Folded 2026-10-10 from archive 2026-09-20-a-dashboard-the-reader-arranges, whose archive step
-     folded nothing. That change named these REQ-DASH-023 and REQ-DASH-024; the ids now belong to
-     widgets-my-open-cases-on-the-start-page, so they are renumbered 030 and 031 here. -->
+- **THEN** it MUST still answer one row per kind, counting all twelve
 
 ### Requirement: REQ-DASH-030 A reader keeps their own arrangement of a dashboard
 
@@ -1173,6 +1136,89 @@ token could name the reader's groups.
 
 @e2e exclude Library behaviour, covered by nextcloud-vue's tests/utils/resolveFilterTokensMyGroups.spec.js.
 
+### Requirement: The Recently opened tile shows when, whatever its width (REQ-DASH-030)
+
+The Recently opened tile SHALL keep its date column visible inside the tile. It
+SHALL show the case title with the case number under it, and the date at the end
+of the row; a long title SHALL wrap rather than push the date out of the tile.
+
+#### Scenario: The date stays visible in a narrow tile
+@e2e exclude {a layout measurement; the column setup is asserted in tests/vitest/recentTileViewedAt.spec.js and measured live at 1440px}
+
+- **GIVEN** the Dashboard at 1440px wide, where the tile is about 340px
+- **WHEN** the reader has opened a case with a long title
+- **THEN** the date column SHALL be inside the tile
+- **AND** the case number SHALL show under the title
+
+### Requirement: The workflow board page config declares no half register/schema pair
+
+No custom page in the manifest or a structure profile SHALL declare only one
+of `config.register` and `config.schema`.
+
+> The WorkflowBoard custom page this was written for has retired: the workflow
+> board is the Cases list in board view, an index page that declares both. The
+> rule for every other custom page stands.
+
+#### Scenario: Opening the workflow board
+<!-- @e2e exclude Manifest shape; proven by tests/vitest/customPageTypesConfig.spec.js and live on :8099 (console without the CnPageRenderer warning). -->
+- **GIVEN** a user opens the workflow board
+- **WHEN** the page renders
+- **THEN** the console holds no `declares only one of config.register / config.schema` warning
+
+<!-- BEGIN retrofit-2026-05-24-dashboard -->
+
+<!-- Widget implementation surface (retrofit) -->
+
+### Requirement: REQ-DASH-016: The Nextcloud dashboard SHALL provide CasesOverview, MyTasks and StartCase widgets
+
+@e2e exclude NC dashboard widget registration (IWidget PHP classes); widget deep-link is app-boot plumbing covered by PHPUnit.
+
+`CasesOverviewWidget`, `MyTasksWidget` and `StartCaseWidget` SHALL each implement `OCP\Dashboard\IWidget` with stable kebab-case ids (`dossiq-cases-overview`, `dossiq-my-tasks`, `dossiq-start-case`), localised titles via `IL10N::t()`, deterministic `getOrder()` return values, MDI-style `getIconClass()`, and an in-app `getUrl()` deep link. Each widget's `load()` SHALL register the corresponding webpack-built Vue bundle via `Util::addScript()` + `Util::addStyle()` — no server-side data computation in PHP.
+
+#### Scenario: StartCase widget exposes deep-link to the case-creation flow
+- **WHEN** a user clicks the Start Case widget tile
+- **THEN** the dashboard SHALL navigate to the URL returned by `StartCaseWidget::getUrl()` (which deep-links to `/cases/new`)
+
+### Requirement: REQ-DASH-017: DashboardController SHALL expose the in-app dashboard data endpoints
+
+@e2e exclude Backend PHP DashboardController spec; endpoint payload structure covered by PHPUnit controller tests.
+
+`OCA\Dossiq\Controller\DashboardController` SHALL serve the in-app dashboard surface (not the Nextcloud dashboard system, which is widget-driven and loads client-side). The controller SHALL provide endpoints for the dashboard landing-page Vue to fetch its initial state (KPIs, layout, widget data) so the SPA can render without spinning up multiple per-widget HTTP requests.
+
+#### Scenario: Initial dashboard payload
+- **WHEN** an authenticated user opens the in-app dashboard (`/dashboard`)
+- **THEN** `DashboardController` SHALL respond with a single payload containing the user's saved layout plus the data each widget needs to render its first frame
+
+### REQ-DASH-018: All three workflow widgets SHALL be registered at app boot via Application
+
+@e2e exclude NC Application::register() PHP bootstrap spec; widget picker registration covered by PHPUnit.
+
+`OCA\Dossiq\AppInfo\Application::register()` SHALL register `CasesOverviewWidget`, `MyTasksWidget`, and `StartCaseWidget` with the Nextcloud dashboard container so they appear in the dashboard widget picker. Registration order SHALL match the canonical `getOrder()` return values.
+
+#### Scenario: Widgets appear in the dashboard picker
+- **WHEN** an authenticated user opens the dashboard widget picker
+- **THEN** all three workflow widgets SHALL be listed alongside the signalering widgets
+
+<!-- END retrofit-2026-05-24-dashboard -->
+
+<!-- Dashboard page render (UI surface) -->
+
+### REQ-DASH-UI-01: The in-app dashboard page SHALL render its shell on navigation
+
+The Dossiq dashboard landing page (`CnDashboardPage`, route `/`) SHALL mount and
+render a stable shell — the "Dashboard" page heading, its action controls, and the
+widget grid container — regardless of whether the underlying OpenRegister
+aggregation endpoints return data. This is a real, browser-verifiable UI surface
+and is covered by a Playwright test that navigates to the dashboard via the
+sidebar and asserts the rendered shell (data rows themselves remain
+data-dependent and are excluded above).
+
+#### Scenario: Dashboard page renders heading and widget grid
+- **GIVEN** an authenticated user on the Dossiq app
+- **WHEN** they click the "Dashboard" entry in the app sidebar
+- **THEN** the main content MUST show a level-2 "Dashboard" heading
+- **AND** the widget grid container MUST render (showing the configured widget tiles or their unavailable-placeholder shells)
+
 ## Non-Functional Requirements
 
 - **Performance**: Dashboard MUST load within 2 seconds for up to 1000 cases. Individual API calls SHOULD complete within 500ms. Data is fetched using `Promise.allSettled` with a limit of 1000 cases, 100 case types, 500 status types, and 100 tasks.
@@ -1225,57 +1271,3 @@ token could name the reader's groups.
 - **Nextcloud Activity API (`OCP\Activity\IManager`)**: Activity feed data source (mentioned in spec, `ActivityFeed.vue` component exists).
 - **GEMMA**: Dashboard follows zaakgericht werken management information patterns.
 - **Competitor reference**: Dimpact ZAC provides a dashboard with case counts, overdue warnings, and team workload views. Flowable Platform includes case KPI dashboards with SLA compliance metrics and workload distribution.
-
-<!-- BEGIN retrofit-2026-05-24-dashboard -->
-
-## Widget Implementation Surface (retrofit)
-
-### REQ-DASH-016: The Nextcloud dashboard SHALL provide CasesOverview, MyTasks and StartCase widgets
-
-@e2e exclude NC dashboard widget registration (IWidget PHP classes); widget deep-link is app-boot plumbing covered by PHPUnit.
-
-`CasesOverviewWidget`, `MyTasksWidget` and `StartCaseWidget` SHALL each implement `OCP\Dashboard\IWidget` with stable kebab-case ids (`dossiq-cases-overview`, `dossiq-my-tasks`, `dossiq-start-case`), localised titles via `IL10N::t()`, deterministic `getOrder()` return values, MDI-style `getIconClass()`, and an in-app `getUrl()` deep link. Each widget's `load()` SHALL register the corresponding webpack-built Vue bundle via `Util::addScript()` + `Util::addStyle()` — no server-side data computation in PHP.
-
-#### Scenario: StartCase widget exposes deep-link to the case-creation flow
-- **WHEN** a user clicks the Start Case widget tile
-- **THEN** the dashboard SHALL navigate to the URL returned by `StartCaseWidget::getUrl()` (which deep-links to `/cases/new`)
-
-### REQ-DASH-017: DashboardController SHALL expose the in-app dashboard data endpoints
-
-@e2e exclude Backend PHP DashboardController spec; endpoint payload structure covered by PHPUnit controller tests.
-
-`OCA\Dossiq\Controller\DashboardController` SHALL serve the in-app dashboard surface (not the Nextcloud dashboard system, which is widget-driven and loads client-side). The controller SHALL provide endpoints for the dashboard landing-page Vue to fetch its initial state (KPIs, layout, widget data) so the SPA can render without spinning up multiple per-widget HTTP requests.
-
-#### Scenario: Initial dashboard payload
-- **WHEN** an authenticated user opens the in-app dashboard (`/dashboard`)
-- **THEN** `DashboardController` SHALL respond with a single payload containing the user's saved layout plus the data each widget needs to render its first frame
-
-### REQ-DASH-018: All three workflow widgets SHALL be registered at app boot via Application
-
-@e2e exclude NC Application::register() PHP bootstrap spec; widget picker registration covered by PHPUnit.
-
-`OCA\Dossiq\AppInfo\Application::register()` SHALL register `CasesOverviewWidget`, `MyTasksWidget`, and `StartCaseWidget` with the Nextcloud dashboard container so they appear in the dashboard widget picker. Registration order SHALL match the canonical `getOrder()` return values.
-
-#### Scenario: Widgets appear in the dashboard picker
-- **WHEN** an authenticated user opens the dashboard widget picker
-- **THEN** all three workflow widgets SHALL be listed alongside the signalering widgets
-
-<!-- END retrofit-2026-05-24-dashboard -->
-
-## Dashboard Page Render (UI surface)
-
-### REQ-DASH-UI-01: The in-app dashboard page SHALL render its shell on navigation
-
-The Dossiq dashboard landing page (`CnDashboardPage`, route `/`) SHALL mount and
-render a stable shell — the "Dashboard" page heading, its action controls, and the
-widget grid container — regardless of whether the underlying OpenRegister
-aggregation endpoints return data. This is a real, browser-verifiable UI surface
-and is covered by a Playwright test that navigates to the dashboard via the
-sidebar and asserts the rendered shell (data rows themselves remain
-data-dependent and are excluded above).
-
-#### Scenario: Dashboard page renders heading and widget grid
-- **GIVEN** an authenticated user on the Dossiq app
-- **WHEN** they click the "Dashboard" entry in the app sidebar
-- **THEN** the main content MUST show a level-2 "Dashboard" heading
-- **AND** the widget grid container MUST render (showing the configured widget tiles or their unavailable-placeholder shells)

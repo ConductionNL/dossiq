@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
  */
 
 declare(strict_types=1);
@@ -23,19 +23,18 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAnalyticsServiceInterface;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
 
 /**
  * Service for complaint analytics, frequency aggregation, and systemic-issue detection.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
  */
-class ComplaintAnalyticsService {
-
-	use SearchesObjects;
+class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 
 	/**
 	 * Minimum complaints per employee slice before employee data is shown (privacy).
@@ -53,6 +52,13 @@ class ComplaintAnalyticsService {
 	private const SYSTEMIC_ISSUE_QOQ_THRESHOLD = 50;
 
 	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service
@@ -64,6 +70,7 @@ class ComplaintAnalyticsService {
 		private readonly LoggerInterface $logger,
 		private readonly DayCount $days = new DayCount(),
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -75,7 +82,7 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array<string, int> Map of dimension value => complaint count
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	public function getFrequencyByDimension(string $dimension, string $dateFrom, string $dateTo): array {
 		$complaints = $this->fetchComplaintsInRange(dateFrom: $dateFrom, dateTo: $dateTo);
@@ -112,7 +119,7 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array<string, int> Map of 'YYYY-MM' => complaint count
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	public function getMonthlyTrend(string $dateFrom, string $dateTo): array {
 		$complaints = $this->fetchComplaintsInRange(dateFrom: $dateFrom, dateTo: $dateTo);
@@ -145,7 +152,7 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array<string, float> Map of categorie => average days to resolve
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	public function getAverageResolutionTime(string $dateFrom, string $dateTo): array {
 		$complaints = $this->fetchComplaintsInRange(dateFrom: $dateFrom, dateTo: $dateTo);
@@ -153,33 +160,62 @@ class ComplaintAnalyticsService {
 		$counts = [];
 
 		foreach ($complaints as $complaint) {
-			if (($complaint['status'] ?? '') !== 'handled') {
+			$resolution = $this->resolution(complaint: $complaint);
+			if ($resolution === null) {
 				continue;
 			}
 
-			$category = (string)($complaint['category'] ?? 'unknown');
-			$receipt = $complaint['receiptDate'] ?? null;
-			$afhandelDeadline = $complaint['afhandelDeadline'] ?? null;
-
-			if ($receipt === null || $afhandelDeadline === null) {
-				continue;
-			}
-
-			$start = new DateTimeImmutable($receipt);
-			$end = new DateTimeImmutable($afhandelDeadline);
-			$days = $this->days->between(from: $start, to: $end);
-
+			[$category, $days] = $resolution;
 			$totals[$category] = ($totals[$category] ?? 0) + $days;
 			$counts[$category] = ($counts[$category] ?? 0) + 1;
 		}
 
+		return $this->averages(totals: $totals, counts: $counts);
+	}//end getAverageResolutionTime()
+
+	/**
+	 * The category and days to resolve of one handled complaint.
+	 *
+	 * @param array<string, mixed> $complaint The complaint.
+	 *
+	 * @return array{0: string, 1: int|float}|null Null when it is not handled or lacks a date.
+	 */
+	private function resolution(array $complaint): array|null {
+		if (($complaint['status'] ?? '') !== 'handled') {
+			return null;
+		}
+
+		$category = (string)($complaint['category'] ?? 'unknown');
+		$receipt = $complaint['receiptDate'] ?? null;
+		$afhandelDeadline = $complaint['afhandelDeadline'] ?? null;
+
+		if ($receipt === null || $afhandelDeadline === null) {
+			return null;
+		}
+
+		$start = new DateTimeImmutable($receipt);
+		$end = new DateTimeImmutable($afhandelDeadline);
+		$days = $this->days->between(from: $start, to: $end);
+
+		return [$category, $days];
+	}//end resolution()
+
+	/**
+	 * The average days per category, rounded to one decimal.
+	 *
+	 * @param array<string, int|float> $totals Summed days per category.
+	 * @param array<string, int>       $counts Complaints per category.
+	 *
+	 * @return array<string, float>
+	 */
+	private function averages(array $totals, array $counts): array {
 		$averages = [];
 		foreach ($counts as $category => $count) {
 			$averages[$category] = round($totals[$category] / $count, 1);
 		}
 
 		return $averages;
-	}//end getAverageResolutionTime()
+	}//end averages()
 
 	/**
 	 * Detect categories with >50% quarter-over-quarter complaint increase.
@@ -189,11 +225,61 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array<int, array<string, mixed>> Systemic-issue records for flagged categories
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	public function detectSystemicIssues(int $year, int $quarter): array {
 		[$currentFrom, $currentTo] = $this->getQuarterRange(year: $year, quarter: $quarter);
 
+		[$prevYear, $prevQuarter] = $this->previousQuarter(year: $year, quarter: $quarter);
+
+		[$prevFrom, $prevTo] = $this->getQuarterRange(year: $prevYear, quarter: $prevQuarter);
+
+		$current = $this->getFrequencyByDimension(dimension: 'category', dateFrom: $currentFrom, dateTo: $currentTo);
+		$previous = $this->getFrequencyByDimension(dimension: 'category', dateFrom: $prevFrom, dateTo: $prevTo);
+
+		$systemicIssues = $this->flagIncreases(
+			current: $current,
+			previous: $previous,
+			labels: ['quarter' => 'Q' . $quarter . ' ' . $year, 'previousQuarter' => 'Q' . $prevQuarter . ' ' . $prevYear],
+		);
+
+		$this->warnSystemic(systemicIssues: $systemicIssues);
+
+		return $systemicIssues;
+	}//end detectSystemicIssues()
+
+	/**
+	 * Check for employees referenced in >= 3 complaints in the last 6 months.
+	 *
+	 * @return array<int, array<string, mixed>> Anonymized alert records (employee reference redacted)
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
+	 */
+	public function checkEmployeeThresholdAlerts(): array {
+		$sixMonthsAgo = (new DateTimeImmutable('today'))->modify('-6 months')->format('Y-m-d');
+		$today = date('Y-m-d');
+
+		$complaints = $this->fetchComplaintsInRange(dateFrom: $sixMonthsAgo, dateTo: $today);
+		[$employeeCounts, $employeeDetails] = $this->tallyEmployees(complaints: $complaints);
+
+		return $this->employeeAlerts(
+			employeeCounts: $employeeCounts,
+			employeeDetails: $employeeDetails,
+			periods: [$sixMonthsAgo, $today],
+		);
+	}//end checkEmployeeThresholdAlerts()
+
+	/**
+	 * The year and quarter before the given one.
+	 *
+	 * @param int $year    Year of the quarter
+	 * @param int $quarter Quarter (1-4)
+	 *
+	 * @return array{0: int, 1: int} The previous year and quarter
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
+	 */
+	private function previousQuarter(int $year, int $quarter): array {
 		$prevYear = $year;
 		$prevQuarter = ($quarter - 1);
 		if ($quarter === 1) {
@@ -201,11 +287,21 @@ class ComplaintAnalyticsService {
 			$prevQuarter = 4;
 		}
 
-		[$prevFrom, $prevTo] = $this->getQuarterRange(year: $prevYear, quarter: $prevQuarter);
+		return [$prevYear, $prevQuarter];
+	}//end previousQuarter()
 
-		$current = $this->getFrequencyByDimension(dimension: 'category', dateFrom: $currentFrom, dateTo: $currentTo);
-		$previous = $this->getFrequencyByDimension(dimension: 'category', dateFrom: $prevFrom, dateTo: $prevTo);
-
+	/**
+	 * The categories whose count rose more than the systemic-issue threshold.
+	 *
+	 * @param array<string, int> $current       Complaint counts per category this quarter
+	 * @param array<string, int> $previous      Complaint counts per category last quarter
+	 * @param array{quarter: string, previousQuarter: string} $labels Labels of this quarter, e.g. "Q2 2026", and of the previous one
+	 *
+	 * @return array<int, array<string, mixed>> Systemic-issue records for flagged categories
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
+	 */
+	private function flagIncreases(array $current, array $previous, array $labels): array {
 		$systemicIssues = [];
 
 		foreach ($current as $category => $currentCount) {
@@ -223,34 +319,43 @@ class ComplaintAnalyticsService {
 					'currentCount' => $currentCount,
 					'previousCount' => $previousCount,
 					'increasePercent' => round($increasePercent, 1),
-					'quarter' => 'Q' . $quarter . ' ' . $year,
-					'previousQuarter' => 'Q' . $prevQuarter . ' ' . $prevYear,
+					'quarter' => $labels['quarter'],
+					'previousQuarter' => $labels['previousQuarter'],
 				];
 			}
 		}
 
+		return $systemicIssues;
+	}//end flagIncreases()
+
+	/**
+	 * Log a warning when any category was flagged.
+	 *
+	 * @param array<int, array<string, mixed>> $systemicIssues The flagged categories
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
+	 */
+	private function warnSystemic(array $systemicIssues): void {
 		if (empty($systemicIssues) === false) {
 			$this->logger->warning(
 				'Systemic complaint issues detected: ' . count($systemicIssues) . ' categories flagged',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 		}
-
-		return $systemicIssues;
-	}//end detectSystemicIssues()
+	}//end warnSystemic()
 
 	/**
-	 * Check for employees referenced in >= 3 complaints in the last 6 months.
+	 * Count complaints per involved employee and keep their category and date.
 	 *
-	 * @return array<int, array<string, mixed>> Anonymized alert records (employee reference redacted)
+	 * @param array<int, array<string, mixed>> $complaints The complaints in the period
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @return array{0: array<string, int>, 1: array<string, list<array<string, mixed>>>} Counts and details per employee
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
-	public function checkEmployeeThresholdAlerts(): array {
-		$sixMonthsAgo = (new DateTimeImmutable('today'))->modify('-6 months')->format('Y-m-d');
-		$today = date('Y-m-d');
-
-		$complaints = $this->fetchComplaintsInRange(dateFrom: $sixMonthsAgo, dateTo: $today);
+	private function tallyEmployees(array $complaints): array {
 		$employeeCounts = [];
 		$employeeDetails = [];
 
@@ -267,6 +372,21 @@ class ComplaintAnalyticsService {
 			];
 		}
 
+		return [$employeeCounts, $employeeDetails];
+	}//end tallyEmployees()
+
+	/**
+	 * The anonymized alerts for employees at or over the threshold, logging each.
+	 *
+	 * @param array<string, int>                          $employeeCounts  Complaint count per employee
+	 * @param array<string, list<array<string, mixed>>>   $employeeDetails Category and date per complaint, per employee
+	 * @param array{0: string, 1: string}                 $periods         The period start and end
+	 *
+	 * @return array<int, array<string, mixed>> Anonymized alert records (employee reference redacted)
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
+	 */
+	private function employeeAlerts(array $employeeCounts, array $employeeDetails, array $periods): array {
 		$alerts = [];
 		foreach ($employeeCounts as $employee => $count) {
 			if ($count < self::EMPLOYEE_ALERT_THRESHOLD) {
@@ -279,18 +399,18 @@ class ComplaintAnalyticsService {
 			$alerts[] = [
 				'count' => $count,
 				'categories' => $categories,
-				'periods' => [$sixMonthsAgo, $today],
+				'periods' => $periods,
 				'threshold' => self::EMPLOYEE_ALERT_THRESHOLD,
 			];
 
 			$this->logger->warning(
 				'Employee complaint threshold exceeded: ' . $count . ' complaints in 6 months',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 		}//end foreach
 
 		return $alerts;
-	}//end checkEmployeeThresholdAlerts()
+	}//end employeeAlerts()
 
 	/**
 	 * Get KPI summary for management dashboard.
@@ -300,11 +420,34 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array<string, mixed> KPI summary
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	public function getKpiSummary(string $dateFrom, string $dateTo): array {
 		$complaints = $this->fetchComplaintsInRange(dateFrom: $dateFrom, dateTo: $dateTo);
 		$total = count($complaints);
+		[$resolved, $withinDeadline] = $this->handledCounts(complaints: $complaints);
+
+		$awbComplianceRate = $this->complianceRate(resolved: $resolved, withinDeadline: $withinDeadline);
+
+		return [
+			'total' => $total,
+			'resolved' => $resolved,
+			'awbComplianceRate' => $awbComplianceRate,
+			'dateFrom' => $dateFrom,
+			'dateTo' => $dateTo,
+		];
+	}//end getKpiSummary()
+
+	/**
+	 * How many complaints were handled, and how many of those carry a handling deadline.
+	 *
+	 * @param array<int, array<string, mixed>> $complaints The complaints.
+	 *
+	 * @return array{0: int, 1: int} Resolved, and resolved within the deadline.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
+	 */
+	private function handledCounts(array $complaints): array {
 		$resolved = 0;
 		$withinDeadline = 0;
 
@@ -323,19 +466,27 @@ class ComplaintAnalyticsService {
 			// Disposition stats would require joining dispositionService — simplified here.
 		}
 
+		return [$resolved, $withinDeadline];
+	}//end handledCounts()
+
+	/**
+	 * The share of handled complaints handled within the deadline, as a percentage.
+	 *
+	 * @param int $resolved       Handled complaints.
+	 * @param int $withinDeadline Handled within the deadline.
+	 *
+	 * @return float The rate, 0.0 when nothing was handled.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
+	 */
+	private function complianceRate(int $resolved, int $withinDeadline): float {
 		$awbComplianceRate = 0.0;
 		if ($resolved > 0) {
 			$awbComplianceRate = round(($withinDeadline / $resolved) * 100, 1);
 		}
 
-		return [
-			'total' => $total,
-			'resolved' => $resolved,
-			'awbComplianceRate' => $awbComplianceRate,
-			'dateFrom' => $dateFrom,
-			'dateTo' => $dateTo,
-		];
-	}//end getKpiSummary()
+		return $awbComplianceRate;
+	}//end complianceRate()
 
 	/**
 	 * Fetch all complaints in a given date range.
@@ -345,25 +496,11 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array<int, array<string, mixed>> List of complaints
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	private function fetchComplaintsInRange(string $dateFrom, string $dateTo): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('complaint_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+		return $this->rows->search(
+			schemaKey: 'complaint_schema',
 			filters: [
 				'ontvangstdatum>=' => $dateFrom,
 				'ontvangstdatum<=' => $dateTo,
@@ -380,7 +517,7 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array{0: string, 1: string} [from, to] ISO dates
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	private function getQuarterRange(int $year, int $quarter): array {
 		$startMonth = ($quarter - 1) * 3 + 1;

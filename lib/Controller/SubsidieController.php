@@ -29,11 +29,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SubsidieServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TussenrapportageServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\VaststellingServiceInterface;
 use OCA\Dossiq\Service\Subsidie\BeschikkingService;
-use OCA\Dossiq\Service\Subsidie\SubsidieService;
-use OCA\Dossiq\Service\Subsidie\TussenrapportageService;
-use OCA\Dossiq\Service\Subsidie\VaststellingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -46,28 +46,28 @@ use OCP\IUserSession;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
  */
 class SubsidieController extends Controller {
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param SubsidieService $subsidyService Core subsidy service.
+	 * @param SubsidieServiceInterface $subsidyService Core subsidy service.
 	 * @param BeschikkingService $decisionService Grant-decision service.
-	 * @param TussenrapportageService $tussenrapportage Interim-report service.
-	 * @param VaststellingService $determinationService Settlement service.
+	 * @param TussenrapportageServiceInterface $tussenrapportage Interim-report service.
+	 * @param VaststellingServiceInterface $determinationService Settlement service.
 	 * @param IUserSession $userSession The user session.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly SubsidieService $subsidyService,
+		private readonly SubsidieServiceInterface $subsidyService,
 		private readonly BeschikkingService $decisionService,
-		private readonly TussenrapportageService $tussenrapportage,
-		private readonly VaststellingService $determinationService,
+		private readonly TussenrapportageServiceInterface $tussenrapportage,
+		private readonly VaststellingServiceInterface $determinationService,
 		private readonly IUserSession $userSession,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -77,7 +77,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function index(): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -106,7 +106,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function create(): JSONResponse {
 		$userId = $this->requireUser();
@@ -120,7 +120,7 @@ class SubsidieController extends Controller {
 			$body['handler'] = $userId;
 		}
 
-		$term = (int)($body['termijnWeken'] ?? SubsidieService::DEFAULT_AANVRAAG_TERMIJN_WEKEN);
+		$term = (int)($body['termijnWeken'] ?? SubsidieServiceInterface::DEFAULT_AANVRAAG_TERMIJN_WEKEN);
 		unset($body['termijnWeken']);
 
 		try {
@@ -141,7 +141,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function transition(string $id): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -168,7 +168,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function createBeschikking(string $id): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -197,7 +197,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function publishBeschikking(string $decisionId): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -222,7 +222,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function signBeschikking(string $decisionId): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -256,7 +256,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function createTussenrapportage(string $uitvoeringId): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -284,7 +284,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function approveTussenrapportage(string $reportId): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -326,7 +326,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function finalizeVaststelling(string $determinationId): JSONResponse {
 		if ($this->requireUser() === null) {

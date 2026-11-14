@@ -31,8 +31,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\AiService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\AiServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -52,16 +52,16 @@ class AiSettingsController extends Controller {
 	 *
 	 * @param string $appName The application name
 	 * @param IRequest $request The request object
-	 * @param AiService $aiService The AI service
-	 * @param SettingsService $settingsService The settings service
+	 * @param AiServiceInterface $aiService The AI service
+	 * @param SettingsServiceInterface $settingsService The settings service
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private AiService $aiService,
-		private SettingsService $settingsService,
+		private AiServiceInterface $aiService,
+		private SettingsServiceInterface $settingsService,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -83,7 +83,7 @@ class AiSettingsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function getSettings(): JSONResponse {
@@ -95,7 +95,7 @@ class AiSettingsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function updateSettings(): JSONResponse {
@@ -110,7 +110,7 @@ class AiSettingsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function healthCheck(): JSONResponse {

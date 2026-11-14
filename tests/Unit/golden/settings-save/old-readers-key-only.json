@@ -1,0 +1,15 @@
+{
+    "writes": [
+        {
+            "reviewerThroughputReaders": "readers"
+        },
+        {
+            "wooReviewerThroughputReaders": "readers"
+        }
+    ],
+    "answer": {
+        "reviewerThroughputReport": "true",
+        "reviewerThroughputReaders": "readers",
+        "wooReviewerThroughputReaders": "readers"
+    }
+}

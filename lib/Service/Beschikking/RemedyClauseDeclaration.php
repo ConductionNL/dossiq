@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md
+ * @spec openspec/specs/beschikking-generatie/spec.md
  */
 
 declare(strict_types=1);
@@ -40,20 +40,24 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Beschikking;
 
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\StoredArray;
+use OCP\IL10N;
 
 /**
  * Reads the remedy a case type declares, and writes the clause its decisions print.
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md
+ * @spec openspec/specs/beschikking-generatie/spec.md
  */
 class RemedyClauseDeclaration {
 
 	/**
 	 * Constructor.
 	 *
+	 * @param IL10N           $l10n Words the publication warning in the reader's language.
 	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
+		private readonly IL10N $l10n,
 		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
@@ -92,7 +96,7 @@ class RemedyClauseDeclaration {
 	 *
 	 * @return bool True when a kind, a term and a body are all named.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
+	 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
 	 */
 	public function isDeclared(array $caseType): bool {
 		$declaration = $this->declarationFor(caseType: $caseType);
@@ -105,24 +109,14 @@ class RemedyClauseDeclaration {
 	 *
 	 * @param array<string, mixed> $caseType The effective case type row.
 	 *
-	 * @return array{kind: string, termDays: int, body: string, enabled: bool, caseType: string} The declaration;
+	 * @return array{kind: string, termDays: int, body: string, enabled: bool, caseType: string, id: string, label: string, description: string}
+	 *         The declaration;
 	 *         `caseType` is the case type a lodged remedy opens, '' when none is named.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
+	 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
 	 */
 	public function declarationFor(array $caseType): array {
-		$declared = ($caseType[self::DECLARATION] ?? null);
-		if (is_string($declared) === true) {
-			$decoded = json_decode($declared, true);
-			$declared = [];
-			if (is_array($decoded) === true) {
-				$declared = $decoded;
-			}
-		}
-
-		if (is_array($declared) === false) {
-			$declared = [];
-		}
+		$declared = StoredArray::from(value: ($caseType[self::DECLARATION] ?? null));
 
 		return [
 			'kind' => strtolower(trim((string)($declared['kind'] ?? ''))),
@@ -130,6 +124,9 @@ class RemedyClauseDeclaration {
 			'body' => trim((string)($declared['body'] ?? '')),
 			'enabled' => (($declared['enabled'] ?? true) !== false),
 			'caseType' => trim((string)($declared['caseType'] ?? '')),
+			'id' => trim((string)($declared['id'] ?? '')),
+			'label' => trim((string)($declared['label'] ?? '')),
+			'description' => trim((string)($declared['description'] ?? '')),
 		];
 	}//end declarationFor()
 
@@ -140,7 +137,7 @@ class RemedyClauseDeclaration {
 	 *
 	 * @return int The term in days.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#requirement-sending-a-decision-starts-the-remedy-term-req-dec-04
+	 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-sending-a-decision-starts-the-remedy-term-req-dec-04
 	 */
 	public function termDaysFor(array $caseType): int {
 		$declaration = $this->declarationFor(caseType: $caseType);
@@ -162,7 +159,7 @@ class RemedyClauseDeclaration {
 	 *
 	 * @return string The clause, '' when the case type declares no remedy.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
+	 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
 	 */
 	public function clauseFor(array $caseType): string {
 		$declaration = $this->declarationFor(caseType: $caseType);
@@ -190,7 +187,7 @@ class RemedyClauseDeclaration {
 	 *
 	 * @return string The clause, '' when the case type declares no remedy.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
+	 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
 	 */
 	public function clauseInEnglishFor(array $caseType): string {
 		$declaration = $this->declarationFor(caseType: $caseType);
@@ -219,7 +216,7 @@ class RemedyClauseDeclaration {
 	 *
 	 * @return array<int, string> The warnings, empty when the declaration is complete.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
+	 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
 	 */
 	public function publicationWarnings(array $caseType): array {
 		$declaration = $this->declarationFor(caseType: $caseType);
@@ -233,12 +230,15 @@ class RemedyClauseDeclaration {
 
 		$title = $this->text->textOf(value: ($caseType['title'] ?? null));
 		if ($title === '') {
-			$title = 'this case type';
+			$title = $this->l10n->t('this case type');
 		}
 
 		return [
-			'The decisions of ' . $title . ' declare no remedy, so they print no '
-			. 'bezwaarclausule. Name the kind, the term in days and the body it is lodged with.',
+			$this->l10n->t(
+				'The decisions of %s declare no remedy, so they print no bezwaarclausule. Name the kind, '
+				. 'the term in days and the body it is lodged with.',
+				[$title]
+			),
 		];
 	}//end publicationWarnings()
 }//end class

@@ -29,10 +29,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\FreezeRegistryInterface;
+use OCA\Dossiq\Kernel\Contracts\FrozenRecordGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\RecordSealInterface;
 use OCA\Dossiq\Service\FrozenRecord\FreezeDefinition;
-use OCA\Dossiq\Service\FrozenRecord\FreezeRegistry;
-use OCA\Dossiq\Service\FrozenRecord\FrozenRecordGuard;
-use OCA\Dossiq\Service\FrozenRecord\RecordSeal;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -56,15 +56,15 @@ class FrozenRecordListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param FreezeRegistry $registry The configured freeze entries.
-	 * @param FrozenRecordGuard $guard The freeze rule.
-	 * @param RecordSeal $seal Seals the record as it freezes.
+	 * @param FreezeRegistryInterface $registry The configured freeze entries.
+	 * @param FrozenRecordGuardInterface $guard The freeze rule.
+	 * @param RecordSealInterface $seal Seals the record as it freezes.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private readonly FreezeRegistry $registry,
-		private readonly FrozenRecordGuard $guard,
-		private readonly RecordSeal $seal,
+		private readonly FreezeRegistryInterface $registry,
+		private readonly FrozenRecordGuardInterface $guard,
+		private readonly RecordSealInterface $seal,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -98,25 +98,62 @@ class FrozenRecordListener implements IEventListener {
 	 */
 	private function onUpdating(ObjectUpdatingEvent $event): void {
 		$stored = $this->payload(object: $event->getOldObject());
-		if ($stored === null) {
-			return;
-		}
-
-		$definition = $this->registry->forRecord(record: $stored);
-		if ($definition === null) {
+		$definition = $this->definitionOf(stored: $stored);
+		if ($stored === null || $definition === null) {
 			return;
 		}
 
 		$incoming = $this->payload(object: $event->getNewObject());
 		if ($incoming === null) {
 			// Fail CLOSED: a write that cannot be read cannot be cleared either.
-			if ($this->guard->isFrozen(definition: $definition, stored: $stored) === true) {
-				$this->refuse(event: $event, refusal: $this->guard->refusal(definition: $definition));
-			}
-
+			$this->refuseIfFrozen(event: $event, definition: $definition, stored: $stored);
 			return;
 		}
 
+		$this->checkUpdate(event: $event, definition: $definition, stored: $stored, incoming: $incoming);
+	}//end onUpdating()
+
+	/**
+	 * The freeze definition that governs a stored record, null when none does or it cannot be read.
+	 *
+	 * @param array<string, mixed>|null $stored The stored record's payload.
+	 *
+	 * @return FreezeDefinition|null
+	 */
+	private function definitionOf(?array $stored): ?FreezeDefinition {
+		if ($stored === null) {
+			return null;
+		}
+
+		return $this->registry->forRecord(record: $stored);
+	}//end definitionOf()
+
+	/**
+	 * Refuse a write that cannot be read when the stored record is frozen.
+	 *
+	 * @param ObjectUpdatingEvent  $event      The update.
+	 * @param FreezeDefinition     $definition The record's freeze definition.
+	 * @param array<string, mixed> $stored     The stored record's payload.
+	 *
+	 * @return void
+	 */
+	private function refuseIfFrozen(ObjectUpdatingEvent $event, FreezeDefinition $definition, array $stored): void {
+		if ($this->guard->isFrozen(definition: $definition, stored: $stored) === true) {
+			$this->refuse(event: $event, refusal: $this->guard->refusal(definition: $definition));
+		}
+	}//end refuseIfFrozen()
+
+	/**
+	 * Refuse an update the freeze forbids, and seal the record when the update freezes it.
+	 *
+	 * @param ObjectUpdatingEvent  $event      The update.
+	 * @param FreezeDefinition     $definition The record's freeze definition.
+	 * @param array<string, mixed> $stored     The stored record's payload.
+	 * @param array<string, mixed> $incoming   The incoming payload.
+	 *
+	 * @return void
+	 */
+	private function checkUpdate(ObjectUpdatingEvent $event, FreezeDefinition $definition, array $stored, array $incoming): void {
 		try {
 			$this->guard->assertUpdatable(definition: $definition, stored: $stored, incoming: $incoming);
 		} catch (RefusedException $refusal) {
@@ -127,7 +164,7 @@ class FrozenRecordListener implements IEventListener {
 		if ($definition->sealFields !== [] && $this->guard->isFreezing(definition: $definition, stored: $stored, incoming: $incoming) === true) {
 			$this->sealOnFreeze(event: $event, definition: $definition, incoming: $incoming);
 		}
-	}//end onUpdating()
+	}//end checkUpdate()
 
 	/**
 	 * Write the seal into the freezing write, keeping what other listeners modified.

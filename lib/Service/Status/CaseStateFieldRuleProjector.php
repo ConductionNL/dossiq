@@ -142,33 +142,68 @@ class CaseStateFieldRuleProjector {
 		);
 
 		$requiredByStatus = $this->requiredByStatus(caseTypeId: $caseTypeId);
-		$roleFields = $this->roles->lifecycleFields(
-			caseType: $this->store->readCaseType(caseTypeId: $caseTypeId)
-		);
+		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
 
 		$states = [];
 		foreach ($statusTypes as $statusType) {
-			$stateKey = $this->store->rowId(row: $statusType);
-			if ($stateKey === '') {
-				continue;
-			}
-
-			$fields = $this->declaration->fieldsBlock(statusType: $statusType);
-			$fields = $this->foldInRequired(
-				fields: $fields,
-				required: ($requiredByStatus[$stateKey] ?? [])
-			);
-			$fields = $this->roles->foldInto(fields: $fields, roles: $roleFields);
-
-			if ($fields === []) {
-				continue;
-			}
-
-			$states[$stateKey] = ['fields' => $fields];
+			$states = $this->withState(states: $states, statusType: $statusType, requiredByStatus: $requiredByStatus, caseType: $caseType);
 		}
 
 		return $states;
 	}//end statesOf()
+
+	/**
+	 * The states with one status type's field rules added, when it has any.
+	 *
+	 * @param array<string, array<string, mixed>> $states The states so far.
+	 * @param array<string, mixed> $statusType The status type row.
+	 * @param array<string, array<int, string>> $requiredByStatus The required fields per status.
+	 * @param array<string, mixed> $caseType The case type.
+	 *
+	 * @return array<string, array<string, mixed>> The states.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function withState(array $states, array $statusType, array $requiredByStatus, array $caseType): array {
+		$stateKey = $this->store->rowId(row: $statusType);
+		if ($stateKey === '') {
+			return $states;
+		}
+
+		$fields = $this->stateFields(statusType: $statusType, stateKey: $stateKey, required: ($requiredByStatus[$stateKey] ?? []), caseType: $caseType);
+		if ($fields === []) {
+			return $states;
+		}
+
+		$states[$stateKey] = ['fields' => $fields];
+
+		return $states;
+	}//end withState()
+
+	/**
+	 * One state's field rules: declared on the status type, required by it, and per role.
+	 *
+	 * @param array<string, mixed> $statusType The status type row.
+	 * @param string $stateKey The status type id.
+	 * @param array<int, string> $required The fields required in this state.
+	 * @param array<string, mixed> $caseType The case type.
+	 *
+	 * @return array<string, mixed> The fields block.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function stateFields(array $statusType, string $stateKey, array $required, array $caseType): array {
+		$fields = $this->declaration->fieldsBlock(statusType: $statusType);
+		$fields = $this->foldInRequired(
+			fields: $fields,
+			required: $required
+		);
+
+		return $this->roles->foldInto(
+			fields: $fields,
+			roles: $this->roles->lifecycleFields(caseType: $caseType, statusId: $stateKey)
+		);
+	}//end stateFields()
 
 	/**
 	 * Publish a case type's states onto the live case schema.

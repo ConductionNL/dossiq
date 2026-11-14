@@ -33,7 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Deelzaak;
 
+use OCA\Dossiq\Kernel\Contracts\CaseObjectReaderInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -41,7 +43,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/deelzaak-support/spec.md
  */
-class CaseObjectReader {
+class CaseObjectReader implements CaseObjectReaderInterface {
 	/**
 	 * Constructor.
 	 *
@@ -66,18 +68,14 @@ class CaseObjectReader {
 	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	public function fetchCaseById(string $caseUuid): ?array {
-		if ($caseUuid === '') {
-			return null;
-		}
-
-		$objectService = $this->settingsService->getObjectService();
+		$objectService = $this->objectServiceFor(caseUuid: $caseUuid);
 		if ($objectService === null) {
 			return null;
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($schema) === true) {
+		if ($this->hasCaseTable(register: $register, schema: $schema) === false) {
 			return null;
 		}
 
@@ -93,6 +91,33 @@ class CaseObjectReader {
 
 		return $this->toArray(obj: $obj);
 	}//end fetchCaseById()
+
+	/**
+	 * OpenRegister's object service to look a case up with, null for an empty uuid or when it is absent.
+	 *
+	 * @param string $caseUuid The case uuid.
+	 *
+	 * @return object|null
+	 */
+	private function objectServiceFor(string $caseUuid): ?object {
+		if ($caseUuid === '') {
+			return null;
+		}
+
+		return $this->settingsService->getObjectService();
+	}//end objectServiceFor()
+
+	/**
+	 * Whether both the register and the case schema are configured.
+	 *
+	 * @param mixed $register The register id.
+	 * @param mixed $schema   The case schema id.
+	 *
+	 * @return bool
+	 */
+	private function hasCaseTable(mixed $register, mixed $schema): bool {
+		return empty($register) === false && empty($schema) === false;
+	}//end hasCaseTable()
 
 	/**
 	 * Load a caseType by id or slug.
@@ -165,18 +190,6 @@ class CaseObjectReader {
 	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	private function toArray(mixed $obj): ?array {
-		if ($obj === null) {
-			return null;
-		}
-
-		if (is_object($obj) === true && method_exists($obj, 'jsonSerialize') === true) {
-			$obj = $obj->jsonSerialize();
-		}
-
-		if (is_array($obj) === true) {
-			return $obj;
-		}
-
-		return null;
+		return SerialisedResult::rowOf(value: $obj);
 	}//end toArray()
 }//end class

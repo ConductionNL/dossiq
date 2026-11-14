@@ -95,7 +95,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IConfig;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -190,26 +190,70 @@ class MigrateUserPreferences implements IRepairStep {
 		$this->failed = 0;
 
 		try {
-			// The callback returns null rather than void: IUserManager treats a
-			// `false` return as "stop iterating", so the contract is
-			// Closure(IUser): (bool|null) and null means "keep going".
-			$this->userManager->callForSeenUsers(
-				function (IUser $user): ?bool {
-					$this->migrateUser(userId: $user->getUID());
-					return null;
-				}
-			);
+			$this->migrateEveryUser();
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: could not enumerate users; per-user preferences were not migrated',
-				['exception' => $e->getMessage()]
-			);
-			$output->warning(
-				'MigrateUserPreferences: user enumeration failed; preferences left under the procest app id.'
-			);
+			$this->reportEnumerationFailed(output: $output, error: $e);
 			return;
 		}//end try
 
+		$this->report(output: $output);
+	}//end run()
+
+	/**
+	 * Migrate the preferences of every user this install has seen.
+	 *
+	 * @return void
+	 *
+	 * @spec exclude One-off procest -> dossiq app-id rename plumbing: it moves
+	 *  oc_preferences rows between namespaces and adds no behaviour of its own.
+	 *  The preferences it preserves are specified where they are read.
+	 */
+	private function migrateEveryUser(): void {
+		// The callback returns null rather than void: IUserManager treats a
+		// `false` return as "stop iterating", so the contract is
+		// Closure(IUser): (bool|null) and null means "keep going".
+		$this->userManager->callForSeenUsers(
+			function (IUser $user): ?bool {
+				$this->migrateUser(userId: $user->getUID());
+				return null;
+			}
+		);
+	}//end migrateEveryUser()
+
+	/**
+	 * Log and report that the users could not be enumerated.
+	 *
+	 * @param IOutput $output The output interface for progress reporting.
+	 * @param Throwable $error Why the enumeration failed.
+	 *
+	 * @return void
+	 *
+	 * @spec exclude One-off procest -> dossiq app-id rename plumbing: it moves
+	 *  oc_preferences rows between namespaces and adds no behaviour of its own.
+	 *  The preferences it preserves are specified where they are read.
+	 */
+	private function reportEnumerationFailed(IOutput $output, Throwable $error): void {
+		$this->logger->warning(
+			'Dossiq: could not enumerate users; per-user preferences were not migrated',
+			['exception' => $error->getMessage()]
+		);
+		$output->warning(
+			'MigrateUserPreferences: user enumeration failed; preferences left under the procest app id.'
+		);
+	}//end reportEnumerationFailed()
+
+	/**
+	 * Report the counts, or that there was nothing to migrate.
+	 *
+	 * @param IOutput $output The output interface for progress reporting.
+	 *
+	 * @return void
+	 *
+	 * @spec exclude One-off procest -> dossiq app-id rename plumbing: it moves
+	 *  oc_preferences rows between namespaces and adds no behaviour of its own.
+	 *  The preferences it preserves are specified where they are read.
+	 */
+	private function report(IOutput $output): void {
 		if ($this->migrated === 0 && $this->alreadyPresent === 0 && $this->failed === 0) {
 			$output->info(
 				'MigrateUserPreferences: no stored procest user preferences on this install; nothing to do.'
@@ -221,8 +265,7 @@ class MigrateUserPreferences implements IRepairStep {
 			'MigrateUserPreferences: migrated ' . $this->migrated . ' preference(s); '
 			. $this->alreadyPresent . ' already set under dossiq; ' . $this->failed . ' failed.'
 		);
-
-	}//end run()
+	}//end report()
 
 	/**
 	 * Copy one user's stored preferences from the old app id to the new one.
@@ -240,13 +283,13 @@ class MigrateUserPreferences implements IRepairStep {
 					continue;
 				}
 
-				$existing = $this->config->getUserValue($userId, Application::APP_ID, $key, '');
+				$existing = $this->config->getUserValue($userId, AppIdentity::APP_ID, $key, '');
 				if ($existing !== '') {
 					$this->alreadyPresent++;
 					continue;
 				}
 
-				$this->config->setUserValue($userId, Application::APP_ID, $key, $old);
+				$this->config->setUserValue($userId, AppIdentity::APP_ID, $key, $old);
 				$this->migrated++;
 			} catch (Throwable $e) {
 				$this->failed++;

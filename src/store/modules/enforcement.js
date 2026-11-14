@@ -33,6 +33,81 @@ const DEFAULT_LHS_MATRIX = {
 	},
 }
 
+/**
+ * The LHS matrix configured in the app settings, or undefined when none is
+ * configured or the settings cannot be read.
+ *
+ * @return {Promise<object|null|undefined>} The configured matrix.
+ */
+async function fetchConfiguredMatrix() {
+	const response = await fetch('/apps/dossiq/api/settings', {
+		headers: {
+			'Content-Type': 'application/json',
+			requesttoken: OC.requestToken,
+			'OCS-APIREQUEST': 'true',
+		},
+	})
+	if (!response.ok) {
+		return undefined
+	}
+	const data = await response.json()
+	return storedMatrix(data.config?.lhsMatrix)
+}
+
+/**
+ * A stored LHS matrix, parsed when it was stored as text; undefined when
+ * nothing is stored.
+ *
+ * @param {object|string|undefined} stored The stored matrix.
+ * @return {object|null|undefined} The matrix.
+ */
+function storedMatrix(stored) {
+	if (!stored) {
+		return undefined
+	}
+	return typeof stored === 'string' ? JSON.parse(stored) : stored
+}
+
+/**
+ * Save a new enforcement action, with its intervention looked up when not
+ * given, and keep it in the store.
+ *
+ * @param {object} store The enforcement store.
+ * @param {object} actionData The action data.
+ * @return {Promise<object>} The saved action.
+ */
+async function saveNewAction(store, actionData) {
+	fillIntervention(store, actionData)
+
+	const objectStore = useObjectStore()
+	const saved = await objectStore.saveObject('handhavingsactie', {
+		...actionData,
+		status: actionData.status || 'opgelegd',
+	})
+	store.actions.push(saved)
+	return saved
+}
+
+/**
+ * Look the intervention up in the LHS matrix when the action does not name
+ * one but does name its severity and behaviour.
+ *
+ * @param {object} store The enforcement store.
+ * @param {object} actionData The action data, completed in place.
+ */
+function fillIntervention(store, actionData) {
+	if (
+		!actionData.intervention
+		&& actionData.severity
+		&& actionData.behaviour
+	) {
+		actionData.intervention = store.lookupLhs(
+			actionData.severity,
+			actionData.behaviour,
+		)
+	}
+}
+
 export const useEnforcementStore = defineStore('enforcement', {
 	state: () => ({
 		/** @type {Array} Enforcement actions for the current case */
@@ -153,21 +228,9 @@ export const useEnforcementStore = defineStore('enforcement', {
 				return
 			}
 			try {
-				const response = await fetch('/apps/dossiq/api/settings', {
-					headers: {
-						'Content-Type': 'application/json',
-						requesttoken: OC.requestToken,
-						'OCS-APIREQUEST': 'true',
-					},
-				})
-				if (response.ok) {
-					const data = await response.json()
-					if (data.config?.lhsMatrix) {
-						this.lhsMatrix =
-							typeof data.config.lhsMatrix === 'string'
-								? JSON.parse(data.config.lhsMatrix)
-								: data.config.lhsMatrix
-					}
+				const matrix = await fetchConfiguredMatrix()
+				if (matrix !== undefined) {
+					this.lhsMatrix = matrix
 				}
 				this.matrixLoaded = true
 			} catch (error) {
@@ -217,25 +280,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 			this.loading = true
 			this.error = null
 			try {
-				// Auto-lookup intervention if not provided
-				if (
-					!actionData.intervention
-					&& actionData.severity
-					&& actionData.behaviour
-				) {
-					actionData.intervention = this.lookupLhs(
-						actionData.severity,
-						actionData.behaviour,
-					)
-				}
-
-				const objectStore = useObjectStore()
-				const saved = await objectStore.saveObject('handhavingsactie', {
-					...actionData,
-					status: actionData.status || 'opgelegd',
-				})
-				this.actions.push(saved)
-				return saved
+				return await saveNewAction(this, actionData)
 			} catch (error) {
 				this.error = error.message
 				console.error('Error creating enforcement action:', error)

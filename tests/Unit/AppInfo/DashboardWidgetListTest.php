@@ -16,20 +16,21 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\DashboardWidgetList;
+use OCA\Dossiq\Dashboard\DashboardWidgetList;
 use OCA\Dossiq\Dashboard\MyOpenWorkWidget;
-use OCA\Dossiq\Dashboard\MyTasksWidget;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Dossiq\AppInfo\Registrar\DashboardWidgetList
+ * @covers \OCA\Dossiq\Dashboard\DashboardWidgetList
  */
 class DashboardWidgetListTest extends TestCase {
 	public function testEveryListedWidgetClassExistsOnce(): void {
 		$classes = (new DashboardWidgetList())->classes();
 
 		self::assertContains(MyOpenWorkWidget::class, $classes);
-		self::assertContains(MyTasksWidget::class, $classes);
+		// One Mijn werk widget replaces My tasks and Overdue cases (board DqNextcloudDashboard).
+		self::assertNotContains(needle: 'OCA\\Dossiq\\Dashboard\\MyTasksWidget', haystack: $classes);
+		self::assertNotContains(needle: 'OCA\\Dossiq\\Dashboard\\OverdueCasesWidget', haystack: $classes);
 		self::assertSame($classes, array_values(array_unique($classes)));
 		foreach ($classes as $class) {
 			self::assertTrue(class_exists($class), $class);

@@ -1,0 +1,363 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V.
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * A case type's conditional rules (caseType.rules) for the Rules tab: the
+ * fields a condition can name, the conversion between the stored condition
+ * vocabulary and the library's condition editor, and a rule as an
+ * "Als … / dan …" row. Dossiq evaluates no rule; the case type's publish
+ * projects them onto the engines that own the actions.
+ *
+ * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+ */
+
+import { conditionSentence } from '@conduction/nextcloud-vue'
+import { resolveTranslatable } from '../utils/i18nResolver.js'
+import axios from '@nextcloud/axios'
+import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
+
+/** The editor field that stands for the case's status. */
+export const STATUS_FIELD = 'status'
+
+/** The prefix of an editor field that stands for a document type. */
+export const DOCUMENT_FIELD_PREFIX = 'document:'
+
+const PROPERTY_TYPES = {
+	number: 'number',
+	integer: 'integer',
+	boolean: 'boolean',
+	date: 'date',
+	datetime: 'date',
+}
+
+/**
+ * The fields a condition of this case type can name.
+ *
+ * Its own property definitions, its status and its document types (a
+ * document can only be "filled in").
+ *
+ * @param {object} catalogue The case type's catalogue.
+ * @param {Array<object>} [catalogue.propertyDefinitions] Its property definitions.
+ * @param {Array<object>} [catalogue.statusTypes] Its statuses.
+ * @param {Array<object>} [catalogue.documentTypes] Its document types.
+ * @return {Array<{id: string, label: string, type: string, options?: Array, format?: string}>}
+ */
+export function ruleFields({ propertyDefinitions = [], statusTypes = [], documentTypes = [] } = {}) {
+	const fields = propertyDefinitions
+		.filter((p) => p && p.name)
+		.map(propertyField)
+	fields.push(...statusFields(statusTypes))
+	fields.push(...documentFields(documentTypes))
+	return fields
+}
+
+/**
+ * The status as a condition field, when the case type has statuses.
+ *
+ * @param {Array<object>} statusTypes The statuses.
+ * @return {Array<object>} The status field, or none.
+ */
+function statusFields(statusTypes) {
+	return statusTypes.length > 0 ? [statusField(statusTypes)] : []
+}
+
+/**
+ * The document types as condition fields, those without an id left out.
+ *
+ * @param {Array<object>} documentTypes The document types.
+ * @return {Array<object>} The fields.
+ */
+function documentFields(documentTypes) {
+	const fields = []
+	for (const d of documentTypes) {
+		if (d && d.id) {
+			fields.push(documentField(d))
+		}
+	}
+	return fields
+}
+
+/**
+ * One property definition as a condition field.
+ *
+ * @param {object} p The property definition.
+ * @return {{id: string, label: string, type: string, options?: Array, format?: string}} The field.
+ */
+function propertyField(p) {
+	const field = { id: p.name, label: resolveTranslatable(p.title || p.label || wordsOf(p.name)).text, type: PROPERTY_TYPES[p.propertyType] || 'string' }
+	addOptions(field, p)
+	addCurrencyFormat(field, p)
+	return field
+}
+
+/**
+ * Give a field the choices its property definition lists.
+ *
+ * @param {object} field The field, changed in place.
+ * @param {object} p The property definition.
+ * @return {void}
+ */
+function addOptions(field, p) {
+	if (Array.isArray(p.enumValues) && p.enumValues.length > 0) {
+		field.options = p.enumValues.map((v) => ({ id: v, label: String(v) }))
+	}
+}
+
+/**
+ * Mark a number field that holds money as currency.
+ *
+ * @param {object} field The field, changed in place.
+ * @param {object} p The property definition.
+ * @return {void}
+ */
+function addCurrencyFormat(field, p) {
+	if (/kosten|bedrag|amount|price|prijs/i.test(p.name) && field.type === 'number') {
+		field.format = 'currency'
+	}
+}
+
+/**
+ * The status as a condition field, with the case type's statuses as choices.
+ *
+ * @param {Array<object>} statusTypes The statuses.
+ * @return {object} The field.
+ */
+function statusField(statusTypes) {
+	return { id: STATUS_FIELD, label: t('dossiq', 'status'), type: 'enum', options: statusTypes.map((s) => ({ id: s.id, label: resolveTranslatable(s.name || s.title || s.id).text })) }
+}
+
+/**
+ * One document type as a condition field: it can only be filled in.
+ *
+ * @param {object} d The document type.
+ * @return {object} The field.
+ */
+function documentField(d) {
+	return { id: DOCUMENT_FIELD_PREFIX + d.id, label: t('dossiq', 'Document {name}', { name: resolveTranslatable(d.name || d.title || d.id).text }), type: 'presence' }
+}
+
+/**
+ * The case type's effective property definitions and statuses, inherited ones included.
+ *
+ * A derived case type (Omgevingsvergunning regulier) declares few rows of its
+ * own; the blueprint merges its parents' in, which is what a rule's
+ * conditions may name.
+ *
+ * @param {string} caseTypeId The case type.
+ * @return {Promise<{propertyDefinitions: Array<object>, statusTypes: Array<object>}|null>} Null when unreadable.
+ */
+export async function fetchBlueprintCatalogue(caseTypeId) {
+	try {
+		const { data } = await axios.get(generateUrl(`/apps/dossiq/api/case-types/${encodeURIComponent(caseTypeId)}/blueprint`))
+		if (!Array.isArray(data?.propertyDefinitions) || !Array.isArray(data?.statusTypes)) {
+			return null
+		}
+		return { propertyDefinitions: data.propertyDefinitions, statusTypes: data.statusTypes }
+	} catch {
+		return null
+	}
+}
+
+/**
+ * The case type's role type names per Nextcloud group (`ncGroupId`), so a
+ * rule that names a group can be labelled with the roles it stands for. An
+ * empty map when the role types cannot be read.
+ *
+ * @param {string} caseTypeId The case type.
+ * @return {Promise<Object<string, Array<string>>>} The names per group.
+ * @spec openspec/specs/case-types/spec.md
+ */
+export async function fetchRoleNamesByGroup(caseTypeId) {
+	try {
+		const { data } = await axios.get(generateUrl('/apps/openregister/api/objects/dossiq/roleType'), { params: { caseType: caseTypeId, _limit: 100 } })
+		return roleNamesByGroup(data?.results)
+	} catch {
+		return {}
+	}
+}
+
+/**
+ * The role type names per group, from the role types read.
+ *
+ * @param {unknown} results The role types; anything but a list reads as none.
+ * @return {Object<string, Array<string>>} The names per group.
+ */
+function roleNamesByGroup(results) {
+	const names = {}
+	for (const roleType of Array.isArray(results) ? results : []) {
+		addRoleName(names, roleType)
+	}
+	return names
+}
+
+/**
+ * Add a role type's trimmed name under its group, when it has both.
+ *
+ * @param {Object<string, Array<string>>} names The names per group, changed in place.
+ * @param {object|null} roleType One role type.
+ * @return {void}
+ */
+function addRoleName(names, roleType) {
+	const group = textOf(roleType?.ncGroupId)
+	const name = textOf(roleType?.name).trim()
+	if (group !== '' && name !== '') {
+		names[group] = [...(names[group] || []), name]
+	}
+}
+
+/**
+ * A value when it is text, else the empty string.
+ *
+ * @param {unknown} value The value.
+ * @return {string} The text.
+ */
+function textOf(value) {
+	return typeof value === 'string' ? value : ''
+}
+
+/**
+ * How each stored condition kind reads as an editor row.
+ *
+ * @type {Map<string, function(object): {field: string, operator: string, value?: unknown}>}
+ */
+const EDITOR_ROWS_BY_KIND = new Map([
+	['fieldCompare', (condition) => ({ field: condition.field, operator: condition.op || 'eq', value: condition.value })],
+	['fieldEquals', (condition) => ({ field: condition.field, operator: 'eq', value: condition.value })],
+	['fieldPresent', (condition) => ({ field: condition.field, operator: 'present' })],
+	['statusIs', (condition) => ({ field: STATUS_FIELD, operator: 'eq', value: condition.status })],
+	['documentPresent', (condition) => ({ field: DOCUMENT_FIELD_PREFIX + condition.documentType, operator: 'present' })],
+])
+
+/**
+ * A stored condition as an editor row.
+ *
+ * @param {object} condition `{ kind, field?, op?, value?, status?, documentType? }`.
+ * @return {{field: string, operator: string, value?: unknown}}
+ */
+export function toEditorCondition(condition) {
+	const toRow = EDITOR_ROWS_BY_KIND.get(condition?.kind)
+	return toRow === undefined ? { field: '', operator: 'eq', value: '' } : toRow(condition)
+}
+
+/**
+ * An editor row as a stored condition, or null for an unfinished row.
+ *
+ * @param {{field: string, operator: string, value?: unknown}} row The editor row.
+ * @return {object|null}
+ */
+export function fromEditorCondition(row) {
+	const field = String(row?.field || '')
+	if (field === '') {
+		return null
+	}
+	if (field.startsWith(DOCUMENT_FIELD_PREFIX)) {
+		return { kind: 'documentPresent', documentType: field.slice(DOCUMENT_FIELD_PREFIX.length) }
+	}
+	return namedFieldCondition(field, row)
+}
+
+/**
+ * The stored condition for an editor row on the status or a property field.
+ *
+ * @param {string} field The row's field.
+ * @param {{operator: string, value?: unknown}} row The editor row.
+ * @return {object} The stored condition.
+ */
+function namedFieldCondition(field, row) {
+	if (field === STATUS_FIELD && row.operator === 'eq') {
+		return { kind: 'statusIs', status: String(row.value ?? '') }
+	}
+	if (row.operator === 'present') {
+		return { kind: 'fieldPresent', field }
+	}
+	return fieldCompareCondition(field, row)
+}
+
+/**
+ * The stored comparison of a field, `eq` when the row names no operator.
+ *
+ * @param {string} field The row's field.
+ * @param {{operator: string, value?: unknown}} row The editor row.
+ * @return {object} The stored condition.
+ */
+function fieldCompareCondition(field, row) {
+	return { kind: 'fieldCompare', field, op: row.operator || 'eq', value: row.value }
+}
+
+/**
+ * What one action does, after "dan".
+ *
+ * @param {object} action The action.
+ * @param {object} names `{ templates, variants, documentTypes, fields }` id => name maps.
+ * @return {string}
+ */
+export function actionSentence(action, names = {}) {
+	const name = (map, id) => (map && map[id]) || id || ''
+	switch (action?.action) {
+	case 'addTask': return t('dossiq', 'task {title} is added', { title: action.title || name(names.tasks, action.taskType) })
+	case 'chooseVariant': return t('dossiq', 'variant {variant} is chosen', { variant: name(names.variants, action.variant) })
+	case 'sendMessage': return t('dossiq', 'message {template} is sent', { template: name(names.templates, action.emailTemplate) })
+	case 'requireDocument': return t('dossiq', 'document {document} is required', { document: name(names.documentTypes, action.documentType) })
+	case 'setField': return t('dossiq', '{field} becomes {value}', { field: name(names.fields, action.field), value: String(action.value ?? '') })
+	default: return String(action?.action || '')
+	}
+}
+
+/**
+ * A rule as an "Als … / dan …" row.
+ *
+ * The moment comes first when it is a status ("Als status Geweigerd wordt"),
+ * then the conditions joined with "en".
+ *
+ * @param {object} rule The stored rule.
+ * @param {Array<object>} fields The fields from `ruleFields`.
+ * @param {object} names Name maps for `actionSentence` and statuses (`statuses`).
+ * @return {{id: string, title: string, line: string, pill: string}}
+ */
+export function caseTypeRuleRow(rule, fields, names = {}) {
+	const clauses = []
+	if (rule?.when?.event === 'statusEntered') {
+		clauses.push(t('dossiq', 'status {status} is entered', { status: (names.statuses && names.statuses[rule.when.status]) || rule.when.status || '' }))
+	} else if (rule?.when?.event === 'created') {
+		clauses.push(t('dossiq', 'a case is created'))
+	}
+	for (const condition of rule?.conditions || []) {
+		clauses.push(conditionSentence(toEditorCondition(condition), fields))
+	}
+	const actions = (rule?.actions || []).map((a) => actionSentence(a, names))
+	return {
+		id: String(rule?.id ?? ''),
+		title: clauses.length > 0
+			? t('dossiq', 'If {conditions}', { conditions: clauses.join(t('dossiq', ' and ')) })
+			: t('dossiq', 'Always'),
+		line: t('dossiq', 'then {actions}', { actions: actions.join(t('dossiq', ' and ')) }),
+		pill: rule?.enabled === false ? 'off' : 'on',
+	}
+}
+
+/**
+ * A new rule id, unique among the case type's rules.
+ *
+ * @param {Array<object>} rules The existing rules.
+ * @return {string}
+ */
+export function newRuleId(rules = []) {
+	const taken = new Set(rules.map((r) => r?.id))
+	let n = rules.length + 1
+	while (taken.has('rule-' + n)) {
+		n++
+	}
+	return 'rule-' + n
+}
+
+/**
+ * A camelCase or snake_case name in words.
+ *
+ * @param {string} name The name.
+ * @return {string}
+ */
+function wordsOf(name) {
+	const words = String(name).replace(/[_-]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().trim()
+	return words.charAt(0).toUpperCase() + words.slice(1)
+}

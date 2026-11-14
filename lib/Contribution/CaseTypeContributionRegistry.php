@@ -45,6 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Contribution;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeContributionRegistryInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -55,7 +56,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseTypeContributionRegistry {
+class CaseTypeContributionRegistry implements CaseTypeContributionRegistryInterface {
 
 	/**
 	 * Convention FQCN a contributing app must expose.
@@ -104,8 +105,25 @@ class CaseTypeContributionRegistry {
 			return null;
 		}
 
+		$instance = $this->containerInstance(candidate: $candidate, appId: $appId);
+		if (is_object($instance) === false || method_exists($instance, self::PROVIDER_METHOD) === false) {
+			return null;
+		}
+
+		return $instance;
+	}//end resolveProvider()
+
+	/**
+	 * The container's instance of the provider class, or null when it cannot be resolved (logged at debug).
+	 *
+	 * @param string $candidate The provider class.
+	 * @param string $appId     The app.
+	 *
+	 * @return mixed
+	 */
+	private function containerInstance(string $candidate, string $appId): mixed {
 		try {
-			$instance = $this->container->get($candidate);
+			return $this->container->get($candidate);
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'Dossiq: case-type provider not resolvable',
@@ -117,17 +135,7 @@ class CaseTypeContributionRegistry {
 
 			return null;
 		}
-
-		if (is_object($instance) === false) {
-			return null;
-		}
-
-		if (method_exists($instance, self::PROVIDER_METHOD) === false) {
-			return null;
-		}
-
-		return $instance;
-	}//end resolveProvider()
+	}//end containerInstance()
 
 	/**
 	 * Normalise one declared case type, or reject it.
@@ -174,45 +182,83 @@ class CaseTypeContributionRegistry {
 		$out = [];
 
 		foreach ($this->appManager->getInstalledApps() as $appId) {
-			$appId = (string)$appId;
-			$provider = $this->resolveProvider(appId: $appId);
-			if ($provider === null) {
-				continue;
+			foreach ($this->caseTypesOf(appId: (string)$appId) as $caseType) {
+				$out[] = $caseType;
 			}
+		}
 
-			try {
-				$declared = $provider->getCaseTypes();
-			} catch (Throwable $e) {
-				$this->logger->error(
-					'Dossiq: case-type provider failed',
-					[
-						'app' => $appId,
-						'reason' => $e->getMessage(),
-					]
+		return $out;
+	}//end all()
+
+	/**
+	 * The case types one app contributes, normalised; none when it has no provider or its provider fails.
+	 *
+	 * @param string $appId The app.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function caseTypesOf(string $appId): array {
+		$provider = $this->resolveProvider(appId: $appId);
+		if ($provider === null) {
+			return [];
+		}
+
+		$declared = $this->declaredBy(provider: $provider, appId: $appId);
+		if (is_array($declared) === false) {
+			return [];
+		}
+
+		return $this->normalisedAll(declared: $declared, appId: $appId);
+	}//end caseTypesOf()
+
+	/**
+	 * What the provider declares, or null when it fails (logged).
+	 *
+	 * @param object $provider The app's provider.
+	 * @param string $appId    The app.
+	 *
+	 * @return mixed
+	 */
+	private function declaredBy(object $provider, string $appId): mixed {
+		try {
+			return $provider->getCaseTypes();
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: case-type provider failed',
+				[
+					'app' => $appId,
+					'reason' => $e->getMessage(),
+				]
+			);
+			return null;
+		}
+	}//end declaredBy()
+
+	/**
+	 * Every declaration normalised; one with no identifier or title is skipped with a warning.
+	 *
+	 * @param array<int|string, mixed> $declared The declarations.
+	 * @param string                   $appId    The app.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function normalisedAll(array $declared, string $appId): array {
+		$out = [];
+		foreach ($declared as $caseType) {
+			$normalised = $this->normalise(declared: $caseType, appId: $appId);
+			if ($normalised === null) {
+				$this->logger->warning(
+					'Dossiq: skipping a case type with no identifier or title',
+					['app' => $appId]
 				);
 				continue;
 			}
 
-			if (is_array($declared) === false) {
-				continue;
-			}
-
-			foreach ($declared as $caseType) {
-				$normalised = $this->normalise(declared: $caseType, appId: $appId);
-				if ($normalised === null) {
-					$this->logger->warning(
-						'Dossiq: skipping a case type with no identifier or title',
-						['app' => $appId]
-					);
-					continue;
-				}
-
-				$out[] = $normalised;
-			}
-		}//end foreach
+			$out[] = $normalised;
+		}
 
 		return $out;
-	}//end all()
+	}//end normalisedAll()
 
 	/**
 	 * One contributed case type by identifier, or null.

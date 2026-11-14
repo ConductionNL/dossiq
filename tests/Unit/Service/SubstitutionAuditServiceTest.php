@@ -45,8 +45,17 @@ if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
 		/** @param mixed ...$args @return mixed */
 		public function saveObject(...$args): mixed;
 
-		/** @param mixed ...$args @return mixed */
-		public function updateObject(...$args): mixed;
+		/**
+		 * Replace an object, in openregister's shape.
+		 *
+		 * @param string               $objectId      The object id.
+		 * @param array<string, mixed> $data          The object's complete new data.
+		 * @param bool                 $_rbac         Apply register RBAC.
+		 * @param bool                 $_multitenancy Apply organisation scoping.
+		 *
+		 * @return mixed
+		 */
+		public function updateObject(string $objectId, array $data, bool $_rbac = true, bool $_multitenancy = true): mixed;
 	}//end interface
 }//end if
 
@@ -113,7 +122,7 @@ class SubstitutionAuditServiceTest extends TestCase {
 		$os->method('find')->willReturn(['id' => 'case-1', 'assignee' => 'jan', 'caseType' => 'objectionProceeding', 'activity' => '[]']);
 		$captured = null;
 		$os->expects($this->once())->method('updateObject')->willReturnCallback(
-			function (string $r, string $s, string $id, array $payload) use (&$captured) {
+			function (string $id, array $payload) use (&$captured) {
 				$captured = $payload;
 				return $payload;
 			}
@@ -197,4 +206,57 @@ class SubstitutionAuditServiceTest extends TestCase {
 		$this->assertSame('a', $actions[1]['action']);
 		$this->assertSame('case-a', $actions[0]['caseId']);
 	}//end testGetActionsForSubstitution()
+	/**
+	 * Allowed and refused stamps: the whole entry and what capacity was asked for, and no stamp for
+	 * an unassigned case, a missing case, an empty actor, or a write that failed.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeStampAndEveryRefusal(): void {
+		$os = $this->objectServiceMock();
+		$os->method('find')->willReturnCallback(
+			static fn (...$args): ?array => ['case-1' => ['id' => 'case-1', 'assignee' => 'jan', 'caseType' => 'permit'], 'case-free' => ['id' => 'case-free']][$args['id'] ?? $args[0]] ?? null
+		);
+		$writes = 0;
+		$os->method('updateObject')->willReturnCallback(
+			static function (...$args) use (&$writes): array {
+				$writes++;
+				if ($writes > 1) {
+					throw new \RuntimeException('store down');
+				}
+
+				return ($args['data'] ?? []);
+			}
+		);
+		$this->settingsService->method('getObjectService')->willReturn($os);
+		$this->substitutionService->expects($this->exactly(2))->method('resolveActingCapacity')
+			->with('marieke', 'jan', 'case-1', 'permit')->willReturn(['uuid' => 'sub-u']);
+
+		$service = new SubstitutionAuditService($this->settingsService, $this->substitutionService, $this->logger);
+		$entry = $service->stampIfSubstituted('case-1', 'marieke', 'edit');
+		$this->assertSame(['type', 'action', 'actor', 'actedOnBehalfOf', 'substitutionId', 'timestamp'], array_keys($entry));
+		$this->assertSame(['substitution-action', 'edit', 'marieke', 'jan', 'sub-u'], array_slice(array_values($entry), 0, 5));
+
+		$this->assertNull($service->stampIfSubstituted('case-free', 'marieke', 'edit'));
+		$this->assertNull($service->stampIfSubstituted('case-gone', 'marieke', 'edit'));
+		$this->assertNull($service->stampIfSubstituted('case-1', '', 'edit'));
+		$this->assertNull($service->stampIfSubstituted('case-1', 'marieke', 'edit'), 'a failed write stamps nothing');
+	}//end testTheWholeStampAndEveryRefusal()
+	/**
+	 * Own work and an unassigned case never ask for a capacity at all.
+	 *
+	 * @return void
+	 */
+	public function testOwnWorkNeverAsksForACapacity(): void {
+		$os = $this->objectServiceMock();
+		$os->method('find')->willReturnCallback(
+			static fn (...$args): array => ['id' => (string)($args['id'] ?? $args[0]), 'assignee' => (($args['id'] ?? $args[0]) === 'case-own' ? 'marieke' : '')]
+		);
+		$this->settingsService->method('getObjectService')->willReturn($os);
+		$this->substitutionService->expects($this->never())->method('resolveActingCapacity');
+
+		$service = new SubstitutionAuditService($this->settingsService, $this->substitutionService, $this->logger);
+		$this->assertNull($service->stampIfSubstituted('case-own', 'marieke', 'edit'));
+		$this->assertNull($service->stampIfSubstituted('case-free', 'marieke', 'edit'));
+	}//end testOwnWorkNeverAsksForACapacity()
 }//end class

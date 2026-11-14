@@ -56,33 +56,29 @@
 				</div>
 
 				<div class="setting-row">
+					<NcSelect
+						v-model="draft.moment"
+						:inputLabel="t('dossiq', 'Moment')"
+						:options="momentOptions"
+						:reduce="(option) => option.value"
+						label="label" />
+				</div>
+
+				<div class="setting-row">
+					<NcSelect
+						v-model="draft.channel"
+						:inputLabel="t('dossiq', 'Channel')"
+						:options="channelOptions"
+						:reduce="(option) => option.value"
+						label="label" />
+				</div>
+
+				<div class="setting-row">
 					<label for="etpl-subject">{{ t('dossiq', 'Subject') }}</label>
 					<NcInputField
 						id="etpl-subject"
 						v-model="draft.subject"
 						@focus="activeField = 'subject'" />
-				</div>
-
-				<div class="setting-row">
-					<label for="etpl-body">{{ t('dossiq', 'Body') }}</label>
-					<NcTextArea
-						id="etpl-body"
-						v-model="draft.body"
-						rows="8"
-						@focus="activeField = 'body'" />
-				</div>
-
-				<!-- Live preview -->
-				<div class="setting-row">
-					<label>{{ t('dossiq', 'Preview') }}</label>
-					<!-- renderPreview() escapes &, < and > in the body and emits
-					     only its own fixed-class <span> and <br>, so no
-					     caller-supplied markup can reach the DOM. -->
-					<!-- eslint-disable vue/no-v-html -->
-					<div
-						class="email-template-admin__preview"
-						v-html="previewHtml" />
-					<!-- eslint-enable vue/no-v-html -->
 					<p
 						v-if="unresolved.length > 0"
 						class="email-template-admin__warning">
@@ -92,6 +88,23 @@
 							})
 						}}
 					</p>
+				</div>
+
+				<!-- The body is plain text with {{name}} variables: the editor
+				     previews it escaped, marks known and unknown variables and
+				     names the unknown ones under it. -->
+				<div class="setting-row" @focusin="activeField = 'body'">
+					<span>{{ t('dossiq', 'Body') }}</span>
+					<CnMarkdownEditor
+						v-model="draft.body"
+						mode="split"
+						variableSyntax="{{name}}"
+						plainText
+						:rows="8"
+						:ariaLabel="t('dossiq', 'Body')"
+						placeholder=""
+						:variables="variableList"
+						:unknownVariableText="t('dossiq', 'Unresolved variables: {names}')" />
 				</div>
 
 				<div class="email-template-admin__actions">
@@ -133,23 +146,127 @@
 </template>
 
 <script>
+import { CnMarkdownEditor } from '@conduction/nextcloud-vue'
 import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcInputField,
 	NcLoadingIcon,
 	NcNoteCard,
-	NcTextArea,
+	NcSelect,
 } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
-import {
-	collectUnresolved,
-	renderPreview,
-} from '../../../utils/emailTemplatePreview.js'
+import { collectUnresolved } from '../../../utils/emailTemplatePreview.js'
+import { MESSAGE_CHANNELS, MESSAGE_MOMENTS } from '../../../utils/messageDelivery.js'
+
+/**
+ * The fields of a template draft, each with its empty value, in draft order.
+ *
+ * @type {object}
+ */
+const DRAFT_FIELDS = { id: null, name: '', subject: '', body: '', moment: null, channel: null }
+
+/**
+ * The path of a case type's email templates.
+ *
+ * @param {string} caseTypeId The case type id.
+ * @return {string} The path, before generateUrl.
+ */
+function caseTypeTemplatesPath(caseTypeId) {
+	return `/apps/dossiq/api/casetypes/${encodeURIComponent(caseTypeId)}/email-templates`
+}
+
+/**
+ * GET a url with the request token.
+ *
+ * @param {string} url The url.
+ * @return {Promise<Response>} The response.
+ */
+function fetchWithToken(url) {
+	return fetch(url, {
+		headers: { requesttoken: OC.requestToken },
+	})
+}
+
+/**
+ * The template list from the templates response: a bare list, `results` or `templates`.
+ *
+ * @param {Array|object} data The response body.
+ * @return {Array<object>} The templates.
+ */
+function templatesFrom(data) {
+	return Array.isArray(data) ? data : data.results || data.templates || []
+}
+
+/**
+ * A draft of a template, every missing field emptied.
+ *
+ * @param {object} tpl The template.
+ * @return {object} The draft.
+ */
+function draftFrom(tpl) {
+	const draft = {}
+	for (const [field, empty] of Object.entries(DRAFT_FIELDS)) {
+		draft[field] = tpl[field] || empty
+	}
+	return draft
+}
+
+/**
+ * Where a draft is saved: its own url with PUT once it exists, else the case
+ * type's templates with POST.
+ *
+ * @param {object} draft The draft.
+ * @param {string} caseTypeId The case type id.
+ * @return {{url: string, method: string}} The target.
+ */
+function saveTarget(draft, caseTypeId) {
+	if (draft.id) {
+		return {
+			url: generateUrl(`/apps/dossiq/api/email-templates/${encodeURIComponent(draft.id)}`),
+			method: 'PUT',
+		}
+	}
+	return { url: generateUrl(caseTypeTemplatesPath(caseTypeId)), method: 'POST' }
+}
+
+/**
+ * The saved body of a draft, an unset moment or channel as null.
+ *
+ * @param {object} draft The draft.
+ * @return {string} The JSON body.
+ */
+function templatePayload(draft) {
+	return JSON.stringify({
+		name: draft.name,
+		subject: draft.subject,
+		body: draft.body,
+		moment: draft.moment || null,
+		channel: draft.channel || null,
+	})
+}
+
+/**
+ * The fetch options that save a draft as JSON with the request token.
+ *
+ * @param {object} draft The draft.
+ * @param {string} method PUT or POST.
+ * @return {object} The fetch options.
+ */
+function saveInit(draft, method) {
+	return {
+		method,
+		headers: {
+			'Content-Type': 'application/json',
+			requesttoken: OC.requestToken,
+		},
+		body: templatePayload(draft),
+	}
+}
 
 /**
  * Per-case-type email template CRUD with click-to-insert variables and a
- * live preview that highlights unresolved {{placeholders}} in red. No
+ * plain-text body editor that previews it and marks unresolved {{placeholders}}. No
  * compose/thread/queue components — display, compose and link come from the
  * email leaf + Nextcloud Mail.
  *
@@ -158,11 +275,12 @@ import {
 export default {
 	name: 'EmailTemplateAdmin',
 	components: {
+		CnMarkdownEditor,
 		NcButton,
 		NcInputField,
 		NcLoadingIcon,
 		NcNoteCard,
-		NcTextArea,
+		NcSelect,
 		Plus,
 	},
 
@@ -181,7 +299,7 @@ export default {
 			activeField: 'body',
 			templates: [],
 			variables: {},
-			draft: { id: null, name: '', subject: '', body: '' },
+			draft: { id: null, name: '', subject: '', body: '', moment: null, channel: null },
 		}
 	},
 
@@ -194,22 +312,49 @@ export default {
 			)
 		},
 
+		/**
+		 * The case events a message can go out on, translated.
+		 *
+		 * @return {Array<{value: string, label: string}>} The options.
+		 * @spec openspec/changes/case-type-messages-moment-channel/specs/case-types/spec.md
+		 */
+		momentOptions() {
+			return MESSAGE_MOMENTS.map((option) => ({ value: option.value, label: t('dossiq', option.label) }))
+		},
+
+		/**
+		 * The ways a message reaches the applicant, translated.
+		 *
+		 * @return {Array<{value: string, label: string}>} The options.
+		 * @spec openspec/changes/case-type-messages-moment-channel/specs/case-types/spec.md
+		 */
+		channelOptions() {
+			return MESSAGE_CHANNELS.map((option) => ({ value: option.value, label: t('dossiq', option.label) }))
+		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		flatVariableNames() {
 			return Object.values(this.variables).flat()
 		},
 
-		/** @spec openspec/specs/case-email-integration/spec.md */
+		/**
+		 * The subject's unresolved variables; the body editor names its own.
+		 *
+		 * @return {Array<string>} The names.
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
 		unresolved() {
-			return collectUnresolved(
-				`${this.draft.subject} ${this.draft.body}`,
-				this.flatVariableNames,
-			)
+			return collectUnresolved(this.draft.subject, this.flatVariableNames)
 		},
 
-		/** @spec openspec/specs/case-email-integration/spec.md */
-		previewHtml() {
-			return renderPreview(this.draft.body, this.flatVariableNames)
+		/**
+		 * The variables the body may use, each described by its group.
+		 *
+		 * @return {Array<{name: string, description: string}>} The variables.
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
+		variableList() {
+			return Object.entries(this.variables).flatMap(([group, names]) => names.map((name) => ({ name, description: this.groupLabel(group) })))
 		},
 
 		/** @spec openspec/specs/case-email-integration/spec.md */
@@ -262,33 +407,12 @@ export default {
 		async load() {
 			this.loading = true
 			try {
+				const path = caseTypeTemplatesPath(this.caseTypeId)
 				const [tplRes, varRes] = await Promise.all([
-					fetch(
-						generateUrl(
-							`/apps/dossiq/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`,
-						),
-						{
-							headers: { requesttoken: OC.requestToken },
-						},
-					),
-					fetch(
-						generateUrl(
-							`/apps/dossiq/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates/variables`,
-						),
-						{
-							headers: { requesttoken: OC.requestToken },
-						},
-					),
+					fetchWithToken(generateUrl(path)),
+					fetchWithToken(generateUrl(`${path}/variables`)),
 				])
-				if (tplRes.ok) {
-					const data = await tplRes.json()
-					this.templates = Array.isArray(data)
-						? data
-						: data.results || data.templates || []
-				}
-				if (varRes.ok) {
-					this.variables = await varRes.json()
-				}
+				await this.keepLoaded(tplRes, varRes)
 			} catch (error) {
 				// Non-fatal — empty editor still works for create.
 			} finally {
@@ -296,9 +420,25 @@ export default {
 			}
 		},
 
+		/**
+		 * Keep the templates and the variables whose read succeeded.
+		 *
+		 * @param {Response} tplRes The templates response.
+		 * @param {Response} varRes The variables response.
+		 * @return {Promise<void>}
+		 */
+		async keepLoaded(tplRes, varRes) {
+			if (tplRes.ok) {
+				this.templates = templatesFrom(await tplRes.json())
+			}
+			if (varRes.ok) {
+				this.variables = await varRes.json()
+			}
+		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		startCreate() {
-			this.draft = { id: null, name: '', subject: '', body: '' }
+			this.draft = { id: null, name: '', subject: '', body: '', moment: null, channel: null }
 			this.editing = true
 			this.activeField = 'body'
 		},
@@ -308,12 +448,7 @@ export default {
 		 * @spec openspec/specs/case-email-integration/spec.md
 		 */
 		selectTemplate(tpl) {
-			this.draft = {
-				id: tpl.id || null,
-				name: tpl.name || '',
-				subject: tpl.subject || '',
-				body: tpl.body || '',
-			}
+			this.draft = draftFrom(tpl)
 			this.editing = true
 			this.activeField = 'body'
 		},
@@ -339,26 +474,8 @@ export default {
 		async save() {
 			this.saving = true
 			try {
-				const isUpdate = !!this.draft.id
-				const url = isUpdate
-					? generateUrl(
-							`/apps/dossiq/api/email-templates/${encodeURIComponent(this.draft.id)}`,
-						)
-					: generateUrl(
-							`/apps/dossiq/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`,
-						)
-				await fetch(url, {
-					method: isUpdate ? 'PUT' : 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						requesttoken: OC.requestToken,
-					},
-					body: JSON.stringify({
-						name: this.draft.name,
-						subject: this.draft.subject,
-						body: this.draft.body,
-					}),
-				})
+				const { url, method } = saveTarget(this.draft, this.caseTypeId)
+				await fetch(url, saveInit(this.draft, method))
 				this.editing = false
 				await this.load()
 			} finally {
@@ -413,28 +530,6 @@ export default {
 	flex-direction: column;
 	gap: 4px;
 	margin-bottom: 12px;
-}
-
-.email-template-admin__preview {
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius);
-	padding: 12px;
-	min-height: 80px;
-	background: var(--color-main-background);
-}
-
-.email-template-admin__preview :deep(.etpl-var-bad) {
-	background: var(--color-error, #e9322d);
-	color: var(--color-primary-element-text, #fff);
-	border-radius: 3px;
-	padding: 0 2px;
-}
-
-.email-template-admin__preview :deep(.etpl-var-ok) {
-	background: var(--color-success, #2e7d32);
-	color: #fff;
-	border-radius: 3px;
-	padding: 0 2px;
 }
 
 .email-template-admin__warning {

@@ -36,25 +36,28 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-merge/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseMergeServiceInterface;
 use OCA\Dossiq\Service\Cases\CaseMergeRelink;
 use OCA\Dossiq\Service\Cases\CaseMergeRule;
 use OCA\Dossiq\Service\Cases\CaseMergeStore;
+use OCA\OpenRegister\Kernel\Contracts\MergeInstruction;
+use OCA\OpenRegister\Kernel\Contracts\ObjectMergerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
  * The dossiq consequences of an OpenRegister merge on a `case`.
  *
- * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+ * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
  */
-class CaseMergeService {
+class CaseMergeService implements CaseMergeServiceInterface {
 
 	/**
 	 * Term statuses that still count as running, and so are the ones a merge
@@ -106,7 +109,7 @@ class CaseMergeService {
 	 *
 	 * @return array<string, mixed> The rule, empty when the register cannot be read.
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	public function mergeRule(): array {
 		return $this->rule->rule();
@@ -127,7 +130,7 @@ class CaseMergeService {
 	 *
 	 * @return string The surviving case's uuid, or the input when there is none.
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-the-old-number-still-finds-the-case-req-cm-38
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-old-number-still-finds-the-case-req-cm-38
 	 */
 	public function resolveSurvivor(string $caseId): string {
 		$current = trim($caseId);
@@ -135,6 +138,25 @@ class CaseMergeService {
 			return $caseId;
 		}
 
+		$survivor = $this->walkMergeChain(caseId: $caseId, current: $current);
+		if ($survivor !== null) {
+			return $survivor;
+		}
+
+		$this->logger->warning('Dossiq: a merged-case chain is longer than ' . self::MAX_HOPS . ' hops');
+
+		return $caseId;
+	}//end resolveSurvivor()
+
+	/**
+	 * Follow `mergedInto` for at most MAX_HOPS hops.
+	 *
+	 * @param string $caseId  The case uuid a caller matched.
+	 * @param string $current The trimmed uuid to start from.
+	 *
+	 * @return string|null The survivor, the input on a cycle, or null when the chain is too long.
+	 */
+	private function walkMergeChain(string $caseId, string $current): string|null {
 		$seen = [];
 		for ($hop = 0; $hop < self::MAX_HOPS; $hop++) {
 			if (isset($seen[$current]) === true) {
@@ -143,24 +165,37 @@ class CaseMergeService {
 			}
 
 			$seen[$current] = true;
-
-			$case = $this->store->readCase(caseId: $current);
-			if ($case === null) {
-				return $current;
-			}
-
-			$next = $this->store->referencedId(value: ($case['mergedInto'] ?? null));
-			if ($next === '' || $next === $current) {
+			$next = $this->mergedInto(current: $current);
+			if ($next === '') {
 				return $current;
 			}
 
 			$current = $next;
 		}
 
-		$this->logger->warning('Dossiq: a merged-case chain is longer than ' . self::MAX_HOPS . ' hops');
+		return null;
+	}//end walkMergeChain()
 
-		return $caseId;
-	}//end resolveSurvivor()
+	/**
+	 * The case one case was merged into, '' when it is unreadable or was not merged.
+	 *
+	 * @param string $current The case uuid.
+	 *
+	 * @return string
+	 */
+	private function mergedInto(string $current): string {
+		$case = $this->store->readCase(caseId: $current);
+		if ($case === null) {
+			return '';
+		}
+
+		$next = $this->store->referencedId(value: ($case['mergedInto'] ?? null));
+		if ($next === '' || $next === $current) {
+			return '';
+		}
+
+		return $next;
+	}//end mergedInto()
 
 	/**
 	 * Whether this case may be merged away.
@@ -173,7 +208,7 @@ class CaseMergeService {
 	 *
 	 * @return bool True when it may be merged away.
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	public function isMergeable(array $case): bool {
 		return $this->refusalFor(case: $case) === '';
@@ -190,7 +225,7 @@ class CaseMergeService {
 	 *
 	 * @return string The rule, empty when the case may be merged away.
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	public function refusalFor(array $case): string {
 		if (($case['isFinalStatus'] ?? false) === true) {
@@ -224,7 +259,7 @@ class CaseMergeService {
 	 *
 	 * @return array{refused?: string, operation?: array<string, mixed>} The outcome.
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	public function requestMerge(string $mergedId, string $survivorId, string $reason, string $actor): array {
 		$merger = $this->settingsService->getOpenRegisterClass(class: self::MERGE_SERVICE_CLASS);
@@ -235,7 +270,9 @@ class CaseMergeService {
 		}
 
 		try {
-			$operation = $merger->executeMerge($mergedId, $survivorId, $reason, $actor);
+			$operation = $merger->merge(
+				instruction: new MergeInstruction(from: $mergedId, into: $survivorId, reason: $reason, mergedBy: $actor)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: OpenRegister refused the merge of "' . $mergedId . '": ' . $e->getMessage()
@@ -258,7 +295,7 @@ class CaseMergeService {
 	 *
 	 * @return string The refusal slug, or ''.
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	private function mergeRefusal(string $mergedId, string $survivorId, mixed $merger): string {
 		if ($mergedId === '' || $survivorId === '' || $mergedId === $survivorId) {
@@ -288,24 +325,23 @@ class CaseMergeService {
 	}//end mergeRefusal()
 
 	/**
-	 * Whether OpenRegister's merge service is here and answers to `executeMerge`.
+	 * Whether OpenRegister's merge service is here and is the platform's object merger.
 	 *
-	 * A duck-typed lookup against a class that is not installed answers null,
-	 * and one against a class that moved answers an object without the method.
-	 * Both are the platform being unavailable, and neither is an error here.
+	 * A lookup against a class that is not installed answers null, and one
+	 * against a class that moved answers something that is not the merger
+	 * contract. Both are the platform being unavailable, and neither is an
+	 * error here.
 	 *
 	 * @param mixed $merger Whatever the class lookup answered.
 	 *
 	 * @return bool True when the merge can be handed over.
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @psalm-assert-if-true ObjectMergerInterface $merger
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	private function canExecuteMerge(mixed $merger): bool {
-		if ($merger === null) {
-			return false;
-		}
-
-		return method_exists($merger, 'executeMerge');
+		return ($merger instanceof ObjectMergerInterface);
 	}//end canExecuteMerge()
 
 	/**
@@ -316,7 +352,7 @@ class CaseMergeService {
 	 *
 	 * @return bool True when the merged case was updated.
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	public function applyMerge(string $mergedId, string $survivorId): bool {
 		if ($mergedId === '' || $survivorId === '' || $mergedId === $survivorId) {
@@ -347,7 +383,7 @@ class CaseMergeService {
 	 *
 	 * @return bool True when the merged case was updated.
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	public function applyReversal(string $mergedId, string $survivorId): bool {
 		if ($mergedId === '') {

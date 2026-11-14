@@ -37,8 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Bezwaar\HearingService;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\HearingServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -62,18 +62,18 @@ class BezwaarHearingController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param HearingService $hearingService The bezwaar hearing domain service
+	 * @param HearingServiceInterface $hearingService The bezwaar hearing domain service
 	 * @param IUserSession $userSession The user session
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly HearingService $hearingService,
+		private readonly HearingServiceInterface $hearingService,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -109,6 +109,48 @@ class BezwaarHearingController extends Controller {
 	 * @spec openspec/specs/bezwaar-hearing/spec.md
 	 */
 	public function recordAttendance(string $sessionId): JSONResponse {
+		$refusal = $this->attendanceRefusal(sessionId: $sessionId);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$entries = $this->request->getParam('entries');
+		if (is_array($entries) === false) {
+			$entries = [];
+		}
+
+		return $this->storeAttendance(sessionId: $sessionId, entries: $entries);
+	}//end recordAttendance()
+
+	/**
+	 * Record the attendance entries of a hearing session, answering a refusal as 400.
+	 *
+	 * @param string $sessionId The hearing session.
+	 * @param array $entries The attendance entries.
+	 *
+	 * @return JSONResponse
+	 */
+	private function storeAttendance(string $sessionId, array $entries): JSONResponse {
+		try {
+			return new JSONResponse(
+				$this->hearingService->recordAttendance(
+					sessionId: $sessionId,
+					entries: array_values($entries)
+				)
+			);
+		} catch (RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}//end storeAttendance()
+
+	/**
+	 * Refuse recording attendance to an anonymous caller, or for a session whose bezwaar case the user may not change.
+	 *
+	 * @param string $sessionId The hearing session.
+	 *
+	 * @return JSONResponse|null The refusal, or null when attendance may be recorded.
+	 */
+	private function attendanceRefusal(string $sessionId): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -124,20 +166,6 @@ class BezwaarHearingController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
-		$entries = $this->request->getParam('entries');
-		if (is_array($entries) === false) {
-			$entries = [];
-		}
-
-		try {
-			return new JSONResponse(
-				$this->hearingService->recordAttendance(
-					sessionId: $sessionId,
-					entries: array_values($entries)
-				)
-			);
-		} catch (RuntimeException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
-	}//end recordAttendance()
+		return null;
+	}//end attendanceRefusal()
 }//end class

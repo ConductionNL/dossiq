@@ -31,30 +31,33 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/semantic-case-intake/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Controller\Support\IntakeRoleGate;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseTypeResolver;
-use OCA\Dossiq\Service\Email\IntakeLog;
-use OCA\Dossiq\Service\Email\IntakePolicy;
-use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
-use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
-use OCA\Dossiq\Service\Intake\CaseClassification;
-use OCA\Dossiq\Service\Intake\ClassificationSchemes;
-use OCA\Dossiq\Service\Intake\DuplicatePolicy;
-use OCA\Dossiq\Service\Intake\IntakeFanOut;
-use OCA\Dossiq\Service\Intake\IntakeRequirements;
-use OCA\Dossiq\Service\Intake\TriageSleep;
-use OCA\Dossiq\Service\Routing\RefusalOutcome;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AdmissibilityJudgementInterface;
+use OCA\Dossiq\Kernel\Contracts\AssigneeNarrowingInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseClassificationInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseMatchSuggestionInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\ClassificationSchemesInterface;
+use OCA\Dossiq\Kernel\Contracts\DuplicatePolicyInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeFanOutInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakePolicyInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeRequirementsInterface;
+use OCA\Dossiq\Kernel\Contracts\RefusalOutcomeInterface;
+use OCA\Dossiq\Kernel\Contracts\TriageChannelInterface;
+use OCA\Dossiq\Kernel\Contracts\TriageSleepInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -79,8 +82,8 @@ use Throwable;
  *  collaborators inside the methods would make them untestable in exchange for a
  *  shorter signature.
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/semantic-case-intake/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 class IntakeTriageController extends Controller {
 
@@ -95,41 +98,45 @@ class IntakeTriageController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest              $request          Inbound request.
-	 * @param CaseTypeResolver      $caseTypeResolver The effective case type.
-	 * @param IntakeRequirements    $requirements     What must be answered, and when.
-	 * @param CaseClassification    $classification   The facets and the access rule.
-	 * @param ClassificationSchemes $schemes          The schemes this instance knows.
-	 * @param AssigneeNarrowing     $narrowing        Who may hold the case.
-	 * @param DuplicatePolicy       $duplicates       What this case type does about a case that already exists.
-	 * @param RefusalOutcome        $refusal          Refusal as an outcome of routing.
-	 * @param AdmissibilityJudgement $admissibility   The ontvankelijkheid verdict at intake.
-	 * @param TriageSleep           $sleep            The triage sleep.
-	 * @param IntakeFanOut          $fanOut           One submission, several cases.
-	 * @param IntakeLog             $log              The triage queue.
-	 * @param IntakePolicy          $policy           Who may run intake.
-	 * @param CaseAccessGuard       $caseAccessGuard  Per-case authorization.
+	 * @param CaseTypeResolverInterface      $caseTypeResolver The effective case type.
+	 * @param IntakeRequirementsInterface    $requirements     What must be answered, and when.
+	 * @param CaseClassificationInterface    $classification   The facets and the access rule.
+	 * @param ClassificationSchemesInterface $schemes          The schemes this instance knows.
+	 * @param AssigneeNarrowingInterface     $narrowing        Who may hold the case.
+	 * @param DuplicatePolicyInterface       $duplicates       What this case type does about a case that already exists.
+	 * @param RefusalOutcomeInterface        $refusal          Refusal as an outcome of routing.
+	 * @param AdmissibilityJudgementInterface $admissibility   The ontvankelijkheid verdict at intake.
+	 * @param TriageSleepInterface           $sleep            The triage sleep.
+	 * @param IntakeFanOutInterface          $fanOut           One submission, several cases.
+	 * @param IntakeLogInterface             $log              The triage queue.
+	 * @param IntakePolicyInterface          $policy           Who may run intake.
+	 * @param CaseAccessGuardInterface       $caseAccessGuard  Per-case authorization.
 	 * @param IUserSession          $userSession      The caller.
 	 * @param LoggerInterface       $logger           Logger.
+	 * @param CaseMatchSuggestionInterface   $suggestions      The case each queued message probably belongs to.
+	 * @param TriageChannelInterface         $channels         The channel each queued message came in on.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseTypeResolver $caseTypeResolver,
-		private readonly IntakeRequirements $requirements,
-		private readonly CaseClassification $classification,
-		private readonly ClassificationSchemes $schemes,
-		private readonly AssigneeNarrowing $narrowing,
-		private readonly DuplicatePolicy $duplicates,
-		private readonly RefusalOutcome $refusal,
-		private readonly AdmissibilityJudgement $admissibility,
-		private readonly TriageSleep $sleep,
-		private readonly IntakeFanOut $fanOut,
-		private readonly IntakeLog $log,
-		private readonly IntakePolicy $policy,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseTypeResolverInterface $caseTypeResolver,
+		private readonly IntakeRequirementsInterface $requirements,
+		private readonly CaseClassificationInterface $classification,
+		private readonly ClassificationSchemesInterface $schemes,
+		private readonly AssigneeNarrowingInterface $narrowing,
+		private readonly DuplicatePolicyInterface $duplicates,
+		private readonly RefusalOutcomeInterface $refusal,
+		private readonly AdmissibilityJudgementInterface $admissibility,
+		private readonly TriageSleepInterface $sleep,
+		private readonly IntakeFanOutInterface $fanOut,
+		private readonly IntakeLogInterface $log,
+		private readonly IntakePolicyInterface $policy,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly CaseMatchSuggestionInterface $suggestions,
+		private readonly TriageChannelInterface $channels,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -150,8 +157,8 @@ class IntakeTriageController extends Controller {
 	 *
 	 * @return JSONResponse The declaration, or 401 without a session.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	#[NoAdminRequired]
 	public function requirements(string $caseTypeId): JSONResponse {
@@ -191,18 +198,13 @@ class IntakeTriageController extends Controller {
 	 *
 	 * @return JSONResponse The refusal record, or the refusal of the refusal.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	#[NoAdminRequired]
 	public function refuse(string $caseId, string $reason = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$forbidden = $this->refuseUnauthorized(caseId: $caseId, user: $user);
-		if ($forbidden !== null) {
-			return $forbidden;
+		$user = $this->handlerOf(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		try {
@@ -242,18 +244,13 @@ class IntakeTriageController extends Controller {
 	 *
 	 * @return JSONResponse What was recorded, or the refusal.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
 	 */
 	#[NoAdminRequired]
 	public function judgeAdmissibility(string $caseId, string $verdict = '', string $reason = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$forbidden = $this->refuseUnauthorized(caseId: $caseId, user: $user);
-		if ($forbidden !== null) {
-			return $forbidden;
+		$user = $this->handlerOf(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		try {
@@ -280,36 +277,89 @@ class IntakeTriageController extends Controller {
 	}//end judgeAdmissibility()
 
 	/**
-	 * The triage queue, with its sleeping items taken out.
+	 * The triage queue, with its sleeping items taken out and each item's likely case suggested.
+	 *
+	 * Every item names the channel it came in on (`email` for the mailbox).
+	 * `channels` counts the channels within the asked lens before the channel
+	 * narrows, so the channel facet keeps offering the others while one is
+	 * chosen.
+	 *
+	 * @param string $suggestion `IS NOT NULL` for the items that look like a case, `IS NULL` for the rest, empty for all.
+	 * @param string $channel    One channel, a comma list, or empty or `all` for every channel.
 	 *
 	 * @return JSONResponse The items a handler should see.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	#[NoAdminRequired]
-	public function queue(): JSONResponse {
+	public function queue(string $suggestion = '', string $channel = ''): JSONResponse {
 		$refusal = $this->requireIntakeRole();
 		if ($refusal !== null) {
 			return $refusal;
 		}
 
+		$items = $this->sleepableItems();
+		$awake = $this->sleep->awake(queue: $items);
+		$lens = $this->channels->annotate(
+			items: $this->suggestions->narrow(
+				items: $this->suggestions->annotate(items: array_values($awake)),
+				suggestion: $suggestion
+			)
+		);
+		$results = $this->channels->narrow(items: $lens, channel: $channel);
+
+		return new JSONResponse(
+			[
+				'results' => $results,
+				'total' => count($results),
+				'sleeping' => (count($items) - count($awake)),
+				'channels' => $this->channels->facet(items: $lens),
+			]
+		);
+	}//end queue()
+
+	/**
+	 * The signed-in caller when they may act on the case's intake, or the 401/403 refusal.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return IUser|JSONResponse
+	 *
+	 * @spec openspec/specs/kcc-routing/spec.md
+	 */
+	private function handlerOf(string $caseId): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$forbidden = $this->refuseUnauthorized(caseId: $caseId, user: $user);
+		if ($forbidden !== null) {
+			return $forbidden;
+		}
+
+		return $user;
+	}//end handlerOf()
+
+	/**
+	 * Every triage log item whose outcome can sleep, a page per outcome.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function sleepableItems(): array {
 		$items = [];
-		foreach (TriageSleep::SLEEPABLE_OUTCOMES as $outcome) {
+		foreach (TriageSleepInterface::SLEEPABLE_OUTCOMES as $outcome) {
 			$items = array_merge(
 				$items,
 				$this->log->search(filters: ['outcome' => $outcome, '_limit' => self::PAGE_SIZE])
 			);
 		}
 
-		$awake = $this->sleep->awake(queue: $items);
-
-		return new JSONResponse(
-			[
-				'results' => $awake,
-				'sleeping' => (count($items) - count($awake)),
-			]
-		);
-	}//end queue()
+		return $items;
+	}//end sleepableItems()
 
 	/**
 	 * Put a triage item to sleep until a date.
@@ -320,7 +370,7 @@ class IntakeTriageController extends Controller {
 	 *
 	 * @return JSONResponse The sleep record, or the refusal.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	#[NoAdminRequired]
 	public function sleepItem(string $entryId, string $until = '', string $reason = ''): JSONResponse {
@@ -352,7 +402,7 @@ class IntakeTriageController extends Controller {
 	 *
 	 * @return JSONResponse What was created, and what was not.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	#[NoAdminRequired]
 	public function fanOut(
@@ -405,16 +455,7 @@ class IntakeTriageController extends Controller {
 	 * @return JSONResponse|null A refusal, or null when the caller may proceed.
 	 */
 	private function requireIntakeRole(): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->policy->mayRunIntake(userId: $user->getUID()) === false) {
-			return new JSONResponse(['message' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-		}
-
-		return null;
+		return (new IntakeRoleGate(userSession: $this->userSession, policy: $this->policy))->refusal();
 	}//end requireIntakeRole()
 
 	/**
@@ -426,11 +467,6 @@ class IntakeTriageController extends Controller {
 	 * @return string The uid, or '' when there is no session.
 	 */
 	private function callerId(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return '';
-		}
-
-		return $user->getUID();
+		return (new IntakeRoleGate(userSession: $this->userSession, policy: $this->policy))->callerId();
 	}//end callerId()
 }//end class

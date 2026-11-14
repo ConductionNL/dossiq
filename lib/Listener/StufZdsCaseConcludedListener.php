@@ -32,9 +32,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Notification\Notifier;
-use OCA\Dossiq\Service\Stuf\NeedsInputDispatcher;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\NeedsInputDispatcherInterface;
+use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -57,10 +57,10 @@ class StufZdsCaseConcludedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param NeedsInputDispatcher $needsInput Notifies the administrators.
+	 * @param NeedsInputDispatcherInterface $needsInput Notifies the administrators.
 	 */
 	public function __construct(
-		private readonly NeedsInputDispatcher $needsInput,
+		private readonly NeedsInputDispatcherInterface $needsInput,
 	) {
 
 	}//end __construct()
@@ -77,7 +77,7 @@ class StufZdsCaseConcludedListener implements IEventListener {
 	public function handle(Event $event): void {
 		// Integriq's class, optional at runtime: instanceof on an absent class is
 		// simply false, as in DeliveryConcludedListener.
-		if (($event instanceof \OCA\Integriq\Event\StufZdsCaseConcludedEvent) === false || $event->getSourceApp() !== Application::APP_ID) {
+		if (($event instanceof \OCA\Integriq\Event\StufZdsCaseConcludedEvent) === false || $event->getSourceApp() !== AppIdentity::APP_ID) {
 			return;
 		}
 
@@ -86,26 +86,50 @@ class StufZdsCaseConcludedListener implements IEventListener {
 			return;
 		}
 
-		$fout = (array)($result['fout'] ?? []);
-		$code = (string)($fout['code'] ?? '');
-		$type = match ($code) {
-			'CIRCUIT_OPEN' => Notifier::SUBJECT_STUF_CIRCUIT_OPEN,
-			'TIMEOUT' => Notifier::SUBJECT_STUF_TIMEOUT,
-			default => Notifier::SUBJECT_STUF_PERMANENT_ERROR,
-		};
-
-		// StufIntegriqBridge correlates as `<endpointId>:<random>`.
-		$endpointId = explode(':', $event->getCorrelationId(), 2)[0];
-
+		$code = (string)(((array)($result['fout'] ?? []))['code'] ?? '');
 		$this->needsInput->dispatch(
-			type: $type,
-			context: [
-				'endpointId' => $endpointId,
-				'operation' => $event->getOperation(),
-				'referentienummer' => (string)($result['referentienummer'] ?? ''),
-				'fout' => $code,
-				'omschrijving' => (string)($fout['omschrijving'] ?? ''),
-			]
+			type: $this->subjectFor(code: $code),
+			context: $this->contextOf(event: $event, result: $result)
 		);
 	}//end handle()
+
+	/**
+	 * The notification subject for a StUF failure code.
+	 *
+	 * @param string $code The failure code.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
+	 */
+	private function subjectFor(string $code): string {
+		return match ($code) {
+			'CIRCUIT_OPEN' => NotifierInterface::SUBJECT_STUF_CIRCUIT_OPEN,
+			'TIMEOUT' => NotifierInterface::SUBJECT_STUF_TIMEOUT,
+			default => NotifierInterface::SUBJECT_STUF_PERMANENT_ERROR,
+		};
+	}//end subjectFor()
+
+	/**
+	 * What the notification tells the administrator about the failed StUF write.
+	 *
+	 * @param object               $event  Integriq's StufZdsCaseConcludedEvent.
+	 * @param array<string, mixed> $result The write's result.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
+	 */
+	private function contextOf(object $event, array $result): array {
+		$fout = (array)($result['fout'] ?? []);
+
+		// StufIntegriqBridge correlates as `<endpointId>:<random>`.
+		return [
+			'endpointId' => explode(':', $event->getCorrelationId(), 2)[0],
+			'operation' => $event->getOperation(),
+			'referentienummer' => (string)($result['referentienummer'] ?? ''),
+			'fout' => (string)($fout['code'] ?? ''),
+			'omschrijving' => (string)($fout['omschrijving'] ?? ''),
+		];
+	}//end contextOf()
 }//end class

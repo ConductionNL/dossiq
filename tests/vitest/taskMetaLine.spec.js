@@ -58,4 +58,18 @@ describe('taskMetaLine', () => {
 			}),
 		).toBe('on case 2026-0074')
 	})
+
+	it('reads a null case number and a missing argument as unknown', () => {
+		expect(taskMetaLine({ caseNumber: null, now: NOW })).toBe('')
+		expect(taskMetaLine({ caseNumber: 74, dueAt: '2026-10-06', now: NOW })).toBe(
+			'on case 74, deadline yesterday',
+		)
+		expect(taskMetaLine()).toBe('')
+	})
+
+	it('draws the deadline unless finished is exactly true', () => {
+		expect(
+			taskMetaLine({ dueAt: '2026-10-07', finished: 'yes', now: NOW }),
+		).toBe('deadline today')
+	})
 })

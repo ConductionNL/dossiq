@@ -49,6 +49,7 @@ namespace OCA\Dossiq\Service\Intake;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -106,6 +107,31 @@ class CaseIntakeFiling {
 	 */
 	public function file(string $type, string $subject, string $person, array $messages): array {
 		$subject = trim($subject);
+		$this->assertSubject(subject: $subject);
+
+		$caseType = $this->publishedCaseType(type: $type);
+
+		[$objectService, $register, $schema] = $this->storage();
+
+		$payload = $this->payload(caseTypeId: (string)($caseType['id'] ?? ''), subject: $subject, person: $person, messages: $messages);
+
+		$saved = $this->save(objectService: $objectService, payload: $payload, register: $register, schema: $schema);
+
+		return $this->asArray(value: $saved);
+	}//end file()
+
+	/**
+	 * Refuse a filing without a subject.
+	 *
+	 * @param string $subject The trimmed subject.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the subject is empty.
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-intake-tool-creates-through-the-existing-path
+	 */
+	private function assertSubject(string $subject): void {
 		if ($subject === '') {
 			throw new RefusedException(
 				rule: 'intake-subject-missing',
@@ -113,9 +139,18 @@ class CaseIntakeFiling {
 				status: RefusedException::STATUS_UNPROCESSABLE
 			);
 		}
+	}//end assertSubject()
 
-		$caseType = $this->publishedCaseType(type: $type);
-
+	/**
+	 * The ObjectService, the register and the case schema to file into.
+	 *
+	 * @return array{0: object, 1: string, 2: string} The ObjectService, register and schema.
+	 *
+	 * @throws RefusedException When storage is unavailable.
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-intake-tool-creates-through-the-existing-path
+	 */
+	private function storage(): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
@@ -127,8 +162,24 @@ class CaseIntakeFiling {
 			);
 		}
 
-		$payload = $this->payload(caseTypeId: (string)($caseType['id'] ?? ''), subject: $subject, person: $person, messages: $messages);
+		return [$objectService, $register, $schema];
+	}//end storage()
 
+	/**
+	 * Save the case through the create path.
+	 *
+	 * @param object                $objectService The ObjectService.
+	 * @param array<string, string> $payload       The case payload.
+	 * @param string                $register      The register.
+	 * @param string                $schema        The case schema.
+	 *
+	 * @return mixed What the create path answered.
+	 *
+	 * @throws RefusedException When the create path refuses the write.
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-intake-tool-creates-through-the-existing-path
+	 */
+	private function save(object $objectService, array $payload, string $register, string $schema): mixed {
 		try {
 			$saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
 		} catch (Throwable $e) {
@@ -142,8 +193,8 @@ class CaseIntakeFiling {
 			);
 		}
 
-		return $this->asArray(value: $saved);
-	}//end file()
+		return $saved;
+	}//end save()
 
 	/**
 	 * The payload the create form would write, built from an allowlist.
@@ -270,17 +321,6 @@ class CaseIntakeFiling {
 	 * @return array<string, mixed> The array.
 	 */
 	private function asArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end asArray()
 }//end class

@@ -1,0 +1,496 @@
+{
+    "a dry run": {
+        "code": 0,
+        "output": [
+            "",
+            "<info>Cases with at least one OPEN Awb proceeding:</info>",
+            "  <info>[would hold]</info> c-free — 1 open proceeding(s): bezwaar",
+            "  <comment>[already held]</comment> c-held — 2 open proceeding(s): bezwaar, beroep",
+            "  <comment>[unresolved]</comment> c-missing — 1 open proceeding(s): beroep",
+            "  <comment>[unresolved]</comment> c-throws — 1 open proceeding(s): ",
+            "  <comment>[unresolved]</comment> c-scalar — 3 open proceeding(s): bezwaar",
+            "  <info>[would hold]</info> c-refused — 0 open proceeding(s): bezwaar",
+            "  <comment>[unresolved]</comment> c-deleted — 1 open proceeding(s): ",
+            "  <info>[would hold]</info> 7 — 1 open proceeding(s): beroep",
+            "  <info>[would hold]</info> c-two — 2 open proceeding(s): bezwaar, beroep",
+            "",
+            "  candidates  = 9",
+            "  would hold  = 4",
+            "  already held= 1",
+            "  unresolved  = 4",
+            "",
+            "<comment>Dry run — nothing was written. Re-run with --apply to place these holds.</comment>"
+        ],
+        "calls": [
+            [
+                "find",
+                "c-free",
+                false,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-free"
+            ],
+            [
+                "find",
+                "c-held",
+                false,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-held"
+            ],
+            [
+                "find",
+                "c-missing",
+                false,
+                false,
+                false
+            ],
+            [
+                "find",
+                "c-throws",
+                false,
+                false,
+                false
+            ],
+            [
+                "find",
+                "c-scalar",
+                false,
+                false,
+                false
+            ],
+            [
+                "find",
+                "c-refused",
+                false,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-refused"
+            ],
+            [
+                "find",
+                "c-deleted",
+                false,
+                false,
+                false
+            ],
+            [
+                "find",
+                "7",
+                false,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "7"
+            ],
+            [
+                "find",
+                "c-two",
+                false,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-two"
+            ]
+        ]
+    },
+    "an applied run": {
+        "code": 0,
+        "output": [
+            "",
+            "<info>Cases with at least one OPEN Awb proceeding:</info>",
+            "  <info>[HELD]</info> c-free — 1 open proceeding(s): bezwaar",
+            "  <comment>[already held]</comment> c-held — 2 open proceeding(s): bezwaar, beroep",
+            "  <comment>[unresolved]</comment> c-missing — 1 open proceeding(s): beroep",
+            "  <comment>[unresolved]</comment> c-throws — 1 open proceeding(s): ",
+            "  <comment>[unresolved]</comment> c-scalar — 3 open proceeding(s): bezwaar",
+            "  <error>[FAILED]</error> c-refused — hold refused",
+            "  <comment>[unresolved]</comment> c-deleted — 1 open proceeding(s): ",
+            "  <info>[HELD]</info> 7 — 1 open proceeding(s): beroep",
+            "  <info>[HELD]</info> c-two — 2 open proceeding(s): bezwaar, beroep",
+            "",
+            "  candidates  = 9",
+            "  held        = 3",
+            "  already held= 1",
+            "  unresolved  = 5"
+        ],
+        "calls": [
+            [
+                "find",
+                "c-free",
+                false,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-free"
+            ],
+            [
+                "placeHold",
+                "c-free",
+                "Awb-procedure (bezwaar) geregistreerd — archivering opgeschort [backfill procest#694: hold ontbrak doordat de listener nooit heeft gelopen; geplaatst op de datum van herstel, niet terugwerkend]"
+            ],
+            [
+                "find",
+                "c-held",
+                false,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-held"
+            ],
+            [
+                "find",
+                "c-missing",
+                false,
+                false,
+                false
+            ],
+            [
+                "find",
+                "c-throws",
+                false,
+                false,
+                false
+            ],
+            [
+                "find",
+                "c-scalar",
+                false,
+                false,
+                false
+            ],
+            [
+                "find",
+                "c-refused",
+                false,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-refused"
+            ],
+            [
+                "placeHold",
+                "c-refused",
+                "Awb-procedure (bezwaar) geregistreerd — archivering opgeschort [backfill procest#694: hold ontbrak doordat de listener nooit heeft gelopen; geplaatst op de datum van herstel, niet terugwerkend]"
+            ],
+            [
+                "find",
+                "c-deleted",
+                false,
+                false,
+                false
+            ],
+            [
+                "find",
+                "7",
+                false,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "7"
+            ],
+            [
+                "placeHold",
+                "7",
+                "Awb-procedure (beroep) geregistreerd — archivering opgeschort [backfill procest#694: hold ontbrak doordat de listener nooit heeft gelopen; geplaatst op de datum van herstel, niet terugwerkend]"
+            ],
+            [
+                "find",
+                "c-two",
+                false,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-two"
+            ],
+            [
+                "placeHold",
+                "c-two",
+                "Awb-procedure (bezwaar/beroep) geregistreerd — archivering opgeschort [backfill procest#694: hold ontbrak doordat de listener nooit heeft gelopen; geplaatst op de datum van herstel, niet terugwerkend]"
+            ]
+        ]
+    },
+    "an applied run with deleted cases": {
+        "code": 0,
+        "output": [
+            "",
+            "<info>Cases with at least one OPEN Awb proceeding:</info>",
+            "  <info>[HELD]</info> c-free — 1 open proceeding(s): bezwaar",
+            "  <comment>[already held]</comment> c-held — 2 open proceeding(s): bezwaar, beroep",
+            "  <comment>[unresolved]</comment> c-missing — 1 open proceeding(s): beroep",
+            "  <comment>[unresolved]</comment> c-throws — 1 open proceeding(s): ",
+            "  <comment>[unresolved]</comment> c-scalar — 3 open proceeding(s): bezwaar",
+            "  <error>[FAILED]</error> c-refused — hold refused",
+            "  <info>[HELD]</info> c-deleted — 1 open proceeding(s): ",
+            "  <info>[HELD]</info> 7 — 1 open proceeding(s): beroep",
+            "  <info>[HELD]</info> c-two — 2 open proceeding(s): bezwaar, beroep",
+            "",
+            "  candidates  = 9",
+            "  held        = 4",
+            "  already held= 1",
+            "  unresolved  = 4"
+        ],
+        "calls": [
+            [
+                "find",
+                "c-free",
+                true,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-free"
+            ],
+            [
+                "placeHold",
+                "c-free",
+                "Awb-procedure (bezwaar) geregistreerd — archivering opgeschort [backfill procest#694: hold ontbrak doordat de listener nooit heeft gelopen; geplaatst op de datum van herstel, niet terugwerkend]"
+            ],
+            [
+                "find",
+                "c-held",
+                true,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-held"
+            ],
+            [
+                "find",
+                "c-missing",
+                true,
+                false,
+                false
+            ],
+            [
+                "find",
+                "c-throws",
+                true,
+                false,
+                false
+            ],
+            [
+                "find",
+                "c-scalar",
+                true,
+                false,
+                false
+            ],
+            [
+                "find",
+                "c-refused",
+                true,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-refused"
+            ],
+            [
+                "placeHold",
+                "c-refused",
+                "Awb-procedure (bezwaar) geregistreerd — archivering opgeschort [backfill procest#694: hold ontbrak doordat de listener nooit heeft gelopen; geplaatst op de datum van herstel, niet terugwerkend]"
+            ],
+            [
+                "find",
+                "c-deleted",
+                true,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-deleted"
+            ],
+            [
+                "placeHold",
+                "c-deleted",
+                "Awb-procedure () geregistreerd — archivering opgeschort [backfill procest#694: hold ontbrak doordat de listener nooit heeft gelopen; geplaatst op de datum van herstel, niet terugwerkend]"
+            ],
+            [
+                "find",
+                "7",
+                true,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "7"
+            ],
+            [
+                "placeHold",
+                "7",
+                "Awb-procedure (beroep) geregistreerd — archivering opgeschort [backfill procest#694: hold ontbrak doordat de listener nooit heeft gelopen; geplaatst op de datum van herstel, niet terugwerkend]"
+            ],
+            [
+                "find",
+                "c-two",
+                true,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-two"
+            ],
+            [
+                "placeHold",
+                "c-two",
+                "Awb-procedure (bezwaar/beroep) geregistreerd — archivering opgeschort [backfill procest#694: hold ontbrak doordat de listener nooit heeft gelopen; geplaatst op de datum van herstel, niet terugwerkend]"
+            ]
+        ]
+    },
+    "a dry run with deleted cases": {
+        "code": 0,
+        "output": [
+            "",
+            "<info>Cases with at least one OPEN Awb proceeding:</info>",
+            "  <info>[would hold]</info> c-free — 1 open proceeding(s): bezwaar",
+            "  <comment>[already held]</comment> c-held — 2 open proceeding(s): bezwaar, beroep",
+            "  <comment>[unresolved]</comment> c-missing — 1 open proceeding(s): beroep",
+            "  <comment>[unresolved]</comment> c-throws — 1 open proceeding(s): ",
+            "  <comment>[unresolved]</comment> c-scalar — 3 open proceeding(s): bezwaar",
+            "  <info>[would hold]</info> c-refused — 0 open proceeding(s): bezwaar",
+            "  <info>[would hold]</info> c-deleted — 1 open proceeding(s): ",
+            "  <info>[would hold]</info> 7 — 1 open proceeding(s): beroep",
+            "  <info>[would hold]</info> c-two — 2 open proceeding(s): bezwaar, beroep",
+            "",
+            "  candidates  = 9",
+            "  would hold  = 5",
+            "  already held= 1",
+            "  unresolved  = 3",
+            "",
+            "<comment>Dry run — nothing was written. Re-run with --apply to place these holds.</comment>"
+        ],
+        "calls": [
+            [
+                "find",
+                "c-free",
+                true,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-free"
+            ],
+            [
+                "find",
+                "c-held",
+                true,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-held"
+            ],
+            [
+                "find",
+                "c-missing",
+                true,
+                false,
+                false
+            ],
+            [
+                "find",
+                "c-throws",
+                true,
+                false,
+                false
+            ],
+            [
+                "find",
+                "c-scalar",
+                true,
+                false,
+                false
+            ],
+            [
+                "find",
+                "c-refused",
+                true,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-refused"
+            ],
+            [
+                "find",
+                "c-deleted",
+                true,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-deleted"
+            ],
+            [
+                "find",
+                "7",
+                true,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "7"
+            ],
+            [
+                "find",
+                "c-two",
+                true,
+                false,
+                false
+            ],
+            [
+                "hasActiveHold",
+                "c-two"
+            ]
+        ]
+    },
+    "no candidates": {
+        "code": 0,
+        "output": [
+            "",
+            "<info>Cases with at least one OPEN Awb proceeding:</info>",
+            "",
+            "  candidates  = 0",
+            "  held        = 0",
+            "  already held= 0",
+            "  unresolved  = 0"
+        ],
+        "calls": []
+    }
+}

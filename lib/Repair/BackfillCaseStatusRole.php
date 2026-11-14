@@ -17,7 +17,8 @@
  * - only a case whose status type DECLARES a role, and whose `statusRole`
  *   differs from it. A case type nobody annotated is skipped, and so is a case
  *   that is already right, which is what makes a second run a no-op;
- * - one field, `statusRole`, with the value OpenRegister computes itself. It
+ * - no value of its own: `statusRole` is readOnly, so the case is re-saved
+ *   unchanged and OpenRegister computes the field on that save. It
  *   changes no status, so it is no transition: `StatusTransitionService` is not
  *   involved, and the notifications the case schema declares (assigned on
  *   create, declared major on an `isMajor` change, moved on a transition) have
@@ -47,49 +48,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCP\Migration\IOutput;
-use OCP\Migration\IRepairStep;
-use Psr\Log\LoggerInterface;
-use Throwable;
-
 /**
  * Backfill `statusRole` on the cases that exist.
  *
  * @spec openspec/specs/case-management/spec.md#REQ-CM-77
  */
-class BackfillCaseStatusRole implements IRepairStep {
-
-	use SearchesObjects;
-
-	/**
-	 * Rows per page.
-	 *
-	 * @var int
-	 */
-	private const PAGE = 200;
-
-	/**
-	 * A ceiling on the paging, so a store that never answers a short page
-	 * cannot keep an upgrade running for ever.
-	 *
-	 * @var int
-	 */
-	private const MAX_PAGES = 500;
-
-	/**
-	 * Constructor.
-	 *
-	 * @param SettingsService $settingsService Names the register and the schemas, and hands out the object service.
-	 * @param LoggerInterface $logger          Records a row that refused.
-	 */
-	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly LoggerInterface $logger,
-	) {
-	}//end __construct()
+class BackfillCaseStatusRole extends BackfillReferencedCaseValue {
 
 	/**
 	 * The step's name in the upgrade output.
@@ -103,61 +67,7 @@ class BackfillCaseStatusRole implements IRepairStep {
 	}//end getName()
 
 	/**
-	 * Run the backfill and say what it did.
-	 *
-	 * @param IOutput $output The upgrade output.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/case-management/spec.md#REQ-CM-77
-	 */
-	public function run(IOutput $output): void {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			$output->info('OpenRegister unavailable, skipping the statusRole backfill.');
-			return;
-		}
-
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		$statusTypeSchema = (string)$this->settingsService->getConfigValue('status_type_schema');
-		if ($register === '' || $caseSchema === '' || $statusTypeSchema === '') {
-			$output->info('statusRole backfill: the case or status type schema is not configured, skipped.');
-			return;
-		}
-
-		try {
-			$tally = (array)$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): array => $this->backfill(
-					objectService: $objectService,
-					register: $register,
-					caseSchema: $caseSchema,
-					statusTypeSchema: $statusTypeSchema
-				)
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the statusRole backfill could not read the cases',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
-			);
-			$output->info('statusRole backfill: the cases could not be read, skipped.');
-			return;
-		}
-
-		$output->info(
-			'statusRole backfill: ' . (int)($tally['filled'] ?? 0) . ' filled, '
-			. (int)($tally['unconfirmed'] ?? 0) . ' written but not confirmed, '
-			. (int)($tally['failed'] ?? 0) . ' failed, '
-			. (int)($tally['skipped'] ?? 0) . ' already right or without a role.'
-		);
-	}//end run()
-
-	/**
-	 * The role a case should carry, or an empty string when it needs no write.
-	 *
-	 * Empty when the case has no status, when its status type declares no
-	 * role, and when the case already carries that role.
+	 * The status role this case should carry, or '' when it needs no write.
 	 *
 	 * @param array<string, mixed>  $case  The stored case.
 	 * @param array<string, string> $roles Role by status type uuid.
@@ -167,154 +77,60 @@ class BackfillCaseStatusRole implements IRepairStep {
 	 * @spec openspec/specs/case-management/spec.md#REQ-CM-77
 	 */
 	public function roleToWrite(array $case, array $roles): string {
-		$status = ($case['status'] ?? null);
-		if (is_array($status) === true) {
-			// An extended read hands the status type over whole.
-			$status = ($status['id'] ?? ($status['uuid'] ?? null));
-		}
-
-		if (is_string($status) === false || $status === '') {
-			return '';
-		}
-
-		$role = ($roles[strtolower($status)] ?? '');
-		if ($role === '' || ($case['statusRole'] ?? null) === $role) {
-			return '';
-		}
-
-		return $role;
+		return $this->valueToWrite(case: $case, values: $roles);
 	}//end roleToWrite()
 
 	/**
-	 * Walk every case and write the role where it is missing or stale.
+	 * {@inheritDoc}
 	 *
-	 * @param object $objectService    The OpenRegister object service.
-	 * @param string $register         The dossiq register.
-	 * @param string $caseSchema       The case schema.
-	 * @param string $statusTypeSchema The status type schema.
-	 *
-	 * @return array{filled: int, unconfirmed: int, failed: int, skipped: int} What happened.
+	 * @return string The field.
 	 */
-	private function backfill(object $objectService, string $register, string $caseSchema, string $statusTypeSchema): array {
-		$tally = ['filled' => 0, 'unconfirmed' => 0, 'failed' => 0, 'skipped' => 0];
-		$roles = $this->rolesByStatusType(objectService: $objectService, register: $register, schema: $statusTypeSchema);
-		if ($roles === []) {
-			return $tally;
-		}
-
-		// The cases are read first and written after. Writing while paging by
-		// offset can move a row between pages, and then one case is seen twice
-		// and another not at all.
-		$todo = [];
-		for ($page = 0; $page < self::MAX_PAGES; $page++) {
-			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)]
-			);
-
-			foreach ($rows as $row) {
-				$role = $this->roleToWrite(case: $row, roles: $roles);
-				$uuid = (string)($row['id'] ?? ($row['uuid'] ?? (($row['@self'] ?? [])['id'] ?? '')));
-				if ($role === '' || $uuid === '') {
-					$tally['skipped']++;
-					continue;
-				}
-
-				$todo[$uuid] = $role;
-			}
-
-			if (count($rows) < self::PAGE) {
-				break;
-			}
-		}//end for
-
-		foreach ($todo as $uuid => $role) {
-			$outcome = $this->writeRole(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				uuid: (string)$uuid,
-				role: $role
-			);
-			$tally[$outcome]++;
-		}
-
-		return $tally;
-	}//end backfill()
+	protected function field(): string {
+		return 'statusRole';
+	}//end field()
 
 	/**
-	 * Write one case's role and report how it went.
+	 * {@inheritDoc}
 	 *
-	 * `filled` when the stored case answers the role back. `unconfirmed` when
-	 * the write went through and the answer does not carry the role, which is
-	 * a store that dropped the field and worth a line in the output.
-	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The dossiq register.
-	 * @param string $schema        The case schema.
-	 * @param string $uuid          The case.
-	 * @param string $role          The role to write.
-	 *
-	 * @return string `filled`, `unconfirmed` or `failed`.
+	 * @return string The reference field.
 	 */
-	private function writeRole(object $objectService, string $register, string $schema, string $uuid, string $role): string {
-		try {
-			$stored = $this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $uuid,
-				changes: ['statusRole' => $role]
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: the statusRole backfill failed for one case',
-				['app' => Application::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
-			);
-			return 'failed';
-		}
-
-		if (($stored['statusRole'] ?? null) === $role) {
-			return 'filled';
-		}
-
-		return 'unconfirmed';
-	}//end writeRole()
+	protected function referenceField(): string {
+		return 'status';
+	}//end referenceField()
 
 	/**
-	 * The role every status type declares, by status type uuid.
+	 * {@inheritDoc}
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The dossiq register.
-	 * @param string $schema        The status type schema.
-	 *
-	 * @return array<string, string> Role by lower-cased uuid; a status type without a role is left out.
+	 * @return string The config key.
 	 */
-	private function rolesByStatusType(object $objectService, string $register, string $schema): array {
-		$roles = [];
-		for ($page = 0; $page < self::MAX_PAGES; $page++) {
-			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)]
-			);
+	protected function targetSchemaKey(): string {
+		return 'status_type_schema';
+	}//end targetSchemaKey()
 
-			foreach ($rows as $row) {
-				$uuid = (string)($row['id'] ?? ($row['uuid'] ?? (($row['@self'] ?? [])['id'] ?? '')));
-				$role = ($row['role'] ?? null);
-				if ($uuid !== '' && is_string($role) === true && $role !== '') {
-					$roles[strtolower($uuid)] = $role;
-				}
-			}
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return string The property.
+	 */
+	protected function targetProperty(): string {
+		return 'role';
+	}//end targetProperty()
 
-			if (count($rows) < self::PAGE) {
-				break;
-			}
-		}
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return string The words.
+	 */
+	protected function missingWhat(): string {
+		return 'a role';
+	}//end missingWhat()
 
-		return $roles;
-	}//end rolesByStatusType()
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return string The words.
+	 */
+	protected function schemasWhat(): string {
+		return 'the case or status type schema';
+	}//end schemasWhat()
 }//end class

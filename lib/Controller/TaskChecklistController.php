@@ -5,10 +5,10 @@
  *
  * Submits one filled-in checklist for a case and reads the runs a case has.
  * A run is an OpenRegister task (see
- * {@see \OCA\Dossiq\Service\Inspection\InspectionRunService}). The URLs keep
- * their first names (`/api/vth/cases/{id}/inspection-result`), because the
- * case panel, the offline client and the end-to-end tests call them; the code
- * behind them knows no procedure.
+ * {@see \OCA\Dossiq\Service\Inspection\InspectionRunService}) at
+ * `/api/cases/{id}/checklist-results`. The earlier
+ * `/api/vth/cases/{id}/inspection-result(s)` stays routed to the
+ * `*LegacyPath()` delegates, because the offline client replays to it.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller
@@ -29,8 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Inspection\InspectionRunService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\InspectionRunServiceInterface;
 use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
 use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
 use OCP\AppFramework\Controller;
@@ -39,6 +39,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -62,8 +63,8 @@ class TaskChecklistController extends Controller {
 	 * @param IRequest $request The request
 	 * @param IUserSession $userSession User session
 	 * @param LoggerInterface $logger Logger
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
-	 * @param InspectionRunService $runs Checklist runs as OpenRegister tasks
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
+	 * @param InspectionRunServiceInterface $runs Checklist runs as OpenRegister tasks
 	 *
 	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
@@ -72,8 +73,8 @@ class TaskChecklistController extends Controller {
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseAccessGuard $caseAccessGuard,
-		private readonly InspectionRunService $runs,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
+		private readonly InspectionRunServiceInterface $runs,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -125,17 +126,9 @@ class TaskChecklistController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function submit(string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new OCSForbiddenException('Not authenticated');
-		}
-
-		// Per-object authorization, decided ENTIRELY from stored state: the
-		// case is loaded through OpenRegister and its `assignee` compared with
-		// the acting uid. Placed before the payload is read at all, so no part
-		// of the request can influence it.
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $id, user: $user) === false) {
-			return new JSONResponse(data: ['error' => 'Not authorized'], statusCode: Http::STATUS_FORBIDDEN);
+		$user = $this->submitter(caseId: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$params = $this->request->getParams();
@@ -155,14 +148,64 @@ class TaskChecklistController extends Controller {
 				actor: $user->getUID()
 			);
 			return new JSONResponse(data: $result, statusCode: Http::STATUS_CREATED);
-		} catch (OpenRegisterValidationException | OpenRegisterCustomValidationException $e) {
+		} catch (Throwable $e) {
+			return $this->submitFailed(caseId: $id, exception: $e);
+		}
+	}//end submit()
+
+	/**
+	 * The caller when they may submit on the case, or the 403 refusal.
+	 *
+	 * Per-object authorization, decided ENTIRELY from stored state: the
+	 * case is loaded through OpenRegister and its `assignee` compared with
+	 * the acting uid. Called before the payload is read at all, so no part
+	 * of the request can influence it.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return IUser|JSONResponse
+	 *
+	 * @throws OCSForbiddenException When nobody is signed in.
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	private function submitter(string $caseId): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			throw new OCSForbiddenException('Not authenticated');
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(data: ['error' => 'Not authorized'], statusCode: Http::STATUS_FORBIDDEN);
+		}
+
+		return $user;
+	}//end submitter()
+
+	/**
+	 * The answer to a checklist run the store did not take.
+	 *
+	 * OpenRegister's validation refusal is the caller's fault (400, logged at
+	 * info); this app's own refusal is a 422; anything else is a logged 500.
+	 *
+	 * @param string    $caseId    The case.
+	 * @param Throwable $exception The failure.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	private function submitFailed(string $caseId, Throwable $exception): JSONResponse {
+		if ($exception instanceof OpenRegisterValidationException
+			|| $exception instanceof OpenRegisterCustomValidationException
+		) {
 			// A REJECTED PAYLOAD IS THE CALLER'S FAULT, NOT THE SERVER'S.
 			//
 			// OpenRegister validates every write against the schema and throws
 			// its own ValidationException with a message that already names the
 			// offending property -- `Property 'checklist' should match format
 			// 'uuid' but 'e2e-checklist' does not`. Without this arm that
-			// exception fell through to the `Throwable` catch below and came
+			// exception fell through to the `Throwable` arm below and came
 			// back as a 500, so a caller sending a bad payload was told the
 			// server had broken and every such submission read as an outage.
 			// It stayed invisible because the e2e citation covering this
@@ -180,37 +223,67 @@ class TaskChecklistController extends Controller {
 			// faults as the caller's fault, which is the worse failure: a
 			// genuine fault must still be a 500 and must still be logged as an
 			// error, and it is, immediately below.
-			$this->logger->info(
-				'Rejected checklist run for case ' . $id . ': ' . $e->getMessage(),
-				['app' => $this->appName]
-			);
+			return $this->rejectedPayload(caseId: $caseId, exception: $exception);
+		}
+
+		if ($exception instanceof RuntimeException) {
 			return new JSONResponse(
-				['message' => $e->getMessage()],
-				Http::STATUS_BAD_REQUEST
-			);
-		} catch (RuntimeException $e) {
-			return new JSONResponse(
-				['message' => $e->getMessage()],
+				['message' => $exception->getMessage()],
 				Http::STATUS_UNPROCESSABLE_ENTITY
 			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Failed to submit a checklist run for case ' . $id . ': ' . $e->getMessage(),
-				['app' => $this->appName]
-			);
-			return new JSONResponse(
-				['message' => 'Submission failed: ' . $e->getMessage()],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
-		}//end try
-	}//end submit()
+		}
+
+		return $this->serverFault(caseId: $caseId, exception: $exception);
+	}//end submitFailed()
+
+	/**
+	 * OpenRegister's validation refusal: a 400 logged at info.
+	 *
+	 * @param string    $caseId    The case.
+	 * @param Throwable $exception The validation refusal.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	private function rejectedPayload(string $caseId, Throwable $exception): JSONResponse {
+		$this->logger->info(
+			'Rejected checklist run for case ' . $caseId . ': ' . $exception->getMessage(),
+			['app' => $this->appName]
+		);
+		return new JSONResponse(
+			['message' => $exception->getMessage()],
+			Http::STATUS_BAD_REQUEST
+		);
+	}//end rejectedPayload()
+
+	/**
+	 * A genuine fault: a 500 logged as an error.
+	 *
+	 * @param string    $caseId    The case.
+	 * @param Throwable $exception The failure.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	private function serverFault(string $caseId, Throwable $exception): JSONResponse {
+		$this->logger->error(
+			'Failed to submit a checklist run for case ' . $caseId . ': ' . $exception->getMessage(),
+			['app' => $this->appName]
+		);
+		return new JSONResponse(
+			['message' => 'Submission failed: ' . $exception->getMessage()],
+			Http::STATUS_INTERNAL_SERVER_ERROR
+		);
+	}//end serverFault()
 
 	/**
 	 * Every checklist run of a case.
 	 *
 	 * Per-object guard: `CaseAccessGuard::hasCaseReadAccess()`.
 	 *
-	 * `GET /api/vth/cases/{id}/inspection-results` is a per-case sub-resource
+	 * `GET /api/cases/{id}/checklist-results` is a per-case sub-resource
 	 * and `$id` is the CASE uuid, so the case-membership predicate applies
 	 * directly. Inspection results carry enforcement findings against a named
 	 * address, so this is a per-case read of supervision data and not a
@@ -239,4 +312,44 @@ class TaskChecklistController extends Controller {
 		$results = $this->runs->runsForCase(caseId: $id, actor: $user->getUID());
 		return new JSONResponse(data: $results, statusCode: Http::STATUS_OK);
 	}//end runs()
+
+	/**
+	 * submit() on its old address.
+	 *
+	 * Deprecated alias of POST /api/cases/{id}/checklist-results; remove after the next major.
+	 *
+	 * @param string $id UUID of the case
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 *
+	 * @contract exclude Deprecated path alias for submit(); behaviour covered by the submit() tests.
+	 */
+	#[NoAdminRequired]
+	public function submitLegacyPath(string $id): JSONResponse {
+		return $this->submit(id: $id);
+	}//end submitLegacyPath()
+
+	/**
+	 * runs() on its old address.
+	 *
+	 * Deprecated alias of GET /api/cases/{id}/checklist-results; remove after the next major.
+	 *
+	 * @param string $id UUID of the case
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 *
+	 * @contract exclude Deprecated path alias for runs(); behaviour covered by the runs() tests.
+	 */
+	#[NoAdminRequired]
+	public function runsLegacyPath(string $id): JSONResponse {
+		return $this->runs(id: $id);
+	}//end runsLegacyPath()
 }//end class

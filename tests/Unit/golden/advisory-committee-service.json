@@ -1,0 +1,3664 @@
+{
+    "assign": {
+        "answer": {
+            "@self": {
+                "id": "req-self"
+            },
+            "id": "req-plain"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "store::saveObject",
+                {
+                    "object": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "deadline": "<deadline>",
+                        "note": "x",
+                        "bezwaar": "obj-1",
+                        "committee": "com-1",
+                        "status": "assigned",
+                        "assignedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req",
+                    "uuid": null
+                }
+            ],
+            [
+                "BezwaarAuditTrail::recordForNewRecord",
+                {
+                    "objectService": [],
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-self",
+                    "event": "panel-member-added",
+                    "payload": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "commissieId": "com-1",
+                        "objectionProceeding": "obj-1"
+                    },
+                    "tag": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "assign, saved with plain id": {
+        "answer": {
+            "id": "req-plain"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "store::saveObject",
+                {
+                    "object": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "deadline": "<deadline>",
+                        "note": "x",
+                        "bezwaar": "obj-1",
+                        "committee": "com-1",
+                        "status": "assigned",
+                        "assignedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req",
+                    "uuid": null
+                }
+            ],
+            [
+                "BezwaarAuditTrail::recordForNewRecord",
+                {
+                    "objectService": [],
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-plain",
+                    "event": "panel-member-added",
+                    "payload": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "commissieId": "com-1",
+                        "objectionProceeding": "obj-1"
+                    },
+                    "tag": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "assign, saved with uuid": {
+        "answer": {
+            "uuid": "req-uuid"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "store::saveObject",
+                {
+                    "object": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "deadline": "<deadline>",
+                        "note": "x",
+                        "bezwaar": "obj-1",
+                        "committee": "com-1",
+                        "status": "assigned",
+                        "assignedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req",
+                    "uuid": null
+                }
+            ],
+            [
+                "BezwaarAuditTrail::recordForNewRecord",
+                {
+                    "objectService": [],
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-uuid",
+                    "event": "panel-member-added",
+                    "payload": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "commissieId": "com-1",
+                        "objectionProceeding": "obj-1"
+                    },
+                    "tag": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "assign, save answers nothing": {
+        "answer": {
+            "panel": [
+                "p1"
+            ],
+            "deadline": "<deadline>",
+            "note": "x",
+            "bezwaar": "obj-1",
+            "committee": "com-1",
+            "status": "assigned",
+            "assignedAt": "<now>"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "store::saveObject",
+                {
+                    "object": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "deadline": "<deadline>",
+                        "note": "x",
+                        "bezwaar": "obj-1",
+                        "committee": "com-1",
+                        "status": "assigned",
+                        "assignedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req",
+                    "uuid": null
+                }
+            ],
+            [
+                "BezwaarAuditTrail::recordForNewRecord",
+                {
+                    "objectService": [],
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "",
+                    "event": "panel-member-added",
+                    "payload": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "commissieId": "com-1",
+                        "objectionProceeding": "obj-1"
+                    },
+                    "tag": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "assign, save fails": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Could not create advice request"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "store::saveObject",
+                {
+                    "object": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "deadline": "<deadline>",
+                        "note": "x",
+                        "bezwaar": "obj-1",
+                        "committee": "com-1",
+                        "status": "assigned",
+                        "assignedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq BAC: failed to create advice request: saveObject failed",
+                []
+            ]
+        ]
+    },
+    "assign, no payload": {
+        "answer": {
+            "id": "r"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "store::saveObject",
+                {
+                    "object": {
+                        "panel": [],
+                        "deadline": "<deadline>",
+                        "bezwaar": "obj-1",
+                        "committee": "com-1",
+                        "status": "assigned",
+                        "assignedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req",
+                    "uuid": null
+                }
+            ],
+            [
+                "BezwaarAuditTrail::recordForNewRecord",
+                {
+                    "objectService": [],
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "r",
+                    "event": "panel-member-added",
+                    "payload": {
+                        "panel": [],
+                        "commissieId": "com-1",
+                        "objectionProceeding": "obj-1"
+                    },
+                    "tag": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "assign, payload overrides the fixed fields": {
+        "answer": {
+            "id": "r"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "store::saveObject",
+                {
+                    "object": {
+                        "panel": [],
+                        "deadline": "2030-01-01",
+                        "bezwaar": "obj-1",
+                        "status": "assigned",
+                        "committee": "com-1",
+                        "assignedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req",
+                    "uuid": null
+                }
+            ],
+            [
+                "BezwaarAuditTrail::recordForNewRecord",
+                {
+                    "objectService": [],
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "r",
+                    "event": "panel-member-added",
+                    "payload": {
+                        "panel": [],
+                        "commissieId": "com-1",
+                        "objectionProceeding": "obj-1"
+                    },
+                    "tag": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "assign, committee not found": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Committee not found"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "assign, committee archived": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Committee is archived and cannot accept new bezwaaren"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "assign, committee active as a string": {
+        "answer": {
+            "id": "r"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "store::saveObject",
+                {
+                    "object": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "deadline": "<deadline>",
+                        "note": "x",
+                        "bezwaar": "obj-1",
+                        "committee": "com-1",
+                        "status": "assigned",
+                        "assignedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req",
+                    "uuid": null
+                }
+            ],
+            [
+                "BezwaarAuditTrail::recordForNewRecord",
+                {
+                    "objectService": [],
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "r",
+                    "event": "panel-member-added",
+                    "payload": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "commissieId": "com-1",
+                        "objectionProceeding": "obj-1"
+                    },
+                    "tag": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "assign, decidiq says archived": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Committee is archived and cannot accept new bezwaaren"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "GovernanceBodyReader::resolve",
+                {
+                    "row": {
+                        "id": "com-1",
+                        "active": true
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "assign, decidiq says active": {
+        "answer": {
+            "id": "r"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "GovernanceBodyReader::resolve",
+                {
+                    "row": {
+                        "id": "com-1",
+                        "active": false
+                    }
+                }
+            ],
+            [
+                "store::saveObject",
+                {
+                    "object": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "deadline": "<deadline>",
+                        "note": "x",
+                        "bezwaar": "obj-1",
+                        "committee": "com-1",
+                        "status": "assigned",
+                        "assignedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req",
+                    "uuid": null
+                }
+            ],
+            [
+                "BezwaarAuditTrail::recordForNewRecord",
+                {
+                    "objectService": [],
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "r",
+                    "event": "panel-member-added",
+                    "payload": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "commissieId": "com-1",
+                        "objectionProceeding": "obj-1"
+                    },
+                    "tag": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "assign, audit fails": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "recordForNewRecord failed"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "store::saveObject",
+                {
+                    "object": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "deadline": "<deadline>",
+                        "note": "x",
+                        "bezwaar": "obj-1",
+                        "committee": "com-1",
+                        "status": "assigned",
+                        "assignedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req",
+                    "uuid": null
+                }
+            ],
+            [
+                "BezwaarAuditTrail::recordForNewRecord",
+                {
+                    "objectService": [],
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "r",
+                    "event": "panel-member-added",
+                    "payload": {
+                        "panel": [
+                            "p1"
+                        ],
+                        "commissieId": "com-1",
+                        "objectionProceeding": "obj-1"
+                    },
+                    "tag": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "assign, no store": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "OpenRegister is not available"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ]
+        ],
+        "logs": []
+    },
+    "assign, no register": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "BAC schemas are not configured"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "assign, no request schema": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "BAC schemas are not configured"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "assign, no committee schema": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "BAC schemas are not configured"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, invalid status": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Invalid BAC advice status"
+        },
+        "calls": [],
+        "logs": []
+    },
+    "move, no store": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "OpenRegister is not available"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ]
+        ],
+        "logs": []
+    },
+    "move, not found": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Advice request not found"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, find fails": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "find failed"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, no register configured": {
+        "answer": {
+            "id": "req-1",
+            "patched": {
+                "status": "in-deliberation"
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "",
+                    "schema": ""
+                }
+            ],
+            [
+                "PanelIndependenceChecker::check",
+                {
+                    "objectionId": "obj-1",
+                    "panel": [
+                        "p1",
+                        "p2"
+                    ]
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "status": "in-deliberation"
+                    },
+                    "register": "",
+                    "schema": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, to deliberation": {
+        "answer": {
+            "id": "req-1",
+            "patched": {
+                "note": "n",
+                "status": "in-deliberation"
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "PanelIndependenceChecker::check",
+                {
+                    "objectionId": "obj-1",
+                    "panel": [
+                        "p1",
+                        "p2"
+                    ]
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "note": "n",
+                        "status": "in-deliberation"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, to deliberation, status missing reads as assigned": {
+        "answer": {
+            "id": "req-1",
+            "patched": {
+                "status": "in-deliberation"
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "PanelIndependenceChecker::check",
+                {
+                    "objectionId": "obj-1",
+                    "panel": [
+                        "p1",
+                        "p2"
+                    ]
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "status": "in-deliberation"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, to deliberation, legacy objection key": {
+        "answer": {
+            "id": "req-1",
+            "patched": {
+                "status": "in-deliberation"
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "PanelIndependenceChecker::check",
+                {
+                    "objectionId": "obj-old",
+                    "panel": [
+                        "p1"
+                    ]
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "status": "in-deliberation"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BAC: advice request still carries the legacy objection key; run the backfill repair step",
+                {
+                    "app": "dossiq",
+                    "requestId": "req-1"
+                }
+            ]
+        ]
+    },
+    "move, to deliberation, no objection": {
+        "answer": {
+            "id": "req-1",
+            "patched": {
+                "status": "in-deliberation"
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "PanelIndependenceChecker::check",
+                {
+                    "objectionId": "",
+                    "panel": [
+                        "p1"
+                    ]
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "status": "in-deliberation"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, to deliberation, no panel": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Panel must be set before deliberation can start"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, to deliberation, conflict": {
+        "answer": {
+            "thrown": "OCA\\Dossiq\\Service\\Transitions\\GuardFailedException",
+            "message": "Panel member conflict (Awb Art. 7:13 lid 3): eerder betrokken"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "PanelIndependenceChecker::check",
+                {
+                    "objectionId": "obj-1",
+                    "panel": [
+                        "p1",
+                        "p2"
+                    ]
+                }
+            ],
+            [
+                "BezwaarAuditTrail::recordRefusal",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "independence-check-failed",
+                    "payload": {
+                        "conflictingMember": "p2",
+                        "reason": "eerder betrokken"
+                    },
+                    "tag": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, to deliberation, conflict, refusal entry fails": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "recordRefusal failed"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "PanelIndependenceChecker::check",
+                {
+                    "objectionId": "obj-1",
+                    "panel": [
+                        "p1",
+                        "p2"
+                    ]
+                }
+            ],
+            [
+                "BezwaarAuditTrail::recordRefusal",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "independence-check-failed",
+                    "payload": {
+                        "conflictingMember": "p2",
+                        "reason": "r"
+                    },
+                    "tag": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, to deliberation, patch answers nothing": {
+        "answer": {
+            "id": "req-1",
+            "status": "in-deliberation",
+            "panel": [
+                "p1",
+                "p2"
+            ],
+            "bezwaar": "obj-1",
+            "x": 1
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "PanelIndependenceChecker::check",
+                {
+                    "objectionId": "obj-1",
+                    "panel": [
+                        "p1",
+                        "p2"
+                    ]
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "x": 1,
+                        "status": "in-deliberation"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, to deliberation, patch fails": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Could not transition advice request"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "PanelIndependenceChecker::check",
+                {
+                    "objectionId": "obj-1",
+                    "panel": [
+                        "p1",
+                        "p2"
+                    ]
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "status": "in-deliberation"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq BAC: failed to transition advice request req-1: patchObject failed",
+                []
+            ]
+        ]
+    },
+    "move, assigned to advice skips a step": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Transition from assigned to advice-issued is not permitted"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, back to assigned": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Transition from in-deliberation to assigned is not permitted"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, from an unknown status": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Transition from weird to in-deliberation is not permitted"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice": {
+        "answer": {
+            "id": "req-1",
+            "patched": {
+                "conclusion": "ongegrond",
+                "recommendation": "handhaven",
+                "signatureEvidence": "sig-1",
+                "status": "advice-issued",
+                "decisionRef": "decision-1",
+                "adviceIssuedAt": "<now>"
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "AdviceDelegationService::raiseAdviceDecision",
+                {
+                    "subjectSchema": "bacAdviceRequest",
+                    "subjectId": "req-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "externalReference": "obj-1",
+                        "subjectLabel": "ongegrond",
+                        "adviceType": "handhaven",
+                        "question": "ongegrond"
+                    }
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "BezwaarAuditTrail::recordThenApply",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "advice-signed-by-chair",
+                    "payload": {
+                        "chair": "chair-anna",
+                        "signatureEvidence": "sig-1",
+                        "conclusion": "ongegrond"
+                    },
+                    "tag": "",
+                    "apply": "closure"
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "conclusion": "ongegrond",
+                        "recommendation": "handhaven",
+                        "signatureEvidence": "sig-1",
+                        "status": "advice-issued",
+                        "decisionRef": "decision-1",
+                        "adviceIssuedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice from the stored fields": {
+        "answer": {
+            "id": "req-1",
+            "patched": {
+                "status": "advice-issued",
+                "decisionRef": "decision-1",
+                "adviceIssuedAt": "<now>"
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "AdviceDelegationService::raiseAdviceDecision",
+                {
+                    "subjectSchema": "bacAdviceRequest",
+                    "subjectId": "req-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "externalReference": "obj-1",
+                        "subjectLabel": "gegrond",
+                        "adviceType": "herroepen",
+                        "question": "gegrond"
+                    }
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "BezwaarAuditTrail::recordThenApply",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "advice-signed-by-chair",
+                    "payload": {
+                        "chair": "chair-anna",
+                        "signatureEvidence": "sig-0",
+                        "conclusion": "gegrond"
+                    },
+                    "tag": "",
+                    "apply": "closure"
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "status": "advice-issued",
+                        "decisionRef": "decision-1",
+                        "adviceIssuedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice, payload status is overridden": {
+        "answer": {
+            "id": "req-1",
+            "patched": {
+                "status": "advice-issued",
+                "decisionRef": "decision-1",
+                "conclusion": "ongegrond",
+                "recommendation": "handhaven",
+                "signatureEvidence": "sig-1",
+                "adviceIssuedAt": "<now>"
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "AdviceDelegationService::raiseAdviceDecision",
+                {
+                    "subjectSchema": "bacAdviceRequest",
+                    "subjectId": "req-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "externalReference": "obj-1",
+                        "subjectLabel": "ongegrond",
+                        "adviceType": "handhaven",
+                        "question": "ongegrond"
+                    }
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "BezwaarAuditTrail::recordThenApply",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "advice-signed-by-chair",
+                    "payload": {
+                        "chair": "chair-anna",
+                        "signatureEvidence": "sig-1",
+                        "conclusion": "ongegrond"
+                    },
+                    "tag": "",
+                    "apply": "closure"
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "status": "advice-issued",
+                        "decisionRef": "decision-1",
+                        "conclusion": "ongegrond",
+                        "recommendation": "handhaven",
+                        "signatureEvidence": "sig-1",
+                        "adviceIssuedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice, no objection uses the request id": {
+        "answer": {
+            "id": "req-1",
+            "patched": {
+                "status": "advice-issued",
+                "decisionRef": "decision-1",
+                "adviceIssuedAt": "<now>"
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "AdviceDelegationService::raiseAdviceDecision",
+                {
+                    "subjectSchema": "bacAdviceRequest",
+                    "subjectId": "req-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "externalReference": "req-1",
+                        "subjectLabel": "gegrond",
+                        "adviceType": "herroepen",
+                        "question": "gegrond"
+                    }
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "BezwaarAuditTrail::recordThenApply",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "advice-signed-by-chair",
+                    "payload": {
+                        "chair": "chair-anna",
+                        "signatureEvidence": "sig-0",
+                        "conclusion": "gegrond"
+                    },
+                    "tag": "",
+                    "apply": "closure"
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "status": "advice-issued",
+                        "decisionRef": "decision-1",
+                        "adviceIssuedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice, missing conclusion": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Advice cannot be issued: missing required field conclusion"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice, both fields missing": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Advice cannot be issued: missing required field conclusion"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice, empty recommendation": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Advice cannot be issued: missing required field recommendation"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice, decision raise fails": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Decision service unavailable: raiseAdviceDecision failed"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "AdviceDelegationService::raiseAdviceDecision",
+                {
+                    "subjectSchema": "bacAdviceRequest",
+                    "subjectId": "req-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "externalReference": "obj-1",
+                        "subjectLabel": "gegrond",
+                        "adviceType": "herroepen",
+                        "question": "gegrond"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq BAC: decidesk advice Decision raise failed — failing closed: raiseAdviceDecision failed",
+                []
+            ]
+        ]
+    },
+    "move, issue advice, decision ref empty": {
+        "answer": {
+            "id": "req-1",
+            "patched": {
+                "status": "advice-issued",
+                "adviceIssuedAt": "<now>"
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "AdviceDelegationService::raiseAdviceDecision",
+                {
+                    "subjectSchema": "bacAdviceRequest",
+                    "subjectId": "req-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "externalReference": "obj-1",
+                        "subjectLabel": "gegrond",
+                        "adviceType": "herroepen",
+                        "question": "gegrond"
+                    }
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "BezwaarAuditTrail::recordThenApply",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "advice-signed-by-chair",
+                    "payload": {
+                        "chair": "chair-anna",
+                        "signatureEvidence": "sig-0",
+                        "conclusion": "gegrond"
+                    },
+                    "tag": "",
+                    "apply": "closure"
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "status": "advice-issued",
+                        "adviceIssuedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice, signing entry fails": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Could not transition advice request"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "AdviceDelegationService::raiseAdviceDecision",
+                {
+                    "subjectSchema": "bacAdviceRequest",
+                    "subjectId": "req-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "externalReference": "obj-1",
+                        "subjectLabel": "gegrond",
+                        "adviceType": "herroepen",
+                        "question": "gegrond"
+                    }
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "BezwaarAuditTrail::recordThenApply",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "advice-signed-by-chair",
+                    "payload": {
+                        "chair": "chair-anna",
+                        "signatureEvidence": "sig-0",
+                        "conclusion": "gegrond"
+                    },
+                    "tag": "",
+                    "apply": "closure"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq BAC: failed to transition advice request req-1: recordThenApply failed",
+                []
+            ]
+        ]
+    },
+    "move, issue advice, no signature anywhere": {
+        "answer": {
+            "id": "req-1",
+            "patched": {
+                "status": "advice-issued",
+                "decisionRef": "decision-1",
+                "adviceIssuedAt": "<now>"
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "AdviceDelegationService::raiseAdviceDecision",
+                {
+                    "subjectSchema": "bacAdviceRequest",
+                    "subjectId": "req-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "externalReference": "obj-1",
+                        "subjectLabel": "gegrond",
+                        "adviceType": "herroepen",
+                        "question": "gegrond"
+                    }
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "BezwaarAuditTrail::recordThenApply",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "advice-signed-by-chair",
+                    "payload": {
+                        "chair": "chair-anna",
+                        "signatureEvidence": null,
+                        "conclusion": "gegrond"
+                    },
+                    "tag": "",
+                    "apply": "closure"
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "status": "advice-issued",
+                        "decisionRef": "decision-1",
+                        "adviceIssuedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice, forged signer in payload and object": {
+        "answer": {
+            "id": "req-1",
+            "patched": {
+                "chair": "mallory",
+                "actor": "mallory",
+                "userId": "mallory",
+                "conclusion": "ongegrond",
+                "recommendation": "handhaven",
+                "signatureEvidence": "sig-1",
+                "status": "advice-issued",
+                "decisionRef": "decision-1",
+                "adviceIssuedAt": "<now>"
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "AdviceDelegationService::raiseAdviceDecision",
+                {
+                    "subjectSchema": "bacAdviceRequest",
+                    "subjectId": "req-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "externalReference": "obj-1",
+                        "subjectLabel": "ongegrond",
+                        "adviceType": "handhaven",
+                        "question": "ongegrond"
+                    }
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "BezwaarAuditTrail::recordThenApply",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "advice-signed-by-chair",
+                    "payload": {
+                        "chair": "chair-anna",
+                        "signatureEvidence": "sig-1",
+                        "conclusion": "ongegrond"
+                    },
+                    "tag": "",
+                    "apply": "closure"
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "chair": "mallory",
+                        "actor": "mallory",
+                        "userId": "mallory",
+                        "conclusion": "ongegrond",
+                        "recommendation": "handhaven",
+                        "signatureEvidence": "sig-1",
+                        "status": "advice-issued",
+                        "decisionRef": "decision-1",
+                        "adviceIssuedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice, caller is not the chair": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Only the chair of the committee can sign the advice"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice, committee names no chair": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Only the chair of the committee can sign the advice"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice, request names no committee": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Only the chair of the committee can sign the advice"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, inadmissible, caller is not the chair": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Only the chair of the committee can sign the advice"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ]
+        ],
+        "logs": []
+    },
+    "move, issued advice cannot be reopened": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Transition from advice-issued to assigned is not permitted"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, inadmissible cannot be reopened": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Transition from inadmissible to in-deliberation is not permitted"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, inadmissible": {
+        "answer": {
+            "id": "req-1",
+            "patched": {
+                "reason": "te laat",
+                "status": "inadmissible",
+                "adviceIssuedAt": "<now>"
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "BezwaarAuditTrail::recordThenApply",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "advice-signed-by-chair",
+                    "payload": {
+                        "chair": "chair-anna",
+                        "signatureEvidence": "sig-0",
+                        "conclusion": "gegrond"
+                    },
+                    "tag": "",
+                    "apply": "closure"
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "reason": "te laat",
+                        "status": "inadmissible",
+                        "adviceIssuedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, inadmissible, patch answers nothing": {
+        "answer": {
+            "id": "req-1",
+            "status": "inadmissible",
+            "bezwaar": "obj-1",
+            "committee": "com-1",
+            "conclusion": "gegrond",
+            "recommendation": "herroepen",
+            "signatureEvidence": "sig-0",
+            "adviceIssuedAt": "<now>"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "BezwaarAuditTrail::recordThenApply",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "advice-signed-by-chair",
+                    "payload": {
+                        "chair": "chair-anna",
+                        "signatureEvidence": "sig-0",
+                        "conclusion": "gegrond"
+                    },
+                    "tag": "",
+                    "apply": "closure"
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "status": "inadmissible",
+                        "adviceIssuedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "auto assign": {
+        "answer": {
+            "id": "r"
+        },
+        "calls": [
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_default_committee",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-default",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "store::saveObject",
+                {
+                    "object": {
+                        "panel": [],
+                        "deadline": "<deadline>",
+                        "bezwaar": "obj-1",
+                        "committee": "com-default",
+                        "status": "assigned",
+                        "assignedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req",
+                    "uuid": null
+                }
+            ],
+            [
+                "BezwaarAuditTrail::recordForNewRecord",
+                {
+                    "objectService": [],
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "r",
+                    "event": "panel-member-added",
+                    "payload": {
+                        "panel": [],
+                        "commissieId": "com-default",
+                        "objectionProceeding": "obj-1"
+                    },
+                    "tag": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "auto assign, none configured": {
+        "answer": null,
+        "calls": [
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_default_committee",
+                    "default": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq BAC: no default committee configured; skipping auto-assignment for bezwaar obj-1",
+                []
+            ]
+        ]
+    },
+    "auto assign, fails": {
+        "answer": null,
+        "calls": [
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_default_committee",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-default",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq BAC: auto-assignment failed for bezwaar obj-1: Committee not found",
+                []
+            ]
+        ]
+    },
+    "deviation": {
+        "answer": "null",
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::record",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "council-deviation-recorded",
+                    "payload": {
+                        "decision": "dec-1",
+                        "motivatie": "mot-1"
+                    },
+                    "tag": "awb-art-7:13"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "deviation, no store": {
+        "answer": "null",
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ]
+        ],
+        "logs": []
+    },
+    "deviation, read fails": {
+        "answer": "null",
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq BAC: failed to read the advice request for a council deviation: find failed",
+                []
+            ]
+        ]
+    },
+    "deviation, not found": {
+        "answer": "null",
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "deviation, entry fails": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "record failed"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::record",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "council-deviation-recorded",
+                    "payload": {
+                        "decision": "dec-1",
+                        "motivatie": "mot-1"
+                    },
+                    "tag": "awb-art-7:13"
+                }
+            ]
+        ],
+        "logs": []
+    }
+}

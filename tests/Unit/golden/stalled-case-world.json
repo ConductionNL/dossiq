@@ -1,0 +1,144 @@
+{
+    "threshold 0": [
+        {
+            "caseId": "a",
+            "milestoneIdentifier": "first",
+            "milestoneLabel": "First",
+            "deadline": "2020-03-09",
+            "caseTitle": "T a",
+            "caseType": "ct-1",
+            "assignee": "u-a"
+        },
+        {
+            "caseId": "b",
+            "milestoneIdentifier": "second",
+            "milestoneLabel": "Second",
+            "deadline": "2020-04-17",
+            "caseTitle": "T b",
+            "caseType": "ct-1",
+            "assignee": "u-b"
+        },
+        {
+            "caseId": "e",
+            "milestoneIdentifier": "first",
+            "milestoneLabel": "First",
+            "deadline": "2020-03-09",
+            "caseTitle": "T e",
+            "caseType": "ct-1",
+            "assignee": "u-e"
+        },
+        {
+            "caseId": "i-uuid",
+            "milestoneIdentifier": "first",
+            "milestoneLabel": "First",
+            "deadline": "2020-03-09",
+            "caseTitle": "T i",
+            "caseType": "ct-1",
+            "assignee": "u-i"
+        },
+        {
+            "caseId": "k",
+            "milestoneIdentifier": "second",
+            "milestoneLabel": "Second",
+            "deadline": "2020-05-27",
+            "caseTitle": "",
+            "caseType": "ct-1",
+            "assignee": "u-k"
+        },
+        {
+            "caseId": "l",
+            "milestoneIdentifier": "",
+            "milestoneLabel": "Nameless",
+            "deadline": "2020-03-06",
+            "caseTitle": "T l",
+            "caseType": "ct-3",
+            "assignee": "u-l"
+        }
+    ],
+    "threshold 30": [
+        {
+            "caseId": "a",
+            "milestoneIdentifier": "first",
+            "milestoneLabel": "First",
+            "deadline": "2020-03-09",
+            "caseTitle": "T a",
+            "caseType": "ct-1",
+            "assignee": "u-a"
+        },
+        {
+            "caseId": "b",
+            "milestoneIdentifier": "second",
+            "milestoneLabel": "Second",
+            "deadline": "2020-04-17",
+            "caseTitle": "T b",
+            "caseType": "ct-1",
+            "assignee": "u-b"
+        },
+        {
+            "caseId": "e",
+            "milestoneIdentifier": "first",
+            "milestoneLabel": "First",
+            "deadline": "2020-03-09",
+            "caseTitle": "T e",
+            "caseType": "ct-1",
+            "assignee": "u-e"
+        },
+        {
+            "caseId": "i-uuid",
+            "milestoneIdentifier": "first",
+            "milestoneLabel": "First",
+            "deadline": "2020-03-09",
+            "caseTitle": "T i",
+            "caseType": "ct-1",
+            "assignee": "u-i"
+        },
+        {
+            "caseId": "k",
+            "milestoneIdentifier": "second",
+            "milestoneLabel": "Second",
+            "deadline": "2020-05-27",
+            "caseTitle": "",
+            "caseType": "ct-1",
+            "assignee": "u-k"
+        },
+        {
+            "caseId": "l",
+            "milestoneIdentifier": "",
+            "milestoneLabel": "Nameless",
+            "deadline": "2020-03-06",
+            "caseTitle": "T l",
+            "caseType": "ct-3",
+            "assignee": "u-l"
+        }
+    ],
+    "threshold 100000": [],
+    "grace equal to the days overdue": [
+        "l"
+    ],
+    "grace one day less": [
+        "a",
+        "e",
+        "i-uuid",
+        "l"
+    ],
+    "waitingOn c": {
+        "caseId": "c",
+        "milestoneIdentifier": "first",
+        "milestoneLabel": "First",
+        "deadline": "2099-01-12",
+        "caseTitle": "T c",
+        "caseType": "ct-1",
+        "assignee": "u-c"
+    },
+    "waitingOn a": {
+        "caseId": "a",
+        "milestoneIdentifier": "first",
+        "milestoneLabel": "First",
+        "deadline": "2020-03-09",
+        "caseTitle": "T a",
+        "caseType": "ct-1",
+        "assignee": "u-a"
+    },
+    "waitingOn closed": null,
+    "waitingOn d": null
+}

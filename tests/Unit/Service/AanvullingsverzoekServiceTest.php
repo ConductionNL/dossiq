@@ -36,6 +36,7 @@ use OCA\Dossiq\Portal\ResidentQuestionTask;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\InformationRequestService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Woo\WooRequestIntake;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -215,6 +216,53 @@ class AanvullingsverzoekServiceTest extends TestCase {
 		self::assertSame(expected: 'handler1', actual: $request['requestedBy']);
 		self::assertNotSame(expected: '', actual: (string)$request['requestedAt']);
 	}//end testAskingWritesTheRequestNamingBothItems()
+
+	/**
+	 * The service, told what the case's type is.
+	 *
+	 * @param string $case The case's type identifier or id.
+	 *
+	 * @return AanvullingsverzoekService&MockObject The service.
+	 */
+	private function serviceForCase(string $case): AanvullingsverzoekService {
+		$service = $this->getMockBuilder(className: AanvullingsverzoekService::class)
+			->setConstructorArgs(['act' => $this->act, 'settingsService' => $this->settings, 'logger' => new NullLogger()])
+			->onlyMethods(['openFor', 'write', 'markCaseWaiting', 'caseTypeOf'])
+			->getMock();
+		$service->method('openFor')->willReturn(null);
+		$service->method('write')->willReturnArgument(0);
+		$service->method('caseTypeOf')->willReturn($case);
+
+		return $service;
+	}//end serviceForCase()
+
+	/**
+	 * A clarification may be asked on any version of the Woo request case
+	 * type, and on no other type.
+	 *
+	 * @return void
+	 */
+	public function testAClarificationIsAskedOnEveryVersionOfTheWooCaseType(): void {
+		$this->act->method('ask')->willReturn($this->sent());
+		$ask = static fn (AanvullingsverzoekService $service): array => $service->ask(
+			caseId: 'case-1',
+			items: [],
+			recipient: 'aanvrager@example.org',
+			durationDays: 14,
+			userId: 'handler1',
+			question: 'Welke periode bedoelt u?',
+		);
+
+		self::assertSame(expected: 'verduidelijking', actual: $ask($this->serviceForCase(case: WooRequestIntake::CASE_TYPE_ID))['kind']);
+		self::assertSame(expected: 'verduidelijking', actual: $ask($this->serviceForCase(case: 'woo-verzoek'))['kind']);
+
+		try {
+			$ask($this->serviceForCase(case: 'melding-openbare-ruimte'));
+			self::fail(message: 'a clarification on another case type is refused');
+		} catch (RefusedException $e) {
+			self::assertSame(expected: 'aanvullingsverzoek-clarification-woo-only', actual: $e->getRule());
+		}
+	}//end testAClarificationIsAskedOnEveryVersionOfTheWooCaseType()
 
 	/**
 	 * The hersteltermijn is the one the suspension landed on.
@@ -490,4 +538,55 @@ class AanvullingsverzoekServiceTest extends TestCase {
 		$this->assertSame(0, $service->daysOpen(request: [], now: $now));
 		$this->assertSame(0, $service->daysOpen(request: ['requestedAt' => 'not a date'], now: $now));
 	}//end testDaysOpenCountsWholeDaysSinceTheRequest()
+
+	/**
+	 * A portal task that is raised but cannot be remembered leaves the request as written, and says so.
+	 *
+	 * @return void
+	 */
+	public function testATaskThatCannotBeRememberedLeavesTheRequestAsWritten(): void {
+		$this->act->method('ask')->willReturn($this->sent());
+		$portalTask = $this->createMock(ResidentQuestionTask::class);
+		$portalTask->method('raise')->willReturn('task-1');
+		$logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+		$warnings = [];
+		$logger->method('warning')->willReturnCallback(
+			static function (string $message, array $context = []) use (&$warnings): void {
+				$warnings[] = [$message, $context];
+			}
+		);
+
+		$service = $this->getMockBuilder(className: AanvullingsverzoekService::class)
+			->setConstructorArgs(['act' => $this->act, 'settingsService' => $this->settings, 'logger' => $logger, 'portalTask' => $portalTask])
+			->onlyMethods(['openFor', 'write', 'markCaseWaiting', 'portalSubjectOf'])
+			->getMock();
+		$service->method('openFor')->willReturn(null);
+		$service->method('portalSubjectOf')->willReturn('person:bsn-hash-1');
+		$service->method('write')->willReturnCallback(
+			static function (array $request, string $id = ''): array {
+				if ($id !== '') {
+					throw new RefusedException(rule: 'aanvullingsverzoek-not-written', sentence: 'The request could not be written down.', status: RefusedException::STATUS_INDETERMINATE);
+				}
+
+				return array_merge($request, ['id' => 'avr-1']);
+			}
+		);
+
+		$request = $service->ask(
+			caseId: 'case-1',
+			items: ['Bankafschrift'],
+			recipient: 'aanvrager@example.org',
+			durationDays: 14,
+			userId: 'handler1',
+			pauseReason: 'reason-awb-45',
+			rationale: 'Zonder bankafschrift kan de aanvraag niet worden beoordeeld',
+		);
+
+		self::assertArrayNotHasKey('portalTask', $request);
+		self::assertSame('avr-1', $request['id']);
+		self::assertSame(
+			[['Dossiq: the portal task was raised, but the request could not remember it', ['app' => 'dossiq', 'request' => 'avr-1', 'task' => 'task-1']]],
+			$warnings
+		);
+	}//end testATaskThatCannotBeRememberedLeavesTheRequestAsWritten()
 }//end class

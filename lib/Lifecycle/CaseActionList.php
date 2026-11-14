@@ -43,12 +43,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Lifecycle;
 
-use OCA\Dossiq\Service\Cases\ExternalHome;
-use OCA\Dossiq\Service\Money\CasePaymentReader;
-use OCA\Dossiq\Service\Money\UnpaidCaseGate;
-use OCA\Dossiq\Service\Transitions\CaseResultWriter;
+use OCA\Dossiq\Kernel\Contracts\CasePaymentReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseResultWriterInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\ExternalHomeInterface;
+use OCA\Dossiq\Kernel\Contracts\UnpaidCaseGateInterface;
 use OCP\IL10N;
-use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 
 /**
  * The acts a case offers, and what blocks them.
@@ -76,19 +76,19 @@ class CaseActionList {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseResultWriter  $resultWriter Decides whether a target status closes the case.
-	 * @param ExternalHome      $externalHome Whether the work on this case lives in another app.
-	 * @param CaseTypeReader    $caseTypes    What the case type declares about paying first.
-	 * @param UnpaidCaseGate    $unpaidCases  Whether an unpaid case proceeds.
-	 * @param CasePaymentReader $payments     The live payment state of one case.
+	 * @param CaseResultWriterInterface  $resultWriter Decides whether a target status closes the case.
+	 * @param ExternalHomeInterface      $externalHome Whether the work on this case lives in another app.
+	 * @param CaseTypeReaderInterface    $caseTypes    What the case type declares about paying first.
+	 * @param UnpaidCaseGateInterface    $unpaidCases  Whether an unpaid case proceeds.
+	 * @param CasePaymentReaderInterface $payments     The live payment state of one case.
 	 * @param IL10N|null        $l10n         Names the closing input; without it the input carries no label.
 	 */
 	public function __construct(
-		private readonly CaseResultWriter $resultWriter,
-		private readonly ExternalHome $externalHome,
-		private readonly CaseTypeReader $caseTypes,
-		private readonly UnpaidCaseGate $unpaidCases,
-		private readonly CasePaymentReader $payments,
+		private readonly CaseResultWriterInterface $resultWriter,
+		private readonly ExternalHomeInterface $externalHome,
+		private readonly CaseTypeReaderInterface $caseTypes,
+		private readonly UnpaidCaseGateInterface $unpaidCases,
+		private readonly CasePaymentReaderInterface $payments,
 		private readonly ?IL10N $l10n=null,
 	) {
 	}//end __construct()
@@ -281,7 +281,7 @@ class CaseActionList {
 	 *
 	 * @return list<array<string, mixed>> The moves, blocked when the work is elsewhere.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
 	 */
 	public function honourExternalHome(array $actions, array $object): array {
 		$sentence = $this->externalHome->whereTheWorkIs(case: $object);
@@ -308,7 +308,7 @@ class CaseActionList {
 	 *
 	 * @return list<array<string, mixed>> The moves, blocked when payment is owed.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
 	 */
 	public function honourPaymentRule(array $actions, array $object, string $caseId): array {
 		$sentence = $this->whyPaymentBlocks(object: $object, caseId: $caseId);
@@ -340,7 +340,7 @@ class CaseActionList {
 	 *
 	 * @return string The refusal, '' when the money is not in the way.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
 	 */
 	public function whyPaymentBlocks(array $object, string $caseId): string {
 		$rule = $this->caseTypes->paymentRule(caseTypeId: $this->caseTypeIdOf(object: $object));
@@ -373,7 +373,7 @@ class CaseActionList {
 	 *
 	 * @return string The case type uuid, '' when the case names none.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
 	 */
 	private function caseTypeIdOf(array $object): string {
 		$caseType = ($object['caseType'] ?? '');

@@ -32,7 +32,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -40,14 +40,16 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\AcknowledgementService;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AcknowledgementServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -57,31 +59,29 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 class AcknowledgementController extends Controller {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param string                 $appName         The app name.
 	 * @param IRequest               $request         The HTTP request.
-	 * @param AcknowledgementService $acknowledgement The acknowledgement of receipt.
-	 * @param CaseAccessGuard        $caseAccessGuard Per-case authorization (fails closed).
+	 * @param AcknowledgementServiceInterface $acknowledgement The acknowledgement of receipt.
+	 * @param CaseAccessGuardInterface        $caseAccessGuard Per-case authorization (fails closed).
 	 * @param IUserSession           $userSession     The current session.
 	 * @param IL10N                  $l10n            The translations.
 	 * @param LoggerInterface        $logger          The logger.
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
-		private readonly AcknowledgementService $acknowledgement,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly AcknowledgementServiceInterface $acknowledgement,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -91,16 +91,13 @@ class AcknowledgementController extends Controller {
 	 *
 	 * @return JSONResponse `{duty: object}`.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	#[NoAdminRequired]
 	public function duty(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You are not signed in.')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->notSignedIn();
 		}
 
 		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
@@ -132,16 +129,13 @@ class AcknowledgementController extends Controller {
 	 *
 	 * @return JSONResponse `{duty: object}`, or the refusal.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	#[NoAdminRequired]
 	public function recordMet(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You are not signed in.')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->notSignedIn();
 		}
 
 		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
@@ -151,6 +145,18 @@ class AcknowledgementController extends Controller {
 			);
 		}
 
+		return $this->recordMetAs(caseId: $caseId, user: $user);
+	}//end recordMet()
+
+	/**
+	 * Record that the case was acknowledged another way, as the caller.
+	 *
+	 * @param string $caseId The case.
+	 * @param IUser  $user   Who said so.
+	 *
+	 * @return JSONResponse The duty, the refusal, or a 500 that hides the failure.
+	 */
+	private function recordMetAs(string $caseId, IUser $user): JSONResponse {
 		try {
 			$duty = $this->acknowledgement->recordMetAnotherWay(
 				caseId: $caseId,
@@ -165,17 +171,41 @@ class AcknowledgementController extends Controller {
 				$e->getStatus()
 			);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq acknowledgement: recording a manual confirmation on case {case} failed',
-				['case' => $caseId, 'reason' => $e->getMessage()]
-			);
-
-			return new JSONResponse(
-				['error' => $this->l10n->t('The confirmation could not be recorded.')],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
+			return $this->recordFailed(caseId: $caseId, exception: $e);
 		}//end try
 
 		return new JSONResponse(['duty' => $duty]);
-	}//end recordMet()
+	}//end recordMetAs()
+
+	/**
+	 * The logged 500 for a confirmation that could not be recorded.
+	 *
+	 * @param string    $caseId    The case.
+	 * @param Throwable $exception The failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function recordFailed(string $caseId, Throwable $exception): JSONResponse {
+		$this->logger->error(
+			'Dossiq acknowledgement: recording a manual confirmation on case {case} failed',
+			['case' => $caseId, 'reason' => $exception->getMessage()]
+		);
+
+		return new JSONResponse(
+			['error' => $this->l10n->t('The confirmation could not be recorded.')],
+			Http::STATUS_INTERNAL_SERVER_ERROR
+		);
+	}//end recordFailed()
+
+	/**
+	 * The 401 for a caller without a session.
+	 *
+	 * @return JSONResponse
+	 */
+	private function notSignedIn(): JSONResponse {
+		return new JSONResponse(
+			['error' => $this->l10n->t('You are not signed in.')],
+			Http::STATUS_UNAUTHORIZED
+		);
+	}//end notSignedIn()
 }//end class

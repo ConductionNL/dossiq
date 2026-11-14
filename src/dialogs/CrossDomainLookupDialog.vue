@@ -21,10 +21,10 @@
   second copy that drifts, and a ground on screen the service does not
   recognise is a choice a consulent makes and is then refused for.
 
-  @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+  @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 -->
 <template>
-	<NcDialog
+	<CnDialog
 		:name="t('dossiq', 'Known in another domain')"
 		size="normal"
 		data-testid="cross-domain-lookup-dialog"
@@ -34,12 +34,13 @@
 				{{
 					t(
 						'dossiq',
-						'This answers whether an open case exists in another domain, which domain it is and who to call. It shows nothing about the case itself.',
+						'Only whether an open case exists elsewhere, and who to call.',
 					)
 				}}
 			</p>
 
 			<NcTextField
+				v-if="!household"
 				v-model="bsn"
 				data-testid="cross-domain-bsn"
 				:label="t('dossiq', 'Citizen service number')" />
@@ -106,24 +107,70 @@
 				{{ t('dossiq', 'Look up') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
+import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { caseIdFromLocation } from '../utils/savedMail.js'
+
+/**
+ * Look up the household's cases or the person's records, keep them, and say it was answered.
+ *
+ * @param {object} dialog The lookup dialog.
+ * @return {Promise<void>}
+ */
+async function showMatches(dialog) {
+	if (dialog.household) {
+		dialog.found = await householdMatches(dialog.ground)
+		emit('cn:page:refresh')
+	} else {
+		dialog.found = await personMatches(dialog)
+	}
+	dialog.answered = true
+}
+
+/**
+ * The cases of this case's household that the ground lets the handler see.
+ *
+ * @param {string} ground The ground the lookup is made on.
+ * @return {Promise<Array<object>>} The cases.
+ */
+async function householdMatches(ground) {
+	const { data } = await axios.post(
+		generateUrl('/apps/dossiq/api/cases/{caseId}/household-cases/lookup', { caseId: caseIdFromLocation() }),
+		{ ground },
+	)
+	return Array.isArray(data?.results) ? data.results : []
+}
+
+/**
+ * What the other domain holds on the person, as the ground lets the handler see.
+ *
+ * @param {{bsn: string, domain: string, ground: string}} dialog The person, the domain and the ground.
+ * @return {Promise<Array<object>>} What was found.
+ */
+async function personMatches(dialog) {
+	const { data } = await axios.post(
+		generateUrl('/apps/dossiq/api/cross-domain/lookup'),
+		{ bsn: dialog.bsn.trim(), domain: dialog.domain, ground: dialog.ground },
+	)
+	return Array.isArray(data?.found) ? data.found : []
+}
 
 export default {
 	name: 'CrossDomainLookupDialog',
 
 	components: {
 		NcButton,
-		NcDialog,
+		CnDialog,
 		NcSelect,
 		NcTextField,
 	},
@@ -136,6 +183,16 @@ export default {
 		domain: {
 			type: String,
 			default: '',
+		},
+
+		/**
+		 * Look up the household of the open case (its family plan) rather than
+		 * one person: no BSN to type, one logged lookup per person, and the
+		 * answer stays on the case's household card for this session.
+		 */
+		household: {
+			type: Boolean,
+			default: false,
 		},
 	},
 
@@ -162,12 +219,12 @@ export default {
 		 *
 		 * @return {boolean} True when it may.
 		 *
-		 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+		 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 		 */
 		canLookUp() {
 			return (
 				this.busy === false
-				&& this.bsn.trim().length > 0
+				&& (this.household || this.bsn.trim().length > 0)
 				&& Boolean(this.ground)
 			)
 		},
@@ -185,7 +242,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+		 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 		 */
 		async loadGrounds() {
 			try {
@@ -210,7 +267,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+		 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 		 */
 		async lookUp() {
 			if (!this.canLookUp) {
@@ -220,23 +277,12 @@ export default {
 			this.error = ''
 			this.answered = false
 			try {
-				const { data } = await axios.post(
-					generateUrl('/apps/dossiq/api/cross-domain/lookup'),
-					{
-						bsn: this.bsn.trim(),
-						domain: this.domain,
-						ground: this.ground,
-					},
-				)
-				this.found = Array.isArray(data?.found) ? data.found : []
-				this.answered = true
+				await showMatches(this)
 			} catch (e) {
 				// The server's own sentence, which names the rule it refused
 				// on. Replacing it here is how "choose the ground you are
 				// looking this person up on" becomes "request failed".
-				this.error =
-					e?.response?.data?.message
-					|| t('dossiq', 'The lookup was not made.')
+				this.error = e?.response?.data?.message || t('dossiq', 'The lookup was not made.')
 			} finally {
 				this.busy = false
 			}

@@ -35,13 +35,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Documents;
 
+use OCA\Dossiq\Kernel\Contracts\ScanVerdictReaderInterface;
 use OCP\App\IAppManager;
 use OCP\IDBConnection;
 use Psr\Log\LoggerInterface;
@@ -49,7 +50,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Reads the verdict `files_antivirus` recorded for a file id.
  */
-class ScanVerdictReader {
+class ScanVerdictReader implements ScanVerdictReaderInterface {
 	/**
 	 * The app that does the scanning. dossiq only reads what it wrote.
 	 *
@@ -113,7 +114,7 @@ class ScanVerdictReader {
 	 *
 	 * @return bool True when `files_antivirus` is installed.
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	public function scannerPresent(): bool {
 		try {
@@ -137,7 +138,7 @@ class ScanVerdictReader {
 	 *         whether a scanner is installed, so the reader of this answer can
 	 *         tell "no scanner here" from "not reached yet".
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	public function verdictFor(int $fileId): array {
 		if ($this->scannerPresent() === false) {
@@ -153,12 +154,19 @@ class ScanVerdictReader {
 			return $this->notScanned(present: true);
 		}
 
+		return $this->verdictFromRow(row: $row);
+	}//end verdictFor()
+
+	/**
+	 * The verdict a recorded scan row gives.
+	 *
+	 * @param array<string, mixed> $row The scanner's recorded row for the file.
+	 *
+	 * @return array{state: string, scannedAt: string|null, scannerPresent: bool}
+	 */
+	private function verdictFromRow(array $row): array {
 		$status = (int)($row['status'] ?? -1);
-		$state = match ($status) {
-			self::RECORDED_CLEAN => self::STATE_CLEAN,
-			self::RECORDED_INFECTED => self::STATE_INFECTED,
-			default => self::STATE_NOT_SCANNED,
-		};
+		$state = $this->stateOf(status: $status);
 
 		if ($state === self::STATE_NOT_SCANNED) {
 			return $this->notScanned(present: true);
@@ -169,7 +177,22 @@ class ScanVerdictReader {
 			'scannedAt' => $this->checkedAt(raw: ($row['check_time'] ?? null)),
 			'scannerPresent' => true,
 		];
-	}//end verdictFor()
+	}//end verdictFromRow()
+
+	/**
+	 * The verdict state a recorded scan status stands for.
+	 *
+	 * @param int $status The recorded status.
+	 *
+	 * @return string
+	 */
+	private function stateOf(int $status): string {
+		return match ($status) {
+			self::RECORDED_CLEAN => self::STATE_CLEAN,
+			self::RECORDED_INFECTED => self::STATE_INFECTED,
+			default => self::STATE_NOT_SCANNED,
+		};
+	}//end stateOf()
 
 	/**
 	 * The row the scanner wrote for this file, or null when there is none.
@@ -182,7 +205,7 @@ class ScanVerdictReader {
 	 *
 	 * @return array<string, mixed>|null The recorded row, or null.
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	private function recordedRow(int $fileId): ?array {
 		try {
@@ -217,7 +240,7 @@ class ScanVerdictReader {
 	 *
 	 * @return string|null The moment, or null.
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	private function checkedAt(mixed $raw): ?string {
 		if (is_numeric($raw) === false) {
@@ -240,7 +263,7 @@ class ScanVerdictReader {
 	 * @return array{state: string, scannedAt: string|null, scannerPresent: bool}
 	 *         The not-scanned verdict.
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	private function notScanned(bool $present): array {
 		return [

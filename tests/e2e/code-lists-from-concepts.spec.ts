@@ -10,22 +10,24 @@
  * points at one with `conceptScheme` and the scheme rules over any inline
  * list still on the field.
  *
- * These tests read the stored definition back through the API rather than
- * trusting the form, because what a case type ends up holding is the whole
- * point of the binding.
+ * These tests drive the case type's field form, the manifest's
+ * `case-type-fields-editor` form (see helpers/field-form.ts), and read the
+ * stored definition back through the API rather than trusting the form,
+ * because what a case type ends up holding is the whole point of the binding.
  *
- * ⚠️ NOT RUN LOCALLY. There is no Playwright run on this box and no instance
- * to run against, so these are written and tagged, not executed, and no
- * mutation check backs them yet. The ids they target (`#pd-add-concept-scheme`,
- * `#pd-add-enum`) and the testids (`concept-scheme-warning`,
- * `property-scheme`) are introduced by this same change in
- * `PropertyDefinitionFields.vue` and `PropertiesTab.vue`, which is what makes
- * them targetable at all.
+ * ⚠️ NOT RUN LOCALLY. There is no Playwright run on this box, so the
+ * selectors are unverified until the first run.
  */
 
-import type { Locator } from '@playwright/test'
-
 import { expect, test } from '@playwright/test'
+import {
+	choiceListOn,
+	create,
+	field,
+	fillChoices,
+	openAddField,
+	openFieldsTab,
+} from './helpers/field-form.ts'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -36,20 +38,6 @@ import {
 	trackCreatedObject,
 } from './helpers/fixtures.ts'
 
-/**
- * The Name input of the Add property definition form.
- *
- * Found by its label. The `.NcTextField` class this used to match is not a
- * class @nextcloud/vue 9 renders (its root is `.input-field`), so the old
- * locator matched nothing and every fill timed out.
- *
- * @param tab The Properties tab.
- */
-function nameField(tab: Locator): Locator {
-	return tab.locator('.pd-fields').getByLabel('Name', { exact: true })
-}
-
-const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 const CASE_TYPE_TITLE = `${RUN_PREFIX} Wijkmelding`
 const SCHEME = 'wijken'
 
@@ -74,42 +62,17 @@ test.describe('code lists from concepts', () => {
 	})
 
 	/**
-	 * Open the Properties tab of the seeded case type.
+	 * Open the Add field form on the seeded case type, with the name filled.
 	 *
 	 * @param page The Playwright page.
-	 * @return The Properties tab root.
+	 * @param name The field name.
+	 * @return The field list and the open form.
 	 */
-	async function openProperties(page) {
-		await page.goto(ADMIN_SETTINGS_URL)
-		const admin = page.locator('.case-type-admin')
-		await admin
-			.locator('[data-testid="cn-object-row"]', { hasText: CASE_TYPE_TITLE })
-			.first()
-			.click()
-		const detail = page.locator('.case-type-detail')
-		await expect(detail).toBeVisible({ timeout: 30_000 })
-		await detail
-			.locator('.case-type-detail__tab', { hasText: /^Properties$/ })
-			.click()
-		const tab = page.locator('.properties-tab')
-		await expect(tab).toBeVisible({ timeout: 30_000 })
-		return tab
-	}
-
-	/**
-	 * Fill the add form and save one definition.
-	 *
-	 * @param tab The Properties tab root.
-	 * @param name The definition name.
-	 * @param fill What to do with the form before saving.
-	 */
-	async function addDefinition(tab, name: string, fill: () => Promise<void>) {
-		await nameField(tab).fill(name)
-		await fill()
-		await tab.getByRole('button', { name: /^Add$/ }).click()
-		await expect(tab.locator('.property-row', { hasText: name })).toBeVisible({
-			timeout: 30_000,
-		})
+	async function startField(page, name: string) {
+		const list = await openFieldsTab(page, CASE_TYPE_TITLE)
+		const dialog = await openAddField(page, list)
+		await field(dialog, 'name').locator('input').first().fill(name)
+		return { list, dialog }
 	}
 
 	/**
@@ -132,49 +95,43 @@ test.describe('code lists from concepts', () => {
 
 	// @e2e openspec/specs/property-definition-management/spec.md#options-come-from-the-scheme
 	test('options come from the scheme', async ({ page, request }) => {
-		const tab = await openProperties(page)
 		const name = `${RUN_PREFIX} Wijk`
-		await addDefinition(tab, name, async () => {
-			await tab.locator('#pd-add-concept-scheme').fill(SCHEME)
-		})
+		const { dialog } = await startField(page, name)
+		// The scheme sits with the choices, behind the Choice list switch, and
+		// makes the choices optional.
+		await choiceListOn(dialog)
+		await field(dialog, 'conceptScheme').locator('input').first().fill(SCHEME)
+		await create(dialog)
 
 		const stored = await storedDefinition(request, name)
 		expect(stored.conceptScheme).toBe(SCHEME)
 		expect(stored.enumValues ?? []).toEqual([])
-
-		const row = tab.locator('.property-row', { hasText: name })
-		await expect(row.locator('[data-testid="property-scheme"]')).toContainText(
-			SCHEME,
-		)
 	})
 
 	// @e2e openspec/specs/property-definition-management/spec.md#inline-lists-still-work
 	test('inline lists still work', async ({ page, request }) => {
-		const tab = await openProperties(page)
 		const name = `${RUN_PREFIX} Kanaal`
-		await addDefinition(tab, name, async () => {
-			await tab.getByText('Limit answers to a list').click()
-			await tab.locator('#pd-add-enum').fill('Balie\nTelefoon')
-		})
+		const { dialog } = await startField(page, name)
+		await choiceListOn(dialog)
+		await fillChoices(dialog, ['Balie', 'Telefoon'])
+		await create(dialog)
 
 		const stored = await storedDefinition(request, name)
 		expect(stored.enumValues).toEqual(['Balie', 'Telefoon'])
 		expect(stored.conceptScheme ?? '').toBe('')
-
-		const row = tab.locator('.property-row', { hasText: name })
-		await expect(row.locator('[data-testid="property-scheme"]')).toHaveCount(0)
 	})
 
 	// @e2e openspec/specs/property-definition-management/spec.md#options-come-from-the-scheme
 	test('a field carrying both is told which one wins', async ({ page }) => {
-		const tab = await openProperties(page)
-		await nameField(tab).fill(`${RUN_PREFIX} Reden`)
-		await tab.getByText('Limit answers to a list').click()
-		await tab.locator('#pd-add-enum').fill('Te laat')
-		await tab.locator('#pd-add-concept-scheme').fill('redenen')
+		const { dialog } = await startField(page, `${RUN_PREFIX} Reden`)
+		await choiceListOn(dialog)
+		await fillChoices(dialog, ['Te laat'])
+		const scheme = field(dialog, 'conceptScheme').locator('input').first()
+		await scheme.fill('redenen')
+		await scheme.press('Tab')
 
-		await expect(
-			tab.locator('[data-testid="concept-scheme-warning"]'),
-		).toContainText('The scheme wins')
+		await expect(field(dialog, 'enumValues')).toContainText(
+			/The concept scheme wins over these choices|Het begrippenkader gaat voor deze keuzes/,
+		)
 	})
 })

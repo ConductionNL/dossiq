@@ -24,26 +24,31 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Consultation;
 
+use OCA\Dossiq\Kernel\Contracts\ConsultationAccessGuardInterface;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Cases\CaseRebindGate;
 use OCA\Dossiq\Service\ConsultationService;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
  * Resolves and authorizes consultation access for the controller layer.
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
  */
-class ConsultationAccessGuard {
+class ConsultationAccessGuard implements ConsultationAccessGuardInterface {
 	/**
 	 * Constructor.
 	 *
@@ -51,6 +56,8 @@ class ConsultationAccessGuard {
 	 * @param ConsultationService $consultationService The consultation service.
 	 * @param IUserSession $userSession The user session.
 	 * @param IGroupManager $groupManager The group manager, for the admin bypass.
+	 * @param CaseAccessGuard $caseAccess The case pages' read check, for the lists.
+	 * @param BackgroundServiceAccount $serviceAccount The account the scheduled workflows call as.
 	 *
 	 * @return void
 	 */
@@ -59,15 +66,89 @@ class ConsultationAccessGuard {
 		private readonly ConsultationService $consultationService,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
+		private readonly CaseAccessGuard $caseAccess,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 	}//end __construct()
+
+	/**
+	 * Which advice requests the caller may see in a list: those on a case the
+	 * caller may read (the case pages' own check). The background service
+	 * account, which runs the scheduled consultation workflows, sees them all.
+	 * Without a caller nothing is readable.
+	 *
+	 * @return callable(array<string, mixed>): bool The test, asked of each request before a list is built.
+	 *
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-a-consultation-list-shows-only-requests-on-cases-the-caller-may-read
+	 */
+	public function readableFilter(): callable {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return static fn (): bool => false;
+		}
+
+		if ($this->isServiceAccount(user: $user) === true) {
+			return static fn (): bool => true;
+		}
+
+		$known = [];
+		return function (array $consultation) use ($user, &$known): bool {
+			$caseId = trim((string)($consultation['parentCase'] ?? ''));
+			if ($caseId === '') {
+				return false;
+			}
+
+			$known[$caseId] ??= $this->caseAccess->hasCaseReadAccess(caseId: $caseId, user: $user);
+			return $known[$caseId];
+		};
+	}//end readableFilter()
+
+	/**
+	 * Refuse a caller who may not read figures across every case: allowed are
+	 * administrators, the coordinators group and the background service account.
+	 *
+	 * @return JSONResponse|null Null when allowed, a 401 or 403 response otherwise.
+	 *
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-the-bottleneck-report-is-for-coordinators
+	 */
+	public function requireCoordinator(): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$uid = $user->getUID();
+		if ($this->groupManager->isAdmin($uid) === true
+			|| $this->groupManager->isInGroup($uid, CaseRebindGate::COORDINATOR_GROUP) === true
+			|| $this->isServiceAccount(user: $user) === true
+		) {
+			return null;
+		}
+
+		return new JSONResponse(['error' => 'Only coordinators may read this report'], Http::STATUS_FORBIDDEN);
+	}//end requireCoordinator()
+
+	/**
+	 * Whether the caller is the configured background service account, in its group.
+	 *
+	 * @param IUser $user The caller.
+	 *
+	 * @return bool True for that account.
+	 */
+	private function isServiceAccount(IUser $user): bool {
+		$configured = $this->serviceAccount->configuredUserId();
+
+		return $configured !== ''
+			&& $user->getUID() === $configured
+			&& $this->groupManager->isInGroup($configured, BackgroundServiceAccount::GROUP) === true;
+	}//end isServiceAccount()
 
 	/**
 	 * Reject an unauthenticated caller.
 	 *
 	 * @return JSONResponse|null Null when a user is signed in, a 401 response otherwise.
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function requireUser(): ?JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -82,7 +163,7 @@ class ConsultationAccessGuard {
 	 *
 	 * @return string The current UID.
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function currentUid(): string {
 		$user = $this->userSession->getUser();
@@ -103,7 +184,7 @@ class ConsultationAccessGuard {
 	 *
 	 * @return ConsultationAccess The denial response, or the resolved consultation.
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function authorize(string $consultationId): ConsultationAccess {
 		$user = $this->userSession->getUser();
@@ -140,7 +221,7 @@ class ConsultationAccessGuard {
 	 *
 	 * @return bool True when the user is the aanvrager, the assignee or an admin.
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	private function isPermitted(array $consultation, string $uid): bool {
 		if ($this->groupManager->isAdmin($uid) === true) {
@@ -160,7 +241,7 @@ class ConsultationAccessGuard {
 	 *
 	 * @return JSONResponse|null A 400 response on a cycle, null otherwise.
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function dependencyCycleError(array $data): ?JSONResponse {
 		$dependsOn = $data['dependsOn'] ?? [];
@@ -187,7 +268,7 @@ class ConsultationAccessGuard {
 	 *
 	 * @return array<string, mixed> The decoded body, or an empty array.
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function requestBody(): array {
 		// 🔴 `getContent()` IS PROTECTED ON THE CONCRETE REQUEST, AND ABSENT

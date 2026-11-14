@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Documents\ScanVerdictReader;
+use OCA\Dossiq\Kernel\Contracts\ScanVerdictReaderInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -33,21 +33,21 @@ use OCP\IUserSession;
  * file gets the same 404 as a file that is not there, and learns nothing from
  * the difference.
  *
- * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 class ScanVerdictController extends Controller {
 
 	/**
 	 * @param string            $appName     The app id.
 	 * @param IRequest          $request     The request.
-	 * @param ScanVerdictReader $verdicts    Reads what the scanner recorded.
+	 * @param ScanVerdictReaderInterface $verdicts    Reads what the scanner recorded.
 	 * @param IRootFolder       $rootFolder  Resolves the node as the caller.
 	 * @param IUserSession      $userSession Who asks.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ScanVerdictReader $verdicts,
+		private readonly ScanVerdictReaderInterface $verdicts,
 		private readonly IRootFolder $rootFolder,
 		private readonly IUserSession $userSession,
 	) {
@@ -62,7 +62,7 @@ class ScanVerdictController extends Controller {
 	 * @return JSONResponse The state, the moment of the check, and whether a
 	 *                      scanner is installed at all.
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	#[NoAdminRequired]
 	public function show(int $fileId): JSONResponse {
@@ -86,7 +86,7 @@ class ScanVerdictController extends Controller {
 	 *
 	 * @return bool True when the file is in the caller's own folder.
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	private function mayAccessFile(string $uid, int $fileId): bool {
 		if ($fileId <= 0) {

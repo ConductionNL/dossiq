@@ -25,14 +25,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\Service\TermijnNotificationService;
+use OCA\Dossiq\Kernel\Contracts\TermijnNotificationServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
 use Psr\Log\LoggerInterface;
@@ -42,19 +42,19 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
 class DeadlineNotificationDispatchJob extends QueuedJob {
 	/**
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time Time factory.
-	 * @param TermijnNotificationService $notificationService Notification service.
+	 * @param TermijnNotificationServiceInterface $notificationService Notification service.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly TermijnNotificationService $notificationService,
+		private readonly TermijnNotificationServiceInterface $notificationService,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);
@@ -71,37 +71,56 @@ class DeadlineNotificationDispatchJob extends QueuedJob {
 	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	protected function run($argument): void {
-		if (is_array($argument) === false) {
-			$this->logger->warning('DeadlineNotificationDispatchJob: invalid argument');
-			return;
-		}
-
-		$type = (string)($argument['type'] ?? '');
-		$termInstanceId = (string)($argument['termijnInstanceId'] ?? '');
-		$recipientUserId = (string)($argument['recipientUserId'] ?? '');
-		$context = (array)($argument['context'] ?? []);
-
-		if ($type === '' || $termInstanceId === '' || $recipientUserId === '') {
-			$this->logger->warning('DeadlineNotificationDispatchJob: missing required argument keys', $argument);
+		$notice = $this->noticeOf(argument: $argument);
+		if ($notice === null) {
 			return;
 		}
 
 		try {
 			$this->notificationService->sendTermijnNotification(
-				$type,
-				$termInstanceId,
-				$recipientUserId,
-				$context,
+				$notice['type'],
+				$notice['termInstanceId'],
+				$notice['recipientUserId'],
+				$notice['context'],
 			);
 			$this->logger->info(
 				'DeadlineNotificationDispatchJob: delivered',
-				['type' => $type, 'recipient' => $recipientUserId, 'instance' => $termInstanceId]
+				['type' => $notice['type'], 'recipient' => $notice['recipientUserId'], 'instance' => $notice['termInstanceId']]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'DeadlineNotificationDispatchJob: delivery failed',
-				['error' => $e->getMessage(), 'type' => $type, 'recipient' => $recipientUserId]
+				['error' => $e->getMessage(), 'type' => $notice['type'], 'recipient' => $notice['recipientUserId']]
 			);
 		}
 	}//end run()
+
+	/**
+	 * The notification the job argument asks for, or null (with a warning) when it is incomplete.
+	 *
+	 * @param mixed $argument The queued job argument.
+	 *
+	 * @return array{type: string, termInstanceId: string, recipientUserId: string, context: array<mixed>}|null
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 */
+	private function noticeOf(mixed $argument): ?array {
+		if (is_array($argument) === false) {
+			$this->logger->warning('DeadlineNotificationDispatchJob: invalid argument');
+			return null;
+		}
+
+		$notice = [
+			'type' => (string)($argument['type'] ?? ''),
+			'termInstanceId' => (string)($argument['termijnInstanceId'] ?? ''),
+			'recipientUserId' => (string)($argument['recipientUserId'] ?? ''),
+			'context' => (array)($argument['context'] ?? []),
+		];
+		if (in_array('', [$notice['type'], $notice['termInstanceId'], $notice['recipientUserId']], true) === true) {
+			$this->logger->warning('DeadlineNotificationDispatchJob: missing required argument keys', $argument);
+			return null;
+		}
+
+		return $notice;
+	}//end noticeOf()
 }//end class

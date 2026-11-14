@@ -105,40 +105,53 @@ class ZtcConceptRules {
 		?array $existingObject,
 		?bool $parentCaseTypeDraft,
 	): ?array {
+		$change = new ZtcChange(resource: $resource, action: $action, body: $body);
+
 		// Ztc-009: Direct concept resources (zaaktypen, besluittypen, informatieobjecttypen).
 		if (in_array($resource, self::CONCEPT_RESOURCES, true) === true) {
-			return $this->checkDirectDraftProtection(
-				resource: $resource,
-				action: $action,
-				body: $body,
-				existingObject: $existingObject
-			);
+			return $this->checkDirectDraftProtection(change: $change, existingObject: $existingObject);
 		}
 
 		// Ztc-010: Sub-resources of zaaktypen.
 		if (in_array($resource, self::ZAAKTYPE_SUB_RESOURCES, true) === true
 			&& $parentCaseTypeDraft === false
 		) {
-			// Allow creation of all sub-resources except resultaattypen.
-			if ($action === 'create' && $resource !== 'resultaattypen') {
-				return null;
-			}
-
-			// Block resultaattypen creation + update/patch/destroy for all sub-resources.
-			if (in_array($action, ['create', 'update', 'patch', 'destroy'], true) === true) {
-				$detail = 'Het is niet toegestaan om typen van een gepubliceerd zaaktype aan te passen.';
-				return $this->results->error(
-					status: 400,
-					detail: $detail,
-					invalidParams: [
-						$this->results->fieldError(fieldName: 'nonFieldErrors', code: 'non-concept-zaaktype', reason: $detail),
-					]
-				);
-			}
+			return $this->publishedParentRefusal(change: $change);
 		}
 
 		return null;
 	}//end checkConceptProtection()
+
+	/**
+	 * The refusal for a change to a sub-resource of a published zaaktype (ztc-010).
+	 *
+	 * Creating a sub-resource is allowed, except a resultaattype; updating,
+	 * patching and destroying any of them is not.
+	 *
+	 * @param ZtcChange $change The change.
+	 *
+	 * @return array|null Validation error result, or null if the change may pass
+	 */
+	private function publishedParentRefusal(ZtcChange $change): ?array {
+		// Allow creation of all sub-resources except resultaattypen.
+		if ($change->action === 'create' && $change->resource !== 'resultaattypen') {
+			return null;
+		}
+
+		// Block resultaattypen creation + update/patch/destroy for all sub-resources.
+		if (in_array($change->action, ['create', 'update', 'patch', 'destroy'], true) === false) {
+			return null;
+		}
+
+		$detail = 'Het is niet toegestaan om typen van een gepubliceerd zaaktype aan te passen.';
+		return $this->results->error(
+			status: 400,
+			detail: $detail,
+			invalidParams: [
+				$this->results->fieldError(fieldName: 'nonFieldErrors', code: 'non-concept-zaaktype', reason: $detail),
+			]
+		);
+	}//end publishedParentRefusal()
 
 	/**
 	 * Default concept=true for new ZTC concept resources.
@@ -201,48 +214,59 @@ class ZtcConceptRules {
 	 * Published types (concept=false) cannot be modified or deleted,
 	 * except PATCH with only eindeGeldigheid.
 	 *
-	 * @param string $resource The resource name
-	 * @param string $action The action
-	 * @param array $body The request body
+	 * @param ZtcChange  $change         The change.
 	 * @param array|null $existingObject The existing object data
 	 *
 	 * @return array|null Validation error, or null if OK
 	 */
-	private function checkDirectDraftProtection(
-		string $resource,
-		string $action,
-		array $body,
-		?array $existingObject,
-	): ?array {
-		if ($existingObject === null) {
+	private function checkDirectDraftProtection(ZtcChange $change, ?array $existingObject): ?array {
+		if ($existingObject === null || self::isPublished(existingObject: $existingObject) === false) {
 			return null;
 		}
 
+		// Ztc-009c/g/k: PATCH with only geldigheid fields is allowed on published types.
+		if ($change->action === 'patch' && self::onlyEndsValidity(body: $change->body) === true) {
+			return null;
+		}
+
+		$resourceLabel = rtrim($change->resource, 'n');
+		$detail = "Het is niet toegestaan om een {$resourceLabel} met concept=false " . $this->actionLabel(action: $change->action) . '.';
+		return $this->results->error(
+			status: 400,
+			detail: $detail,
+			invalidParams: [
+				$this->results->fieldError(fieldName: 'nonFieldErrors', code: 'non-concept-object', reason: $detail),
+			]
+		);
+	}//end checkDirectDraftProtection()
+
+	/**
+	 * Whether a stored type is published: its draft flag, else its concept flag, reads false.
+	 *
+	 * @param array $existingObject The existing object data
+	 *
+	 * @return bool True for a published type.
+	 */
+	private static function isPublished(array $existingObject): bool {
 		$isDraft = $existingObject['isDraft'] ?? ($existingObject['concept'] ?? true);
-		if ($isDraft === 'false' || $isDraft === false || $isDraft === '0' || $isDraft === 0) {
-			// Ztc-009c/g/k: PATCH with only geldigheid fields is allowed on published types.
-			if ($action === 'patch') {
-				$metadataKeys = ['_route', 'zgwApi', 'resource', 'uuid', 'concept'];
-				$allowedKeys = ['endValidity', 'startValidity', 'beginObject'];
-				$contentKeys = array_values(array_diff(array_keys($body), $metadataKeys, $allowedKeys));
-				if (count($contentKeys) === 0 && array_key_exists('endValidity', $body) === true) {
-					return null;
-				}
-			}
 
-			$resourceLabel = rtrim($resource, 'n');
-			$detail = "Het is niet toegestaan om een {$resourceLabel} met concept=false " . $this->actionLabel(action: $action) . '.';
-			return $this->results->error(
-				status: 400,
-				detail: $detail,
-				invalidParams: [
-					$this->results->fieldError(fieldName: 'nonFieldErrors', code: 'non-concept-object', reason: $detail),
-				]
-			);
-		}//end if
+		return in_array($isDraft, ['false', false, '0', 0], true);
+	}//end isPublished()
 
-		return null;
-	}//end checkDirectConceptProtection()
+	/**
+	 * Whether a patch only sets the validity, ending it.
+	 *
+	 * @param array $body The request body
+	 *
+	 * @return bool True when it carries endValidity and no other content.
+	 */
+	private static function onlyEndsValidity(array $body): bool {
+		$metadataKeys = ['_route', 'zgwApi', 'resource', 'uuid', 'concept'];
+		$allowedKeys = ['endValidity', 'startValidity', 'beginObject'];
+		$contentKeys = array_values(array_diff(array_keys($body), $metadataKeys, $allowedKeys));
+
+		return (count($contentKeys) === 0 && array_key_exists('endValidity', $body) === true);
+	}//end onlyEndsValidity()
 
 	/**
 	 * Get a Dutch action label for error messages.

@@ -118,18 +118,31 @@ class StalledCaseDetector {
 			filters: ['_limit' => 1000],
 		);
 
-		$today = new DateTimeImmutable('today');
-		$stalled = [];
+		return $this->stallRows(
+			cases: $cases,
+			window: new StallWindow(today: new DateTimeImmutable('today'), thresholdDays: $thresholdDays)
+		);
+	}//end findStalledCases()
 
+	/**
+	 * The stall rows of the cases that have stalled.
+	 *
+	 * @param array<int, array<string, mixed>> $cases  The case objects.
+	 * @param StallWindow                      $window Today and the grace days.
+	 *
+	 * @return array<int, array<string, mixed>> One row per stalled case.
+	 */
+	private function stallRows(array $cases, StallWindow $window): array {
+		$stalled = [];
 		foreach ($cases as $case) {
-			$stall = $this->getStallRow(case: $case, today: $today, thresholdDays: $thresholdDays);
+			$stall = $this->getStallRow(row: $case, window: $window);
 			if ($stall !== null) {
 				$stalled[] = $stall;
 			}
-		}//end foreach
+		}
 
 		return $stalled;
-	}//end findStalledCases()
+	}//end stallRows()
 
 	/**
 	 * The milestone one case waits on now, whether or not it is late.
@@ -150,7 +163,7 @@ class StalledCaseDetector {
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function waitingOn(array $case): ?array {
-		return $this->getStallRow(case: $case, today: new DateTimeImmutable('today'), thresholdDays: PHP_INT_MIN);
+		return $this->getStallRow(row: $case, window: new StallWindow(today: new DateTimeImmutable('today'), thresholdDays: PHP_INT_MIN));
 	}//end waitingOn()
 
 	/**
@@ -159,120 +172,198 @@ class StalledCaseDetector {
 	 * Cases without an id, closed cases, cases without a case type and cases
 	 * without a parsable start date are skipped (null).
 	 *
-	 * @param array<string, mixed> $case The case object.
-	 * @param DateTimeImmutable $today Today (date only).
-	 * @param int $thresholdDays Grace days past the deadline.
+	 * @param array<string, mixed> $row    The case object.
+	 * @param StallWindow          $window Today and the grace days.
 	 *
 	 * @return array<string, mixed>|null Stall row, or null when on track or skipped.
 	 */
-	private function getStallRow(array $case, DateTimeImmutable $today, int $thresholdDays): ?array {
-		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
-		$status = strtolower((string)($case['status'] ?? ''));
-		if ($caseId === '' || $this->isClosedStatus(status: $status) === true) {
+	private function getStallRow(array $row, StallWindow $window): ?array {
+		$candidate = $this->candidateOf(row: $row);
+		if ($candidate === null) {
 			return null;
 		}
 
-		$caseTypeId = (string)($case['caseType'] ?? '');
-		if ($caseTypeId === '') {
-			return null;
-		}
-
-		$startDate = $this->parseCaseStart(case: $case);
-		if ($startDate === null) {
-			return null;
-		}
-
-		$stall = $this->evaluateStall(
-			caseId: $caseId,
-			caseTypeId: $caseTypeId,
-			startDate: $startDate,
-			today: $today,
-			thresholdDays: $thresholdDays,
-		);
-
+		$stall = $this->evaluateStall(candidate: $candidate, window: $window);
 		if ($stall === null) {
 			return null;
 		}
 
-		$stall['caseTitle'] = (string)($case['title'] ?? '');
-		$stall['caseType'] = $caseTypeId;
-		$stall['assignee'] = (string)($case['assignee'] ?? '');
+		$stall['caseTitle'] = (string)($row['title'] ?? '');
+		$stall['caseType'] = $candidate->caseTypeId;
+		$stall['assignee'] = (string)($row['assignee'] ?? '');
 
 		return $stall;
 	}//end getStallRow()
 
 	/**
+	 * The case as a stall candidate, or null when it is closed or lacks an id, a case type or a start.
+	 *
+	 * @param array<string, mixed> $row The case object.
+	 *
+	 * @return StallCandidate|null The candidate.
+	 */
+	private function candidateOf(array $row): ?StallCandidate {
+		$caseId = $this->openCaseId(row: $row);
+		$caseTypeId = (string)($row['caseType'] ?? '');
+		if ($caseId === '' || $caseTypeId === '') {
+			return null;
+		}
+
+		$startDate = $this->parseCaseStart(row: $row);
+		if ($startDate === null) {
+			return null;
+		}
+
+		return new StallCandidate(caseId: $caseId, caseTypeId: $caseTypeId, startDate: $startDate);
+	}//end candidateOf()
+
+	/**
+	 * The id of a case that is still open, or '' when it has no id or is closed.
+	 *
+	 * @param array<string, mixed> $row The case object.
+	 *
+	 * @return string The case id, or ''.
+	 */
+	private function openCaseId(array $row): string {
+		$caseId = (string)($row['id'] ?? ($row['uuid'] ?? ''));
+		if ($caseId === '' || $this->isClosedStatus(status: strtolower((string)($row['status'] ?? ''))) === true) {
+			return '';
+		}
+
+		return $caseId;
+	}//end openCaseId()
+
+	/**
 	 * Evaluate whether a single case has stalled on its earliest unreached
 	 * milestone and, if so, build the report row.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param string $caseTypeId The case type UUID.
-	 * @param DateTimeImmutable $startDate The case start date.
-	 * @param DateTimeImmutable $today Today (date only).
-	 * @param int $thresholdDays Grace days past the deadline.
+	 * @param StallCandidate $candidate The case, its type and its start.
+	 * @param StallWindow    $window    Today and the grace days.
 	 *
 	 * @return array<string, mixed>|null Stall row, or null when on track.
 	 */
-	private function evaluateStall(
-		string $caseId,
-		string $caseTypeId,
-		DateTimeImmutable $startDate,
-		DateTimeImmutable $today,
-		int $thresholdDays,
-	): ?array {
-		$definitions = $this->repository->findDefinitions(caseTypeId: $caseTypeId);
+	private function evaluateStall(StallCandidate $candidate, StallWindow $window): ?array {
+		$definitions = $this->orderedDefinitions(caseTypeId: $candidate->caseTypeId);
 		if (count($definitions) === 0) {
 			return null;
 		}
 
-		// Order definitions by their numeric `order`.
+		[$reachedBy, $reachedOn] = $this->reached(caseId: $candidate->caseId);
+
+		$projected = $this->schedule->project(definitions: $definitions, caseStart: $candidate->startDate, reached: $reachedOn);
+
+		// The first unreached milestone is what the case waits on; when every
+		// milestone is reached the case is complete, not stalled.
+		$definition = $this->firstUnreached(definitions: $definitions, reachedBy: $reachedBy);
+		if ($definition === null) {
+			return null;
+		}
+
+		return $this->stallRowFor(candidate: $candidate, window: $window, definition: $definition, projected: $projected);
+	}//end evaluateStall()
+
+	/**
+	 * The report row for the milestone a case waits on, or null when it is not past its grace days.
+	 *
+	 * @param StallCandidate                       $candidate  The case, its type and its start.
+	 * @param StallWindow                          $window     Today and the grace days.
+	 * @param array<string, mixed>                 $definition The first unreached milestone.
+	 * @param array<string, DateTimeImmutable>     $projected  The scheduled deadlines, by milestone identifier.
+	 *
+	 * @return array<string, mixed>|null Stall row, or null when on track.
+	 */
+	private function stallRowFor(StallCandidate $candidate, StallWindow $window, array $definition, array $projected): ?array {
+		// Its deadline comes from the SCHEDULE, which reads `dependsOn`,
+		// rather than from this milestone's own duration counted off the
+		// case start.
+		$identifier = $this->identifierOf(definition: $definition);
+		$deadline = ($projected[$identifier] ?? $this->ownDeadline(definition: $definition, candidate: $candidate));
+		$daysOverdue = $this->days->signed(from: $deadline, to: $window->today);
+		if ($daysOverdue <= $window->thresholdDays) {
+			return null;
+		}
+
+		return [
+			'caseId' => $candidate->caseId,
+			'milestoneIdentifier' => $identifier,
+			'milestoneLabel' => $this->labelOf(definition: $definition),
+			'deadline' => $deadline->format('Y-m-d'),
+			'daysOverdue' => $daysOverdue,
+		];
+	}//end stallRowFor()
+
+	/**
+	 * A case type's milestone definitions, ordered by their numeric `order`.
+	 *
+	 * @param string $caseTypeId The case type id.
+	 *
+	 * @return array<int, array<string, mixed>> The definitions.
+	 */
+	private function orderedDefinitions(string $caseTypeId): array {
+		$definitions = $this->repository->findDefinitions(caseTypeId: $caseTypeId);
 		usort(
 			$definitions,
 			static fn (array $a, array $b): int => ((int)($a['order'] ?? 0) <=> (int)($b['order'] ?? 0))
 		);
 
-		[$reachedBy, $reachedOn] = $this->reached(caseId: $caseId);
+		return $definitions;
+	}//end orderedDefinitions()
 
-		$projected = $this->schedule->project(
-			definitions: $definitions,
-			caseStart: $startDate,
-			reached: $reachedOn
-		);
-
-		foreach ($definitions as $def) {
-			$defId = (string)($def['id'] ?? ($def['uuid'] ?? ''));
-			if (isset($reachedBy[$defId]) === true) {
-				continue;
+	/**
+	 * The first definition this case has not reached, or null when it reached them all.
+	 *
+	 * @param array<int, array<string, mixed>> $definitions The ordered definitions.
+	 * @param array<string, bool>              $reachedBy   Reached, by definition id.
+	 *
+	 * @return array<string, mixed>|null The definition.
+	 */
+	private function firstUnreached(array $definitions, array $reachedBy): ?array {
+		foreach ($definitions as $definition) {
+			$defId = (string)($definition['id'] ?? ($definition['uuid'] ?? ''));
+			if (isset($reachedBy[$defId]) === false) {
+				return $definition;
 			}
+		}
 
-			// First unreached milestone — this is what the case waits on.
-			// Its deadline comes from the SCHEDULE, which reads `dependsOn`,
-			// rather than from this milestone's own duration counted off the
-			// case start.
-			$identifier = (string)($def['identifier'] ?? '');
-			$deadline = ($projected[$identifier] ?? $this->addWorkingDays(
-				start: $startDate,
-				workingDays: (int)($def['expectedDurationWorkingDays'] ?? 0)
-			));
-			$daysOverdue = $this->days->signed(from: $deadline, to: $today);
-
-			if ($daysOverdue > $thresholdDays) {
-				return [
-					'caseId' => $caseId,
-					'milestoneIdentifier' => (string)($def['identifier'] ?? ''),
-					'milestoneLabel' => (string)($def['label'] ?? ($def['name'] ?? '')),
-					'deadline' => $deadline->format('Y-m-d'),
-					'daysOverdue' => $daysOverdue,
-				];
-			}
-
-			// Earliest unreached milestone is within deadline -> on track.
-			return null;
-		}//end foreach
-
-		// All milestones reached -> case complete, not stalled.
 		return null;
-	}//end evaluateStall()
+	}//end firstUnreached()
+
+	/**
+	 * The deadline of a milestone counted from the case start by its own duration.
+	 *
+	 * @param array<string, mixed> $definition The definition.
+	 * @param StallCandidate       $candidate  The case and its start.
+	 *
+	 * @return DateTimeImmutable The deadline.
+	 */
+	private function ownDeadline(array $definition, StallCandidate $candidate): DateTimeImmutable {
+		return $this->addWorkingDays(
+			start: $candidate->startDate,
+			workingDays: (int)($definition['expectedDurationWorkingDays'] ?? 0)
+		);
+	}//end ownDeadline()
+
+	/**
+	 * A definition's identifier, or ''.
+	 *
+	 * @param array<string, mixed> $definition The definition.
+	 *
+	 * @return string The identifier.
+	 */
+	private function identifierOf(array $definition): string {
+		return (string)($definition['identifier'] ?? '');
+	}//end identifierOf()
+
+	/**
+	 * A definition's label, falling back to its name, or ''.
+	 *
+	 * @param array<string, mixed> $definition The definition.
+	 *
+	 * @return string The label.
+	 */
+	private function labelOf(array $definition): string {
+		return (string)($definition['label'] ?? ($definition['name'] ?? ''));
+	}//end labelOf()
 
 	/**
 	 * Which milestones this case has reached, and on what dates.
@@ -319,12 +410,12 @@ class StalledCaseDetector {
 	/**
 	 * Parse a case's start date into a date-only immutable value.
 	 *
-	 * @param array<string, mixed> $case The case object.
+	 * @param array<string, mixed> $row The case object.
 	 *
 	 * @return DateTimeImmutable|null The start date, or null when absent/invalid.
 	 */
-	private function parseCaseStart(array $case): ?DateTimeImmutable {
-		$raw = (string)($case['startDate'] ?? ($case['created'] ?? ''));
+	private function parseCaseStart(array $row): ?DateTimeImmutable {
+		$raw = (string)($row['startDate'] ?? ($row['created'] ?? ''));
 		if ($raw === '') {
 			return null;
 		}

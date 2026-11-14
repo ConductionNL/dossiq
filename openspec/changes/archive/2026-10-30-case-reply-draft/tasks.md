@@ -1,0 +1,4 @@
+- [x] CaseReplyDraftController show/save + routes
+- [x] PHPUnit CaseReplyDraftControllerTest
+- [x] case-resident-thread content.draft + vitest
+- [x] l10n

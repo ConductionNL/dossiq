@@ -43,7 +43,7 @@ function allCaseWidgets() {
 	const top = pageConfig().widgets
 	const nested = top.flatMap((entry) =>
 		entry.type === 'sections'
-			? (entry.content?.sections ?? []).map((section) => section.widget)
+			? (entry.content?.sections ?? []).map((section) => section.widget).filter(Boolean)
 			: [],
 	)
 	return [...top, ...nested]

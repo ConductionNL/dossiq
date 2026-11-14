@@ -46,6 +46,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Kernel\Contracts\SavedMailImportInterface;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -57,7 +58,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-email-integration/spec.md
  */
-class SavedMailImport {
+class SavedMailImport implements SavedMailImportInterface {
 
 	/**
 	 * integriq's parser, relative to integriq's own namespace.
@@ -73,11 +74,6 @@ class SavedMailImport {
 	 * The message was read and filed on the case.
 	 */
 	public const OUTCOME_IMPORTED = 'imported';
-
-	/**
-	 * The file is still there and nobody could read it.
-	 */
-	public const OUTCOME_KEPT = 'kept';
 
 	/**
 	 * Constructor.
@@ -108,60 +104,110 @@ class SavedMailImport {
 	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	public function import(string $caseId, string $fileName, string $raw): array {
-		if (trim($caseId) === '') {
-			return $this->kept(reason: 'This file is not on a case, so there is nothing to file a message on.');
+		$reason = $this->unreadableInput(caseId: $caseId, raw: $raw);
+		if ($reason !== '') {
+			return $this->kept(reason: $reason);
 		}
 
-		if ($raw === '') {
-			return $this->kept(reason: 'The file is empty, so there is no message in it to read.');
-		}
-
-		if (FleetAppId::isEnabledForUser(appManager: $this->appManager, canonical: 'integriq') === false) {
-			return $this->kept(
-				reason: 'Integriq is not installed, and it is what reads a saved mail file. '
-					. 'The file is unchanged on this case.'
-			);
-		}
-
-		$parser = FleetAppId::getService(
-			container: $this->container,
-			canonical: 'integriq',
-			relative: self::PARSER
-		);
-		if ($parser === null || method_exists($parser, 'parse') === false) {
+		$parser = $this->mailReader();
+		if ($parser === null) {
 			return $this->kept(
 				reason: 'Integriq is installed but carries no mail reader, so this version cannot '
 					. 'read a saved mail file. The file is unchanged on this case.'
 			);
 		}
 
+		$file = new SavedMailFile(caseId: $caseId, fileName: $fileName);
 		try {
 			$parsed = $parser->parse($fileName, $raw);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: a saved mail file could not be read',
-				['case' => $caseId, 'file' => $fileName, 'error' => $e->getMessage()]
-			);
-
-			return $this->kept(
-				reason: 'This file could not be read as a message. It is unchanged on this case.'
-			);
+			return $this->unreadableFile(file: $file, failure: $e);
 		}
 
-		$subject = $this->stringFrom(parsed: $parsed, method: 'getSubject');
-		$title = $subject;
-		if ($title === '') {
-			// A saved message with no subject reads as the file it came from,
-			// which is the only name the handler who dragged it in would
-			// recognise. An empty title on the timeline reads as a message
-			// nobody wrote.
-			$title = $fileName;
+		return $this->fileOnCase(file: $file, parsed: $parsed);
+	}//end import()
+
+	/**
+	 * Why the input cannot be read at all, or '' when it can: no case, no
+	 * bytes, or no integriq to read them.
+	 *
+	 * @param string $caseId The case the file is on.
+	 * @param string $raw    The file's bytes.
+	 *
+	 * @return string The sentence a handler reads, or ''.
+	 */
+	private function unreadableInput(string $caseId, string $raw): string {
+		if (trim($caseId) === '') {
+			return 'This file is not on a case, so there is nothing to file a message on.';
 		}
 
+		if ($raw === '') {
+			return 'The file is empty, so there is no message in it to read.';
+		}
+
+		if (FleetAppId::isEnabledForUser(appManager: $this->appManager, canonical: 'integriq') === false) {
+			return 'Integriq is not installed, and it is what reads a saved mail file. '
+				. 'The file is unchanged on this case.';
+		}
+
+		return '';
+	}//end unreadableInput()
+
+	/**
+	 * Integriq's mail reader, or null when this version carries none.
+	 *
+	 * @return object|null The parser.
+	 */
+	private function mailReader(): ?object {
+		$parser = FleetAppId::getService(
+			container: $this->container,
+			canonical: 'integriq',
+			relative: self::PARSER
+		);
+		if ($parser === null || method_exists($parser, 'parse') === false) {
+			return null;
+		}
+
+		return $parser;
+	}//end mailReader()
+
+	/**
+	 * A file the reader could not read: logged, and kept.
+	 *
+	 * @param SavedMailFile $file    The file.
+	 * @param Throwable     $failure What the reader said.
+	 *
+	 * @return array{outcome: string, reason: string, subject: string, from: string, receivedAt: string} The outcome.
+	 */
+	private function unreadableFile(SavedMailFile $file, Throwable $failure): array {
+		$this->logger->warning(
+			'Dossiq: a saved mail file could not be read',
+			['case' => $file->caseId, 'file' => $file->fileName, 'error' => $failure->getMessage()]
+		);
+
+		return $this->kept(
+			reason: 'This file could not be read as a message. It is unchanged on this case.'
+		);
+	}//end unreadableFile()
+
+	/**
+	 * File the parsed message on the case.
+	 *
+	 * 🔴 THE ORIGINAL STAYS. It is the record: a parsed message is a reading
+	 * of a file, and an archive that kept only the reading cannot answer a
+	 * question about the bytes later on. Nothing here deletes or moves the node.
+	 *
+	 * @param SavedMailFile $file   The file.
+	 * @param object        $parsed The parsed message.
+	 *
+	 * @return array{outcome: string, reason: string, subject: string, from: string, receivedAt: string} The outcome.
+	 */
+	private function fileOnCase(SavedMailFile $file, object $parsed): array {
+		$title = $this->titleOf(file: $file, parsed: $parsed);
 		$from = $this->stringFrom(parsed: $parsed, method: 'getFrom');
 
 		$this->cases->recordReceivedEmail(
-			caseId: $caseId,
+			caseId: $file->caseId,
 			from: $from,
 			recipient: $this->firstRecipient(parsed: $parsed),
 			subject: $title,
@@ -169,10 +215,6 @@ class SavedMailImport {
 			inReplyTo: ''
 		);
 
-		// 🔴 THE ORIGINAL STAYS. It is the record: a parsed message is a
-		// reading of a file, and an archive that kept only the reading cannot
-		// answer a question about the bytes later on. Nothing here deletes or
-		// moves the node.
 		return [
 			'outcome' => self::OUTCOME_IMPORTED,
 			'reason' => '',
@@ -180,7 +222,28 @@ class SavedMailImport {
 			'from' => $from,
 			'receivedAt' => $this->stringFrom(parsed: $parsed, method: 'getReceivedAt'),
 		];
-	}//end import()
+	}//end fileOnCase()
+
+	/**
+	 * The message's subject, or the file's name when it has none.
+	 *
+	 * A saved message with no subject reads as the file it came from, which
+	 * is the only name the handler who dragged it in would recognise. An
+	 * empty title on the timeline reads as a message nobody wrote.
+	 *
+	 * @param SavedMailFile $file   The file.
+	 * @param object        $parsed The parsed message.
+	 *
+	 * @return string
+	 */
+	private function titleOf(SavedMailFile $file, object $parsed): string {
+		$subject = $this->stringFrom(parsed: $parsed, method: 'getSubject');
+		if ($subject === '') {
+			return $file->fileName;
+		}
+
+		return $subject;
+	}//end titleOf()
 
 	/**
 	 * The file stays, and the reason says why nothing was read.

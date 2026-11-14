@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Dso\DsoCaseSteps;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Dso\DsoIntakeCasePayload;
@@ -213,6 +214,11 @@ class DsoCaseWritesMatchTheRealSchemaTest extends TestCase {
 				caseTypes: new CaseTypeReferenceResolver(store: new CaseTypeStore(settingsService: $settings)),
 				journal: $available['journal']
 			);
+			$available['steps'] = new DsoCaseSteps(
+				notifier: $available['notifier'],
+				intakeCases: $available['intakeCases'],
+				journal: $available['journal'],
+			);
 		}
 
 		$args = [];
@@ -251,7 +257,7 @@ class DsoCaseWritesMatchTheRealSchemaTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-an-intake-channel-passes-on-when-the-request-arrived-req-term-043
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-an-intake-channel-passes-on-when-the-request-arrived-req-term-043
 	 */
 	public function testTheSubmissionMomentIsTheReceipt(): void {
 		$verzoek = $this->mappedVerzoek();

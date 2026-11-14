@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCA\Dossiq\Service\Status\StatusDeclarations;
 /**
  * Builds the offered and withheld lists for one case.
  *
- * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class OfferedTransitions {
 
@@ -70,50 +70,80 @@ class OfferedTransitions {
 	 *
 	 * @return array{transitions: array<int, array<string, mixed>>, withheld: array<int, array<string, mixed>>}
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function from(array $transitions, array $case, string $currentId, string $userId): array {
 		$caseTypeId = (string)($case['caseType'] ?? '');
-		$offered = [];
-		$withheld = [];
+		$lists = ['transitions' => [], 'withheld' => []];
 
 		foreach ($transitions as $transition) {
 			if ($this->leadsFrom(transition: $transition, currentId: $currentId, caseTypeId: $caseTypeId) === false) {
 				continue;
 			}
 
-			$eval = $this->guardRegistry->evaluateAll(
-				guards: $this->guardsFor(transition: $transition),
-				case: $case,
-				userId: $userId,
-			);
-
-			// Drop transitions whose role guard hides them silently.
-			if ($this->specReader->isRoleHidden(evalResults: $eval) === true) {
-				continue;
+			$sorted = $this->sortTransition(transition: $transition, caseRow: $case, userId: $userId);
+			if ($sorted !== null) {
+				$lists[$sorted[0]][] = $sorted[1];
 			}
+		}
 
-			// WITHHOLDING BEATS REFUSING. A transition that is offered and
-			// then refused teaches the handler that the list is unreliable; a
-			// transition that is not offered, with the reason readable in its
-			// place, teaches them what to do next. The information is the same
-			// and only one of the two is usable.
-			$reasons = $this->moves->withheldReasons(transition: $transition, case: $case);
-			if ($reasons !== []) {
-				$withheld[] = [
-					'id' => (string)($transition['id'] ?? ''),
-					'label' => (string)($transition['label'] ?? ''),
-					'toStatus' => (string)($transition['toStatus'] ?? ''),
-					'reasons' => $reasons,
-				];
-				continue;
-			}
-
-			$offered[] = $this->offeredEntry(transition: $transition, eval: $eval, case: $case);
-		}//end foreach
-
-		return ['transitions' => $offered, 'withheld' => $withheld];
+		return $lists;
 	}//end from()
+
+	/**
+	 * Which list one transition out of the current status belongs on, with its entry; null when it is hidden.
+	 *
+	 * @param array<string, mixed> $transition The transition.
+	 * @param array<string, mixed> $caseRow    The case.
+	 * @param string               $userId     The acting user.
+	 *
+	 * @return array{0: string, 1: array<string, mixed>}|null `transitions` or `withheld`, and the entry.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function sortTransition(array $transition, array $caseRow, string $userId): ?array {
+		$eval = $this->guardRegistry->evaluateAll(
+			guards: $this->guardsFor(transition: $transition),
+			case: $caseRow,
+			userId: $userId,
+		);
+
+		// Drop transitions whose role guard hides them silently.
+		if ($this->specReader->isRoleHidden(evalResults: $eval) === true) {
+			return null;
+		}
+
+		// WITHHOLDING BEATS REFUSING. A transition that is offered and
+		// then refused teaches the handler that the list is unreliable; a
+		// transition that is not offered, with the reason readable in its
+		// place, teaches them what to do next. The information is the same
+		// and only one of the two is usable.
+		$reasons = $this->moves->withheldReasons(transition: $transition, case: $caseRow);
+		if ($reasons !== []) {
+			return ['withheld', $this->withheldEntry(transition: $transition, reasons: $reasons)];
+		}
+
+		return ['transitions', $this->offeredEntry(transition: $transition, eval: $eval, case: $caseRow)];
+	}//end sortTransition()
+
+	/**
+	 * A withheld transition with the reasons it is withheld.
+	 *
+	 * @param array<string, mixed> $transition The transition.
+	 * @param array<int, string>   $reasons    Why it is withheld.
+	 *
+	 * @return array<string, mixed> The entry.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function withheldEntry(array $transition, array $reasons): array {
+		return [
+			'id' => (string)($transition['id'] ?? ''),
+			'label' => (string)($transition['label'] ?? ''),
+			'toStatus' => (string)($transition['toStatus'] ?? ''),
+			'reasons' => $reasons,
+		];
+	}//end withheldEntry()
 
 	/**
 	 * Whether this transition is a move a handler could pick from here at all.
@@ -132,7 +162,7 @@ class OfferedTransitions {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function leadsFrom(mixed $transition, string $currentId, string $caseTypeId): bool {
 		if (is_array($transition) === false) {
@@ -174,6 +204,7 @@ class OfferedTransitions {
 		return $this->specReader->guardsWithImplicit(
 			transition: $transition,
 			approvalsWired: $this->guardRegistry->knows(type: GuardRegistry::APPROVAL_GATE),
+			entryGuardWired: $this->guardRegistry->knows(type: GuardRegistry::STATUS_ENTRY_REQUIREMENTS),
 		);
 	}//end guardsFor()
 
@@ -186,7 +217,7 @@ class OfferedTransitions {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function offeredEntry(array $transition, array $eval, array $case): array {
 		$failed = array_values(
@@ -207,6 +238,9 @@ class OfferedTransitions {
 			// renders nothing rather than a blank line.
 			'explanation' => $this->moves->explanationOf(transition: $transition),
 			'toStatus' => (string)($transition['toStatus'] ?? ''),
+			// The destination's name, so a menu can say where the move goes
+			// ("Naar Besluit") when the move's own label is only that name.
+			'toStatusName' => $this->statuses->nameOf(statusTypeId: (string)($transition['toStatus'] ?? '')),
 			'guardsPassed' => count($failed) === 0,
 			'failedGuards' => $failed,
 			// Whether the move closes the case and the results it may close

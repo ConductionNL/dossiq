@@ -145,3 +145,12 @@ first and seen red. Build every OpenRegister double from the real class signatur
   `development` with CI green. The five rows then read `yes` (build); 19.18 reads `yes` for "from
   the last one" and partial for "from a named template" until 5.2 is done. `production` only with a
   store release.
+
+## 8. Mail conversations
+
+- [x] 8.1 On the add, read `Message-ID`, `In-Reply-To` and `References` from `.eml` and `.msg` picks and record a shared `threadId` in `provenance`; a mail without those headers gets its own (REQ-WRC-006).
+  - done: generic, in the collect path every case type shares. `lib/Service/Email/MessageThreadReader.php` reads `Message-ID`, `In-Reply-To`, `References` and `Date` from an `.eml` and from an `.msg` (its message-level property streams, else its saved transport headers, through `lib/Service/Email/CompoundFileStreams.php`); `lib/Service/Zaakdossier/CaseMailThreads.php` places the mail in the conversation of a collected mail it answers or that answers it, joins two conversations a middle mail links, and keys a headerless mail on its bytes; `CaseFileCollector::collect()` writes `threadId`, `messageId`, `parentIds` and `sentAt` into `provenance` (declared in `register.d/85-woo-gather-provenance.json`, informatieobject 1.4.3, zaakinformatieobject 1.2.2, register 0.20.95). A document linked from another case is not threaded (no bytes are copied).
+- [x] 8.2 Count conversations in GET `/api/cases/{id}/woo/collection` and group a conversation's messages in the collected documents list, in date order (REQ-WRC-006).
+  - done in the API: the report answers `documents`, `conversations` and `threads` (each conversation's messages in date order, undated last; conversations by their first message), read through `CaseDocumentProvenance::threadsForCase()`. No page renders the collection report yet, so there is no documents list on screen to group; that half waits for the page that shows the report.
+- [x] 8.3 Test: a three-mail reply chain from two custodians shares one `threadId`; a headerless `.msg` stands alone.
+  - done: `WooGatherAddTest::testAReplyChainFromTwoCustodiansIsOneConversation` (the reply collected first, the third mail naming only what it answers, real register and schema), `CaseMailThreadsTest`, `MessageThreadReaderTest` (an `.msg` built by `tests/Support/CompoundFileBuilder.php`), `CaseFileCollectorTest::testAMailIsPlacedInItsConversation`.

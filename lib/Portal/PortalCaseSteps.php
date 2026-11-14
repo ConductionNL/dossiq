@@ -31,8 +31,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -45,15 +46,27 @@ class PortalCaseSteps {
 	use SearchesObjects;
 
 	/**
+	 * Reads the case unscoped.
+	 *
+	 * @var UnscopedObjectReader
+	 */
+	private readonly UnscopedObjectReader $reader;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Resolves the register, the schemas and the object service.
-	 * @param LoggerInterface $logger The logger.
+	 * @param SettingsServiceInterface           $settingsService Resolves the register, the schemas and the object service.
+	 * @param LoggerInterface           $logger          The logger.
+	 * @param UnscopedObjectReader|null $reader          Reads unscoped; a fresh one when null.
+	 *
+	 * @spec openspec/changes/mandated-case-steps-read-unscoped/specs/portal-contribution/spec.md#requirement-a-case-read-under-a-mandate-shows-its-steps-and-documents-req-portal-023
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
+		?UnscopedObjectReader $reader = null,
 	) {
+		$this->reader = ($reader ?? new UnscopedObjectReader());
 	}//end __construct()
 
 	/**
@@ -66,16 +79,15 @@ class PortalCaseSteps {
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
 	 */
 	public function forCase(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		if ($caseId === '' || $objectService === null || $register === '') {
+		$read = (new PortalCaseReads(settingsService: $this->settingsService))->open(caseId: $caseId);
+		if ($read === null) {
 			return [];
 		}
 
 		try {
 			return (array)$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): array => $this->steps(objectService: $objectService, register: $register, caseId: $caseId)
+				objectService: $read->objectService,
+				operation: fn (): array => $this->steps(read: $read)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
@@ -89,41 +101,70 @@ class PortalCaseSteps {
 	/**
 	 * Read the case and its case type's status types, then fold them.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param int|string $register The register.
-	 * @param string $caseId The case UUID.
+	 * @param PortalCaseRead $read The case being read.
 	 *
 	 * @return array<int, array<string, string>> The steps.
+	 *
+	 * @spec openspec/changes/mandated-case-steps-read-unscoped/specs/portal-contribution/spec.md#requirement-a-case-read-under-a-mandate-shows-its-steps-and-documents-req-portal-023
 	 */
-	private function steps(object $objectService, int|string $register, string $caseId): array {
+	private function steps(PortalCaseRead $read): array {
 		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
 		$statusSchema = (string)$this->settingsService->getConfigValue('status_type_schema');
 		if ($caseSchema === '' || $statusSchema === '') {
 			return [];
 		}
 
-		$case = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseSchema,
-			id: $caseId
-		);
-		if ($case === null) {
-			return [];
-		}
-
+		$case = $this->readCase(read: $read, caseSchema: $caseSchema);
 		$caseType = trim((string)($case['caseType'] ?? ''));
-		if ($caseType === '') {
+		if ($case === null || $caseType === '') {
 			return [];
 		}
 
-		$statusTypes = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
-			schema: $statusSchema,
-			filters: ['caseType' => $caseType, '_limit' => 100]
-		);
+		$statusTypes = $this->statusTypesOf(read: $read, statusSchema: $statusSchema, caseType: $caseType);
 
 		return (new CaseSteps())->forCase(case: $case, statusTypes: $statusTypes);
 	}//end steps()
+
+	/**
+	 * Read the case, unscoped.
+	 *
+	 * @param PortalCaseRead $read       The case being read.
+	 * @param string         $caseSchema The case schema.
+	 *
+	 * @return array<string, mixed>|null The case, or null when it is not found.
+	 *
+	 * @spec openspec/changes/mandated-case-steps-read-unscoped/specs/portal-contribution/spec.md#requirement-a-case-read-under-a-mandate-shows-its-steps-and-documents-req-portal-023
+	 */
+	private function readCase(PortalCaseRead $read, string $caseSchema): ?array {
+		// Unscoped, as the history is: runAsSystem lifts RBAC only for a
+		// request without a Nextcloud user, and a person reading a case
+		// under a mandate is signed in as themselves, not as the case's
+		// party. Portaliq proved the case is theirs to read before asking.
+		return $this->reader->find(
+			objectService: $read->objectService,
+			register: $read->register,
+			schema: $caseSchema,
+			id: $read->caseId
+		);
+	}//end readCase()
+
+	/**
+	 * The status types of the case's case type, unscoped.
+	 *
+	 * @param PortalCaseRead $read         The case being read.
+	 * @param string         $statusSchema The status type schema.
+	 * @param string         $caseType     The case type.
+	 *
+	 * @return array<int, array<string, mixed>> The status types.
+	 *
+	 * @spec openspec/changes/mandated-case-steps-read-unscoped/specs/portal-contribution/spec.md#requirement-a-case-read-under-a-mandate-shows-its-steps-and-documents-req-portal-023
+	 */
+	private function statusTypesOf(PortalCaseRead $read, string $statusSchema, string $caseType): array {
+		return $this->searchObjectsAsArraysUnscoped(
+			objectService: $read->objectService,
+			register: $read->register,
+			schema: $statusSchema,
+			filters: ['caseType' => $caseType, '_limit' => 100]
+		);
+	}//end statusTypesOf()
 }//end class

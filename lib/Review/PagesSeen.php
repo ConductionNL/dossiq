@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Review;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
 
 /**
  * Records the pages a reviewer displayed on a document's review, and answers which required pages are still unseen.
@@ -35,7 +36,7 @@ use OCA\Dossiq\Exception\RefusedException;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
  */
-class PagesSeen {
+class PagesSeen implements PagesSeenInterface {
 
 	/**
 	 * Constructor.
@@ -71,6 +72,23 @@ class PagesSeen {
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function record(string $caseId, string $documentRef, array $pages, ?int $pageCount, string $userId): array {
+		$pages  = $this->displayedPages(pages: $pages);
+		$review = $this->reviewWithPageCount(caseId: $caseId, documentRef: $documentRef, pageCount: $pageCount);
+		$review['pagesSeen'] = $this->seenWith(review: $review, pages: $pages, userId: $userId);
+
+		return $this->reviews->save(review: $review);
+	}//end record()
+
+	/**
+	 * The displayed pages, positive and distinct.
+	 *
+	 * @param list<int> $pages The pages displayed.
+	 *
+	 * @return list<int> The pages to record.
+	 *
+	 * @throws RefusedException When no page is given.
+	 */
+	private function displayedPages(array $pages): array {
 		$pages = array_values(array_unique(array_filter($pages, static fn (int $page): bool => $page >= 1)));
 		if ($pages === []) {
 			throw new RefusedException(
@@ -80,6 +98,19 @@ class PagesSeen {
 			);
 		}
 
+		return $pages;
+	}//end displayedPages()
+
+	/**
+	 * The document's review, with the page count set by the first count heard.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $documentRef The document.
+	 * @param int|null $pageCount The document's page count, when the viewer knows it.
+	 *
+	 * @return array<string, mixed> The review.
+	 */
+	private function reviewWithPageCount(string $caseId, string $documentRef, ?int $pageCount): array {
 		$fresh = ['case' => $caseId, 'documentRef' => $documentRef, 'relevance' => DocumentRelevance::UNMARKED];
 		$review = ($this->reviews->forCase(caseId: $caseId)[$documentRef] ?? $fresh);
 		if ($pageCount !== null && $pageCount >= 1 && isset($review['pageCount']) === false) {
@@ -87,6 +118,19 @@ class PagesSeen {
 			$review['pagesRequired'] = $this->depth->pagesRequired(depth: (array)($review['depth'] ?? []), pageCount: $pageCount);
 		}
 
+		return $review;
+	}//end reviewWithPageCount()
+
+	/**
+	 * The review's seen pages, with each page not yet recorded for this reviewer appended.
+	 *
+	 * @param array<string, mixed> $review The review.
+	 * @param list<int> $pages The pages displayed.
+	 * @param string $userId The reviewer.
+	 *
+	 * @return list<array<string, mixed>> The seen pages.
+	 */
+	private function seenWith(array $review, array $pages, string $userId): array {
 		$seen = array_values((array)($review['pagesSeen'] ?? []));
 		$known = [];
 		foreach ($seen as $entry) {
@@ -100,10 +144,8 @@ class PagesSeen {
 			}
 		}
 
-		$review['pagesSeen'] = $seen;
-
-		return $this->reviews->save(review: $review);
-	}//end record()
+		return $seen;
+	}//end seenWith()
 
 	/**
 	 * The required pages of a review that nobody has seen yet.

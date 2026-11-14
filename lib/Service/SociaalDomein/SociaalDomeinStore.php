@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 
 declare(strict_types=1);
@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\SociaalDomein;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\SociaalDomeinStoreInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -53,9 +54,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
-class SociaalDomeinStore {
+class SociaalDomeinStore implements SociaalDomeinStoreInterface {
 
 	use RefusesWhenIndeterminate;
 	use SearchesObjects;
@@ -92,6 +93,20 @@ class SociaalDomeinStore {
 	];
 
 	/**
+	 * The case type categories of each domain, as the case types spell them.
+	 *
+	 * A procedure that moved onto a case type is a case of a case type in one
+	 * of these categories, so this is how a case says which domain it is in.
+	 *
+	 * @var array<string, array<int, string>>
+	 */
+	public const DOMAIN_CATEGORIES = [
+		'Jeugdwet' => ['Jeugd', 'Jeugdhulp'],
+		'Wmo' => ['Wmo'],
+		'Participatiewet' => ['Participatiewet', 'Werk en inkomen'],
+	];
+
+	/**
 	 * The status every one of the three schemas spells its closed state with.
 	 *
 	 * All three enums end in the same literal, checked 2026-09-18. A domain
@@ -115,6 +130,144 @@ class SociaalDomeinStore {
 	}//end __construct()
 
 	/**
+	 * Per domain, whom to call about an open case of that domain about this
+	 * person: the case's assignee, else its team, else the domain.
+	 *
+	 * Read AS THE SYSTEM, deliberately. A consulent asking whether another
+	 * domain knows this household usually cannot open that domain's
+	 * confidential case, and a read under their own access would answer
+	 * "nothing exists", which is the worst answer this lookup can give. Only
+	 * the domain and the contact leave this method; the caller logs the act.
+	 *
+	 * @param string $bsn The person's citizen service number.
+	 *
+	 * @return array<string, string> Domain => contact, the first open case per domain.
+	 *
+	 * @throws RefusedException When the cases or their case types cannot be read.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	public function openCaseContactsAbout(string $bsn): array {
+		$objectService = $this->objectService();
+		try {
+			$cases = $this->searchObjectsAsArraysUnscoped(
+				objectService: $objectService,
+				register: self::REGISTER,
+				schema: 'case',
+				filters: ['subjectBsn' => $bsn]
+			);
+			$contacts = $this->openContactsOf(objectService: $objectService, cases: $cases);
+		} catch (Throwable $e) {
+			$this->refuseIndeterminate(
+				rule: 'sociaal-domein-unreadable',
+				sentence: 'The cases of the social domain could not be read, so no answer is given rather than "nothing exists".',
+				previous: $e,
+			);
+		}
+
+		return $contacts;
+	}//end openCaseContactsAbout()
+
+	/**
+	 * Domain => contact for the first open case per domain.
+	 *
+	 * @param object                           $objectService The OpenRegister object service.
+	 * @param array<int, array<string, mixed>> $cases         The person's cases.
+	 *
+	 * @return array<string, string> Domain => contact.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function openContactsOf(object $objectService, array $cases): array {
+		$contacts = [];
+		foreach ($cases as $case) {
+			if ($this->isFinal(caseData: $case) === true) {
+				continue;
+			}
+
+			$domain = $this->domainOfCase(objectService: $objectService, caseData: $case);
+			if ($domain === '' || isset($contacts[$domain]) === true) {
+				continue;
+			}
+
+			$contacts[$domain] = $this->contactOf(case: $case, domain: $domain);
+		}
+
+		return $contacts;
+	}//end openContactsOf()
+
+	/**
+	 * Whether a case sits in a final status.
+	 *
+	 * @param array<string, mixed> $caseData The case.
+	 *
+	 * @return bool True when the case is closed.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function isFinal(array $caseData): bool {
+		return ($caseData['isFinalStatus'] ?? false) === true;
+	}//end isFinal()
+
+	/**
+	 * The domain of a case's case type, or '' when it is none of the three.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param array<string, mixed> $caseData      The case.
+	 *
+	 * @return string The domain.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function domainOfCase(object $objectService, array $caseData): string {
+		$type = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: self::REGISTER,
+			schema: 'caseType',
+			id: (string)($caseData['caseType'] ?? '')
+		);
+		return $this->domainOfCategory(category: trim((string)($type['category'] ?? '')));
+	}//end domainOfCase()
+
+	/**
+	 * The domain a case type category belongs to, or '' when it is none of the three.
+	 *
+	 * @param string $category The case type category.
+	 *
+	 * @return string The domain.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	public function domainOfCategory(string $category): string {
+		foreach (self::DOMAIN_CATEGORIES as $domain => $categories) {
+			if (in_array($category, $categories, true) === true) {
+				return $domain;
+			}
+		}
+
+		return '';
+	}//end domainOfCategory()
+
+	/**
+	 * Whom to call about a case: its assignee, else its team, else the domain.
+	 *
+	 * @param array<string, mixed> $case   The case.
+	 * @param string               $domain Its domain.
+	 *
+	 * @return string The contact.
+	 */
+	private function contactOf(array $case, string $domain): string {
+		foreach (['assignee', 'assignedGroup'] as $key) {
+			$value = trim((string)($case[$key] ?? ''));
+			if ($value !== '') {
+				return $value;
+			}
+		}
+
+		return $domain;
+	}//end contactOf()
+
+	/**
 	 * Rows of one schema matching these filters.
 	 *
 	 * 🔴 AN UNREADABLE STORE IS NOT AN EMPTY LIST, AND HERE IT REFUSES. A plan
@@ -129,7 +282,7 @@ class SociaalDomeinStore {
 	 *
 	 * @throws RefusedException When the store cannot be asked.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 	 */
 	public function rows(string $schema, array $filters = []): array {
 		$objectService = $this->objectService();
@@ -165,7 +318,7 @@ class SociaalDomeinStore {
 	 *
 	 * @throws RefusedException When the store cannot be asked.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 	 */
 	public function read(string $schema, string $id): ?array {
 		if (trim($id) === '') {
@@ -200,24 +353,14 @@ class SociaalDomeinStore {
 	 *
 	 * @throws RefusedException When the write fails.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 	 */
 	public function write(string $schema, array $object): array {
 		$objectService = $this->objectService();
-		$declaredId = trim((string)($object['id'] ?? ''));
-		$uuid = null;
-		if ($declaredId !== '') {
-			$uuid = $declaredId;
-		}
+		$uuid = $this->declaredUuid(object: $object);
 
 		try {
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: self::REGISTER,
-				schema: $schema,
-				object: $object,
-				uuid: $uuid
-			);
+			$saved = $this->saveObjectAsArray(objectService: $objectService, register: self::REGISTER, schema: $schema, object: $object, uuid: $uuid);
 		} catch (Throwable $e) {
 			$this->refuseIndeterminate(
 				rule: 'sociaal-domein-not-written',
@@ -226,6 +369,40 @@ class SociaalDomeinStore {
 			);
 		}
 
+		return $this->savedOrRefused(saved: $saved);
+	}//end write()
+
+	/**
+	 * The id the object declares, or null for a new one.
+	 *
+	 * @param array<string, mixed> $object The object.
+	 *
+	 * @return string|null The uuid.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 */
+	private function declaredUuid(array $object): ?string {
+		$declaredId = trim((string)($object['id'] ?? ''));
+		$uuid = null;
+		if ($declaredId !== '') {
+			$uuid = $declaredId;
+		}
+
+		return $uuid;
+	}//end declaredUuid()
+
+	/**
+	 * The stored object, refusing when the store handed back nothing readable.
+	 *
+	 * @param array<string, mixed>|null $saved The stored object, or null.
+	 *
+	 * @return array<string, mixed> The stored object.
+	 *
+	 * @throws RefusedException When nothing readable was stored.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 */
+	private function savedOrRefused(?array $saved): array {
 		if ($saved === null) {
 			// 🔴 NOT A SILENT NULL. `saveObjectAsArray` answers null when the
 			// store hands back a shape it cannot read, and a caller that took
@@ -238,7 +415,7 @@ class SociaalDomeinStore {
 		}
 
 		return $saved;
-	}//end write()
+	}//end savedOrRefused()
 
 	/**
 	 * The object service, or a refusal naming what is missing.

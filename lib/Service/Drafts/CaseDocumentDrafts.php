@@ -34,11 +34,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Drafts;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseDocumentDraftsInterface;
+use OCA\Dossiq\Service\Access\CaseRecordLookup;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Zaakdossier\DocumentTypeResolver;
 use OCA\Dossiq\Service\Zaakdossier\GeneratedDocumentFiler;
 use OCA\Filinq\Event\DocumentGenerationRequestedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -49,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-a-case-type-names-the-template-it-drafts-a-document-from-req-cdd-001
  */
-class CaseDocumentDrafts {
+class CaseDocumentDrafts implements CaseDocumentDraftsInterface {
 
 	use SearchesObjects;
 
@@ -118,10 +121,11 @@ class CaseDocumentDrafts {
 			return $this->answer(status: 'refused', reason: $e->getMessage());
 		}
 
-		$event = $this->requestEvent(caseId: $caseId, case: $case, declaration: $declaration, built: $built);
+		$draft = ['caseId' => $caseId, 'case' => $case, 'declaration' => $declaration, 'built' => $built];
+		$event = $this->requestEvent(draft: $draft);
 		$this->events->dispatchTyped($event);
 
-		return $this->outcome(caseId: $caseId, event: $event, declaration: $declaration);
+		return $this->outcome(draft: $draft, event: $event);
 	}//end draft()
 
 	/**
@@ -149,60 +153,153 @@ class CaseDocumentDrafts {
 	}//end declarationFor()
 
 	/**
+	 * Every document type a case's case type drafts itself, under any purpose.
+	 *
+	 * Each type is named as declared and as its catalogue id, because a
+	 * drafted document is filed under the id and older ones carry the name.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return list<string> The type names and ids, or [] when the case type drafts nothing.
+	 */
+	public function documentTypesForCase(string $caseId): array {
+		$case = $this->caseRow(caseId: $caseId);
+		$reference = $this->caseTypes->referenceId(value: ($case['caseType'] ?? ''));
+		if ($reference === '') {
+			return [];
+		}
+
+		$resolver = new DocumentTypeResolver(settingsService: $this->settingsService);
+		$types = [];
+		foreach ((array)($this->resolver->effectiveCaseType(caseTypeId: $reference)['documentDrafts'] ?? []) as $declared) {
+			if (is_array($declared) === false) {
+				continue;
+			}
+
+			$name = trim((string)($declared['documentType'] ?? ''));
+			if ($name !== '') {
+				$types[] = $name;
+				$types[] = $resolver->resolve(name: $name);
+			}
+		}
+
+		return array_values(array_unique(array_filter($types)));
+	}//end documentTypesForCase()
+
+	/**
+	 * The declaration for one purpose on a case's case type, read by case id.
+	 *
+	 * @param string $caseId  The case uuid.
+	 * @param string $purpose The purpose.
+	 *
+	 * @return array<string, mixed> The declaration, or [] when the case type declares none.
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-a-case-type-names-the-template-it-drafts-a-document-from-req-cdd-001
+	 */
+	public function declarationForCase(string $caseId, string $purpose): array {
+		return $this->declarationFor(case: $this->caseRow(caseId: $caseId), purpose: $purpose);
+	}//end declarationForCase()
+
+	/**
 	 * The request filinq's published contract takes.
 	 *
-	 * @param string               $caseId      The case uuid.
-	 * @param array<string, mixed> $case        The case row.
-	 * @param array<string, mixed> $declaration The draft declaration.
-	 * @param array<string, mixed> $built       The declared data.
+	 * @param array{caseId: string, case: array<string, mixed>, declaration: array<string, mixed>, built: array<string, mixed>} $draft The draft.
 	 *
 	 * @return DocumentGenerationRequestedEvent The request event.
 	 */
-	private function requestEvent(string $caseId, array $case, array $declaration, array $built): DocumentGenerationRequestedEvent {
-		$dataKey = trim((string)($declaration['dataKey'] ?? ''));
-		$data = ['case' => $case];
+	private function requestEvent(array $draft): DocumentGenerationRequestedEvent {
+		return new DocumentGenerationRequestedEvent(
+			request: $this->generationRequest(draft: $draft),
+			requestingApp: AppIdentity::APP_ID
+		);
+	}//end requestEvent()
+
+	/**
+	 * The request body of the generation event.
+	 *
+	 * @param array{caseId: string, case: array<string, mixed>, declaration: array<string, mixed>, built: array<string, mixed>} $draft The draft.
+	 *
+	 * @return array<string, mixed> The request.
+	 */
+	private function generationRequest(array $draft): array {
+		$declaration = $draft['declaration'];
+		$data = $this->templateData(draft: $draft);
+		$title = $this->filename(declaration: $declaration);
+
+		return [
+			'templateSlug' => (string)$declaration['templateSlug'],
+			'templateNamespace' => trim((string)($declaration['templateNamespace'] ?? self::DEFAULT_NAMESPACE)),
+			'format' => (string)($declaration['format'] ?? 'pdf'),
+			'filename' => $title,
+			'storeFile' => true,
+			'data' => $data,
+			'object' => $this->caseObject(caseId: $draft['caseId']),
+			'metadata' => $this->metadata(declaration: $declaration),
+		];
+	}//end generationRequest()
+
+	/**
+	 * The data the template is rendered with: the case, and the declared data.
+	 *
+	 * @param array{caseId: string, case: array<string, mixed>, declaration: array<string, mixed>, built: array<string, mixed>} $draft The draft.
+	 *
+	 * @return array<string, mixed> The data.
+	 */
+	private function templateData(array $draft): array {
+		$dataKey = trim((string)($draft['declaration']['dataKey'] ?? ''));
+		$data = ['case' => $draft['case']];
 		if ($dataKey === '') {
-			$data = array_merge($data, $built);
+			$data = array_merge($data, $draft['built']);
 		}
 
 		if ($dataKey !== '') {
-			$data[$dataKey] = $built;
+			$data[$dataKey] = $draft['built'];
 		}
 
+		return $data;
+	}//end templateData()
+
+	/**
+	 * The filename of the drafted document: the declared title, or the template slug.
+	 *
+	 * @param array<string, mixed> $declaration The draft declaration.
+	 *
+	 * @return string The filename.
+	 */
+	private function filename(array $declaration): string {
 		$title = trim((string)($declaration['title'] ?? ''));
 		if ($title === '') {
 			$title = (string)$declaration['templateSlug'];
 		}
 
-		return new DocumentGenerationRequestedEvent(
-			request: [
-				'templateSlug' => (string)$declaration['templateSlug'],
-				'templateNamespace' => trim((string)($declaration['templateNamespace'] ?? self::DEFAULT_NAMESPACE)),
-				'format' => (string)($declaration['format'] ?? 'pdf'),
-				'filename' => $title,
-				'storeFile' => true,
-				'data' => $data,
-				'object' => [
-					'register' => $this->settingsService->getConfigValue('register'),
-					'schema' => $this->settingsService->getConfigValue('case_schema'),
-					'id' => $caseId,
-				],
-				'metadata' => $this->metadata(declaration: $declaration),
-			],
-			requestingApp: Application::APP_ID
-		);
-	}//end requestEvent()
+		return $title;
+	}//end filename()
+
+	/**
+	 * The case object the document is filed on.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array<string, mixed> The register, schema and id.
+	 */
+	private function caseObject(string $caseId): array {
+		return [
+			'register' => $this->settingsService->getConfigValue('register'),
+			'schema' => $this->settingsService->getConfigValue('case_schema'),
+			'id' => $caseId,
+		];
+	}//end caseObject()
 
 	/**
 	 * What filinq answered, with the document filed on the case.
 	 *
-	 * @param string               $caseId      The case uuid.
+	 * @param array{caseId: string, case: array<string, mixed>, declaration: array<string, mixed>, built: array<string, mixed>} $draft The draft.
 	 * @param DocumentGenerationRequestedEvent $event The dispatched event.
-	 * @param array<string, mixed> $declaration The draft declaration.
 	 *
 	 * @return array{status: string, reason: string, informatieobject: string, fileId: int}
 	 */
-	private function outcome(string $caseId, DocumentGenerationRequestedEvent $event, array $declaration): array {
+	private function outcome(array $draft, DocumentGenerationRequestedEvent $event): array {
+		$declaration = $draft['declaration'];
 		$error = (string)($event->getError() ?? '');
 		if ($error !== '') {
 			return $this->answer(status: 'failed', reason: $error);
@@ -220,7 +317,7 @@ class CaseDocumentDrafts {
 
 		try {
 			$created = $this->filer->file(
-				caseId: $caseId,
+				caseId: $draft['caseId'],
 				fileId: $fileId,
 				title: (string)($result['name'] ?? $declaration['templateSlug']),
 				mime: (string)($result['mime'] ?? 'application/pdf'),
@@ -286,14 +383,13 @@ class CaseDocumentDrafts {
 	 * @return array<string, mixed>
 	 */
 	private function caseRow(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '' || $caseId === '') {
-			return [];
-		}
+		$lookup = new CaseRecordLookup(
+			settingsService: $this->settingsService,
+			caseTypes: $this->caseTypes,
+			resolver: $this->resolver,
+		);
 
-		return ($this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId) ?? []);
+		return $lookup->caseRow(caseId: $caseId);
 	}//end caseRow()
 
 	/**

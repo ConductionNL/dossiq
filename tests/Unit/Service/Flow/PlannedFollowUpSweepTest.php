@@ -46,6 +46,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Flow\PlannedSeriesLedger
  * @uses \OCA\Dossiq\Service\Flow\PlannedFollowUpDocument
  * @uses \OCA\Dossiq\Service\Flow\PlannedSeriesCalendar
+ * @uses \OCA\Dossiq\Service\Flow\RetirementSweep
  */
 class PlannedFollowUpSweepTest extends TestCase {
 
@@ -71,6 +72,13 @@ class PlannedFollowUpSweepTest extends TestCase {
 	private array $config = [];
 
 	/**
+	 * The filters the stubbed flow mapper was asked for, per call.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $queries = [];
+
+	/**
 	 * Reset the recorder between tests.
 	 *
 	 * @return void
@@ -78,6 +86,7 @@ class PlannedFollowUpSweepTest extends TestCase {
 	protected function setUp(): void {
 		$this->saves = [];
 		$this->config = [];
+		$this->queries = [];
 	}//end setUp()
 
 	/**
@@ -173,6 +182,26 @@ class PlannedFollowUpSweepTest extends TestCase {
 		$this->assertSame(0, $service->retireSpent(today: new DateTimeImmutable('2026-10-15')));
 		$this->assertSame([], $this->saves);
 	}//end testAFlowThatHasNotFiredIsLeftAlone()
+
+	/**
+	 * The planned flows are read by their slug, not by the app that stored them,
+	 * so a series an example set stored for another app is swept too.
+	 *
+	 * @return void
+	 */
+	public function testPlannedFlowsAreFoundBySlugWhicheverAppStoredThem(): void {
+		$service = $this->serviceFor(
+			document: $this->document(recurrence: 'yearly'),
+			lastRunAt: null
+		);
+
+		$service->retireSpent(today: new DateTimeImmutable('2026-10-15'));
+
+		$this->assertSame(
+			[['app' => null, 'applicationSlug' => PlannedFollowUpDocument::PLANNED_SLUG]],
+			$this->queries
+		);
+	}//end testPlannedFlowsAreFoundBySlugWhicheverAppStoredThem()
 
 	/**
 	 * A planned follow-up document, with or without a recurrence.
@@ -293,26 +322,29 @@ class PlannedFollowUpSweepTest extends TestCase {
 		};
 
 		$flow = $this->flow;
-		$flowMapper = new class($flow) {
+		$flowMapper = new class($flow, $this->queries) {
 
 			/**
 			 * Constructor.
 			 *
 			 * @param object $flow The single stubbed flow.
+			 * @param array<int, array<string, mixed>> $queries The recorder, by reference.
 			 */
-			public function __construct(private object $flow) {
+			public function __construct(private object $flow, private array &$queries) {
 			}
 
 			/**
-			 * The planned flows this app owns.
+			 * The planned flows, recording the filters asked for.
 			 *
-			 * @param string $app The app id.
-			 * @param string $applicationSlug The planned-follow-up marker.
+			 * @param string|null $app The app id.
+			 * @param string|null $applicationSlug The planned-follow-up marker.
 			 * @param integer $limit The page size.
 			 *
 			 * @return array<int, object> The flows.
 			 */
-			public function findAllFlows(string $app, string $applicationSlug, int $limit): array {
+			public function findAllFlows(?string $app = null, ?string $applicationSlug = null, int $limit = 100): array {
+				$this->queries[] = ['app' => $app, 'applicationSlug' => $applicationSlug];
+
 				return [$this->flow];
 			}
 		};

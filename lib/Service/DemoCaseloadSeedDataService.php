@@ -40,6 +40,8 @@ namespace OCA\Dossiq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\DemoCaseloadSeedDataServiceInterface;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -50,7 +52,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/dossiq-app-scaffold/spec.md
  */
-class DemoCaseloadSeedDataService {
+class DemoCaseloadSeedDataService implements DemoCaseloadSeedDataServiceInterface {
 	/**
 	 * The shipped dataset, relative to this file.
 	 *
@@ -65,6 +67,7 @@ class DemoCaseloadSeedDataService {
 	 * @param EngineTaskGateway $engineTask The engine's task writer.
 	 * @param IUserSession $userSession The identity the seed command set.
 	 * @param LoggerInterface $logger The logger interface.
+	 * @param LanguageMapText $text Reads a translatable status name as text.
 	 *
 	 * @return void
 	 */
@@ -73,6 +76,7 @@ class DemoCaseloadSeedDataService {
 		private EngineTaskGateway $engineTask,
 		private IUserSession $userSession,
 		private LoggerInterface $logger,
+		private LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -98,80 +102,124 @@ class DemoCaseloadSeedDataService {
 		$now = ($now ?? new DateTimeImmutable('today'));
 		$seed = $this->readSeedFile();
 		$objectService = $this->gateway->objectService();
-		$ids = $this->gateway->schemaIds();
 
-		$caseTypes = $this->caseTypesByIdentifier(objectService: $objectService, ids: $ids);
-		$statuses = $this->statusTypesByCaseTypeAndName(objectService: $objectService, ids: $ids);
+		return $this->gateway->asSystem(
+			objectService: $objectService,
+			operation: fn (): array => $this->seedWith(
+				seed: $seed,
+				run: new DemoSeedRun(objectService: $objectService, now: $now)
+			),
+		);
+	}//end seed()
 
-		$summary = ['cases' => 0, 'tasks' => 0, 'skipped' => 0];
+	/**
+	 * Seed the demo caseload through one ObjectService, inside the system-operation scope.
+	 *
+	 * The seed creates cases in later lifecycle statuses, which OpenRegister
+	 * allows on create only to the system.
+	 *
+	 * @param array       $seed The dataset.
+	 * @param DemoSeedRun $run  Where the seed writes, and its clock.
+	 *
+	 * @return array{cases: integer, tasks: integer, skipped: integer} What was created.
+	 */
+	private function seedWith(array $seed, DemoSeedRun $run): array {
+		$this->lookUp(run: $run);
 
 		foreach (($seed['cases'] ?? []) as $caseSeed) {
-			$title = (string)($caseSeed['title'] ?? '');
-			if ($title === '') {
-				continue;
-			}
+			$this->seedCase(run: $run, caseSeed: $caseSeed);
+		}
 
-			$present = $this->gateway->exists(
-				objectService: $objectService,
-				registerId: $ids['register'],
-				schemaId: $ids['case'],
-				filters: ['title' => $title]
-			);
+		$this->logger->info('Dossiq: Demo caseload seeded', $run->summary);
 
-			if ($present === true) {
-				$summary['skipped']++;
-				continue;
-			}
+		return $run->summary;
+	}//end seedWith()
 
-			$caseId = $this->createCase(
-				objectService: $objectService,
-				ids: $ids,
-				caseSeed: $caseSeed,
-				caseTypes: $caseTypes,
-				statuses: $statuses,
-				now: $now
-			);
+	/**
+	 * Read the register and schema ids, the case types and the status types once.
+	 *
+	 * @param DemoSeedRun $run The seed.
+	 *
+	 * @return void
+	 */
+	private function lookUp(DemoSeedRun $run): void {
+		$run->ids = $this->gateway->schemaIds();
+		$run->caseTypes = $this->caseTypesByIdentifier(objectService: $run->objectService, ids: $run->ids);
+		$run->statuses = $this->statusTypesByCaseTypeAndName(objectService: $run->objectService, ids: $run->ids);
+	}//end lookUp()
 
-			if ($caseId === '') {
-				continue;
-			}
+	/**
+	 * Seed one case and its tasks, unless it has no title or is already present.
+	 *
+	 * @param DemoSeedRun $run      The seed.
+	 * @param array       $caseSeed The case seed entry.
+	 *
+	 * @return void
+	 */
+	private function seedCase(DemoSeedRun $run, array $caseSeed): void {
+		$title = (string)($caseSeed['title'] ?? '');
+		if ($title === '') {
+			return;
+		}
 
-			$summary['cases']++;
-			$summary['tasks'] += $this->createTasks(
-				caseId: $caseId,
-				tasks: (array)($caseSeed['tasks'] ?? []),
-				now: $now
-			);
-		}//end foreach
+		if ($this->isPresent(run: $run, title: $title) === true) {
+			$run->summary['skipped']++;
+			return;
+		}
 
-		$this->logger->info('Dossiq: Demo caseload seeded', $summary);
+		$this->createWithTasks(run: $run, caseSeed: $caseSeed);
+	}//end seedCase()
 
-		return $summary;
-	}//end seed()
+	/**
+	 * Create one case and then its tasks, counting both.
+	 *
+	 * @param DemoSeedRun $run      The seed.
+	 * @param array       $caseSeed The case seed entry.
+	 *
+	 * @return void
+	 */
+	private function createWithTasks(DemoSeedRun $run, array $caseSeed): void {
+		$caseId = $this->createCase(run: $run, caseSeed: $caseSeed);
+		if ($caseId === '') {
+			return;
+		}
+
+		$run->summary['cases']++;
+		$run->summary['tasks'] += $this->createTasks(
+			caseId: $caseId,
+			tasks: (array)($caseSeed['tasks'] ?? []),
+			now: $run->now
+		);
+	}//end createWithTasks()
+
+	/**
+	 * Whether the register already holds a case with this title.
+	 *
+	 * @param DemoSeedRun $run   The seed.
+	 * @param string      $title The case title.
+	 *
+	 * @return bool
+	 */
+	private function isPresent(DemoSeedRun $run, string $title): bool {
+		return $this->gateway->exists(
+			objectService: $run->objectService,
+			registerId: $run->ids['register'],
+			schemaId: $run->ids['case'],
+			filters: ['title' => $title]
+		) === true;
+	}//end isPresent()
 
 	/**
 	 * Create one case from its seed entry.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param array $caseSeed The case seed entry.
-	 * @param array<string, array> $caseTypes Case types keyed by identifier.
-	 * @param array<string, string> $statuses Status ids keyed by "caseTypeId|name".
-	 * @param DateTimeImmutable $now The clock.
+	 * @param DemoSeedRun $run      The seed.
+	 * @param array       $caseSeed The case seed entry.
 	 *
 	 * @return string The created case id, or '' when it could not be created.
 	 */
-	private function createCase(
-		object $objectService,
-		array $ids,
-		array $caseSeed,
-		array $caseTypes,
-		array $statuses,
-		DateTimeImmutable $now,
-	): string {
+	private function createCase(DemoSeedRun $run, array $caseSeed): string {
 		$identifier = (string)($caseSeed['caseType'] ?? '');
-		$caseType = ($caseTypes[$identifier] ?? null);
-		if ($caseType === null) {
+		if (isset($run->caseTypes[$identifier]) === false) {
 			$this->logger->warning(
 				'Dossiq: Demo seed skipped a case whose case type is not installed',
 				['case' => ($caseSeed['title'] ?? ''), 'caseType' => $identifier]
@@ -180,50 +228,63 @@ class DemoCaseloadSeedDataService {
 		}
 
 		return $this->gateway->create(
-			objectService: $objectService,
-			registerId: $ids['register'],
-			schemaId: $ids['case'],
-			data: $this->casePayload(
-				caseSeed: $caseSeed,
-				caseType: $caseType,
-				statuses: $statuses,
-				now: $now
-			)
+			objectService: $run->objectService,
+			registerId: $run->ids['register'],
+			schemaId: $run->ids['case'],
+			data: $this->casePayload(run: $run, caseSeed: $caseSeed)
 		);
 	}//end createCase()
 
 	/**
-	 * Build the payload for one case.
+	 * Build the payload for one case whose case type is installed.
 	 *
-	 * @param array $caseSeed The case seed entry.
-	 * @param array $caseType The resolved case type.
-	 * @param array<string, string> $statuses Status ids keyed by "caseTypeId|name".
-	 * @param DateTimeImmutable $now The clock.
+	 * @param DemoSeedRun $run      The seed.
+	 * @param array       $caseSeed The case seed entry.
 	 *
 	 * @return array The case payload.
 	 */
-	private function casePayload(
-		array $caseSeed,
-		array $caseType,
-		array $statuses,
-		DateTimeImmutable $now,
-	): array {
+	private function casePayload(DemoSeedRun $run, array $caseSeed): array {
+		$caseType = $run->caseTypes[(string)($caseSeed['caseType'] ?? '')];
 		$startDate = $this->resolveStartDate(
 			caseSeed: $caseSeed,
 			processingDeadline: (string)($caseType['processingDeadline'] ?? ''),
-			now: $now
+			now: $run->now
 		);
 
-		$data = [
+		$data = $this->describedCase(caseSeed: $caseSeed, caseTypeId: (string)$caseType['id']);
+		$data['startDate'] = $startDate->format('Y-m-d');
+		$data += $this->priorityPair(caseSeed: $caseSeed);
+
+		return $data + $this->lifecycleFields(run: $run, caseSeed: $caseSeed);
+	}//end casePayload()
+
+	/**
+	 * The fields that describe a case: what it is, who has it, how it came in.
+	 *
+	 * @param array  $caseSeed   The case seed entry.
+	 * @param string $caseTypeId The resolved case type id.
+	 *
+	 * @return array<string, string>
+	 */
+	private function describedCase(array $caseSeed, string $caseTypeId): array {
+		return [
 			'title' => (string)($caseSeed['title'] ?? ''),
 			'description' => (string)($caseSeed['description'] ?? ''),
-			'caseType' => (string)$caseType['id'],
+			'caseType' => $caseTypeId,
 			'assignee' => (string)($caseSeed['assignee'] ?? ''),
 			'intakeChannel' => (string)($caseSeed['intakeChannel'] ?? 'manual'),
 			'confidentiality' => (string)($caseSeed['confidentiality'] ?? 'openbaar'),
-			'startDate' => $startDate->format('Y-m-d'),
 		];
+	}//end describedCase()
 
+	/**
+	 * The impact and urgency behind the priority a case seed names.
+	 *
+	 * @param array $caseSeed The case seed entry.
+	 *
+	 * @return array{impact: string, urgency: string}
+	 */
+	private function priorityPair(array $caseSeed): array {
 		// The seed names a priority because that is what a reader of the demo
 		// caseload sees, but a priority cannot be written directly any more:
 		// the derivation recomputes it on every save from impact and urgency,
@@ -232,20 +293,37 @@ class DemoCaseloadSeedDataService {
 		// priority puts it back through the matrix and gets the same answer.
 		$pair = (CasePriorityService::PRIORITY_SEED_PAIRS[(string)($caseSeed['priority'] ?? 'normal')]
 			?? CasePriorityService::PRIORITY_SEED_PAIRS['normal']);
-		$data['impact'] = $pair['impact'];
-		$data['urgency'] = $pair['urgency'];
 
-		$statusId = ($statuses[$caseType['id'] . '|' . (string)($caseSeed['status'] ?? '')] ?? '');
+		return ['impact' => $pair['impact'], 'urgency' => $pair['urgency']];
+	}//end priorityPair()
+
+	/**
+	 * The status, end date and last activity a case seed asks for, when it does.
+	 *
+	 * @param DemoSeedRun $run      The seed.
+	 * @param array       $caseSeed The case seed entry.
+	 *
+	 * @return array<string, string>
+	 */
+	private function lifecycleFields(DemoSeedRun $run, array $caseSeed): array {
+		$data = [];
+		$caseTypeId = $run->caseTypes[(string)($caseSeed['caseType'] ?? '')]['id'];
+		$statusId = ($run->statuses[$caseTypeId . '|' . (string)($caseSeed['status'] ?? '')] ?? '');
 		if ($statusId !== '') {
 			$data['status'] = $statusId;
 		}
 
 		if (isset($caseSeed['endInDays']) === true) {
-			$data['endDate'] = $this->offset(now: $now, days: (int)$caseSeed['endInDays'])->format('Y-m-d');
+			$data['endDate'] = $this->offset(now: $run->now, days: (int)$caseSeed['endInDays'])->format('Y-m-d');
+		}
+
+		if (isset($caseSeed['lastActivityInDays']) === true) {
+			$data['lastActivityAt'] = $this->offset(now: $run->now, days: (int)$caseSeed['lastActivityInDays'])
+				->format(DateTimeImmutable::ATOM);
 		}
 
 		return $data;
-	}//end casePayload()
+	}//end lifecycleFields()
 
 	/**
 	 * Create the tasks belonging to one case.
@@ -472,7 +550,7 @@ class DemoCaseloadSeedDataService {
 
 		foreach ($statusTypes as $statusType) {
 			$row = $this->gateway->toArray(object: $statusType);
-			$name = (string)($row['name'] ?? '');
+			$name = $this->text->textOf(value: ($row['name'] ?? ''));
 			$caseType = (string)($row['caseType'] ?? '');
 			if ($name === '' || $caseType === '') {
 				continue;

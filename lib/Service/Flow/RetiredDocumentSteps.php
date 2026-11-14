@@ -26,19 +26,20 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+
 
 /**
  * Builds `filinq.generate-document` steps from retired document steps.
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 class RetiredDocumentSteps {
 
@@ -94,7 +95,7 @@ class RetiredDocumentSteps {
 	 *
 	 * @throws UnmappableStep When the step has no text or no document type.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function create(array $config): array {
 		$text = $this->syntax->inlineMergeFields(
@@ -107,13 +108,27 @@ class RetiredDocumentSteps {
 			$name = 'document.md';
 		}
 
+		return $this->filedFrom(config: $config, document: ['text' => $text, 'name' => $name]);
+	}//end create()
+
+	/**
+	 * The filed document step for a text and a name, under the configuration's type and output.
+	 *
+	 * @param array<string, mixed>  $config   The retired configuration.
+	 * @param array<string, string> $document The `text` and the file `name`.
+	 *
+	 * @return array{type: string, config: array<string, mixed>} The generate-document step.
+	 *
+	 * @throws UnmappableStep When the step has no text or no document type.
+	 */
+	private function filedFrom(array $config, array $document): array {
 		return $this->filed(
-			text: $text,
-			name: $name,
+			text: $document['text'],
+			name: $document['name'],
 			documentType: trim((string)($config['documentType'] ?? '')),
 			output: $this->output(config: $config)
 		);
-	}//end create()
+	}//end filedFrom()
 
 	/**
 	 * `dossiq.action.mergeTemplate`: render text into a case field, or file it in the dossier.
@@ -124,7 +139,7 @@ class RetiredDocumentSteps {
 	 *
 	 * @throws UnmappableStep When the step has no text, or files a document without a type.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function merge(array $config): array {
 		$text = (string)($config['template'] ?? ($config['templateSlug'] ?? ''));
@@ -136,25 +151,34 @@ class RetiredDocumentSteps {
 				$name = 'Document';
 			}
 
-			return $this->filed(
-				text: $text,
-				name: $name,
-				documentType: trim((string)($config['documentType'] ?? '')),
-				output: $this->output(config: $config)
-			);
+			return $this->filedFrom(config: $config, document: ['text' => $text, 'name' => $name]);
 		}
 
+		return $this->fieldWrite(config: $config, write: ['text' => $text, 'targetField' => $targetField]);
+	}//end merge()
+
+	/**
+	 * The generate-document step that writes rendered text into a case field and stores no file.
+	 *
+	 * @param array<string, mixed>  $config The retired configuration.
+	 * @param array<string, string> $write  The `text` and the `targetField`.
+	 *
+	 * @return array{type: string, config: array<string, mixed>} The generate-document step.
+	 *
+	 * @throws UnmappableStep When the step has no text.
+	 */
+	private function fieldWrite(array $config, array $write): array {
 		return [
 			'type' => self::GENERATE_DOCUMENT,
 			'config' => [
-				'template' => $this->text(text: $text),
+				'template' => $this->text(text: $write['text']),
 				'storeFile' => false,
-				'targetField' => $targetField,
-				'requestingApp' => Application::APP_ID,
+				'targetField' => $write['targetField'],
+				'requestingApp' => AppIdentity::APP_ID,
 				'output' => $this->output(config: $config),
 			],
 		];
-	}//end merge()
+	}//end fieldWrite()
 
 	/**
 	 * A step that renders the text as a file and asks dossiq to file it on the case.
@@ -183,7 +207,7 @@ class RetiredDocumentSteps {
 				'filename' => $this->syntax->forDocument(template: $title, what: 'document name'),
 				'format' => self::FILED_FORMAT,
 				'storeFile' => true,
-				'requestingApp' => Application::APP_ID,
+				'requestingApp' => AppIdentity::APP_ID,
 				'output' => $output,
 				'metadata' => [
 					self::METADATA_TYPE => $documentType,

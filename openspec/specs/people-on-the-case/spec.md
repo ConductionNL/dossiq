@@ -98,7 +98,10 @@ A case SHALL carry two named seats: the handler doing the work, which
 remains `assignee`, and a coordinator answerable for it, bound as a role
 on the case rather than a second assignee field. Both SHALL be assignable,
 both SHALL be searchable, and both SHALL be shown on the case's people
-panel.
+panel, as board DqZaakBetrokkenen draws them: the handler in the Zetels card
+(Behandelaar), the coordinator under Partijen with the role, so there is one
+place to look for everyone on the case. The Zetels card SHALL NOT repeat the
+coordinator.
 
 #### Scenario: behandelaar and casemanager are two people
 @e2e tests/e2e/handing-a-case-over.spec.ts
@@ -106,7 +109,7 @@ panel.
 - **GIVEN** a case
 - **WHEN** a teamleider names a handler and a coordinator
 - **THEN** the case SHALL carry both
-- **AND** the people panel SHALL show both with their roles
+- **AND** the people panel SHALL show the handler under Zetels and the coordinator under Partijen, each with their role
 
 #### Scenario: a coordinator finds their cases
 @e2e tests/e2e/handing-a-case-over.spec.ts
@@ -189,3 +192,19 @@ started by an administrator naming the person.
 - **GIVEN** a completed leaver handover
 - **WHEN** a case that moved is opened
 - **THEN** it SHALL record that it moved, from whom, and by whose act
+
+### Requirement: The case schema's role vocabulary survives a rewrite of the schema
+
+When the case schema is updated by anything (a register import, an upgrade, an admin), the system SHALL write the instance's role types back into its `linkRoles` when they are missing, so a person linked in a role type is shown under the role type's name.
+
+#### Scenario: A window refresh re-imports the register
+- GIVEN the case schema's link roles hold the role type "Gemachtigde" (3c0f5a00-0000-4000-a000-0000000c0002)
+- WHEN the register is imported again and the case schema's link roles are reset to the generic party roles
+- THEN the role types are written back
+- AND J. van Wijk's row in Rollen reads "Gemachtigde", not the uuid
+
+#### Scenario: The import saves its own copy of the case schema after the sync ran
+- GIVEN a register import updates the case schema, and that update has already written the role types back
+- WHEN the import then saves its own copy of the case schema, holding only the generic party roles
+- THEN the role types are written back again, read against the stored schema rather than the copy cached earlier in the request
+- AND J. van Wijk's row in Rollen still reads "Gemachtigde", not the uuid

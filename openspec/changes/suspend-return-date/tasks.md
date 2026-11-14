@@ -1,0 +1,3 @@
+- [x] 1.1 days input dateField (tests/vitest/suspendComesBackOn.spec.js)
+- [ ] 1.2 Live check on DqVolgendeStap after the library lands
+- [x] 1.3 days label above its field (labelOutside, id case-act-days); no history line under the reason on suspend (r26a)

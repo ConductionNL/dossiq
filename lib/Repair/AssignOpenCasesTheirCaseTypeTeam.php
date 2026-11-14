@@ -17,16 +17,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/open-cases-take-their-case-type-team/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeHandlingInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -50,7 +50,7 @@ use Throwable;
  *
  * Only `assignedGroup` is written. Running it twice changes nothing.
  *
- * @spec openspec/changes/open-cases-take-their-case-type-team/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 	use SearchesObjects;
@@ -63,13 +63,13 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService The settings service.
-	 * @param CaseTypeHandling $handling        The one reader of a case type's handling block.
+	 * @param SettingsServiceInterface  $settingsService The settings service.
+	 * @param CaseTypeHandlingInterface $handling        The one reader of a case type's handling block.
 	 * @param LoggerInterface  $logger          The logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseTypeHandling $handling,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseTypeHandlingInterface $handling,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -79,7 +79,7 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/open-cases-take-their-case-type-team/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function getName(): string {
 		return 'Dossiq: give open cases without a team the handling team of their case type';
@@ -92,7 +92,7 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/open-cases-take-their-case-type-team/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -127,100 +127,144 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 	 *
 	 * @return int The cases written.
 	 *
-	 * @spec openspec/changes/open-cases-take-their-case-type-team/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function assignAll(object $objectService, string $register, string $caseTypeSchema, string $caseSchema): int {
-		try {
-			$caseTypes = $this->allRows(objectService: $objectService, register: $register, schema: $caseTypeSchema, filters: []);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: the case team fill could not list case types',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-			);
-			return 0;
-		}
+		$run = new CaseTeamFillRun(objectService: $objectService, register: $register);
+		$run->caseTypeSchema = $caseTypeSchema;
+		$run->caseSchema = $caseSchema;
 
+		$caseTypes = $this->caseTypes(run: $run);
 		$assigned = 0;
 		foreach ($caseTypes as $caseType) {
-			$caseTypeId = (string)($caseType['id'] ?? ($caseType['@self']['id'] ?? ''));
-			$group = $this->handling->defaultGroup(caseType: $caseType);
-			if ($caseTypeId === '' || $group === '') {
-				continue;
-			}
-
-			$assigned += $this->assignCaseType(
-				objectService: $objectService,
-				register: $register,
-				caseSchema: $caseSchema,
-				caseTypeId: $caseTypeId,
-				group: $group,
-			);
+			$assigned += $this->assignCaseType(run: $run, caseType: $caseType);
 		}
 
 		return $assigned;
 	}//end assignAll()
 
 	/**
+	 * Every case type, or none when they cannot be listed.
+	 *
+	 * @param CaseTeamFillRun $run The pass.
+	 *
+	 * @return array<int, array<string, mixed>> The case types.
+	 */
+	private function caseTypes(CaseTeamFillRun $run): array {
+		try {
+			return $this->allRows(
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->caseTypeSchema,
+				filters: [],
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: the case team fill could not list case types',
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
+			);
+			return [];
+		}
+	}//end caseTypes()
+
+	/**
 	 * Fill the team on the open cases of one case type that have none.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register      The register.
-	 * @param string $caseSchema    The case schema.
-	 * @param string $caseTypeId    The case type.
-	 * @param string $group         The case type's handling group.
+	 * A case type without an id or without a handling group writes nothing.
+	 *
+	 * @param CaseTeamFillRun      $run      The pass.
+	 * @param array<string, mixed> $caseType The case type.
 	 *
 	 * @return int The cases written.
 	 */
-	private function assignCaseType(
-		object $objectService,
-		string $register,
-		string $caseSchema,
-		string $caseTypeId,
-		string $group,
-	): int {
+	private function assignCaseType(CaseTeamFillRun $run, array $caseType): int {
+		$caseTypeId = (string)($caseType['id'] ?? ($caseType['@self']['id'] ?? ''));
+		$group = $this->handling->defaultGroup(caseType: $caseType);
+		if ($caseTypeId === '' || $group === '') {
+			return 0;
+		}
+
+		$typeRun = $run->forCaseType(caseTypeId: $caseTypeId, group: $group);
+		$assigned = 0;
+		foreach ($this->casesOf(run: $typeRun) as $case) {
+			$assigned += $this->assignCase(run: $typeRun, case: $case);
+		}
+
+		return $assigned;
+	}//end assignCaseType()
+
+	/**
+	 * Every case of the run's case type, or none when they cannot be listed.
+	 *
+	 * @param CaseTeamFillRun $run The pass, narrowed to one case type.
+	 *
+	 * @return array<int, array<string, mixed>> The cases.
+	 */
+	private function casesOf(CaseTeamFillRun $run): array {
 		try {
-			$cases = $this->allRows(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['caseType' => $caseTypeId],
+			return $this->allRows(
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->caseSchema,
+				filters: ['caseType' => $run->caseTypeId],
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the case team fill could not list cases',
-				['app' => Application::APP_ID, 'caseType' => $caseTypeId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseType' => $run->caseTypeId, 'exception' => $e->getMessage()]
 			);
+			return [];
+		}
+	}//end casesOf()
+
+	/**
+	 * Give one case the run's handling group when it is open and has no team.
+	 *
+	 * @param CaseTeamFillRun      $run  The pass, narrowed to one case type.
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return int 1 when the case was written, else 0.
+	 */
+	private function assignCase(CaseTeamFillRun $run, array $case): int {
+		$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
+		if ($caseId === '' || $this->needsTeam(case: $case) === false) {
 			return 0;
 		}
 
-		$assigned = 0;
-		foreach ($cases as $case) {
-			$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
-			if ($caseId === '' || $this->needsTeam(case: $case) === false) {
-				continue;
-			}
+		if ($this->writeTeam(run: $run, caseId: $caseId) === false) {
+			return 0;
+		}
 
-			try {
-				$this->patchObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: $caseSchema,
-					id: $caseId,
-					changes: ['assignedGroup' => $group],
-				);
-			} catch (Throwable $e) {
-				$this->logger->error(
-					'Dossiq: the case team fill could not write a case',
-					['app' => Application::APP_ID, 'caseId' => $caseId, 'exception' => $e->getMessage()]
-				);
-				continue;
-			}
+		return 1;
+	}//end assignCase()
 
-			$assigned++;
-		}//end foreach
+	/**
+	 * Write the run's handling group onto one case, logging a failure.
+	 *
+	 * @param CaseTeamFillRun $run    The pass, narrowed to one case type.
+	 * @param string          $caseId The case.
+	 *
+	 * @return bool Whether the write went through.
+	 */
+	private function writeTeam(CaseTeamFillRun $run, string $caseId): bool {
+		try {
+			$this->patchObjectAsArray(
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->caseSchema,
+				id: $caseId,
+				changes: ['assignedGroup' => $run->group],
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: the case team fill could not write a case',
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'exception' => $e->getMessage()]
+			);
+			return false;
+		}
 
-		return $assigned;
-	}//end assignCaseType()
+		return true;
+	}//end writeTeam()
 
 	/**
 	 * Whether a case is open and has no team.

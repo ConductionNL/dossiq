@@ -54,6 +54,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
+ * @uses \OCA\Dossiq\Listener\Support\EventGetters
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class MessageReceivedListenerServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

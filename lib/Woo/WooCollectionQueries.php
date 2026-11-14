@@ -33,8 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCollectionQueriesInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -45,7 +46,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-selecting-query-is-saved-and-can-be-re-run-req-wrc-004
  */
-class WooCollectionQueries {
+class WooCollectionQueries implements WooCollectionQueriesInterface {
 
 	use SearchesObjects;
 
@@ -57,18 +58,18 @@ class WooCollectionQueries {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService The register and the schemas.
+	 * @param SettingsServiceInterface    $settingsService The register and the schemas.
 	 * @param IRootFolder        $rootFolder      The caller's own files, for a files re-run.
 	 * @param WooSources         $sources         integriq's search, for a Microsoft 365 re-run.
 	 * @param WooCaseDocuments   $caseDocuments   What is already on the case.
-	 * @param CaseReviewerAccess $access          The grants of a new query.
+	 * @param CaseReviewerAccessInterface $access          The grants of a new query.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IRootFolder $rootFolder,
 		private readonly WooSources $sources,
 		private readonly WooCaseDocuments $caseDocuments,
-		private readonly CaseReviewerAccess $access,
+		private readonly CaseReviewerAccessInterface $access,
 	) {
 	}//end __construct()
 
@@ -149,6 +150,27 @@ class WooCollectionQueries {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-selecting-query-is-saved-and-can-be-re-run-req-wrc-004
 	 */
 	public function rerun(string $caseId, string $queryId, string $userId): array {
+		$query = $this->storedQuery(caseId: $caseId, queryId: $queryId);
+
+		$answer = $this->search(query: $query, userId: $userId);
+		if ($answer['refusal'] !== '') {
+			return $answer;
+		}
+
+		return $this->markNew(query: $query, queryId: $queryId, rows: $answer['rows'], caseId: $caseId);
+	}//end rerun()
+
+	/**
+	 * The stored query of this case with the given uuid.
+	 *
+	 * @param string $caseId  The case uuid.
+	 * @param string $queryId The stored query's uuid.
+	 *
+	 * @return array<string, mixed> The stored query.
+	 *
+	 * @throws WooCorpusRefused 404 when the query is not one of this case.
+	 */
+	private function storedQuery(string $caseId, string $queryId): array {
 		$query = null;
 		foreach ($this->forCase(caseId: $caseId) as $row) {
 			if ($this->idOf(row: $row) === $queryId) {
@@ -160,24 +182,33 @@ class WooCollectionQueries {
 			throw new WooCorpusRefused(reason: 'query_not_found', status: 404);
 		}
 
-		$answer = $this->search(query: $query, userId: $userId);
-		if ($answer['refusal'] !== '') {
-			return $answer;
-		}
+		return $query;
+	}//end storedQuery()
 
+	/**
+	 * Mark each row the query had not found before and the case does not hold, and remember the keys.
+	 *
+	 * @param array<string, mixed>             $query   The stored query.
+	 * @param string                           $queryId The stored query's uuid.
+	 * @param array<int, array<string, mixed>> $rows    The rows the search found.
+	 * @param string                           $caseId  The case uuid.
+	 *
+	 * @return array{rows: array<int, array<string, mixed>>, refusal: string} Each row with `new`.
+	 */
+	private function markNew(array $query, string $queryId, array $rows, string $caseId): array {
 		$seen = array_flip($this->keys(values: (array)($query['resultKeys'] ?? [])));
 		$onCase = array_flip($this->caseDocuments->idsFor(caseId: $caseId));
-		$rows = [];
-		foreach ($answer['rows'] as $row) {
+		$marked = [];
+		foreach ($rows as $row) {
 			$row['new'] = (isset($seen[$row['key']]) === false && isset($onCase[$row['key']]) === false);
-			$rows[] = $row;
+			$marked[] = $row;
 		}
 
-		$query['resultKeys'] = $this->keys(values: array_merge(array_keys($seen), array_column($rows, 'key')));
+		$query['resultKeys'] = $this->keys(values: array_merge(array_keys($seen), array_column($marked, 'key')));
 		$this->save(row: $query, uuid: $queryId);
 
-		return ['rows' => $rows, 'refusal' => ''];
-	}//end rerun()
+		return ['rows' => $marked, 'refusal' => ''];
+	}//end markNew()
 
 	/**
 	 * Search the query's source again.

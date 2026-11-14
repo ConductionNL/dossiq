@@ -102,28 +102,8 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function validateCaseFields(array $result, ?array $existingObject): array {
-		$body = $result['enrichedBody'];
-
-		$error = $this->checkIdentificatieImmutable(body: $body, existingObject: $existingObject)
-			?? $this->checkCommunicatiekanaal(body: $body)
-			?? $this->checkRelevanteAndereZaken(body: $body)
-			?? $this->checkGegevensgroep(
-				group: $body['suspension'] ?? null,
-				required: [
-					'indicatie' => ['opschorting.indicatie', 'Indicatie is vereist bij opschorting.', true],
-					'reason'    => ['opschorting.reden', 'Reden is vereist bij opschorting.', false],
-				],
-				detail: 'Opschorting vereist indicatie en reden.'
-			)
-			?? $this->checkGegevensgroep(
-				group: $body['verlenging'] ?? null,
-				required: [
-					'reason' => ['verlenging.reden', 'Reden is vereist bij verlenging.', false],
-					'duur'   => ['verlenging.duur', 'Duur is vereist bij verlenging.', false],
-				],
-				detail: 'Verlenging vereist reden en duur.'
-			)
-			?? $this->relations->checkHoofdzaak(body: $body, existingObject: $existingObject);
+		$body  = $result['enrichedBody'];
+		$error = $this->firstFieldRefusal(body: $body, existingObject: $existingObject);
 		if ($error !== null) {
 			return $error;
 		}
@@ -134,7 +114,71 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 			return $payment['error'];
 		}
 
-		$body  = $payment['body'];
+		return $this->withPaidBody(result: $result, body: $payment['body']);
+	}//end validateCaseFields()
+
+	/**
+	 * The first refusal of the rules that run before the payment rule (zrc-002 to zrc-013).
+	 *
+	 * @param array      $body           The request body
+	 * @param array|null $existingObject The existing zaak, null on create
+	 *
+	 * @return array|null The refusal, or null when acceptable
+	 */
+	private function firstFieldRefusal(array $body, ?array $existingObject): ?array {
+		return $this->checkIdentificatieImmutable(body: $body, existingObject: $existingObject)
+			?? $this->checkCommunicatiekanaal(body: $body)
+			?? $this->checkRelevanteAndereZaken(body: $body)
+			?? $this->checkOpschorting(body: $body)
+			?? $this->checkVerlenging(body: $body)
+			?? $this->relations->checkHoofdzaak(body: $body, existingObject: $existingObject);
+	}//end firstFieldRefusal()
+
+	/**
+	 * Zrc-012: the opschorting gegevensgroep needs indicatie and reden.
+	 *
+	 * @param array $body The request body
+	 *
+	 * @return array|null The refusal, or null when acceptable
+	 */
+	private function checkOpschorting(array $body): ?array {
+		return $this->checkGegevensgroep(
+			group: $body['suspension'] ?? null,
+			required: [
+				'indicatie' => ['opschorting.indicatie', 'Indicatie is vereist bij opschorting.', true],
+				'reason'    => ['opschorting.reden', 'Reden is vereist bij opschorting.', false],
+			],
+			detail: 'Opschorting vereist indicatie en reden.'
+		);
+	}//end checkOpschorting()
+
+	/**
+	 * Zrc-012: the verlenging gegevensgroep needs reden and duur.
+	 *
+	 * @param array $body The request body
+	 *
+	 * @return array|null The refusal, or null when acceptable
+	 */
+	private function checkVerlenging(array $body): ?array {
+		return $this->checkGegevensgroep(
+			group: $body['verlenging'] ?? null,
+			required: [
+				'reason' => ['verlenging.reden', 'Reden is vereist bij verlenging.', false],
+				'duur'   => ['verlenging.duur', 'Duur is vereist bij verlenging.', false],
+			],
+			detail: 'Verlenging vereist reden en duur.'
+		);
+	}//end checkVerlenging()
+
+	/**
+	 * Run the rules on the body as the payment rule left it (zrc-015, zrc-022), and carry it on.
+	 *
+	 * @param array $result The current validation result
+	 * @param array $body   The body after the payment rule
+	 *
+	 * @return array The refusal, or the result carrying the body
+	 */
+	private function withPaidBody(array $result, array $body): array {
 		$error = $this->relations->validateProductenOfDiensten(body: $body) ?? $this->checkArchiefstatus(body: $body);
 		if ($error !== null) {
 			return $error;
@@ -143,7 +187,7 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 		$result['enrichedBody'] = $body;
 
 		return $result;
-	}//end validateCaseFields()
+	}//end withPaidBody()
 
 	/**
 	 * Zrc-002: refuse a changed identificatie on update/patch.
@@ -174,43 +218,39 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 	 * @return array|null The refusal, or null when acceptable
 	 */
 	private function checkCommunicatiekanaal(array $body): ?array {
-		$commChannel = $body['communicatiekanaal'] ?? null;
-		if ($commChannel === null || $commChannel === '') {
+		$commChannel = $body['communicatiekanaal'] ?? '';
+		if ($commChannel === '') {
 			return null;
 		}
 
 		if (filter_var($commChannel, FILTER_VALIDATE_URL) === false) {
-			return $this->error(
-				status: 400,
-				detail: 'De communicatiekanaal URL is ongeldig.',
-				invalidParams: [
-					$this->fieldError(
-						fieldName: 'communicatiekanaal',
-						code: 'bad-url',
-						reason: 'De communicatiekanaal URL is ongeldig.'
-					),
-				]
-			);
+			return $this->communicatiekanaalRefusal(code: 'bad-url', reason: 'De communicatiekanaal URL is ongeldig.');
 		}
 
 		if ($this->isValidUrl(url: $commChannel) === false) {
 			// Zrc-010: URL is syntactically valid but does not point to a specific
 			// resource (no UUID path segment) → VNG requires 'invalid-resource'.
-			return $this->error(
-				status: 400,
-				detail: 'De communicatiekanaal URL is ongeldig.',
-				invalidParams: [
-					$this->fieldError(
-						fieldName: 'communicatiekanaal',
-						code: 'invalid-resource',
-						reason: 'De communicatiekanaal URL wijst niet naar een geldig object.'
-					),
-				]
-			);
+			return $this->communicatiekanaalRefusal(code: 'invalid-resource', reason: 'De communicatiekanaal URL wijst niet naar een geldig object.');
 		}
 
 		return null;
 	}//end checkCommunicatiekanaal()
+
+	/**
+	 * The 400 refusal on the communicatiekanaal field.
+	 *
+	 * @param string $code   The refusal code
+	 * @param string $reason The field reason
+	 *
+	 * @return array The refusal
+	 */
+	private function communicatiekanaalRefusal(string $code, string $reason): array {
+		return $this->error(
+			status: 400,
+			detail: 'De communicatiekanaal URL is ongeldig.',
+			invalidParams: [$this->fieldError(fieldName: 'communicatiekanaal', code: $code, reason: $reason)]
+		);
+	}//end communicatiekanaalRefusal()
 
 	/**
 	 * Zrc-011: refuse a relevanteAndereZaken entry whose url is no resource URL.
@@ -290,6 +330,32 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 	 * @return array{error: array|null, body: array} The refusal, or the (possibly cleared) body
 	 */
 	private function applyBetalingsindicatie(array $body, ?array $existingObject): array {
+		[$betalingsindicatie, $lastPaid] = $this->effectivePayment(body: $body, existingObject: $existingObject);
+
+		if ($this->noNvtDateConflict(betalingsindicatie: $betalingsindicatie, lastPaid: $lastPaid) === true) {
+			return ['error' => null, 'body' => $body];
+		}
+
+		// On create: reject (cannot set date with nvt).
+		if ($existingObject === null) {
+			return $this->nvtWithDateRefused(body: $body);
+		}
+
+		// On update/patch: clear laatsteBetaaldatum when switching to nvt.
+		$body['laatsteBetaaldatum'] = null;
+
+		return ['error' => null, 'body' => $body];
+	}//end applyBetalingsindicatie()
+
+	/**
+	 * The betalingsindicatie and laatsteBetaaldatum that count, the stored ones filling what the body leaves out.
+	 *
+	 * @param array $body The request body
+	 * @param array|null $existingObject The existing zaak, null on create
+	 *
+	 * @return array{0: mixed, 1: mixed} The betalingsindicatie and laatsteBetaaldatum.
+	 */
+	private function effectivePayment(array $body, ?array $existingObject): array {
 		$betalingsindicatie = $body['betalingsindicatie'] ?? null;
 		$lastPaid           = $body['laatsteBetaaldatum'] ?? null;
 
@@ -299,30 +365,41 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 			$lastPaid           ??= $existingObject['lastPaymentDate'] ?? ($existingObject['laatsteBetaaldatum'] ?? null);
 		}
 
-		if ($betalingsindicatie !== 'nvt' || $lastPaid === null || $lastPaid === '') {
-			return ['error' => null, 'body' => $body];
-		}
+		return [$betalingsindicatie, $lastPaid];
+	}//end effectivePayment()
 
-		// On create: reject (cannot set date with nvt).
-		if ($existingObject === null) {
-			$error = $this->error(
-				status: 400,
-				detail: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.',
-				invalidParams: [$this->fieldError(
-					fieldName: 'laatsteBetaaldatum',
-					code: 'betaling-nvt',
-					reason: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.'
-				)
-				]
-			);
-			return ['error' => $error, 'body' => $body];
-		}
+	/**
+	 * Whether the pair leaves nothing to refuse: no "nvt", or no laatsteBetaaldatum.
+	 *
+	 * @param mixed $betalingsindicatie The betalingsindicatie that counts.
+	 * @param mixed $lastPaid The laatsteBetaaldatum that counts.
+	 *
+	 * @return bool True when the pair goes together.
+	 */
+	private function noNvtDateConflict(mixed $betalingsindicatie, mixed $lastPaid): bool {
+		return $betalingsindicatie !== 'nvt' || $lastPaid === null || $lastPaid === '';
+	}//end noNvtDateConflict()
 
-		// On update/patch: clear laatsteBetaaldatum when switching to nvt.
-		$body['laatsteBetaaldatum'] = null;
-
-		return ['error' => null, 'body' => $body];
-	}//end applyBetalingsindicatie()
+	/**
+	 * Refuse a laatsteBetaaldatum alongside betalingsindicatie "nvt" on create.
+	 *
+	 * @param array $body The request body
+	 *
+	 * @return array{error: array|null, body: array} The refusal and the body
+	 */
+	private function nvtWithDateRefused(array $body): array {
+		$error = $this->error(
+			status: 400,
+			detail: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.',
+			invalidParams: [$this->fieldError(
+				fieldName: 'laatsteBetaaldatum',
+				code: 'betaling-nvt',
+				reason: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.'
+			)
+			]
+		);
+		return ['error' => $error, 'body' => $body];
+	}//end nvtWithDateRefused()
 
 	/**
 	 * Zrc-022: an archiefstatus past nog_te_archiveren needs archiefnominatie and archiefactiedatum.

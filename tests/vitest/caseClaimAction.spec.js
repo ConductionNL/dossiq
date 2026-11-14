@@ -137,7 +137,7 @@ describe('the case page offers Claim and Release', () => {
 
 describe('the queue and the case list offer Claim on a row', () => {
 	it('declares the row action on both indexes', () => {
-		for (const id of ['Queue', 'Cases']) {
+		for (const id of ['Cases']) {
 			const claim = action(page(id).config.actions, 'claim')
 			expect(claim.type).toBe('handler')
 			expect(claim.handler).toBe('claimCase')

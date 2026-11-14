@@ -19,6 +19,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -26,6 +27,7 @@ class CorrespondentWriterTest extends TestCase {
 	private const CONFIG = [
 		'register' => 'dossiq',
 		'dispatch_schema' => 'dispatch',
+		'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject',
 	];
 
 	private const PARTIES = [
@@ -112,6 +114,7 @@ class CorrespondentWriterTest extends TestCase {
 			people: $this->people,
 			settingsService: $settings,
 			store: new DocumentRecordStore(settingsService: $settings),
+			labels: new DocumentListingLabels(settingsService: $settings),
 		);
 	}//end setUp()
 
@@ -222,6 +225,57 @@ class CorrespondentWriterTest extends TestCase {
 	}//end testNoCorrespondentsWritesNothing()
 
 	/**
+	 * An edit naming neither sender nor recipients changes nothing and records nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnEditNamingNoCorrespondentIsIgnored(): void {
+		$this->assertSame([], $this->writer->applyEdit('doc-1', ['sender' => 'party-jan'], ['title' => 'Nieuw'], 'uitgaand'));
+		$this->assertSame([], $this->objects->saves);
+	}//end testAnEditNamingNoCorrespondentIsIgnored()
+
+	/**
+	 * An edit of only the recipients keeps the stored sender, resolves both
+	 * against the parties of the case the document is filed on, and records
+	 * the dispatches on that case.
+	 *
+	 * @return void
+	 */
+	public function testAnEditResolvesAgainstTheDocumentsCase(): void {
+		$this->objects->answers[] = ['informatieobject' => 'doc-1', 'case' => ''];
+		$this->objects->answers[] = ['informatieobject' => 'doc-1', 'case' => ' case-1 '];
+
+		$patch = $this->writer->applyEdit(
+			'doc-1',
+			['sender' => 'party-jan', 'recipients' => []],
+			['recipients' => ['party-council']],
+			'inkomend'
+		);
+
+		$this->assertSame(['sender' => 'party-jan', 'recipients' => ['party-council']], $patch);
+		$this->assertSame(['case-1', 'case-1'], array_column($this->objects->saves, 'case'));
+		$this->assertSame(['party-jan', 'party-council'], array_column($this->objects->saves, 'involvedParty'));
+	}//end testAnEditResolvesAgainstTheDocumentsCase()
+
+	/**
+	 * A new sender replaces the stored one and the stored recipients stay.
+	 *
+	 * @return void
+	 */
+	public function testAnEditOfTheSenderKeepsTheRecipients(): void {
+		$this->objects->answers[] = ['informatieobject' => 'doc-3', 'case' => 'case-1'];
+
+		$patch = $this->writer->applyEdit(
+			'doc-3',
+			['sender' => 'party-council', 'recipients' => ['party-jan']],
+			['sender' => 'party-jan'],
+			'inkomend'
+		);
+
+		$this->assertSame(['sender' => 'party-jan', 'recipients' => ['party-jan']], $patch);
+	}//end testAnEditOfTheSenderKeepsTheRecipients()
+
+	/**
 	 * The writer resolves against the case's own parties, so a typed name is
 	 * dropped here too and the mail intake's address finds its party.
 	 *
@@ -298,6 +352,7 @@ class CorrespondentWriterTest extends TestCase {
 			people: $people,
 			settingsService: $settings,
 			store: new DocumentRecordStore(settingsService: $settings),
+			labels: new DocumentListingLabels(settingsService: $settings),
 		);
 
 		$writer->describeAll(
@@ -336,6 +391,7 @@ class CorrespondentWriterTest extends TestCase {
 			people: $people,
 			settingsService: $settings,
 			store: new DocumentRecordStore(settingsService: $settings),
+			labels: new DocumentListingLabels(settingsService: $settings),
 		);
 
 		$this->assertSame(
@@ -351,4 +407,86 @@ class CorrespondentWriterTest extends TestCase {
 			actual: $writer->addressedParties(caseId: 'case-1', roles: ['belanghebbende']),
 		);
 	}//end testTheFirstRoleThatAnswersWinsAndTheRolesAreNotMerged()
+
+	/**
+	 * A writer whose parties reader must never be asked, over the given settings.
+	 *
+	 * @param SettingsService&MockObject $settings The settings.
+	 *
+	 * @return CorrespondentWriter
+	 */
+	private function writerWithoutPartyReads(SettingsService&MockObject $settings): CorrespondentWriter {
+		$people = $this->createMock(originalClassName: PersonLinkReader::class);
+		$people->expects($this->never())->method('peopleOn');
+
+		return new CorrespondentWriter(
+			rules: new DocumentCorrespondents(),
+			people: $people,
+			settingsService: $settings,
+			store: new DocumentRecordStore(settingsService: $settings),
+			labels: new DocumentListingLabels(settingsService: $settings),
+		);
+	}//end writerWithoutPartyReads()
+
+	/**
+	 * Settings over the stub object service, or over none.
+	 *
+	 * @param bool $withObjects Whether OpenRegister is there.
+	 *
+	 * @return SettingsService&MockObject
+	 */
+	private function settings(bool $withObjects): SettingsService&MockObject {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($withObjects === true ? $this->objects : null);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (self::CONFIG[$key] ?? $default)
+		);
+
+		return $settings;
+	}//end settings()
+
+	/**
+	 * A document filed on no case resolves against no parties: a party id the case would hold is dropped
+	 * and nothing is recorded.
+	 *
+	 * @return void
+	 */
+	public function testAnEditOfADocumentOnNoCaseResolvesAgainstNoParties(): void {
+		$this->objects->answers[] = ['informatieobject' => 'doc-loose', 'case' => '  '];
+		$writer = $this->writerWithoutPartyReads(settings: $this->settings(withObjects: true));
+
+		$patch = $writer->applyEdit('doc-loose', [], ['sender' => 'party-jan', 'recipients' => ['party-council']], 'inkomend');
+
+		$this->assertSame(['sender' => '', 'recipients' => []], $patch);
+		$this->assertSame([], $this->objects->saves);
+	}//end testAnEditOfADocumentOnNoCaseResolvesAgainstNoParties()
+
+	/**
+	 * When the document's joins cannot be read the edit still answers, against no case.
+	 *
+	 * @return void
+	 */
+	public function testAnEditWhoseJoinsCannotBeReadResolvesAgainstNoCase(): void {
+		$writer = $this->writerWithoutPartyReads(settings: $this->settings(withObjects: false));
+
+		$this->assertSame(
+			['sender' => '', 'recipients' => []],
+			$writer->applyEdit('doc-1', [], ['recipients' => ['party-council']], 'uitgaand')
+		);
+	}//end testAnEditWhoseJoinsCannotBeReadResolvesAgainstNoCase()
+
+	/**
+	 * A listing skips entries that are not document rows.
+	 *
+	 * @return void
+	 */
+	public function testAListingSkipsEntriesThatAreNotRows(): void {
+		$listed = $this->writer->describeAll(
+			caseId: 'case-1',
+			documents: ['not a row', ['id' => 'doc-b', 'sender' => 'party-jan'], 42],
+		);
+
+		$this->assertSame(['doc-b'], array_column($listed, 'id'));
+		$this->assertSame('Jan Jansen', $listed[0]['senderName']);
+	}//end testAListingSkipsEntriesThatAreNotRows()
 }//end class

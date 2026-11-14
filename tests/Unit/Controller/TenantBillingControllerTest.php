@@ -74,6 +74,21 @@ class TenantBillingControllerTest extends TestCase {
 	}//end testTheRunAnswersWithTheInvoice()
 
 	/**
+	 * A run that hands nothing to the finance app is a 409 with the reason.
+	 *
+	 * @return void
+	 */
+	public function testARunThatExportsNothingSaysWhy(): void {
+		$billing = $this->createMock(TenantBillingService::class);
+		$billing->method('runInvoicing')->willReturn(['exported' => false, 'error' => 'no unbilled events']);
+
+		$response = $this->controller(billing: $billing)->run('t-1', 'previous');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame('no unbilled events', $response->getData()['error']);
+	}//end testARunThatExportsNothingSaysWhy()
+
+	/**
 	 * A month the service refuses is a 400 on both endpoints.
 	 *
 	 * @return void

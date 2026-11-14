@@ -33,16 +33,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+ * @spec openspec/specs/partner-organisations/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\PartnerMigrationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\PartnerMigrationService;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -51,7 +51,7 @@ use Throwable;
 /**
  * Repair step projecting dossiq partners onto OpenRegister Organisations.
  *
- * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+ * @spec openspec/specs/partner-organisations/spec.md
  */
 class MigratePartnersToOrganisations implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -59,15 +59,15 @@ class MigratePartnersToOrganisations implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param PartnerMigrationService $migration The partner migration.
-	 * @param SettingsService $settingsService Resolves OpenRegister's ObjectService.
+	 * @param PartnerMigrationServiceInterface $migration The partner migration.
+	 * @param SettingsServiceInterface $settingsService Resolves OpenRegister's ObjectService.
 	 * @param LoggerInterface $logger Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private PartnerMigrationService $migration,
-		private SettingsService $settingsService,
+		private PartnerMigrationServiceInterface $migration,
+		private SettingsServiceInterface $settingsService,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -77,7 +77,7 @@ class MigratePartnersToOrganisations implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
 	public function getName(): string {
 		return 'Move Dossiq partner organisations onto OpenRegister Organisations';
@@ -102,27 +102,35 @@ class MigratePartnersToOrganisations implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
 	public function run(IOutput $output): void {
 		$summary = ['migrated' => 0, 'skipped' => 0, 'failed' => 0, 'total' => 0];
 
 		try {
-			$this->withSystemIdentity(
-				objectService: $this->settingsService->getObjectService(),
-				work: function () use (&$summary): void {
-					$summary = $this->migration->migrate();
-				}
-			);
+			$this->withSystemIdentity(objectService: $this->settingsService->getObjectService(), work: function () use (&$summary): void {
+				$summary = $this->migration->migrate();
+			});
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: partner migration repair step failed',
-				['exception' => $e->getMessage()]
-			);
+			$this->logger->error('Dossiq: partner migration repair step failed', ['exception' => $e->getMessage()]);
 			$output->warning('Dossiq: partner migration could not run: ' . $e->getMessage());
 			return;
 		}
 
+		self::report(output: $output, summary: $summary);
+	}//end run()
+
+	/**
+	 * Report what the partner migration did.
+	 *
+	 * @param IOutput                                                       $output  Output interface for progress reporting.
+	 * @param array{migrated: int, skipped: int, failed: int, total: int} $summary The migration's summary.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/partner-organisations/spec.md
+	 */
+	private static function report(IOutput $output, array $summary): void {
 		if ($summary['total'] === 0) {
 			$output->info('Dossiq: no partner organisations to migrate.');
 			return;
@@ -137,5 +145,5 @@ class MigratePartnersToOrganisations implements IRepairStep {
 				$summary['total']
 			)
 		);
-	}//end run()
+	}//end report()
 }//end class

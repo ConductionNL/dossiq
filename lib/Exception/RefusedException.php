@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+ * @spec openspec/specs/quality-gates/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use Throwable;
 /**
  * A rule refused a write, or could not be evaluated (REQ-QG-CRN-2).
  *
- * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+ * @spec openspec/specs/quality-gates/spec.md
  */
 class RefusedException extends RuntimeException {
 	/**
@@ -136,7 +136,7 @@ class RefusedException extends RuntimeException {
 	 *
 	 * @return self A 503-carrying refusal.
 	 *
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public static function indeterminate(string $rule, string $sentence, ?Throwable $previous = null): self {
 		return new self(
@@ -152,7 +152,7 @@ class RefusedException extends RuntimeException {
 	 *
 	 * @return string The slug for the response's `error` field.
 	 *
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function getRule(): string {
 		return $this->rule;
@@ -167,7 +167,7 @@ class RefusedException extends RuntimeException {
 	 *
 	 * @return string The static sentence.
 	 *
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function getSentence(): string {
 		return $this->sentence;
@@ -178,7 +178,7 @@ class RefusedException extends RuntimeException {
 	 *
 	 * @return int The status code.
 	 *
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function getStatus(): int {
 		return $this->status;

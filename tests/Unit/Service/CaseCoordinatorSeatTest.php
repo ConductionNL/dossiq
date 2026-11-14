@@ -38,6 +38,7 @@ use RuntimeException;
  * The handler, the coordinator, and finding the cases somebody coordinates.
  *
  * @covers \OCA\Dossiq\Service\People\CaseSeats
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  *
  * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
  */

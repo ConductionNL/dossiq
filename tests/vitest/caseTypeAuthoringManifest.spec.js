@@ -36,10 +36,6 @@ const register = JSON.parse(
 )
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
-const cellWidgetsSource = fs.readFileSync(
-	path.join(ROOT, 'src', 'services', 'cellWidgets.js'),
-	'utf8',
-)
 
 /**
  * One page of the manifest.
@@ -80,10 +76,10 @@ function chip(label) {
 }
 
 describe('statusType carries a colour and a list visibility', () => {
-	it('enumerates twelve colours rather than accepting a hex value', () => {
+	it('enumerates fourteen colours rather than accepting a hex value', () => {
 		const colour = schema('statusType').properties.colour
 		expect(colour.type).toBe('string')
-		expect(colour.enum).toHaveLength(12)
+		expect(colour.enum).toHaveLength(14)
 		for (const value of colour.enum) {
 			expect(value).not.toMatch(/^#/)
 		}
@@ -187,9 +183,9 @@ describe('the Cases index', () => {
 		expect(chip('Closed').filter.isFinalStatus).toBe(true)
 	})
 
-	it('draws the Status column through a registered cell widget', () => {
-		expect(casesColumn('status').widget).toBe('statusBadge')
-		expect(cellWidgetsSource).toContain('statusBadge:')
+	it('draws the Status column through the library badge in the status colour', () => {
+		expect(casesColumn('status').widget).toBe('badge')
+		expect(casesColumn('status').widgetProps.resolve.colorField).toBe('colour')
 	})
 
 	it('keeps the name formatter as the widget’s fallback label', () => {
@@ -396,15 +392,21 @@ describe('the Case types index shows one row per case type', () => {
 
 	it('defaults to the version nothing has superseded', () => {
 		const current = chips().find((chip) => chip.default === true)
-		expect(current.label).toBe('Current versions')
+		expect(current.label).toBe('All')
 		expect(current.filter).toEqual({ supersededBy: 'IS NULL' })
 	})
 
-	it('spells the empty test as the sentinel the Queue page uses', () => {
+	it('counts All, Published and Draft as board DqZaaktypen draws them', () => {
+		const tabs = chips().filter((chip) => chip.showCount === true)
+		expect(tabs.map((chip) => [chip.label, chip.filter.isDraft])).toEqual([['All', undefined], ['Published', false], ['Draft', true]])
+		expect(tabs.every((chip) => chip.filter.supersededBy === 'IS NULL')).toBe(true)
+	})
+
+	it('spells the empty test as the sentinel the team queue uses', () => {
 		// `assignee: "IS NULL"` is the literal sentinel every OpenRegister
 		// condition builder matches by value. A different spelling here would
 		// contribute no condition at all and list every version.
-		const queue = page('Queue').config.filter.assignee
+		const queue = page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters.assignee
 		expect(chips()[0].filter.supersededBy).toBe(queue)
 	})
 
@@ -413,6 +415,25 @@ describe('the Case types index shows one row per case type', () => {
 		expect(all).toBeDefined()
 		expect(all.filter).toEqual({})
 		expect(all.default).toBeUndefined()
+	})
+
+	// @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/case-types/spec.md#requirement-a-case-type-a-package-placed-reads-as-shipped
+	it('narrows the current versions to the shipped case types, before All versions', () => {
+		const labels = chips().map((chip) => chip.label)
+		const shipped = chips().find((chip) => chip.label === 'Shipped')
+		expect(shipped.filter).toEqual({ supersededBy: 'IS NULL', shipped: true })
+		expect(shipped.default).toBeUndefined()
+		expect(labels.indexOf('Shipped')).toBeLessThan(labels.indexOf('All versions'))
+		expect(labels.at(-1)).toBe('All versions')
+		expect(schema('caseType').properties.shipped.facetable).toBe(true)
+	})
+
+	// @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/case-types/spec.md#requirement-a-case-type-a-package-placed-reads-as-shipped
+	it('reads each row as Shipped or Own', () => {
+		const origin = page('CaseTypes').config.columns.find((column) => column.key === 'shipped')
+		expect(origin.label).toBe('Origin')
+		expect(origin.widgetProps).toEqual({ trueLabel: 'Shipped', falseLabel: 'Own', pill: true })
+		expect(schema('caseType').properties.shipped.type).toBe('boolean')
 	})
 
 	it('filters on a real, facetable caseType property', () => {
@@ -659,7 +680,7 @@ describe('the header actions', () => {
 		expect(
 			page('CaseTypeDetail').config.headerActions.map((a) => a.label),
 		).toEqual([
-			'Export',
+			'Download',
 			'Import',
 			'Duplicate',
 			'New version',

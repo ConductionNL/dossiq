@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Registry;
 
-use OCA\Dossiq\Support\FleetAppId;
+use OCA\Dossiq\Kernel\Contracts\BagObjectReaderInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -40,23 +40,13 @@ use Throwable;
  * be able to tell an address the BAG does not hold from a read that did not
  * happen.
  *
- * @spec openspec/changes/bag-client-retired/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
+ * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
  */
-class BagObjectReader {
+class BagObjectReader implements BagObjectReaderInterface {
 	/**
 	 * Integriq's BAG object read, below integriq's app namespace.
 	 */
 	public const INTEGRIQ_READER = 'PropertySource\\Provider\\BagObjectReader';
-
-	/**
-	 * Integriq is not installed on this instance.
-	 */
-	public const REASON_NO_INTEGRIQ = 'integriq-not-installed';
-
-	/**
-	 * Integriq is installed, in a version without the BAG object read.
-	 */
-	public const REASON_NO_READER = 'integriq-has-no-bag-read';
 
 	/**
 	 * The read was asked and gave no usable answer.
@@ -85,16 +75,13 @@ class BagObjectReader {
 	 *
 	 * @return array{available:bool,reason:string,found:bool,simulated:bool}
 	 *
-	 * @spec openspec/changes/bag-client-retired/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
+	 * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
 	 */
 	public function read(string $type, string $identificatie): array {
-		if (FleetAppId::isInstalled(appManager: $this->appManager, canonical: 'integriq') === false) {
-			return self::unanswered(reason: self::REASON_NO_INTEGRIQ);
-		}
-
-		$reader = FleetAppId::getService(container: $this->container, canonical: 'integriq', relative: self::INTEGRIQ_READER);
-		if ($reader === null || method_exists($reader, 'read') === false) {
-			return self::unanswered(reason: self::REASON_NO_READER);
+		$leaf = new IntegriqLeaf(container: $this->container, appManager: $this->appManager);
+		$reader = $leaf->readerOr(relative: self::INTEGRIQ_READER, missing: self::REASON_NO_READER);
+		if (is_string($reader) === true) {
+			return self::unanswered(reason: $reader);
 		}
 
 		try {
@@ -127,10 +114,7 @@ class BagObjectReader {
 		$simulated = (($answer['simulated'] ?? true) !== false);
 
 		if ($answer['available'] === false) {
-			$reason = self::REASON_UNREACHABLE;
-			if (is_string($answer['reason'] ?? null) === true && $answer['reason'] !== '') {
-				$reason = $answer['reason'];
-			}
+			$reason = IntegriqLeaf::unavailableReason(answer: $answer);
 
 			return ['available' => false, 'reason' => $reason, 'found' => false, 'simulated' => $simulated];
 		}

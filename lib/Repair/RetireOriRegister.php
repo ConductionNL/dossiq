@@ -45,7 +45,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ori-removal/specs/ori-removal/spec.md
+ * @spec openspec/specs/ori-removal/spec.md
  */
 
 declare(strict_types=1);
@@ -61,7 +61,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Removes the ORI register once its objects are gone, and not before.
  *
- * @spec openspec/changes/ori-removal/specs/ori-removal/spec.md
+ * @spec openspec/specs/ori-removal/spec.md
  */
 class RetireOriRegister implements IRepairStep {
 
@@ -78,7 +78,7 @@ class RetireOriRegister implements IRepairStep {
 	 * @param IDBConnection $db Database connection.
 	 * @param LoggerInterface $logger Logger.
 	 *
-	 * @spec openspec/changes/ori-removal/specs/ori-removal/spec.md
+	 * @spec openspec/specs/ori-removal/spec.md
 	 */
 	public function __construct(
 		private readonly IDBConnection $db,
@@ -91,7 +91,7 @@ class RetireOriRegister implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/ori-removal/specs/ori-removal/spec.md
+	 * @spec openspec/specs/ori-removal/spec.md
 	 */
 	public function getName(): string {
 		return 'Retire the ORI register once its objects have moved to decidiq';
@@ -104,43 +104,102 @@ class RetireOriRegister implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/ori-removal/specs/ori-removal/spec.md
+	 * @spec openspec/specs/ori-removal/spec.md
 	 */
 	public function run(IOutput $output): void {
 		$registerId = $this->findRegisterId();
 		if ($registerId === null) {
-			$output->info(
-				'RetireOriRegister: no `ori` register on this install '
-				. '(already retired, never provisioned, or OpenRegister is absent); nothing to do.'
-			);
+			self::nothingToRetire(output: $output);
 			return;
 		}
 
 		$objects = $this->countObjects(registerId: $registerId);
+		if ($this->keepsRegister(output: $output, objects: $objects) === true) {
+			return;
+		}
+
+		$this->retire(output: $output, registerId: $registerId);
+	}//end run()
+
+	/**
+	 * Say there is no `ori` register to retire.
+	 *
+	 * @param IOutput $output Repair output.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/ori-removal/spec.md
+	 */
+	private static function nothingToRetire(IOutput $output): void {
+		$output->info(
+			'RetireOriRegister: no `ori` register on this install '
+			. '(already retired, never provisioned, or OpenRegister is absent); nothing to do.'
+		);
+	}//end nothingToRetire()
+
+	/**
+	 * Whether the register must be kept: its objects could not be counted, or it still holds some.
+	 *
+	 * @param IOutput  $output  Repair output.
+	 * @param int|null $objects Object count, or null when it could not be established.
+	 *
+	 * @return bool True when the register is kept, and the reason has been said.
+	 *
+	 * @spec openspec/specs/ori-removal/spec.md
+	 */
+	private function keepsRegister(IOutput $output, ?int $objects): bool {
 		if ($objects === null) {
 			$output->info('RetireOriRegister: could not count the register\'s objects; keeping it.');
-			return;
+			return true;
 		}
 
 		if ($objects > 0) {
-			$message = sprintf(
-				'RetireOriRegister: the `ori` register still holds %d object(s); KEEPING it. '
-				. 'Migrate them into decidiq first (see the decidiq `ori-adoption` importer), '
-				. 'then re-run `occ maintenance:repair`.',
-				$objects
-			);
-			$this->logger->warning($message, ['register' => self::REGISTER_SLUG, 'objects' => $objects]);
-			$output->warning($message);
-			return;
+			$this->warnStillHolds(output: $output, objects: $objects);
+			return true;
 		}
 
+		return false;
+	}//end keepsRegister()
+
+	/**
+	 * Warn that the register still holds objects, so it is kept.
+	 *
+	 * @param IOutput $output  Repair output.
+	 * @param int     $objects The objects it holds.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/ori-removal/spec.md
+	 */
+	private function warnStillHolds(IOutput $output, int $objects): void {
+		$message = sprintf(
+			'RetireOriRegister: the `ori` register still holds %d object(s); KEEPING it. '
+			. 'Migrate them into decidiq first (see the decidiq `ori-adoption` importer), '
+			. 'then re-run `occ maintenance:repair`.',
+			$objects
+		);
+		$this->logger->warning($message, ['register' => self::REGISTER_SLUG, 'objects' => $objects]);
+		$output->warning($message);
+	}//end warnStillHolds()
+
+	/**
+	 * Delete the empty register, and say whether it was retired.
+	 *
+	 * @param IOutput $output     Repair output.
+	 * @param int     $registerId The register to delete.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/ori-removal/spec.md
+	 */
+	private function retire(IOutput $output, int $registerId): void {
 		if ($this->deleteRegister(registerId: $registerId) === true) {
 			$output->info('RetireOriRegister: the `ori` register was empty and has been retired.');
 			return;
 		}
 
 		$output->info('RetireOriRegister: could not retire the `ori` register; it is unchanged.');
-	}//end run()
+	}//end retire()
 
 	/**
 	 * Resolve the numeric id of the `ori` register.
@@ -186,6 +245,32 @@ class RetireOriRegister implements IRepairStep {
 	 * @return int|null Object count, or null when it cannot be established.
 	 */
 	private function countObjects(int $registerId): ?int {
+		$rows = $this->shardTables(registerId: $registerId);
+		if ($rows === null) {
+			return null;
+		}
+
+		$total = 0;
+		foreach ($rows as $row) {
+			$count = $this->shardCount(registerId: $registerId, row: $row);
+			if ($count === null) {
+				return null;
+			}
+
+			$total += $count;
+		}
+
+		return $total;
+	}//end countObjects()
+
+	/**
+	 * The shard tables carrying this register's id, or null (logged) when they cannot be listed.
+	 *
+	 * @param int $registerId The register whose objects to count.
+	 *
+	 * @return array<int, array<string, mixed>>|null The `table_name` rows, or null.
+	 */
+	private function shardTables(int $registerId): ?array {
 		// Matched on the `openregister_table_` MARKER rather than on a computed
 		// prefix: the Nextcloud table prefix is configurable per install, and a
 		// guess that misses returns zero tables — which would read as "empty"
@@ -203,31 +288,36 @@ class RetireOriRegister implements IRepairStep {
 			return null;
 		}
 
-		$total = 0;
-		foreach ($rows as $row) {
-			$table = (string)($row['table_name'] ?? '');
-			// Only ever a name this query returned, and shape-checked before it
-			// reaches SQL: the count is unparameterisable, so the identifier has
-			// to be provably ours.
-			if (preg_match('/^[A-Za-z0-9_]+openregister_table_' . $registerId . '_[0-9]+$/', $table) !== 1) {
-				continue;
-			}
+		return $rows;
+	}//end shardTables()
 
-			try {
-				$count = $this->db->executeQuery('SELECT COUNT(*) AS c FROM "' . $table . '"')->fetch();
-			} catch (Exception $e) {
-				$this->logger->warning(
-					'RetireOriRegister: could not count a shard table; keeping the register.',
-					['table' => $table, 'exception' => $e->getMessage()]
-				);
-				return null;
-			}
-
-			$total += (int)($count['c'] ?? 0);
+	/**
+	 * The objects in one shard table: 0 for a name that is not this register's shard, null (logged) when unreadable.
+	 *
+	 * @param int                  $registerId The register whose objects to count.
+	 * @param array<string, mixed> $row        The `table_name` row.
+	 *
+	 * @return int|null The count, or null when it cannot be established.
+	 */
+	private function shardCount(int $registerId, array $row): ?int {
+		$table = (string)($row['table_name'] ?? '');
+		// Only ever a name this query returned, and shape-checked before it
+		// reaches SQL: the count is unparameterisable, so the identifier has
+		// to be provably ours.
+		if (preg_match('/^[A-Za-z0-9_]+openregister_table_' . $registerId . '_[0-9]+$/', $table) !== 1) {
+			return 0;
 		}
 
-		return $total;
-	}//end countObjects()
+		try {
+			$count = $this->db->executeQuery('SELECT COUNT(*) AS c FROM "' . $table . '"')->fetch();
+		} catch (Exception $e) {
+			$context = ['table' => $table, 'exception' => $e->getMessage()];
+			$this->logger->warning('RetireOriRegister: could not count a shard table; keeping the register.', $context);
+			return null;
+		}
+
+		return (int)($count['c'] ?? 0);
+	}//end shardCount()
 
 	/**
 	 * Delete the register row.

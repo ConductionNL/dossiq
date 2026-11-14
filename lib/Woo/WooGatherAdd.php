@@ -43,9 +43,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Zaakdossier\CaseFileCollector;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseFileCollectorInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
+use OCA\Dossiq\Kernel\Contracts\ReviewWritesInterface;
+use OCA\Dossiq\Kernel\Contracts\WooGatherAddInterface;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
@@ -58,29 +60,31 @@ use Throwable;
  *
  * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-picked-results-become-documents-on-the-case-req-woo-013
  */
-class WooGatherAdd {
+class WooGatherAdd implements WooGatherAddInterface {
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRootFolder               $rootFolder  The caller's own files.
-	 * @param DocumentRecordStore       $store       Records and joins in OpenRegister.
-	 * @param CaseFileCollector         $collector   Writes copied bytes as a document on the case, with provenance.
+	 * @param DocumentRecordStoreInterface       $store       Records and joins in OpenRegister.
+	 * @param CaseFileCollectorInterface         $collector   Writes copied bytes as a document on the case, with provenance.
 	 * @param WooSources                $sources     Fetches an integriq hit.
-	 * @param CaseAccessGuard           $accessGuard Whether the caller may read the case a linked document is on.
+	 * @param CaseAccessGuardInterface           $accessGuard Whether the caller may read the case a linked document is on.
 	 * @param IL10N                     $l10n        The refusal sentences.
 	 * @param LoggerInterface           $logger      Logs a pick that failed for a reason the caller cannot fix.
 	 * @param WooCollection             $collection  Records a duplicate or unreadable pick as an exclusion.
+	 * @param ReviewWritesInterface|null $reviews    Opens an unmarked review for each added document.
 	 */
 	public function __construct(
 		private readonly IRootFolder $rootFolder,
-		private readonly DocumentRecordStore $store,
-		private readonly CaseFileCollector $collector,
+		private readonly DocumentRecordStoreInterface $store,
+		private readonly CaseFileCollectorInterface $collector,
 		private readonly WooSources $sources,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly WooCollection $collection,
+		private readonly ?ReviewWritesInterface $reviews = null,
 	) {
 	}//end __construct()
 
@@ -107,143 +111,240 @@ class WooGatherAdd {
 				continue;
 			}
 
-			$results[] = $this->addOne(caseId: $caseId, pick: $pick, terms: $terms, user: $user, custodians: $custodians);
+			$run = new WooPickRun(caseId: $caseId, terms: $terms, user: $user, custodians: $custodians, pick: $pick);
+			$results[] = $this->addOne(run: $run);
 		}
+
+		$this->openReviews(caseId: $caseId, results: $results);
 
 		return $results;
 	}//end addPicks()
 
 	/**
-	 * Add one pick.
+	 * Give each document just added an unmarked review, shared with the people on the case.
 	 *
-	 * @param string               $caseId The case uuid.
-	 * @param array<string, mixed> $pick   The pick.
-	 * @param string               $terms  The search terms.
-	 * @param IUser                $user   The caller.
-	 * @param array<int, string>   $custodians The plan's custodians.
+	 * A review that cannot be written leaves the documents added: a document
+	 * without a review reads as unmarked, the state the review would hold.
+	 *
+	 * @param string                           $caseId  The Woo case uuid.
+	 * @param array<int, array<string, mixed>> $results The answer per pick.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	private function openReviews(string $caseId, array $results): void {
+		$documentRefs = [];
+		foreach ($results as $result) {
+			if (($result['status'] ?? '') === 'added' && (string)($result['documentId'] ?? '') !== '') {
+				$documentRefs[] = (string)$result['documentId'];
+			}
+		}
+
+		if ($this->reviews === null || $documentRefs === []) {
+			return;
+		}
+
+		try {
+			$this->reviews->openReviews(caseId: $caseId, documentRefs: $documentRefs);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'WooGatherAdd: the added documents got no review',
+				['case' => $caseId, 'documents' => count($documentRefs), 'error' => $e->getMessage()]
+			);
+		}
+	}//end openReviews()
+
+	/**
+	 * Add one pick, once its custodian is one the plan names.
+	 *
+	 * @param WooPickRun $run The pick.
 	 *
 	 * @return array<string, mixed> The answer for this pick.
 	 */
-	private function addOne(string $caseId, array $pick, string $terms, IUser $user, array $custodians): array {
-		$source = (string)($pick['source'] ?? '');
-		$key = trim((string)($pick['key'] ?? ''));
-		$custodian = trim((string)($pick['custodian'] ?? ''));
-		if (in_array($custodian, $custodians, true) === false) {
-			return $this->answer(key: $key, source: $source, documentId: '', reason: 'custodian-required');
+	private function addOne(WooPickRun $run): array {
+		if (in_array($run->custodian(), $run->custodians, true) === false) {
+			return $this->answer(run: $run, reason: 'custodian-required');
 		}
 
-		$provenance = [
-			'source' => $source,
-			'sourceSystem' => $source,
-			'custodian' => $custodian,
-			'location' => (string)($pick['location'] ?? ''),
-			'terms' => $terms,
-			'searchedAt' => gmdate('Y-m-d\TH:i:s\Z'),
-			'searchedBy' => $user->getUID(),
-		];
+		$run->provenance = $this->provenance(run: $run);
 
-		try {
-			$documentId = match ($source) {
-				WooSources::SOURCE_FILES => $this->addFile(caseId: $caseId, fileId: (int)$key, provenance: $provenance, user: $user),
-				WooSources::SOURCE_CASES => $this->linkDocument(caseId: $caseId, documentId: $key, provenance: $provenance, user: $user),
-				WooSources::SOURCE_MICROSOFT365 => $this->addFetched(caseId: $caseId, handle: $key, provenance: $provenance, user: $user),
-				default => throw new WooPickRefused('unknown-source'),
-			};
-		} catch (WooPickRefused $refused) {
-			$this->recordUnreadable(caseId: $caseId, reason: $refused->getMessage(), provenance: $provenance, user: $user);
-			return $this->answer(key: $key, source: $source, documentId: '', reason: $refused->getMessage());
-		} catch (Throwable $e) {
-			$this->logger->warning('WooGatherAdd: a pick could not be added', ['case' => $caseId, 'source' => $source, 'error' => $e->getMessage()]);
-			return $this->answer(key: $key, source: $source, documentId: '', reason: 'write-failed');
-		}
-
-		return $this->answer(key: $key, source: $source, documentId: $documentId, reason: '');
+		return $this->tryAdd(run: $run);
 	}//end addOne()
+
+	/**
+	 * Where the pick was found, by whom and when.
+	 *
+	 * @param WooPickRun $run The pick.
+	 *
+	 * @return array<string, mixed> The provenance the document keeps.
+	 */
+	private function provenance(WooPickRun $run): array {
+		return [
+			'source' => $run->source(),
+			'sourceSystem' => $run->source(),
+			'custodian' => $run->custodian(),
+			'location' => $run->location(),
+			'terms' => $run->terms,
+			'searchedAt' => gmdate('Y-m-d\TH:i:s\Z'),
+			'searchedBy' => $run->user->getUID(),
+		];
+	}//end provenance()
+
+	/**
+	 * Add the pick from its source, answering a refusal or a failure in its place.
+	 *
+	 * @param WooPickRun $run The pick, its provenance set.
+	 *
+	 * @return array<string, mixed> The answer for this pick.
+	 */
+	private function tryAdd(WooPickRun $run): array {
+		try {
+			$documentId = $this->addFromSource(run: $run);
+		} catch (WooPickRefused $refused) {
+			$this->recordUnreadable(run: $run, reason: $refused->getMessage());
+			return $this->answer(run: $run, reason: $refused->getMessage());
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'WooGatherAdd: a pick could not be added',
+				['case' => $run->caseId, 'source' => $run->source(), 'error' => $e->getMessage()]
+			);
+			return $this->answer(run: $run, reason: 'write-failed');
+		}
+
+		return $this->added(run: $run, documentId: $documentId);
+	}//end tryAdd()
+
+	/**
+	 * Add the pick the way its source asks.
+	 *
+	 * @param WooPickRun $run The pick, its provenance set.
+	 *
+	 * @return string The document record uuid.
+	 *
+	 * @throws WooPickRefused When the source is unknown or the pick cannot be added.
+	 */
+	private function addFromSource(WooPickRun $run): string {
+		return match ($run->source()) {
+			WooSources::SOURCE_FILES => $this->addFile(run: $run),
+			WooSources::SOURCE_CASES => $this->linkDocument(run: $run),
+			WooSources::SOURCE_MICROSOFT365 => $this->addFetched(run: $run),
+			default => throw new WooPickRefused('unknown-source'),
+		};
+	}//end addFromSource()
 
 	/**
 	 * Copy a Nextcloud file the caller can read into the case folder.
 	 *
-	 * @param string               $caseId     The case uuid.
-	 * @param int                  $fileId     The file id, as the unified search answered it.
-	 * @param array<string, mixed> $provenance Where it was found.
-	 * @param IUser                $user       The caller.
+	 * The key is the file id, as the unified search answered it.
+	 *
+	 * @param WooPickRun $run The pick, its provenance set.
 	 *
 	 * @return string The document record uuid.
 	 *
 	 * @throws WooPickRefused When the caller cannot read the file.
 	 */
-	private function addFile(string $caseId, int $fileId, array $provenance, IUser $user): string {
+	private function addFile(WooPickRun $run): string {
+		$fileId = (int)$run->key();
 		if ($fileId <= 0) {
 			throw new WooPickRefused('not-readable');
 		}
 
-		$file = null;
-		foreach ($this->rootFolder->getUserFolder($user->getUID())->getById($fileId) as $node) {
-			if ($node instanceof File) {
-				$file = $node;
-				break;
-			}
-		}
-
+		$file = $this->userFile(user: $run->user, fileId: $fileId);
 		if ($file === null || $file->isReadable() === false) {
 			throw new WooPickRefused('not-readable');
 		}
 
-		return $this->store(caseId: $caseId, fileName: $file->getName(), content: $file->getContent(), provenance: $provenance);
+		return $this->store(run: $run, file: new WooPickedFile(fileName: $file->getName(), content: $file->getContent()));
 	}//end addFile()
+
+	/**
+	 * The first file under this id in the caller's own folder.
+	 *
+	 * @param IUser $user   The caller.
+	 * @param int   $fileId The file id.
+	 *
+	 * @return File|null The file, or null when the caller's folder holds none.
+	 */
+	private function userFile(IUser $user, int $fileId): ?File {
+		foreach ($this->rootFolder->getUserFolder($user->getUID())->getById($fileId) as $node) {
+			if ($node instanceof File) {
+				return $node;
+			}
+		}
+
+		return null;
+	}//end userFile()
 
 	/**
 	 * Fetch an integriq hit and store it in the case folder.
 	 *
-	 * @param string               $caseId     The case uuid.
-	 * @param string               $handle     integriq's fetch handle.
-	 * @param array<string, mixed> $provenance Where it was found.
-	 * @param IUser                $user       The caller.
+	 * The key is integriq's fetch handle.
+	 *
+	 * @param WooPickRun $run The pick, its provenance set.
 	 *
 	 * @return string The document record uuid.
 	 *
 	 * @throws WooPickRefused When integriq cannot hand it over.
 	 */
-	private function addFetched(string $caseId, string $handle, array $provenance, IUser $user): string {
-		$fetched = $this->sources->fetchMicrosoft365(handle: $handle, userId: $user->getUID());
+	private function addFetched(WooPickRun $run): string {
+		$fetched = $this->sources->fetchMicrosoft365(handle: $run->key(), userId: $run->user->getUID());
 		if ($fetched === null) {
 			throw new WooPickRefused('not-fetched');
 		}
 
 		return $this->store(
-			caseId: $caseId,
-			fileName: $fetched['fileName'],
-			content: $fetched['content'],
-			provenance: $provenance,
-			mimeType: $fetched['mimeType']
+			run: $run,
+			file: new WooPickedFile(fileName: $fetched['fileName'], content: $fetched['content'], mimeType: $fetched['mimeType'])
 		);
 	}//end addFetched()
 
 	/**
 	 * Link a document of another case the caller may read.
 	 *
-	 * @param string               $caseId     The case uuid.
-	 * @param string               $documentId The document record uuid.
-	 * @param array<string, mixed> $provenance Where it was found, kept on this case's join.
-	 * @param IUser                $user       The caller.
+	 * The key is the document record uuid; the provenance is kept on this
+	 * case's join.
+	 *
+	 * @param WooPickRun $run The pick, its provenance set.
 	 *
 	 * @return string The document record uuid.
 	 *
 	 * @throws WooPickRefused When the document is unknown, unreadable or already on the case.
 	 */
-	private function linkDocument(string $caseId, string $documentId, array $provenance, IUser $user): string {
+	private function linkDocument(WooPickRun $run): string {
+		$documentId = $run->key();
 		if ($documentId === '' || $this->store->findRecord(recordId: $documentId) === null) {
 			throw new WooPickRefused('not-found');
 		}
 
+		$this->assertLinkable(run: $run, documentId: $documentId);
+		$this->store->ensureJoin(caseId: $run->caseId, recordId: $documentId, extra: ['provenance' => $run->provenance]);
+
+		return $documentId;
+	}//end linkDocument()
+
+	/**
+	 * Refuse a document already on this case, or on no case the caller may read.
+	 *
+	 * Every join is read: a join to this case refuses the link even after a
+	 * readable case was found.
+	 *
+	 * @param WooPickRun $run        The pick.
+	 * @param string     $documentId The document record uuid.
+	 *
+	 * @return void
+	 *
+	 * @throws WooPickRefused `already-on-case` or `not-readable`.
+	 */
+	private function assertLinkable(WooPickRun $run, string $documentId): void {
 		$readable = false;
 		foreach ($this->store->joinsFor(recordId: $documentId) as $join) {
 			$otherCase = (string)($join['case'] ?? '');
-			if ($otherCase === $caseId) {
+			if ($otherCase === $run->caseId) {
 				throw new WooPickRefused('already-on-case');
 			}
 
-			if ($otherCase !== '' && $this->accessGuard->hasCaseReadAccess(caseId: $otherCase, user: $user) === true) {
+			if ($this->mayReadCase(user: $run->user, otherCase: $otherCase) === true) {
 				$readable = true;
 			}
 		}
@@ -251,47 +352,39 @@ class WooGatherAdd {
 		if ($readable === false) {
 			throw new WooPickRefused('not-readable');
 		}
+	}//end assertLinkable()
 
-		$this->store->ensureJoin(caseId: $caseId, recordId: $documentId, extra: ['provenance' => $provenance]);
-
-		return $documentId;
-	}//end linkDocument()
+	/**
+	 * Whether the caller may read the other case a document is on.
+	 *
+	 * @param IUser  $user      The caller.
+	 * @param string $otherCase The other case uuid, '' when the join names none.
+	 *
+	 * @return bool
+	 */
+	private function mayReadCase(IUser $user, string $otherCase): bool {
+		return $otherCase !== '' && $this->accessGuard->hasCaseReadAccess(caseId: $otherCase, user: $user) === true;
+	}//end mayReadCase()
 
 	/**
 	 * Store bytes in the case folder as a document with its provenance, unless the case holds them already.
 	 *
-	 * @param string               $caseId     The case uuid.
-	 * @param string               $fileName   The file name.
-	 * @param string               $content    The bytes.
-	 * @param array<string, mixed> $provenance Where it was found.
-	 * @param string               $mimeType   The MIME type the source gave, '' when none.
+	 * @param WooPickRun    $run  The pick, its provenance set.
+	 * @param WooPickedFile $file The bytes.
 	 *
 	 * @return string The document record uuid.
 	 *
 	 * @throws WooPickRefused   `write-failed` when the file cannot be read back or no record results.
 	 * @throws WooPickRefused   `duplicate` when the case holds the same bytes; recorded as an exclusion.
 	 */
-	private function store(string $caseId, string $fileName, string $content, array $provenance, string $mimeType = ''): string {
-		$sha256 = hash('sha256', $content);
-		$duplicateOf = $this->collection->duplicateOf(caseId: $caseId, sha256: $sha256);
-		if ($duplicateOf !== '') {
-			$this->collection->record(
-				caseId: $caseId,
-				fields: [
-					'source' => $provenance['source'],
-					'location' => $provenance['location'],
-					'fileName' => $fileName,
-					'sha256' => $sha256,
-					'duplicateOf' => $duplicateOf,
-					'custodian' => $provenance['custodian'],
-					'reason' => 'duplicate',
-					'excludedBy' => $provenance['searchedBy'],
-				]
-			);
+	private function store(WooPickRun $run, WooPickedFile $file): string {
+		$run->duplicateOf = $this->collection->duplicateOf(caseId: $run->caseId, sha256: $file->sha256());
+		if ($run->duplicateOf !== '') {
+			$this->recordDuplicate(run: $run, file: $file);
 			throw new WooPickRefused('duplicate');
 		}
 
-		$recordId = $this->collector->collect(caseId: $caseId, fileName: $fileName, content: $content, provenance: $provenance, mimeType: $mimeType);
+		$recordId = $this->collect(run: $run, file: $file);
 		if ($recordId === '') {
 			throw new WooPickRefused('write-failed');
 		}
@@ -300,61 +393,117 @@ class WooGatherAdd {
 	}//end store()
 
 	/**
-	 * Record a pick that could not be read as an exclusion, so what arrived reconciles.
+	 * Write the bytes as a document on the case, with the pick's provenance.
 	 *
-	 * @param string               $caseId     The case uuid.
-	 * @param string               $reason     The pick's refusal.
-	 * @param array<string, mixed> $provenance Where it was found.
-	 * @param IUser                $user       The caller.
+	 * @param WooPickRun    $run  The pick, its provenance set.
+	 * @param WooPickedFile $file The bytes.
+	 *
+	 * @return string The document record uuid, '' when no record results.
+	 */
+	private function collect(WooPickRun $run, WooPickedFile $file): string {
+		return $this->collector->collect(
+			caseId: $run->caseId,
+			fileName: $file->fileName,
+			content: $file->content,
+			provenance: $run->provenance,
+			mimeType: $file->mimeType
+		);
+	}//end collect()
+
+	/**
+	 * Record bytes the case already holds as a duplicate exclusion.
+	 *
+	 * @param WooPickRun    $run  The pick, the duplicate it is of set.
+	 * @param WooPickedFile $file The bytes.
 	 *
 	 * @return void
 	 */
-	private function recordUnreadable(string $caseId, string $reason, array $provenance, IUser $user): void {
+	private function recordDuplicate(WooPickRun $run, WooPickedFile $file): void {
+		$this->collection->record(
+			caseId: $run->caseId,
+			fields: [
+				'source' => $run->provenance['source'],
+				'location' => $run->provenance['location'],
+				'fileName' => $file->fileName,
+				'sha256' => $file->sha256(),
+				'duplicateOf' => $run->duplicateOf,
+				'custodian' => $run->provenance['custodian'],
+				'reason' => 'duplicate',
+				'excludedBy' => $run->provenance['searchedBy'],
+			]
+		);
+	}//end recordDuplicate()
+
+	/**
+	 * Record a pick that could not be read as an exclusion, so what arrived reconciles.
+	 *
+	 * @param WooPickRun $run    The pick, its provenance set.
+	 * @param string     $reason The pick's refusal.
+	 *
+	 * @return void
+	 */
+	private function recordUnreadable(WooPickRun $run, string $reason): void {
 		if (in_array($reason, ['not-readable', 'not-fetched'], true) === false) {
 			return;
 		}
 
 		$this->collection->record(
-			caseId: $caseId,
+			caseId: $run->caseId,
 			fields: [
-				'source' => $provenance['source'],
-				'location' => $provenance['location'],
-				'custodian' => $provenance['custodian'],
+				'source' => $run->provenance['source'],
+				'location' => $run->provenance['location'],
+				'custodian' => $run->provenance['custodian'],
 				'reason' => 'unreadable',
-				'excludedBy' => $user->getUID(),
+				'excludedBy' => $run->user->getUID(),
 			]
 		);
 	}//end recordUnreadable()
 
 	/**
-	 * One pick's answer.
+	 * The answer of a pick that was added.
 	 *
-	 * @param string $key        The pick's key.
-	 * @param string $source     The pick's source.
-	 * @param string $documentId The document uuid, '' when refused.
-	 * @param string $reason     The refusal code, '' when added.
+	 * @param WooPickRun $run        The pick.
+	 * @param string     $documentId The document uuid.
 	 *
 	 * @return array<string, mixed> The answer.
 	 */
-	private function answer(string $key, string $source, string $documentId, string $reason): array {
-		$status = 'refused';
-		if ($reason === '') {
-			$status = 'added';
-		}
+	private function added(WooPickRun $run, string $documentId): array {
+		return array_replace($this->answer(run: $run, reason: ''), ['documentId' => $documentId]);
+	}//end added()
 
-		if ($reason === 'duplicate') {
-			$status = 'excluded';
-		}
-
+	/**
+	 * One pick's answer, without a document unless added() sets it.
+	 *
+	 * @param WooPickRun $run    The pick.
+	 * @param string     $reason The refusal code, '' when added.
+	 *
+	 * @return array<string, mixed> The answer.
+	 */
+	private function answer(WooPickRun $run, string $reason): array {
 		return [
-			'key' => $key,
-			'source' => $source,
-			'status' => $status,
-			'documentId' => $documentId,
+			'key' => $run->key(),
+			'source' => $run->source(),
+			'status' => $this->status(reason: $reason),
+			'documentId' => '',
 			'reason' => $reason,
 			'message' => $this->sentence(reason: $reason),
 		];
 	}//end answer()
+
+	/**
+	 * The status a pick ends in: added, excluded as a duplicate, or refused.
+	 *
+	 * @param string $reason The refusal code, '' when added.
+	 *
+	 * @return string
+	 */
+	private function status(string $reason): string {
+		return match ($reason) {
+			'' => 'added',
+			'duplicate' => 'excluded',
+			default => 'refused',
+		};
+	}//end status()
 
 	/**
 	 * The sentence a refusal shows.

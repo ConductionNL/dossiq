@@ -114,12 +114,12 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		title() {
 			return this.role ? t('dossiq', 'Edit role') : t('dossiq', 'New role')
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
 				{ id: 'bestuurder', label: t('dossiq', 'Director') },
@@ -130,7 +130,7 @@ export default {
 			]
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
 			return (
 				this.typeOptions.find((o) => o.id === this.form.type)
@@ -138,7 +138,7 @@ export default {
 			)
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		selectedParent() {
 			return (
 				this.parentOptions.find((o) => o.id === this.form.parentRole)
@@ -149,7 +149,7 @@ export default {
 
 	methods: {
 		t,
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		validate() {
 			const errs = {}
 			if (!this.form.name) errs.name = t('dossiq', 'Naam is required')
@@ -157,7 +157,7 @@ export default {
 			return Object.keys(errs).length === 0
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		save() {
 			if (!this.validate()) return
 			this.$emit('save', { ...this.form })

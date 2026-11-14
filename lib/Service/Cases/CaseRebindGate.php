@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use OCP\IGroupManager;
 /**
  * What refuses a rebind, and what the case still has to answer.
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseRebindGate {
 
@@ -91,7 +91,7 @@ class CaseRebindGate {
 	 *
 	 * @return boolean True when they may.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function mayRebind(string $uid): bool {
 		if ($uid === '') {
@@ -111,7 +111,7 @@ class CaseRebindGate {
 	 *
 	 * @throws RefusedException When the caller may not rebind, or named no reason.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function assertMayRebind(string $actorUid, string $reason): string {
 		if ($this->mayRebind(uid: $actorUid) === false) {
@@ -145,7 +145,7 @@ class CaseRebindGate {
 	 *
 	 * @throws RefusedException When the target will not do.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function assertTarget(string $caseId, array $case, string $targetCaseTypeId): void {
 		if (trim($targetCaseTypeId) === '') {
@@ -156,6 +156,24 @@ class CaseRebindGate {
 			);
 		}
 
+		$this->assertNotOwnType(case: $case, targetCaseTypeId: $targetCaseTypeId);
+
+		$this->assertTargetPublished(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId);
+	}//end assertTarget()
+
+	/**
+	 * Refuse a target that is the case's own type.
+	 *
+	 * @param array<string, mixed> $case             The case as read.
+	 * @param string               $targetCaseTypeId The target.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the case is already on the target.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function assertNotOwnType(array $case, string $targetCaseTypeId): void {
 		if ($this->store->referenceId(value: ($case['caseType'] ?? '')) === $targetCaseTypeId) {
 			throw new RefusedException(
 				rule: 'rebind-to-itself',
@@ -163,7 +181,45 @@ class CaseRebindGate {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end assertNotOwnType()
 
+	/**
+	 * Refuse a target that cannot be read or is still a draft.
+	 *
+	 * @param string $caseId           The case, for the message.
+	 * @param string $targetCaseTypeId The target.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the target will not do.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function assertTargetPublished(string $caseId, string $targetCaseTypeId): void {
+		$target = $this->readableTarget(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId);
+
+		if (($target['isDraft'] ?? false) === true) {
+			throw new RefusedException(
+				rule: 'rebind-target-is-a-draft',
+				sentence: 'That case type is still a draft. Publish it before moving a running case onto it.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertTargetPublished()
+
+	/**
+	 * The target case type, refused when it cannot be read.
+	 *
+	 * @param string $caseId           The case, for the message.
+	 * @param string $targetCaseTypeId The target.
+	 *
+	 * @return array<string, mixed> The target case type.
+	 *
+	 * @throws RefusedException When the target cannot be read.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function readableTarget(string $caseId, string $targetCaseTypeId): array {
 		$target = $this->store->readCaseType(caseTypeId: $targetCaseTypeId);
 		if ($target === []) {
 			throw new RefusedException(
@@ -173,14 +229,8 @@ class CaseRebindGate {
 			);
 		}
 
-		if (($target['isDraft'] ?? false) === true) {
-			throw new RefusedException(
-				rule: 'rebind-target-is-a-draft',
-				sentence: 'That case type is still a draft. Publish it before moving a running case onto it.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-	}//end assertTarget()
+		return $target;
+	}//end readableTarget()
 
 	/**
 	 * Refuse a landing status that is not the target's own.
@@ -197,7 +247,7 @@ class CaseRebindGate {
 	 *
 	 * @throws RefusedException When the status is absent or belongs elsewhere.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function assertStatus(string $targetCaseTypeId, string $targetStatusId): void {
 		if (trim($targetStatusId) === '') {
@@ -238,21 +288,7 @@ class CaseRebindGate {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function assertDropConfirmed(array $dropped, array $confirmed): void {
-		$normalise = static function (array $names): array {
-			$keys = [];
-			foreach ($names as $name) {
-				if (is_scalar($name) === true && trim((string)$name) !== '') {
-					$keys[] = mb_strtolower(trim((string)$name));
-				}
-			}
-
-			$keys = array_values(array_unique($keys));
-			sort($keys);
-
-			return $keys;
-		};
-
-		if ($normalise($dropped) === $normalise($confirmed)) {
+		if (self::normalisedNames(names: $dropped) === self::normalisedNames(names: $confirmed)) {
 			return;
 		}
 
@@ -270,6 +306,27 @@ class CaseRebindGate {
 	}//end assertDropConfirmed()
 
 	/**
+	 * The non-blank names, trimmed, lowercased, distinct and sorted.
+	 *
+	 * @param array<int, mixed> $names The names.
+	 *
+	 * @return array<int, string> The comparable names.
+	 */
+	private static function normalisedNames(array $names): array {
+		$keys = [];
+		foreach ($names as $name) {
+			if (is_scalar($name) === true && trim((string)$name) !== '') {
+				$keys[] = mb_strtolower(trim((string)$name));
+			}
+		}
+
+		$keys = array_values(array_unique($keys));
+		sort($keys);
+
+		return $keys;
+	}//end normalisedNames()
+
+	/**
 	 * Refuse a rebind the case does not carry the target's required fields for.
 	 *
 	 * @param array<int, string> $missing The fields the target requires and the case lacks.
@@ -278,7 +335,7 @@ class CaseRebindGate {
 	 *
 	 * @throws RefusedException When anything is missing.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function assertNothingMissing(array $missing): void {
 		if ($missing === []) {
@@ -311,7 +368,7 @@ class CaseRebindGate {
 	 *
 	 * @return array{carried: bool, note: string} The verdict.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function resultCompatibility(array $case, string $targetCaseTypeId): array {
 		$resultId = $this->store->referenceId(value: ($case['result'] ?? ''));

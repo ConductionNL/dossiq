@@ -172,6 +172,10 @@ describe('the Recently opened tile', () => {
 			translateLabel: (label) => label,
 		}
 		table.secondaryFieldText = CnDataTable.methods.secondaryFieldText.bind(table)
+		// Since 2.129.0 `secondaryValue` reads the line through `cellLineValue`.
+		if (CnDataTable.methods.cellLineValue) {
+			table.cellLineValue = CnDataTable.methods.cellLineValue.bind(table)
+		}
 		expect(
 			CnDataTable.methods.secondaryValue.call(
 				table,

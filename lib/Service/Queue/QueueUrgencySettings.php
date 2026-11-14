@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue;
 
+use OCA\Dossiq\Kernel\Contracts\QueueUrgencySettingsInterface;
 use OCA\Dossiq\Service\SettingsService;
 
 /**
@@ -35,12 +36,14 @@ use OCA\Dossiq\Service\SettingsService;
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
-class QueueUrgencySettings {
+class QueueUrgencySettings implements QueueUrgencySettingsInterface {
 
 	public const KEY_CRITICAL_DAYS = 'queue_critical_days';
 	public const KEY_WARNING_DAYS = 'queue_warning_days';
 	public const KEY_PRIORITY_WEIGHT = 'queue_priority_weight';
 	public const KEY_IDLE_WEIGHT = 'queue_idle_weight';
+	public const KEY_IN_SIGHT_DAYS = 'queue_in_sight_days';
+	public const KEY_RESIDENT_WAIT_WEIGHT = 'queue_resident_wait_weight';
 
 	/**
 	 * Constructor.
@@ -60,11 +63,16 @@ class QueueUrgencySettings {
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function profile(): UrgencyProfile {
-		return new UrgencyProfile(
+		$profile = new UrgencyProfile(
 			criticalDays: $this->settings->getConfigValue(self::KEY_CRITICAL_DAYS, ''),
 			warningDays: $this->settings->getConfigValue(self::KEY_WARNING_DAYS, ''),
 			priorityWeight: $this->settings->getConfigValue(self::KEY_PRIORITY_WEIGHT, ''),
 			idleWeight: $this->settings->getConfigValue(self::KEY_IDLE_WEIGHT, ''),
+		);
+
+		return $profile->withQueueExtras(
+			inSightDays: $this->settings->getConfigValue(self::KEY_IN_SIGHT_DAYS, ''),
+			residentWaitWeight: $this->settings->getConfigValue(self::KEY_RESIDENT_WAIT_WEIGHT, ''),
 		);
 	}//end profile()
 }//end class

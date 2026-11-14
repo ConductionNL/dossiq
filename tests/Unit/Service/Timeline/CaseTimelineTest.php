@@ -41,6 +41,8 @@ use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -98,6 +100,13 @@ class FakeTimelineWriter {
 	public bool $throws = false;
 
 	/**
+	 * Set when a write to many cases should write nothing.
+	 *
+	 * @var boolean
+	 */
+	public bool $manyWritesNothing = false;
+
+	/**
 	 * Write one entry.
 	 *
 	 * @param mixed                $object The object it hangs on.
@@ -126,6 +135,9 @@ class FakeTimelineWriter {
 	public function writeToMany(array $objects, array $data): array {
 		$this->writtenToMany[] = $objects;
 		$this->written[] = $data;
+		if ($this->manyWritesNothing === true) {
+			return [];
+		}
 
 		$entries = [];
 		foreach ($objects as $index => $object) {
@@ -229,6 +241,13 @@ class FakeTimelineObjectService {
 	public array $unreadable = [];
 
 	/**
+	 * Ids whose read throws.
+	 *
+	 * @var array<int, string>
+	 */
+	public array $throwing = [];
+
+	/**
 	 * Whether the request has no Nextcloud user, as a portal request has not.
 	 * OpenRegister's RBAC then answers nothing for a scoped read.
 	 *
@@ -242,6 +261,36 @@ class FakeTimelineObjectService {
 	 * @var array<int, array{rbac: bool, multitenancy: bool}>
 	 */
 	public array $scopes = [];
+
+	/**
+	 * Whether each find ran inside runAsSystem, in order.
+	 *
+	 * @var array<int, bool>
+	 */
+	public array $findsAsSystem = [];
+
+	/**
+	 * Whether the current call runs as the system.
+	 *
+	 * @var boolean
+	 */
+	private bool $inSystem = false;
+
+	/**
+	 * Run an operation as the system, as OpenRegister's ObjectService does.
+	 *
+	 * @param callable $operation The operation.
+	 *
+	 * @return mixed What it returns.
+	 */
+	public function runAsSystem(callable $operation): mixed {
+		$this->inSystem = true;
+		try {
+			return $operation();
+		} finally {
+			$this->inSystem = false;
+		}
+	}//end runAsSystem()
 
 	/**
 	 * Find one object.
@@ -262,6 +311,11 @@ class FakeTimelineObjectService {
 		bool $_multitenancy = true,
 	): ?object {
 		$this->scopes[] = ['rbac' => $_rbac, 'multitenancy' => $_multitenancy];
+		$this->findsAsSystem[] = $this->inSystem;
+		if (in_array($id, $this->throwing, true) === true) {
+			throw new RuntimeException('the case cannot be read: ' . $id);
+		}
+
 		if (in_array($id, $this->unreadable, true) === true) {
 			return null;
 		}
@@ -336,6 +390,9 @@ class CaseTimelineTest extends TestCase {
 	 * @param boolean $openRegister   Whether OpenRegister reads as available.
 	 * @param boolean $writerResolves Whether the container answers for the writer.
 	 * @param string  $caseSchema     The configured case schema, '' for unconfigured.
+	 * @param IUserSession|null $userSession The session, null for none.
+	 * @param boolean $objectService  Whether the settings answer an object service.
+	 * @param string  $register       The configured register, '' for unconfigured.
 	 *
 	 * @return CaseTimeline The seam under test.
 	 */
@@ -343,14 +400,17 @@ class CaseTimelineTest extends TestCase {
 		bool $openRegister = true,
 		bool $writerResolves = true,
 		string $caseSchema = 'case',
+		?IUserSession $userSession = null,
+		bool $objectService = true,
+		string $register = 'dossiq',
 	): CaseTimeline {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('isOpenRegisterAvailable')->willReturn($openRegister);
-		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getObjectService')->willReturn($objectService === true ? $this->objects : null);
 		$settings->method('getConfigValue')->willReturnCallback(
-			static function (string $key) use ($caseSchema): string {
+			static function (string $key) use ($caseSchema, $register): string {
 				return match ($key) {
-					'register' => 'dossiq',
+					'register' => $register,
 					'case_schema' => $caseSchema,
 					default => '',
 				};
@@ -381,8 +441,60 @@ class CaseTimelineTest extends TestCase {
 			settings: $settings,
 			container: $container,
 			logger: $this->logger,
+			userSession: $userSession,
 		);
 	}//end timeline()
+
+	/**
+	 * A session with or without a signed-in user.
+	 *
+	 * @param boolean $signedIn Whether somebody is signed in.
+	 *
+	 * @return IUserSession The session.
+	 */
+	private function session(bool $signedIn): IUserSession {
+		$session = $this->createMock(IUserSession::class);
+		$session->method('getUser')->willReturn($signedIn === true ? $this->createMock(IUser::class) : null);
+
+		return $session;
+	}//end session()
+
+	/**
+	 * An entry written with nobody signed in (an install, an import, cron)
+	 * reads the case as the system, so OpenRegister does not refuse it to
+	 * "Anonymous" (rehearsal R2: twelve entries lost during the example set).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-read-or-write-with-nobody-signed-in-runs-as-the-system-req-cm-83
+	 */
+	public function testAnEntryWrittenWithoutAUserReadsTheCaseAsTheSystem(): void {
+		$id = $this->timeline(userSession: $this->session(signedIn: false))->record(
+			caseId: 'case-1',
+			kind: TimelineKinds::CONTACTMOMENT,
+			message: 'Gebeld',
+		);
+
+		$this->assertNotSame('', $id);
+		$this->assertSame([true], $this->objects->findsAsSystem);
+	}//end testAnEntryWrittenWithoutAUserReadsTheCaseAsTheSystem()
+
+	/**
+	 * Control: a signed-in handler writes with their own rights.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-read-or-write-with-nobody-signed-in-runs-as-the-system-req-cm-83
+	 */
+	public function testASignedInHandlerIsNeverElevated(): void {
+		$this->timeline(userSession: $this->session(signedIn: true))->record(
+			caseId: 'case-1',
+			kind: TimelineKinds::CONTACTMOMENT,
+			message: 'Gebeld',
+		);
+
+		$this->assertSame([false], $this->objects->findsAsSystem);
+	}//end testASignedInHandlerIsNeverElevated()
 
 	/**
 	 * The happy path carries the kind, the visibility and the fields through.
@@ -506,6 +618,91 @@ class CaseTimelineTest extends TestCase {
 		$this->assertSame(['case-3'], $named);
 		$this->assertCount(2, $this->writer->writtenToMany[0]);
 	}//end testAnUnreadableRelatedCaseIsLoggedByName()
+
+	/**
+	 * A related case whose read throws is treated like one that cannot be
+	 * read: named in the log and left out, while the entry still lands on the
+	 * case and on the related cases that could be read.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-history-surface/spec.md
+	 */
+	public function testARelatedCaseWhoseReadThrowsIsLoggedAndLeftOut(): void {
+		$this->objects->throwing = ['case-3'];
+
+		$named = [];
+		$this->logger->method('warning')->willReturnCallback(
+			static function (string $message, array $context = []) use (&$named): void {
+				if (isset($context['case']) === true) {
+					$named[] = $context['case'];
+				}
+			}
+		);
+
+		$id = $this->timeline()->record(
+			caseId: 'case-1',
+			kind: TimelineKinds::CONTACTMOMENT,
+			message: 'Gebeld',
+			relatedCaseIds: ['case-2', 'case-3'],
+		);
+
+		$this->assertSame('entry-many-0', $id);
+		$this->assertSame(['case-3'], $named);
+		$this->assertSame(
+			['case-1', 'case-2'],
+			array_map(static fn (object $object): string => $object->uuid, $this->writer->writtenToMany[0])
+		);
+	}//end testARelatedCaseWhoseReadThrowsIsLoggedAndLeftOut()
+
+	/**
+	 * A write to many cases that writes nothing answers '' rather than an id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-history-surface/spec.md
+	 */
+	public function testAManyWriteThatWritesNothingAnswersNothing(): void {
+		$this->writer->manyWritesNothing = true;
+
+		$id = $this->timeline()->record(
+			caseId: 'case-1',
+			kind: TimelineKinds::CONTACTMOMENT,
+			message: 'Gebeld',
+			relatedCaseIds: ['case-2'],
+		);
+
+		$this->assertSame('', $id);
+		$this->assertCount(1, $this->writer->writtenToMany);
+	}//end testAManyWriteThatWritesNothingAnswersNothing()
+
+	/**
+	 * Without an object service, or without a register, nothing is read or
+	 * written, and the missing configuration is logged rather than thrown.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-history-surface/spec.md
+	 */
+	public function testAMissingObjectServiceOrRegisterWritesNothing(): void {
+		$this->logger->expects($this->exactly(2))->method('warning');
+
+		$withoutService = $this->timeline(objectService: false)->record(
+			caseId: 'case-1',
+			kind: TimelineKinds::CONTACTMOMENT,
+			message: 'Gebeld',
+		);
+		$withoutRegister = $this->timeline(register: '')->record(
+			caseId: 'case-1',
+			kind: TimelineKinds::CONTACTMOMENT,
+			message: 'Gebeld',
+		);
+
+		$this->assertSame('', $withoutService);
+		$this->assertSame('', $withoutRegister);
+		$this->assertSame([], $this->objects->scopes);
+		$this->assertSame([], $this->writer->written);
+	}//end testAMissingObjectServiceOrRegisterWritesNothing()
 
 	/**
 	 * An instance whose OpenRegister has no timeline writes nothing, answers
@@ -862,6 +1059,10 @@ class CaseTimelineTest extends TestCase {
 			TimelineKinds::DATA_SUBJECT_REQUEST,
 			TimelineKinds::APPLICANT_RESPONSE,
 			TimelineKinds::STOPPING_RULE_MET,
+			TimelineKinds::DOCUMENT,
+			TimelineKinds::MESSAGE,
+			TimelineKinds::TASK,
+			TimelineKinds::ASSIGNMENT,
 		];
 
 		foreach ($named as $slug) {

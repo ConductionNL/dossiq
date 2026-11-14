@@ -168,6 +168,19 @@ describe('the shared screen is what renders', () => {
 	})
 })
 
+describe('every rule reads as words', () => {
+	it('names a rule its own list does not cover from the app\'s notification labels, never as its key', async () => {
+		fetchPreferences.mockResolvedValue([
+			{ schema: 'case', schemaTitle: 'Case', notification: 'caseDeclaredMajor', enabled: true, source: 'app-default' },
+			{ schema: 'case', schemaTitle: 'Case', notification: 'caseMovedForItsFollowers', enabled: true, source: 'app-default' },
+		])
+		const wrapper = await mountSettings()
+
+		const labels = wrapper.findComponent(SharedScreenStub).props('events').map((event) => event.label)
+		expect(labels).toEqual(['A case is declared major', 'A case I follow changes status'])
+	})
+})
+
 describe('a change goes back to the platform', () => {
 	it('writes the notification the row stands for', async () => {
 		const wrapper = await mountSettings()
@@ -184,6 +197,37 @@ describe('a change goes back to the platform', () => {
 			schema: 'workDigest',
 			notification: 'workDigestReady',
 			enabled: true,
+			scope: null,
+		})
+	})
+
+	it('switches e-mail on for one notification and keeps its Nextcloud channel', async () => {
+		fetchPreferences.mockResolvedValue([
+			{
+				schema: 'case',
+				notification: 'caseAssigned',
+				enabled: true,
+				channels: ['nc-notification'],
+				availableChannels: ['nc-notification', 'email'],
+				optInChannels: ['email'],
+				source: 'schema-default',
+			},
+		])
+		const wrapper = await mountSettings()
+
+		wrapper.findComponent(SharedScreenStub).vm.$emit('change', {
+			eventId: 'case-caseAssigned',
+			channelId: 'email',
+			scope: '',
+			value: true,
+		})
+		await flushPromises()
+
+		expect(savePreference).toHaveBeenCalledWith({
+			schema: 'case',
+			notification: 'caseAssigned',
+			enabled: true,
+			channels: ['nc-notification', 'email'],
 			scope: null,
 		})
 	})

@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
+use OCA\Dossiq\Kernel\Contracts\PortalSubmissionLedgerInterface;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use OCP\IMemcache;
@@ -45,12 +46,7 @@ use OCP\IMemcache;
  *
  * @spec openspec/changes/portal-submission-is-made-once/specs/portal-contribution/spec.md#requirement-a-repeated-portal-submission-returns-the-first-ones-answer-req-psm-001
  */
-class PortalSubmissionLedger {
-
-	/**
-	 * The header the key arrives in.
-	 */
-	public const HEADER = 'Idempotency-Key';
+class PortalSubmissionLedger implements PortalSubmissionLedgerInterface {
 
 	/**
 	 * What a key may look like; anything else is treated as no key.

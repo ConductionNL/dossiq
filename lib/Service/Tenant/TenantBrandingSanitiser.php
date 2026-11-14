@@ -101,31 +101,9 @@ class TenantBrandingSanitiser {
 	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function sanitiseBranding(array $branding): array {
-		$out = [];
-		if (isset($branding['logo']) === true) {
-			// Fail closed: when the upload carries MIME/size metadata, enforce
-			// the logo MIME-type + 5 MB guard before accepting it.
-			// validateLogoUpload() throws InvalidArgumentException on a
-			// disallowed MIME type or an oversized file.
-			$logoMime = (string)($branding['logoMimeType'] ?? '');
-			$logoBytes = (int)($branding['logoBytes'] ?? 0);
-			if ($logoMime !== '' || $logoBytes > 0) {
-				$this->validateLogoUpload(mimeType: $logoMime, bytes: $logoBytes);
-			}
-
-			$out['logo'] = (string)$branding['logo'];
-		}
-
-		foreach (['primaryColor', 'secondaryColor'] as $colorField) {
-			if (isset($branding[$colorField]) === true) {
-				$val = (string)$branding[$colorField];
-				if ($this->isHexColor(val: $val) === false) {
-					throw new InvalidArgumentException('Invalid hex color for ' . $colorField . ': ' . $val);
-				}
-
-				$out[$colorField] = $val;
-			}
-		}
+		$out  = [];
+		$out += $this->sanitisedLogo(branding: $branding);
+		$out += $this->sanitisedColors(branding: $branding);
 
 		if (isset($branding['fontFamily']) === true) {
 			$out['fontFamily'] = (string)$branding['fontFamily'];
@@ -139,6 +117,58 @@ class TenantBrandingSanitiser {
 	}//end sanitiseBranding()
 
 	/**
+	 * The branding's logo, once the upload passed the MIME/size guard.
+	 *
+	 * @param array<string,mixed> $branding Input.
+	 *
+	 * @return array<string,string> The `logo` entry, or empty when none is given.
+	 *
+	 * @throws InvalidArgumentException When the logo upload fails the MIME/size guard.
+	 */
+	private function sanitisedLogo(array $branding): array {
+		if (isset($branding['logo']) === false) {
+			return [];
+		}
+
+		// Fail closed: when the upload carries MIME/size metadata, enforce
+		// the logo MIME-type + 5 MB guard before accepting it.
+		// validateLogoUpload() throws InvalidArgumentException on a
+		// disallowed MIME type or an oversized file.
+		$logoMime = (string)($branding['logoMimeType'] ?? '');
+		$logoBytes = (int)($branding['logoBytes'] ?? 0);
+		if ($logoMime !== '' || $logoBytes > 0) {
+			$this->validateLogoUpload(mimeType: $logoMime, bytes: $logoBytes);
+		}
+
+		return ['logo' => (string)$branding['logo']];
+	}//end sanitisedLogo()
+
+	/**
+	 * The branding's primary and secondary colors, each a valid hex color.
+	 *
+	 * @param array<string,mixed> $branding Input.
+	 *
+	 * @return array<string,string> The color entries given.
+	 *
+	 * @throws InvalidArgumentException When a hex color is invalid.
+	 */
+	private function sanitisedColors(array $branding): array {
+		$out = [];
+		foreach (['primaryColor', 'secondaryColor'] as $colorField) {
+			if (isset($branding[$colorField]) === true) {
+				$val = (string)$branding[$colorField];
+				if ($this->isHexColor(val: $val) === false) {
+					throw new InvalidArgumentException('Invalid hex color for ' . $colorField . ': ' . $val);
+				}
+
+				$out[$colorField] = $val;
+			}
+		}
+
+		return $out;
+	}//end sanitisedColors()
+
+	/**
 	 * Whitelist-based CSS sanitiser. Strips any rule with a property not in
 	 * the whitelist or a value containing `url(`, `@import`, `expression`.
 	 *
@@ -150,44 +180,75 @@ class TenantBrandingSanitiser {
 	 */
 	public function sanitiseCustomCss(string $css): string {
 		// Drop dangerous tokens entirely.
+		if (self::hasDangerousToken(css: $css) === true) {
+			return '';
+		}
+
+		$kept = array_filter(
+			array_map(static fn (string $line): string => self::keptDeclaration(line: $line), self::declarationsOf(css: $css)),
+			static fn (string $declaration): bool => $declaration !== ''
+		);
+
+		if ($kept === []) {
+			return '';
+		}
+
+		return implode('; ', $kept) . ';';
+	}//end sanitiseCustomCss()
+
+	/**
+	 * Whether the sheet holds any of the tokens that discard it whole, in any case.
+	 *
+	 * @param string $css Raw CSS.
+	 *
+	 * @return bool True when a dangerous token occurs.
+	 */
+	private static function hasDangerousToken(string $css): bool {
 		foreach (self::CSS_DANGEROUS_TOKENS as $bad) {
 			if (stripos($css, $bad) !== false) {
-				return '';
+				return true;
 			}
 		}
 
+		return false;
+	}//end hasDangerousToken()
+
+	/**
+	 * The sheet split into declarations on newlines and semicolons.
+	 *
+	 * @param string $css Raw CSS.
+	 *
+	 * @return array<int, string> The pieces.
+	 */
+	private static function declarationsOf(string $css): array {
 		$lines = preg_split('/[\n;]/', $css);
 		if ($lines === false) {
-			$lines = [];
+			return [];
 		}
 
-		$kept = [];
-		foreach ($lines as $line) {
-			$trim = trim($line);
-			if ($trim === '') {
-				continue;
-			}
+		return $lines;
+	}//end declarationsOf()
 
-			$parts = explode(':', $trim, 2);
-			if (count($parts) !== 2) {
-				continue;
-			}
-
-			$prop = trim(strtolower($parts[0]));
-			$val = trim($parts[1]);
-			if (in_array($prop, self::CSS_PROPERTY_WHITELIST, true) === false) {
-				continue;
-			}
-
-			$kept[] = $prop . ': ' . $val;
+	/**
+	 * One declaration as kept, `property: value` with the property lower-cased, or '' when dropped.
+	 *
+	 * @param string $line One piece of the sheet.
+	 *
+	 * @return string The declaration, or '' when it is empty, has no value or names a property not allowed.
+	 */
+	private static function keptDeclaration(string $line): string {
+		$parts = explode(':', trim($line), 2);
+		if (count($parts) !== 2) {
+			return '';
 		}
 
-		if (count($kept) > 0) {
-			return implode('; ', $kept) . ';';
+		$prop = trim(strtolower($parts[0]));
+		if (in_array($prop, self::CSS_PROPERTY_WHITELIST, true) === false) {
+			return '';
 		}
 
-		return '';
-	}//end sanitiseCustomCss()
+		return $prop . ': ' . trim($parts[1]);
+	}//end keptDeclaration()
 
 	/**
 	 * Validate that an uploaded logo passes the MIME + size guard.

@@ -1,0 +1,1 @@
+- [x] 1.1 config (tests/vitest/caseListsAsBoardRows.spec.js)

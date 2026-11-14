@@ -7,12 +7,13 @@
 		:registry="registry"
 		:pageTypes="pageTypes"
 		:formatters="formatters"
-		:cellWidgets="cellWidgets"
 		appId="dossiq"
 		:translate="translateForApp"
 		:notificationLabels="notificationLabels"
 		:permissions="permissions"
-		:supportDialog="supportDialog">
+		:supportDialog="supportDialog"
+		:userSettingsSections="userSettingsSections"
+		:userSettingsNextcloudLinks="userSettingsNextcloudLinks">
 		<!--
 			Host-mounted object sidebar (decidesk pattern). CnAppRoot
 			suppresses its own auto-mounted CnObjectSidebar because this
@@ -23,7 +24,7 @@
 			(shared with this slot via CnAppRoot's ancestor-aware
 			provide); we bind those tabs straight through.
 			`:use-registry="false"` keeps the manifest `component:`-based
-			tabs (CaseTasksTab / CaseEmailTab / …) instead of the
+			tabs (CaseTimelineTab / …) instead of the
 			integration-registry tabs.
 
 			`objectSchema` and `objectData` are the RESOLVED schema and record,
@@ -40,20 +41,12 @@
 		<!--
 			The user settings dialog. Every per-person preference lives here;
 			dossiq has no Nextcloud personal settings page (Ruben, 11 Oct 2026).
-			Filling this slot drops CnAppRoot's fallback sections, so
-			UserSettings repeats credentials and gets the walkthrough replay
-			from walkthroughSettings() below.
+			The app's sections join the library's credentials, guided tour and
+			integrations sections; the library's notification section stays out,
+			because dossiq's Notices section is the screen over those preferences.
 		-->
-		<template #user-settings>
-			<UserSettings
-				:manifest="manifest"
-				:walkthrough="walkthroughSettings()"
-				@continueWalkthrough="
-					appRoot() && appRoot().continueWalkthroughFromSettings()
-				"
-				@restartWalkthrough="
-					appRoot() && appRoot().restartWalkthroughFromSettings()
-				" />
+		<template #user-settings-sections>
+			<UserSettings />
 		</template>
 		<template #sidebar="{ pageSidebarComponent }">
 			<CnObjectSidebar
@@ -91,8 +84,7 @@ import { supportDialogForThisLoad } from './utils/onboardingOrder.js'
 import { currentPermissions } from './utils/permissions.js'
 
 /**
- * The location hash that opens the user settings dialog. The "My case types"
- * caption's pencil links here (ManifestController::USER_SETTINGS_HREF).
+ * The location hash that opens the user settings dialog.
  */
 const USER_SETTINGS_HASH = '#user-settings'
 
@@ -104,7 +96,7 @@ export default {
 		UserSettings,
 	},
 
-	/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
+	/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 	provide() {
 		return {
 			// Provide/inject channel for index pages that auto-mount sidebar
@@ -151,18 +143,6 @@ export default {
 			type: Object,
 			default: () => ({}),
 		},
-
-		/**
-		 * Cell-widget registry — forwarded to CnAppRoot as `cnCellWidgets`.
-		 * Resolves `pages[].config.columns[].widget` ids to components on
-		 * index pages (see src/services/cellWidgets.js). A formatter shapes a
-		 * value; a cell widget is what a column needs when the cell carries a
-		 * STATE the reader has to see, such as an overdue deadline.
-		 */
-		cellWidgets: {
-			type: Object,
-			default: () => ({}),
-		},
 	},
 
 	data() {
@@ -205,7 +185,67 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
+		/**
+		 * The user settings dialog's sections, in order: the library's Views in
+		 * my menu first (board DqPersoonlijkeInstellingen), the app's own, then
+		 * the library's credentials, guided tour and integrations.
+		 *
+		 * @return {Array<string>} The section keys CnAppRoot draws.
+		 * @spec openspec/specs/personal-settings-surface/spec.md#requirement-the-personal-settings-open-with-the-views-in-my-menu
+		 */
+		userSettingsSections() {
+			return ['views', 'app', 'credentials', 'walkthrough', 'integrations']
+		},
+
+		/**
+		 * Nextcloud's own personal settings, linked from the dialog's navigation
+		 * above the app's entry. Nextcloud offers an app no list of them.
+		 *
+		 * @return {Array<{label: string, section: string, icon: string}>} The links.
+		 * @spec openspec/specs/personal-settings-surface/spec.md
+		 */
+		userSettingsNextcloudLinks() {
+			return [
+				{
+					label: 'Personal info',
+					section: 'personal-info',
+					icon: 'AccountOutline',
+				},
+				{ label: 'Security', section: 'security', icon: 'LockOutline' },
+				{
+					label: 'Notifications',
+					section: 'notifications',
+					icon: 'BellOutline',
+				},
+				{
+					label: 'Mobile & desktop',
+					section: 'sync-clients',
+					icon: 'Cellphone',
+				},
+				{
+					label: 'Sharing',
+					section: 'sharing',
+					icon: 'ShareVariantOutline',
+				},
+				{
+					label: 'Appearance and accessibility',
+					section: 'theming',
+					icon: 'EyeOutline',
+				},
+				{
+					label: 'Availability',
+					section: 'availability',
+					icon: 'ClockOutline',
+				},
+				{
+					label: 'Privacy',
+					section: 'privacy',
+					icon: 'ShieldAccountOutline',
+				},
+			]
+		},
+
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 		permissions() {
 			// One source, shared with the router guard in `main.js`. It used
 			// to live here alone, and the router half of the same manifest
@@ -229,7 +269,7 @@ export default {
 		},
 	},
 
-	/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
+	/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 	async created() {
 		// Pinia stores still need to come up so legacy custom components
 		// keep working through the manifest transition. CnAppRoot itself
@@ -278,38 +318,13 @@ export default {
 		},
 
 		/**
-		 * The walkthrough replay section CnAppRoot draws in its own fallback,
-		 * which filling the #user-settings slot switches off. Reads CnAppRoot's
-		 * state and labels, so the wording and the behaviour stay the library's.
-		 *
-		 * @return {object|null} Section props for UserSettings, or null without a tour.
-		 * @spec openspec/specs/personal-settings-surface/spec.md
-		 */
-		walkthroughSettings() {
-			const root = this.appRoot()
-			if (!root || !root.walkthroughEnabled) {
-				return null
-			}
-			const inProgress = Boolean(root.walkthroughProgressValue)
-			return {
-				sectionName: root.restartWalkthroughSectionName,
-				hint: root.restartWalkthroughHint,
-				inProgress,
-				continueLabel: root.continueWalkthroughLabel,
-				restartLabel: inProgress
-					? root.startOverWalkthroughLabel
-					: root.restartWalkthroughLabel,
-			}
-		},
-
-		/**
 		 * Translate function passed down to CnAppRoot / CnAppNav /
 		 * CnPageRenderer. Closes over the Nextcloud `translate` import so
 		 * the lib never has to know our app id.
 		 *
 		 * @param {string} key Translation key.
 		 * @return {string} Translated string (or the key on miss).
-		 * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md
 		 */
 		translateForApp(key) {
 			return ncT('dossiq', key)

@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Pause;
 
+use OCA\Dossiq\Service\Pause\PauseChaseSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\Pause\ChaseSchedule;
@@ -42,6 +43,7 @@ use RuntimeException;
  * REQ-TERM-011: each reminder is sent, recorded and counted exactly once.
  *
  * @covers \OCA\Dossiq\Service\Pause\PauseChaseService
+ * @covers \OCA\Dossiq\Service\Pause\PauseChaseSources
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\Pause\ChaseSchedule
@@ -102,6 +104,13 @@ class PauseChaseServiceTest extends TestCase {
 	private array $events = [];
 
 	/**
+	 * The recorded events with instance, type, basis, rationale and days impact.
+	 *
+	 * @var array<int, array>
+	 */
+	private array $eventCalls = [];
+
+	/**
 	 * Wire the service against doubles of everything it writes through.
 	 *
 	 * @return void
@@ -123,8 +132,9 @@ class PauseChaseServiceTest extends TestCase {
 			}
 		);
 		$this->termService->method('recordEvent')->willReturnCallback(
-			function (string $instanceId, string $type): array {
+			function (string $instanceId, string $type, ...$rest): array {
 				$this->events[] = $type;
+				$this->eventCalls[] = array_merge([$instanceId, $type], array_slice($rest, 0, 3));
 				return ['deadlineInstance' => $instanceId, 'type' => $type];
 			}
 		);
@@ -142,12 +152,14 @@ class PauseChaseServiceTest extends TestCase {
 	private function service(): PauseChaseService {
 		return new PauseChaseService(
 			termService: $this->termService,
-			reasons: $this->reasons,
-			schedule: new ChaseSchedule(
-				calendar: new WorkingDayCalculator(),
-				dates: $this->caseDates(),
+			chase: new PauseChaseSources(
+				reasons: $this->reasons,
+				schedule: new ChaseSchedule(
+					calendar: new WorkingDayCalculator(),
+					dates: $this->caseDates(),
+				),
+				notifications: $this->notifications,
 			),
-			notifications: $this->notifications,
 			timeline: $this->timeline,
 			settings: $this->createMock(SettingsService::class),
 			logger: new NullLogger(),
@@ -434,4 +446,48 @@ class PauseChaseServiceTest extends TestCase {
 			)
 		);
 	}//end testAPauseWithNoDeclaredReasonIsLeftAlone()
+	/**
+	 * A reminder and the escalation record the same shape on the term and the timeline.
+	 *
+	 * @return void
+	 */
+	public function testTheReminderAndTheEscalationRecordTheirWholeStep(): void {
+		$timeline = [];
+		$this->timeline->method('record')->willReturnCallback(
+			static function (string $caseId, string $kind, string $message, array $fields) use (&$timeline): string {
+				$timeline[] = [$caseId, $kind, $message, $fields];
+				return 'entry';
+			}
+		);
+		$this->notifications->method('sendTermijnNotification')->willReturnCallback(
+			function (string $template, string $instanceId, string $recipient, array $context): array {
+				$this->assertSame(['case' => 'c1', 'chaseText' => 'Wij hebben uw aanvulling nog niet ontvangen.', 'pauseDeadline' => '2026-09-15', 'dedupeKey' => 't1:chase:2'], $context);
+				return [];
+			}
+		);
+		$this->termService->method('getTermijnInstance')->willReturnOnConsecutiveCalls(
+			$this->instance(['chasesSent' => 1, 'lastChasedAt' => '2026-09-06T09:00:00+02:00']),
+			$this->instance(['chasesSent' => 2, 'lastChasedAt' => '2026-09-11T09:00:00+02:00'])
+		);
+
+		$this->assertTrue($this->service()->chaseIfDue(instance: $this->instance(), now: new DateTimeImmutable('2026-09-11T10:00:00+02:00')));
+		$this->assertTrue($this->service()->escalateIfDue(instance: $this->instance(), now: new DateTimeImmutable('2026-09-16T10:00:00+02:00')));
+
+		$this->assertSame(
+			[
+				['t1', PauseChaseService::EVENT_CHASED, 'Awb 4:5', 'Reminder 2 of 2 sent: Aanvulling gevraagd', 0],
+				['t1', PauseChaseService::EVENT_ESCALATED, 'Awb 4:5', 'No reply after 2 reminders. Escalated to handler.', 0],
+			],
+			$this->eventCalls
+		);
+		$fields = ['term' => 'Aanvulling gevraagd', 'dueAt' => '2026-09-15', 'termijnId' => 't1'];
+		$this->assertSame(
+			[
+				['c1', TimelineKinds::TERM_EVENT, 'Reminder 2 of 2 sent: Aanvulling gevraagd', ['event' => PauseChaseService::EVENT_CHASED] + $fields],
+				['c1', TimelineKinds::TERM_EVENT, 'No reply after 2 reminders. Escalated to handler.', ['event' => PauseChaseService::EVENT_ESCALATED] + $fields],
+			],
+			$timeline
+		);
+		$this->assertSame([['chasesSent' => 2, 'lastChasedAt' => '2026-09-11T10:00:00+02:00'], ['chaseEscalatedAt' => '2026-09-16T10:00:00+02:00']], $this->patches);
+	}//end testTheReminderAndTheEscalationRecordTheirWholeStep()
 }//end class

@@ -28,6 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseDefinitionImportServiceInterface;
+use OCA\Dossiq\Service\CaseDefinition\PackageImport;
 use OCA\Dossiq\Service\CaseDefinition\PackageValidator;
 use OCA\Dossiq\Service\CaseDefinition\PackageWriter;
 use OCA\Dossiq\Service\CaseDefinition\WorkflowDeployer;
@@ -45,9 +47,7 @@ use ZipArchive;
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseDefinitionImportService {
-
-
+class CaseDefinitionImportService implements CaseDefinitionImportServiceInterface {
 
 	/**
 	 * The collections each component carries, in write order.
@@ -97,12 +97,11 @@ class CaseDefinitionImportService {
 	 *
 	 * @return array{valid: bool, errors: string[], warnings: string[], manifest: ?array<string, mixed>, conflicts: array<string, mixed>}
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function validatePackage(string $zipPath): array {
 		return $this->validator->validatePackage(zipPath: $zipPath);
 	}//end validatePackage()
-
 
 	/**
 	 * Import a case definition package.
@@ -114,72 +113,139 @@ class CaseDefinitionImportService {
 	 *
 	 * @throws \RuntimeException If import fails.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function importCaseDefinition(
 		string $zipPath,
 		string $strategy = 'skip',
 	): array {
-		// First validate.
 		$validation = $this->validator->validatePackage(zipPath: $zipPath);
 		if ($validation['valid'] === false) {
-			return [
-				'success' => false,
-				'message' => 'Package validation failed: ' . implode('; ', $validation['errors']),
-				'components' => [],
-			];
+			return $this->validationFailure(validation: $validation);
 		}
-
-		$manifest = $validation['manifest'];
-		$components = $manifest['components'] ?? [];
-		$results = [];
 
 		$zip = new ZipArchive();
 		$zip->open($zipPath, ZipArchive::RDONLY);
-
-		foreach ($components as $component) {
-			try {
-				$results[$component] = $this->importComponent(zip: $zip, component: $component, strategy: $strategy);
-			} catch (\Throwable $e) {
-				$results[$component] = [
-					'status' => 'error',
-					'message' => $e->getMessage(),
-				];
-				$this->logger->error(
-					'Failed to import component {component}: {error}',
-					[
-						'component' => $component,
-						'error' => $e->getMessage(),
-					]
-				);
-			}
-		}
-
+		$results = $this->importComponents(
+			import: new PackageImport(zip: $zip, strategy: $strategy),
+			components: ($validation['manifest']['components'] ?? [])
+		);
 		$zip->close();
 
-		$allSuccess = in_array('error', array_column($results, 'status'), true) === false;
+		return $this->importSummary(results: $results);
+	}//end importCaseDefinition()
 
+	/**
+	 * The answer for a package that did not validate.
+	 *
+	 * @param array<string, mixed> $validation The validator's answer.
+	 *
+	 * @return array{success: bool, message: string, components: array<string, array{status: string, message: string}>}
+	 */
+	private function validationFailure(array $validation): array {
+		return [
+			'success' => false,
+			'message' => 'Package validation failed: ' . implode('; ', $validation['errors']),
+			'components' => [],
+		];
+	}//end validationFailure()
+
+	/**
+	 * Import every component the manifest names, in order.
+	 *
+	 * @param PackageImport     $import     The opened package and its strategy.
+	 * @param array<int, mixed> $components The manifest's component names.
+	 *
+	 * @return array<string, array{status: string, message: string}> The result per component.
+	 */
+	private function importComponents(PackageImport $import, array $components): array {
+		$results = [];
+		foreach ($components as $component) {
+			$results[$component] = $this->importOrReport(import: $import, component: $component);
+		}
+
+		return $results;
+	}//end importComponents()
+
+	/**
+	 * Import one component; a failure becomes its error result and is logged.
+	 *
+	 * @param PackageImport $import    The opened package and its strategy.
+	 * @param mixed         $component The component name.
+	 *
+	 * @return array{status: string, message: string}
+	 */
+	private function importOrReport(PackageImport $import, mixed $component): array {
+		try {
+			return $this->importComponent(import: $import, component: $component);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Failed to import component {component}: {error}',
+				[
+					'component' => $component,
+					'error' => $e->getMessage(),
+				]
+			);
+
+			return $this->componentResult(status: 'error', message: $e->getMessage());
+		}
+	}//end importOrReport()
+
+	/**
+	 * Answer the import, after logging how it ended.
+	 *
+	 * @param array<string, array{status: string, message: string}> $results The result per component.
+	 *
+	 * @return array{success: bool, message: string, components: array<string, array{status: string, message: string}>}
+	 */
+	private function importSummary(array $results): array {
+		$allSuccess = in_array('error', array_column($results, 'status'), true) === false;
+		$this->logImportOutcome(allSuccess: $allSuccess, count: count($results));
+
+		return [
+			'success' => $allSuccess,
+			'message' => $this->importMessage(allSuccess: $allSuccess),
+			'components' => $results,
+		];
+	}//end importSummary()
+
+	/**
+	 * Log how the import ended.
+	 *
+	 * @param bool $allSuccess Whether every component was imported.
+	 * @param int  $count      How many components were attempted.
+	 *
+	 * @return void
+	 */
+	private function logImportOutcome(bool $allSuccess, int $count): void {
 		$successLabel = 'false';
-		$message = 'Import completed with errors';
 		if ($allSuccess === true) {
 			$successLabel = 'true';
-			$message = 'Import completed successfully';
 		}
 
 		$this->logger->info(
 			'Case definition import completed: {success}, components: {count}',
 			[
 				'success' => $successLabel,
-				'count' => count($results),
+				'count' => $count,
 			]
 		);
+	}//end logImportOutcome()
 
-		return [
-			'success' => $allSuccess,
-			'message' => $message,
-			'components' => $results,
-		];
-	}//end importCaseDefinition()
+	/**
+	 * The sentence the import answers with.
+	 *
+	 * @param bool $allSuccess Whether every component was imported.
+	 *
+	 * @return string
+	 */
+	private function importMessage(bool $allSuccess): string {
+		if ($allSuccess === true) {
+			return 'Import completed successfully';
+		}
+
+		return 'Import completed with errors';
+	}//end importMessage()
 
 	/**
 	 * Import a single component from the ZIP archive.
@@ -197,83 +263,73 @@ class CaseDefinitionImportService {
 	 * case type — statuses without the case type they belong to, roles
 	 * pointing at nothing — is a state nobody can read and nobody asked for.
 	 *
-	 * @param \ZipArchive $zip The opened ZIP archive.
-	 * @param string $component The component name.
-	 * @param string $strategy The conflict resolution strategy.
+	 * @param PackageImport $import    The opened package and its strategy.
+	 * @param string        $component The component name.
 	 *
 	 * @return array{status: string, message: string, created?: array<int, string>, replaced?: array<int, string>}
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
-	private function importComponent(
-		\ZipArchive $zip,
-		string $component,
-		string $strategy,
-	): array {
+	private function importComponent(PackageImport $import, string $component): array {
 		if ($component === 'workflows') {
-			return $this->workflows->deploy(zip: $zip, strategy: $strategy);
+			return $this->workflows->deploy(zip: $import->zip, strategy: $import->strategy);
 		}
 
-		$content = $zip->getFromName($component . '.json');
-		if ($content === false) {
-			return [
-				'status' => 'skipped',
-				'message' => "Component file {$component}.json not found in archive",
-			];
-		}
-
-		$data = json_decode($content, true);
-		if (is_array($data) === false) {
-			return [
-				'status' => 'error',
-				'message' => "Invalid JSON in {$component}.json",
-			];
-		}
-
-		$collections = (self::COMPONENT_COLLECTIONS[$component] ?? []);
-		if ($collections === []) {
-			return [
-				'status' => 'error',
-				'message' => "Component '{$component}' names no collection this import knows how to write.",
-			];
+		$content = $import->zip->getFromName($component . '.json');
+		$refusal = $this->unusableComponent(component: $component, content: $content);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		return $this->writer->writeCollections(
 			component: $component,
-			data: $data,
-			collections: $collections,
-			strategy: $strategy
+			data: json_decode((string)$content, true),
+			collections: self::COMPONENT_COLLECTIONS[$component],
+			strategy: $import->strategy
 		);
 	}//end importComponent()
 
+	/**
+	 * Why a component cannot be written, or null when it can: its file is
+	 * missing, it is not JSON, or it names no collection this import knows.
+	 *
+	 * @param string       $component The component name.
+	 * @param string|false $content   The component file's content, or false when absent.
+	 *
+	 * @return array{status: string, message: string}|null
+	 */
+	private function unusableComponent(string $component, string|false $content): ?array {
+		if ($content === false) {
+			return $this->componentResult(status: 'skipped', message: "Component file {$component}.json not found in archive");
+		}
 
+		if (is_array(json_decode($content, true)) === false) {
+			return $this->componentResult(status: 'error', message: "Invalid JSON in {$component}.json");
+		}
 
+		if ((self::COMPONENT_COLLECTIONS[$component] ?? []) === []) {
+			return $this->componentResult(
+				status: 'error',
+				message: "Component '{$component}' names no collection this import knows how to write."
+			);
+		}
 
+		return null;
+	}//end unusableComponent()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	/**
+	 * One component's result.
+	 *
+	 * @param string $status  `skipped` or `error`.
+	 * @param string $message What happened.
+	 *
+	 * @return array{status: string, message: string}
+	 */
+	private function componentResult(string $status, string $message): array {
+		return [
+			'status' => $status,
+			'message' => $message,
+		];
+	}//end componentResult()
 
 }//end class

@@ -31,13 +31,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\GeneratedDocumentFilerInterface;
 use OCA\Dossiq\Service\Actions\AddressesTheCase;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\Files\File;
@@ -49,21 +50,10 @@ use RuntimeException;
 /**
  * Turns a generated file into an informatieobject on the case.
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
-class GeneratedDocumentFiler {
+class GeneratedDocumentFiler implements GeneratedDocumentFilerInterface {
 	use AddressesTheCase;
-
-	/**
-	 * The metadata key that marks a request whose caller files the document itself.
-	 *
-	 * The Generate document button files the document so it can answer with
-	 * the informatieobject it made; the listener leaves such a document alone,
-	 * or the case would get it twice.
-	 *
-	 * @var string
-	 */
-	public const FILED_BY_CALLER = 'dossiqFiledByCaller';
 
 	/**
 	 * The metadata key naming the document type.
@@ -95,7 +85,7 @@ class GeneratedDocumentFiler {
 	 *
 	 * @return bool True when it names a document type.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function wantsFiling(array $metadata): bool {
 		return trim((string)($metadata[self::TYPE] ?? '')) !== '';
@@ -114,7 +104,7 @@ class GeneratedDocumentFiler {
 	 *
 	 * @throws RuntimeException When the metadata names no type or the file cannot be read.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function file(string $caseId, int $fileId, string $title, string $mime, array $metadata): array {
 		$type = trim((string)($metadata[self::TYPE] ?? ''));
@@ -126,7 +116,7 @@ class GeneratedDocumentFiler {
 
 		$record = [
 			'title' => $title,
-			'informatieobjecttype' => $type,
+			'informatieobjecttype' => $this->catalogueType(name: $type),
 			'direction' => (string)($metadata['direction'] ?? 'outgoing'),
 			'auteur' => $this->currentAuthor(),
 			'format' => $mime,
@@ -140,6 +130,27 @@ class GeneratedDocumentFiler {
 
 		return $this->dossier->uploadDocument($caseId, $file->getName(), $file->getContent(), $record);
 	}//end file()
+
+	/**
+	 * The catalogue id of a document type the metadata names, so every road
+	 * that files a generated document stores the same reference.
+	 *
+	 * @param string $name The type as the template or declaration names it.
+	 *
+	 * @return string The catalogue id, or the name when the catalogue has none.
+	 */
+	private function catalogueType(string $name): string {
+		$resolver = null;
+		if ($this->container->has(DocumentTypeResolver::class) === true) {
+			$resolver = $this->container->get(DocumentTypeResolver::class);
+		}
+
+		if ($resolver instanceof DocumentTypeResolver) {
+			return $resolver->resolve(name: $name);
+		}
+
+		return $name;
+	}//end catalogueType()
 
 	/**
 	 * Who the document is addressed to.

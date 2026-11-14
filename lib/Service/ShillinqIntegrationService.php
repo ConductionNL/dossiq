@@ -34,7 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -71,7 +71,7 @@ class ShillinqIntegrationService {
 	 *
 	 * @return array<string, array<int, array<string,mixed>>> Keyed by `<tenantId>:<month>`.
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
 	 */
 	public function groupForInvoicing(array $events): array {
 		$grouped = [];
@@ -150,28 +150,58 @@ class ShillinqIntegrationService {
 	 * @spec openspec/changes/dossiq-delivers-nothing/tasks.md
 	 */
 	public function exportInvoice(array $payload): array {
-		$tenantId = (string)($payload['tenantId'] ?? '');
-		$period = (string)($payload['period'] ?? '');
+		$month = new InvoiceMonth(tenantId: (string)($payload['tenantId'] ?? ''), period: (string)($payload['period'] ?? ''));
 		$eventClass = self::INGEST_EVENT;
 		if (class_exists($eventClass) === false) {
-			return $this->refused(tenantId: $tenantId, period: $period, attempts: 0, reason: 'Shillinq is not installed, so no invoice was drafted.');
+			return $this->refused(month: $month, attempts: 0, reason: 'Shillinq is not installed, so no invoice was drafted.');
 		}
 
+		$event = $this->dispatchInvoice(eventClass: $eventClass, payload: $payload, month: $month);
+		if (is_array($event) === true) {
+			return $event;
+		}
+
+		return $this->answerOf(event: $event, month: $month);
+	}//end exportInvoice()
+
+	/**
+	 * Dispatch the invoice request, or the refusal when it cannot be asked.
+	 *
+	 * @param string              $eventClass The shillinq ingest event class.
+	 * @param array<string,mixed> $payload    The built payload (tenantId, period, lines).
+	 * @param InvoiceMonth        $month      The tenant and the month.
+	 *
+	 * @return object|array<string, mixed> The dispatched event, or the refusal.
+	 *
+	 * @spec openspec/changes/dossiq-delivers-nothing/tasks.md
+	 */
+	private function dispatchInvoice(string $eventClass, array $payload, InvoiceMonth $month): object|array {
+		$tenantId = $month->tenantId;
+		$period = $month->period;
 		try {
 			// Shillinq's contract: sourceApp, externalReference, period, lines, correlationId.
-			$event = new $eventClass(Application::APP_ID, $tenantId, $period, (array)($payload['lines'] ?? []), $tenantId . ':' . $period);
+			$event = new $eventClass(AppIdentity::APP_ID, $tenantId, $period, (array)($payload['lines'] ?? []), $tenantId . ':' . $period);
 			$this->eventDispatcher->dispatchTyped($event);
 		} catch (Throwable $e) {
-			return $this->refused(tenantId: $tenantId, period: $period, attempts: 1, reason: 'Shillinq could not be asked: ' . $e->getMessage());
+			return $this->refused(month: $month, attempts: 1, reason: 'Shillinq could not be asked: ' . $e->getMessage());
 		}
 
-		if ((bool)$event->isHandled() === false) {
-			$reason = (string)($event->getError() ?? '');
-			if ($reason === '') {
-				$reason = 'No shillinq listener answered the invoice request.';
-			}
+		return $event;
+	}//end dispatchInvoice()
 
-			return $this->refused(tenantId: $tenantId, period: $period, attempts: 1, reason: $reason);
+	/**
+	 * What shillinq answered on a dispatched invoice request.
+	 *
+	 * @param object       $event The dispatched event.
+	 * @param InvoiceMonth $month The tenant and the month.
+	 *
+	 * @return array{success:bool, invoiceRef?:string, invoiceNumber?:string, duplicated?:bool, attempts:int, lastError?:string}
+	 *
+	 * @spec openspec/changes/dossiq-delivers-nothing/tasks.md
+	 */
+	private function answerOf(object $event, InvoiceMonth $month): array {
+		if ((bool)$event->isHandled() === false) {
+			return $this->refused(month: $month, attempts: 1, reason: $this->unhandledReason(event: $event));
 		}
 
 		$result = (array)$event->getResult();
@@ -182,19 +212,38 @@ class ShillinqIntegrationService {
 			'duplicated' => (bool)($result['duplicated'] ?? false),
 			'attempts' => 1,
 		];
-	}//end exportInvoice()
+	}//end answerOf()
+
+	/**
+	 * Why an unhandled invoice request drafted nothing.
+	 *
+	 * @param object $event The dispatched event.
+	 *
+	 * @return string The listener's error, or that no listener answered.
+	 *
+	 * @spec openspec/changes/dossiq-delivers-nothing/tasks.md
+	 */
+	private function unhandledReason(object $event): string {
+		$reason = (string)($event->getError() ?? '');
+		if ($reason === '') {
+			$reason = 'No shillinq listener answered the invoice request.';
+		}
+
+		return $reason;
+	}//end unhandledReason()
 
 	/**
 	 * Record why no invoice exists for the month, and answer with it.
 	 *
-	 * @param string $tenantId Tenant UUID.
-	 * @param string $period YYYY-MM.
+	 * @param InvoiceMonth $month The tenant UUID and the month (YYYY-MM).
 	 * @param int $attempts 0 when shillinq was never asked, 1 when it was.
 	 * @param string $reason Why.
 	 *
 	 * @return array{success:bool, attempts:int, lastError:string}
 	 */
-	private function refused(string $tenantId, string $period, int $attempts, string $reason): array {
+	private function refused(InvoiceMonth $month, int $attempts, string $reason): array {
+		$tenantId = $month->tenantId;
+		$period = $month->period;
 		$this->logger->warning('Dossiq: shillinq drafted no invoice', ['tenantId' => $tenantId, 'period' => $period, 'reason' => $reason]);
 		$this->auditTrail->emit(
 			payload: [

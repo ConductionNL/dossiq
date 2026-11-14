@@ -39,9 +39,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\ContactMomentService;
-use OCA\Dossiq\Service\Pipelinq\ContactMomentBridge;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ContactMomentBridgeInterface;
+use OCA\Dossiq\Kernel\Contracts\ContactMomentServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -63,24 +64,22 @@ class PipelinqContactMomentController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string               $appName     The app name.
 	 * @param IRequest             $request     The HTTP request.
-	 * @param ContactMomentBridge  $moments     Contact moments by membership, and the two filing acts.
-	 * @param ContactMomentService $log         Writes the dossiq contact moment and appends it to pipelinq.
-	 * @param CaseAccessGuard      $access      Per-case authorization (fails closed).
+	 * @param ContactMomentBridgeInterface  $moments     Contact moments by membership, and the two filing acts.
+	 * @param ContactMomentServiceInterface $log         Writes the dossiq contact moment and appends it to pipelinq.
+	 * @param CaseAccessGuardInterface      $access      Per-case authorization (fails closed).
 	 * @param IUserSession         $userSession The current session.
 	 * @param IL10N                $l10n        The translations.
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
-		private readonly ContactMomentBridge $moments,
-		private readonly ContactMomentService $log,
-		private readonly CaseAccessGuard $access,
+		private readonly ContactMomentBridgeInterface $moments,
+		private readonly ContactMomentServiceInterface $log,
+		private readonly CaseAccessGuardInterface $access,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -128,23 +127,8 @@ class PipelinqContactMomentController extends Controller {
 			return $refused;
 		}
 
-		$data = [
-			'case' => $caseId,
-			'relatedCases' => [$caseId],
-			'notificationChannel' => (string)$this->request->getParam('notificationChannel', ''),
-			'direction' => (string)$this->request->getParam('direction', 'inbound'),
-			'summary' => (string)$this->request->getParam('summary', ''),
-			'callerIdentification' => (string)$this->request->getParam('callerIdentification', ''),
-			'visibleToApplicant' => ($this->request->getParam('visibleToApplicant', false) === true),
-		];
-
-		$startTime = trim((string)$this->request->getParam('startTime', ''));
-		if ($startTime !== '') {
-			$data['startTime'] = $startTime;
-		}
-
 		try {
-			$record = $this->log->createContactMoment(data: $data);
+			$record = $this->log->createContactMoment(data: $this->momentData(caseId: $caseId));
 		} catch (RuntimeException $e) {
 			return new JSONResponse(
 				['error' => $this->l10n->t('The contact moment could not be saved: %s', [$e->getMessage()])],
@@ -161,6 +145,32 @@ class PipelinqContactMomentController extends Controller {
 			Http::STATUS_CREATED
 		);
 	}//end logContactMoment()
+
+	/**
+	 * The contact moment the request describes, on the route's case; the start time only when one was sent.
+	 *
+	 * @param string $caseId The case, from the route and never from the body.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function momentData(string $caseId): array {
+		$data = [
+			'case' => $caseId,
+			'relatedCases' => [$caseId],
+			'notificationChannel' => (string)$this->request->getParam('notificationChannel', ''),
+			'direction' => (string)$this->request->getParam('direction', 'inbound'),
+			'summary' => (string)$this->request->getParam('summary', ''),
+			'callerIdentification' => (string)$this->request->getParam('callerIdentification', ''),
+			'visibleToApplicant' => ($this->request->getParam('visibleToApplicant', false) === true),
+		];
+
+		$startTime = trim((string)$this->request->getParam('startTime', ''));
+		if ($startTime !== '') {
+			$data['startTime'] = $startTime;
+		}
+
+		return $data;
+	}//end momentData()
 
 	/**
 	 * File a contact moment on this case onto a further case, through pipelinq.

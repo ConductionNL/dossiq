@@ -16,7 +16,7 @@
   Nothing here computes an erasure. Every number and every ground is a value
   the server read back from OpenRegister's preview.
 
-  @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+  @spec openspec/specs/avg-processing-surface/spec.md
 -->
 <template>
 	<div class="dsr-tab">
@@ -178,7 +178,7 @@ export default {
 		 *
 		 * @return {boolean} True when the case names one of the three rights.
 		 *
-		 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+		 * @spec openspec/specs/avg-processing-surface/spec.md
 		 */
 		isRequest() {
 			return ['inzage', 'correctie', 'verwijdering'].includes(
@@ -191,7 +191,7 @@ export default {
 		 *
 		 * @return {boolean} True for a verwijdering.
 		 *
-		 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+		 * @spec openspec/specs/avg-processing-surface/spec.md
 		 */
 		isErasure() {
 			return this.object?.dataSubjectRequestType === 'verwijdering'
@@ -202,7 +202,7 @@ export default {
 		 *
 		 * @return {boolean} True once the platform has answered.
 		 *
-		 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+		 * @spec openspec/specs/avg-processing-surface/spec.md
 		 */
 		hasPreview() {
 			return Object.keys(this.counts ?? {}).length > 0
@@ -213,7 +213,7 @@ export default {
 		 *
 		 * @return {string} The absolute url.
 		 *
-		 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+		 * @spec openspec/specs/avg-processing-surface/spec.md
 		 */
 		downloadUrl() {
 			return subjectExportDownloadUrl(this.exportState.exportId)
@@ -224,7 +224,7 @@ export default {
 		 *
 		 * @return {string} The sentence.
 		 *
-		 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+		 * @spec openspec/specs/avg-processing-surface/spec.md
 		 */
 		outcomeSentence() {
 			if (this.outcome?.complete === true) {
@@ -249,7 +249,7 @@ export default {
 	 *
 	 * @return {void}
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	mounted() {
 		if (this.isRequest && !this.isErasure) {
@@ -265,7 +265,7 @@ export default {
 		 *
 		 * @return {Promise<void>} When the panel has been updated.
 		 *
-		 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+		 * @spec openspec/specs/avg-processing-surface/spec.md
 		 */
 		async takePreview() {
 			await this.act(async () => {
@@ -281,7 +281,7 @@ export default {
 		 *
 		 * @return {Promise<void>} When the outcome has been shown.
 		 *
-		 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+		 * @spec openspec/specs/avg-processing-surface/spec.md
 		 */
 		async takeRun() {
 			await this.act(async () => {
@@ -294,7 +294,7 @@ export default {
 		 *
 		 * @return {Promise<void>} When the export has been asked for.
 		 *
-		 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+		 * @spec openspec/specs/avg-processing-surface/spec.md
 		 */
 		async askForExport() {
 			await this.act(async () => {
@@ -308,7 +308,7 @@ export default {
 		 *
 		 * @return {Promise<void>} When the state has been read.
 		 *
-		 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+		 * @spec openspec/specs/avg-processing-surface/spec.md
 		 */
 		async loadExportState() {
 			await this.act(async () => {
@@ -322,7 +322,7 @@ export default {
 		 * @param {() => Promise<void>} work The act.
 		 * @return {Promise<void>} When the act has finished or refused.
 		 *
-		 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+		 * @spec openspec/specs/avg-processing-surface/spec.md
 		 */
 		async act(work) {
 			this.busy = true
@@ -342,7 +342,7 @@ export default {
 		 * @param {string} bucket `erasable`, `pseudonymised` or `protected`.
 		 * @return {number} The total.
 		 *
-		 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+		 * @spec openspec/specs/avg-processing-surface/spec.md
 		 */
 		total(bucket) {
 			return Object.values(this.counts?.[bucket] ?? {}).reduce(

@@ -31,10 +31,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\ContractDecisionDelegationService;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ContractDecisionDelegationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\JsonEncodedStringPropertiesInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -65,7 +65,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 
 	/**
 	 * Per-case outcomes reported by linkCase(); each value doubles as the
-	 * tally key in the run() counter map.
+	 * tally key in the run's counter map.
 	 */
 	private const RESULT_LINKED = 'linked';
 	private const RESULT_SKIPPED = 'skipped';
@@ -75,15 +75,15 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param ContractDecisionDelegationService $delegationService Decision delegation service.
-	 * @param SettingsService $settingsService Settings / ObjectService resolver.
-	 * @param JsonEncodedStringProperties $jsonProperties Restores the declared string shape of JSON-encoded properties.
+	 * @param ContractDecisionDelegationServiceInterface $delegationService Decision delegation service.
+	 * @param SettingsServiceInterface $settingsService Settings / ObjectService resolver.
+	 * @param JsonEncodedStringPropertiesInterface $jsonProperties Restores the declared string shape of JSON-encoded properties.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly ContractDecisionDelegationService $delegationService,
-		private readonly SettingsService $settingsService,
-		private readonly JsonEncodedStringProperties $jsonProperties,
+		private readonly ContractDecisionDelegationServiceInterface $delegationService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly JsonEncodedStringPropertiesInterface $jsonProperties,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -117,84 +117,146 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 			return;
 		}
 
-		$counts = [
-			self::RESULT_LINKED => 0,
-			self::RESULT_SKIPPED => 0,
-			self::RESULT_ERROR => 0,
-			self::RESULT_NONE => 0,
-		];
-
 		// This repair step runs without a Nextcloud user session — anonymous
 		// callers are fail-closed by OpenRegister RBAC (#1955) on every
-		// boot, so the list/save calls below run inside runAsSystem().
-		$this->runAsSystemIfAvailable(
-			objectService: $objectService,
-			operation: function () use ($objectService, $output, &$counts): void {
-				foreach (self::CONTRACT_DECISION_CASE_TYPES as $caseTypeSlug) {
-					try {
-						// ObjectService::findAll() takes a single $config array — the
-						// previous named-argument call (register:/schema:/limit:) threw
-						// "Unknown named parameter" on every run. Use the shared
-						// slug-aware search bridge, which also normalises the rows to
-						// the associative arrays this loop expects.
-						$cases = $this->searchObjectsAsArrays(
-							objectService: $objectService,
-							register: Application::REGISTER_SLUG,
-							schema: 'case',
-							filters: [
-								'caseTypeSlug' => $caseTypeSlug,
-								'_limit' => 500,
-							],
-						);
-					} catch (Throwable $e) {
-						$output->warning('Could not list cases for type ' . $caseTypeSlug . ': ' . $e->getMessage());
-						$this->logger->warning(
-							'LinkInFlightContractDecisionsRepair: list failed',
-							['caseTypeSlug' => $caseTypeSlug, 'error' => $e->getMessage()]
-						);
-						continue;
-					}//end try
+		// boot, so the list/save calls run inside runAsSystem().
+		$run = new InFlightDecisionLinkRun(objectService: $objectService, output: $output, logger: $this->logger);
+		$this->runAsSystemIfAvailable(objectService: $objectService, operation: fn (): array => $this->linkCaseTypes(run: $run));
 
-					foreach ($cases as $case) {
-						$outcome = $this->linkCase(
-							objectService: $objectService,
-							case: $case,
-							caseTypeSlug: $caseTypeSlug,
-							output: $output,
-						);
-
-						$counts[$outcome]++;
-					}//end foreach
-				}//end foreach
-			}
-		);
-
-		$output->info(
-			sprintf(
-				'Contract decision link complete: %d linked, %d skipped (already decided/historical), %d errors (leaf unavailable).',
-				$counts[self::RESULT_LINKED],
-				$counts[self::RESULT_SKIPPED],
-				$counts[self::RESULT_ERROR]
-			)
-		);
+		$output->info($this->summaryOf(counts: $run->counts));
 	}//end run()
+
+	/**
+	 * Link the cases of every contract decision case type, counting each outcome.
+	 *
+	 * @param InFlightDecisionLinkRun $run The run.
+	 *
+	 * @return array<string, int> The counts so far.
+	 */
+	private function linkCaseTypes(InFlightDecisionLinkRun $run): array {
+		foreach (self::CONTRACT_DECISION_CASE_TYPES as $caseTypeSlug) {
+			foreach ($this->casesOfType(run: $run, caseTypeSlug: $caseTypeSlug) as $case) {
+				$run->count(
+					outcome: $this->linkCase(run: $run, case: $case, caseTypeSlug: $caseTypeSlug)
+				);
+			}
+		}
+
+		return $run->counts;
+	}//end linkCaseTypes()
+
+	/**
+	 * The cases of one case type; a list that fails is reported and reads as none.
+	 *
+	 * @param InFlightDecisionLinkRun $run          The run.
+	 * @param string                  $caseTypeSlug The case type slug.
+	 *
+	 * @return array<int, array<string, mixed>> The case rows.
+	 */
+	private function casesOfType(InFlightDecisionLinkRun $run, string $caseTypeSlug): array {
+		try {
+			// ObjectService::findAll() takes a single $config array — the
+			// previous named-argument call (register:/schema:/limit:) threw
+			// "Unknown named parameter" on every run. Use the shared
+			// slug-aware search bridge, which also normalises the rows to
+			// the associative arrays this loop expects.
+			return $this->searchObjectsAsArrays(
+				objectService: $run->objectService,
+				register: AppIdentity::REGISTER_SLUG,
+				schema: 'case',
+				filters: $this->caseTypeFilters(caseTypeSlug: $caseTypeSlug),
+			);
+		} catch (Throwable $e) {
+			$run->listFailed(caseTypeSlug: $caseTypeSlug, error: $e);
+			return [];
+		}
+	}//end casesOfType()
+
+	/**
+	 * The search filters for one case type's cases.
+	 *
+	 * @param string $caseTypeSlug The case type slug.
+	 *
+	 * @return array<string, mixed> The filters.
+	 */
+	private function caseTypeFilters(string $caseTypeSlug): array {
+		return [
+			'caseTypeSlug' => $caseTypeSlug,
+			'_limit' => 500,
+		];
+	}//end caseTypeFilters()
+
+	/**
+	 * The closing line of a run.
+	 *
+	 * @param array<string, int> $counts How many cases ended in each outcome.
+	 *
+	 * @return string The line.
+	 */
+	private function summaryOf(array $counts): string {
+		return sprintf(
+			'Contract decision link complete: %d linked, %d skipped (already decided/historical), %d errors (leaf unavailable).',
+			($counts[self::RESULT_LINKED] ?? 0),
+			($counts[self::RESULT_SKIPPED] ?? 0),
+			($counts[self::RESULT_ERROR] ?? 0)
+		);
+	}//end summaryOf()
 
 	/**
 	 * Link a single in-flight case forward to a decidesk Decision.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param array<string, mixed> $case The case row.
-	 * @param string $caseTypeSlug The dossiq case type slug.
-	 * @param IOutput $output The migration output interface.
+	 * @param InFlightDecisionLinkRun $run          The run: its object service and output.
+	 * @param array<string, mixed>    $case         The case row.
+	 * @param string                  $caseTypeSlug The dossiq case type slug.
 	 *
 	 * @return string One of the self::RESULT_* constants.
 	 */
-	private function linkCase(
-		object $objectService,
-		array $case,
-		string $caseTypeSlug,
-		IOutput $output,
-	): string {
+	private function linkCase(InFlightDecisionLinkRun $run, array $case, string $caseTypeSlug): string {
+		$output = $run->output;
+		$caseUuid = (string)($case['uuid'] ?? $case['id'] ?? '');
+		$precheck = $this->precheckOf(case: $case);
+		if ($precheck !== null) {
+			return $precheck;
+		}
+
+		// Open case with no decision yet — link forward to decidesk.
+		try {
+			$newDecisionRef = $this->raiseAndPersistDecision(objectService: $run->objectService, case: $case, caseTypeSlug: $caseTypeSlug);
+			$output->info('Linked case ' . $caseUuid . ' → decidesk Decision ' . $newDecisionRef);
+		} catch (RuntimeException $e) {
+			// Decidesk leaf unavailable — warn + skip this case; do NOT fail the migration.
+			$this->reportNotLinked(output: $output, caseUuid: $caseUuid, error: $e);
+			return self::RESULT_ERROR;
+		}//end try
+
+		return self::RESULT_LINKED;
+	}//end linkCase()
+
+	/**
+	 * Report a case that could not be linked.
+	 *
+	 * @param IOutput $output The migration output interface.
+	 * @param string $caseUuid The case uuid.
+	 * @param RuntimeException $error Why it could not be linked.
+	 *
+	 * @return void
+	 */
+	private function reportNotLinked(IOutput $output, string $caseUuid, RuntimeException $error): void {
+		$output->warning('Could not link case ' . $caseUuid . ': ' . $error->getMessage() . ' — skipping.');
+		$this->logger->warning(
+			'LinkInFlightContractDecisionsRepair: could not link case',
+			['caseUuid' => $caseUuid, 'error' => $error->getMessage()]
+		);
+	}//end reportNotLinked()
+
+	/**
+	 * The outcome of a case that needs no link, or null when it must be linked.
+	 *
+	 * @param array<string, mixed> $case The case row.
+	 *
+	 * @return string|null One of the self::RESULT_* constants, or null to link.
+	 */
+	private function precheckOf(array $case): ?string {
 		$caseUuid = (string)($case['uuid'] ?? $case['id'] ?? '');
 		$besluitRef = (string)($case['besluitRef'] ?? '');
 		$decisionRef = (string)($case['decisionRef'] ?? '');
@@ -222,49 +284,53 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 			return self::RESULT_SKIPPED;
 		}
 
-		// Open case with no decision yet — link forward to decidesk.
-		try {
-			$newDecisionRef = $this->delegationService->raiseContractDecision(
-				caseRef: $caseUuid,
-				contractRef: (string)($case['contractRef'] ?? ''),
-				decisionType: $this->mapCaseTypeToDecisionType(caseTypeSlug: $caseTypeSlug),
-				subject: [
-					'subjectRegister' => Application::REGISTER_SLUG,
-					'subjectSchema' => 'case',
-					'subjectId' => $caseUuid,
-					'subjectLabel' => (string)($case['title'] ?? $caseTypeSlug),
-				],
-				mandateContext: [],
-			);
+		return null;
+	}//end precheckOf()
 
-			// Persist the decisionRef on the case (does not alter the case outcome).
-			// A loaded case carries `statusHistory`, `activity`, `geometry`
-			// and `relatedCases` DECODED, and the schema still declares each
-			// of them a string — a bare array_merge writes arrays into them
-			// and OpenRegister refuses the whole save.
-			$objectService->saveObject(
-				object: $this->jsonProperties->mergeForWrite(
-					stored: $case,
-					updates: ['decisionRef' => $newDecisionRef],
-					schemaSlug: 'case',
-				),
-				register: Application::REGISTER_SLUG,
-				schema: 'case',
-				uuid: $caseUuid,
-			);
-			$output->info('Linked case ' . $caseUuid . ' → decidesk Decision ' . $newDecisionRef);
-		} catch (RuntimeException $e) {
-			// Decidesk leaf unavailable — warn + skip this case; do NOT fail the migration.
-			$output->warning('Could not link case ' . $caseUuid . ': ' . $e->getMessage() . ' — skipping.');
-			$this->logger->warning(
-				'LinkInFlightContractDecisionsRepair: could not link case',
-				['caseUuid' => $caseUuid, 'error' => $e->getMessage()]
-			);
-			return self::RESULT_ERROR;
-		}//end try
+	/**
+	 * Raise a decidesk Decision for a case and persist its reference on the case.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param array<string, mixed> $case          The case row.
+	 * @param string               $caseTypeSlug  The dossiq case type slug.
+	 *
+	 * @return string The new decision reference.
+	 *
+	 * @throws RuntimeException When the decidesk leaf is unavailable.
+	 */
+	private function raiseAndPersistDecision(object $objectService, array $case, string $caseTypeSlug): string {
+		$caseUuid = (string)($case['uuid'] ?? $case['id'] ?? '');
+		$newDecisionRef = $this->delegationService->raiseContractDecision(
+			caseRef: $caseUuid,
+			contractRef: (string)($case['contractRef'] ?? ''),
+			decisionType: $this->mapCaseTypeToDecisionType(caseTypeSlug: $caseTypeSlug),
+			subject: [
+				'subjectRegister' => AppIdentity::REGISTER_SLUG,
+				'subjectSchema' => 'case',
+				'subjectId' => $caseUuid,
+				'subjectLabel' => (string)($case['title'] ?? $caseTypeSlug),
+			],
+			mandateContext: [],
+		);
 
-		return self::RESULT_LINKED;
-	}//end linkCase()
+		// Persist the decisionRef on the case (does not alter the case outcome).
+		// A loaded case carries `statusHistory`, `activity`, `geometry`
+		// and `relatedCases` DECODED, and the schema still declares each
+		// of them a string — a bare array_merge writes arrays into them
+		// and OpenRegister refuses the whole save.
+		$objectService->saveObject(
+			object: $this->jsonProperties->mergeForWrite(
+				stored: $case,
+				updates: ['decisionRef' => $newDecisionRef],
+				schemaSlug: 'case',
+			),
+			register: AppIdentity::REGISTER_SLUG,
+			schema: 'case',
+			uuid: $caseUuid,
+		);
+
+		return $newDecisionRef;
+	}//end raiseAndPersistDecision()
 
 	/**
 	 * Map a dossiq case type slug to a decidesk decisionType.
@@ -275,8 +341,8 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	 */
 	private function mapCaseTypeToDecisionType(string $caseTypeSlug): string {
 		return match ($caseTypeSlug) {
-			'leverancier-contractverlenging-verzoek' => ContractDecisionDelegationService::DECISION_TYPE_CONTRACT_RENEWAL,
-			default => ContractDecisionDelegationService::DECISION_TYPE_REPORT_ADOPTION,
+			'leverancier-contractverlenging-verzoek' => ContractDecisionDelegationServiceInterface::DECISION_TYPE_CONTRACT_RENEWAL,
+			default => ContractDecisionDelegationServiceInterface::DECISION_TYPE_REPORT_ADOPTION,
 		};
 	}//end mapCaseTypeToDecisionType()
 }//end class

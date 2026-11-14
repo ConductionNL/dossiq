@@ -33,6 +33,7 @@ use ReflectionClass;
  * @covers \OCA\Dossiq\Service\TenantSessionService
  *
  * @uses \OCA\Dossiq\Service\TenantOrganisationResolver
+ * @uses \OCA\Dossiq\Service\OrganisationLookup
  */
 class TenantSessionServiceTest extends TestCase {
 	use MakesActiveOrganisationContext;

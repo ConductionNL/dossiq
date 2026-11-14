@@ -30,14 +30,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/adopt-apphost/tasks.md#task-2.3
+ * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.3
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\OpenRegister\AppHost\Controller\GenericHealthController;
 use OCA\OpenRegister\AppHost\Observability\HealthCheckExecutor;
 use OCA\OpenRegister\AppHost\Observability\ManifestLoader;
@@ -50,7 +50,7 @@ use OCP\IRequest;
 /**
  * Public, declarative health endpoint backed by the AppHost engine.
  *
- * @spec openspec/changes/adopt-apphost/tasks.md#task-2.3
+ * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.3
  */
 class HealthController extends GenericHealthController {
 
@@ -70,7 +70,7 @@ class HealthController extends GenericHealthController {
 		HealthCheckExecutor $executor
 	) {
 		parent::__construct(
-			appName: Application::APP_ID,
+			appName: AppIdentity::APP_ID,
 			request: $request,
 			manifestLoader: $manifestLoader,
 			executor: $executor
@@ -82,7 +82,7 @@ class HealthController extends GenericHealthController {
 	 *
 	 * @return JSONResponse `{status, app, version, checks}` with HTTP code per policy.
 	 *
-	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.3
+	 * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.3
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

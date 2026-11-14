@@ -24,8 +24,7 @@
  * @spec openspec/specs/initiator-selection/spec.md
  */
 
-import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
+import { resolvePartyByAddress } from './caseParties.js'
 
 /**
  * Compose a person display name from a Haal Centraal naam block.
@@ -55,7 +54,7 @@ export function personDisplayName(naam) {
  * @spec openspec/specs/initiator-selection/spec.md
  */
 export function personResult(person) {
-	const bsn = person.citizenServiceNumber || person.citizen_service_number || ''
+	const bsn = citizenServiceNumberOf(person)
 	return {
 		type: 'person',
 		sourceId: bsn,
@@ -63,9 +62,29 @@ export function personResult(person) {
 		detail: [person.birth?.date, bsn && `BSN ${bsn}`]
 			.filter(Boolean)
 			.join(' · '),
-		objectId: person.id || person['@self']?.id || null,
+		objectId: registerObjectId(person),
 		protected: person.indicatieGeheim === true,
 	}
+}
+
+/**
+ * A brpPerson row's BSN, in either key casing.
+ *
+ * @param {object} person The brpPerson object.
+ * @return {string} The BSN, '' when it has none.
+ */
+function citizenServiceNumberOf(person) {
+	return person.citizenServiceNumber || person.citizen_service_number || ''
+}
+
+/**
+ * A register row's own uuid, from the row or its `@self` block.
+ *
+ * @param {object} row The register object.
+ * @return {string|null} The uuid, null when it has none.
+ */
+function registerObjectId(row) {
+	return row.id || row['@self']?.id || null
 }
 
 /**
@@ -76,16 +95,46 @@ export function personResult(person) {
  * @spec openspec/specs/initiator-selection/spec.md
  */
 export function companyResult(company) {
-	const number = company.kvkNumber || company.kvk_number || ''
+	const number = kvkNumberOf(company)
 	return {
 		type: 'company',
 		sourceId: number,
-		displayName: company.tradeName || company.trade_name || '',
-		detail: [company.legalForm || company.legal_form, number && `KVK ${number}`]
+		displayName: tradeNameOf(company),
+		detail: [legalFormOf(company), number && `KVK ${number}`]
 			.filter(Boolean)
 			.join(' · '),
-		objectId: company.id || company['@self']?.id || null,
+		objectId: registerObjectId(company),
 	}
+}
+
+/**
+ * A kvkCompany row's KVK number, in either key casing.
+ *
+ * @param {object} company The kvkCompany object.
+ * @return {string} The number, '' when it has none.
+ */
+function kvkNumberOf(company) {
+	return company.kvkNumber || company.kvk_number || ''
+}
+
+/**
+ * A kvkCompany row's trade name, in either key casing.
+ *
+ * @param {object} company The kvkCompany object.
+ * @return {string} The name, '' when it has none.
+ */
+function tradeNameOf(company) {
+	return company.tradeName || company.trade_name || ''
+}
+
+/**
+ * A kvkCompany row's legal form, in either key casing.
+ *
+ * @param {object} company The kvkCompany object.
+ * @return {string|undefined} The legal form as stored.
+ */
+function legalFormOf(company) {
+	return company.legalForm || company.legal_form
 }
 
 /**
@@ -98,16 +147,37 @@ export function companyResult(company) {
 export function contactResult(contact) {
 	return {
 		type: 'contact',
-		sourceId:
-			contact.id
-			|| contact.uid
-			|| contact.emailAddresses?.[0]
-			|| contact.fullName
-			|| '',
+		sourceId: contactSourceId(contact),
 		displayName: contact.fullName || contact.id || '',
-		detail: contact.emailAddresses?.[0] || contact.topAction?.title || '',
+		detail: contactDetail(contact),
 		objectId: null,
 	}
+}
+
+/**
+ * The identifier a contact is recorded under: its id, uid, first address or name.
+ *
+ * @param {object} contact The contactsmenu contact entry.
+ * @return {string} The identifier, '' when it has none.
+ */
+function contactSourceId(contact) {
+	return (
+		contact.id
+		|| contact.uid
+		|| contact.emailAddresses?.[0]
+		|| contact.fullName
+		|| ''
+	)
+}
+
+/**
+ * The line under a contact: its first address, else its top action.
+ *
+ * @param {object} contact The contactsmenu contact entry.
+ * @return {string} The detail, '' when it has neither.
+ */
+function contactDetail(contact) {
+	return contact.emailAddresses?.[0] || contact.topAction?.title || ''
 }
 
 /**
@@ -159,79 +229,72 @@ export function requesterPayload(result) {
 }
 
 /**
- * Whether a unified result is the one a requester payload names.
+ * A picked party as the four fields a case carries for its requester, from
+ * the kind it was found as (`person`, `company`, `contact`) and its row.
  *
- * The payload is what the form holds, so the picker has to recognise its
- * own choice coming back in. A bare uuid string is accepted too: that is
- * what `case.requester` holds on a case whose projection was written by
- * the semantic handoff rather than by the picker.
+ * A Nextcloud contact has no register row, so it is pointed at the party that
+ * already holds its address when OpenRegister knows one: two cases from one
+ * address then name one record, not two that no merge would find. A register
+ * row is already the record and is taken as it is.
  *
- * @param {object|string|null} value The current requester payload, uuid, or null.
+ * @param {string} kind The source the row came from.
+ * @param {object} row The row.
+ * @return {Promise<object>} `{ requester, initiatorType, initiatorSourceId, initiatorDisplayName }`.
+ * @spec openspec/specs/initiator-selection/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
+ */
+export async function initiatorChoice(kind, row) {
+	const shapes = { person: personResult, company: companyResult, contact: contactResult }
+	const shape = shapes[kind]
+	if (!shape || !row) {
+		return {}
+	}
+	const result = shape(row)
+	if (needsAddressLookup(result)) {
+		await adoptPartyHoldingAddress(result)
+	}
+	return requesterPayload(result)
+}
+
+/**
+ * The address a result's detail line holds, trimmed.
+ *
  * @param {object} result A unified initiator result.
- * @return {boolean} True when the result is the current choice.
- * @spec openspec/specs/initiator-selection/spec.md
+ * @return {string} The detail as an address candidate.
  */
-export function isCurrentRequester(value, result) {
-	if (!value || !result) {
-		return false
-	}
-	if (typeof value === 'string') {
-		return !!result.objectId && value === result.objectId
-	}
-	if (value.initiatorType) {
-		return (
-			value.initiatorType === result.type
-			&& String(value.initiatorSourceId || '')
-				=== String(result.sourceId || '')
-		)
-	}
-	// A bare unified result (the shape the picker emitted before the
-	// payload carried the uuid).
-	return (
-		value.type === result.type
-		&& String(value.sourceId || '') === String(result.sourceId || '')
-	)
+function addressOf(result) {
+	return String(result.detail || '').trim()
 }
 
 /**
- * Mask an identifying number to five dots plus its last four digits.
+ * Whether a result has no register row but names an address a party may hold.
  *
- * The last four are kept on purpose: a handler has to be able to tell two
- * cases apart, and a fully hidden number makes the card useless without
- * revealing it. The number itself is still on the case object — this is a
- * display rule, not storage masking, which needs OpenRegister to mask a
- * field on read.
- *
- * @param {string} value The number to mask.
- * @return {string} The masked number, or '' for an empty value.
- * @spec openspec/specs/initiator-display/spec.md
+ * @param {object} result A unified initiator result.
+ * @return {boolean} True when the address should be looked up.
  */
-export function maskNumber(value) {
-	const text = String(value || '')
-	if (text === '') {
-		return ''
-	}
-	return `•••••${text.slice(-4)}`
+function needsAddressLookup(result) {
+	return !result.objectId && addressOf(result).includes('@')
 }
 
 /**
- * Search Nextcloud contacts through the core contactsmenu endpoint.
- * Degrades to [] on any failure (Contacts absent, endpoint disabled) —
- * the picker shows an explicit empty state, never an error toast.
+ * Point a result at the party that already holds its address, when one does.
  *
- * @param {string} query The search filter.
- * @return {Promise<Array<object>>} Unified contact results.
- * @spec openspec/specs/initiator-selection/spec.md
+ * @param {object} result A unified initiator result; its `objectId` is set.
+ * @return {Promise<void>}
  */
-export async function searchContacts(query) {
-	try {
-		const { data } = await axios.post(generateUrl('/contactsmenu/contacts'), {
-			filter: query,
-		})
-		const contacts = data?.contacts || []
-		return contacts.map(contactResult)
-	} catch (err) {
-		// Graceful degradation by spec — unavailable source is an empty state.
-		return []
+async function adoptPartyHoldingAddress(result) {
+	const party = await resolvePartyByAddress(addressOf(result))
+	if (party) {
+		result.objectId = partyObjectId(party)
 	}
+}
+
+/**
+ * A party record's uuid, whichever shape OpenRegister answered it in.
+ *
+ * @param {object} party The party record.
+ * @return {string|null} The uuid, null when it has none.
+ */
+function partyObjectId(party) {
+	return party.id || party['@self']?.id || party.uuid || null
 }

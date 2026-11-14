@@ -50,3 +50,14 @@
 .cn-data-table tr.cn-row--danger td.cn-cell--strong {
 	font-weight: 600;
 }
+
+/* Board DqZakenSorteren draws the case cards 242px wide, three beside the open
+   side panel and four at full width; the library's card track minimum (260px)
+   leaves two. Dossiq's lists take a 232px minimum. The footer under a card
+   grid stands the page column's 20px under the cards (DqAanMijToegewezen,
+   DqZakenSorteren). */
+.cn-look-board .cn-index-page,
+.cn-index-page.cn-look-board {
+	--cn-card-grid-min: 232px;
+	--cn-board-pager-gap: 20px;
+}

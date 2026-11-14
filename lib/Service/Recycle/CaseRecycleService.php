@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -42,8 +42,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Recycle;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\CaseRecycleServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Db\AuditTrailMapper;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -52,9 +55,9 @@ use Throwable;
 /**
  * Lists deleted cases with their window, and restores one as a recorded act.
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
-class CaseRecycleService {
+class CaseRecycleService implements CaseRecycleServiceInterface {
 
 	use SearchesObjects;
 
@@ -84,11 +87,33 @@ class CaseRecycleService {
 	public const RESTORE_ACTION = 'object.restored';
 
 	/**
-	 * How many deleted rows one page of the lens holds.
+	 * OpenRegister's register mapper.
+	 *
+	 * @var string
+	 */
+	public const REGISTER_MAPPER = 'OCA\\OpenRegister\\Db\\RegisterMapper';
+
+	/**
+	 * OpenRegister's schema mapper.
+	 *
+	 * @var string
+	 */
+	public const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
+
+	/**
+	 * The most deleted cases the lens reads. Rows past the recovery window are
+	 * purged, so the trash of one schema stays far below this.
 	 *
 	 * @var int
 	 */
-	public const PAGE_SIZE = 50;
+	public const DELETED_ROW_CAP = 1000;
+
+	/**
+	 * The constant that names OpenRegister's deleted lens on the object list.
+	 *
+	 * @var string
+	 */
+	public const DELETED_LENS = 'OCA\\OpenRegister\\Db\\MagicMapper\\MagicSearchHandler::DELETED_ONLY';
 
 	/**
 	 * Constructor.
@@ -120,6 +145,7 @@ class CaseRecycleService {
 	 * @param int $offset How many rows to skip.
 	 * @param string $forUser The caller's user id; an empty id sees nothing.
 	 * @param bool $isAdmin Whether the caller is an administrator.
+	 * @param string $search A term the number, title or deleter must hold; empty for all.
 	 *
 	 * @return array{results: array<int, array<string, mixed>>, total: int}
 	 *
@@ -128,50 +154,194 @@ class CaseRecycleService {
 	 * here instead would put an IGroupManager in a class whose whole job is to
 	 * read OpenRegister, and would make the scoping untestable without one.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function deletedCases(
 		int $limit = self::PAGE_SIZE,
 		int $offset = 0,
 		string $forUser = '',
 		bool $isAdmin = false,
+		string $search = '',
 	): array {
-		$mapper = $this->settingsService->getOpenRegisterClass(class: self::MAGIC_MAPPER);
-		if ($mapper === null || method_exists($mapper, 'findDeletedAcrossAllMagicTables') === false) {
-			return [
-				'results' => [],
-				'total' => 0,
-			];
-		}
+		return $this->pageOf(cases: $this->visibleCases(forUser: $forUser, isAdmin: $isAdmin, search: $search), offset: $offset, limit: $limit);
+	}//end deletedCases()
 
-		try {
-			$rows = $mapper->findDeletedAcrossAllMagicTables(limit: $limit, offset: $offset);
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: could not read the deleted cases: ' . $e->getMessage());
-			return [
-				'results' => [],
-				'total' => 0,
-			];
-		}
-
+	/**
+	 * Every deleted case the caller may see and the search term matches, unsorted.
+	 *
+	 * @param string $forUser The caller's user id; an empty id sees nothing.
+	 * @param bool   $isAdmin Whether the caller is an administrator.
+	 * @param string $search  A term the number, title or deleter must hold; empty for all.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function visibleCases(string $forUser, bool $isAdmin, string $search): array {
 		$cases = [];
-		foreach ($rows as $row) {
-			if ($this->isCase(entity: $row) === false) {
+		foreach ($this->deletedRows() as $row) {
+			if ($this->visible(row: $row, forUser: $forUser, isAdmin: $isAdmin) === false) {
 				continue;
 			}
 
-			if ($this->maySee(entity: $row, userId: $forUser, isAdmin: $isAdmin) === false) {
-				continue;
+			$case = $this->row(entity: $row);
+			if ($this->matches(case: $case, search: $search) === true) {
+				$cases[] = $case;
 			}
-
-			$cases[] = $this->row(entity: $row);
 		}
+
+		return $cases;
+	}//end visibleCases()
+
+	/**
+	 * Whether a deleted row is a case the caller may see.
+	 *
+	 * @param mixed  $row     The deleted row.
+	 * @param string $forUser The caller's user id.
+	 * @param bool   $isAdmin Whether the caller is an administrator.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function visible(mixed $row, string $forUser, bool $isAdmin): bool {
+		return $this->isCase(entity: $row) === true
+			&& $this->maySee(entity: $row, userId: $forUser, isAdmin: $isAdmin) === true;
+	}//end visible()
+
+	/**
+	 * One page of the cases, newest deletion first, with the total.
+	 *
+	 * @param array<int, array<string, mixed>> $cases  The cases.
+	 * @param int                              $offset How many rows to skip.
+	 * @param int                              $limit  How many rows to return.
+	 *
+	 * @return array{results: array<int, array<string, mixed>>, total: int}
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function pageOf(array $cases, int $offset, int $limit): array {
+		usort(
+			$cases,
+			static fn (array $first, array $second): int => strcmp($second['deletedAt'], $first['deletedAt'])
+		);
 
 		return [
-			'results' => $cases,
+			'results' => array_slice($cases, max(0, $offset), max(0, $limit)),
 			'total' => count($cases),
 		];
-	}//end deletedCases()
+	}//end pageOf()
+
+	/**
+	 * The soft-deleted rows the lens chooses from.
+	 *
+	 * The case table's deleted rows when OpenRegister offers the `_deleted`
+	 * lens and can say which table that is, else every deleted row on the
+	 * instance. An OpenRegister without the lens drops deleted rows from the
+	 * object list, so asking it the table question would answer nothing. Never a page of either: the
+	 * lens scopes the rows first and pages after, or a case behind a page of
+	 * other apps' deletions would never be listed.
+	 *
+	 * @return array<int, object> OpenRegister's object entities.
+	 */
+	private function deletedRows(): array {
+		$mapper = $this->settingsService->getOpenRegisterClass(class: self::MAGIC_MAPPER);
+		if ($mapper === null) {
+			return [];
+		}
+
+		$table = $this->resolvedCaseTable();
+		try {
+			return $this->readDeletedRows(mapper: $mapper, table: $table);
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: could not read the deleted cases: ' . $e->getMessage());
+		}
+
+		return [];
+	}//end deletedRows()
+
+	/**
+	 * The case table, or null when it cannot be resolved.
+	 *
+	 * @return array{register: object, schema: object}|null The pair.
+	 */
+	private function resolvedCaseTable(): ?array {
+		// A case table that cannot be resolved falls back on the scan of every table.
+		$table = null;
+		try {
+			$table = $this->caseTable();
+		} catch (Throwable $e) {
+			$this->logger->info('Dossiq: the case table could not be resolved: ' . $e->getMessage());
+		}
+
+		return $table;
+	}//end resolvedCaseTable()
+
+	/**
+	 * The case table's deleted rows through the lens, else every deleted row on the instance.
+	 *
+	 * @param object                                       $mapper OpenRegister's magic mapper.
+	 * @param array{register: object, schema: object}|null $table  The case table, or null.
+	 *
+	 * @return array<int, object> OpenRegister's object entities.
+	 */
+	private function readDeletedRows(object $mapper, ?array $table): array {
+		if ($table !== null && $this->deletedLensAvailable() === true) {
+			return $mapper->searchObjectsInRegisterSchemaTable(
+				query: [
+					'_deleted' => 'true',
+					'_limit' => self::DELETED_ROW_CAP,
+				],
+				register: $table['register'],
+				schema: $table['schema']
+			);
+		}
+
+		return $mapper->findDeletedAcrossAllMagicTables();
+	}//end readDeletedRows()
+
+	/**
+	 * Whether OpenRegister's object list offers the `_deleted` lens.
+	 *
+	 * @return bool True when it does.
+	 */
+	protected function deletedLensAvailable(): bool {
+		return defined(self::DELETED_LENS);
+	}//end deletedLensAvailable()
+
+	/**
+	 * OpenRegister's register and schema entities of the case table, or null.
+	 *
+	 * @return array{register: object, schema: object}|null The pair.
+	 */
+	private function caseTable(): ?array {
+		$registers = $this->settingsService->getOpenRegisterClass(class: self::REGISTER_MAPPER);
+		$schemas = $this->settingsService->getOpenRegisterClass(class: self::SCHEMA_MAPPER);
+		if ($registers === null || $schemas === null) {
+			return null;
+		}
+
+		// An unconfigured id is a miss the mapper raises; the caller falls back on it.
+		return [
+			'register' => $registers->find($this->settingsService->getConfigValue('register')),
+			'schema' => $schemas->find($this->settingsService->getConfigValue('case_schema')),
+		];
+	}//end caseTable()
+
+	/**
+	 * Whether a lens row matches a search term on its number, title or deleter.
+	 *
+	 * @param array<string, mixed> $case The row.
+	 * @param string $search The term; empty matches everything.
+	 *
+	 * @return bool True when the row stays.
+	 */
+	private function matches(array $case, string $search): bool {
+		// An empty needle is found at position 0, so an empty term keeps every row.
+		$haystack = implode(' ', [$case['identifier'], $case['title'], $case['deletedBy']]);
+
+		return (mb_stripos($haystack, trim($search)) !== false);
+	}//end matches()
 
 	/**
 	 * One live case, as an associative array, or null.
@@ -183,7 +353,7 @@ class CaseRecycleService {
 	 *
 	 * @return array<string, mixed>|null The case payload, or null.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function liveCase(string $caseId): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -228,7 +398,7 @@ class CaseRecycleService {
 	 *
 	 * @throws RuntimeException `case_not_deleted` when the case is not in the recycle state.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function restore(string $caseId): array {
 		$entity = $this->findDeleted(caseId: $caseId);
@@ -255,7 +425,7 @@ class CaseRecycleService {
 	 *
 	 * @return object|null OpenRegister's object entity, or null.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function findDeleted(string $caseId): ?object {
 		$mapper = $this->settingsService->getOpenRegisterClass(class: self::MAGIC_MAPPER);
@@ -263,10 +433,27 @@ class CaseRecycleService {
 			return null;
 		}
 
+		$entity = $this->findIncludingDeleted(mapper: $mapper, caseId: $caseId);
+		if ($this->isDeletedCase(entity: $entity) === false) {
+			return null;
+		}
+
+		return $entity;
+	}//end findDeleted()
+
+	/**
+	 * The entity behind an id, deleted rows included, or null on a miss.
+	 *
+	 * @param object $mapper OpenRegister's magic mapper.
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return object|null OpenRegister's object entity, or null.
+	 */
+	private function findIncludingDeleted(object $mapper, string $caseId): ?object {
 		// A miss is what the mapper RAISES rather than returns, so the catch is
 		// the read-miss path. It logs and answers nothing here; the single
-		// answer below covers a miss, a row of another schema and a row that
-		// is not in the recycle state, which are the same answer to a caller.
+		// answer in findDeleted() covers a miss, a row of another schema and a
+		// row that is not in the recycle state, which are the same answer to a caller.
 		$entity = null;
 		try {
 			$entity = $mapper->find(identifier: $caseId, register: null, schema: null, includeDeleted: true);
@@ -277,15 +464,21 @@ class CaseRecycleService {
 			);
 		}
 
-		if ($entity === null
-			|| $this->isCase(entity: $entity) === false
-			|| $this->windowReader->isSoftDeleted(entity: $entity) === false
-		) {
-			return null;
-		}
-
 		return $entity;
-	}//end findDeleted()
+	}//end findIncludingDeleted()
+
+	/**
+	 * Whether an entity is a case in the recycle state.
+	 *
+	 * @param object|null $entity OpenRegister's object entity, or null on a miss.
+	 *
+	 * @return bool True for a soft-deleted case.
+	 */
+	private function isDeletedCase(?object $entity): bool {
+		return $entity !== null
+			&& $this->isCase(entity: $entity) === true
+			&& $this->windowReader->isSoftDeleted(entity: $entity) === true;
+	}//end isDeletedCase()
 
 	/**
 	 * One row of the deleted lens.
@@ -322,10 +515,27 @@ class CaseRecycleService {
 	 */
 	private function recordRestore(object $entity, ?array $window): void {
 		$mapper = $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER);
-		if ($mapper === null || method_exists($mapper, 'createAuditTrailEntry') === false) {
+		if ($mapper instanceof AuditTrailMapper === false) {
 			return;
 		}
 
+		[$actor, $actorName] = $this->restoringActor();
+
+		try {
+			$context = self::restoreContext(entity: $entity, window: $window, actor: $actor);
+			$event = ObjectAuditEvents::of(object: $entity, action: self::RESTORE_ACTION, context: $context, actorId: $actor, actorName: $actorName);
+			$mapper->recordObjectEvent(event: $event);
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: the case was restored but the record could not be written: ' . $e->getMessage());
+		}
+	}//end recordRestore()
+
+	/**
+	 * Who is restoring: the signed-in user, or the system.
+	 *
+	 * @return array{0: string, 1: string} The actor's id and display name.
+	 */
+	private function restoringActor(): array {
 		$user = $this->userSession->getUser();
 		$actor = 'system';
 		$actorName = 'System';
@@ -334,25 +544,26 @@ class CaseRecycleService {
 			$actorName = $user->getDisplayName();
 		}
 
-		try {
-			$mapper->createAuditTrailEntry(
-				object: $entity,
-				action: self::RESTORE_ACTION,
-				context: [
-					'restoredBy' => $actor,
-					'restoredAt' => (new DateTime())->format(DateTime::ATOM),
-					'objectUuid' => (string)$entity->getUuid(),
-					'restoredWithin' => $window,
-				],
-				actorId: $actor,
-				actorName: $actorName
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the case was restored but the record could not be written: ' . $e->getMessage()
-			);
-		}
-	}//end recordRestore()
+		return [$actor, $actorName];
+	}//end restoringActor()
+
+	/**
+	 * What the restore record says: who, when, which case and inside which window.
+	 *
+	 * @param object                    $entity The case restored.
+	 * @param array<string, mixed>|null $window The window it came back inside.
+	 * @param string                    $actor  Who restored it.
+	 *
+	 * @return array<string, mixed> The context.
+	 */
+	private static function restoreContext(object $entity, ?array $window, string $actor): array {
+		return [
+			'restoredBy' => $actor,
+			'restoredAt' => (new DateTime())->format(DateTime::ATOM),
+			'objectUuid' => (string)$entity->getUuid(),
+			'restoredWithin' => $window,
+		];
+	}//end restoreContext()
 
 	/**
 	 * OpenRegister's mapper, or an exception.
@@ -380,7 +591,7 @@ class CaseRecycleService {
 	 *
 	 * @return array<string, mixed>|null The window, or null when the row carries none.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function window(object $entity): ?array {
 		return $this->windowReader->windowFor(entity: $entity);
@@ -398,7 +609,7 @@ class CaseRecycleService {
 	 *
 	 * @return bool True when the row belongs in this caller's lens.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function maySee(object $entity, string $userId, bool $isAdmin): bool {
 		if ($isAdmin === true) {

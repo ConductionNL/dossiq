@@ -36,13 +36,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
  * Resolve workflow step/transition roles to NC group ids for OR RBAC.
  *
- * @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-2.1
+ * @spec openspec/changes/archive/2026-06-15-migrate-role-routing-to-or-rbac/tasks.md#P-2.1
  */
 class WorkflowStepAuthorizationResolver {
 
@@ -78,7 +79,7 @@ class WorkflowStepAuthorizationResolver {
 	 *
 	 * @return array<int, string> Distinct, non-empty NC group ids (may be empty when no role maps to a group).
 	 *
-	 * @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-2.1
+	 * @spec openspec/changes/archive/2026-06-15-migrate-role-routing-to-or-rbac/tasks.md#P-2.1
 	 */
 	public function resolveGroupIds(array $entry): array {
 		$roleTypeIds = $this->collectRoleTypeIds(entry: $entry);
@@ -109,23 +110,8 @@ class WorkflowStepAuthorizationResolver {
 
 		$rule = ($entry['routingRule'] ?? null);
 		if (is_array($rule) === true) {
-			$single = (string)($rule['roleType'] ?? '');
-			if ($single !== '') {
-				$ids[$single] = true;
-			}
-
-			foreach ((array)($rule['roleTypes'] ?? []) as $roleType) {
-				$roleType = (string)$roleType;
-				if ($roleType !== '') {
-					$ids[$roleType] = true;
-				}
-			}
-
-			$fallback = (string)($rule['fallback'] ?? '');
-			if ($fallback !== '') {
-				$ids[$fallback] = true;
-			}
-		}//end if
+			$ids = $this->routingRuleRoleTypeIds(rule: $rule);
+		}
 
 		$assignee = (string)($entry['assigneeRole'] ?? '');
 		if ($assignee !== '') {
@@ -143,6 +129,36 @@ class WorkflowStepAuthorizationResolver {
 	}//end collectRoleTypeIds()
 
 	/**
+	 * The roleType UUIDs a routing rule names: its role, its roles and its fallback.
+	 *
+	 * @param array<string, mixed> $rule The routing rule.
+	 *
+	 * @return array<string, true> The roleType UUIDs, as keys.
+	 */
+	private function routingRuleRoleTypeIds(array $rule): array {
+		$ids = [];
+
+		$single = (string)($rule['roleType'] ?? '');
+		if ($single !== '') {
+			$ids[$single] = true;
+		}
+
+		foreach ((array)($rule['roleTypes'] ?? []) as $roleType) {
+			$roleType = (string)$roleType;
+			if ($roleType !== '') {
+				$ids[$roleType] = true;
+			}
+		}
+
+		$fallback = (string)($rule['fallback'] ?? '');
+		if ($fallback !== '') {
+			$ids[$fallback] = true;
+		}
+
+		return $ids;
+	}//end routingRuleRoleTypeIds()
+
+	/**
 	 * Load a roleType's ncGroupId, caching the result for this publish pass.
 	 *
 	 * @param string $roleTypeId The roleType UUID.
@@ -156,16 +172,12 @@ class WorkflowStepAuthorizationResolver {
 
 		$this->groupIdCache[$roleTypeId] = null;
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$source = $this->roleTypeSource();
+		if ($source === null) {
 			return null;
 		}
 
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$roleTypeSchema = $this->settingsService->getConfigValue(key: 'role_type_schema');
-		if ($register === '' || $roleTypeSchema === '') {
-			return null;
-		}
+		[$objectService, $register, $roleTypeSchema] = $source;
 
 		try {
 			$roleType = $this->toArray(value: $objectService->find($roleTypeId, register: $register, schema: $roleTypeSchema));
@@ -177,6 +189,38 @@ class WorkflowStepAuthorizationResolver {
 			return null;
 		}
 
+		return $this->cacheGroupId(roleTypeId: $roleTypeId, roleType: $roleType);
+	}//end ncGroupIdFor()
+
+	/**
+	 * The object service, register and roleType schema roleTypes are read from.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The source, or null when OpenRegister or the schema is missing.
+	 */
+	private function roleTypeSource(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$roleTypeSchema = $this->settingsService->getConfigValue(key: 'role_type_schema');
+		if ($register === '' || $roleTypeSchema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $roleTypeSchema];
+	}//end roleTypeSource()
+
+	/**
+	 * Cache and answer a roleType's ncGroupId.
+	 *
+	 * @param string               $roleTypeId The roleType UUID.
+	 * @param array<string, mixed> $roleType   The roleType.
+	 *
+	 * @return string|null The NC group id, or null when unmapped.
+	 */
+	private function cacheGroupId(string $roleTypeId, array $roleType): ?string {
 		$groupId = trim((string)($roleType['ncGroupId'] ?? ''));
 		if ($groupId === '') {
 			return null;
@@ -184,7 +228,7 @@ class WorkflowStepAuthorizationResolver {
 
 		$this->groupIdCache[$roleTypeId] = $groupId;
 		return $groupId;
-	}//end ncGroupIdFor()
+	}//end cacheGroupId()
 
 	/**
 	 * Coerce an ObjectService return value to a plain array.
@@ -194,17 +238,6 @@ class WorkflowStepAuthorizationResolver {
 	 * @return array<string, mixed>
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

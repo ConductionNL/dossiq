@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
  */
 
 declare(strict_types=1);
@@ -30,15 +30,16 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\MandaatGebruikServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
  * Immutable audit log for mandate uses.
  *
- * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
  */
-class MandaatGebruikService {
+class MandaatGebruikService implements MandaatGebruikServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -65,7 +66,7 @@ class MandaatGebruikService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
 	 */
 	public function logMandaatGebruik(
 		string $caseId,
@@ -114,7 +115,7 @@ class MandaatGebruikService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
 	 */
 	public function getDecisionAuditTrail(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -140,7 +141,7 @@ class MandaatGebruikService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
 	 */
 	public function getDecisionByMandaat(string $mandateId, ?DateTimeImmutable $from = null, ?DateTimeImmutable $until = null): array {
 		$objectService = $this->settingsService->getObjectService();

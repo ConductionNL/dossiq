@@ -32,9 +32,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\ReadsEventObjects;
 use OCA\Dossiq\Service\Relation\LinkMarkerRule;
 use OCA\Dossiq\Service\Relation\LinkMarkerRuleReader;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -51,7 +52,7 @@ use Throwable;
  * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-marker-rule-derives-a-flag-on-the-referenced-object-req-lcr-4
  */
 class LinkMarkerListener implements IEventListener {
-
+	use ReadsEventObjects;
 	use SearchesObjects;
 
 	/**
@@ -64,13 +65,13 @@ class LinkMarkerListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register, schema keys, rules and the object service.
+	 * @param SettingsServiceInterface $settingsService Register, schema keys, rules and the object service.
 	 * @param LoggerInterface $logger          Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -94,13 +95,37 @@ class LinkMarkerListener implements IEventListener {
 			return;
 		}
 
-		try {
-			$rules = (new LinkMarkerRuleReader())->fromJson(json: $this->settingsService->getConfigValue(key: self::RULES_KEY));
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: the link marker rules do not read: '.$e->getMessage());
+		$rules = $this->markerRules();
+		if ($rules === null) {
 			return;
 		}
 
+		$this->applyAll(rules: $rules, source: $source);
+	}//end handle()
+
+	/**
+	 * The configured marker rules, null (and a warning) when they do not read.
+	 *
+	 * @return array<int, LinkMarkerRule>|null
+	 */
+	private function markerRules(): array|null {
+		try {
+			return (new LinkMarkerRuleReader())->fromJson(json: $this->settingsService->getConfigValue(key: self::RULES_KEY));
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: the link marker rules do not read: '.$e->getMessage());
+			return null;
+		}
+	}//end markerRules()
+
+	/**
+	 * Apply each rule to a saved object, skipping a rule that fails.
+	 *
+	 * @param array<int, LinkMarkerRule> $rules  The rules.
+	 * @param array<string, mixed>       $source The saved object.
+	 *
+	 * @return void
+	 */
+	private function applyAll(array $rules, array $source): void {
 		foreach ($rules as $rule) {
 			try {
 				$this->apply(rule: $rule, source: $source);
@@ -111,7 +136,7 @@ class LinkMarkerListener implements IEventListener {
 				);
 			}
 		}
-	}//end handle()
+	}//end applyAll()
 
 	/**
 	 * Apply one rule to a saved object.
@@ -122,46 +147,84 @@ class LinkMarkerListener implements IEventListener {
 	 * @return void
 	 */
 	private function apply(LinkMarkerRule $rule, array $source): void {
-		$sourceSchema = $this->settingsService->getConfigValue(key: $rule->source);
-		if ($sourceSchema === '' || $this->isInSchema(object: $source, schema: $sourceSchema) === false) {
-			return;
-		}
-
-		$targetId = $this->referenceOf(source: $source, field: $rule->field);
-		if ($targetId === '') {
-			return;
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		$register      = $this->settingsService->getConfigValue(key: 'register');
-		$targetSchema  = $this->settingsService->getConfigValue(key: $rule->target);
-		if ($objectService === null || $register === '' || $targetSchema === '') {
+		$run = $this->markerRun(rule: $rule, source: $source);
+		if ($run === null || $this->locateTarget(run: $run) === false) {
 			return;
 		}
 
 		$target = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $targetSchema,
-			id: $targetId
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: $run->targetSchema,
+			id: $run->targetId
 		);
-		if ($target === null) {
-			return;
+		if ($target !== null) {
+			$this->syncMarker(run: $run, target: $target);
+		}
+	}//end apply()
+
+	/**
+	 * The run for a source on the rule's source schema that names its target, or null.
+	 *
+	 * @param LinkMarkerRule       $rule   The rule.
+	 * @param array<string, mixed> $source The saved object.
+	 *
+	 * @return LinkMarkerRun|null
+	 */
+	private function markerRun(LinkMarkerRule $rule, array $source): ?LinkMarkerRun {
+		$sourceSchema = $this->settingsService->getConfigValue(key: $rule->source);
+		if ($sourceSchema === '' || $this->isInSchema(object: $source, schema: $sourceSchema) === false) {
+			return null;
 		}
 
-		$marker = $rule->holds(source: $source, target: $target);
-		if (($target[$rule->marker] ?? null) === $marker) {
+		$run = new LinkMarkerRun();
+		$run->rule = $rule;
+		$run->source = $source;
+		$run->targetId = $this->referenceOf(source: $source, field: $rule->field);
+		if ($run->targetId === '') {
+			return null;
+		}
+
+		return $run;
+	}//end markerRun()
+
+	/**
+	 * Where the target lives; false without an object service, a register or the target's schema.
+	 *
+	 * @param LinkMarkerRun $run The run.
+	 *
+	 * @return bool
+	 */
+	private function locateTarget(LinkMarkerRun $run): bool {
+		$run->objectService = $this->settingsService->getObjectService();
+		$run->register      = $this->settingsService->getConfigValue(key: 'register');
+		$run->targetSchema  = $this->settingsService->getConfigValue(key: $run->rule->target);
+
+		return $run->objectService !== null && $run->register !== '' && $run->targetSchema !== '';
+	}//end locateTarget()
+
+	/**
+	 * Write the rule's marker onto the target when it differs from the stored one.
+	 *
+	 * @param LinkMarkerRun        $run    The run.
+	 * @param array<string, mixed> $target The target.
+	 *
+	 * @return void
+	 */
+	private function syncMarker(LinkMarkerRun $run, array $target): void {
+		$marker = $run->rule->holds(source: $run->source, target: $target);
+		if (($target[$run->rule->marker] ?? null) === $marker) {
 			return;
 		}
 
 		$this->patchObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $targetSchema,
-			id: $targetId,
-			changes: [$rule->marker => $marker]
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: $run->targetSchema,
+			id: $run->targetId,
+			changes: [$run->rule->marker => $marker]
 		);
-	}//end apply()
+	}//end syncMarker()
 
 	/**
 	 * The uuid a source field references, or '' when it holds none.
@@ -216,21 +279,10 @@ class LinkMarkerListener implements IEventListener {
 	 * @return array<string, mixed>|null The object, or null.
 	 */
 	private function objectOf(Event $event): ?array {
-		foreach (['getNewObject', 'getObject'] as $method) {
-			if (method_exists($event, $method) === false) {
-				continue;
-			}
-
-			$value = $event->{$method}();
-			if (is_array($value) === true) {
-				return $value;
-			}
-
-			if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
+		foreach ($this->eventObjectValues(event: $event) as $value) {
+			$row = $this->objectToArrayOrNull(value: $value);
+			if ($row !== null) {
+				return $row;
 			}
 		}
 

@@ -47,8 +47,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DemoDataServiceInterface;
+use OCA\Dossiq\Service\Setup\ExampleDataFragments;
 use OCP\App\IAppManager;
+use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -56,9 +59,9 @@ use RuntimeException;
 /**
  * Imports the generated demo dataset into OpenRegister on request.
  *
- * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
-class DemoDataService {
+class DemoDataService implements DemoDataServiceInterface {
 	/**
 	 * App-relative path to the generated mock descriptor.
 	 *
@@ -97,7 +100,16 @@ class DemoDataService {
 	 *
 	 * @var string
 	 */
-	private const CONFIG_APP_ID = Application::APP_ID . '.demo';
+	private const CONFIG_APP_ID = AppIdentity::APP_ID . '.demo';
+
+	/**
+	 * App-config key listing the slugs of the curated example objects an
+	 * earlier load created. A re-run leaves those alone, so it does not
+	 * reassign them to whoever clicked or move their dates.
+	 *
+	 * @var string
+	 */
+	public const FRAGMENTS_LOADED_KEY = 'example_fragments_loaded';
 
 	/**
 	 * Constructor.
@@ -105,6 +117,8 @@ class DemoDataService {
 	 * @param IAppManager        $appManager Resolves this app's path and version.
 	 * @param ContainerInterface $container  Resolves OpenRegister's importer.
 	 * @param LoggerInterface    $logger     Records what was imported.
+	 * @param ExampleDataFragments|null $fragments The curated example objects loaded with the generated set.
+	 * @param IAppConfig|null           $appConfig Records which curated objects a load created.
 	 *
 	 * @return void
 	 */
@@ -112,6 +126,8 @@ class DemoDataService {
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?ExampleDataFragments $fragments = null,
+		private readonly ?IAppConfig $appConfig = null,
 	) {
 	}//end __construct()
 
@@ -120,29 +136,11 @@ class DemoDataService {
 	 *
 	 * @return boolean True when the descriptor is present on disk.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function isAvailable(): bool {
 		return is_file($this->descriptorPath()) === true;
 	}//end isAvailable()
-
-	/**
-	 * The answer that means "plant nothing".
-	 *
-	 * 🔴 NOT THE ABSENCE OF AN ANSWER. An operator who declines has FINISHED the
-	 * step; a step that can never be marked done reopens the wizard over every
-	 * page (nextcloud-vue#806).
-	 *
-	 * @var string
-	 */
-	public const NONE_DATASET = 'none';
-
-	/**
-	 * The id of the dataset this app ships.
-	 *
-	 * @var string
-	 */
-	public const DEMO_DATASET = 'demo';
 
 	/**
 	 * Every answer the wizard's choice step may offer, declining included.
@@ -161,8 +159,8 @@ class DemoDataService {
 		$choices = [
 			[
 				'id'          => self::NONE_DATASET,
-				'label'       => 'None, I will set this up myself',
-				'description' => 'Nothing is imported. You start with an empty app and add your own data.',
+				'label'       => 'Start empty',
+				'description' => 'You create the first case yourself',
 				'objectCount' => 0,
 				'icon'        => 'CloseCircleOutline',
 			],
@@ -170,24 +168,22 @@ class DemoDataService {
 
 		$objects = $this->shippedObjectCount();
 		if ($objects !== null) {
-			$choices[] = [
+			// First, as the setup board (DqInstellen) offers it: looking around
+			// with example data is the suggested start, starting empty the
+			// alternative.
+			array_unshift($choices, [
 				'id'    => self::DEMO_DATASET,
-				'label' => 'Example data',
+				'label' => 'Load example data',
 				// 🔴 NO NUMBER IN THIS SENTENCE. The wizard runs a card's
 				// description through the app's translation function, which is a
 				// literal lookup, so an interpolated count would make the string
 				// untranslatable and leave a Dutch operator reading English. The
 				// count travels as `objectCount` and the card renders it as a
 				// stat, with a label the library translates.
-				'description' => (
-					'Sample values for every schema this app supplies, generated from the schemas '
-					. 'themselves. It shows the lists, detail pages and dashboards working rather '
-					. 'than telling a story. Safe to run more than once, and you can delete it '
-					. 'afterwards.'
-				),
+				'description' => 'Cases, contacts and organisations, all fictional',
 				'objectCount' => $objects,
 				'icon'        => 'DatabaseOutline',
-			];
+			]);
 		}
 
 		return $choices;
@@ -219,12 +215,12 @@ class DemoDataService {
 			return null;
 		}
 
-		$components = ($data['components'] ?? []);
-		if (is_array($components) === false || is_array(($components['objects'] ?? null)) === false) {
-			return 0;
+		$curated = 0;
+		if ($this->fragments !== null) {
+			$curated = count($this->fragments->rawObjects());
 		}
 
-		return count($components['objects']);
+		return $this->requestedCount(data: $data) + $curated;
 
 	}//end shippedObjectCount()
 
@@ -258,9 +254,39 @@ class DemoDataService {
 	 * @throws RuntimeException When the descriptor is missing or unreadable, OpenRegister is
 	 *     absent, or nothing was stored and nothing was already present.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function install(): array {
+		$data = $this->withFragments(data: $this->readDescriptor());
+
+		// The ASK: how many objects the shipped descriptor carries. Kept, but
+		// as one half of a comparison rather than as the answer.
+		$requested = $this->requestedCount(data: $data);
+
+		$result = $this->configurationService()->importFromApp(
+			appId: self::CONFIG_APP_ID,
+			data: $this->objectsOnly(data: $data),
+			version: $this->appManager->getAppVersion(AppIdentity::APP_ID),
+			force: true
+		);
+
+		$imported = $this->readLanding(result: $result, requested: $requested);
+		$this->assertSomethingSurvived(imported: $imported, requested: $requested);
+
+		$this->reportLanding(imported: $imported, requested: $requested);
+		$this->recordFragments();
+
+		return $imported;
+	}//end install()
+
+	/**
+	 * The shipped demo descriptor, decoded.
+	 *
+	 * @return array<string, mixed> The descriptor.
+	 *
+	 * @throws RuntimeException When the descriptor is missing, unreadable or not valid JSON.
+	 */
+	private function readDescriptor(): array {
 		$path = $this->descriptorPath();
 		if (is_file($path) === false) {
 			throw new RuntimeException('No demo dataset ships with this app (' . self::DESCRIPTOR . ' not found).');
@@ -276,39 +302,53 @@ class DemoDataService {
 			throw new RuntimeException('The demo dataset is not valid JSON: ' . $path);
 		}
 
-		// The ASK: how many objects the shipped descriptor carries. Kept, but
-		// as one half of a comparison rather than as the answer.
-		$requested = 0;
+		return $data;
+	}//end readDescriptor()
+
+	/**
+	 * How many objects the descriptor carries.
+	 *
+	 * @param array<string, mixed> $data The descriptor, with its fragments.
+	 *
+	 * @return integer The object count, 0 when it carries none.
+	 */
+	private function requestedCount(array $data): int {
 		$components = ($data['components'] ?? []);
 		if (is_array($components) === true && is_array(($components['objects'] ?? null)) === true) {
-			$requested = count($components['objects']);
+			return count($components['objects']);
 		}
 
-		$result = $this->configurationService()->importFromApp(
-			appId: self::CONFIG_APP_ID,
-			data: $this->objectsOnly(data: $data),
-			version: $this->appManager->getAppVersion(Application::APP_ID),
-			force: true
-		);
+		return 0;
+	}//end requestedCount()
 
-		$imported = $this->readLanding(result: $result, requested: $requested);
-
-		// 🔴 AN IMPORT THAT STORED NOTHING IS NOT A SUCCESS, and this is the
-		// only place that can tell. Same shape as the seed steps of #1767 and
-		// #1769, which reported `success: true` with every counter at zero and
-		// recorded themselves as done. A descriptor that ships no objects at
-		// all is a different condition and stays a success: registers and
-		// schemas are a legitimate thing to ship on their own.
-		// STORING NOTHING IS NOT THE SAME AS FAILING. This read `objects === 0`
-		// alone, which refuses an import whose objects are already there, and
-		// that is the normal case on a second run. The step's own body promises
-		// it is "safe to run more than once", and an idempotent import
-		// necessarily stores zero the second time. Measured on CI, dossiq
-		// development, every run since 2026-09-03: 444 requested, 0 stored,
-		// reported as a hard failure on an install with nothing left to do.
-		//
-		// So the question is whether anything SURVIVED, not whether anything
-		// moved.
+	/**
+	 * Refuse an import of objects of which none was stored and none was already there.
+	 *
+	 * 🔴 AN IMPORT THAT STORED NOTHING IS NOT A SUCCESS, and this is the
+	 * only place that can tell. Same shape as the seed steps of #1767 and
+	 * #1769, which reported `success: true` with every counter at zero and
+	 * recorded themselves as done. A descriptor that ships no objects at
+	 * all is a different condition and stays a success: registers and
+	 * schemas are a legitimate thing to ship on their own.
+	 * STORING NOTHING IS NOT THE SAME AS FAILING. This read `objects === 0`
+	 * alone, which refuses an import whose objects are already there, and
+	 * that is the normal case on a second run. The step's own body promises
+	 * it is "safe to run more than once", and an idempotent import
+	 * necessarily stores zero the second time. Measured on CI, dossiq
+	 * development, every run since 2026-09-03: 444 requested, 0 stored,
+	 * reported as a hard failure on an install with nothing left to do.
+	 *
+	 * So the question is whether anything SURVIVED, not whether anything
+	 * moved.
+	 *
+	 * @param array<string, integer> $imported  The landing: objects, requested, refused, unchanged, registers, schemas.
+	 * @param integer                $requested How many objects the descriptor carries.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When objects were asked for and nothing survived.
+	 */
+	private function assertSomethingSurvived(array $imported, int $requested): void {
 		if ($requested > 0 && $imported['objects'] === 0 && $imported['unchanged'] === 0) {
 			throw new RuntimeException(
 				'The demo import stored 0 of ' . $requested . ' object(s) ('
@@ -320,11 +360,7 @@ class DemoDataService {
 				. 'instance still carrying the old `dossiq.demo` schema fork looks like.'
 			);
 		}
-
-		$this->reportLanding(imported: $imported, requested: $requested);
-
-		return $imported;
-	}//end install()
+	}//end assertSomethingSurvived()
 
 	/**
 	 * Read what the importer actually did, as counts.
@@ -344,7 +380,7 @@ class DemoDataService {
 	 * @return array{objects: integer, requested: integer, refused: integer, unchanged: integer,
 	 *     registers: integer, schemas: integer} The landing, next to the ask.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function readLanding(array $result, int $requested): array {
 		$skipped   = (array)($result['skipped'] ?? []);
@@ -368,7 +404,7 @@ class DemoDataService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function reportLanding(array $imported, int $requested): void {
 		$this->logger->info(
@@ -377,7 +413,7 @@ class DemoDataService {
 			. $imported['refused'] . ' refused, '
 			. $imported['registers'] . ' register(s), '
 			. $imported['schemas'] . ' schema(s).',
-			['app' => Application::APP_ID]
+			['app' => AppIdentity::APP_ID]
 		);
 
 		if ($imported['objects'] >= $requested) {
@@ -391,7 +427,7 @@ class DemoDataService {
 			'[DemoDataService] the demo import lost ' . ($requested - $imported['objects'])
 			. ' of ' . $requested . ' object(s) — ' . $imported['refused'] . ' refused, the rest were '
 			. 'left unchanged because an object of the same version already exists.',
-			['app' => Application::APP_ID]
+			['app' => AppIdentity::APP_ID]
 		);
 	}//end reportLanding()
 
@@ -434,7 +470,7 @@ class DemoDataService {
 	 *
 	 * @return array<string, mixed> The same descriptor with no register or schema definitions.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function objectsOnly(array $data): array {
 		unset($data['registers'], $data['schemas']);
@@ -447,12 +483,62 @@ class DemoDataService {
 	}//end objectsOnly()
 
 	/**
+	 * Add the curated example data fragments to the generated set.
+	 *
+	 * @param array<string, mixed> $data The generated descriptor.
+	 *
+	 * @return array<string, mixed> The descriptor with the fragment objects appended.
+	 */
+	private function withFragments(array $data): array {
+		if ($this->fragments === null) {
+			return $data;
+		}
+
+		$objects = (array)($data['components']['objects'] ?? []);
+		$data['components']['objects'] = array_merge(
+			array_values($objects),
+			$this->fragments->objects(skipSlugs: $this->loadedFragments())
+		);
+
+		return $data;
+	}//end withFragments()
+
+	/**
+	 * The slugs of the curated objects an earlier load created.
+	 *
+	 * @return array<int, string> The slugs.
+	 */
+	private function loadedFragments(): array {
+		if ($this->appConfig === null) {
+			return [];
+		}
+
+		$loaded = json_decode($this->appConfig->getValueString(AppIdentity::APP_ID, self::FRAGMENTS_LOADED_KEY, '[]'), true);
+
+		return array_values(array_filter((array)$loaded, 'is_string'));
+	}//end loadedFragments()
+
+	/**
+	 * Record every curated object as created, after an import that landed.
+	 *
+	 * @return void
+	 */
+	private function recordFragments(): void {
+		if ($this->appConfig === null || $this->fragments === null) {
+			return;
+		}
+
+		$slugs = array_values(array_unique(array_merge($this->loadedFragments(), $this->fragments->slugs())));
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::FRAGMENTS_LOADED_KEY, (string)json_encode($slugs));
+	}//end recordFragments()
+
+	/**
 	 * Absolute path to the shipped descriptor.
 	 *
 	 * @return string The path.
 	 */
 	private function descriptorPath(): string {
-		return $this->appManager->getAppPath(Application::APP_ID) . self::DESCRIPTOR;
+		return $this->appManager->getAppPath(AppIdentity::APP_ID) . self::DESCRIPTOR;
 	}//end descriptorPath()
 
 	/**

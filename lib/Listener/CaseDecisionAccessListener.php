@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Access\CaseDecisionAccess;
+use OCA\Dossiq\Kernel\Contracts\CaseDecisionAccessInterface;
 use OCA\OpenRegister\Event\DecisionChangeRequestedEvent;
 use OCA\OpenRegister\Event\DecisionVisibilityRequestedEvent;
 use OCP\EventDispatcher\Event;
@@ -48,11 +48,11 @@ class CaseDecisionAccessListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseDecisionAccess $access The case-side answer.
+	 * @param CaseDecisionAccessInterface $access The case-side answer.
 	 * @param LoggerInterface    $logger Logger.
 	 */
 	public function __construct(
-		private readonly CaseDecisionAccess $access,
+		private readonly CaseDecisionAccessInterface $access,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -74,34 +74,59 @@ class CaseDecisionAccessListener implements IEventListener {
 			return;
 		}
 
-		if ($event instanceof DecisionChangeRequestedEvent === false) {
-			return;
+		if ($event instanceof DecisionChangeRequestedEvent === true) {
+			$this->answerChange(event: $event);
 		}
+	}//end handle()
 
+	/**
+	 * Allow or refuse a change to a decision by what the caller may do on its case.
+	 *
+	 * No verdict (the decision sits on no guarded case) leaves the answer alone.
+	 *
+	 * @param DecisionChangeRequestedEvent $event The change request.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-decision-on-a-cases-file-is-changed-by-its-decider-or-a-supervisor-of-that-case-req-cra-006
+	 */
+	private function answerChange(DecisionChangeRequestedEvent $event): void {
 		$objectUuid = trim((string)($event->getSubject()['objectUuid'] ?? ''));
 		if ($objectUuid === '') {
 			return;
 		}
 
-		try {
-			$verdict = $this->access->mayChange(objectUuid: $objectUuid, userId: $event->getActorId());
-		} catch (Throwable $error) {
-			$this->logger->warning(
-				'Dossiq: the case of a decision could not be read; the change is refused (REQ-CRA-006)',
-				['object' => $objectUuid, 'error' => $error->getMessage()]
-			);
-			$event->refuse(CaseDecisionAccess::REFUSAL);
-			return;
-		}
-
+		$verdict = $this->changeVerdict(objectUuid: $objectUuid, actorId: $event->getActorId());
 		if ($verdict === true) {
 			$event->allow();
 		}
 
 		if ($verdict === false) {
-			$event->refuse(CaseDecisionAccess::REFUSAL);
+			$event->refuse(CaseDecisionAccessInterface::REFUSAL);
 		}
-	}//end handle()
+	}//end answerChange()
+
+	/**
+	 * Whether the actor may change the decision's case; a case that cannot be read refuses.
+	 *
+	 * @param string $objectUuid The decision's object.
+	 * @param string $actorId    The actor.
+	 *
+	 * @return bool|null Null when the decision sits on no guarded case.
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-decision-on-a-cases-file-is-changed-by-its-decider-or-a-supervisor-of-that-case-req-cra-006
+	 */
+	private function changeVerdict(string $objectUuid, string $actorId): ?bool {
+		try {
+			return $this->access->mayChange(objectUuid: $objectUuid, userId: $actorId);
+		} catch (Throwable $error) {
+			$this->logger->warning(
+				'Dossiq: the case of a decision could not be read; the change is refused (REQ-CRA-006)',
+				['object' => $objectUuid, 'error' => $error->getMessage()]
+			);
+			return false;
+		}
+	}//end changeVerdict()
 
 	/**
 	 * Show a hidden decision to a supervisor of the object's case; leave it hidden for anyone else.

@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\OpenRegister\Db\FlowTimer;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
+use OCA\OpenRegister\Service\Flow\Timer\TimerFiring;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -90,7 +91,7 @@ class TakeBackTimerFiredListenerTest extends TestCase {
 		$timer->setAppId($appId);
 		$timer->setMetadata($metadata);
 
-		return new FlowTimerFiredEvent(timer: $timer, kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:'.$rungKey, rungKey: $rungKey, recipients: [], priority: null, message: null);
+		return new FlowTimerFiredEvent(timer: $timer, firing: new TimerFiring(kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:'.$rungKey, rungKey: $rungKey));
 	}//end fire()
 
 	/**

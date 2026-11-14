@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Service\CaseNumberReader;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
@@ -37,11 +38,14 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\TermijnNotificationService
+ * @covers \OCA\Dossiq\Service\Term\TermNoticeSources
  * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
+ * @uses \OCA\Dossiq\Service\Term\TermLetter
  *
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
  * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
+ * @uses \OCA\Dossiq\Service\Email\OutboundMailPolicy
  * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
  * @uses \OCA\Dossiq\Service\Email\IntakeAccount
@@ -56,6 +60,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\OptOutGate
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  * @uses   \OCA\Dossiq\Service\CaseNumberReader
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  */
 class TermijnNotificationServiceTest extends TestCase {
 	use MakesRealTermNoticeSender;
@@ -85,9 +90,11 @@ class TermijnNotificationServiceTest extends TestCase {
 
 		$logger = $this->createMock(LoggerInterface::class);
 		$this->service = new TermijnNotificationService(
-			new TermijnService($settings, $logger),
-			$this->sender(),
-			$logger
+			notices: new TermNoticeSources(
+				termService: new TermijnService(settingsService: $settings, logger: $logger),
+				sender: $this->sender(),
+			),
+			logger: $logger
 		);
 	}
 
@@ -169,9 +176,11 @@ class TermijnNotificationServiceTest extends TestCase {
 	public function testANoticeWithNoChannelIsNotSentAndCarriesItsResult(): void {
 		$logger = $this->createMock(LoggerInterface::class);
 		$service = new TermijnNotificationService(
-			$this->createMock(TermijnService::class),
-			$this->realTermNoticeSender(),
-			$logger
+			notices: new TermNoticeSources(
+				termService: $this->createMock(originalClassName: TermijnService::class),
+				sender: $this->realTermNoticeSender(),
+			),
+			logger: $logger
 		);
 
 		try {
@@ -196,7 +205,7 @@ class TermijnNotificationServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
 	 */
 	public function testALetterHandedTheCaseUuidNamesTheCaseNumber(): void {
 		$uuid = '7849aeec-d7da-474e-8211-6215e9c6230f';
@@ -219,7 +228,7 @@ class TermijnNotificationServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
 	 */
 	public function testACaseNumberIsLeftAsWritten(): void {
 		$service = $this->serviceReadingCases(cases: []);
@@ -234,7 +243,7 @@ class TermijnNotificationServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
 	 */
 	public function testAnUnreadableCaseKeepsTheReference(): void {
 		$uuid = '0b3c5a3e-1111-4222-8333-944455556666';
@@ -292,8 +301,10 @@ class TermijnNotificationServiceTest extends TestCase {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 
 		return new TermijnNotificationService(
-			termService: $terms,
-			sender: $this->sender(),
+			notices: new TermNoticeSources(
+				termService: $terms,
+				sender: $this->sender(),
+			),
 			logger: $logger,
 			caseNumbers: new CaseNumberReader(settings: $settings, logger: $logger),
 		);
@@ -305,4 +316,29 @@ class TermijnNotificationServiceTest extends TestCase {
 
 		return $sender;
 	}//end sender()
+	/**
+	 * Queueing: nothing without a job list, an unknown template refused, a case type that does
+	 * not send it skipped, and otherwise one dispatch job with the whole payload.
+	 *
+	 * @return void
+	 */
+	public function testQueueingANotification(): void {
+		$logger = $this->createMock(LoggerInterface::class);
+		$notices = new TermNoticeSources(termService: $this->createMock(TermijnService::class), sender: $this->sender());
+		self::assertFalse((new TermijnNotificationService(notices: $notices, logger: $logger))->queueTermijnNotification('ontvangstbevestiging', 'ti-1', 'u'));
+
+		$jobs = $this->createMock(\OCP\BackgroundJob\IJobList::class);
+		$jobs->expects(self::once())->method('add')->with(
+			\OCA\Dossiq\BackgroundJob\DeadlineNotificationDispatchJob::class,
+			['type' => 'ontvangstbevestiging', 'termijnInstanceId' => 'ti-1', 'recipientUserId' => 'u', 'context' => ['a' => 1]]
+		);
+		$service = new TermijnNotificationService(notices: $notices, logger: $logger, jobList: $jobs);
+
+		self::assertFalse($service->queueTermijnNotification('ontvangstbevestiging', 'ti-1', 'u', [], ['handling' => ['automaticMessages' => []]]));
+		self::assertTrue($service->queueTermijnNotification('ontvangstbevestiging', 'ti-1', 'u', ['a' => 1]));
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->expectExceptionMessage('Unknown template: nope');
+		$service->queueTermijnNotification('nope', 'ti-1', 'u');
+	}
 }

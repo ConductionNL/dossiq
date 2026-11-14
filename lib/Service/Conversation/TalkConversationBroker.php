@@ -26,15 +26,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Conversation;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IServerContainer;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -45,7 +45,7 @@ use Throwable;
 /**
  * Opens and closes Nextcloud Talk rooms on behalf of a case.
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class TalkConversationBroker {
 
@@ -71,7 +71,7 @@ class TalkConversationBroker {
 	 *
 	 * @return bool True when Talk is installed and its broker answers.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isAvailable(): bool {
 		return $this->broker() !== null;
@@ -95,7 +95,7 @@ class TalkConversationBroker {
 	 *
 	 * @throws RefusedException When Talk is present and refuses the room.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function createRoom(string $name, array $moderators = []): ?array {
 		$broker = $this->broker();
@@ -104,34 +104,59 @@ class TalkConversationBroker {
 		}
 
 		try {
-			$room = $broker->createConversation(
-				name: $name,
-				moderators: $this->resolveModerators(moderators: $moderators),
-				options: $broker->newConversationOptions(),
-			);
-
-			return [
-				'id' => $room->getId(),
-				'url' => $room->getAbsoluteUrl(),
-			];
+			return $this->openRoom(broker: $broker, name: $name, moderators: $moderators);
 		} catch (Throwable $e) {
 			// A REFUSAL, not a null. Talk being absent and Talk failing to
 			// open a room are different answers, and the caller can only act
 			// on the first. The controller translates this one into its own
 			// status and sentence.
-			$this->logger->warning(
-				'Talk refused a room named "' . $name . '": ' . $e->getMessage(),
-				['app' => Application::APP_ID],
-			);
-
-			throw new RefusedException(
-				rule: 'talk-room-refused',
-				sentence: 'Nextcloud Talk could not open a room for this case.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
+			throw $this->roomRefused(name: $name, e: $e);
 		}//end try
 	}//end createRoom()
+
+	/**
+	 * Log Talk's refusal and build the refusal the caller receives.
+	 *
+	 * @param string    $name Room name, shown in Talk.
+	 * @param Throwable $e    What Talk threw.
+	 *
+	 * @return RefusedException
+	 */
+	private function roomRefused(string $name, Throwable $e): RefusedException {
+		$this->logger->warning(
+			'Talk refused a room named "' . $name . '": ' . $e->getMessage(),
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return new RefusedException(
+			rule: 'talk-room-refused',
+			sentence: 'Nextcloud Talk could not open a room for this case.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $e,
+		);
+	}//end roomRefused()
+
+	/**
+	 * Create the conversation and answer its id and absolute url.
+	 *
+	 * @param IBroker       $broker     Talk's broker.
+	 * @param string        $name       Room name, shown in Talk.
+	 * @param array<string> $moderators User ids that moderate the room.
+	 *
+	 * @return array{id: string, url: string}
+	 */
+	private function openRoom(IBroker $broker, string $name, array $moderators): array {
+		$room = $broker->createConversation(
+			name: $name,
+			moderators: $this->resolveModerators(moderators: $moderators),
+			options: $broker->newConversationOptions(),
+		);
+
+		return [
+			'id' => $room->getId(),
+			'url' => $room->getAbsoluteUrl(),
+		];
+	}//end openRoom()
 
 	/**
 	 * Close one Talk room.
@@ -144,7 +169,7 @@ class TalkConversationBroker {
 	 *
 	 * @return bool True when Talk closed the room.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function closeRoom(string $roomId): bool {
 		$broker = $this->broker();
@@ -163,7 +188,7 @@ class TalkConversationBroker {
 			// close would leave the case saying its channel is open.
 			$this->logger->warning(
 				'Talk refused to close room "' . $roomId . '": ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 
 			return false;
@@ -177,7 +202,7 @@ class TalkConversationBroker {
 	 *
 	 * @return array<IUser> The users that exist.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function resolveModerators(array $moderators): array {
 		$users = [];
@@ -204,7 +229,7 @@ class TalkConversationBroker {
 	 *
 	 * @return IBroker|null The broker, or null.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function broker(): ?IBroker {
 		if ($this->container->has(IBroker::class) === false) {

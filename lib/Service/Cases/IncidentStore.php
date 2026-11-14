@@ -30,7 +30,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -39,18 +39,20 @@ namespace OCA\Dossiq\Service\Cases;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\IncidentStoreInterface;
+use OCA\Dossiq\Service\Custody\DossierRegister;
+use OCA\Dossiq\Service\Custody\StoredInstant;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
  * Record, list, hand on and settle the reports inside a case.
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
-class IncidentStore {
+class IncidentStore implements IncidentStoreInterface {
 
 	use SearchesObjects;
 
@@ -89,7 +91,7 @@ class IncidentStore {
 	 * @param IncidentRecord  $record          Orders, counts and shapes a hand-off.
 	 * @param LoggerInterface $logger          Records every report and every hand-off.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -111,7 +113,7 @@ class IncidentStore {
 	 *
 	 * @throws RefusedException When the report is incomplete or cannot be written.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function record(
 		string $caseId,
@@ -122,7 +124,7 @@ class IncidentStore {
 	): array {
 		$caseId = trim($caseId);
 		$description = trim($description);
-		$happened = $this->instant(value: $eventDate);
+		$happened = (new StoredInstant())->parse(value: $eventDate);
 
 		if ($caseId === '' || $description === '' || $happened === null) {
 			throw new RefusedException(
@@ -154,7 +156,7 @@ class IncidentStore {
 	 *
 	 * @return array<int, array<string, mixed>> The incidents.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function onCase(string $caseId): array {
 		$caseId = trim($caseId);
@@ -178,7 +180,7 @@ class IncidentStore {
 	 *
 	 * @return array<int, array<string, mixed>> The incidents, in event order.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	public function ownedBy(string $userId): array {
 		$userId = trim($userId);
@@ -212,9 +214,30 @@ class IncidentStore {
 	 *
 	 * @return array<string, int> The counts, keyed by case.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	public function openCountsFor(array $caseIds): array {
+		$wanted = $this->trimmedIds(caseIds: $caseIds);
+
+		if ($wanted === []) {
+			return [];
+		}
+
+		$byCase = $this->incidentsByCase(wanted: $wanted);
+
+		return $this->openCounts(byCase: $byCase);
+	}//end openCountsFor()
+
+	/**
+	 * The non-empty case ids, trimmed.
+	 *
+	 * @param array<int, string> $caseIds The cases.
+	 *
+	 * @return array<int, string> The case ids asked about.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 */
+	private function trimmedIds(array $caseIds): array {
 		$wanted = [];
 		foreach ($caseIds as $caseId) {
 			$caseId = trim((string)$caseId);
@@ -223,10 +246,19 @@ class IncidentStore {
 			}
 		}
 
-		if ($wanted === []) {
-			return [];
-		}
+		return $wanted;
+	}//end trimmedIds()
 
+	/**
+	 * The incidents of the wanted cases, grouped by case.
+	 *
+	 * @param array<int, string> $wanted The case ids asked about.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>> The incidents, keyed by case.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 */
+	private function incidentsByCase(array $wanted): array {
 		$byCase = [];
 		foreach ($this->rows(filters: ['_limit' => self::PAGE_SIZE]) as $row) {
 			$caseId = trim((string)($row['case'] ?? ''));
@@ -235,6 +267,19 @@ class IncidentStore {
 			}
 		}
 
+		return $byCase;
+	}//end incidentsByCase()
+
+	/**
+	 * The open count per case, leaving out cases with none open.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $byCase The incidents, keyed by case.
+	 *
+	 * @return array<string, int> The counts, keyed by case.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 */
+	private function openCounts(array $byCase): array {
 		$counts = [];
 		foreach ($byCase as $caseId => $incidents) {
 			$open = $this->record->openCount(incidents: $incidents);
@@ -244,7 +289,7 @@ class IncidentStore {
 		}
 
 		return $counts;
-	}//end openCountsFor()
+	}//end openCounts()
 
 	/**
 	 * Hand one incident to somebody, leaving the case where it is.
@@ -256,7 +301,7 @@ class IncidentStore {
 	 *
 	 * @throws RefusedException When the incident is unknown or cannot be written.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	public function assign(string $incidentId, string $assignee): array {
 		$incident = $this->require(incidentId: $incidentId);
@@ -285,7 +330,7 @@ class IncidentStore {
 	 *
 	 * @throws RefusedException When the incident is unknown, the outcome is empty, or the write fails.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function settle(string $incidentId, string $outcome): array {
 		$outcome = trim($outcome);
@@ -314,7 +359,7 @@ class IncidentStore {
 	 *
 	 * @return int|null The delay in days, or null when either moment is missing.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function recordingDelayDays(array $incident): ?int {
 		return $this->record->recordingDelayDays(incident: $incident);
@@ -331,11 +376,11 @@ class IncidentStore {
 	 */
 	private function require(string $incidentId): array {
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->dossierRegister()->context();
 			$incident = $this->findObjectAsArray(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'case_incident_schema'),
+				schema: $this->dossierRegister()->schema(key: 'case_incident_schema'),
 				id: trim($incidentId),
 			);
 		} catch (Throwable $e) {
@@ -367,12 +412,12 @@ class IncidentStore {
 	 */
 	private function rows(array $filters): array {
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->dossierRegister()->context();
 
 			return $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'case_incident_schema'),
+				schema: $this->dossierRegister()->schema(key: 'case_incident_schema'),
 				filters: $filters,
 			);
 		} catch (Throwable $e) {
@@ -399,33 +444,55 @@ class IncidentStore {
 		unset($incident['@self'], $incident['id'], $incident['uuid']);
 
 		try {
-			[$objectService, $register] = $this->context();
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_incident_schema'),
-				object: $incident,
-				uuid: $uuid,
-			);
+			$saved = $this->store(record: $incident, uuid: $uuid);
 		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: self::UNWRITABLE,
-				sentence: 'The report could not be recorded.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
+			throw $this->unrecorded(previous: $e);
 		}
 
 		if ($saved === null) {
-			throw new RefusedException(
-				rule: self::UNWRITABLE,
-				sentence: 'The report could not be recorded.',
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
+			throw $this->unrecorded(previous: null);
 		}
 
 		return $saved;
 	}//end write()
+
+	/**
+	 * Save the incident in the register.
+	 *
+	 * @param array<string, mixed> $record The incident, without its metadata.
+	 * @param string|null          $uuid   The uuid to update, or null to create.
+	 *
+	 * @return array<string, mixed>|null The stored row, or null when it could not be read back.
+	 *
+	 * @throws Throwable When the register is not available or refuses the write.
+	 */
+	private function store(array $record, ?string $uuid): ?array {
+		[$objectService, $register] = $this->dossierRegister()->context();
+
+		return $this->saveObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->dossierRegister()->schema(key: 'case_incident_schema'),
+			object: $record,
+			uuid: $uuid,
+		);
+	}//end store()
+
+	/**
+	 * The refusal when the incident could not be recorded.
+	 *
+	 * @param Throwable|null $previous The cause, if any.
+	 *
+	 * @return RefusedException The refusal.
+	 */
+	private function unrecorded(?Throwable $previous): RefusedException {
+		return new RefusedException(
+			rule: self::UNWRITABLE,
+			sentence: 'The report could not be recorded.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $previous,
+		);
+	}//end unrecorded()
 
 	/**
 	 * The uuid of a stored row, however the register spelled it.
@@ -437,63 +504,12 @@ class IncidentStore {
 	private function uuidOf(array $row): string {
 		return trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
 	}//end uuidOf()
-
 	/**
-	 * A moment, or null when the value is empty or unreadable.
+	 * The dossier register and its configured schemas.
 	 *
-	 * @param string $value The candidate.
-	 *
-	 * @return DateTimeImmutable|null The moment.
+	 * @return DossierRegister The register reader.
 	 */
-	private function instant(string $value): ?DateTimeImmutable {
-		$value = trim($value);
-		if ($value === '') {
-			return null;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end instant()
-
-	/**
-	 * The object service and the register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
-	 */
-	private function context(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
-	}//end context()
-
-	/**
-	 * A configured schema, or an exception naming the key.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema id or slug.
-	 *
-	 * @throws RuntimeException When the key is unset.
-	 */
-	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
-	}//end schema()
+	private function dossierRegister(): DossierRegister {
+		return new DossierRegister(settingsService: $this->settingsService);
+	}//end dossierRegister()
 }//end class

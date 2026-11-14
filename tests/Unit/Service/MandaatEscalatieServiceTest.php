@@ -30,6 +30,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\MandaatEscalatieService
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaWriter
  */
 class MandaatEscalatieServiceTest extends TestCase {
 
@@ -133,4 +134,39 @@ class MandaatEscalatieServiceTest extends TestCase {
 			self::assertSame('dave', $row['targetUserId']);
 		}
 	}//end testAutoRerouteOnPersonnelChange()
+	/**
+	 * The path: the highest applicable mandate whose role has a holder, a primair holder before
+	 * an observer, a role without holders skipped; no path without configuration or holder.
+	 *
+	 * @return void
+	 */
+	public function testTheEscalationPathAndItsDeadEnds(): void {
+		$this->objects->seed('mandate', ['id' => 'm-top', 'mandateeRole' => 'rol-nobody', 'terms' => ['plafondCents' => 9000000], 'status' => 'active']);
+		$this->objects->seed('mandate', ['id' => 'm-norole', 'terms' => ['plafondCents' => 8000000], 'status' => 'active']);
+		$this->objects->seed('medewerkerRolToewijzing', ['userId' => 'dave', 'roleId' => 'rol-manager', 'allocationType' => 'observer']);
+		$this->objects->seed('medewerkerRolToewijzing', ['userId' => '', 'roleId' => 'rol-consulent', 'allocationType' => 'primair']);
+
+		self::assertSame(['mandaatId' => 'm-high', 'userId' => 'carol'], $this->service->resolveEscalatiePath('wmo-toekenning'));
+		self::assertSame(['mandaatId' => '', 'userId' => ''], $this->service->resolveEscalatiePath('omgevingsvergunning'));
+
+		$warnings = [];
+		$logger   = $this->createMock(LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			static function (string $message, array $context) use (&$warnings): void {
+				$warnings[] = [$message, $context];
+			}
+		);
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ['register' => 'dossiq', 'mandaat_schema' => 'mandate', 'medewerker_rol_toewijzing_schema' => 'nobodyHere'][$key] ?? '');
+		$service = new MandaatEscalatieService($settings, $logger);
+		self::assertSame(['mandaatId' => '', 'userId' => ''], $service->resolveEscalatiePath('wmo-toekenning', 'ceiling_exceeded'));
+		self::assertSame([['Mandaat escalation path unresolved', ['decisionType' => 'wmo-toekenning', 'reason' => 'ceiling_exceeded']]], $warnings);
+
+		$bare = $this->createMock(SettingsService::class);
+		$bare->method('getObjectService')->willReturn($this->objects);
+		$bare->method('getConfigValue')->willReturn('');
+		self::assertSame(['mandaatId' => '', 'userId' => ''], (new MandaatEscalatieService($bare, $logger))->resolveEscalatiePath('wmo-toekenning'));
+		self::assertCount(1, $warnings, 'an unconfigured store is no dead end to log');
+	}//end testTheEscalationPathAndItsDeadEnds()
 }//end class

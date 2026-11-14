@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
+use OCA\Dossiq\Service\Email\OutboundMailRules;
 use OCA\Dossiq\Listener\FlowEmailSentListener;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
@@ -40,8 +41,10 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Listener\FlowEmailSentListener
  * @covers \OCA\Dossiq\Service\CaseEmailService::recordSentEmail
+ * @covers \OCA\Dossiq\Service\Email\OutboundMailRules
  * @uses \OCA\Dossiq\Service\CaseEmailService
  * @uses \OCA\Dossiq\Service\Support\CaseObjectReference
+ * @uses \OCA\Dossiq\Service\Email\SentCaseMail
  */
 class FlowEmailSentListenerTest extends TestCase {
 
@@ -100,13 +103,15 @@ class FlowEmailSentListenerTest extends TestCase {
 		);
 
 		$emails = new CaseEmailService(
-			new NullLogger(),
-			$repository,
-			$this->createMock(CaseContactDirectory::class),
-			$this->createMock(OutboundCaseMail::class),
-			$this->createMock(RecipientAllowlist::class),
-			$timeline,
-			$this->createMock(CaseMailOptOut::class)
+			logger: new NullLogger(),
+			repository: $repository,
+			contactDirectory: $this->createMock(originalClassName: CaseContactDirectory::class),
+			sending: new OutboundMailRules(
+				outbound: $this->createMock(originalClassName: OutboundCaseMail::class),
+				allowlist: $this->createMock(originalClassName: RecipientAllowlist::class),
+				optOut: $this->createMock(originalClassName: CaseMailOptOut::class),
+			),
+			timeline: $timeline
 		);
 
 		$user = $this->createMock(IUser::class);

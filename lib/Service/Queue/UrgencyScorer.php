@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service\Queue;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
 
@@ -45,7 +46,14 @@ class UrgencyScorer {
 	private const DEADLINE_TIER_OVERDUE = 'overdue';
 	private const DEADLINE_TIER_CRITICAL = 'critical';
 	private const DEADLINE_TIER_WARNING = 'warning';
+	private const DEADLINE_TIER_IN_SIGHT = 'inSight';
 	private const DEADLINE_TIER_NORMAL = 'normal';
+
+	/**
+	 * What the priority, idle and resident wait parts may add together, so
+	 * the tier still decides first.
+	 */
+	private const MAX_EXTRA_POINTS = 249.0;
 
 	/**
 	 * Base score per deadline tier. Higher tiers score higher; the deadline
@@ -60,6 +68,9 @@ class UrgencyScorer {
 		self::DEADLINE_TIER_OVERDUE => 1000.0,
 		self::DEADLINE_TIER_CRITICAL => 750.0,
 		self::DEADLINE_TIER_WARNING => 500.0,
+		// In sight is a grey label inside the normal band: it names the term
+		// coming up without moving it ahead of anything.
+		self::DEADLINE_TIER_IN_SIGHT => 250.0,
 		self::DEADLINE_TIER_NORMAL => 250.0,
 	];
 
@@ -105,11 +116,13 @@ class UrgencyScorer {
 	 * @param LoggerInterface $logger Logger.
 	 * @param WorkingDayRoll|null $calendar The administered calendar the business days are
 	 *        counted on (REQ-OTE-04), or null to count Monday to Friday and say so once.
+	 * @param DayCount $days The one place days between two dates are counted.
 	 */
 	public function __construct(
 		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
 		private readonly ?WorkingDayRoll $calendar = null,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -146,49 +159,111 @@ class UrgencyScorer {
 		DateTimeImmutable $now,
 		?UrgencyProfile $profile = null,
 	): array {
-		$profile = ($profile ?? new UrgencyProfile());
-		$today = new DateTimeImmutable($now->format('Y-m-d'));
+		$run = new UrgencyScoreRun(today: new DateTimeImmutable($now->format('Y-m-d')), profile: ($profile ?? new UrgencyProfile()));
 
-		$daysUntilDeadline = null;
-		$deadlineTier = self::DEADLINE_TIER_NORMAL;
-		$deadlineComponent = 0.0;
-
-		$deadlineDate = $this->dates->tryParse($this->dates->toCalendarDateOrNull($deadline));
-		if ($deadlineDate !== null) {
-			$daysUntilDeadline = $this->businessDaysBetween(today: $today, target: $deadlineDate);
-			$deadlineTier = $this->deadlineTierFor(daysUntilDeadline: $daysUntilDeadline, profile: $profile);
-			$deadlineComponent = (self::DEADLINE_TIER_BASE_SCORE[$deadlineTier] - $daysUntilDeadline);
-		}
-
+		$this->scoreDeadline(run: $run, deadline: $deadline);
 		$priorityKey = strtolower(trim($priority));
-		$priorityComponent = ((self::PRIORITY_POINTS[$priorityKey] ?? self::DEFAULT_PRIORITY_POINTS) * $profile->priorityWeight);
+		$run->priorityComponent = ((self::PRIORITY_POINTS[$priorityKey] ?? self::DEFAULT_PRIORITY_POINTS) * $run->profile->priorityWeight);
+		$this->scoreIdle(run: $run, referenceDate: $referenceDate);
 
-		$idleDays = null;
-		$idleComponent = 0.0;
-		$referenceParsed = $this->dates->tryParse($this->dates->toCalendarDateOrNull($referenceDate));
-		if ($referenceParsed !== null) {
-			$idleDays = 0;
-			if ($referenceParsed < $today) {
-				$idleDays = (int)$today->diff($referenceParsed)->days;
-			}
+		return self::resultOf(run: $run);
+	}//end scoreItem()
 
-			$idleComponent = (min($idleDays, self::MAX_IDLE_DAYS) * $profile->idleWeight);
+	/**
+	 * Add the deadline part: the tier base less the working days left.
+	 *
+	 * @param UrgencyScoreRun $run      The item being scored.
+	 * @param string|null     $deadline The deadline, or null for none.
+	 *
+	 * @return void
+	 */
+	private function scoreDeadline(UrgencyScoreRun $run, ?string $deadline): void {
+		$deadlineDate = $this->dates->tryParse($this->dates->toCalendarDateOrNull($deadline));
+		if ($deadlineDate === null) {
+			return;
 		}
 
-		$score = ($deadlineComponent + $priorityComponent + $idleComponent);
+		$run->daysUntilDeadline = $this->businessDaysBetween(today: $run->today, target: $deadlineDate);
+		$run->deadlineTier = $this->deadlineTierFor(daysUntilDeadline: $run->daysUntilDeadline, profile: $run->profile);
+		$run->deadlineComponent = (self::DEADLINE_TIER_BASE_SCORE[$run->deadlineTier] - $run->daysUntilDeadline);
+	}//end scoreDeadline()
+
+	/**
+	 * Add the idle part: the capped days since the last activity, weighed.
+	 *
+	 * @param UrgencyScoreRun $run           The item being scored.
+	 * @param string|null     $referenceDate The last activity, or null for no idle part.
+	 *
+	 * @return void
+	 */
+	private function scoreIdle(UrgencyScoreRun $run, ?string $referenceDate): void {
+		$referenceParsed = $this->dates->tryParse($this->dates->toCalendarDateOrNull($referenceDate));
+		if ($referenceParsed === null) {
+			return;
+		}
+
+		$run->idleDays = 0;
+		if ($referenceParsed < $run->today) {
+			$run->idleDays = $this->days->between(from: $run->today, to: $referenceParsed);
+		}
+
+		$run->idleComponent = (min($run->idleDays, self::MAX_IDLE_DAYS) * $run->profile->idleWeight);
+	}//end scoreIdle()
+
+	/**
+	 * The score result of an item whose parts are all added.
+	 *
+	 * @param UrgencyScoreRun $run The scored item.
+	 *
+	 * @return array{
+	 *     deadlineTier: string,
+	 *     daysUntilDeadline: int|null,
+	 *     idleDays: int|null,
+	 *     score: float,
+	 *     scoreBreakdown: array{deadline: float, priority: float, idle: float}
+	 * } Score result.
+	 */
+	private static function resultOf(UrgencyScoreRun $run): array {
+		$score = ($run->deadlineComponent + $run->priorityComponent + $run->idleComponent);
 
 		return [
-			'deadlineTier' => $deadlineTier,
-			'daysUntilDeadline' => $daysUntilDeadline,
-			'idleDays' => $idleDays,
+			'deadlineTier' => ($run->deadlineTier ?? self::DEADLINE_TIER_NORMAL),
+			'daysUntilDeadline' => $run->daysUntilDeadline,
+			'idleDays' => $run->idleDays,
 			'score' => round($score, 2),
 			'scoreBreakdown' => [
-				'deadline' => round($deadlineComponent, 2),
-				'priority' => round($priorityComponent, 2),
-				'idle' => round($idleComponent, 2),
+				'deadline' => round($run->deadlineComponent, 2),
+				'priority' => round($run->priorityComponent, 2),
+				'idle' => round($run->idleComponent, 2),
 			],
 		];
-	}//end scoreItem()
+	}//end resultOf()
+
+	/**
+	 * A scored item with the resident wait part added while the case waits on
+	 * the resident (`waitingOnApplicant`), capped so the tier still decides first.
+	 *
+	 * @param array<string, mixed> $scoring The result of {@see scoreItem()}.
+	 * @param bool                 $waiting Whether the case waits on the resident.
+	 * @param UrgencyProfile       $profile The weights.
+	 *
+	 * @return array<string, mixed> The result, with `scoreBreakdown.residentWait`.
+	 *
+	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/tenant-configuration/spec.md
+	 */
+	public function withResidentWait(array $scoring, bool $waiting, UrgencyProfile $profile): array {
+		$breakdown = $scoring['scoreBreakdown'];
+		$part = 0.0;
+		if ($waiting === true) {
+			$room = (self::MAX_EXTRA_POINTS - $breakdown['priority'] - $breakdown['idle']);
+			$part = max(0.0, min($profile->residentWaitWeight(), $room));
+		}
+
+		$scoring['scoreBreakdown']['residentWait'] = round($part, 2);
+		$scoring['score'] = round(((float)$scoring['score'] + $part), 2);
+
+		return $scoring;
+	}//end withResidentWait()
 
 	/**
 	 * Determine the deadline tier for a given business-day offset.
@@ -211,6 +286,10 @@ class UrgencyScorer {
 
 		if ($daysUntilDeadline <= $profile->warningDays) {
 			return self::DEADLINE_TIER_WARNING;
+		}
+
+		if ($daysUntilDeadline <= $profile->inSightDays()) {
+			return self::DEADLINE_TIER_IN_SIGHT;
 		}
 
 		return self::DEADLINE_TIER_NORMAL;
@@ -236,11 +315,39 @@ class UrgencyScorer {
 			return 0;
 		}
 
-		$direction = 1;
-		if ($target < $today) {
-			$direction = -1;
+		$counted = $this->administeredSpan(today: $today, target: $target);
+		if ($counted === null) {
+			$counted = $this->weekdaysWalked(today: $today, target: $target);
 		}
 
+		return ($counted * self::directionOf(today: $today, target: $target));
+	}//end businessDaysBetween()
+
+	/**
+	 * Whether the target lies after today (1) or before it (-1).
+	 *
+	 * @param DateTimeImmutable $today  The reference "today".
+	 * @param DateTimeImmutable $target The target date.
+	 *
+	 * @return integer 1 forward, -1 backward.
+	 */
+	private static function directionOf(DateTimeImmutable $today, DateTimeImmutable $target): int {
+		if ($target < $today) {
+			return -1;
+		}
+
+		return 1;
+	}//end directionOf()
+
+	/**
+	 * The unsigned working days between today and the target on the administered calendar, or null.
+	 *
+	 * @param DateTimeImmutable $today  The reference "today".
+	 * @param DateTimeImmutable $target The target date.
+	 *
+	 * @return integer|null The unsigned count, or null when no calendar answers.
+	 */
+	private function administeredSpan(DateTimeImmutable $today, DateTimeImmutable $target): ?int {
 		// THE ADMINISTERED CALENDAR FIRST (REQ-TERM-026, REQ-OTE-04). A closure
 		// day the organisation declared is not a working day, and Koningsdag
 		// is not one either, which a Monday-to-Friday walk counts as both.
@@ -249,37 +356,38 @@ class UrgencyScorer {
 		// engine counts the working days in [from, to), so the bounds shift.
 		$from = $target->setTime(0, 0);
 		$to = $today->setTime(0, 0);
-		if ($direction > 0) {
+		if (self::directionOf(today: $today, target: $target) > 0) {
 			$from = $today->setTime(0, 0)->modify('+1 day');
 			$to = $target->setTime(0, 0)->modify('+1 day');
 		}
 
-		$counted = $this->administeredBusinessDays(earlier: $from, later: $to);
-		if ($counted !== null) {
-			return ($counted * $direction);
-		}
+		return $this->administeredBusinessDays(earlier: $from, later: $to);
+	}//end administeredSpan()
 
+	/**
+	 * The unsigned Monday-to-Friday days walked from today to the target, bounded.
+	 *
+	 * @param DateTimeImmutable $today  The reference "today".
+	 * @param DateTimeImmutable $target The target date.
+	 *
+	 * @return integer The unsigned count.
+	 */
+	private function weekdaysWalked(DateTimeImmutable $today, DateTimeImmutable $target): int {
+		$step = sprintf('%+d day', self::directionOf(today: $today, target: $target));
 		$cursor = $today;
 		$count = 0;
 		$walked = 0;
-
 		while ($cursor->format('Y-m-d') !== $target->format('Y-m-d') && $walked < self::MAX_BUSINESS_DAY_WALK) {
-			$step = '+1 day';
-			if ($direction < 0) {
-				$step = '-1 day';
-			}
-
 			$cursor = $cursor->modify($step);
-			$dow = (int)$cursor->format('N');
-			if ($dow < 6) {
+			if ((int)$cursor->format('N') < 6) {
 				$count++;
 			}
 
 			$walked++;
 		}
 
-		return ($count * $direction);
-	}//end businessDaysBetween()
+		return $count;
+	}//end weekdaysWalked()
 
 	/**
 	 * The working days between two days on the administered calendar, or null.

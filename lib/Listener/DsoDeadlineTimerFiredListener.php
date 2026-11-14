@@ -31,15 +31,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Dso\DsoDeadlineActs;
-use OCA\Dossiq\Service\Dso\DsoDeadlineTimer;
+use OCA\Dossiq\Kernel\Contracts\DsoDeadlineActsInterface;
+use OCA\Dossiq\Kernel\Contracts\DsoDeadlineTimerInterface;
+use OCA\Dossiq\Listener\Support\TimerFire;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Turns a DSO term rung into the notification or the overdue marker.
@@ -53,12 +52,12 @@ class DsoDeadlineTimerFiredListener implements IEventListener {
 	/**
 	 * Build the listener.
 	 *
-	 * @param DsoDeadlineActs          $acts           Reads the case and acts on it.
+	 * @param DsoDeadlineActsInterface          $acts           Reads the case and acts on it.
 	 * @param BackgroundServiceAccount $serviceAccount The identity a cron-driven fire writes as.
 	 * @param LoggerInterface          $logger         Logs a failed fire.
 	 */
 	public function __construct(
-		private readonly DsoDeadlineActs $acts,
+		private readonly DsoDeadlineActsInterface $acts,
 		private readonly BackgroundServiceAccount $serviceAccount,
 		private readonly LoggerInterface $logger,
 	) {
@@ -78,37 +77,38 @@ class DsoDeadlineTimerFiredListener implements IEventListener {
 			return;
 		}
 
-		$timer    = $event->getTimer();
-		$metadata = ($timer->getMetadata() ?? []);
+		$metadata = TimerFire::metadataFrom(event: $event, source: DsoDeadlineTimerInterface::METADATA_SOURCE);
 		$caseId   = (string) ($metadata['caseId'] ?? '');
-		if ((string) $timer->getAppId() !== 'dossiq'
-			|| (string) ($metadata['source'] ?? '') !== DsoDeadlineTimer::METADATA_SOURCE
-			|| $caseId === ''
-		) {
+		if ($metadata === null || $caseId === '') {
 			return;
 		}
 
-		$message = (string) $event->getMessage();
 		$rungKey = (string) $event->getRungKey();
-
-		try {
-			$this->serviceAccount->runAsWhenNobodyIsSignedIn(
-				operation: function () use ($caseId, $message, $rungKey): void {
-					$case = $this->acts->find(caseId: $caseId);
-					if ($case === null) {
-						return;
-					}
-
-					$this->act(case: $case, message: $message, rungKey: $rungKey);
-				}
-			);
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged and told to the admins. Nothing was written.
-			return;
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq DSO: timer fire handling failed', ['case' => $caseId, 'rung' => $rungKey, 'error' => $e->getMessage()]);
+		$failure = TimerFire::runAsAccount(
+			account: $this->serviceAccount,
+			operation: fn () => $this->actOnCase(caseId: $caseId, event: $event)
+		);
+		if ($failure !== null) {
+			$this->logger->error('Dossiq DSO: timer fire handling failed', ['case' => $caseId, 'rung' => $rungKey, 'error' => $failure->getMessage()]);
 		}
 	}//end handle()
+
+	/**
+	 * Read the case fresh and act on the fire when it still exists.
+	 *
+	 * @param string              $caseId The case.
+	 * @param FlowTimerFiredEvent $event  The fire.
+	 *
+	 * @return void
+	 */
+	private function actOnCase(string $caseId, FlowTimerFiredEvent $event): void {
+		$case = $this->acts->find(caseId: $caseId);
+		if ($case === null) {
+			return;
+		}
+
+		$this->act(case: $case, event: $event);
+	}//end actOnCase()
 
 	/**
 	 * The domain act for one rung.
@@ -119,24 +119,24 @@ class DsoDeadlineTimerFiredListener implements IEventListener {
 	 * NotifierTest finds every dispatched subject by scanning for them, and
 	 * a constant would hide this sender from it.
 	 *
-	 * @param array<string, mixed> $case    The case, read fresh.
-	 * @param string               $message The rung's message identity.
-	 * @param string               $rungKey The rung key.
+	 * @param array<string, mixed> $case  The case, read fresh.
+	 * @param FlowTimerFiredEvent  $event The fire: its rung key and its message identity.
 	 *
 	 * @return void
 	 */
-	private function act(array $case, string $message, string $rungKey): void {
-		if (str_starts_with($rungKey, 'slaBreached:') === true) {
+	private function act(array $case, FlowTimerFiredEvent $event): void {
+		if (TimerFire::isBreach(event: $event) === true) {
 			$this->acts->markOverdue(case: $case);
 			return;
 		}
 
-		if ($message === DsoDeadlineTimer::MESSAGE_CRITICAL) {
+		$message = (string) $event->getMessage();
+		if ($message === DsoDeadlineTimerInterface::MESSAGE_CRITICAL) {
 			$this->acts->notify(case: $case, subject: 'dso_deadline_critical');
 			return;
 		}
 
-		if ($message === DsoDeadlineTimer::MESSAGE_WARNING) {
+		if ($message === DsoDeadlineTimerInterface::MESSAGE_WARNING) {
 			$this->acts->notify(case: $case, subject: 'dso_deadline_warning');
 		}
 	}//end act()

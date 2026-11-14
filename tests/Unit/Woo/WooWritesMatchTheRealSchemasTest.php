@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
@@ -56,6 +57,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Woo\WooRequestIntake
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
+ * @uses   \OCA\Dossiq\Service\DecisionDocument\CaseDecisionLink
  * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
  * @uses   \OCA\Dossiq\Service\Intake\WrittenCase
  * @uses   \OCA\Dossiq\Woo\WooCaseLedger
@@ -77,6 +79,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses   \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  */
 class WooWritesMatchTheRealSchemasTest extends TestCase {
 
@@ -174,7 +177,9 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 		$this->store->seed(schema: 'case', uuid: self::CASE, row: ['title' => 'Parkeren', 'caseType' => WooRequestIntake::CASE_TYPE_ID]);
 		$this->store->seed(schema: 'wooDocumentAssessment', uuid: 'a-1', row: ['caseRef' => self::CASE, 'documentRef' => 'io-1', 'classification' => 'openbaar']);
 
-		$service = new WOODecisionService($this->settings, $assessments, $this->createMock(IUserSession::class), $this->createMock(LoggerInterface::class));
+		$delegation = $this->createMock(ContractDecisionDelegationService::class);
+		$delegation->method('raiseDecision')->willReturn('decidiq-decision-1');
+		$service = new WOODecisionService($this->settings, $assessments, $this->createMock(IUserSession::class), $this->createMock(LoggerInterface::class), decisionDelegation: $delegation);
 		$result = $service->assembleDecision(caseId: self::CASE);
 
 		$decision = $this->store->row(schema: 'decision', uuid: $result['decisionId']);

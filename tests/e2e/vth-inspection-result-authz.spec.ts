@@ -94,7 +94,7 @@ const OUTSIDER_PASSWORD = process.env.DOSSIQ_E2E_OUTSIDER_PASSWORD ?? 'e2eOuts!2
  * @return The route to POST an inspection result to.
  */
 function submitUrl(id: string): string {
-	return `/index.php/apps/dossiq/api/vth/cases/${id}/inspection-result`
+	return `/index.php/apps/dossiq/api/cases/${id}/checklist-results`
 }
 
 /**
@@ -230,7 +230,7 @@ async function readResults(
 	id: string,
 ): Promise<{ status: number; results: any[] }> {
 	const res = await session.api.get(
-		`/index.php/apps/dossiq/api/vth/cases/${id}/inspection-results`,
+		`/index.php/apps/dossiq/api/cases/${id}/checklist-results`,
 		{ headers: { 'OCS-APIRequest': 'true' } },
 	)
 	const body = await res.json().catch(() => null)
@@ -507,7 +507,7 @@ test.describe('VTH inspection result: only the stored handler may submit', () =>
 	test("a checklist template is listed in the editor's shape", async () => {
 		expect(adminCleanup, 'the admin context must be open').not.toBeNull()
 		const res = await (adminCleanup as APIRequestContext).get(
-			'/index.php/apps/dossiq/api/vth/checklists',
+			'/index.php/apps/dossiq/api/checklists',
 			{
 				headers: { 'OCS-APIRequest': 'true' },
 			},

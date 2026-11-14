@@ -45,6 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\DigitalPostLetter
  */
 class IntegriqAdapterTest extends TestCase {
 	/**
@@ -149,6 +150,51 @@ class IntegriqAdapterTest extends TestCase {
 		$this->assertSame('123456782', $this->dispatched->getRecipient());
 		$this->assertSame('handler', $this->dispatched->getRequestedBy());
 	}//end testATrackedMessageIdIsRecordedAsSent()
+
+	/**
+	 * The whole envelope reaches integriq: source, recipient, letter and attachment.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeEnvelopeReachesIntegriq(): void {
+		$this->answerWith(
+			static function (Event $event): void {
+				$event->setHandled(true);
+				$event->setMessageId('  dp-9  ');
+			}
+		);
+
+		$result = $this->adapter()->sendMessage('123456782', 'Besluit', 'De tekst', 'BESLUIT', 'UEZE', 'besluit', 'case-7');
+
+		$this->assertSame(['messageId', 'status', 'sentAt'], array_keys($result));
+		$this->assertSame('dp-9', $result['messageId']);
+		$this->assertSame('digital-post-source-1', $this->dispatched->getSourceId());
+		$this->assertSame('Besluit', $this->dispatched->getSubject());
+		$this->assertSame('De tekst', $this->dispatched->getBody());
+		$this->assertSame([['content' => 'UEZE', 'encoding' => 'base64']], $this->dispatched->getAttachments());
+		$this->assertSame(16, strlen($this->dispatched->getCorrelationId()));
+	}//end testTheWholeEnvelopeReachesIntegriq()
+
+	/**
+	 * A dispatch that throws is a refusal, logged as an error, never a send.
+	 *
+	 * @return void
+	 */
+	public function testADispatchThatThrowsIsARefusal(): void {
+		$this->dispatcher->method('dispatchTyped')->willThrowException(new \RuntimeException('listener broke'));
+
+		$result = $this->adapter()->sendMessage('123456782', 'Besluit', 'De tekst', 'BESLUIT');
+
+		$this->assertSame(
+			[
+				'status' => 'refused',
+				'refused' => true,
+				'code' => 'dispatch-failed',
+				'error' => 'The digital post request could not be handed to integriq. Nothing was sent.',
+			],
+			$result
+		);
+	}//end testADispatchThatThrowsIsARefusal()
 
 	/**
 	 * A structured refusal is a refusal, carrying integriq's own reason.

@@ -1,0 +1,105 @@
+{
+    "publications as a scalar": {
+        "answer": {
+            "caseId": "case-1",
+            "channel": "website",
+            "publishedAt": "2026-05-01 10:00",
+            "publications": [
+                {
+                    "channel": "website",
+                    "publishedAt": "2026-05-01 10:00",
+                    "notes": null,
+                    "delivery": {
+                        "status": "requested",
+                        "eventId": "evt-9",
+                        "correlationId": "<correlation-id>",
+                        "matchedSubscriptions": 3,
+                        "requestedAt": "<now>"
+                    }
+                }
+            ],
+            "delivery": {
+                "status": "requested",
+                "eventId": "evt-9",
+                "correlationId": "<correlation-id>",
+                "matchedSubscriptions": 3,
+                "requestedAt": "<now>"
+            }
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "find",
+                "case-1",
+                "dossiq",
+                "case"
+            ],
+            [
+                "getConfigValue",
+                "publication_template"
+            ],
+            [
+                "dispatchTyped",
+                "OCA\\Integriq\\Event\\DeliveryRequestedEvent"
+            ],
+            [
+                "saveObject",
+                {
+                    "id": "case-1",
+                    "title": "Kapvergunning Dorpsstraat",
+                    "identifier": "Z-2026-0042",
+                    "besluitDocument": "doc-7",
+                    "publications": [
+                        {
+                            "channel": "website",
+                            "publishedAt": "2026-05-01 10:00",
+                            "notes": null,
+                            "delivery": {
+                                "status": "requested",
+                                "eventId": "evt-9",
+                                "correlationId": "<correlation-id>",
+                                "matchedSubscriptions": 3,
+                                "requestedAt": "<now>"
+                            }
+                        }
+                    ],
+                    "publishedAt": "2026-05-01 10:00"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "request": {
+            "sourceApp": "dossiq",
+            "subjectRegister": "dossiq",
+            "subjectSchema": "case",
+            "subjectId": "case-1",
+            "subjectLabel": "Kapvergunning Dorpsstraat",
+            "deliveryKind": "besluit-publication",
+            "channel": "website",
+            "payload": {
+                "caseId": "case-1",
+                "channel": "website",
+                "publishedAt": "2026-05-01 10:00",
+                "notes": null,
+                "template": "",
+                "besluitDocument": "doc-7",
+                "identifier": "Z-2026-0042"
+            },
+            "correlationId": "<correlation-id>",
+            "externalReference": "Z-2026-0042",
+            "userId": null
+        },
+        "logs": []
+    }
+}

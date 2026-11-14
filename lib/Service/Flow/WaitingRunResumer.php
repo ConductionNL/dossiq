@@ -94,37 +94,78 @@ class WaitingRunResumer {
 			return;
 		}
 
-		foreach ($suspended as $run) {
-			if ($this->awaitsDecision(run: $run, decisionRef: $decisionRef) === false) {
-				continue;
-			}
-
-			try {
-				$this->runner->signal(
-					run: $run,
-					payload: [
-						// Without a `decision` key the resume is a nudge and the
-						// node suspends again — so the outcome is what makes
-						// this an answer, and it is decidiq's word, not ours.
-						'decision' => $status,
-						'decisionRef' => $decisionRef,
-						'caseId' => $caseId,
-					]
-				);
-
-				$this->logger->info(
-					'Dossiq: resumed flow run ' . (string)$run->getUuid() . ' on decision ' . $decisionRef
-				);
-			} catch (Throwable $e) {
-				$this->logger->error(
-					'Dossiq: could not resume flow run on a concluded decision: ' . $e->getMessage(),
-					['run' => $run->getUuid(), 'decisionRef' => $decisionRef]
-				);
-			}//end try
-
-			return;
-		}//end foreach
+		$this->signalAwaiting(suspended: $suspended, caseId: $caseId, decisionRef: $decisionRef, status: $status);
 	}//end resumeWaitingRun()
+
+	/**
+	 * Signal the first suspended run waiting on this decision with its outcome.
+	 *
+	 * @param iterable<object> $suspended   The runs suspended on the case.
+	 * @param string           $caseId      The case the decision belongs to.
+	 * @param string           $decisionRef The concluded decision's id.
+	 * @param string           $status      The terminal status decidiq reported.
+	 *
+	 * @return void
+	 */
+	private function signalAwaiting(iterable $suspended, string $caseId, string $decisionRef, string $status): void {
+		$run = $this->firstAwaiting(suspended: $suspended, decisionRef: $decisionRef);
+		if ($run === null) {
+			return;
+		}
+
+		$this->signalRun(
+			run: $run,
+			payload: [
+				// Without a `decision` key the resume is a nudge and the
+				// node suspends again — so the outcome is what makes
+				// this an answer, and it is decidiq's word, not ours.
+				'decision' => $status,
+				'decisionRef' => $decisionRef,
+				'caseId' => $caseId,
+			]
+		);
+	}//end signalAwaiting()
+
+	/**
+	 * The first suspended run waiting on this decision, or null.
+	 *
+	 * @param iterable<object> $suspended   The runs suspended on the case.
+	 * @param string           $decisionRef The concluded decision's id.
+	 *
+	 * @return object|null The run.
+	 */
+	private function firstAwaiting(iterable $suspended, string $decisionRef): ?object {
+		foreach ($suspended as $run) {
+			if ($this->awaitsDecision(run: $run, decisionRef: $decisionRef) === true) {
+				return $run;
+			}
+		}
+
+		return null;
+	}//end firstAwaiting()
+
+	/**
+	 * Signal a run with the decision's outcome; a failure is logged, never thrown.
+	 *
+	 * @param object               $run     The waiting run.
+	 * @param array<string, mixed> $payload The decision, its ref and the case.
+	 *
+	 * @return void
+	 */
+	private function signalRun(object $run, array $payload): void {
+		try {
+			$this->runner->signal(run: $run, payload: $payload);
+
+			$this->logger->info(
+				'Dossiq: resumed flow run ' . (string)$run->getUuid() . ' on decision ' . $payload['decisionRef']
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: could not resume flow run on a concluded decision: ' . $e->getMessage(),
+				['run' => $run->getUuid(), 'decisionRef' => $payload['decisionRef']]
+			);
+		}//end try
+	}//end signalRun()
 
 	/**
 	 * Whether a suspended run is waiting on this particular decision.

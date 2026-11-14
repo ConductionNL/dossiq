@@ -49,15 +49,23 @@ class TakeoverStore {
 	use SearchesObjects;
 
 	/**
+	 * The register and the configured schemas, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param LoggerInterface $logger          Records what could not be read or written.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -101,33 +109,55 @@ class TakeoverStore {
 		unset($record['@self'], $record['id'], $record['uuid']);
 
 		try {
-			[$objectService, $register] = $this->context();
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_takeover_schema'),
-				object: $record,
-				uuid: $uuid,
-			);
+			$saved = $this->store(record: $record, uuid: $uuid);
 		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: CaseTakeoverRequest::UNWRITABLE,
-				sentence: 'The request could not be recorded, so nobody was asked.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
+			throw $this->unrecorded(previous: $e);
 		}
 
 		if ($saved === null) {
-			throw new RefusedException(
-				rule: CaseTakeoverRequest::UNWRITABLE,
-				sentence: 'The request could not be recorded, so nobody was asked.',
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
+			throw $this->unrecorded(previous: null);
 		}
 
 		return $saved;
 	}//end write()
+
+	/**
+	 * Save the request in the register.
+	 *
+	 * @param array<string, mixed> $record The request, without its metadata.
+	 * @param string|null          $uuid   The uuid to update, or null to create.
+	 *
+	 * @return array<string, mixed>|null The stored row, or null when it could not be read back.
+	 *
+	 * @throws Throwable When the register is not available or refuses the write.
+	 */
+	private function store(array $record, ?string $uuid): ?array {
+		[$objectService, $register] = $this->context();
+
+		return $this->saveObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->schema(key: 'case_takeover_schema'),
+			object: $record,
+			uuid: $uuid,
+		);
+	}//end store()
+
+	/**
+	 * The refusal when the request could not be recorded.
+	 *
+	 * @param Throwable|null $previous The cause, if any.
+	 *
+	 * @return RefusedException The refusal.
+	 */
+	private function unrecorded(?Throwable $previous): RefusedException {
+		return new RefusedException(
+			rule: CaseTakeoverRequest::UNWRITABLE,
+			sentence: 'The request could not be recorded, so nobody was asked.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $previous,
+		);
+	}//end unrecorded()
 
 	/**
 	 * The uuid of a stored row, however the register spelled it.
@@ -148,17 +178,7 @@ class TakeoverStore {
 	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
 	 */
 	public function context(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
+		return $this->dossierRegister->context();
 	}//end context()
 
 	/**
@@ -171,12 +191,7 @@ class TakeoverStore {
 	 * @throws RuntimeException When the key is unset.
 	 */
 	public function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
+		return $this->dossierRegister->schema(key: $key);
 	}//end schema()
 
 	/**

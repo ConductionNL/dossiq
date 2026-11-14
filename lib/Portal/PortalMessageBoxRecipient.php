@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -64,11 +64,11 @@ class PortalMessageBoxRecipient {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService OpenRegister access and the configured register and schemas.
+	 * @param SettingsServiceInterface $settingsService OpenRegister access and the configured register and schemas.
 	 * @param LoggerInterface $logger          Logger; never given the identity.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -83,22 +83,47 @@ class PortalMessageBoxRecipient {
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function forMessage(string $messageId): ?string {
+		$source = $this->messageSource();
+		if ($messageId === '' || $source === null) {
+			return null;
+		}
+
+		return $this->readRecipient(source: $source, messageId: $messageId);
+	}//end forMessage()
+
+	/**
+	 * The object service and the register, message and case schemas, when all are configured.
+	 *
+	 * @return array{objectService: object, schemas: array<string, string>}|null Null when one is missing.
+	 */
+	private function messageSource(): array|null {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$messageSchema = $this->settingsService->getConfigValue('portaal_bericht_schema');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		if ($messageId === '' || $objectService === null || $register === '' || $messageSchema === '' || $caseSchema === '') {
+		if ($objectService === null || $register === '' || $messageSchema === '' || $caseSchema === '') {
 			return null;
 		}
 
+		return [
+			'objectService' => $objectService,
+			'schemas' => ['register' => $register, 'message' => $messageSchema, 'case' => $caseSchema],
+		];
+	}//end messageSource()
+
+	/**
+	 * Read the recipient of one message as the system, or null when it cannot be read.
+	 *
+	 * @param array{objectService: object, schemas: array<string, string>} $source    The object service and schemas.
+	 * @param string                                                       $messageId The portaalBericht uuid.
+	 *
+	 * @return string|null
+	 */
+	private function readRecipient(array $source, string $messageId): string|null {
 		try {
 			$recipient = $this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): ?string => $this->recipientOf(
-					objectService: $objectService,
-					schemas: ['register' => $register, 'message' => $messageSchema, 'case' => $caseSchema],
-					messageId: $messageId
-				)
+				objectService: $source['objectService'],
+				operation: fn (): ?string => $this->recipientOf(objectService: $source['objectService'], schemas: $source['schemas'], messageId: $messageId)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: the message box recipient could not be read', ['exception' => get_class($e)]);
@@ -110,7 +135,7 @@ class PortalMessageBoxRecipient {
 		}
 
 		return $recipient;
-	}//end forMessage()
+	}//end readRecipient()
 
 	/**
 	 * Read the message and its case, inside the system context.

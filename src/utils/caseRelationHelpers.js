@@ -43,6 +43,15 @@ export function relationDisplayLabel(relation) {
 	return relationTypeLabel(relation?.aardRelatie)
 }
 
+// The label per kind of case relation, as literal t() calls so the string
+// extraction reads them; any other kind is shown as it is stored.
+const RELATION_LABELS = new Map([
+	['vervolg', () => t('dossiq', 'Follow-up')],
+	['subject', () => t('dossiq', 'Subject')],
+	['bijdrage', () => t('dossiq', 'Contribution')],
+	['samenhang', () => t('dossiq', 'Related')],
+])
+
 /**
  * The fallback word for a relation type, for a row the schema cannot name.
  *
@@ -56,19 +65,23 @@ export function relationDisplayLabel(relation) {
  * @spec openspec/specs/related-case-linking/spec.md
  */
 export function relationTypeLabel(aardRelatie) {
-	switch (aardRelatie) {
-		case 'vervolg':
-			return t('dossiq', 'Follow-up')
-		case 'subject':
-			return t('dossiq', 'Subject')
-		case 'bijdrage':
-			return t('dossiq', 'Contribution')
-		case 'samenhang':
-			return t('dossiq', 'Related')
-		default:
-			return aardRelatie
-	}
+	const label = RELATION_LABELS.get(aardRelatie)
+	return label ? label() : aardRelatie
 }
+
+// The message per relation refusal reason, as literal t() calls so the
+// string extraction reads them.
+const RELATION_REFUSALS = new Map([
+	['self_relation', () => t('dossiq', 'A case cannot be related to itself.')],
+	['duplicate', () => t('dossiq', 'This relation already exists.')],
+	['hierarchy_overlap', () => t(
+		'dossiq',
+		'These cases are already linked through the main/sub-case hierarchy.',
+	)],
+	['access_denied', () => t('dossiq', 'You do not have access to one of the cases.')],
+	['invalid_aard_relatie', () => t('dossiq', 'Select a valid relation type.')],
+	['missing_case_id', () => t('dossiq', 'A target case and relation type are required.')],
+])
 
 /**
  * Map a guard-reason code to a localised, user-facing message.
@@ -79,25 +92,8 @@ export function relationTypeLabel(aardRelatie) {
  * @spec openspec/specs/related-case-linking/spec.md
  */
 export function relationErrorMessage(reason) {
-	switch (reason) {
-		case 'self_relation':
-			return t('dossiq', 'A case cannot be related to itself.')
-		case 'duplicate':
-			return t('dossiq', 'This relation already exists.')
-		case 'hierarchy_overlap':
-			return t(
-				'dossiq',
-				'These cases are already linked through the main/sub-case hierarchy.',
-			)
-		case 'access_denied':
-			return t('dossiq', 'You do not have access to one of the cases.')
-		case 'invalid_aard_relatie':
-			return t('dossiq', 'Select a valid relation type.')
-		case 'missing_case_id':
-			return t('dossiq', 'A target case and relation type are required.')
-		default:
-			return t('dossiq', 'Could not save the relation.')
-	}
+	const message = RELATION_REFUSALS.get(reason)
+	return message ? message() : t('dossiq', 'Could not save the relation.')
 }
 
 /**
@@ -106,7 +102,7 @@ export function relationErrorMessage(reason) {
  * @param {string} value The value.
  * @return {boolean} True for a uuid.
  *
- * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
+ * @spec openspec/specs/related-case-linking/spec.md
  */
 export function isBareUuid(value) {
 	return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -129,22 +125,14 @@ export function isBareUuid(value) {
  * @return {Array} Sections `{key, label, icon, items}`.
  *
  * @spec openspec/specs/related-case-linking/spec.md
- * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
+ * @spec openspec/specs/related-case-linking/spec.md
  */
 export function relationSections(relations) {
 	const groups = new Map()
 
 	for (const relation of relations || []) {
-		const caseId = String(relation?.caseId || '')
-		if (caseId === '') {
-			continue
-		}
-
-		// A row whose far case has no readable title is left out rather than
-		// shown as its uuid: "8afb946b-…" under "Related cases" tells a handler
-		// nothing, and the server resolves the title of every case it can read.
-		const title = String(relation?.title || '').trim()
-		if (title === '' || isBareUuid(title)) {
+		const item = relationItem(relation)
+		if (item === null) {
 			continue
 		}
 
@@ -152,11 +140,7 @@ export function relationSections(relations) {
 		if (!groups.has(label)) {
 			groups.set(label, [])
 		}
-		const notes = String(relation?.notes || '').trim()
-		groups.get(label).push({
-			id: caseId,
-			label: notes === '' ? title : `${title} (${notes})`,
-		})
+		groups.get(label).push(item)
 	}
 
 	return [...groups.entries()].map(([label, items]) => ({
@@ -165,4 +149,33 @@ export function relationSections(relations) {
 		icon: 'LinkVariant',
 		items,
 	}))
+}
+
+/**
+ * One relation as a row of its section: the far case's id, and its title
+ * with the relation's notes; null for a row without a case or a readable
+ * title.
+ *
+ * @param {object|null} relation One row from `/api/cases/{id}/relations`.
+ * @return {{id: string, label: string}|null} The row.
+ */
+function relationItem(relation) {
+	const caseId = String(relation?.caseId || '')
+	if (caseId === '') {
+		return null
+	}
+
+	// A row whose far case has no readable title is left out rather than
+	// shown as its uuid: "8afb946b-…" under "Related cases" tells a handler
+	// nothing, and the server resolves the title of every case it can read.
+	const title = String(relation?.title || '').trim()
+	if (title === '' || isBareUuid(title)) {
+		return null
+	}
+
+	const notes = String(relation?.notes || '').trim()
+	return {
+		id: caseId,
+		label: notes === '' ? title : `${title} (${notes})`,
+	}
 }

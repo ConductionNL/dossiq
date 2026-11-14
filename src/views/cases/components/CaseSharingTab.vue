@@ -137,6 +137,7 @@ import {
 	federatedSharesListEndpoint,
 	revokeFederatedShareEndpoint,
 } from '../../../utils/federatedShareHelpers.js'
+import { loadPartnerOrganisations } from '../../../utils/partnerOrganisations.js'
 
 export default {
 	name: 'CaseSharingTab',
@@ -194,7 +195,7 @@ export default {
 		 * later screen could tell them so.
 		 *
 		 * @return {string} The sentence.
-		 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+		 * @spec openspec/specs/deelzaak-support/spec.md
 		 */
 		inheritanceWarning() {
 			return n(
@@ -233,7 +234,7 @@ export default {
 		 * exist would teach them to ignore the line.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+		 * @spec openspec/specs/deelzaak-support/spec.md
 		 */
 		async loadDeelzaken() {
 			if (!this.objectId) {
@@ -383,7 +384,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md */
 		async loadShares() {
 			if (!this.objectId) {
 				return
@@ -440,21 +441,14 @@ export default {
 		 * existing caseShare objects keeps resolving.
 		 *
 		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md
-		 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+		 * @spec openspec/specs/partner-organisations/spec.md
+		 * @spec openspec/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
 		 *
 		 * @return {Promise<void>}
 		 */
 		async loadPartners() {
 			try {
-				const response = await axios.get(
-					generateUrl('/apps/openregister/api/organisations'),
-				)
-				// A partner is somebody ELSE's organisation that this instance
-				// shares cases WITH. Without the type filter the picker would
-				// offer this municipality its own tenant to share a case with.
-				this.partners = (response.data?.results || []).filter(
-					(organisation) => organisation.type === 'partner',
-				)
+				this.partners = await loadPartnerOrganisations()
 			} catch (err) {
 				this.partners = []
 				showError(t('dossiq', 'Could not load partner organisations'))
@@ -481,7 +475,7 @@ export default {
 
 		/**
 		 * @param {object} payload the partner-share creation payload.
-		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 		 */
 		async createShare(payload) {
 			try {
@@ -499,7 +493,7 @@ export default {
 
 		/**
 		 * @param {string} shareId the caseShare UUID to revoke.
-		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 		 */
 		async revokeShare(shareId) {
 			try {

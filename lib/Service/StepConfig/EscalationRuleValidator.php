@@ -87,35 +87,59 @@ final class EscalationRuleValidator {
 			return [$this->error(path: $path, code: 'malformed_escalation_rule', message: 'escalationRule must be an object')];
 		}
 
-		$errors = [];
+		return array_merge(
+			$this->slaErrors(sla: $sla, path: $path),
+			$this->validateTiming(rule: $rule, path: $path),
+			$this->validatePreBreachOffset(rule: $rule, sla: $sla, path: $path),
+			$this->validateRoles(rule: $rule, roleTypes: $roleTypes, path: $path),
+			$this->openIncidentErrors(rule: $rule, path: $path)
+		);
+	}//end validate()
 
-		// Rule 6: escalationRule requires an SLA.
-		if ($sla === null) {
-			$errors[] = $this->error(
+	/**
+	 * Rule 6: an escalationRule requires an SLA.
+	 *
+	 * @param mixed  $sla  The step's SLA.
+	 * @param string $path The JSON path of the rule.
+	 *
+	 * @return array<int, array<string, string>> The error, or none.
+	 */
+	private function slaErrors(mixed $sla, string $path): array {
+		if ($sla !== null) {
+			return [];
+		}
+
+		return [
+			$this->error(
 				path: $path,
 				code: 'escalation_requires_sla',
 				message: 'escalationRule cannot be set without a sla'
-			);
+			),
+		];
+	}//end slaErrors()
+
+	/**
+	 * An openIncident flag, when given, must be a boolean.
+	 *
+	 * @param array<string, mixed> $rule The escalation rule.
+	 * @param string               $path The JSON path of the rule.
+	 *
+	 * @return array<int, array<string, string>> The error, or none.
+	 */
+	private function openIncidentErrors(array $rule, string $path): array {
+		$openIncident = ($rule['openIncident'] ?? null);
+		if ($openIncident === null || is_bool($openIncident) === true) {
+			return [];
 		}
 
-		$errors = array_merge($errors, $this->validateTiming(rule: $rule, path: $path));
-		$errors = array_merge($errors, $this->validatePreBreachOffset(rule: $rule, sla: $sla, path: $path));
-		$errors = array_merge(
-			$errors,
-			$this->validateRoles(rule: $rule, roleTypes: $roleTypes, path: $path)
-		);
-
-		$openIncident = ($rule['openIncident'] ?? null);
-		if ($openIncident !== null && is_bool($openIncident) === false) {
-			$errors[] = $this->error(
+		return [
+			$this->error(
 				path: $path . '.openIncident',
 				code: 'malformed_open_incident',
 				message: 'escalationRule.openIncident must be a boolean'
-			);
-		}
-
-		return $errors;
-	}//end validate()
+			),
+		];
+	}//end openIncidentErrors()
 
 	/**
 	 * Validate the trigger / offset / offsetUnit triplet of an escalationRule.
@@ -128,6 +152,24 @@ final class EscalationRuleValidator {
 	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private function validateTiming(array $rule, string $path): array {
+		return array_merge(
+			$this->triggerErrors(rule: $rule, path: $path),
+			$this->offsetErrors(rule: $rule, path: $path),
+			$this->offsetUnitErrors(rule: $rule, path: $path),
+		);
+	}//end validateTiming()
+
+	/**
+	 * The error for an escalationRule trigger that is not a known one.
+	 *
+	 * @param array<string, mixed> $rule The escalationRule object.
+	 * @param string $path The path prefix for any error.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 *
+	 * @spec openspec/specs/process-step-configuration/spec.md
+	 */
+	private function triggerErrors(array $rule, string $path): array {
 		$errors = [];
 
 		$trigger = ($rule['trigger'] ?? null);
@@ -139,6 +181,22 @@ final class EscalationRuleValidator {
 			);
 		}
 
+		return $errors;
+	}//end triggerErrors()
+
+	/**
+	 * The error for an escalationRule offset that is not a non-negative integer.
+	 *
+	 * @param array<string, mixed> $rule The escalationRule object.
+	 * @param string $path The path prefix for any error.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 *
+	 * @spec openspec/specs/process-step-configuration/spec.md
+	 */
+	private function offsetErrors(array $rule, string $path): array {
+		$errors = [];
+
 		$offset = ($rule['offset'] ?? null);
 		if (is_int($offset) === false || $offset < 0) {
 			$errors[] = $this->error(
@@ -147,6 +205,22 @@ final class EscalationRuleValidator {
 				message: 'escalationRule.offset must be a non-negative integer'
 			);
 		}
+
+		return $errors;
+	}//end offsetErrors()
+
+	/**
+	 * The error for an escalationRule offsetUnit that is not a known one.
+	 *
+	 * @param array<string, mixed> $rule The escalationRule object.
+	 * @param string $path The path prefix for any error.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 *
+	 * @spec openspec/specs/process-step-configuration/spec.md
+	 */
+	private function offsetUnitErrors(array $rule, string $path): array {
+		$errors = [];
 
 		$offsetUnit = ($rule['offsetUnit'] ?? null);
 		if (is_string($offsetUnit) === false
@@ -160,7 +234,7 @@ final class EscalationRuleValidator {
 		}
 
 		return $errors;
-	}//end validateTiming()
+	}//end offsetUnitErrors()
 
 	/**
 	 * Rule 7: a preBreach offset cannot exceed sla.value.
@@ -208,7 +282,6 @@ final class EscalationRuleValidator {
 	 */
 	private function validateRoles(array $rule, array $roleTypes, string $path): array {
 		$errors = [];
-		$checkRoles = ($roleTypes !== []);
 
 		foreach (['notifyRole', 'escalateToRole'] as $roleKey) {
 			$role = ($rule[$roleKey] ?? null);
@@ -216,26 +289,47 @@ final class EscalationRuleValidator {
 				continue;
 			}
 
-			if (is_string($role) === false || $role === '') {
-				$errors[] = $this->error(
-					path: $path . '.' . $roleKey,
-					code: 'malformed_role_reference',
-					message: $roleKey . ' must be a non-empty role reference'
-				);
-				continue;
-			}
-
-			if ($checkRoles === true && array_key_exists($role, $roleTypes) === false) {
-				$errors[] = $this->error(
-					path: $path . '.' . $roleKey,
-					code: 'unknown_role_reference',
-					message: $roleKey . ' does not resolve to a roleType on the linked caseType'
-				);
+			$error = $this->roleError(role: $role, roleKey: $roleKey, roleTypes: $roleTypes, path: $path);
+			if ($error !== null) {
+				$errors[] = $error;
 			}
 		}//end foreach
 
 		return $errors;
 	}//end validateRoles()
+
+	/**
+	 * The error for one role reference, when it is malformed or does not resolve.
+	 *
+	 * @param mixed                $role      The role reference.
+	 * @param string               $roleKey   `notifyRole` or `escalateToRole`.
+	 * @param array<string, mixed> $roleTypes Map of role name/uuid to definition.
+	 * @param string               $path      The path prefix for any error.
+	 *
+	 * @return array{path: string, code: string, message: string}|null Null when the reference is fine.
+	 *
+	 * @spec openspec/specs/process-step-configuration/spec.md
+	 */
+	private function roleError(mixed $role, string $roleKey, array $roleTypes, string $path): array|null {
+		$checkRoles = ($roleTypes !== []);
+		if (is_string($role) === false || $role === '') {
+			return $this->error(
+				path: $path . '.' . $roleKey,
+				code: 'malformed_role_reference',
+				message: $roleKey . ' must be a non-empty role reference'
+			);
+		}
+
+		if ($checkRoles === true && array_key_exists($role, $roleTypes) === false) {
+			return $this->error(
+				path: $path . '.' . $roleKey,
+				code: 'unknown_role_reference',
+				message: $roleKey . ' does not resolve to a roleType on the linked caseType'
+			);
+		}
+
+		return null;
+	}//end roleError()
 
 	/**
 	 * Build a structured error record.

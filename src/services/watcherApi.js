@@ -43,9 +43,9 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-followers/specs/case-management/spec.md
- * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
- * @spec openspec/changes/one-follow-control-in-the-header/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-you-follow-a-case-you-do-not-own-req-cm-40
+ * @spec openspec/specs/case-management/spec.md#requirement-the-case-page-shows-one-follow-control-req-cm-40a
  */
 
 import axios from '@nextcloud/axios'
@@ -85,7 +85,7 @@ function objectUrl(id, register, schema) {
  * @param {string} schema   The schema slug.
  * @return {Promise<object>} The subscription row the write answered.
  *
- * @spec openspec/changes/case-followers/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export async function follow(id, register = CASE_REGISTER, schema = CASE_SCHEMA) {
 	const { data } = await axios.put(`${objectUrl(id, register, schema)}/watch`)
@@ -104,7 +104,7 @@ export async function follow(id, register = CASE_REGISTER, schema = CASE_SCHEMA)
  * @param {string} schema   The schema slug.
  * @return {Promise<void>}
  *
- * @spec openspec/changes/case-followers/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export async function unfollow(id, register = CASE_REGISTER, schema = CASE_SCHEMA) {
 	await axios.delete(`${objectUrl(id, register, schema)}/watch`)
@@ -119,7 +119,7 @@ export async function unfollow(id, register = CASE_REGISTER, schema = CASE_SCHEM
  * @param {string}  schema   The schema slug.
  * @return {Promise<void>}
  *
- * @spec openspec/changes/case-followers/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export async function setFollowing(
 	id,
@@ -136,29 +136,6 @@ export async function setFollowing(
 }
 
 /**
- * The people following an object.
- *
- * Needs `update` on the object. A reader without it gets 403, which the caller
- * has to tell apart from an empty list.
- *
- * @param {string} id       The object uuid.
- * @param {string} register The register slug.
- * @param {string} schema   The schema slug.
- * @return {Promise<Array<object>>} One row per follower.
- *
- * @spec openspec/changes/case-followers/specs/case-management/spec.md
- */
-export async function listFollowers(
-	id,
-	register = CASE_REGISTER,
-	schema = CASE_SCHEMA,
-) {
-	const { data } = await axios.get(`${objectUrl(id, register, schema)}/watchers`)
-
-	return Array.isArray(data?.results) ? data.results : []
-}
-
-/**
  * Whether a row the page already fetched is followed by this reader.
  *
  * `@self.watching` rides every read and every list row, and is OMITTED for an
@@ -167,7 +144,7 @@ export async function listFollowers(
  * @param {object} row The object as the store holds it.
  * @return {boolean} TRUE when this reader follows it.
  *
- * @spec openspec/changes/case-followers/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function isFollowing(row) {
 	return row?.['@self']?.watching === true
@@ -183,7 +160,7 @@ export function isFollowing(row) {
  * @param {object} row The object as the store holds it.
  * @return {string} The uuid, or the empty string.
  *
- * @spec openspec/changes/case-followers/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function objectIdOf(row) {
 	return String(row?.id ?? row?.['@self']?.id ?? '')

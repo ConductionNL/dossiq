@@ -1,0 +1,4 @@
+- [x] DocumentVerdicts::byDocument + PHPUnit
+- [x] ZaakdossierController reviewVerdict on rows + PHPUnit
+- [x] Files tab verdict column + Beoordelen (manifest, when on the case type flag)
+- [x] DocumentAssessDialog documentId preselect + vitest

@@ -59,13 +59,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Kernel\Contracts\CaseFieldRoleProjectorInterface;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
@@ -76,9 +77,9 @@ use Throwable;
 /**
  * Projects a case type's per-role field rules onto the live case schema.
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
-class CaseFieldRoleProjector {
+class CaseFieldRoleProjector implements CaseFieldRoleProjectorInterface {
 
 	/**
 	 * The schema the rules are published onto.
@@ -140,7 +141,7 @@ class CaseFieldRoleProjector {
 	 *
 	 * @return bool True when the schema was rewritten.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function publish(string $caseTypeId): bool {
 		if ($caseTypeId === '') {
@@ -167,7 +168,7 @@ class CaseFieldRoleProjector {
 	 *
 	 * @return bool True when the schema was rewritten.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function reapply(): bool {
 		return $this->write(caseTypeId: '', own: []);
@@ -185,17 +186,36 @@ class CaseFieldRoleProjector {
 	 *
 	 * @return array<string, mixed> The declared blocks, by property name.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function registerBase(): array {
+		$configData = $this->mergedRegisterConfig();
+		if ($configData === null) {
+			return [];
+		}
+
+		$properties = ($configData['components']['schemas'][self::CASE_SCHEMA_SLUG]['properties'] ?? []);
+		if (is_array($properties) === false) {
+			return [];
+		}
+
+		return $this->declaredBlocks(properties: $properties);
+	}//end registerBase()
+
+	/**
+	 * The shipped register JSON with its fragments merged in.
+	 *
+	 * @return array<string, mixed>|null Null when the file is missing or not a JSON object.
+	 */
+	private function mergedRegisterConfig(): array|null {
 		$configPath = __DIR__ . '/../../Settings/dossiq_register.json';
 		if (file_exists($configPath) === false) {
-			return [];
+			return null;
 		}
 
 		$configData = json_decode((string)file_get_contents($configPath), true);
 		if (json_last_error() !== JSON_ERROR_NONE || is_array($configData) === false) {
-			return [];
+			return null;
 		}
 
 		[$configData] = $this->fragments->merge(
@@ -203,11 +223,17 @@ class CaseFieldRoleProjector {
 			fragmentDir: __DIR__ . '/../../Settings/register.d'
 		);
 
-		$properties = ($configData['components']['schemas'][self::CASE_SCHEMA_SLUG]['properties'] ?? []);
-		if (is_array($properties) === false) {
-			return [];
-		}
+		return $configData;
+	}//end mergedRegisterConfig()
 
+	/**
+	 * The non-empty authorization block of every case property that declares one.
+	 *
+	 * @param array<mixed> $properties The case schema's properties.
+	 *
+	 * @return array<string, mixed> The declared blocks, by property name.
+	 */
+	private function declaredBlocks(array $properties): array {
 		$base = [];
 		foreach ($properties as $field => $definition) {
 			$block = ($definition[self::DECLARED_AUTHORIZATION_KEY] ?? $definition[self::AUTHORIZATION_KEY] ?? null);
@@ -217,7 +243,7 @@ class CaseFieldRoleProjector {
 		}
 
 		return $base;
-	}//end registerBase()
+	}//end declaredBlocks()
 
 	/**
 	 * Write the ledger and the properties back, answering whether it landed.
@@ -227,7 +253,7 @@ class CaseFieldRoleProjector {
 	 *
 	 * @return bool True when the schema was written.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function write(string $caseTypeId, array $own): bool {
 		// 🔴 ASKED, NOT CAUGHT. An absent OpenRegister is the ordinary state of
@@ -265,23 +291,62 @@ class CaseFieldRoleProjector {
 	 *
 	 * @return bool True when the schema was written.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function writeToSchema(string $caseTypeId, array $own): bool {
-		$schemaMapper = $this->container->get(self::SCHEMA_MAPPER);
-		if (is_object($schemaMapper) === false) {
+		$resolved = $this->mapperAndCaseSchema();
+		if ($resolved === null) {
 			return false;
 		}
 
-		$schema = $this->slugs->resolve(schemaMapper: $schemaMapper, slug: self::CASE_SCHEMA_SLUG);
-		if ($schema === null) {
-			return false;
-		}
+		[$schemaMapper, $schema] = $resolved;
 
+		return $this->projectOnto(schemaMapper: $schemaMapper, schema: $schema, caseTypeId: $caseTypeId, own: $own);
+	}//end writeToSchema()
+
+	/**
+	 * Compute the ledger and the properties and update the schema when either changed.
+	 *
+	 * @param object               $schemaMapper The schema mapper.
+	 * @param object               $schema       The case schema.
+	 * @param string               $caseTypeId   The case type being published, or '' for a reapply.
+	 * @param array<string, mixed> $own          What that case type now projects.
+	 *
+	 * @return bool True when the schema was written.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function projectOnto(object $schemaMapper, object $schema, string $caseTypeId, array $own): bool {
 		$configuration = $this->arrayOf(value: $schema->getConfiguration());
 		$properties = $this->arrayOf(value: $schema->getProperties());
 
 		$ledger = $this->arrayOf(value: ($configuration[self::LEDGER_KEY] ?? []));
+		[$updatedLedger, $updatedProperties] = $this->projected(caseTypeId: $caseTypeId, own: $own, ledger: $ledger, properties: $properties);
+
+		if ($updatedLedger === $ledger && $updatedProperties === $properties) {
+			return false;
+		}
+
+		$schema->setConfiguration($this->configurationWith(configuration: $configuration, updatedLedger: $updatedLedger));
+		$schema->setProperties($updatedProperties);
+		$schemaMapper->update($schema);
+
+		return true;
+	}//end projectOnto()
+
+	/**
+	 * The ledger with this case type's projection, and the properties that ledger implies.
+	 *
+	 * @param string               $caseTypeId The case type being published, or '' for a reapply.
+	 * @param array<string, mixed> $own        What that case type now projects.
+	 * @param array<string, mixed> $ledger     The stored ledger.
+	 * @param array<string, mixed> $properties The stored schema properties.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>} The updated ledger and properties.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function projected(string $caseTypeId, array $own, array $ledger, array $properties): array {
 		$updatedLedger = $this->ledger->ledgerWith(
 			ledger: $ledger,
 			caseTypeId: $caseTypeId,
@@ -295,21 +360,48 @@ class CaseFieldRoleProjector {
 			previous: $ledger
 		);
 
-		if ($updatedLedger === $ledger && $updatedProperties === $properties) {
-			return false;
+		return [$updatedLedger, $updatedProperties];
+	}//end projected()
+
+	/**
+	 * OpenRegister's schema mapper and the case schema, or null when either is missing.
+	 *
+	 * @return array{0: object, 1: object}|null The mapper and the schema.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function mapperAndCaseSchema(): ?array {
+		$schemaMapper = $this->container->get(self::SCHEMA_MAPPER);
+		if (is_object($schemaMapper) === false) {
+			return null;
 		}
 
+		$schema = $this->slugs->resolve(schemaMapper: $schemaMapper, slug: self::CASE_SCHEMA_SLUG);
+		if ($schema === null) {
+			return null;
+		}
+
+		return [$schemaMapper, $schema];
+	}//end mapperAndCaseSchema()
+
+	/**
+	 * The schema configuration with the ledger replaced, or dropped when empty.
+	 *
+	 * @param array<string, mixed> $configuration The schema configuration.
+	 * @param array<string, mixed> $updatedLedger The new ledger.
+	 *
+	 * @return array<string, mixed> The configuration to store.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function configurationWith(array $configuration, array $updatedLedger): array {
 		unset($configuration[self::LEDGER_KEY]);
 		if ($updatedLedger !== []) {
 			$configuration[self::LEDGER_KEY] = $updatedLedger;
 		}
 
-		$schema->setConfiguration($configuration);
-		$schema->setProperties($updatedProperties);
-		$schemaMapper->update($schema);
-
-		return true;
-	}//end writeToSchema()
+		return $configuration;
+	}//end configurationWith()
 
 	/**
 	 * One schema column as an array, whatever it answered.
@@ -318,7 +410,7 @@ class CaseFieldRoleProjector {
 	 *
 	 * @return array<string, mixed> The value.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function arrayOf(mixed $value): array {
 		if (is_array($value) === false) {

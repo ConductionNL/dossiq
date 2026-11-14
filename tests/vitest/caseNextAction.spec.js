@@ -51,7 +51,6 @@ const milestoneFragment = JSON.parse(
 		'utf8',
 	),
 )
-const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 const routesSource = fs.readFileSync(
 	path.join(ROOT, 'appinfo', 'routes.php'),
 	'utf8',
@@ -211,10 +210,8 @@ describe('the case says what happens next', () => {
 		).toBeUndefined()
 	})
 
-	it('names an icon that is registered', () => {
-		expect(iconsSource, `${section().icon} in src/icons.js`).toContain(
-			`vue-material-design-icons/${section().icon}.vue`,
-		)
+	it('draws no title icon, as the boards draw none on card titles', () => {
+		expect(section().icon).toBeUndefined()
 	})
 
 	it('says so when nothing is planned', () => {

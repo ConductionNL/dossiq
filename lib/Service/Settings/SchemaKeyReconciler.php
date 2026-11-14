@@ -11,7 +11,7 @@
  *
  * That second path is not a nicety: without it the per-schema config keys were
  * never written on a fresh deploy of an existing instance, and the status-name
- * lookup and the WorkflowBoard silently broke.
+ * lookup and the workflow board silently broke.
  *
  * Split out of {@see \OCA\Dossiq\Service\SettingsService}.
  *
@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Settings;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -152,7 +152,7 @@ class SchemaKeyReconciler {
 			}
 
 			$registerId = (string)$register->getId();
-			$this->appConfig->setValueString(Application::APP_ID, 'register', $registerId);
+			$this->appConfig->setValueString(AppIdentity::APP_ID, 'register', $registerId);
 			$this->logger->info(
 				'Dossiq: Auto-configured register ID',
 				['registerId' => $registerId]
@@ -216,7 +216,7 @@ class SchemaKeyReconciler {
 			return 0;
 		}
 
-		if ($this->appConfig->getValueString(Application::APP_ID, $configKey, '') === $schemaId) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, $configKey, '') === $schemaId) {
 			return 0;
 		}
 
@@ -236,11 +236,11 @@ class SchemaKeyReconciler {
 	 * @return void
 	 */
 	private function writeSchemaKey(string $slug, string $configKey, string $schemaId): void {
-		$this->appConfig->setValueString(Application::APP_ID, $configKey, $schemaId);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, $configKey, $schemaId);
 
 		if ($slug === SchemaSlugMap::WORKFLOW_TEMPLATE_SLUG) {
 			$this->appConfig->setValueString(
-				Application::APP_ID,
+				AppIdentity::APP_ID,
 				SchemaSlugMap::WORKFLOW_DEFINITION_ALIAS,
 				$schemaId
 			);

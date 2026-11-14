@@ -1,0 +1,285 @@
+{
+    "uuids": [
+        "timer-1",
+        "timer-2",
+        "timer-3",
+        "timer-4",
+        null,
+        null,
+        "timer-5",
+        "timer-6",
+        null,
+        null
+    ],
+    "arm": [
+        {
+            "config": {
+                "subjectType": "object",
+                "subjectUuid": "ti-1",
+                "appId": "dossiq",
+                "title": "Beslistermijn Z/2026/1",
+                "purpose": "due",
+                "legalEffect": "wettelijk",
+                "sla": {
+                    "value": 56,
+                    "unit": "calendarDays"
+                },
+                "ladder": "nl-termijn-default",
+                "extensionMax": 3,
+                "anchorEvent": "case_created",
+                "anchorEventAt": "2026-06-02T00:00:00+02:00",
+                "metadata": {
+                    "source": "dossiq-termijn",
+                    "kind": "beslistermijn",
+                    "termijnInstanceId": "ti-1",
+                    "caseId": "Z/2026/1",
+                    "deadlineDefinition": "td-ov",
+                    "basis": "Wabo"
+                }
+            },
+            "actor": null,
+            "now": null
+        },
+        {
+            "config": {
+                "subjectType": "object",
+                "subjectUuid": "ti-1",
+                "appId": "dossiq",
+                "title": "Beslistermijn Z/2026/1",
+                "purpose": "due",
+                "legalEffect": "wettelijk",
+                "sla": {
+                    "value": 1,
+                    "unit": "businessDays"
+                },
+                "extensionMax": 1,
+                "anchorEvent": "case_created",
+                "anchorEventAt": "2026-06-02T00:00:00+02:00",
+                "metadata": {
+                    "source": "dossiq-termijn",
+                    "kind": "beslistermijn",
+                    "termijnInstanceId": "ti-1",
+                    "caseId": "Z/2026/1",
+                    "deadlineDefinition": "td-ov",
+                    "basis": "AWB 4:13"
+                },
+                "escalationRules": [
+                    {
+                        "trigger": "preBreach",
+                        "offset": 0,
+                        "offsetUnit": "calendarDays",
+                        "notifyRole": [
+                            "handler"
+                        ],
+                        "escalateToRole": [],
+                        "priority": "high",
+                        "message": "termijn-drempel",
+                        "openIncident": false
+                    }
+                ]
+            },
+            "actor": null,
+            "now": null
+        },
+        {
+            "config": {
+                "subjectType": "object",
+                "subjectUuid": "ti-2",
+                "appId": "dossiq",
+                "title": "Beslistermijn ti-2",
+                "purpose": "due",
+                "legalEffect": "wettelijk",
+                "sla": {
+                    "value": 10,
+                    "unit": "calendarDays"
+                },
+                "extensionMax": 1,
+                "anchorEvent": "case_created",
+                "anchorEventAt": "2026-10-23T00:00:00+02:00",
+                "metadata": {
+                    "source": "dossiq-termijn",
+                    "kind": "beslistermijn",
+                    "termijnInstanceId": "ti-2",
+                    "caseId": "",
+                    "deadlineDefinition": "",
+                    "basis": "AWB 4:13"
+                },
+                "escalationRules": [
+                    {
+                        "trigger": "preBreach",
+                        "offset": 7,
+                        "notifyRole": [
+                            "handler",
+                            "teamleader"
+                        ],
+                        "escalateToRole": [
+                            "teamleader"
+                        ],
+                        "priority": "medium",
+                        "message": "termijn-7d",
+                        "offsetUnit": "calendarDays",
+                        "openIncident": false
+                    },
+                    {
+                        "trigger": "preBreach",
+                        "offset": 2,
+                        "notifyRole": [
+                            "handler",
+                            "teamleader",
+                            "manager"
+                        ],
+                        "escalateToRole": [
+                            "manager"
+                        ],
+                        "priority": "high",
+                        "message": "termijn-2d",
+                        "offsetUnit": "calendarDays",
+                        "openIncident": false
+                    },
+                    {
+                        "trigger": "slaBreached",
+                        "offset": 0,
+                        "notifyRole": [
+                            "handler",
+                            "teamleader",
+                            "manager"
+                        ],
+                        "escalateToRole": [
+                            "manager"
+                        ],
+                        "priority": "critical",
+                        "message": "termijn-overschreden",
+                        "offsetUnit": "calendarDays",
+                        "openIncident": false
+                    }
+                ]
+            },
+            "actor": null,
+            "now": null
+        },
+        {
+            "config": {
+                "subjectType": "object",
+                "subjectUuid": "ti-4",
+                "appId": "dossiq",
+                "title": "Beslistermijn ti-4",
+                "purpose": "due",
+                "legalEffect": "wettelijk",
+                "sla": {
+                    "value": 20,
+                    "unit": "calendarDays"
+                },
+                "ladder": "nl-termijn-default",
+                "extensionMax": 1,
+                "anchorEvent": "case_created",
+                "anchorEventAt": "2026-06-02T00:00:00+02:00",
+                "metadata": {
+                    "source": "dossiq-termijn",
+                    "kind": "beslistermijn",
+                    "termijnInstanceId": "ti-4",
+                    "caseId": "",
+                    "deadlineDefinition": "",
+                    "basis": "AWB 4:13"
+                }
+            },
+            "actor": null,
+            "now": null
+        },
+        {
+            "config": {
+                "subjectType": "object",
+                "subjectUuid": "ti-1",
+                "appId": "dossiq",
+                "title": "Hersteltermijn Z/2026/1",
+                "purpose": "due",
+                "legalEffect": "none",
+                "sla": {
+                    "value": 14,
+                    "unit": "calendarDays"
+                },
+                "escalationRules": [
+                    {
+                        "trigger": "slaBreached",
+                        "offset": 0,
+                        "offsetUnit": "calendarDays",
+                        "notifyRole": [
+                            "handler"
+                        ],
+                        "escalateToRole": [],
+                        "priority": "high",
+                        "message": "pauze-verlopen",
+                        "openIncident": false
+                    },
+                    {
+                        "trigger": "preBreach",
+                        "offset": 7,
+                        "offsetUnit": "calendarDays",
+                        "notifyRole": [],
+                        "escalateToRole": [],
+                        "priority": "normal",
+                        "message": "pauze-chase",
+                        "openIncident": false
+                    },
+                    {
+                        "trigger": "preBreach",
+                        "offset": 2,
+                        "offsetUnit": "calendarDays",
+                        "notifyRole": [],
+                        "escalateToRole": [],
+                        "priority": "normal",
+                        "message": "pauze-chase",
+                        "openIncident": false
+                    }
+                ],
+                "anchorEvent": "hersteltermijn_start",
+                "metadata": {
+                    "source": "dossiq-termijn",
+                    "kind": "hersteltermijn",
+                    "termijnInstanceId": "ti-1",
+                    "caseId": "Z/2026/1",
+                    "basis": "AWB 4:5"
+                }
+            },
+            "actor": null,
+            "now": null
+        },
+        {
+            "config": {
+                "subjectType": "object",
+                "subjectUuid": "ti-3",
+                "appId": "dossiq",
+                "title": "Hersteltermijn ti-3",
+                "purpose": "due",
+                "legalEffect": "none",
+                "sla": {
+                    "value": 3,
+                    "unit": "calendarDays"
+                },
+                "escalationRules": [
+                    {
+                        "trigger": "slaBreached",
+                        "offset": 0,
+                        "offsetUnit": "calendarDays",
+                        "notifyRole": [
+                            "handler"
+                        ],
+                        "escalateToRole": [],
+                        "priority": "high",
+                        "message": "pauze-verlopen",
+                        "openIncident": false
+                    }
+                ],
+                "anchorEvent": "hersteltermijn_start",
+                "metadata": {
+                    "source": "dossiq-termijn",
+                    "kind": "hersteltermijn",
+                    "termijnInstanceId": "ti-3",
+                    "caseId": "",
+                    "basis": "AWB 4:5"
+                }
+            },
+            "actor": null,
+            "now": null
+        }
+    ]
+}

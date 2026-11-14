@@ -1,0 +1,31 @@
+{
+  "schema": "decision_type_schema",
+  "match": [
+    "name",
+    "caseType"
+  ],
+  "rows": [
+    {
+      "id": "5f4e51d5-288c-52e8-b82d-cbd4272b08a3",
+      "name": "Gunningsbeslissing",
+      "description": "Het besluit aan welke inschrijver de opdracht wordt gegund, met de motivering per inschrijver. Het opent de opschortende termijn; de gunning is pas definitief als die is verstreken.",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "caseTypes": [
+        "d2b26387-ec33-533a-bd75-4ded3719a932"
+      ],
+      "isDraft": false,
+      "publicationRequired": false
+    },
+    {
+      "id": "f299a4e4-9d38-5dff-830f-db40eafa97da",
+      "name": "Afwijzingsbeslissing",
+      "description": "Het besluit dat een inschrijving niet wordt gegund of ongeldig is, met de redenen en de relevante kenmerken van de winnende inschrijving.",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "caseTypes": [
+        "d2b26387-ec33-533a-bd75-4ded3719a932"
+      ],
+      "isDraft": false,
+      "publicationRequired": false
+    }
+  ]
+}

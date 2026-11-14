@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use Throwable;
 
 /**
@@ -28,17 +28,15 @@ use Throwable;
  * by provenance marker, write one without letting a single failure abort the
  * rest. Copying that a third time is how the copies drift.
  *
- * Measured 2026-09-03: ONE class uses this trait, WorkflowTemplateFlowMigrator.
- * The endorsement-route migrator went with the parafering runtime
- * (proposals-are-cases). AutomaticActionFlowMigrator still carries its own
- * copy of the machinery and never adopted this, which is the drift the trait
- * was extracted to stop. Adopting it there is the open work; inlining the
- * trait back into its one consumer would remove the seam that makes adopting
- * it cheap.
+ * Two classes use this trait: WorkflowTemplateFlowMigrator and
+ * AutomaticActionFlowMigrator. The endorsement-route migrator went with the
+ * parafering runtime (proposals-are-cases). AutomaticActionFlowMigrator takes
+ * the marker index and the outcome rule from here and keeps its own
+ * flowService() and writeFlow(), whose log lines differ from these.
  *
  * The consuming class supplies MARKER_PREFIX, a logger and a container.
  *
- * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+ * @spec openspec/specs/workflow-definitions-to-flow/spec.md
  */
 trait ProjectsOntoFlows {
 
@@ -77,7 +75,7 @@ trait ProjectsOntoFlows {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Flow projection could not resolve FlowService: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 
 			return null;
@@ -101,7 +99,7 @@ trait ProjectsOntoFlows {
 		$offset = 0;
 
 		while (true) {
-			$page = $flowService->findAll(Application::APP_ID, null, null, self::FLOW_PAGE, $offset);
+			$page = $flowService->findAll(AppIdentity::APP_ID, null, null, self::FLOW_PAGE, $offset);
 			if (is_array($page) === false || $page === []) {
 				return $map;
 			}
@@ -138,7 +136,7 @@ trait ProjectsOntoFlows {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not project onto a flow',
-				['app' => Application::APP_ID, 'marker' => $marker, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'marker' => $marker, 'exception' => $e->getMessage()]
 			);
 
 			return ['outcome' => 'failed', 'marker' => $marker, 'detail' => $e->getMessage()];
@@ -180,28 +178,7 @@ trait ProjectsOntoFlows {
 	 * @return array<int, array<string, mixed>> The decoded list.
 	 */
 	private function decodeList(mixed $value): array {
-		if (is_string($value) === true) {
-			$decoded = json_decode($value, true);
-			if (is_array($decoded) === false) {
-				return [];
-			}
-
-			$value = $decoded;
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$rows = [];
-		foreach ($value as $row) {
-			if (is_array($row) === true) {
-				$rows[] = $row;
-			}
-		}
-
-		return $rows;
-
+		return RowList::from(value: $value);
 	}//end decodeList()
 
 }//end trait

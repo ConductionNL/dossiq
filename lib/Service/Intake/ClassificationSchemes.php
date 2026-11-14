@@ -33,14 +33,15 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+ * @spec openspec/specs/semantic-case-intake/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ClassificationSchemesInterface;
 use OCP\IAppConfig;
 
 /**
@@ -48,9 +49,9 @@ use OCP\IAppConfig;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+ * @spec openspec/specs/semantic-case-intake/spec.md
  */
-class ClassificationSchemes {
+class ClassificationSchemes implements ClassificationSchemesInterface {
 
 	/**
 	 * The app-config key holding the administered schemes.
@@ -98,7 +99,7 @@ class ClassificationSchemes {
 	 *
 	 * @return array<string, array<int, string>> Scheme name to allowed values.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function schemes(): array {
 		return array_merge(self::SHIPPED, $this->administered());
@@ -114,7 +115,7 @@ class ClassificationSchemes {
 	 *
 	 * @return boolean True when the scheme is known or unnamed.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function resolves(string $scheme): bool {
 		$name = trim($scheme);
@@ -132,7 +133,7 @@ class ClassificationSchemes {
 	 *
 	 * @return array<int, string> The allowed values, empty when unknown.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function valuesOf(string $scheme): array {
 		$schemes = $this->schemes();
@@ -156,7 +157,7 @@ class ClassificationSchemes {
 	 *
 	 * @return boolean True when the value is allowed.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function allows(string $scheme, string $value): bool {
 		$values = $this->valuesOf(scheme: $scheme);
@@ -181,7 +182,7 @@ class ClassificationSchemes {
 	 * @return array<string, array<int, string>> Scheme name to allowed values.
 	 */
 	private function administered(): array {
-		$raw = $this->appConfig->getValueString(Application::APP_ID, self::SCHEMES_KEY, '');
+		$raw = $this->appConfig->getValueString(AppIdentity::APP_ID, self::SCHEMES_KEY, '');
 
 		if (trim($raw) === '') {
 			return [];

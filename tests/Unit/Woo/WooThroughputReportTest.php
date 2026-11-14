@@ -34,6 +34,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Woo\WooThroughputReport
  * @covers \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Csv\CsvWriter
+ * @uses \OCA\Dossiq\Woo\ReportPeriod
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  */
@@ -197,4 +199,45 @@ class WooThroughputReportTest extends TestCase {
 			$csv
 		);
 	}//end testTheCsvHoldsTheRowsAndDefusesFormulas()
+
+	/**
+	 * A search that fails is refused as indeterminate, keeping the cause.
+	 *
+	 * @return void
+	 */
+	public function testAFailingSearchIsRefusedWithItsCause(): void {
+		$this->store->missingSchemas = ['wooDocumentAssessment'];
+
+		try {
+			$this->report()->forPeriod(from: '2026-11-01', to: '2026-11-30');
+			$this->fail('A failed read must not read as an empty report');
+		} catch (RefusedException $e) {
+			$this->assertSame(503, $e->getStatus());
+			$this->assertInstanceOf(\OCP\AppFramework\Db\DoesNotExistException::class, $e->getPrevious());
+		}
+	}//end testAFailingSearchIsRefusedWithItsCause()
+
+	/**
+	 * More assessments than the page cap allows are reported as truncated.
+	 *
+	 * @return void
+	 */
+	public function testMoreAssessmentsThanThePageCapAreFlaggedAsTruncated(): void {
+		$this->store->pages = true;
+		for ($n = 0; $n < 20000; $n++) {
+			$this->store->rows['wooDocumentAssessment']['bulk-'.$n] = [
+				'id' => 'bulk-'.$n,
+				'caseRef' => 'case-bulk',
+				'documentRef' => 'doc-'.$n,
+				'classification' => 'openbaar',
+				'assessedBy' => 'reviewer-a',
+				'assessedAt' => '2026-11-10T09:00:00+00:00',
+			];
+		}
+
+		$report = $this->report()->forCase(caseId: 'case-bulk');
+
+		$this->assertTrue($report['truncated']);
+		$this->assertSame(20000, $report['rows'][0]['total']);
+	}//end testMoreAssessmentsThanThePageCapAreFlaggedAsTruncated()
 }//end class

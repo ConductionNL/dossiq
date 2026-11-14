@@ -67,55 +67,93 @@ class PackageValidator {
 	 *
 	 * @return array{valid: bool, errors: string[], warnings: string[], manifest: ?array<string, mixed>, conflicts: array<string, mixed>}
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function validatePackage(string $zipPath): array {
-		$result = [
-			'valid' => true,
-			'errors' => [],
+		$zip = new ZipArchive();
+		$openResult = $zip->open($zipPath, ZipArchive::RDONLY);
+		if ($openResult !== true) {
+			return $this->refusedPackage(errors: ['Failed to open ZIP archive: error code ' . $openResult]);
+		}
+
+		$manifestResult = $this->manifestOf(zip: $zip);
+		if ($manifestResult['errors'] !== []) {
+			$zip->close();
+			return $this->refusedPackage(errors: $manifestResult['errors']);
+		}
+
+		$result = $this->validatedPackage(zip: $zip, manifest: $manifestResult['manifest']);
+		$zip->close();
+		$this->logValidation(result: $result);
+
+		return $result;
+	}//end validatePackage()
+
+	/**
+	 * The answer for a package refused before its contents were read.
+	 *
+	 * @param string[] $errors Why.
+	 *
+	 * @return array{valid: bool, errors: string[], warnings: string[], manifest: ?array<string, mixed>, conflicts: array<string, mixed>}
+	 */
+	private function refusedPackage(array $errors): array {
+		return [
+			'valid' => false,
+			'errors' => $errors,
 			'warnings' => [],
 			'manifest' => null,
 			'conflicts' => [],
 		];
+	}//end refusedPackage()
 
-		// Open the ZIP.
-		$zip = new ZipArchive();
-		$openResult = $zip->open($zipPath, ZipArchive::RDONLY);
-		if ($openResult !== true) {
-			$result['valid'] = false;
-			$result['errors'][] = 'Failed to open ZIP archive: error code ' . $openResult;
-			return $result;
-		}
-
-		// Check required files.
+	/**
+	 * The parsed manifest, or the errors that stop it: a required file missing
+	 * from the archive, or a manifest that cannot be read.
+	 *
+	 * @param \ZipArchive $zip The opened ZIP archive.
+	 *
+	 * @return array{manifest: ?array<string, mixed>, errors: string[]}
+	 */
+	private function manifestOf(\ZipArchive $zip): array {
 		$missingFiles = $this->findMissingRequiredFiles(zip: $zip);
 		if ($missingFiles !== []) {
-			$result['valid'] = false;
-			$result['errors'] = $missingFiles;
-			$zip->close();
-			return $result;
+			return [
+				'manifest' => null,
+				'errors' => $missingFiles,
+			];
 		}
 
-		// Parse manifest.
-		$manifestResult = $this->readManifest(zip: $zip);
-		if ($manifestResult['errors'] !== []) {
-			$result['valid'] = false;
-			$result['errors'] = $manifestResult['errors'];
-			$zip->close();
-			return $result;
-		}
+		return $this->readManifest(zip: $zip);
+	}//end manifestOf()
 
-		$result['manifest'] = $manifestResult['manifest'];
+	/**
+	 * Validate the manifest's structure, declared components and dependencies.
+	 *
+	 * @param \ZipArchive $zip      The opened ZIP archive.
+	 * @param mixed       $manifest The parsed manifest.
+	 *
+	 * @return array{valid: bool, errors: string[], warnings: string[], manifest: ?array<string, mixed>, conflicts: array<string, mixed>}
+	 */
+	private function validatedPackage(\ZipArchive $zip, mixed $manifest): array {
+		$issues = $this->validateManifestContents(zip: $zip, manifest: (array)$manifest);
 
-		// Validate manifest structure, declared components and dependencies.
-		$issues = $this->validateManifestContents(zip: $zip, manifest: (array)$manifestResult['manifest']);
+		return [
+			'valid' => ($issues['errors'] === []),
+			'errors' => $issues['errors'],
+			'warnings' => $issues['warnings'],
+			'manifest' => $manifest,
+			'conflicts' => [],
+		];
+	}//end validatedPackage()
 
-		$result['errors'] = $issues['errors'];
-		$result['warnings'] = $issues['warnings'];
-		$result['valid'] = ($issues['errors'] === []);
-
-		$zip->close();
-
+	/**
+	 * Log a full validation's outcome.
+	 *
+	 * @param array<string, mixed> $result The answer: `valid`, `errors`, `warnings`, `manifest`, `conflicts`.
+	 *
+	 * @return void
+	 */
+	private function logValidation(array $result): void {
 		$validLabel = 'false';
 		if ($result['valid'] === true) {
 			$validLabel = 'true';
@@ -129,9 +167,7 @@ class PackageValidator {
 				'warningCount' => count($result['warnings']),
 			]
 		);
-
-		return $result;
-	}//end validatePackage()
+	}//end logValidation()
 
 	/**
 	 * Validate a package the app ships on disk, as {@see PackageDirectory::read()} returns it.

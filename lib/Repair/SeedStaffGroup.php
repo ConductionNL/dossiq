@@ -35,16 +35,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Access\CaseTeamAccessProjector;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTeamAccessProjectorInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\IGroup;
@@ -58,7 +58,7 @@ use Throwable;
 /**
  * Seeds `dossiq-medewerkers` with the current handling teams and assignees.
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 class SeedStaffGroup implements IRepairStep {
 
@@ -88,16 +88,16 @@ class SeedStaffGroup implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService         $settingsService Names the register and the case schema, and hands out the object service.
-	 * @param CaseTeamAccessProjector $teamAccess      The one reader of every case type's handling teams.
+	 * @param SettingsServiceInterface         $settingsService Names the register and the case schema, and hands out the object service.
+	 * @param CaseTeamAccessProjectorInterface $teamAccess      The one reader of every case type's handling teams.
 	 * @param IGroupManager           $groupManager    Reads the teams and holds the staff group.
 	 * @param IUserManager            $userManager     Resolves an assignee to an account.
 	 * @param IAppConfig              $appConfig       Holds the marker.
 	 * @param LoggerInterface         $logger          The logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseTeamAccessProjector $teamAccess,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseTeamAccessProjectorInterface $teamAccess,
 		private readonly IGroupManager $groupManager,
 		private readonly IUserManager $userManager,
 		private readonly IAppConfig $appConfig,
@@ -110,7 +110,7 @@ class SeedStaffGroup implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function getName(): string {
 		return 'Put the current handling teams and assignees into the dossiq staff group';
@@ -123,46 +123,91 @@ class SeedStaffGroup implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueBool(Application::APP_ID, self::MARKER, false) === true) {
+		if ($this->appConfig->getValueBool(AppIdentity::APP_ID, self::MARKER, false) === true) {
 			return;
 		}
 
+		$target = $this->seedTarget(output: $output);
+		if ($target === null) {
+			return;
+		}
+
+		[$objectService, $group] = $target;
+		$userIds = $this->staffUserIds(objectService: $objectService, output: $output);
+		if ($userIds === null) {
+			return;
+		}
+
+		$this->seed(group: $group, userIds: $userIds, output: $output);
+	}//end run()
+
+	/**
+	 * OpenRegister's object service and the staff group, or null (said on the output) when either is missing.
+	 *
+	 * @param IOutput $output The upgrade output.
+	 *
+	 * @return array{0: object, 1: IGroup}|null The object service and the group.
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function seedTarget(IOutput $output): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			$output->info('Staff group: OpenRegister unavailable, seeding left for the next upgrade.');
-			return;
+			return null;
 		}
 
 		$group = $this->staffGroup();
 		if ($group === null) {
 			$output->warning('Staff group: "' . self::STAFF_GROUP . '" could not be created, seeding left for the next upgrade.');
-			return;
+			return null;
 		}
 
+		return [$objectService, $group];
+	}//end seedTarget()
+
+	/**
+	 * The handling team members and assignees, or null (logged and said on the output) when they cannot be read.
+	 *
+	 * @param object  $objectService OpenRegister's object service.
+	 * @param IOutput $output        The upgrade output.
+	 *
+	 * @return array<int, string>|null User ids, possibly repeated.
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function staffUserIds(object $objectService, IOutput $output): ?array {
 		try {
-			$userIds = (array)$this->runAsSystemIfAvailable(
+			return (array)$this->runAsSystemIfAvailable(
 				objectService: $objectService,
-				operation: fn (): array => array_merge(
-					$this->handlingTeamMembers(),
-					$this->assignees(objectService: $objectService)
-				)
+				operation: fn (): array => array_merge($this->handlingTeamMembers(), $this->assignees(objectService: $objectService))
 			);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the staff group could not be seeded',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
-			);
+			$this->logger->warning('Dossiq: the staff group could not be seeded', ['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]);
 			$output->warning('Staff group: the case types or cases could not be read, seeding left for the next upgrade.');
-			return;
+			return null;
 		}
+	}//end staffUserIds()
 
+	/**
+	 * Add the people to the group, and mark the seeding done.
+	 *
+	 * @param IGroup             $group   The staff group.
+	 * @param array<int, string> $userIds User ids, possibly repeated.
+	 * @param IOutput            $output  The upgrade output.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function seed(IGroup $group, array $userIds, IOutput $output): void {
 		$added = $this->addAll(group: $group, userIds: $userIds);
-		$this->appConfig->setValueBool(Application::APP_ID, self::MARKER, true);
+		$this->appConfig->setValueBool(AppIdentity::APP_ID, self::MARKER, true);
 		$output->info('Staff group: ' . $added . ' people added to "' . self::STAFF_GROUP . '".');
-	}//end run()
+	}//end seed()
 
 	/**
 	 * The staff group, created when it is missing.
@@ -220,29 +265,51 @@ class SeedStaffGroup implements IRepairStep {
 			return [];
 		}
 
+		return $this->assigneesIn(objectService: $objectService, register: $register, caseSchema: $caseSchema);
+	}//end assignees()
+
+	/**
+	 * Every user a case in the case register is assigned to, page by page.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register      The register.
+	 * @param string $caseSchema    The case schema.
+	 *
+	 * @return array<int, string> User ids, possibly repeated.
+	 */
+	private function assigneesIn(object $objectService, string $register, string $caseSchema): array {
 		$userIds = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
-			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)]
-			);
+			$filters = ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)];
+			$rows = $this->searchObjectsAsArraysUnscoped(objectService: $objectService, register: $register, schema: $caseSchema, filters: $filters);
 
-			foreach ($rows as $row) {
-				$assignee = ($row['assignee'] ?? null);
-				if (is_string($assignee) === true && trim($assignee) !== '') {
-					$userIds[] = trim($assignee);
-				}
-			}
-
+			$userIds = array_merge($userIds, $this->assigneesOf(rows: $rows));
 			if (count($rows) < self::PAGE) {
 				break;
 			}
 		}
 
 		return $userIds;
-	}//end assignees()
+	}//end assigneesIn()
+
+	/**
+	 * The assignee of every row that names one.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The case rows.
+	 *
+	 * @return array<int, string> User ids, possibly repeated.
+	 */
+	private function assigneesOf(array $rows): array {
+		$userIds = [];
+		foreach ($rows as $row) {
+			$assignee = ($row['assignee'] ?? null);
+			if (is_string($assignee) === true && trim($assignee) !== '') {
+				$userIds[] = trim($assignee);
+			}
+		}
+
+		return $userIds;
+	}//end assigneesOf()
 
 	/**
 	 * Add every existing account that is not a member yet.

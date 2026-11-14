@@ -25,49 +25,57 @@
       "name": "Ontvangst",
       "description": "Verzoek ontvangen, ontvangstbevestiging verzenden",
       "order": 1,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "blue"
     },
     {
       "name": "Beoordeling ontvankelijkheid",
       "description": "Controleren of het verzoek aan de formele vereisten voldoet",
       "order": 2,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "purple"
     },
     {
       "name": "Zoeken documenten",
       "description": "Zoeken en verzamelen van relevante documenten",
       "order": 3,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "purple"
     },
     {
       "name": "Beoordelen documenten",
       "description": "Per document beoordelen of openbaarmaking mogelijk is",
       "order": 4,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "purple"
     },
     {
       "name": "Lakken / Anonimiseren",
       "description": "Gevoelige informatie in documenten anonimiseren",
       "order": 5,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "orange"
     },
     {
       "name": "Besluit",
       "description": "Formeel besluit nemen over openbaarmaking",
       "order": 6,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "teal"
     },
     {
       "name": "Publicatie",
       "description": "Goedgekeurde documenten publiceren in de leeskamer",
       "order": 7,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "green"
     },
     {
       "name": "Afgehandeld",
       "description": "Zaak is afgerond",
       "order": 8,
-      "isFinal": true
+      "isFinal": true,
+      "colour": "green"
     }
   ],
   "propertyDefinitions": [
@@ -89,7 +97,8 @@
       "name": "verzoekerType",
       "definition": "Type verzoeker",
       "description": "Categorie: burger, journalist of organisatie",
-      "propertyType": "string",
+      "propertyType": "enum",
+      "enumValues": ["burger", "journalist", "organisatie"],
       "isRequired": false
     },
     {
@@ -132,7 +141,8 @@
       "name": "gewensteVorm",
       "definition": "Gewenste vorm van verstrekking",
       "description": "Hoe de verzoeker de documenten wil ontvangen: papier, digitaal of inzage",
-      "propertyType": "string",
+      "propertyType": "enum",
+      "enumValues": ["papier", "digitaal", "inzage"],
       "isRequired": false,
       "defaultValue": "digitaal"
     }

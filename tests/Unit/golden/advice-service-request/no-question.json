@@ -1,0 +1,78 @@
+{
+    "calls": [
+        {
+            "getConfigValue": "register"
+        },
+        {
+            "getConfigValue": "advies_aanvraag_schema"
+        },
+        {
+            "saveObject": {
+                "object": {
+                    "case": "case-1",
+                    "requestedBy": "bob",
+                    "advisor": "alice",
+                    "type": "intern",
+                    "subject": "",
+                    "deadline": null,
+                    "status": "requested",
+                    "questions": ""
+                },
+                "register": "dossiq",
+                "schema": "adviesAanvraag",
+                "uuid": null
+            }
+        },
+        {
+            "raiseAdviceDecision": {
+                "subjectSchema": "adviesAanvraag",
+                "subjectId": "advice-3",
+                "payload": {
+                    "subjectRegister": "dossiq",
+                    "externalReference": "case-1",
+                    "subjectLabel": "Adviesaanvraag",
+                    "question": "",
+                    "advisor": "alice"
+                }
+            }
+        },
+        {
+            "getConfigValue": "advies_aanvraag_schema"
+        },
+        {
+            "saveObject": {
+                "object": {
+                    "id": "advice-3",
+                    "decisionRef": "decision-9"
+                },
+                "register": "dossiq",
+                "schema": "adviesAanvraag",
+                "uuid": "advice-3"
+            }
+        },
+        {
+            "notifyAdviseur": {
+                "caseId": "case-1",
+                "payload": {
+                    "case": "case-1",
+                    "requestedBy": "bob",
+                    "advisor": "alice",
+                    "type": "intern",
+                    "subject": "",
+                    "deadline": null,
+                    "status": "requested",
+                    "questions": ""
+                },
+                "saved": {
+                    "id": "advice-3"
+                }
+            }
+        },
+        {
+            "info": "Advice request created for case case-1 by bob"
+        }
+    ],
+    "answer": {
+        "id": "advice-3"
+    }
+}

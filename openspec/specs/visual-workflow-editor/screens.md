@@ -1,3 +1,5 @@
 # Screens
 
-- DqFlow https://identity.conduction.nl/screens/board?id=dossiq/DqFlow
+- dossiq/DqFlow flow van een zaaktype https://identity.conduction.nl/screens/board?id=dossiq/DqFlow
+
+Components: CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailGrid, CnFlowCanvasMessages, CnFlowDetail, CnFlowEditorPage, CnFlowNode, CnFlowSidebar, CnGraphCanvas, CnNoteCard, CnPageHeader

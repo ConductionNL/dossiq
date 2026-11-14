@@ -34,8 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Inspection\InspectionTemplateMapper;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -67,11 +67,11 @@ class FoldInspectionChecklistTemplates implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister and config.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister and config.
 	 * @param LoggerInterface $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 		$this->mapper = new InspectionTemplateMapper();
@@ -105,47 +105,67 @@ class FoldInspectionChecklistTemplates implements IRepairStep {
 			return;
 		}
 
-		$counts = ['folded' => 0, 'already' => 0, 'unreadable' => 0];
+		$run = new ChecklistFoldRun(objects: $objects, register: $register);
+		$run->output = $output;
 		$this->runAsSystemIfAvailable(
 			objectService: $objects,
-			operation: function () use ($objects, $register, &$counts, $output): void {
-				$folded = $this->foldedRefs(objects: $objects, register: $register);
-				foreach ($this->candidates(objects: $objects, register: $register) as $candidate) {
-					$this->foldOne(objects: $objects, register: $register, candidate: $candidate, folded: $folded, counts: $counts, output: $output);
-				}
-			}
+			operation: fn () => $this->foldAll(run: $run)
 		);
 
-		$output->info(
+		$this->report(run: $run);
+	}//end run()
+
+	/**
+	 * Say what the fold did and what it left.
+	 *
+	 * @param ChecklistFoldRun $run The fold.
+	 *
+	 * @return void
+	 */
+	private function report(ChecklistFoldRun $run): void {
+		$run->output->info(
 			sprintf(
 				'Checklist template fold: %d folded, %d already folded, %d left for a person to look at.',
-				$counts['folded'],
-				$counts['already'],
-				$counts['unreadable']
+				$run->counts['folded'],
+				$run->counts['already'],
+				$run->counts['unreadable']
 			)
 		);
-	}//end run()
+	}//end report()
+
+	/**
+	 * Fold every candidate that is not folded yet.
+	 *
+	 * @param ChecklistFoldRun $run The fold.
+	 *
+	 * @return void
+	 */
+	private function foldAll(ChecklistFoldRun $run): void {
+		$run->folded = $this->foldedRefs(run: $run);
+		foreach ($this->candidates(run: $run) as $candidate) {
+			$this->foldOne(run: $run, candidate: $candidate);
+		}
+	}//end foldAll()
 
 	/**
 	 * Every source mapped onto a template, with what could not be read.
 	 *
-	 * @param object $objects  The ObjectService.
-	 * @param string $register The register id.
+	 * @param ChecklistFoldRun $run The fold.
 	 *
 	 * @return array<int, array{template: array<string, mixed>, unresolved: array<int, string>}> The candidates.
 	 */
-	private function candidates(object $objects, string $register): array {
+	private function candidates(ChecklistFoldRun $run): array {
 		$candidates = [];
-		foreach ($this->read(objects: $objects, register: $register, schema: 'inspectieChecklist') as $checklist) {
+		foreach ($this->read(run: $run, schema: 'inspectieChecklist') as $checklist) {
 			$candidates[] = ['template' => $this->mapper->fromStackA(checklist: $checklist), 'unresolved' => []];
 		}
 
 		$rows = [];
-		foreach ($this->read(objects: $objects, register: $register, schema: 'checklistItem') as $row) {
+		foreach ($this->read(run: $run, schema: 'checklistItem') as $row) {
 			$rows[(string)($row['@self']['id'] ?? $row['id'] ?? '')] = $row;
 		}
 
-		foreach ($this->read(objects: $objects, register: $register, schema: 'inspectionChecklist') as $checklist) {
+		foreach ($this->read(run: $run, schema: 'inspectionChecklist') as $checklist) {
 			$candidates[] = $this->mapper->fromStackC(checklist: $checklist, rows: $rows);
 		}
 
@@ -155,53 +175,88 @@ class FoldInspectionChecklistTemplates implements IRepairStep {
 	/**
 	 * Fold one candidate, unless it is folded or cannot be read whole.
 	 *
-	 * @param object                                                               $objects   The ObjectService.
-	 * @param string                                                               $register  The register id.
+	 * @param ChecklistFoldRun                                                     $run       The fold.
 	 * @param array{template: array<string, mixed>, unresolved: array<int, string>} $candidate The mapped source.
-	 * @param array<string, bool>                                                  $folded    Legacy references already on a template.
-	 * @param array<string, int>                                                   $counts    The running counts.
-	 * @param IOutput                                                              $output    The output.
 	 *
 	 * @return void
 	 */
-	private function foldOne(object $objects, string $register, array $candidate, array &$folded, array &$counts, IOutput $output): void {
+	private function foldOne(ChecklistFoldRun $run, array $candidate): void {
 		$template = $candidate['template'];
 		$ref = (string)$template['legacyRef'];
-		if (isset($folded[$ref]) === true) {
-			$counts['already']++;
+		if (isset($run->folded[$ref]) === true) {
+			$run->counts['already']++;
 			return;
 		}
 
 		if ($candidate['unresolved'] !== []) {
-			$counts['unreadable']++;
-			$output->warning(sprintf('Checklist %s names item rows that cannot be read (%s); not folded.', $ref, implode(', ', $candidate['unresolved'])));
+			$this->leaveUnreadable(run: $run, candidate: $candidate);
 			return;
 		}
 
-		try {
-			$this->saveObjectAsArray(objectService: $objects, register: $register, schema: InspectionTemplateMapper::SCHEMA, object: $template);
-		} catch (Throwable $e) {
-			$counts['unreadable']++;
-			$this->logger->warning('Checklist template fold refused', ['source' => $ref, 'exception' => $e->getMessage()]);
-			$output->warning(sprintf('Checklist %s could not be folded: %s', $ref, $e->getMessage()));
+		if ($this->saved(run: $run, template: $template) === false) {
 			return;
 		}
 
-		$folded[$ref] = true;
-		$counts['folded']++;
+		$run->folded[$ref] = true;
+		$run->counts['folded']++;
 	}//end foldOne()
+
+	/**
+	 * Count and report a candidate whose item rows cannot all be read.
+	 *
+	 * @param ChecklistFoldRun                                                     $run       The fold.
+	 * @param array{template: array<string, mixed>, unresolved: array<int, string>} $candidate The mapped source.
+	 *
+	 * @return void
+	 */
+	private function leaveUnreadable(ChecklistFoldRun $run, array $candidate): void {
+		$run->counts['unreadable']++;
+		$run->output->warning(
+			sprintf(
+				'Checklist %s names item rows that cannot be read (%s); not folded.',
+				(string)$candidate['template']['legacyRef'],
+				implode(', ', $candidate['unresolved'])
+			)
+		);
+	}//end leaveUnreadable()
+
+	/**
+	 * Save one template, or count, log and report why the store refused it.
+	 *
+	 * @param ChecklistFoldRun     $run      The fold.
+	 * @param array<string, mixed> $template The template, with its legacy reference.
+	 *
+	 * @return bool Whether it was saved.
+	 */
+	private function saved(ChecklistFoldRun $run, array $template): bool {
+		$ref = (string)$template['legacyRef'];
+		try {
+			$this->saveObjectAsArray(
+				objectService: $run->objects,
+				register: $run->register,
+				schema: InspectionTemplateMapper::SCHEMA,
+				object: $template
+			);
+		} catch (Throwable $e) {
+			$run->counts['unreadable']++;
+			$this->logger->warning('Checklist template fold refused', ['source' => $ref, 'exception' => $e->getMessage()]);
+			$run->output->warning(sprintf('Checklist %s could not be folded: %s', $ref, $e->getMessage()));
+			return false;
+		}
+
+		return true;
+	}//end saved()
 
 	/**
 	 * The legacy references already on a template.
 	 *
-	 * @param object $objects  The ObjectService.
-	 * @param string $register The register id.
+	 * @param ChecklistFoldRun $run The fold.
 	 *
 	 * @return array<string, bool> Reference => true.
 	 */
-	private function foldedRefs(object $objects, string $register): array {
+	private function foldedRefs(ChecklistFoldRun $run): array {
 		$refs = [];
-		foreach ($this->read(objects: $objects, register: $register, schema: InspectionTemplateMapper::SCHEMA) as $template) {
+		foreach ($this->read(run: $run, schema: InspectionTemplateMapper::SCHEMA) as $template) {
 			$ref = trim((string)($template['legacyRef'] ?? ''));
 			if ($ref !== '') {
 				$refs[$ref] = true;
@@ -214,15 +269,19 @@ class FoldInspectionChecklistTemplates implements IRepairStep {
 	/**
 	 * Every object of one schema, or none when the schema is not there.
 	 *
-	 * @param object $objects  The ObjectService.
-	 * @param string $register The register id.
-	 * @param string $schema   The schema slug.
+	 * @param ChecklistFoldRun $run    The fold.
+	 * @param string           $schema The schema slug.
 	 *
 	 * @return array<int, array<string, mixed>> The objects.
 	 */
-	private function read(object $objects, string $register, string $schema): array {
+	private function read(ChecklistFoldRun $run, string $schema): array {
 		try {
-			return $this->searchObjectsAsArraysUnscoped(objectService: $objects, register: $register, schema: $schema, filters: ['_limit' => self::LIMIT]);
+			return $this->searchObjectsAsArraysUnscoped(
+				objectService: $run->objects,
+				register: $run->register,
+				schema: $schema,
+				filters: ['_limit' => self::LIMIT]
+			);
 		} catch (Throwable $e) {
 			$this->logger->info('Checklist template fold: nothing read from ' . $schema, ['exception' => $e->getMessage()]);
 			return [];

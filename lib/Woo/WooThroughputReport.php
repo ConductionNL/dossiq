@@ -23,8 +23,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseDateNormaliser;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooThroughputReportInterface;
+use OCA\Dossiq\Service\Csv\CsvWriter;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserManager;
 use Throwable;
@@ -42,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  */
-class WooThroughputReport {
+class WooThroughputReport implements WooThroughputReportInterface {
 
 	use SearchesObjects;
 
@@ -64,15 +66,15 @@ class WooThroughputReport {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
-	 * @param CaseDateNormaliser $caseDates Reads a moment as a day in the instance's zone.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
+	 * @param CaseDateNormaliserInterface $caseDates Reads a moment as a day in the instance's zone.
 	 * @param IUserManager $userManager The user manager, for display names.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseDateNormaliser $caseDates,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseDateNormaliserInterface $caseDates,
 		private readonly IUserManager $userManager,
 	) {
 	}//end __construct()
@@ -89,7 +91,7 @@ class WooThroughputReport {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	public function forCase(string $caseId): array {
-		return $this->report(filters: ['caseRef' => $caseId], from: null, to: null);
+		return $this->report(filters: ['caseRef' => $caseId], period: new ReportPeriod(from: null, to: null));
 	}//end forCase()
 
 	/**
@@ -115,7 +117,7 @@ class WooThroughputReport {
 			}
 		}
 
-		return $this->report(filters: [], from: $from, to: $to);
+		return $this->report(filters: [], period: new ReportPeriod(from: $from, to: $to));
 	}//end forPeriod()
 
 	/**
@@ -129,14 +131,14 @@ class WooThroughputReport {
 	 */
 	public function toCsv(array $rows): string {
 		$columns = array_merge(['reviewer', 'displayName', 'day'], self::VERDICTS, ['total']);
-		$lines = [self::csvLine(cells: $columns)];
+		$lines = [(new CsvWriter())->line(cells: $columns)];
 		foreach ($rows as $row) {
 			$cells = [];
 			foreach ($columns as $column) {
 				$cells[] = (string)($row[$column] ?? '');
 			}
 
-			$lines[] = self::csvLine(cells: $cells);
+			$lines[] = (new CsvWriter())->line(cells: $cells);
 		}
 
 		return implode("\r\n", $lines) . "\r\n";
@@ -146,17 +148,16 @@ class WooThroughputReport {
 	 * Read the assessments and group them.
 	 *
 	 * @param array<string, mixed> $filters The object filters.
-	 * @param string|null $from The first day, or null for no lower bound.
-	 * @param string|null $to The last day, or null for no upper bound.
+	 * @param ReportPeriod         $period  The days counted.
 	 *
 	 * @return array{rows: list<array<string, int|string>>, cases: list<string>, truncated: bool} The report.
 	 */
-	private function report(array $filters, ?string $from, ?string $to): array {
+	private function report(array $filters, ReportPeriod $period): array {
 		$tally = [];
 		$cases = [];
 		$read = $this->readAssessments(filters: $filters);
 		foreach ($read['rows'] as $assessment) {
-			$counted = $this->countable(assessment: $assessment, from: $from, to: $to);
+			$counted = $this->countable(assessment: $assessment, period: $period);
 			if ($counted === null) {
 				continue;
 			}
@@ -198,12 +199,27 @@ class WooThroughputReport {
 	 * The reviewer, day and verdict an assessment counts under, or null when it counts nowhere.
 	 *
 	 * @param array<string, mixed> $assessment The assessment.
-	 * @param string|null $from The first day, or null.
-	 * @param string|null $to The last day, or null.
+	 * @param ReportPeriod         $period     The days counted.
 	 *
 	 * @return array{0: string, 1: string, 2: string}|null The reviewer, day and verdict.
 	 */
-	private function countable(array $assessment, ?string $from, ?string $to): ?array {
+	private function countable(array $assessment, ReportPeriod $period): ?array {
+		$counted = $this->assessedAs(assessment: $assessment);
+		if ($counted === null || $period->contains(day: $counted[1]) === false) {
+			return null;
+		}
+
+		return $counted;
+	}//end countable()
+
+	/**
+	 * The reviewer, day and verdict of an assessment, or null when one is missing or the verdict unknown.
+	 *
+	 * @param array<string, mixed> $assessment The assessment.
+	 *
+	 * @return array{0: string, 1: string, 2: string}|null The reviewer, day and verdict.
+	 */
+	private function assessedAs(array $assessment): ?array {
 		$reviewer = trim((string)($assessment['assessedBy'] ?? ''));
 		$verdict = (string)($assessment['classification'] ?? '');
 		$day = $this->caseDates->toCalendarDateOrNull(value: (string)($assessment['assessedAt'] ?? ''));
@@ -211,12 +227,8 @@ class WooThroughputReport {
 			return null;
 		}
 
-		if (($from !== null && $day < $from) || ($to !== null && $day > $to)) {
-			return null;
-		}
-
 		return [$reviewer, $day, $verdict];
-	}//end countable()
+	}//end assessedAs()
 
 	/**
 	 * Page through the assessments the caller may read.
@@ -235,19 +247,26 @@ class WooThroughputReport {
 			throw $this->unavailable(previous: null);
 		}
 
+		return $this->pagedAssessments(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
+	}//end readAssessments()
+
+	/**
+	 * Page through the assessments in the register, up to the page cap.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $register      The register.
+	 * @param string               $schema        The assessment schema.
+	 * @param array<string, mixed> $filters       The object filters.
+	 *
+	 * @return array{rows: list<array<string, mixed>>, truncated: bool} The rows, and whether the page cap cut them short.
+	 *
+	 * @throws RefusedException When OpenRegister cannot be read.
+	 */
+	private function pagedAssessments(object $objectService, string $register, string $schema, array $filters): array {
 		$rows = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
-			try {
-				$batch = $this->searchObjectsAsArrays(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					filters: $filters + ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)],
-				);
-			} catch (Throwable $e) {
-				throw $this->unavailable(previous: $e);
-			}
-
+			$pageFilters = $filters + ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)];
+			$batch = $this->assessmentPage(objectService: $objectService, register: $register, schema: $schema, filters: $pageFilters);
 			array_push($rows, ...$batch);
 			if (count($batch) < self::PAGE) {
 				return ['rows' => $rows, 'truncated' => false];
@@ -255,7 +274,34 @@ class WooThroughputReport {
 		}
 
 		return ['rows' => $rows, 'truncated' => true];
-	}//end readAssessments()
+	}//end pagedAssessments()
+
+	/**
+	 * Read one page of assessments.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $register      The register.
+	 * @param string               $schema        The assessment schema.
+	 * @param array<string, mixed> $filters       The object filters with the page's limit and offset.
+	 *
+	 * @return list<array<string, mixed>> The page.
+	 *
+	 * @throws RefusedException When OpenRegister cannot be read.
+	 */
+	private function assessmentPage(object $objectService, string $register, string $schema, array $filters): array {
+		try {
+			$batch = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: $filters,
+			);
+		} catch (Throwable $e) {
+			throw $this->unavailable(previous: $e);
+		}
+
+		return $batch;
+	}//end assessmentPage()
 
 	/**
 	 * The refusal when the assessments cannot be read.
@@ -289,23 +335,4 @@ class WooThroughputReport {
 		return $name;
 	}//end displayName()
 
-	/**
-	 * One CSV line. A cell that starts like a formula is prefixed so a spreadsheet does not run it.
-	 *
-	 * @param list<string> $cells The cells.
-	 *
-	 * @return string The line.
-	 */
-	private static function csvLine(array $cells): string {
-		$out = [];
-		foreach ($cells as $cell) {
-			if ($cell !== '' && in_array($cell[0], ['=', '+', '-', '@'], true) === true) {
-				$cell = "'" . $cell;
-			}
-
-			$out[] = '"' . str_replace('"', '""', $cell) . '"';
-		}
-
-		return implode(',', $out);
-	}//end csvLine()
 }//end class

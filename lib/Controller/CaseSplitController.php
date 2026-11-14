@@ -28,17 +28,18 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\CaseCaller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Cases\CaseSplitExecutor;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseSplitExecutorInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -51,7 +52,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Split a case, and read what its type allows a split to divide.
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseSplitController extends Controller {
 
@@ -62,20 +63,20 @@ class CaseSplitController extends Controller {
 	 *
 	 * @param string           $appName     The app name.
 	 * @param IRequest         $request     The request.
-	 * @param CaseSplitExecutor $splits    Carries out the plan CaseSplitPlan builds.
-	 * @param CaseAccessGuard  $accessGuard Per-case authorization, failing closed.
+	 * @param CaseSplitExecutorInterface $splits    Carries out the plan CaseSplitPlan builds.
+	 * @param CaseAccessGuardInterface  $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession     $userSession The session.
 	 * @param LoggerInterface  $logger      The logger.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseSplitExecutor $splits,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseSplitExecutorInterface $splits,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -89,7 +90,7 @@ class CaseSplitController extends Controller {
 	 *
 	 * @return JSONResponse The new case and what moved, or the refusal.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	#[NoAdminRequired]
 	public function split(string $caseId): JSONResponse {
@@ -134,7 +135,7 @@ class CaseSplitController extends Controller {
 	 *
 	 * @return JSONResponse The parts, or the refusal.
 	 *
-	 * @spec openspec/changes/split-picker-asks-the-policy/specs/case-management/spec.md#requirement-the-picker-says-what-may-be-divided-before-the-handler-chooses-req-cm-49
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-picker-says-what-may-be-divided-before-the-handler-chooses-req-cm-49
 	 */
 	#[NoAdminRequired]
 	public function divisible(string $caseId): JSONResponse {
@@ -158,16 +159,7 @@ class CaseSplitController extends Controller {
 	 * @return IUser|null The caller, or null.
 	 */
 	private function writerOf(string $caseId): ?IUser {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return null;
-		}
-
-		if ($this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return null;
-		}
-
-		return $user;
+		return (new CaseCaller(userSession: $this->userSession, accessGuard: $this->accessGuard))->writer(caseId: $caseId);
 	}//end writerOf()
 
 	/**

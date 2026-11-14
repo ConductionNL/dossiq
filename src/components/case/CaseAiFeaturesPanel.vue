@@ -120,6 +120,11 @@
 					data-testid="case-ai-question-answer">
 					{{ answer }}
 				</div>
+				<AiSuggestionDecision
+					v-if="answer"
+					:text="answer"
+					testid="case-ai-question-decision"
+					@decide="decide('question', $event)" />
 				<p
 					v-if="answerFailed"
 					class="case-ai-features__unreadable"
@@ -237,6 +242,11 @@
 						:data-testid="`case-ai-feature-output-${feature.slug}`">
 						{{ runs[feature.slug].output }}
 					</div>
+					<AiSuggestionDecision
+						v-if="runs[feature.slug] && runs[feature.slug].output"
+						:text="runs[feature.slug].output"
+						:testid="`case-ai-feature-decision-${feature.slug}`"
+						@decide="decide(`feature:${feature.slug}`, $event)" />
 				</section>
 
 				<p class="case-ai-features__hint">
@@ -255,6 +265,8 @@
 <script>
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import AiSuggestionDecision from './AiSuggestionDecision.vue'
+import { createSuggestionTracker } from '../../services/aiSuggestionTracker.js'
 import { converse } from '../../services/assistantApi.js'
 import {
 	AiFeatureRefusal,
@@ -270,9 +282,93 @@ import {
 	whereItRuns,
 } from '../../services/caseAiFeaturesApi.js'
 
+/**
+ * A fresh, empty run form for each feature.
+ *
+ * @param {Array<object>|null} features The features, or null when they could not be read.
+ * @return {object} The run state per feature slug.
+ */
+function emptyRuns(features) {
+	const runs = {}
+	for (const feature of features || []) {
+		runs[feature.slug] = {
+			documentReference: '',
+			instruction: '',
+			busy: false,
+			refusal: null,
+			failed: false,
+			output: '',
+		}
+	}
+	return runs
+}
+
+/**
+ * Why a question was not answered: the assistant's own reason, or a plain one.
+ *
+ * @param {object} error The failure.
+ * @return {string} The sentence to show.
+ */
+function askFailure(error) {
+	return String(error?.response?.data?.error ?? '')
+		|| t('dossiq', 'The assistant did not answer.')
+}
+
+/**
+ * The gateway request for one run of a feature.
+ *
+ * @param {object} feature The feature.
+ * @param {object} state The feature's run state.
+ * @return {object} `{feature, documentReference, instruction}`.
+ */
+function runRequest(feature, state) {
+	return {
+		feature: feature.slug,
+		documentReference: state.documentReference,
+		instruction: state.instruction,
+	}
+}
+
+/**
+ * The suggestion a run's output makes, for the oversight trail.
+ *
+ * @param {object} state The feature's run state, holding the output.
+ * @param {object} answer The gateway's answer.
+ * @return {object} The suggestion.
+ */
+function runSuggestion(state, answer) {
+	return {
+		type: 'decision_support',
+		text: state.output,
+		prompt: state.instruction,
+		model: String(answer?.model ?? ''),
+		documentId: state.documentReference,
+	}
+}
+
+/**
+ * What a failed run leaves in its state: a refusal in words, or a plain failure.
+ *
+ * @param {object} error The failure.
+ * @param {string} slug The feature slug.
+ * @return {object} The state fields to set.
+ */
+function runFailure(error, slug) {
+	if (error instanceof AiFeatureRefusal) {
+		return {
+			refusal: {
+				sentence: refusalSentence(error, slug),
+				gate: error.gate,
+			},
+		}
+	}
+	return { failed: true }
+}
+
 export default {
 	name: 'CaseAiFeaturesPanel',
 	components: {
+		AiSuggestionDecision,
 		NcButton,
 		NcLoadingIcon,
 		NcNoteCard,
@@ -300,8 +396,30 @@ export default {
 		}
 	},
 
+	/**
+	 * Start tracking the suggestions shown on this case, and report the
+	 * undecided ones as closed when the page is left.
+	 *
+	 * @spec openspec/specs/ai-oversight-dispatch/spec.md
+	 */
+	created() {
+		this.tracker = createSuggestionTracker({ caseId: this.objectId })
+		this.onPageHide = () => this.tracker.closeAll({ leaving: true })
+		window.addEventListener('pagehide', this.onPageHide)
+	},
+
 	async mounted() {
 		await this.load()
+	},
+
+	/**
+	 * Report the undecided suggestions as closed when the panel closes.
+	 *
+	 * @spec openspec/specs/ai-oversight-dispatch/spec.md
+	 */
+	beforeUnmount() {
+		window.removeEventListener('pagehide', this.onPageHide)
+		this.tracker.closeAll()
 	},
 
 	methods: {
@@ -321,6 +439,18 @@ export default {
 				return
 			}
 
+			const features = await this.readPanel()
+			this.runs = emptyRuns(features)
+			this.documents = await this.documentsFor(features)
+			this.loading = false
+		},
+
+		/**
+		 * Read the features, the group and the prompts together, and keep them.
+		 *
+		 * @return {Promise<Array<object>|null>} The features, or null when they could not be read.
+		 */
+		async readPanel() {
 			const [features, group, prompts] = await Promise.all([
 				fetchCaseFeatures(this.objectId),
 				fetchReportGroup(this.objectId),
@@ -329,27 +459,20 @@ export default {
 			this.features = features
 			this.prompts = prompts || []
 			this.group = groupView(group)
+			return features
+		},
 
-			const runs = {}
-			for (const feature of features || []) {
-				runs[feature.slug] = {
-					documentReference: '',
-					instruction: '',
-					busy: false,
-					refusal: null,
-					failed: false,
-					output: '',
-				}
-			}
-			this.runs = runs
-
+		/**
+		 * The case documents, read only when a feature can actually be run.
+		 *
+		 * @param {Array<object>|null} features The features.
+		 * @return {Promise<Array<object>|null>} The documents.
+		 */
+		async documentsFor(features) {
 			const offersARun = (features || []).some(
 				(feature) => feature.available === true,
 			)
-			this.documents = offersARun
-				? await fetchCaseDocuments(this.objectId)
-				: []
-			this.loading = false
+			return offersARun ? await fetchCaseDocuments(this.objectId) : []
 		},
 
 		/**
@@ -360,19 +483,49 @@ export default {
 		 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-prompts-offered-on-a-case-come-from-hermiq
 		 */
 		async ask(prompt) {
+			this.tracker.dismiss('question', 'superseded')
 			this.asking = true
 			this.answer = ''
 			this.answerFailed = ''
 			try {
 				const result = await converse(this.objectId, prompt.prompt)
-				this.answer = String(result?.reply ?? '')
+				this.showAnswer(result, prompt)
 			} catch (error) {
-				this.answerFailed =
-					String(error?.response?.data?.error ?? '')
-					|| t('dossiq', 'The assistant did not answer.')
+				this.answerFailed = askFailure(error)
 			} finally {
 				this.asking = false
 			}
+		},
+
+		/**
+		 * Keep the assistant's answer, and track it as a suggestion when there is one.
+		 *
+		 * @param {object} result The assistant's reply.
+		 * @param {object} prompt The prompt that was asked.
+		 * @return {void}
+		 */
+		showAnswer(result, prompt) {
+			this.answer = String(result?.reply ?? '')
+			this.trackSuggestion('question', {
+				type: 'qa',
+				text: this.answer,
+				prompt: prompt.prompt,
+				model: String(result?.model ?? ''),
+			})
+		},
+
+		/**
+		 * Report what the person did with the suggestion in a slot.
+		 *
+		 * @param {string} slot The slot key.
+		 * @param {object} decision `{userAction, actualValue?}` from AiSuggestionDecision.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/ai-oversight-dispatch/spec.md
+		 */
+		decide(slot, decision) {
+			return this.tracker.decide(slot, decision.userAction, {
+				actualValue: decision.actualValue,
+			})
 		},
 
 		/**
@@ -396,28 +549,30 @@ export default {
 		 */
 		async run(feature) {
 			const state = this.runs[feature.slug]
-			state.busy = true
-			state.refusal = null
-			state.failed = false
-			state.output = ''
+			const slot = `feature:${feature.slug}`
+			this.tracker.dismiss(slot, 'superseded')
+			Object.assign(state, { busy: true, refusal: null, failed: false, output: '' })
 			try {
-				const answer = await runFeatureOnDocument({
-					feature: feature.slug,
-					documentReference: state.documentReference,
-					instruction: state.instruction,
-				})
+				const answer = await runFeatureOnDocument(runRequest(feature, state))
 				state.output = String(answer?.output ?? '')
+				this.trackSuggestion(slot, runSuggestion(state, answer))
 			} catch (error) {
-				if (error instanceof AiFeatureRefusal) {
-					state.refusal = {
-						sentence: refusalSentence(error, feature.slug),
-						gate: error.gate,
-					}
-				} else {
-					state.failed = true
-				}
+				Object.assign(state, runFailure(error, feature.slug))
 			} finally {
 				state.busy = false
+			}
+		},
+
+		/**
+		 * Track a suggestion in its slot, when it says anything.
+		 *
+		 * @param {string} slot The slot key.
+		 * @param {object} suggestion The suggestion, with its text.
+		 * @return {void}
+		 */
+		trackSuggestion(slot, suggestion) {
+			if (suggestion.text !== '') {
+				this.tracker.show(slot, suggestion)
 			}
 		},
 	},

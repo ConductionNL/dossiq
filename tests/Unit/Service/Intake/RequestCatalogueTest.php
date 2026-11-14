@@ -22,6 +22,8 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Intake\RequestCatalogue
  * @uses   \OCA\Dossiq\Service\Ai\CaseTypeAiFeatures
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class RequestCatalogueTest extends TestCase {
 
@@ -94,4 +96,43 @@ class RequestCatalogueTest extends TestCase {
 	public function testNothingDeclaredIsAnEmptyCatalogue(): void {
 		self::assertSame([], $this->catalogue([['id' => 'ct-1', 'identifier' => 'x', 'title' => 'X']])->entries());
 	}//end testNothingDeclaredIsAnEmptyCatalogue()
+	/**
+	 * A case type's title and description are translatable, so a stored row
+	 * carries them as a language map; the catalogue reads them as text.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	public function testATranslatableTitleAndDescriptionAreReadAsText(): void {
+		$entries = $this->catalogue(
+			[
+				['id' => 'ct-1', 'identifier' => 'melding', 'title' => ['nl' => 'Melding openbare ruimte'], 'description' => ['nl' => 'Iets kapot op straat'], 'aiFeatures' => ['conversational-intake' => 'intake']],
+			]
+		)->entries();
+
+		self::assertSame([['type' => 'melding', 'title' => 'Melding openbare ruimte', 'description' => 'Iets kapot op straat']], $entries);
+	}//end testATranslatableTitleAndDescriptionAreReadAsText()
+
+	/**
+	 * A case type without a title or name is offered under its type, never under an empty title.
+	 *
+	 * @return void
+	 */
+	public function testAnUntitledCaseTypeIsOfferedUnderItsType(): void {
+		$entries = $this->catalogue(
+			[
+				['id' => 'ct-1', 'identifier' => 'melding', 'aiFeatures' => ['conversational-intake' => 'intake']],
+				['id' => 'ct-2', 'identifier' => 'klacht', 'name' => 'Klacht', 'aiFeatures' => ['conversational-intake' => 'intake']],
+			]
+		)->entries();
+
+		self::assertSame(
+			[
+				['type' => 'klacht', 'title' => 'Klacht', 'description' => ''],
+				['type' => 'melding', 'title' => 'melding', 'description' => ''],
+			],
+			$entries
+		);
+	}//end testAnUntitledCaseTypeIsOfferedUnderItsType()
 }//end class

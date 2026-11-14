@@ -33,7 +33,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\Session\SessionService;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\LifecycleRegister;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -41,10 +41,12 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Session\SessionService
+ * @covers \OCA\Dossiq\Service\Support\OpensInTheInitialState
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinition
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinitionReader
  * @uses   \OCA\Dossiq\Service\Session\SessionRules
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Support\CaseRegisterReads
  */
 class SessionServiceTest extends TestCase {
 
@@ -89,11 +91,11 @@ class SessionServiceTest extends TestCase {
 	];
 
 	/**
-	 * The register.
+	 * The register, judging the session's lifecycle as OpenRegister does.
 	 *
-	 * @var InMemoryRegister
+	 * @var LifecycleRegister
 	 */
-	private InMemoryRegister $store;
+	private LifecycleRegister $store;
 
 	/**
 	 * The real schemas.
@@ -131,7 +133,11 @@ class SessionServiceTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->store = new InMemoryRegister();
+		$this->store = new LifecycleRegister();
+		// Recording minutes moves a planned session to executed, which the
+		// schema's transitions do not declare; the tests that write a status
+		// on create judge the move themselves.
+		$this->store->judgesMoves = false;
 		$this->store->seed(schema: 'caseType', uuid: 'ct-1', row: ['title' => 'fixture-session', 'sessions' => self::SESSIONS]);
 		$this->store->seed(schema: 'caseType', uuid: 'ct-bare', row: ['title' => 'fixture-bare']);
 		$this->store->seed(schema: 'case', uuid: self::CASE_ID, row: ['title' => 'Case', 'caseType' => 'ct-1']);
@@ -220,9 +226,12 @@ class SessionServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheCaseTypesStatusNamesAreWritten(): void {
+		$this->store->judgesMoves = true;
 		$saved = $this->service->schedule(caseId: self::CASE_ID, sessionKey: 'site-visit', scheduledDate: '2026-10-11T09:30:00+00:00', chairpersonId: self::CHAIR, invitees: []);
 
 		self::assertSame('uitgenodigd', $saved['status']);
+		self::assertSame('uitgenodigd', $this->store->row('hearingSession', (string)$saved['id'])['status']);
+		self::assertSame(['hearingSession: planned -> uitgenodigd'], $this->store->moves);
 		self::assertSame([], self::$schemas->errors(slug: 'hearingSession', payload: $saved));
 	}//end testTheCaseTypesStatusNamesAreWritten()
 
@@ -232,10 +241,13 @@ class SessionServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testOnlyAWaivableSessionIsWaived(): void {
+		$this->store->judgesMoves = true;
 		$saved = $this->service->waive(caseId: self::CASE_ID, sessionKey: 'hearing', chairpersonId: self::CHAIR, reason: 'Applicant does not want to be heard');
 
 		self::assertTrue($saved['hearingWaived']);
 		self::assertSame('afgezien', $saved['status']);
+		self::assertSame('afgezien', $this->store->row('hearingSession', (string)$saved['id'])['status']);
+		self::assertSame(['hearingSession: planned -> afgezien'], $this->store->moves);
 		self::assertSame('hearing', $saved['sessionKey']);
 		self::assertSame([], self::$schemas->errors(slug: 'hearingSession', payload: $saved));
 
@@ -302,6 +314,39 @@ class SessionServiceTest extends TestCase {
 	}//end testMinutesAndRecordingConsentFollowTheDefinition()
 
 	/**
+	 * A stored recording consent denial is not changed by the minutes.
+	 *
+	 * @return void
+	 */
+	public function testMinutesKeepAStoredConsentDenial(): void {
+		$id = $this->service->schedule(caseId: self::CASE_ID, sessionKey: 'hearing', scheduledDate: '2026-10-20T10:00:00+00:00', chairpersonId: self::CHAIR, invitees: [['role' => 'applicant']])['id'];
+		$denied = array_merge($this->store->row(schema: 'hearingSession', uuid: $id), ['recordingConsent' => 'denied']);
+
+		foreach ([
+			'grant with audio' => ['minutesSummary' => 'Heard', 'audioRecording' => 'a1f0c1d5-7b1a-4e7e-9a59-3c2f2f0b9a11', 'recordingConsent' => 'granted'],
+			'grant without audio' => ['minutesSummary' => 'Heard', 'recordingConsent' => 'granted'],
+			'not requested' => ['minutesSummary' => 'Heard', 'recordingConsent' => 'not_requested'],
+		] as $case => $payload) {
+			$this->store->seed(schema: 'hearingSession', uuid: $id, row: $denied);
+			try {
+				$this->service->addMinutes(sessionId: $id, payload: $payload);
+				self::fail("A stored denial was changed: $case");
+			} catch (InvalidArgumentException $e) {
+				self::assertStringContainsString('recording consent', $e->getMessage(), $case);
+			}
+
+			$stored = $this->store->row(schema: 'hearingSession', uuid: $id);
+			self::assertSame('denied', $stored['recordingConsent'], $case);
+			self::assertSame('planned', $stored['status'], $case);
+			self::assertArrayNotHasKey('audioRecording', $stored, $case);
+		}
+
+		$closed = $this->service->addMinutes(sessionId: $id, payload: ['minutesSummary' => 'Heard', 'recordingConsent' => 'denied']);
+		self::assertSame('executed', $closed['status']);
+		self::assertSame('denied', $closed['recordingConsent']);
+	}//end testMinutesKeepAStoredConsentDenial()
+
+	/**
 	 * A session that does not require minutes or consent closes without them.
 	 *
 	 * @return void
@@ -355,4 +400,23 @@ class SessionServiceTest extends TestCase {
 		self::assertArrayHasKey('title', self::$schemas->schemas['hearingSession']['properties']);
 		self::assertArrayHasKey('sessionKey', self::$schemas->schemas['hearingSession']['properties']);
 	}//end testTheSessionSchemaIsACalendar()
+	/**
+	 * The case reads refuse with their sentences: no case id, no case, no case type, and a case without one.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseReadsRefuseWithTheirSentences(): void {
+		$this->store->seed(schema: 'case', uuid: 'case-untyped', row: ['title' => 'No type']);
+		$this->store->seed(schema: 'case', uuid: 'case-lost', row: ['title' => 'Lost type', 'caseType' => 'ct-gone']);
+		$this->assertSame([], $this->service->sessionsFor('case-untyped')['definitions']);
+
+		foreach (['' => 'Case not found', 'case-none' => 'Case not found', 'case-lost' => 'Case type not found'] as $caseId => $sentence) {
+			try {
+				$this->service->sessionsFor((string)$caseId);
+				$this->fail('refused');
+			} catch (\RuntimeException $e) {
+				$this->assertSame($sentence, $e->getMessage());
+			}
+		}
+	}//end testTheCaseReadsRefuseWithTheirSentences()
 }//end class

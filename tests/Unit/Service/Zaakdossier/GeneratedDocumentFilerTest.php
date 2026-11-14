@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
+use OCA\Dossiq\Service\Zaakdossier\DocumentTypeResolver;
 use OCA\Dossiq\Service\Zaakdossier\GeneratedDocumentFiler;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\Files\File;
@@ -40,6 +41,13 @@ class GeneratedDocumentFilerTest extends TestCase {
 	 * @var array<int, mixed>|null
 	 */
 	private ?array $uploaded = null;
+
+	/**
+	 * The document type lookup the container answers, when a test sets one.
+	 *
+	 * @var DocumentTypeResolver|null
+	 */
+	private ?DocumentTypeResolver $types = null;
 
 	/**
 	 * The filer over a dossier that records, a root folder holding one file and a signed-in user.
@@ -70,7 +78,9 @@ class GeneratedDocumentFilerTest extends TestCase {
 		$writer->method('addressedParties')->willReturn(['party-aanvrager']);
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('has')->willReturn(true);
-		$container->method('get')->willReturn($writer);
+		$container->method('get')->willReturnCallback(
+			fn (string $id): object => ($id === DocumentTypeResolver::class && $this->types !== null) ? $this->types : $writer
+		);
 
 		return new GeneratedDocumentFiler($dossier, $root, $session, $container);
 	}//end filer()
@@ -121,6 +131,20 @@ class GeneratedDocumentFilerTest extends TestCase {
 			$this->uploaded
 		);
 	}//end testTheFileIsFiledWithWhatTheMetadataSays()
+
+	/**
+	 * A type named the way a person would is filed under its catalogue id, whichever road filed it.
+	 *
+	 * @return void
+	 */
+	public function testATypeNameIsFiledUnderItsCatalogueId(): void {
+		$this->types = $this->createMock(DocumentTypeResolver::class);
+		$this->types->method('resolve')->with('Besluit')->willReturn('iot-besluit');
+
+		$this->filer([$this->file()])->file(caseId: 'case-1', fileId: 41, title: 'Besluit', mime: 'application/pdf', metadata: ['informatieobjecttype' => 'Besluit']);
+
+		self::assertSame('iot-besluit', $this->uploaded[3]['informatieobjecttype']);
+	}//end testATypeNameIsFiledUnderItsCatalogueId()
 
 	/**
 	 * Without a document type nothing is uploaded.

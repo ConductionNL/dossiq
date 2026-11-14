@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use OCA\Dossiq\Service\Status\StatusDeclaration;
 /**
  * One declared pause reason, normalised (REQ-TERM-011).
  *
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 final class PauseReason {
 	/**
@@ -120,9 +120,10 @@ final class PauseReason {
 	 *
 	 * @return array{key: string, name: string, category: string, waitingOn: string,
 	 *               legalBasis: string, chaseIntervalDays: int, chaseBudget: int,
-	 *               countsWorkingDays: bool, chaseText: string, escalateTo: string}
+	 *               countsWorkingDays: bool, chaseText: string, escalateTo: string,
+	 *               defaultDays: int|null}
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public static function normalise(array $row): array {
 		$category = trim((string)($row['category'] ?? ''));
@@ -141,8 +142,34 @@ final class PauseReason {
 			'countsWorkingDays' => self::flag(value: ($row['countsWorkingDays'] ?? true)),
 			'chaseText' => trim((string)($row['chaseText'] ?? '')),
 			'escalateTo' => trim((string)($row['escalateTo'] ?? '')),
+			'defaultDays' => self::defaultDays(value: ($row['defaultDays'] ?? null)),
 		];
 	}//end normalise()
+
+	/**
+	 * The days a reason usually gives, as a positive whole number, or null.
+	 *
+	 * Nothing, zero, a negative or a word reads as no default, so the form
+	 * keeps whatever the handler typed.
+	 *
+	 * @param mixed $value The declared value.
+	 *
+	 * @return int|null The days, or null.
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private static function defaultDays(mixed $value): ?int {
+		if (is_int($value) === false && (is_string($value) === false || preg_match('/^\d+$/', trim($value)) !== 1)) {
+			return null;
+		}
+
+		$days = (int)$value;
+		if ($days <= 0) {
+			return null;
+		}
+
+		return $days;
+	}//end defaultDays()
 
 	/**
 	 * Whether this reason chases at all.
@@ -155,7 +182,7 @@ final class PauseReason {
 	 *
 	 * @return bool True when reminders go out for it.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public static function chases(array $reason): bool {
 		return ((int)($reason['chaseIntervalDays'] ?? 0) > 0

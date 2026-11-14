@@ -12,7 +12,7 @@
  * (no legacy dialect, no imperative dispatch). The mandatory/optional
  * contract field set is pinned to the REAL OpenRegister HandoffKindContracts
  * for ns#Case (mandatory: title, summary, channel, source; optional:
- * requester, priority) so a contract drift on OR fails this test.
+ * requester, priority, caseType) so a contract drift on OR fails this test.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Settings
@@ -44,7 +44,7 @@ class SemanticCaseIntakeTest extends TestCase {
 	 */
 	private const MANDATORY = ['title', 'summary', 'channel', 'source'];
 
-	private const OPTIONAL = ['requester', 'priority'];
+	private const OPTIONAL = ['requester', 'priority', 'caseType'];
 
 	/**
 	 * @var array<string,mixed>

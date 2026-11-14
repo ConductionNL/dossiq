@@ -244,7 +244,7 @@ test.describe('Unread state on the case', () => {
 	/**
 	 * @e2e REQ-URS-02 the case page says which panel holds something unseen
 	 */
-	test('the strip names a panel with something new, and goes when it is read', async ({
+	test('the Files tab says how much is new, and the count goes when it is opened', async ({
 		page,
 	}) => {
 		const state = await readState(cases.withDocument)
@@ -253,27 +253,26 @@ test.describe('Unread state on the case', () => {
 			'OpenRegister answers a counts map even when every panel is read',
 		).toBeDefined()
 
-		// The strip is only drawn when there IS something new, so a run on an
+		// The count is only drawn when there IS something new, so a run on an
 		// instance whose case has no unseen files asserts the silence instead:
-		// a strip that appeared on a case with nothing new would be the defect.
+		// a count on a case with nothing new would be the defect.
 		const counts = (state.unreadCounts ?? {}) as Record<string, number>
 		const somethingNew = Object.values(counts).some((count) => Number(count) > 0)
 
 		await page.goto(`${APP_URL}cases/${cases.withDocument}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		const strip = page.getByTestId('case-unread')
-		if (somethingNew === false) {
-			await expect(strip).toHaveCount(0)
+		const filesTab = page.locator('.cn-tabs-widget').getByRole('tab', { name: /^Files/ })
+		const newOnFiles = filesTab.getByTestId('cn-tabs-count-label')
+		if (Number(counts.files ?? 0) === 0 || somethingNew === false) {
+			await expect(newOnFiles).toHaveCount(0)
 			return
 		}
 
-		await expect(strip).toBeVisible(PAGE_LOAD)
-		const panel = page.getByTestId('case-unread-files')
-		await expect(panel).toBeVisible()
+		await expect(newOnFiles).toContainText('new', PAGE_LOAD)
 
-		await panel.click()
-		await expect(panel).toHaveCount(0)
+		await filesTab.click()
+		await expect(newOnFiles).toHaveCount(0)
 
 		await expect
 			.poll(

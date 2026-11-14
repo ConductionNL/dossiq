@@ -18,7 +18,7 @@ holds both sources, and dossiq SHALL NOT read `integration.brp.*` or `integratio
 - **WHEN** any flow touches a DSO, DigiD, or e-Depot seam
 - **THEN** the Log adapter MUST handle it and no external request MUST leave the instance
 
-#### Scenario: The retired BRP tier key does nothing
+#### Scenario: Admin flips BRP to the test tier
 
 - **GIVEN** an instance where `integration.brp.mode` is still set to `test`
 - **WHEN** the conflict-of-interest check runs

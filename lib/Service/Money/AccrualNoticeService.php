@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
  */
 
 declare(strict_types=1);
@@ -35,23 +35,33 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\AccrualNoticeServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaWriter;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\Dossiq\Service\TermKind;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
  * AWB 4:17 ingebrekestelling registration + DwangsomBerekening creation.
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
  */
-class AccrualNoticeService {
+class AccrualNoticeService implements AccrualNoticeServiceInterface {
 	use SearchesObjects;
 
 	public const TARIFF_AWB_PLAFOND = 144200;
 	public const TARIFF_AWB_GRACE = 14;
+
+	/**
+	 * The Awb 4:17 regime, for a term whose definition declares no deviating one.
+	 *
+	 * @var array{plafond: int, grace: int, custom: false}
+	 */
+	private const AWB_DEFAULT_REGIME = ['plafond' => self::TARIFF_AWB_PLAFOND, 'grace' => self::TARIFF_AWB_GRACE, 'custom' => false];
 
 	/**
 	 * The Awb 4:17 first-band daily rate in cents, the fallback of a deviating regime without one.
@@ -76,117 +86,207 @@ class AccrualNoticeService {
 	}//end __construct()
 
 	/**
+	 * The term instance a notice would be registered against.
+	 *
+	 * @param string $termInstanceId The TermijnInstance id.
+	 *
+	 * @return array<string, mixed>|null The instance, or null when it does not exist.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 */
+	public function termInstance(string $termInstanceId): ?array {
+		return $this->termService->getTermijnInstance($termInstanceId);
+	}//end termInstance()
+
+	/**
+	 * The statutory decision term of a case, the one a notice of default is given on.
+	 *
+	 * A case carries several clocks (statutory, planned, internal, phase); only
+	 * the statutory term is owed to the applicant, so only it can be late in
+	 * the sense of Awb 4:17. The newest statutory instance wins.
+	 *
+	 * @param string $caseId The case id.
+	 *
+	 * @return array<string, mixed>|null The instance, or null when the case has none.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 */
+	public function statutoryTermOf(string $caseId): ?array {
+		foreach ($this->termService->instancesForCase($caseId) as $instance) {
+			// A kind outside the vocabulary reads as statutory, as TermKind::ofInstance() does.
+			$kind = (string)($instance['kind'] ?? '');
+			if ($kind === TermKind::STATUTORY || in_array($kind, TermKind::ALL, true) === false) {
+				return $instance;
+			}
+		}
+
+		return null;
+	}//end statutoryTermOf()
+
+	/**
+	 * Why a notice received on this day would be premature, or '' when the term has passed.
+	 *
+	 * @param array<string, mixed> $instance    The term instance.
+	 * @param DateTimeImmutable    $receiptDate The day the notice was received.
+	 *
+	 * @return string The reason, in the handler's terms, or '' when the notice may be registered.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 */
+	public function prematureReason(array $instance, DateTimeImmutable $receiptDate): string {
+		if ($this->termHasPassed(instance: $instance, receiptDate: $receiptDate) === true) {
+			return '';
+		}
+
+		$deadline = (string)($instance['endDateCurrent'] ?? '');
+		if ($deadline === '') {
+			return 'The decision term has no end date yet, so a notice of default cannot count.';
+		}
+
+		return 'The decision term runs until '.$deadline.'. A notice of default only counts once the term has passed (Awb 4:17).';
+	}//end prematureReason()
+
+	/**
+	 * Whether the term was exceeded before the notice came in.
+	 *
+	 * @param array<string, mixed> $instance    The term instance.
+	 * @param DateTimeImmutable    $receiptDate The day the notice was received.
+	 *
+	 * @return bool True when the notice is in time to count.
+	 */
+	private function termHasPassed(array $instance, DateTimeImmutable $receiptDate): bool {
+		$status = (string)($instance['status'] ?? '');
+		$deadline = (string)($instance['endDateCurrent'] ?? '');
+
+		return ($status === 'exceeded' && $deadline !== '' && $deadline < $receiptDate->format('Y-m-d'));
+	}//end termHasPassed()
+
+	/**
 	 * Register an ingebrekestelling against a TermijnInstance.
 	 *
 	 * @param string $termInstanceId TermijnInstance id.
 	 * @param DateTimeImmutable $receiptDate Receipt date.
 	 * @param string $channel Receipt channel.
 	 * @param string $documentLink Document link.
+	 * @param string $sender Who sent the notice; empty when not recorded.
 	 *
 	 * @return array<string, mixed> The ingebrekestelling row (with possibly null/created berekening).
 	 *
 	 * @throws RuntimeException When the instance is missing.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 */
 	public function registerNotice(
 		string $termInstanceId,
 		DateTimeImmutable $receiptDate,
 		string $channel,
 		string $documentLink = '',
+		string $sender = '',
 	): array {
 		$instance = $this->termService->getTermijnInstance($termInstanceId);
 		if ($instance === null) {
 			throw new RuntimeException('TermijnInstance not found: ' . $termInstanceId);
 		}
 
-		$status = (string)($instance['status'] ?? '');
-		$deadline = (string)($instance['endDateCurrent'] ?? '');
-		$receipt = $receiptDate->format('Y-m-d');
+		$notice = new NoticeRegistration();
+		$notice->termInstanceId = $termInstanceId;
+		$notice->instance = $instance;
+		$notice->receiptDate = $receiptDate;
+		$notice->channel = $channel;
+		$notice->documentLink = $documentLink;
+		$notice->sender = $sender;
 
-		$isValid = ($status === 'exceeded' && $deadline !== '' && $deadline < $receipt);
+		$row = $this->noticeRow(notice: $notice);
+		$saved = $this->saveSchema(schemaConfigKey: MoneyConfigKeys::NOTICE_OF_DEFAULT_SCHEMA, object: $row);
+		$row['id'] = (string)($saved['id'] ?? '');
+
+		if ($this->startsPenaltyPayment(notice: $notice, row: $row) === false) {
+			return $row;
+		}
+
+		// First valid notice: link it and start a DwangsomBerekening.
+		$row['penaltyPaymentCalculation'] = $this->startPenaltyPaymentCalculation(notice: $notice, noticeId: (string)$row['id']);
+
+		return $row;
+	}//end registerNotice()
+
+	/**
+	 * The stored notice: valid when the term had passed on receipt, premature otherwise.
+	 *
+	 * @param NoticeRegistration $notice The notice.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function noticeRow(NoticeRegistration $notice): array {
+		$isValid = $this->termHasPassed(instance: $notice->instance, receiptDate: $notice->receiptDate);
 
 		$row = [
-			'deadlineInstance' => $termInstanceId,
-			'receiptDate' => $receipt,
-			'notificationChannel' => $channel,
+			'deadlineInstance' => $notice->termInstanceId,
+			'receiptDate' => $notice->receiptDate->format('Y-m-d'),
+			'notificationChannel' => $notice->channel,
 			'gevalideerd' => $isValid,
-			'documentLink' => $documentLink,
+			'documentLink' => $notice->documentLink,
 		];
+		if ($notice->sender !== '') {
+			$row['sender'] = $notice->sender;
+		}
 
 		$row['validityStatus'] = 'premaat';
 		if ($isValid === true) {
 			$row['validityStatus'] = 'valid';
 		}
 
-		$saved = $this->saveSchema(schemaConfigKey: 'ingebrekestelling_schema', object: $row);
-		$row['id'] = (string)($saved['id'] ?? '');
+		return $row;
+	}//end noticeRow()
 
-		if ($isValid === false) {
+	/**
+	 * Whether this notice starts the dwangsom: valid, and the first valid one on the term.
+	 *
+	 * One-dwangsom guard: if an earlier valid notice already exists, the receipt
+	 * is recorded but no second berekening is spawned.
+	 *
+	 * @param NoticeRegistration   $notice The notice.
+	 * @param array<string, mixed> $row    The stored notice.
+	 *
+	 * @return bool
+	 */
+	private function startsPenaltyPayment(NoticeRegistration $notice, array $row): bool {
+		if ($row['gevalideerd'] === false) {
 			$this->logger->info(
 				'Premature ingebrekestelling rejected',
-				['deadlineInstance' => $termInstanceId, 'receiptDate' => $receipt]
+				['deadlineInstance' => $notice->termInstanceId, 'receiptDate' => $row['receiptDate']]
 			);
-			return $row;
+			return false;
 		}
 
-		// One-dwangsom guard: if an earlier valid notice already exists,
-		// record the receipt but do NOT spawn a second berekening.
-		$existing = (string)($instance['relevantIngbrekes'] ?? '');
+		$existing = (string)($notice->instance['relevantIngbrekes'] ?? '');
 		if ($existing !== '') {
 			$this->logger->info(
 				'Additional ingebrekestelling recorded; first remains the dwangsom basis',
-				['deadlineInstance' => $termInstanceId, 'firstNotice' => $existing]
+				['deadlineInstance' => $notice->termInstanceId, 'firstNotice' => $existing]
 			);
-			return $row;
+			return false;
 		}
 
-		// First valid notice: link it and start a DwangsomBerekening.
-		$row['penaltyPaymentCalculation'] = $this->startPenaltyPaymentCalculation(
-			termInstanceId: $termInstanceId,
-			instance: $instance,
-			ingebrekestellingId: (string)$row['id'],
-			receiptDate: $receiptDate,
-			channel: $channel,
-			documentLink: $documentLink,
-		);
-
-		return $row;
-	}//end registerNotice()
+		return true;
+	}//end startsPenaltyPayment()
 
 	/**
-	 * Link the first valid notice to its instance and open the DwangsomBerekening.
+	 * Link the first valid notice to the term and start the dwangsom calculation.
 	 *
-	 * @param string $termInstanceId TermijnInstance id.
-	 * @param array<string, mixed> $instance TermijnInstance row.
-	 * @param string $ingebrekestellingId Id of the saved ingebrekestelling.
-	 * @param DateTimeImmutable $receiptDate Receipt date.
-	 * @param string $channel Receipt channel.
-	 * @param string $documentLink Document link.
+	 * @param NoticeRegistration $notice   The first valid notice.
+	 * @param string             $noticeId The stored notice's id.
 	 *
-	 * @return array<string, mixed> The created DwangsomBerekening row.
+	 * @return array<string, mixed> The stored calculation.
 	 */
-	private function startPenaltyPaymentCalculation(
-		string $termInstanceId,
-		array $instance,
-		string $ingebrekestellingId,
-		DateTimeImmutable $receiptDate,
-		string $channel,
-		string $documentLink,
-	): array {
+	private function startPenaltyPaymentCalculation(NoticeRegistration $notice, string $noticeId): array {
 		$this->termService->updateTermijnInstance(
-			$termInstanceId,
-			['relevantIngbrekes' => $ingebrekestellingId]
+			$notice->termInstanceId,
+			['relevantIngbrekes' => $noticeId]
 		);
 
-		$regime = $this->resolveRegime(instance: $instance);
-
-		// Awb 4:17: the grace period is a statutory term, so its end goes
-		// through the calendar the organisation administers before it becomes
-		// the day the dwangsom starts running. The regime's validity rules
-		// above are untouched: only the day this date lands on moves.
-		$graceEnd = $receiptDate->modify('+' . ((int)$regime['grace']) . ' days');
-		$startAt = ($this->timerService?->rollTermEndFor(date: $graceEnd) ?? $graceEnd)->format('Y-m-d');
+		$regime = $this->resolveRegime(instance: $notice->instance);
 
 		$regimeLabel = 'awb-default';
 		if ($regime['custom'] === true) {
@@ -194,11 +294,11 @@ class AccrualNoticeService {
 		}
 
 		$calculation = $this->saveSchema(
-			schemaConfigKey: 'dwangsom_berekening_schema',
+			schemaConfigKey: MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA,
 			object: [
-				'noticeOfDefault' => $ingebrekestellingId,
-				'deadlineInstance' => $termInstanceId,
-				'startDate' => $startAt,
+				'noticeOfDefault' => $noticeId,
+				'deadlineInstance' => $notice->termInstanceId,
+				'startDate' => $this->penaltyStartDay(receiptDate: $notice->receiptDate, regime: $regime),
 				'plafondCalculated' => (int)$regime['plafond'],
 				'status' => 'lopend',
 				'regime' => $regimeLabel,
@@ -208,27 +308,57 @@ class AccrualNoticeService {
 			]
 		);
 
+		$this->recordNoticeEvents(notice: $notice);
+
+		return $calculation;
+	}//end startPenaltyPaymentCalculation()
+
+	/**
+	 * The day the dwangsom starts running: the end of the grace period on the administered calendar.
+	 *
+	 * Awb 4:17: the grace period is a statutory term, so its end goes through
+	 * the calendar the organisation administers before it becomes the day the
+	 * dwangsom starts running. The regime's validity rules are untouched: only
+	 * the day this date lands on moves.
+	 *
+	 * @param DateTimeImmutable    $receiptDate When the notice arrived.
+	 * @param array<string, mixed> $regime      The resolved regime.
+	 *
+	 * @return string The start day (Y-m-d).
+	 */
+	private function penaltyStartDay(DateTimeImmutable $receiptDate, array $regime): string {
+		$graceEnd = $receiptDate->modify('+' . ((int)$regime['grace']) . ' days');
+
+		return ($this->timerService?->rollTermEndFor(date: $graceEnd) ?? $graceEnd)->format('Y-m-d');
+	}//end penaltyStartDay()
+
+	/**
+	 * Record the received notice and the started calculation on the term.
+	 *
+	 * @param NoticeRegistration $notice The first valid notice.
+	 *
+	 * @return void
+	 */
+	private function recordNoticeEvents(NoticeRegistration $notice): void {
 		$this->termService->recordEvent(
-			termInstanceId: $termInstanceId,
+			termInstanceId: $notice->termInstanceId,
 			type: 'ingebrekestelling-received',
 			basis: 'AWB 4:17',
-			rationale: 'Ingebrekestelling ontvangen via ' . $channel,
+			rationale: 'Ingebrekestelling ontvangen via ' . $notice->channel,
 			daysImpact: 0,
-			moment: $receiptDate,
-			documentLink: $documentLink,
+			moment: $notice->receiptDate,
+			documentLink: $notice->documentLink,
 		);
 
 		$this->termService->recordEvent(
-			termInstanceId: $termInstanceId,
+			termInstanceId: $notice->termInstanceId,
 			type: 'penaltypayment-gestart',
 			basis: 'AWB 4:17',
 			rationale: 'Dwangsom-berekening gestart na grace period',
 			daysImpact: 0,
-			moment: $receiptDate,
+			moment: $notice->receiptDate,
 		);
-
-		return $calculation;
-	}//end startDwangsomBerekening()
+	}//end recordNoticeEvents()
 
 	/**
 	 * The rate bands a regime accrues over: none for the Awb default, one
@@ -261,29 +391,56 @@ class AccrualNoticeService {
 	private function resolveRegime(array $instance): array {
 		$defId = (string)($instance['deadlineDefinition'] ?? '');
 		if ($defId === '') {
-			return ['plafond' => self::TARIFF_AWB_PLAFOND, 'grace' => self::TARIFF_AWB_GRACE, 'custom' => false];
+			return self::AWB_DEFAULT_REGIME;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_definitie_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return ['plafond' => self::TARIFF_AWB_PLAFOND, 'grace' => self::TARIFF_AWB_GRACE, 'custom' => false];
+		$store = $this->definitionStore();
+		if ($store === null) {
+			return self::AWB_DEFAULT_REGIME;
 		}
+
+		[$objectService, $register, $schema] = $store;
 
 		try {
 			$def = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $defId);
 		} catch (\Throwable $e) {
-			return ['plafond' => self::TARIFF_AWB_PLAFOND, 'grace' => self::TARIFF_AWB_GRACE, 'custom' => false];
+			return self::AWB_DEFAULT_REGIME;
 		}
 
 		if ($def === null) {
-			return ['plafond' => self::TARIFF_AWB_PLAFOND, 'grace' => self::TARIFF_AWB_GRACE, 'custom' => false];
+			return self::AWB_DEFAULT_REGIME;
 		}
 
-		$regime = $def['deviatingPenaltyPaymentRegime'] ?? null;
+		return $this->regimeOf(definition: $def);
+	}//end resolveRegime()
+
+	/**
+	 * The object service, register and deadline-definition schema, or null when any is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The store.
+	 */
+	private function definitionStore(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('termijn_definitie_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end definitionStore()
+
+	/**
+	 * The definition's deviating regime, or the AWB default when it declares none.
+	 *
+	 * @param array<string, mixed> $definition The deadline definition.
+	 *
+	 * @return array{plafond:int,grace:int,custom:bool,dailyTariff?:int}
+	 */
+	private function regimeOf(array $definition): array {
+		$regime = $definition['deviatingPenaltyPaymentRegime'] ?? null;
 		if (is_array($regime) === false) {
-			return ['plafond' => self::TARIFF_AWB_PLAFOND, 'grace' => self::TARIFF_AWB_GRACE, 'custom' => false];
+			return self::AWB_DEFAULT_REGIME;
 		}
 
 		return [
@@ -292,7 +449,7 @@ class AccrualNoticeService {
 			'dailyTariff' => (int)($regime['dailyTariff'] ?? 0),
 			'custom' => true,
 		];
-	}//end resolveRegime()
+	}//end regimeOf()
 
 	/**
 	 * Save to a configured schema.
@@ -303,27 +460,13 @@ class AccrualNoticeService {
 	 * @return array<string, mixed>
 	 */
 	private function saveSchema(string $schemaConfigKey, array $object): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue($schemaConfigKey);
-		if ($objectService === null || $register === '' || $schema === '') {
-			return $object;
-		}
+		$writer = new ConfiguredSchemaWriter(
+			settingsService: $this->settingsService,
+			onFailure: function (\Throwable $e) use ($schemaConfigKey): void {
+				$this->logger->error('AccrualNoticeService persist failed', ['schemaConfigKey' => $schemaConfigKey, 'error' => $e->getMessage()]);
+			}
+		);
 
-		try {
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $object
-			);
-			return ($saved ?? $object);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'AccrualNoticeService persist failed',
-				['schemaConfigKey' => $schemaConfigKey, 'error' => $e->getMessage()]
-			);
-			return $object;
-		}
+		return $writer->save(schemaConfigKey: $schemaConfigKey, object: $object);
 	}//end saveSchema()
 }//end class

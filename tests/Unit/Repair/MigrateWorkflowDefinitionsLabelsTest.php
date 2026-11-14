@@ -42,6 +42,9 @@ use Psr\Log\LoggerInterface;
  * What the backfill writes, and what it heals.
  *
  * @covers \OCA\Dossiq\Repair\MigrateWorkflowDefinitions
+ * @covers \OCA\Dossiq\Service\Workflow\BackfillSchemas
+ * @covers \OCA\Dossiq\Service\Workflow\BackfillTarget
+ * @covers \OCA\Dossiq\Service\Workflow\BackfillCaseType
  * @covers \OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels
  *
  * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
@@ -122,7 +125,7 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/vth-package/specs/vth-workflow-templates/spec.md
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
 	public function testACaseTypeHoldingOnlyADraftStillGetsItsBasisTemplate(): void {
 		$this->runStep(caseType: self::caseType(), versions: [self::template(lifecycle: 'draft')]);
@@ -145,7 +148,7 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 	 *
 	 * @dataProvider lifecyclesThatAreNotADraft
 	 *
-	 * @spec openspec/changes/vth-package/specs/vth-workflow-templates/spec.md
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
 	public function testACaseTypeHoldingMoreThanDraftsIsLeftAlone(string $lifecycle): void {
 		$this->runStep(

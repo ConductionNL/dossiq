@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+ * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use RuntimeException;
  * The reason code is integriq's: `opted-out`, `no-consent`, or
  * `authority-unavailable` when integriq could not answer.
  *
- * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+ * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
  */
 class RecipientOptedOutException extends RuntimeException {
 
@@ -58,7 +58,7 @@ class RecipientOptedOutException extends RuntimeException {
 	 *
 	 * @return string The code.
 	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
 	 */
 	public function getReasonCode(): string {
 		return $this->reasonCode;

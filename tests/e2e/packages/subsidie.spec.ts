@@ -84,7 +84,7 @@ async function caseTypeIds(page: Page, identifier: string): Promise<string[]> {
 }
 
 test.describe('package subsidie', () => {
-	// @e2e openspec/changes/subsidie-package/specs/subsidieverlening-keten/spec.md#scenario-an-administrator-installs-the-subsidie-package
+	// @e2e openspec/specs/subsidieverlening-keten/spec.md#scenario-an-administrator-installs-the-subsidie-package
 	test('an administrator installs subsidie and finds the case type with its flow', async ({
 		page,
 	}) => {

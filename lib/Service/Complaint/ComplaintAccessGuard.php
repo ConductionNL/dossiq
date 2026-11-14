@@ -28,13 +28,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Complaint;
 
+use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
@@ -45,9 +46,9 @@ use OCP\IUserSession;
 /**
  * Shared authorization guard for the complaint controllers.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
-class ComplaintAccessGuard {
+class ComplaintAccessGuard implements ComplaintAccessGuardInterface {
 	/**
 	 * Constructor.
 	 *
@@ -69,7 +70,7 @@ class ComplaintAccessGuard {
 	 *
 	 * @return string The current UID, empty when there is no session.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function currentUid(): string {
 		$user = $this->userSession->getUser();
@@ -85,7 +86,7 @@ class ComplaintAccessGuard {
 	 *
 	 * @return JSONResponse The 401 response.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function notAuthenticated(): JSONResponse {
 		return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -96,7 +97,7 @@ class ComplaintAccessGuard {
 	 *
 	 * @return array<string, mixed> Decoded request body
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function parseBody(): array {
 		$params = $this->request->getParams();
@@ -118,7 +119,7 @@ class ComplaintAccessGuard {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function authorizeAccess(array $complaint, string $userId): void {
 		// Read access is broadly allowed for authenticated users: the behandelaar
@@ -140,7 +141,7 @@ class ComplaintAccessGuard {
 	 *
 	 * @throws OCSForbiddenException If not authorized
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function authorizeMutation(array $complaint, string $userId): void {
 		$handler = $complaint['handler'] ?? null;
@@ -173,7 +174,7 @@ class ComplaintAccessGuard {
 	 *
 	 * @throws OCSForbiddenException If not a coordinator
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function requireCoordinator(string $userId): void {
 		$isAdmin = $this->groupManager->isAdmin($userId);

@@ -116,6 +116,22 @@ class RecordImportStore {
 			return '';
 		}
 
+		$caseId = $this->savedId(saved: $saved);
+		if ($caseId !== '' && $mapped['result'] !== '') {
+			$this->writeResult(objectService: $objectService, register: $register, caseId: $caseId, resultType: $mapped['result']);
+		}
+
+		return $caseId;
+	}//end writeCase()
+
+	/**
+	 * The uuid of a saved case: its getUuid(), else the id its array form carries.
+	 *
+	 * @param mixed $saved What saveObject answered.
+	 *
+	 * @return string The case id, or '' when it carries none.
+	 */
+	private function savedId(mixed $saved): string {
 		$caseId = '';
 		if (is_object($saved) === true && method_exists($saved, 'getUuid') === true) {
 			$caseId = (string)$saved->getUuid();
@@ -125,12 +141,8 @@ class RecordImportStore {
 			$caseId = $this->idOf(row: ($this->objectToArrayOrNull(value: $saved) ?? []));
 		}
 
-		if ($caseId !== '' && $mapped['result'] !== '') {
-			$this->writeResult(objectService: $objectService, register: $register, caseId: $caseId, resultType: $mapped['result']);
-		}
-
 		return $caseId;
-	}//end writeCase()
+	}//end savedId()
 
 	/**
 	 * The result a closed record ended with. A refusal is logged; the case stands.
@@ -232,6 +244,18 @@ class RecordImportStore {
 			return null;
 		}
 
+		return $this->bySource(cases: $cases, matchField: $matchField);
+	}//end casesBySource()
+
+	/**
+	 * Case ids keyed by the source id each case holds in the match field.
+	 *
+	 * @param array<int, array<string, mixed>> $cases      The case type's cases.
+	 * @param string                           $matchField The path the source id is read from.
+	 *
+	 * @return array<string, string>
+	 */
+	private function bySource(array $cases, string $matchField): array {
 		$bySource = [];
 		foreach ($cases as $case) {
 			$sourceId = trim((string)$this->mapping->read(case: $case, path: $matchField));
@@ -241,7 +265,7 @@ class RecordImportStore {
 		}
 
 		return $bySource;
-	}//end casesBySource()
+	}//end bySource()
 
 	/**
 	 * The case type, by uuid or identifier.
@@ -266,15 +290,71 @@ class RecordImportStore {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['identifier' => $caseType, '_limit' => 1]
+				filters: ['identifier' => $caseType, '_limit' => 50]
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('RecordImportStore: the case type could not be read', ['caseType' => $caseType, 'error' => $e->getMessage()]);
 			return null;
 		}
 
-		return ($rows[0] ?? null);
+		return $this->versionInUse(rows: $rows);
 	}//end caseType()
+
+		/**
+	 * Every case type version in use: not superseded and not a draft.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 *
+	 * @return list<array<string, mixed>> The case types.
+	 *
+	 * @throws Throwable When the case types cannot be read: an unread list is
+	 *                   not "no case type imports anything", so the caller says so.
+	 *
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
+	 */
+	public function caseTypesInUse(object $objectService): array {
+		$rows = $this->listAll(
+			objectService: $objectService,
+			register: (string)$this->settingsService->getConfigValue('register'),
+			schema: (string)$this->settingsService->getConfigValue('case_type_schema'),
+			filters: []
+		);
+
+		return array_values(array_filter($rows, fn (array $row): bool => $this->inUse(row: $row)));
+	}//end caseTypesInUse()
+
+	/**
+	 * Whether a case type version is in use: not superseded and not a draft.
+	 *
+	 * @param array<string, mixed> $row The case type.
+	 *
+	 * @return bool True when in use.
+	 */
+	private function inUse(array $row): bool {
+		return trim((string)($row['supersededBy'] ?? '')) === '' && ($row['isDraft'] ?? false) !== true;
+	}//end inUse()
+
+/**
+	 * Of the versions that share an identifier, the one new cases get: the
+	 * newest published version nothing has superseded, else the first row.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The versions.
+	 *
+	 * @return array<string, mixed>|null The version in use, or null when there is none.
+	 *
+	 * @spec openspec/changes/woo-five-steps/specs/case-type-version-chain/spec.md#requirement-the-woo-request-case-type-has-a-second-version-with-five-steps
+	 */
+	private function versionInUse(array $rows): ?array {
+		$current = array_values(
+			array_filter(
+				$rows,
+				fn (array $row): bool => $this->inUse(row: $row)
+			)
+		);
+		usort($current, static fn (array $left, array $right): int => ((int)($right['version'] ?? 0) <=> (int)($left['version'] ?? 0)));
+
+		return ($current[0] ?? ($rows[0] ?? null));
+	}//end versionInUse()
 
 	/**
 	 * Every row of one schema, page by page.

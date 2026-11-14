@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Custody\CaseCustodyChain;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
@@ -54,6 +55,10 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Custody\CustodyMove
+ * @uses \OCA\Dossiq\Service\Custody\CustodyRows
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
+ * @uses \OCA\Dossiq\Exception\RefusedException
  *
  * @spec openspec/specs/case-management/spec.md
  */
@@ -253,6 +258,90 @@ class CaseCustodyChainTest extends TestCase {
 		self::assertSame([], $chain->holdings(caseId: 'case-1'));
 		self::assertNull($chain->openHoldingFor(caseId: 'case-1'));
 	}//end testAnEmptyChainAnswersNothingRatherThanGuessing()
+
+	/**
+	 * A move without a case is refused and writes nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function testAMoveWithoutACaseIsRefused(): void {
+		try {
+			$this->chain()->move(caseId: '  ', organisationUnit: 'toezicht', handler: '', reason: 'x', movedBy: 'jan');
+			self::fail('A move without a case must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('A holding needs a case, so nothing was recorded.', $e->getSentence());
+			self::assertSame(CaseCustodyChain::CUSTODY_UNWRITABLE, $e->getRule());
+		}
+
+		self::assertNull($this->chain()->begin(caseId: ' ', organisationUnit: 'a', handler: '', from: '', reason: 'r', movedBy: 'jan'));
+	}//end testAMoveWithoutACaseIsRefused()
+
+	/**
+	 * The first move on an empty chain opens holding one with trimmed values and logs the untrimmed target.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function testAFirstMoveOpensHoldingOneTrimmedAndLogsIt(): void {
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())->method('info')->with(
+			'Dossiq custody: a case changed hands',
+			['caseId' => 'case-1', 'to' => ' toezicht ', 'sequence' => 1, 'movedBy' => ' jan '],
+		);
+		$chain = new CaseCustodyChain(settingsService: $this->settings(), logger: $logger, dates: $this->caseDates());
+
+		$opened = $chain->move(
+			caseId: ' case-1 ',
+			organisationUnit: ' toezicht ',
+			handler: ' sofie ',
+			reason: ' Handhaving ',
+			movedBy: ' jan ',
+			movedAt: '2026-04-12T14:30:00+02:00',
+		);
+
+		self::assertSame('case-1', $opened['caseId']);
+		self::assertSame('toezicht', $opened['organisationUnit']);
+		self::assertSame('sofie', $opened['handler']);
+		self::assertSame('Handhaving', $opened['reason']);
+		self::assertSame('jan', $opened['movedBy']);
+		self::assertSame(1, $opened['sequence']);
+		self::assertSame('', $opened['until']);
+		self::assertTrue($opened['open']);
+	}//end testAFirstMoveOpensHoldingOneTrimmedAndLogsIt()
+
+	/**
+	 * Without a register the chain reads as empty after a warning, and a move is refused as indeterminate.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function testWithoutARegisterTheChainIsEmptyAndAMoveIsRefused(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->exactly(2))->method('warning')->with(
+			'Dossiq custody: the chain could not be read',
+			['caseId' => 'case-1', 'exception' => 'OpenRegister is not available'],
+		);
+		$logger->expects($this->never())->method('info');
+		$chain = new CaseCustodyChain(settingsService: $settings, logger: $logger, dates: $this->caseDates());
+
+		self::assertSame([], $chain->holdings(caseId: ' case-1 '));
+
+		try {
+			$chain->move(caseId: 'case-1', organisationUnit: 'toezicht', handler: '', reason: 'x', movedBy: 'jan');
+			self::fail('A move that cannot be written must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('The chain of custody could not be written, so the case was not moved.', $e->getSentence());
+			self::assertSame(CaseCustodyChain::CUSTODY_UNWRITABLE, $e->getRule());
+			self::assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
+			self::assertInstanceOf(\RuntimeException::class, $e->getPrevious());
+		}
+	}//end testWithoutARegisterTheChainIsEmptyAndAMoveIsRefused()
 
 	/**
 	 * The chain under test, wired to the in-memory store.

@@ -152,6 +152,36 @@ class CaseLifecycleControllerTest extends TestCase {
 	}//end testSuspendIsRefusedWithoutCaseAccess()
 
 	/**
+	 * The picked pause reason reaches the service, and an undeclared one is a 422 naming its code.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	public function testSuspendPassesThePauseReasonAndRefusesAnUndeclaredOne(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, mixed $default = null): mixed => match ($key) {
+				'reason' => '',
+				'days' => 14,
+				'pauseReason' => 'made-up',
+				default => $default,
+			}
+		);
+		$this->request = $request;
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->lifecycle->expects($this->once())
+			->method('suspend')
+			->with(caseId: 'case-1', reason: '', days: 14, pauseReason: 'made-up')
+			->willThrowException(new \RuntimeException('pause_reason_not_declared'));
+
+		$response = $this->controller()->suspend(caseId: 'case-1');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		$this->assertSame('pause_reason_not_declared', $response->getData()['code']);
+	}//end testSuspendPassesThePauseReasonAndRefusesAnUndeclaredOne()
+
+	/**
 	 * The per-case guard is asked with the case from the URL and the session
 	 * user, not with anything the caller supplied.
 	 *

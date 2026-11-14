@@ -22,9 +22,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Lifecycle;
 
+use OCA\Dossiq\Service\Lifecycle\CaseActSources;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Lifecycle\CaseActsMenu;
 use OCA\Dossiq\Service\Lifecycle\CaseActsOverview;
+use OCA\Dossiq\Service\Lifecycle\CaseArchiveReadiness;
 use OCA\Dossiq\Service\Lifecycle\CaseArchiveState;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Lifecycle\CaseHoldActs;
@@ -38,7 +40,7 @@ use PHPUnit\Framework\TestCase;
  * The state half of the act read.
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseActsOverview
- *
+ * @covers \OCA\Dossiq\Service\Lifecycle\CaseActSources
  * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseActsOverviewTest extends TestCase {
@@ -72,11 +74,12 @@ class CaseActsOverviewTest extends TestCase {
 	/**
 	 * Build the read model over doubled collaborators.
 	 *
-	 * @param CaseArchiveState|null $archiveState The archive marker reader, when wired.
+	 * @param CaseArchiveState|null     $archiveState The archive marker reader, when wired.
+	 * @param CaseArchiveReadiness|null $readiness    The archive readiness checklist, when wired.
 	 *
 	 * @return CaseActsOverview The read model.
 	 */
-	private function overview(?CaseArchiveState $archiveState = null): CaseActsOverview {
+	private function overview(?CaseArchiveState $archiveState = null, ?CaseArchiveReadiness $readiness = null): CaseActsOverview {
 		$incompleteness = $this->createMock(originalClassName: CaseIncompleteness::class);
 		$incompleteness->method('missingOn')->willReturn(['applicantAddress']);
 
@@ -88,19 +91,25 @@ class CaseActsOverviewTest extends TestCase {
 
 		$endings = $this->createMock(originalClassName: CaseEndingActs::class);
 		$endings->method('endingOf')->willReturn(['act' => 'abort', 'reason' => 'Ingetrokken']);
+		$endings->method('resultChoicesOn')->willReturnCallback(
+			static fn (array $case): array => (($case['caseType'] ?? '') === 'ct-1') ? [['id' => 'rt-1', 'name' => 'Deels toegewezen']] : []
+		);
 
 		$processStatus = $this->createMock(originalClassName: ProcessOwnedStatusRule::class);
 		$processStatus->method('allowsHandSet')->willReturn(false);
 
 		return new CaseActsOverview(
 			store: $this->store,
-			menu: $this->menu,
-			endings: $endings,
-			holds: $holds,
-			drafts: $drafts,
+			acts: new CaseActSources(
+				menu: $this->menu,
+				endings: $endings,
+				holds: $holds,
+				drafts: $drafts,
+			),
 			incompleteness: $incompleteness,
 			processStatus: $processStatus,
 			archiveState: $archiveState,
+			readiness: $readiness,
 		);
 	}//end overview()
 
@@ -148,6 +157,38 @@ class CaseActsOverviewTest extends TestCase {
 		self::assertSame([['on' => 'fatima']], $answer['awaitingApproval']);
 		self::assertSame('finish', $answer['acts'][0]['act']);
 	}//end testTheReadCarriesTheStateAndTheMenuInOneAnswer()
+
+	/**
+	 * The read carries the results a finish or abort of THIS case may name,
+	 * read off the case's own case type, so the form can offer a picker
+	 * instead of a free field.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
+	 */
+	public function testTheReadCarriesTheResultsTheCaseCanCloseWith(): void {
+		$answer = $this->overview()->overview(caseId: 'case-1');
+
+		self::assertSame([['id' => 'rt-1', 'name' => 'Deels toegewezen']], $answer['resultTypes']);
+	}//end testTheReadCarriesTheResultsTheCaseCanCloseWith()
+
+	/**
+	 * Control: a case of a case type without results reads an empty list, so
+	 * the answer above came from the case's type and not from a constant.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
+	 */
+	public function testACaseTypeWithoutResultsReadsAnEmptyList(): void {
+		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);
+		$this->store->method('loadCase')->willReturn(array_merge(self::CASE, ['caseType' => 'ct-2']));
+
+		$answer = $this->overview()->overview(caseId: 'case-1');
+
+		self::assertSame([], $answer['resultTypes']);
+	}//end testACaseTypeWithoutResultsReadsAnEmptyList()
 
 	/**
 	 * 🔑 THE ARCHIVE MARKER DECIDES WHETHER THE MENU OFFERS RESTORE. Two
@@ -217,4 +258,59 @@ class CaseActsOverviewTest extends TestCase {
 			self::assertSame(RefusedException::STATUS_UNPROCESSABLE, $refusal->getStatus());
 		}
 	}//end testAnUnknownCaseIsRefusedRatherThanAnsweredEmpty()
+	/**
+	 * The archive readiness is the readiness checklist of the loaded case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function testTheArchiveReadinessIsTheChecklistOfTheLoadedCase(): void {
+		$checklist = [['item' => 'result', 'ready' => true], ['item' => 'documents', 'ready' => false]];
+		$readiness = $this->createMock(originalClassName: CaseArchiveReadiness::class);
+		$readiness->expects($this->once())->method('checklist')
+			->with('case-1', self::CASE)
+			->willReturn($checklist);
+
+		self::assertSame(
+			expected: ['caseId' => 'case-1', 'checklist' => $checklist],
+			actual: $this->overview(readiness: $readiness)->archiveReadiness(caseId: 'case-1')
+		);
+	}//end testTheArchiveReadinessIsTheChecklistOfTheLoadedCase()
+
+	/**
+	 * Without the readiness service the checklist is empty, not an error.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function testWithoutTheReadinessServiceTheChecklistIsEmpty(): void {
+		self::assertSame(
+			expected: ['caseId' => 'case-1', 'checklist' => []],
+			actual: $this->overview()->archiveReadiness(caseId: 'case-1')
+		);
+	}//end testWithoutTheReadinessServiceTheChecklistIsEmpty()
+
+	/**
+	 * The archive readiness of an unknown case is refused before any checklist is made.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function testTheArchiveReadinessOfAnUnknownCaseIsRefused(): void {
+		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);
+		$this->store->method('loadCase')->willReturn(null);
+		$readiness = $this->createMock(originalClassName: CaseArchiveReadiness::class);
+		$readiness->expects($this->never())->method('checklist');
+
+		try {
+			$this->overview(readiness: $readiness)->archiveReadiness(caseId: 'nope');
+			self::fail(message: 'A case that cannot be read has to refuse.');
+		} catch (RefusedException $refusal) {
+			self::assertSame(expected: 'case-not-found', actual: $refusal->getRule());
+			self::assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $refusal->getStatus());
+		}
+	}//end testTheArchiveReadinessOfAnUnknownCaseIsRefused()
 }//end class

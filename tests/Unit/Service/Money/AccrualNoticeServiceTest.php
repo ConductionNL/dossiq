@@ -50,6 +50,10 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
+ * @uses \OCA\Dossiq\Service\TermKind
+ * @uses \OCA\Dossiq\Service\Term\ThresholdShares
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaWriter
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndAsk
  */
 class AccrualNoticeServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -82,8 +86,8 @@ class AccrualNoticeServiceTest extends TestCase {
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
-					'ingebrekestelling_schema' => 'noticeOfDefault',
-					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
+					'notice_of_default_schema' => 'noticeOfDefault',
+					'accruing_amount_schema' => 'penaltyPaymentCalculation',
 					default => '',
 				};
 			},
@@ -338,5 +342,85 @@ class AccrualNoticeServiceTest extends TestCase {
 		self::assertFalse($row['gevalideerd']);
 		self::assertSame('premaat', $row['validityStatus']);
 		self::assertArrayNotHasKey('penaltyPaymentCalculation', $row);
+	}
+
+	/**
+	 * The case's statutory term is the one a notice is given on; a planned or
+	 * internal clock on the same case is not.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 *
+	 * @return void
+	 */
+	public function testTheStatutoryTermOfACaseIsFound(): void {
+		$this->objects->seed('deadlineInstance', [
+			'id' => 'ti-internal',
+			'case' => 'Z/2026/300',
+			'kind' => 'internal',
+			'startDate' => '2026-02-01T10:00:00+00:00',
+			'endDateCurrent' => '2026-02-10',
+			'status' => 'exceeded',
+		]);
+
+		self::assertSame('ti-1', $this->service->statutoryTermOf('Z/2026/300')['id'] ?? null);
+		self::assertNull($this->service->statutoryTermOf('Z/2026/999'));
+		self::assertSame('ti-1', $this->service->termInstance('ti-1')['id'] ?? null);
+	}
+
+	/**
+	 * A notice while the term runs gets the reason naming the end date; one
+	 * after the term has passed gets none.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 *
+	 * @return void
+	 */
+	public function testAPrematureNoticeGetsTheReason(): void {
+		$running = ['status' => 'lopend', 'endDateCurrent' => '2026-12-31'];
+		self::assertStringContainsString('2026-12-31', $this->service->prematureReason($running, new DateTimeImmutable('2026-03-15')));
+		self::assertStringContainsString('no end date', $this->service->prematureReason(['status' => 'lopend'], new DateTimeImmutable('2026-03-15')));
+
+		$passed = ['status' => 'exceeded', 'endDateCurrent' => '2026-02-25'];
+		self::assertSame('', $this->service->prematureReason($passed, new DateTimeImmutable('2026-03-15')));
+		self::assertNotSame('', $this->service->prematureReason($passed, new DateTimeImmutable('2026-02-25')));
+	}
+
+	/**
+	 * Who sent the notice is stored with it.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 *
+	 * @return void
+	 */
+	public function testTheSenderIsStored(): void {
+		$row = $this->service->registerNotice('ti-1', new DateTimeImmutable('2026-03-15'), 'post', '', 'J. de Vries');
+
+		self::assertSame('J. de Vries', $row['sender']);
+		self::assertSame('J. de Vries', $this->objects->store['noticeOfDefault'][(string)$row['id']]['sender'] ?? null);
+	}
+	/**
+	 * A first valid notice stores the whole notice and calculation rows, and both events in order.
+	 *
+	 * @return void
+	 */
+	public function testAFirstValidNoticeStoresTheWholeRowsAndBothEvents(): void {
+		$row = $this->service->registerNotice('ti-1', new DateTimeImmutable('2026-03-15'), 'email', 'doc:1');
+		$calculation = $row['penaltyPaymentCalculation'];
+		unset($row['penaltyPaymentCalculation']);
+
+		self::assertSame(
+			['deadlineInstance' => 'ti-1', 'receiptDate' => '2026-03-15', 'notificationChannel' => 'email', 'gevalideerd' => true, 'documentLink' => 'doc:1', 'validityStatus' => 'valid', 'id' => $row['id']],
+			$row
+		);
+		unset($calculation['id']);
+		self::assertSame(
+			['noticeOfDefault' => $row['id'], 'deadlineInstance' => 'ti-1', 'startDate' => '2026-03-29', 'plafondCalculated' => 144200, 'status' => 'lopend', 'regime' => 'awb-default', 'rateBands' => []],
+			array_intersect_key($calculation, array_flip(['noticeOfDefault', 'deadlineInstance', 'startDate', 'plafondCalculated', 'status', 'regime', 'rateBands']))
+		);
+
+		$events = array_values($this->objects->store['termijnGebeurtenis'] ?? []);
+		self::assertSame(['ingebrekestelling-received', 'penaltypayment-gestart'], array_column($events, 'type'));
+		self::assertSame('Ingebrekestelling ontvangen via email', $events[0]['rationale']);
+		self::assertSame('Dwangsom-berekening gestart na grace period', $events[1]['rationale']);
 	}
 }

@@ -267,6 +267,27 @@ class ShippedObjectPropertyTypeTest extends TestCase {
 	}//end collectJsonPointerRefs()
 
 	/**
+	 * Whether a value is a translation map: language codes to strings.
+	 *
+	 * @param mixed $value The shipped value.
+	 *
+	 * @return bool True for a non-empty map of language code to string.
+	 */
+	private function isTranslation(mixed $value): bool {
+		if (is_array($value) === false || $value === [] || array_is_list($value) === true) {
+			return false;
+		}
+
+		foreach ($value as $language => $text) {
+			if (preg_match('/^[a-z]{2}$/', (string)$language) !== 1 || is_string($text) === false) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end isTranslation()
+
+	/**
 	 * Compare one shipped value against its declared property, recursing into
 	 * declared object properties and array items.
 	 *
@@ -288,6 +309,11 @@ class ShippedObjectPropertyTypeTest extends TestCase {
 		}
 
 		$actual = $this->jsonType(value: $value);
+		if (($definition['translatable'] ?? false) === true && $declared === 'string' && $this->isTranslation(value: $value) === true) {
+			// A translatable string ships as one string per language.
+			return;
+		}
+
 		if ($value === [] && in_array($declared, ['object', 'array'], true) === true) {
 			// An empty JSON array and an empty JSON object decode identically.
 			return;

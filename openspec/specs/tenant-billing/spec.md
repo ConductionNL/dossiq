@@ -6,7 +6,9 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 
 ## Purpose
 Emits immutable billing events across the case lifecycle, including refunds that net prior charges, and exports pending events to Shillinq daily grouped by tenant and month with retry and deferral on failure. It keeps exports idempotent by only touching events without an invoiceRef and presents a tenant billing dashboard with current-month, year-to-date, forecast, invoice history, and quota status.
+
 ## Requirements
+
 ### Requirement: Billing event emission on case lifecycle (REQ-007-A)
 
 The system SHALL emit immutable billing events on the case lifecycle.
@@ -52,3 +54,11 @@ The system SHALL present a tenant billing dashboard with current-month, YTD, for
 - **WHEN** the page loads
 - **THEN** it SHALL display the current-month summary (cases, refunds, total), YTD breakdown, forecasted spend, invoice history with download links, and quota status
 
+### Requirement: The monthly package fee is a billing event
+
+The billing event types SHALL include `subscription_fee`, the monthly fee of a tenant's package, in the service's allowed types and in the `tenantBillingEvent` schema alike.
+
+#### Scenario: Recording the fee
+- **GIVEN** a tenant on the Standaard package
+- **WHEN** its monthly fee is recorded as a `subscription_fee` event of € 450
+- **THEN** the tenant page's billing card SHALL list it beside the case charges

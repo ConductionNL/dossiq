@@ -329,22 +329,6 @@
                 "eventDocumentAdded": true,
                 "eventMessageFromHandler": true,
                 "eventTermReminder": true
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "portaalBericht",
-                    "slug": "portaal-bericht-demo-1"
-                },
-                "caseId": "zaak-2026-vth-09128",
-                "caseReference": "Z/2026/09128",
-                "senderType": "burger",
-                "senderRef": "demo-burger-123456789",
-                "senderName": "M.A. Janssen-de Vries",
-                "subject": "Vraag over voorwaarde 3 in beschikking",
-                "content": "Geachte mevrouw Bakker, kunt u toelichten wat exact wordt bedoeld met 'voorgeschreven dakhellingshoek'?",
-                "direction": "citizen_to_handler",
-                "sentAt": "2026-04-10T14:33:00+02:00"
             }
         ]
     }

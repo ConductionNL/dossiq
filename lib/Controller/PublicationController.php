@@ -19,15 +19,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-besluitvorming-workflow/tasks.md#task-7
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\PublicationService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PublicationServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -42,24 +42,24 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-besluitvorming-workflow/tasks.md#task-7
  */
 class PublicationController extends Controller {
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PublicationService $publicationService Publication service.
+	 * @param PublicationServiceInterface $publicationService Publication service.
 	 * @param IUserSession $userSession User session for guard.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PublicationService $publicationService,
+		private readonly PublicationServiceInterface $publicationService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -69,7 +69,7 @@ class PublicationController extends Controller {
 	 *
 	 * @return JSONResponse The publication record.
 	 *
-	 * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
+	 * @spec openspec/changes/archive/2026-06-13-besluitvorming-workflow/tasks.md#task-7
 	 */
 	#[NoAdminRequired]
 	public function publish(string $id): JSONResponse {
@@ -87,7 +87,7 @@ class PublicationController extends Controller {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'PublicationController::publish failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'caseId' => $id]
+				['app' => AppIdentity::APP_ID, 'caseId' => $id]
 			);
 			return new JSONResponse(
 				['error' => $e->getMessage()],

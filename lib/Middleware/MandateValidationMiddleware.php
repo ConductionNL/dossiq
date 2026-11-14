@@ -18,18 +18,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Middleware;
 
-use OCA\Dossiq\Service\TenantAuditTrailService;
-use OCA\Dossiq\Service\TenantAuthenticationService;
-use OCA\Dossiq\Service\TenantContext;
-use OCA\Dossiq\Service\TenantService;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\TenantAuditTrailServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantAuthenticationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantContextInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantServiceInterface;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
 use OCP\IRequest;
@@ -44,7 +44,7 @@ use OCP\IUserSession;
  * makes it on OpenRegister's routes only. It moved here when the active
  * tenant became OpenRegister's active organisation (Q3, Ruben 2026-10-08).
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
 class MandateValidationMiddleware extends Middleware {
 	/**
@@ -88,18 +88,18 @@ class MandateValidationMiddleware extends Middleware {
 	 *
 	 * @param IRequest $request Request.
 	 * @param IUserSession $userSession User session.
-	 * @param TenantContext $context Tenant context.
-	 * @param TenantAuthenticationService $authService Auth service.
-	 * @param TenantService $tenantService Platform admin check.
-	 * @param TenantAuditTrailService $auditTrail Writes each decision to the tenant's audit trail.
+	 * @param TenantContextInterface $context Tenant context.
+	 * @param TenantAuthenticationServiceInterface $authService Auth service.
+	 * @param TenantServiceInterface $tenantService Platform admin check.
+	 * @param TenantAuditTrailServiceInterface $auditTrail Writes each decision to the tenant's audit trail.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly TenantContext $context,
-		private readonly TenantAuthenticationService $authService,
-		private readonly TenantService $tenantService,
-		private readonly TenantAuditTrailService $auditTrail,
+		private readonly TenantContextInterface $context,
+		private readonly TenantAuthenticationServiceInterface $authService,
+		private readonly TenantServiceInterface $tenantService,
+		private readonly TenantAuditTrailServiceInterface $auditTrail,
 	) {
 	}//end __construct()
 
@@ -116,7 +116,7 @@ class MandateValidationMiddleware extends Middleware {
 	 * OCP\AppFramework\Middleware::beforeController(); this middleware
 	 * dispatches on the controller class and the request URI instead.
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
 	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function beforeController($controller, $methodName): void {
@@ -167,7 +167,7 @@ class MandateValidationMiddleware extends Middleware {
 	 * fixed by OCP\AppFramework\Middleware::afterException(); only $exception is
 	 * inspected.
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
 	 */
 	public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response {
 		if ($exception instanceof MandateDeniedException) {
@@ -248,7 +248,7 @@ class MandateValidationMiddleware extends Middleware {
 	 *
 	 * @return string|null Action or null when no mandate gate applies.
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
 	 */
 	public function resolveAction(string $verb, string $path): ?string {
 		foreach (self::STATUS_PATH_HINTS as $hint) {

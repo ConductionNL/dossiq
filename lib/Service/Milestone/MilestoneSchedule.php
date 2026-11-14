@@ -49,6 +49,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Milestone;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\MilestoneScheduleInterface;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 
 /**
@@ -56,7 +57,7 @@ use OCA\Dossiq\Service\WorkingDayCalculator;
  *
  * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/milestone-tracking/spec.md
  */
-class MilestoneSchedule {
+class MilestoneSchedule implements MilestoneScheduleInterface {
 
 	/**
 	 * How deep a dependency chain may be resolved.
@@ -93,18 +94,52 @@ class MilestoneSchedule {
 	 */
 	public function project(array $definitions, DateTimeImmutable $caseStart, array $reached = []): array {
 		$ordered = $this->ordered(definitions: $definitions);
+		$run = new MilestoneProjection(
+			byIdentifier: $this->byIdentifier(definitions: $ordered),
+			cumulative: $this->cumulativeDurations(ordered: $ordered),
+			caseStart: $caseStart,
+			reached: $reached
+		);
+
+		foreach (array_keys($run->byIdentifier) as $identifier) {
+			$this->resolve(run: $run, step: new ChainStep(identifier: $identifier, depth: 0));
+		}
+
+		return $run->dates;
+	}//end project()
+
+	/**
+	 * Every definition with an identifier, by identifier; a later one with the same identifier wins.
+	 *
+	 * @param array<int, array<string, mixed>> $definitions The definitions.
+	 *
+	 * @return array<string, array<string, mixed>> The definitions by identifier.
+	 */
+	private function byIdentifier(array $definitions): array {
 		$byIdentifier = [];
-		foreach ($ordered as $definition) {
+		foreach ($definitions as $definition) {
 			$identifier = (string)($definition['identifier'] ?? '');
 			if ($identifier !== '') {
 				$byIdentifier[$identifier] = $definition;
 			}
 		}
 
-		// The cumulative sum is over the items that name NO predecessor, in
-		// order, and over those only. Counting a dependent item into the
-		// running total would push every later independent item out by work
-		// that hangs off a different branch entirely.
+		return $byIdentifier;
+	}//end byIdentifier()
+
+	/**
+	 * The running total of working days of the items that name no predecessor, in order.
+	 *
+	 * The cumulative sum is over the items that name NO predecessor, in
+	 * order, and over those only. Counting a dependent item into the
+	 * running total would push every later independent item out by work
+	 * that hangs off a different branch entirely.
+	 *
+	 * @param array<int, array<string, mixed>> $ordered The definitions, in order.
+	 *
+	 * @return array<string, int> The running total at each predecessor-less item, by identifier.
+	 */
+	private function cumulativeDurations(array $ordered): array {
 		$cumulative = [];
 		$running = 0;
 		foreach ($ordered as $definition) {
@@ -117,21 +152,8 @@ class MilestoneSchedule {
 			$cumulative[$identifier] = $running;
 		}
 
-		$dates = [];
-		foreach ($byIdentifier as $identifier => $definition) {
-			$this->resolve(
-				identifier: $identifier,
-				byIdentifier: $byIdentifier,
-				cumulative: $cumulative,
-				caseStart: $caseStart,
-				reached: $reached,
-				dates: $dates,
-				depth: 0
-			);
-		}
-
-		return $dates;
-	}//end project()
+		return $cumulative;
+	}//end cumulativeDurations()
 
 	/**
 	 * The identifiers that form a dependency cycle, or an empty list.
@@ -148,22 +170,9 @@ class MilestoneSchedule {
 	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/milestone-tracking/spec.md
 	 */
 	public function cycle(array $definitions): array {
-		$byIdentifier = [];
-		foreach ($definitions as $definition) {
-			$identifier = (string)($definition['identifier'] ?? '');
-			if ($identifier !== '') {
-				$byIdentifier[$identifier] = $definition;
-			}
-		}
-
-		$state = [];
-		foreach (array_keys($byIdentifier) as $identifier) {
-			$found = $this->walkForCycle(
-				identifier: $identifier,
-				byIdentifier: $byIdentifier,
-				state: $state,
-				path: []
-			);
+		$search = new CycleSearch(byIdentifier: $this->byIdentifier(definitions: $definitions));
+		foreach (array_keys($search->byIdentifier) as $identifier) {
+			$found = $this->walkFrom(search: $search, identifier: $identifier);
 			if (count($found) > 0) {
 				return $found;
 			}
@@ -214,13 +223,8 @@ class MilestoneSchedule {
 	/**
 	 * Resolve one milestone's date, recursively.
 	 *
-	 * @param string $identifier The milestone to resolve.
-	 * @param array<string, array<string, mixed>> $byIdentifier Every definition, by identifier.
-	 * @param array<string, int> $cumulative The running total for predecessor-less items.
-	 * @param DateTimeImmutable $caseStart The case start date.
-	 * @param array<string, DateTimeImmutable> $reached Actual dates, by identifier.
-	 * @param array<string, DateTimeImmutable> $dates The memo, written in place.
-	 * @param int $depth The current recursion depth.
+	 * @param MilestoneProjection $run  The projection, whose memo this writes.
+	 * @param ChainStep           $step The milestone to resolve and the depth of the walk.
 	 *
 	 * @return DateTimeImmutable|null The date, or null when it cannot be resolved.
 	 *
@@ -228,65 +232,52 @@ class MilestoneSchedule {
 	 * call that folds a predecessor's date into this one. Psalm does not count
 	 * a method's call to itself, so it sees only `project()`'s outer loop,
 	 * which discards it on purpose: that loop wants the memo, and the memo is
-	 * `$dates`, written by reference so a diamond in the chain is resolved
+	 * `$run->dates`, written in place so a diamond in the chain is resolved
 	 * once rather than once per path into it.
 	 */
-	private function resolve(
-		string $identifier,
-		array $byIdentifier,
-		array $cumulative,
-		DateTimeImmutable $caseStart,
-		array $reached,
-		array &$dates,
-		int $depth,
-	): ?DateTimeImmutable {
-		if (isset($dates[$identifier]) === true) {
-			return $dates[$identifier];
+	private function resolve(MilestoneProjection $run, ChainStep $step): ?DateTimeImmutable {
+		$identifier = $step->identifier;
+		if (isset($run->dates[$identifier]) === true) {
+			return $run->dates[$identifier];
 		}
 
-		if ($depth > self::MAX_CHAIN_DEPTH || isset($byIdentifier[$identifier]) === false) {
+		if ($step->depth > self::MAX_CHAIN_DEPTH || isset($run->byIdentifier[$identifier]) === false) {
 			return null;
 		}
 
 		// A milestone that has been reached IS its date. Projecting over the
 		// top of a fact is how a timeline ends up disagreeing with the record
 		// of what happened.
-		if (isset($reached[$identifier]) === true) {
-			$dates[$identifier] = $reached[$identifier];
-			return $dates[$identifier];
-		}
+		$run->dates[$identifier] = ($run->reached[$identifier] ?? $this->projectedDate(run: $run, step: $step));
 
-		$definition = $byIdentifier[$identifier];
-		$predecessors = $this->predecessorsOf(definition: $definition);
+		return $run->dates[$identifier];
+	}//end resolve()
 
-		if (count($predecessors) === 0) {
-			$dates[$identifier] = $this->workingDays->addWorkingDays(
-				start: $caseStart,
-				days: (int)($cumulative[$identifier] ?? $this->durationOf(definition: $definition))
+	/**
+	 * The projected date of a milestone that is not reached yet.
+	 *
+	 * @param MilestoneProjection $run  The projection.
+	 * @param ChainStep           $step The milestone and the depth of the walk.
+	 *
+	 * @return DateTimeImmutable The date.
+	 */
+	private function projectedDate(MilestoneProjection $run, ChainStep $step): DateTimeImmutable {
+		$definition = $run->byIdentifier[$step->identifier];
+		if (count($this->predecessorsOf(definition: $definition)) === 0) {
+			return $this->workingDays->addWorkingDays(
+				start: $run->caseStart,
+				days: (int)($run->cumulative[$step->identifier] ?? $this->durationOf(definition: $definition))
 			);
-			return $dates[$identifier];
 		}
 
 		// Every named predecessor missing from this case type falls back to the
 		// case start: the declaration points at nothing, and dropping the
 		// milestone off the timeline would hide that rather than show it.
-		$from = $this->latestPredecessorDate(
-			predecessors: $predecessors,
-			byIdentifier: $byIdentifier,
-			cumulative: $cumulative,
-			caseStart: $caseStart,
-			reached: $reached,
-			dates: $dates,
-			depth: $depth,
-		) ?? $caseStart;
-
-		$dates[$identifier] = $this->workingDays->addWorkingDays(
-			start: $from,
+		return $this->workingDays->addWorkingDays(
+			start: ($this->latestPredecessorDate(run: $run, step: $step) ?? $run->caseStart),
 			days: $this->durationOf(definition: $definition)
 		);
-
-		return $dates[$identifier];
-	}//end resolve()
+	}//end projectedDate()
 
 	/**
 	 * The latest date among a milestone's predecessors, or null when none resolve.
@@ -294,37 +285,15 @@ class MilestoneSchedule {
 	 * All of them must be reached before this one, so the date that satisfies
 	 * the declaration is the LATEST of them, not the first.
 	 *
-	 * @param array<int, string>                    $predecessors The declared predecessors.
-	 * @param array<string, array<string, mixed>>   $byIdentifier Every milestone by identifier.
-	 * @param array<string, int>                    $cumulative   The cumulative durations.
-	 * @param DateTimeImmutable                     $caseStart    When the case started.
-	 * @param array<string, DateTimeImmutable>      $reached      The milestones already reached.
-	 * @param array<string, DateTimeImmutable>      $dates        The memo, written in place.
-	 * @param int                                   $depth        How deep the chain walk is.
+	 * @param MilestoneProjection $run  The projection.
+	 * @param ChainStep           $step The milestone whose predecessors are read.
 	 *
 	 * @return DateTimeImmutable|null The latest predecessor date, or null when none resolved.
 	 */
-	private function latestPredecessorDate(
-		array $predecessors,
-		array $byIdentifier,
-		array $cumulative,
-		DateTimeImmutable $caseStart,
-		array $reached,
-		array &$dates,
-		int $depth,
-	): ?DateTimeImmutable {
+	private function latestPredecessorDate(MilestoneProjection $run, ChainStep $step): ?DateTimeImmutable {
 		$from = null;
-		foreach ($predecessors as $predecessor) {
-			$predecessorDate = $this->resolve(
-				identifier: $predecessor,
-				byIdentifier: $byIdentifier,
-				cumulative: $cumulative,
-				caseStart: $caseStart,
-				reached: $reached,
-				dates: $dates,
-				depth: ($depth + 1)
-			);
-
+		foreach ($this->predecessorsOf(definition: $run->byIdentifier[$step->identifier]) as $predecessor) {
+			$predecessorDate = $this->resolve(run: $run, step: $step->toPredecessor(identifier: $predecessor));
 			if ($predecessorDate !== null && ($from === null || $predecessorDate > $from)) {
 				$from = $predecessorDate;
 			}
@@ -334,55 +303,69 @@ class MilestoneSchedule {
 	}//end latestPredecessorDate()
 
 	/**
-	 * Depth-first walk looking for a cycle.
+	 * Walk for a cycle from one definition.
 	 *
-	 * @param string $identifier The node to walk from.
-	 * @param array<string, array<string, mixed>> $byIdentifier Every definition, by identifier.
-	 * @param array<string, string> $state Node colours, written in place.
-	 * @param string[] $path The chain walked so far.
+	 * @param CycleSearch $search     The definitions and the node colours.
+	 * @param string      $identifier The node to walk from.
 	 *
 	 * @return string[] The cycle, or [].
 	 */
-	private function walkForCycle(string $identifier, array $byIdentifier, array &$state, array $path): array {
-		if (($state[$identifier] ?? '') === 'done') {
+	private function walkFrom(CycleSearch $search, string $identifier): array {
+		return $this->walkForCycle(search: $search, trail: [$identifier]);
+	}//end walkFrom()
+
+	/**
+	 * Depth-first walk looking for a cycle.
+	 *
+	 * @param CycleSearch $search The definitions and the node colours, written in place.
+	 * @param string[]    $trail  The chain walked so far, ending at the node to walk from.
+	 *
+	 * @return string[] The cycle, or [].
+	 */
+	private function walkForCycle(CycleSearch $search, array $trail): array {
+		$identifier = (string)end($trail);
+		$colour = ($search->state[$identifier] ?? '');
+		if ($colour === 'walking') {
+			return $this->cycleOn(trail: $trail);
+		}
+
+		if ($colour === 'done' || isset($search->byIdentifier[$identifier]) === false) {
 			return [];
 		}
 
-		if (($state[$identifier] ?? '') === 'walking') {
-			// Report the cycle itself, not the path that led into it: an
-			// administrator has to know which items to break, and the run-up
-			// is not part of the answer.
-			$start = array_search($identifier, $path, true);
-			if ($start === false) {
-				return [$identifier];
-			}
-
-			return array_values(array_slice($path, (int)$start));
-		}
-
-		if (isset($byIdentifier[$identifier]) === false) {
-			return [];
-		}
-
-		$state[$identifier] = 'walking';
-		$path[] = $identifier;
-
-		foreach ($this->predecessorsOf(definition: $byIdentifier[$identifier]) as $predecessor) {
-			$found = $this->walkForCycle(
-				identifier: $predecessor,
-				byIdentifier: $byIdentifier,
-				state: $state,
-				path: $path
-			);
+		$search->state[$identifier] = 'walking';
+		foreach ($this->predecessorsOf(definition: $search->byIdentifier[$identifier]) as $predecessor) {
+			$found = $this->walkForCycle(search: $search, trail: [...$trail, $predecessor]);
 			if (count($found) > 0) {
 				return $found;
 			}
 		}
 
-		$state[$identifier] = 'done';
+		$search->state[$identifier] = 'done';
 
 		return [];
 	}//end walkForCycle()
+
+	/**
+	 * The cycle a trail closed, without the run-up that led into it.
+	 *
+	 * An administrator has to know which items to break, and the run-up is
+	 * not part of the answer.
+	 *
+	 * @param string[] $trail The chain walked, ending at the node seen again.
+	 *
+	 * @return string[] The cycle.
+	 */
+	private function cycleOn(array $trail): array {
+		$identifier = (string)end($trail);
+		$path = array_slice($trail, 0, -1);
+		$start = array_search($identifier, $path, true);
+		if ($start === false) {
+			return [$identifier];
+		}
+
+		return array_values(array_slice($path, (int)$start));
+	}//end cycleOn()
 
 	/**
 	 * The identifiers this definition waits on.

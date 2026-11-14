@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Product;
 
+use OCA\Dossiq\Kernel\Contracts\CaseOutcomeProductIssuerInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -39,9 +40,9 @@ use Throwable;
  * decision app's outcome event). The decision outcome reaches it through
  * DecisionConcludedListener.
  *
- * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
+ * @spec openspec/changes/archive/2026-10-30-portal-permits-as-held-products/tasks.md#2.1
  */
-class CaseOutcomeProductIssuer {
+class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 	use SearchesObjects;
 
 	/**
@@ -88,7 +89,7 @@ class CaseOutcomeProductIssuer {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
+	 * @spec openspec/changes/archive/2026-10-30-portal-permits-as-held-products/tasks.md#2.1
 	 */
 	public function onConcludedDecision(string $caseId, string $decisionId, string $status, ?string $decidedAt): void {
 		try {
@@ -114,7 +115,7 @@ class CaseOutcomeProductIssuer {
 	 *
 	 * @return array<string, mixed>|null The product written or changed, or null.
 	 *
-	 * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
+	 * @spec openspec/changes/archive/2026-10-30-portal-permits-as-held-products/tasks.md#2.1
 	 */
 	public function issueFor(string $caseId, string $decisionId, string $status, ?string $decidedAt): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -124,7 +125,7 @@ class CaseOutcomeProductIssuer {
 		}
 
 		$case = $this->read(objectService: $objectService, register: $register, schema: 'case', id: $caseId);
-		$declared = $this->declarationFor(objectService: $objectService, register: $register, case: $case);
+		$declared = $this->declarationFor(objectService: $objectService, register: $register, caseObject: $case);
 		if ($case === null || $declared === null) {
 			return null;
 		}
@@ -134,18 +135,12 @@ class CaseOutcomeProductIssuer {
 			return null;
 		}
 
+		$outcome = new ProductOutcome(objectService: $objectService, register: $register, caseObject: $case, declared: $declared);
 		if (is_array($declared['changesProduct'] ?? null) === true) {
-			return $this->change(objectService: $objectService, register: $register, case: $case, declared: $declared);
+			return $this->change(outcome: $outcome);
 		}
 
-		return $this->issue(
-			objectService: $objectService,
-			register: $register,
-			case: $case,
-			declared: $declared,
-			decisionId: $decisionId,
-			decidedAt: $decidedAt
-		);
+		return $this->issue(outcome: $outcome, decision: new ProductDecision(id: $decisionId, decidedAt: $decidedAt));
 	}//end onConcludedDecision()
 
 	/**
@@ -153,16 +148,16 @@ class CaseOutcomeProductIssuer {
 	 *
 	 * @param object                    $objectService OpenRegister's object service.
 	 * @param string                    $register      The register.
-	 * @param array<string, mixed>|null $case          The case.
+	 * @param array<string, mixed>|null $caseObject    The case.
 	 *
 	 * @return array<string, mixed>|null The declaration.
 	 */
-	private function declarationFor(object $objectService, string $register, ?array $case): ?array {
-		if ($case === null) {
+	private function declarationFor(object $objectService, string $register, ?array $caseObject): ?array {
+		if ($caseObject === null) {
 			return null;
 		}
 
-		$type = $this->read(objectService: $objectService, register: $register, schema: 'caseType', id: (string)($case['caseType'] ?? ''));
+		$type = $this->read(objectService: $objectService, register: $register, schema: 'caseType', id: (string)($caseObject['caseType'] ?? ''));
 		$declared = (($type ?? [])['issuesPermit'] ?? null);
 		if (is_array($declared) === false || $declared === []) {
 			return null;
@@ -174,42 +169,76 @@ class CaseOutcomeProductIssuer {
 	/**
 	 * Write the case's product, once per decision.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register.
-	 * @param array<string, mixed> $case          The case.
-	 * @param array<string, mixed> $declared      The case type's product declaration.
-	 * @param string               $decisionId    The decision.
-	 * @param string|null          $decidedAt     When it concluded.
+	 * @param ProductOutcome  $outcome  The case and its declaration.
+	 * @param ProductDecision $decision The decision.
 	 *
 	 * @return array<string, mixed>|null The product.
 	 */
-	private function issue(object $objectService, string $register, array $case, array $declared, string $decisionId, ?string $decidedAt): ?array {
-		$holder = trim((string)($case['portalSubject'] ?? ''));
-		if ($holder === '') {
-			$this->logger->info('Dossiq: a case without a portal subject issues no product', ['case' => ($case['id'] ?? '')]);
+	private function issue(ProductOutcome $outcome, ProductDecision $decision): ?array {
+		if (trim((string)($outcome->caseObject['portalSubject'] ?? '')) === '') {
+			$this->logger->info('Dossiq: a case without a portal subject issues no product', ['case' => ($outcome->caseObject['id'] ?? '')]);
 			return null;
 		}
 
-		$schema = $this->schemaOf(declared: $declared);
+		$existing = $this->issuedFor(outcome: $outcome, decisionId: $decision->id);
+		if ($existing !== null) {
+			return $existing;
+		}
+
+		$product = $this->productFor(outcome: $outcome, decision: $decision);
+
+		return $this->runAsSystemIfAvailable(
+			objectService: $outcome->objectService,
+			operation: fn (): ?array => $this->saveObjectAsArray(
+				objectService: $outcome->objectService,
+				register: $outcome->register,
+				schema: $this->schemaOf(declared: $outcome->declared),
+				object: $product
+			)
+		);
+	}//end issue()
+
+	/**
+	 * The product already issued for this decision, or null.
+	 *
+	 * @param ProductOutcome $outcome    The case and its declaration.
+	 * @param string         $decisionId The decision.
+	 *
+	 * @return array<string, mixed>|null The product.
+	 */
+	private function issuedFor(ProductOutcome $outcome, string $decisionId): ?array {
 		$existing = $this->runAsSystemIfAvailable(
-			objectService: $objectService,
+			objectService: $outcome->objectService,
 			operation: fn (): array => $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $outcome->objectService,
+				register: $outcome->register,
+				schema: $this->schemaOf(declared: $outcome->declared),
 				filters: ['decision' => $decisionId, '_limit' => 1],
 			)
 		);
-		if (is_array($existing) === true && $existing !== []) {
-			return $existing[0];
+		if (is_array($existing) === false || $existing === []) {
+			return null;
 		}
 
+		return $existing[0];
+	}//end issuedFor()
+
+	/**
+	 * The product a decision issues, without its empty fields.
+	 *
+	 * @param ProductOutcome  $outcome  The case and its declaration.
+	 * @param ProductDecision $decision The decision.
+	 *
+	 * @return array<string, mixed> The product.
+	 */
+	private function productFor(ProductOutcome $outcome, ProductDecision $decision): array {
+		$declared = $outcome->declared;
 		$product = [
-			'title' => $this->title(template: (string)($declared['titleTemplate'] ?? ''), case: $case),
-			'portalSubject' => $holder,
-			'case' => (string)($case['id'] ?? ''),
-			'decision' => $decisionId,
-			'validFrom' => $this->day(instant: $decidedAt),
+			'title' => $this->title(outcome: $outcome),
+			'portalSubject' => trim((string)$outcome->caseObject['portalSubject']),
+			'case' => (string)($outcome->caseObject['id'] ?? ''),
+			'decision' => $decision->id,
+			'validFrom' => $this->day(instant: $decision->decidedAt),
 			'status' => 'active',
 		];
 		foreach (self::STATIC_FIELDS as $field) {
@@ -217,76 +246,127 @@ class CaseOutcomeProductIssuer {
 		}
 
 		foreach ((array)($declared['detailsFromCase'] ?? []) as $field => $source) {
-			$product[(string)$field] = $this->shaped(declared: $declared, field: (string)$field, value: $this->caseValue(case: $case, name: (string)$source));
+			$product[(string)$field] = $outcome->stored(field: (string)$field, name: (string)$source);
 		}
 
-		$product = array_filter($product, static fn ($value): bool => $value !== '');
-
-		return $this->runAsSystemIfAvailable(
-			objectService: $objectService,
-			operation: fn (): ?array => $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $product
-			)
-		);
-	}//end issue()
+		return array_filter($product, static fn ($value): bool => $value !== '');
+	}//end productFor()
 
 	/**
 	 * Set the fields a change case declares on the product it names.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register.
-	 * @param array<string, mixed> $case          The change case.
-	 * @param array<string, mixed> $declared      The change case type's product declaration.
+	 * @param ProductOutcome $outcome The change case and its declaration.
 	 *
 	 * @return array<string, mixed>|null The product, changed.
 	 */
-	private function change(object $objectService, string $register, array $case, array $declared): ?array {
-		$changes = (array)$declared['changesProduct'];
-		$schema = $this->schemaOf(declared: $declared);
-		$productId = $this->caseValue(case: $case, name: (string)($changes['answer'] ?? ''));
-		$product = $this->read(objectService: $objectService, register: $register, schema: $schema, id: $productId);
-		if ($product === null) {
+	private function change(ProductOutcome $outcome): ?array {
+		$changes = (array)$outcome->declared['changesProduct'];
+		$productId = $outcome->answer(name: (string)($changes['answer'] ?? ''));
+		if ($this->changeableProduct(outcome: $outcome, productId: $productId) === false) {
 			return null;
 		}
 
-		// Only the requester's own product, and only while it is in force: a
-		// change case can name any id, and the decision is about this case.
-		if ((string)($product['portalSubject'] ?? '') !== (string)($case['portalSubject'] ?? '')
-			|| (string)($product['status'] ?? 'active') !== 'active'
-		) {
-			$this->logger->warning(
-				'Dossiq: a change case names a product that is not its requester\'s or not in force',
-				['case' => ($case['id'] ?? ''), 'product' => $productId]
-			);
-			return null;
-		}
-
-		$set = [];
-		foreach ((array)($changes['set'] ?? []) as $field => $answer) {
-			$value = $this->shaped(declared: $declared, field: (string)$field, value: $this->caseValue(case: $case, name: (string)$answer));
-			if ($value !== '') {
-				$set[(string)$field] = $value;
-			}
-		}
-
+		$set = $this->changeSet(outcome: $outcome, set: (array)($changes['set'] ?? []));
 		if ($set === []) {
 			return null;
 		}
 
+		return $this->patchProduct(outcome: $outcome, productId: $productId, set: $set);
+	}//end change()
+
+	/**
+	 * Whether the product a change case names exists and is its requester's own and in force; logged when not.
+	 *
+	 * @param ProductOutcome $outcome   The change case and its declaration, which names the product schema.
+	 * @param string         $productId The product the change case names.
+	 *
+	 * @return bool True when the product may be changed.
+	 */
+	private function changeableProduct(ProductOutcome $outcome, string $productId): bool {
+		$product = $this->read(
+			objectService: $outcome->objectService,
+			register: $outcome->register,
+			schema: $this->schemaOf(declared: $outcome->declared),
+			id: $productId
+		);
+		if ($product === null) {
+			return false;
+		}
+
+		if ($this->inForceFor(outcome: $outcome, product: $product) === false) {
+			$this->logger->warning(
+				'Dossiq: a change case names a product that is not its requester\'s or not in force',
+				['case' => ($outcome->caseObject['id'] ?? ''), 'product' => $productId]
+			);
+			return false;
+		}
+
+		return true;
+	}//end changeableProduct()
+
+	/**
+	 * Write the change set onto the product, as the system when the object service offers it.
+	 *
+	 * @param ProductOutcome       $outcome   The change case and its declaration, which names the product schema.
+	 * @param string               $productId The product.
+	 * @param array<string, mixed> $set       The fields to set.
+	 *
+	 * @return array<string, mixed>|null The product, changed.
+	 */
+	private function patchProduct(ProductOutcome $outcome, string $productId, array $set): ?array {
+		$schema = $this->schemaOf(declared: $outcome->declared);
 		return $this->runAsSystemIfAvailable(
-			objectService: $objectService,
+			objectService: $outcome->objectService,
 			operation: fn (): ?array => $this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
+				objectService: $outcome->objectService,
+				register: $outcome->register,
 				schema: $schema,
 				id: $productId,
 				changes: $set
 			)
 		);
-	}//end change()
+	}//end patchProduct()
+
+	/**
+	 * Whether a product is the change case requester's own and still in force.
+	 *
+	 * A change case can name any id, and the decision is about this case. A
+	 * case without a holder owns no product, and only a product whose status
+	 * says `active` is in force.
+	 *
+	 * @param ProductOutcome       $outcome The change case.
+	 * @param array<string, mixed> $product The product it names.
+	 *
+	 * @return bool True when the change may be made.
+	 */
+	private function inForceFor(ProductOutcome $outcome, array $product): bool {
+		$holder = (string)($outcome->caseObject['portalSubject'] ?? '');
+		if (trim($holder) === '' || (string)($product['portalSubject'] ?? '') !== $holder) {
+			return false;
+		}
+
+		return (string)($product['status'] ?? '') === 'active';
+	}//end inForceFor()
+
+	/**
+	 * The product fields a change case sets, without the empty ones.
+	 *
+	 * @param ProductOutcome        $outcome The change case.
+	 * @param array<string|int, mixed> $set  Product field => case answer name.
+	 *
+	 * @return array<string, string> The fields to set.
+	 */
+	private function changeSet(ProductOutcome $outcome, array $set): array {
+		$changes = [];
+		foreach ($set as $field => $answer) {
+			$value = $outcome->stored(field: (string)$field, name: (string)$answer);
+			if ($value !== '') {
+				$changes[(string)$field] = $value;
+			}
+		}
+
+		return $changes;
+	}//end changeSet()
 
 	/**
 	 * The product schema a declaration names.
@@ -305,65 +385,22 @@ class CaseOutcomeProductIssuer {
 	}//end schemaOf()
 
 	/**
-	 * A value as the declaration wants it stored.
-	 *
-	 * @param array<string, mixed> $declared The declaration.
-	 * @param string               $field    The product field.
-	 * @param string               $value    The raw value.
-	 *
-	 * @return string The value.
-	 */
-	private function shaped(array $declared, string $field, string $value): string {
-		if (in_array($field, (array)($declared['compactFields'] ?? []), true) === true) {
-			return strtoupper((string)preg_replace('/[\s-]+/', '', $value));
-		}
-
-		return $value;
-	}//end shaped()
-
-	/**
-	 * A case value by name: a top-level field, else a case-type property answer.
-	 *
-	 * @param array<string, mixed> $case The case.
-	 * @param string               $name The name.
-	 *
-	 * @return string The value, or ''.
-	 */
-	private function caseValue(array $case, string $name): string {
-		if ($name === '') {
-			return '';
-		}
-
-		if (is_scalar($case[$name] ?? null) === true) {
-			return trim((string)$case[$name]);
-		}
-
-		foreach ((array)($case['properties'] ?? []) as $answer) {
-			if (is_array($answer) === true && ($answer['name'] ?? null) === $name && is_scalar($answer['value'] ?? null) === true) {
-				return trim((string)$answer['value']);
-			}
-		}
-
-		return '';
-	}//end caseValue()
-
-	/**
 	 * The product title: the template with case values in double braces.
 	 *
-	 * @param string               $template The title template.
-	 * @param array<string, mixed> $case     The case.
+	 * @param ProductOutcome $outcome The case and its declaration.
 	 *
 	 * @return string The title.
 	 */
-	private function title(string $template, array $case): string {
+	private function title(ProductOutcome $outcome): string {
+		$template = (string)($outcome->declared['titleTemplate'] ?? '');
 		if (trim($template) === '') {
-			return trim((string)($case['title'] ?? ''));
+			return trim((string)($outcome->caseObject['title'] ?? ''));
 		}
 
 		return trim(
 			(string)preg_replace_callback(
 				'/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/',
-				fn (array $match): string => $this->caseValue(case: $case, name: $match[1]),
+				fn (array $match): string => $outcome->answer(name: $match[1]),
 				$template
 			)
 		);

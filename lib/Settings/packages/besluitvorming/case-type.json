@@ -52,69 +52,85 @@
   "statusTypes": [
     {
       "id": "ec39b5a0-6c03-5015-bebb-7dd55e10317b",
+      "phase": "Beoordeling",
       "name": "Voorstel opstellen",
       "order": 1,
       "isFinal": false,
       "description": "Ambtenaar stelt het collegeadvies op",
       "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
-      "role": "intake"
+      "role": "intake",
+      "colour": "purple"
     },
     {
       "id": "a25d2a57-34e5-53eb-ac90-a8dd8635d835",
+      "phase": "Advies",
       "name": "Ambtelijk advies",
       "order": 2,
       "isFinal": false,
       "description": "Inhoudelijk advies door beleidsadviseur",
       "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
-      "role": "in-progress"
+      "role": "in-progress",
+      "colour": "purple"
     },
     {
       "id": "4e78b56b-70d5-5314-b959-d9f0d9279636",
+      "phase": "Advies",
       "name": "Parafering",
       "order": 3,
       "isFinal": false,
       "description": "Sequentiele goedkeuring door de gemandateerde functionarissen",
-      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
+      "colour": "purple"
     },
     {
       "id": "68ab762b-d585-537a-90c2-09cb8677c5e3",
+      "phase": "Advies",
       "name": "Gereed voor agendering",
       "order": 4,
       "isFinal": false,
       "description": "Alle parafen verzameld, klaar voor planning vergadering",
-      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
+      "colour": "orange"
     },
     {
       "id": "6358773e-715f-535b-90c7-e06536561575",
+      "phase": "Advies",
       "name": "Geagendeerd",
       "order": 5,
       "isFinal": false,
       "description": "Opgevoerd op de agenda van een vergadering",
-      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
+      "colour": "orange"
     },
     {
       "id": "522f28c3-005f-510c-9524-8cf548650725",
+      "phase": "Advies",
       "name": "Vergadering",
       "order": 6,
       "isFinal": false,
       "description": "Behandeling tijdens de vergadering",
-      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
+      "colour": "orange"
     },
     {
       "id": "e7da32f4-314d-5e9f-a0c4-6319a784b245",
+      "phase": "Besluit",
       "name": "Besluit genomen",
       "order": 7,
       "isFinal": false,
       "description": "Besluit geregistreerd inclusief stemuitslag",
-      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
+      "colour": "teal"
     },
     {
       "id": "7e229319-9026-555d-bc6c-ec64e4c03a89",
+      "phase": "Verzending",
       "name": "Bekendmaking",
       "order": 8,
       "isFinal": false,
       "description": "Publicatie via DROP of LVBB",
-      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
+      "colour": "green"
     },
     {
       "id": "0960a903-030a-5187-a033-7c5645497b7d",
@@ -123,73 +139,90 @@
       "isFinal": true,
       "description": "Dossier gearchiveerd conform selectielijst",
       "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
-      "role": "closed"
+      "role": "closed",
+      "colour": "grey"
     },
     {
       "id": "5903b223-f0fe-580f-8c48-f9986b7583f8",
+      "phase": "Beoordeling",
       "name": "Voorstel opstellen",
       "order": 1,
       "isFinal": false,
       "description": "Steller stelt het raadsvoorstel op",
       "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
-      "role": "intake"
+      "role": "intake",
+      "colour": "purple"
     },
     {
       "id": "d741a40f-1077-5601-8159-6d8013c341c8",
+      "phase": "Advies",
       "name": "Ambtelijk advies",
       "order": 2,
       "isFinal": false,
       "description": "Inhoudelijk advies door beleidsadviseur",
       "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
-      "role": "in-progress"
+      "role": "in-progress",
+      "colour": "purple"
     },
     {
       "id": "6c4b7ed5-86b3-50e9-a2f7-5f3b3e8e0821",
+      "phase": "Advies",
       "name": "Parafering",
       "order": 3,
       "isFinal": false,
       "description": "Sequentiele goedkeuring inclusief griffier",
-      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
+      "colour": "purple"
     },
     {
       "id": "c6caebc9-ddff-51ef-a71e-81e7310fd6d5",
+      "phase": "Advies",
       "name": "Gereed voor agendering",
       "order": 4,
       "isFinal": false,
       "description": "Klaar voor planning raadsvergadering",
-      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
+      "colour": "orange"
     },
     {
       "id": "5c6454ae-ee88-57a0-b616-05a936722b0a",
+      "phase": "Advies",
       "name": "Geagendeerd",
       "order": 5,
       "isFinal": false,
       "description": "Opgevoerd op de raadsagenda",
-      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
+      "colour": "orange"
     },
     {
       "id": "fd6b0705-1872-5e91-86d2-4bed79370f11",
+      "phase": "Advies",
       "name": "Vergadering",
       "order": 6,
       "isFinal": false,
       "description": "Behandeling tijdens de raadsvergadering",
-      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
+      "colour": "orange"
     },
     {
       "id": "37063211-c7c3-5f21-b39b-a831bc5f7d4e",
+      "phase": "Besluit",
       "name": "Besluit genomen",
       "order": 7,
       "isFinal": false,
       "description": "Raadsbesluit geregistreerd inclusief stemuitslag",
-      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
+      "colour": "teal"
     },
     {
       "id": "64dbb5e3-7252-5a9e-a5d7-6b42bb415bd1",
+      "phase": "Verzending",
       "name": "Bekendmaking",
       "order": 8,
       "isFinal": false,
       "description": "Publicatie via DROP of LVBB",
-      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
+      "colour": "green"
     },
     {
       "id": "75ad89ae-75b8-56ea-8830-7f1f7985b6db",
@@ -198,65 +231,80 @@
       "isFinal": true,
       "description": "Dossier gearchiveerd conform selectielijst",
       "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
-      "role": "closed"
+      "role": "closed",
+      "colour": "grey"
     },
     {
       "id": "44ed85f7-efc6-5b89-81ec-84ffaa0924f2",
+      "phase": "Beoordeling",
       "name": "Voorstel opstellen",
       "order": 1,
       "isFinal": false,
       "description": "Steller stelt het DT-advies op",
       "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f",
-      "role": "intake"
+      "role": "intake",
+      "colour": "purple"
     },
     {
       "id": "707d6728-d489-51f0-bcd8-eab639874655",
+      "phase": "Advies",
       "name": "Ambtelijk advies",
       "order": 2,
       "isFinal": false,
       "description": "Inhoudelijk advies",
       "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f",
-      "role": "in-progress"
+      "role": "in-progress",
+      "colour": "purple"
     },
     {
       "id": "23463e09-831a-5ec7-8703-ac1d1541ada9",
+      "phase": "Advies",
       "name": "Parafering",
       "order": 3,
       "isFinal": false,
       "description": "Verkorte goedkeuring: beleidsadviseur en directeur",
-      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f",
+      "colour": "purple"
     },
     {
       "id": "8419cf95-a8b0-5c4a-a484-f44a433e3a07",
+      "phase": "Advies",
       "name": "Gereed voor agendering",
       "order": 4,
       "isFinal": false,
       "description": "Klaar voor besluit binnen mandaat",
-      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f",
+      "colour": "orange"
     },
     {
       "id": "66d7edd0-376b-5372-9559-7310d59c6404",
+      "phase": "Advies",
       "name": "Geagendeerd",
       "order": 5,
       "isFinal": false,
       "description": "Opgevoerd voor mandaatbesluit",
-      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f",
+      "colour": "orange"
     },
     {
       "id": "f3d21797-338b-59e3-96de-192560017727",
+      "phase": "Advies",
       "name": "Vergadering",
       "order": 6,
       "isFinal": false,
       "description": "Behandeling binnen mandaat",
-      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f",
+      "colour": "orange"
     },
     {
       "id": "3e35cc4e-c54b-52ed-85d5-50777c20819d",
+      "phase": "Besluit",
       "name": "Besluit genomen",
       "order": 7,
       "isFinal": false,
       "description": "Mandaatbesluit geregistreerd",
-      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f",
+      "colour": "teal"
     },
     {
       "id": "0b852d48-726b-53a9-ba1c-23cf85d06825",
@@ -265,7 +313,8 @@
       "isFinal": true,
       "description": "Dossier gearchiveerd conform selectielijst",
       "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f",
-      "role": "closed"
+      "role": "closed",
+      "colour": "grey"
     }
   ],
   "roleTypes": [

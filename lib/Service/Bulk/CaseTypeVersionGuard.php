@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Service\Bulk;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Throwable;
 
 /**
@@ -46,7 +47,7 @@ use Throwable;
  * declared: the engine's guard also covers a selection given as a query, which
  * this one does not resolve.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseTypeVersionGuard {
 
@@ -59,7 +60,7 @@ class CaseTypeVersionGuard {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -77,7 +78,7 @@ class CaseTypeVersionGuard {
 	 *
 	 * @throws MixedCaseTypeVersionsException When the selection spans versions.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function assertOneVersion(array $caseIds): void {
 		$caseTypeIds = $this->caseTypeIdsOf(caseIds: $caseIds);
@@ -85,6 +86,21 @@ class CaseTypeVersionGuard {
 			return;
 		}
 
+		$families = $this->familiesOf(caseTypeIds: $caseTypeIds);
+
+		$this->assertEachFamilyOneVersion(families: $families);
+	}//end assertOneVersion()
+
+	/**
+	 * The selection's case counts per case type family and version.
+	 *
+	 * @param array<string, int> $caseTypeIds How many selected cases sit on each case type.
+	 *
+	 * @return array<string, array{title: string, counts: array<int, int>}> The families.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function familiesOf(array $caseTypeIds): array {
 		$families = [];
 		foreach ($caseTypeIds as $caseTypeId => $caseCount) {
 			$caseType = $this->caseTypes->readCaseType(caseTypeId: (string)$caseTypeId);
@@ -102,6 +118,21 @@ class CaseTypeVersionGuard {
 			$families[$family]['counts'][$version] = (($families[$family]['counts'][$version] ?? 0) + $caseCount);
 		}
 
+		return $families;
+	}//end familiesOf()
+
+	/**
+	 * Refuse the first family whose cases run on two versions.
+	 *
+	 * @param array<string, array{title: string, counts: array<int, int>}> $families The families.
+	 *
+	 * @return void
+	 *
+	 * @throws MixedCaseTypeVersionsException When a family spans versions.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function assertEachFamilyOneVersion(array $families): void {
 		foreach ($families as $family) {
 			$counts = $family['counts'];
 			if (count($counts) < 2) {
@@ -117,7 +148,7 @@ class CaseTypeVersionGuard {
 				counts: array_map('intval', $counts),
 			);
 		}
-	}//end assertOneVersion()
+	}//end assertEachFamilyOneVersion()
 
 	/**
 	 * The case type of every selected case, and how many cases sit on it.
@@ -130,7 +161,7 @@ class CaseTypeVersionGuard {
 	 *
 	 * @return array<string, int> Case type uuid to case count.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function caseTypeIdsOf(array $caseIds): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -141,21 +172,23 @@ class CaseTypeVersionGuard {
 			return [];
 		}
 
+		return $this->countCaseTypes(objectService: $objectService, register: $register, schema: $schema, caseIds: $caseIds);
+	}//end caseTypeIdsOf()
+
+	/**
+	 * Count the cases per case type.
+	 *
+	 * @param object            $objectService OpenRegister's object service.
+	 * @param string            $register      The register.
+	 * @param string            $schema        The case schema.
+	 * @param array<int, mixed> $caseIds       The case ids.
+	 *
+	 * @return array<string, int> Cases per case type id.
+	 */
+	private function countCaseTypes(object $objectService, string $register, string $schema, array $caseIds): array {
 		$found = [];
 		foreach ($caseIds as $caseId) {
-			$caseId = trim((string)$caseId);
-			if ($caseId === '') {
-				continue;
-			}
-
-			try {
-				$case = $objectService->find($caseId, register: $register, schema: $schema);
-			} catch (Throwable $e) {
-				continue;
-			}
-
-			$row = $this->asArray(value: $case);
-			$caseTypeId = $this->caseTypes->referenceId(value: ($row['caseType'] ?? ''));
+			$caseTypeId = $this->caseTypeIdOf(objectService: $objectService, register: $register, schema: $schema, caseId: $caseId);
 			if ($caseTypeId === '') {
 				continue;
 			}
@@ -164,7 +197,33 @@ class CaseTypeVersionGuard {
 		}
 
 		return $found;
-	}//end caseTypeIdsOf()
+	}//end countCaseTypes()
+
+	/**
+	 * The case type of one case, or '' when the id is blank, the case cannot be read or names none.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register.
+	 * @param string $schema        The case schema.
+	 * @param mixed  $caseId        The case id.
+	 *
+	 * @return string
+	 */
+	private function caseTypeIdOf(object $objectService, string $register, string $schema, mixed $caseId): string {
+		$caseId = trim((string)$caseId);
+		if ($caseId === '') {
+			return '';
+		}
+
+		try {
+			$case = $objectService->find($caseId, register: $register, schema: $schema);
+		} catch (Throwable $e) {
+			return '';
+		}
+
+		$row = $this->asArray(value: $case);
+		return $this->caseTypes->referenceId(value: ($row['caseType'] ?? ''));
+	}//end caseTypeIdOf()
 
 	/**
 	 * The uuid of the oldest version in this case type's chain, which is what
@@ -178,7 +237,7 @@ class CaseTypeVersionGuard {
 	 *
 	 * @return string The family key.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function familyOf(array $caseType, string $caseTypeId): string {
 		$current = $caseType;
@@ -211,7 +270,7 @@ class CaseTypeVersionGuard {
 	 *
 	 * @return array<string, mixed> The row.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function asArray(mixed $value): array {
 		if (is_array($value) === true) {
@@ -228,14 +287,6 @@ class CaseTypeVersionGuard {
 			return [];
 		}
 
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end asArray()
 }//end class

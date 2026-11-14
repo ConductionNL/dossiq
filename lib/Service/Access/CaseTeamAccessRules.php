@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ namespace OCA\Dossiq\Service\Access;
 /**
  * Builds the case schema's authorization block from the shipped block and the case types.
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 class CaseTeamAccessRules {
 
@@ -58,8 +58,11 @@ class CaseTeamAccessRules {
 	 * The verbs a handling team holds on the cases of its case type.
 	 *
 	 * Delete is not one of them: it stays with administrators (Ruben, 2026-10-11).
+	 * The file verbs keep what a team could do with a case's files before the
+	 * case schema named them (case-type-rights-enforced): read, add and delete,
+	 * as reading and updating the case allowed.
 	 */
-	public const TEAM_ACTIONS = ['read', 'update'];
+	public const TEAM_ACTIONS = ['read', 'update', 'readFiles', 'addFiles', 'deleteFiles'];
 
 	/**
 	 * The case property the rule matches on.
@@ -74,7 +77,7 @@ class CaseTeamAccessRules {
 	 *
 	 * @return array<string, mixed> The block.
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function block(array $shipped, array $caseTypes): array {
 		$entries = $this->teamEntries(caseTypes: $caseTypes);
@@ -102,9 +105,26 @@ class CaseTeamAccessRules {
 	 *
 	 * @return array<int, array<string, mixed>> The entries, sorted by group.
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function teamEntries(array $caseTypes): array {
+		$byTeam = $this->caseTypesByTeam(caseTypes: $caseTypes);
+
+		ksort($byTeam, SORT_STRING);
+
+		return $this->entriesOf(byTeam: $byTeam);
+	}//end teamEntries()
+
+	/**
+	 * The case type ids each handling team handles.
+	 *
+	 * @param array<int, array{id: string, teams: array<int, string>}> $caseTypes Every case type, with its handling teams.
+	 *
+	 * @return array<string, array<string, true>> Case type ids by team.
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function caseTypesByTeam(array $caseTypes): array {
 		$byTeam = [];
 		foreach ($caseTypes as $caseType) {
 			$id = trim($caseType['id']);
@@ -112,18 +132,46 @@ class CaseTeamAccessRules {
 				continue;
 			}
 
-			foreach ($caseType['teams'] as $team) {
-				$team = trim($team);
-				if ($team === '') {
-					continue;
-				}
-
-				$byTeam[$team][$id] = true;
-			}
+			$byTeam = $this->withTeams(byTeam: $byTeam, id: $id, teams: $caseType['teams']);
 		}
 
-		ksort($byTeam, SORT_STRING);
+		return $byTeam;
+	}//end caseTypesByTeam()
 
+	/**
+	 * The teams map with one case type added under each of its non-empty teams.
+	 *
+	 * @param array<string, array<string, true>> $byTeam Case type ids by team so far.
+	 * @param string                             $id     The case type id.
+	 * @param array<int, string>                 $teams  Its handling teams.
+	 *
+	 * @return array<string, array<string, true>> Case type ids by team.
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function withTeams(array $byTeam, string $id, array $teams): array {
+		foreach ($teams as $team) {
+			$team = trim($team);
+			if ($team === '') {
+				continue;
+			}
+
+			$byTeam[$team][$id] = true;
+		}
+
+		return $byTeam;
+	}//end withTeams()
+
+	/**
+	 * One conditional entry per team, over its sorted case type ids.
+	 *
+	 * @param array<string, array<string, true>> $byTeam Case type ids by team.
+	 *
+	 * @return array<int, array<string, mixed>> The entries.
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function entriesOf(array $byTeam): array {
 		$entries = [];
 		foreach ($byTeam as $team => $ids) {
 			$caseTypeIds = array_map('strval', array_keys($ids));
@@ -135,5 +183,5 @@ class CaseTeamAccessRules {
 		}
 
 		return $entries;
-	}//end teamEntries()
+	}//end entriesOf()
 }//end class

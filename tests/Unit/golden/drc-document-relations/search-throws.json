@@ -1,0 +1,37 @@
+{
+    "calls": [
+        {
+            "getConfigValue": "document_link_schema"
+        },
+        {
+            "buildSearchQuery": {
+                "requestParams": {
+                    "document": "https://drc.example.com/enkelvoudiginformatieobjecten/71000000-1111-4222-8333-444455556666",
+                    "object": "https://zrc.example.com/zaken/73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "register": "5",
+                "schema": "11"
+            }
+        },
+        {
+            "searchObjectsPaginated": {
+                "q": {
+                    "document": "https://drc.example.com/enkelvoudiginformatieobjecten/71000000-1111-4222-8333-444455556666",
+                    "object": "https://zrc.example.com/zaken/73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "r": "5",
+                "s": "11"
+            }
+        }
+    ],
+    "answer": {
+        "valid": false,
+        "status": 503,
+        "detail": "De controle van regel drc-003 kon niet worden uitgevoerd. Er is niets gewijzigd. Probeer het later opnieuw.",
+        "invalidParams": [],
+        "enrichedBody": [],
+        "code": "check-not-completed"
+    }
+}

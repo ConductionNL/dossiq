@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CasePlanDrain;
 
+use OCA\Dossiq\Kernel\Contracts\CasePlanMigrationServiceInterface;
 use OCA\Dossiq\Service\CasePlanProjectionService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -49,16 +50,12 @@ use UnexpectedValueException;
  *
  * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-002-in-flight-cases-are-drained-losslessly
  */
-class CasePlanMigrationService {
+class CasePlanMigrationService implements CasePlanMigrationServiceInterface {
 	use SearchesObjects;
-
-	public const MIGRATED = 'migrated';
 
 	public const WOULD_MIGRATE = 'would_migrate';
 
 	public const EMPTY = 'empty';
-
-	public const UNMAPPABLE = 'unmappable';
 
 	/**
 	 * Page size for the case scan.
@@ -111,28 +108,67 @@ class CasePlanMigrationService {
 		// fail-closes an anonymous write, so the whole drain runs as system.
 		return $this->runAsSystemIfAvailable(
 			objectService: $objects,
-			operation: function () use ($objects, $register, $caseSchema, $typeSchema, $dryRun): array {
-				$reports = [];
-				$types = $this->searchObjectsAsArraysUnscoped(
-					objectService: $objects,
+			operation: fn (): array => $this->drainAll(
+				scope: new DrainScope(
+					objects: $objects,
 					register: $register,
-					schema: $typeSchema,
-					filters: ['handlingModel' => 'cmmn', '_limit' => self::PAGE]
-				);
-				foreach ($types as $type) {
-					$typeId = (string)($type['id'] ?? $type['uuid'] ?? '');
-					foreach ($this->casesOf(objects: $objects, register: $register, schema: $caseSchema, typeId: $typeId) as $case) {
-						$report = $this->migrateCase(case: $case, dryRun: $dryRun);
-						if ($report['outcome'] !== self::EMPTY) {
-							$reports[] = $report;
-						}
-					}
-				}
-
-				return $reports;
-			}
+					caseSchema: $caseSchema,
+					typeSchema: $typeSchema,
+					dryRun: $dryRun,
+				)
+			)
 		);
 	}//end migrateAll()
+
+	/**
+	 * Migrate every case of every CMMN case type, in the caller's security context.
+	 *
+	 * @param DrainScope $scope The object service, register, schemas and dry-run flag.
+	 *
+	 * @return array<int, array<string, mixed>> One report per case that carried a blob.
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-002-in-flight-cases-are-drained-losslessly
+	 */
+	private function drainAll(DrainScope $scope): array {
+		$reports = [];
+		$types = $this->searchObjectsAsArraysUnscoped(
+			objectService: $scope->objects,
+			register: $scope->register,
+			schema: $scope->typeSchema,
+			filters: ['handlingModel' => 'cmmn', '_limit' => self::PAGE]
+		);
+		foreach ($types as $type) {
+			$typeId = (string)($type['id'] ?? $type['uuid'] ?? '');
+			$reports = array_merge(
+				$reports,
+				$this->drainType(scope: $scope, typeId: $typeId)
+			);
+		}
+
+		return $reports;
+	}//end drainAll()
+
+	/**
+	 * Migrate every case of one case type.
+	 *
+	 * @param DrainScope $scope  The object service, register, case schema and dry-run flag.
+	 * @param string     $typeId The case type id.
+	 *
+	 * @return array<int, array<string, mixed>> One report per case that carried a blob.
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-002-in-flight-cases-are-drained-losslessly
+	 */
+	private function drainType(DrainScope $scope, string $typeId): array {
+		$reports = [];
+		foreach ($this->casesOf(scope: $scope, typeId: $typeId) as $case) {
+			$report = $this->migrateCase(case: $case, dryRun: $scope->dryRun);
+			if ($report['outcome'] !== self::EMPTY) {
+				$reports[] = $report;
+			}
+		}
+
+		return $reports;
+	}//end drainType()
 
 	/**
 	 * Migrate one case by uuid.
@@ -200,20 +236,20 @@ class CasePlanMigrationService {
 			return $this->report(caseId: $caseId, outcome: self::WOULD_MIGRATE, reason: 'dry_run');
 		}
 
-		return $this->commit(caseId: $caseId, blob: $blob, definition: $definition, history: $history);
+		return $this->commit(drained: new CaseWithBlob(caseId: $caseId, blob: $blob), definition: $definition, history: $history);
 	}//end migrateCase()
 
 	/**
 	 * Ensure the rows, write the case file, verify, clear the blob.
 	 *
-	 * @param string               $caseId     The case uuid.
-	 * @param array<string, mixed> $blob       The decoded blob.
+	 * @param CaseWithBlob         $drained    The case uuid and its decoded blob.
 	 * @param array<string, mixed> $definition The definition with states.
 	 * @param array<int, mixed>    $history    The history entries.
 	 *
 	 * @return array<string, mixed> The case's report.
 	 */
-	private function commit(string $caseId, array $blob, array $definition, array $history): array {
+	private function commit(CaseWithBlob $drained, array $definition, array $history): array {
+		$caseId = $drained->caseId;
 		$plans = $this->settingsService->getOpenRegisterClass(class: CasePlanProjectionService::CASE_PLAN_SERVICE);
 		if ($plans === null || method_exists($plans, 'ensureItems') === false) {
 			return $this->report(caseId: $caseId, outcome: self::UNMAPPABLE, reason: 'case_layer_lacks_ensure_items');
@@ -232,15 +268,40 @@ class CasePlanMigrationService {
 			return $this->report(caseId: $caseId, outcome: self::UNMAPPABLE, reason: 'refused: ' . $e->getMessage());
 		}
 
-		$mismatches = $this->blob->mismatches(states: $blob['planItemStates'], rows: ($ensured['items'] ?? []));
+		return $this->verifyAndClear(drained: $drained, ensured: $ensured);
+	}//end commit()
+
+	/**
+	 * Verify the ensured rows against the blob, then clear the blob.
+	 *
+	 * @param CaseWithBlob $drained The case uuid and its decoded blob.
+	 * @param mixed        $ensured What ensureItems answered.
+	 *
+	 * @return array<string, mixed> The case's report.
+	 */
+	private function verifyAndClear(CaseWithBlob $drained, mixed $ensured): array {
+		$mismatches = $this->blob->mismatches(states: $drained->blob['planItemStates'], rows: ($ensured['items'] ?? []));
 		if ($mismatches !== []) {
-			return $this->report(caseId: $caseId, outcome: self::UNMAPPABLE, reason: 'state_mismatch: ' . implode('; ', $mismatches));
+			return $this->report(caseId: $drained->caseId, outcome: self::UNMAPPABLE, reason: 'state_mismatch: ' . implode('; ', $mismatches));
 		}
 
+		return $this->clearBlob(drained: $drained, ensured: $ensured);
+	}//end verifyAndClear()
+
+	/**
+	 * Write the case file and clear the blob, reporting the counts.
+	 *
+	 * @param CaseWithBlob $drained The case uuid and its decoded blob.
+	 * @param mixed        $ensured What ensureItems answered.
+	 *
+	 * @return array<string, mixed> The case's report.
+	 */
+	private function clearBlob(CaseWithBlob $drained, mixed $ensured): array {
+		$caseId = $drained->caseId;
 		$created = count($ensured['created'] ?? []);
 		$existing = count($ensured['existing'] ?? []);
 		try {
-			$this->writeCase(caseId: $caseId, changes: array_merge($blob['caseFile'], ['casePlanState' => '']));
+			$this->writeCase(caseId: $caseId, changes: array_merge($drained->blob['caseFile'], ['casePlanState' => '']));
 		} catch (Throwable $e) {
 			$this->logger->error('CasePlanMigrationService: rows verified, blob not cleared', ['case' => $caseId, 'exception' => $e->getMessage()]);
 			return $this->report(
@@ -253,7 +314,7 @@ class CasePlanMigrationService {
 		}
 
 		return $this->report(caseId: $caseId, outcome: self::MIGRATED, reason: 'verified', created: $created, existing: $existing);
-	}//end commit()
+	}//end clearBlob()
 
 	/**
 	 * Refuse a case-file slot the case does not declare.
@@ -307,14 +368,12 @@ class CasePlanMigrationService {
 	/**
 	 * Every case of one case type, page by page.
 	 *
-	 * @param object $objects  The ObjectService.
-	 * @param string $register The register id.
-	 * @param string $schema   The case schema id.
-	 * @param string $typeId   The case type uuid.
+	 * @param DrainScope $scope  The ObjectService, register and case schema.
+	 * @param string     $typeId The case type uuid.
 	 *
 	 * @return iterable<array<string, mixed>> The cases.
 	 */
-	private function casesOf(object $objects, string $register, string $schema, string $typeId): iterable {
+	private function casesOf(DrainScope $scope, string $typeId): iterable {
 		if ($typeId === '') {
 			return;
 		}
@@ -322,9 +381,9 @@ class CasePlanMigrationService {
 		$offset = 0;
 		do {
 			$page = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objects,
-				register: $register,
-				schema: $schema,
+				objectService: $scope->objects,
+				register: $scope->register,
+				schema: $scope->caseSchema,
 				filters: ['caseType' => $typeId, '_limit' => self::PAGE, '_offset' => $offset]
 			);
 			yield from $page;

@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
  */
 
 declare(strict_types=1);
@@ -27,8 +27,9 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TenantBillingServiceInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -39,7 +40,12 @@ use Throwable;
  *
  * @spec openspec/specs/tenant-billing/spec.md
  */
-class TenantBillingService {
+class TenantBillingService implements TenantBillingServiceInterface {
+	/**
+	 * The month value that names the month before the current one.
+	 */
+	public const PREVIOUS_MONTH = 'previous';
+
 	/**
 	 * Allowed event types (mirrors the schema enum).
 	 *
@@ -53,6 +59,7 @@ class TenantBillingService {
 		'api_burst',
 		'quota_exceeded',
 		'case_refund',
+		'subscription_fee',
 	];
 
 	/**
@@ -62,9 +69,9 @@ class TenantBillingService {
 	 * @var array<string, float>
 	 */
 	public const TIER_MONTHLY_PRICE = [
-		'basic' => 49.0,
-		'standard' => 149.0,
-		'enterprise' => 499.0,
+		'basic' => 450.0,
+		'standard' => 900.0,
+		'enterprise' => 1800.0,
 	];
 
 	/**
@@ -109,39 +116,26 @@ class TenantBillingService {
 	 * invoice was EUR0 and exportInvoice had zero callers (procest#223
 	 * finding 2 — orphaned billing capability).
 	 *
+	 * Running a month twice hands one invoice to the finance app: the first
+	 * run stamps every event it bills, and a stamped event is never billed
+	 * again.
+	 *
 	 * @param string $tenantId Tenant UUID.
-	 * @param string $month YYYY-MM.
+	 * @param string $month YYYY-MM, or `previous` for the month before this one.
 	 *
 	 * @return array{tenantId:string, month:string, eventCount:int, amount:float, currency:string, exported:bool, invoiceRef:?string, error:?string}
 	 *
 	 * @throws InvalidArgumentException When month is malformed.
 	 *
-	 * @spec openspec/specs/tenant-billing/spec.md
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-an-administrator-sees-and-runs-a-tenants-monthly-billing-req-tq-bill-01
 	 */
 	public function runInvoicing(string $tenantId, string $month): array {
-		if (preg_match('/^[0-9]{4}-(0[1-9]|1[0-2])$/', $month) !== 1) {
-			throw new InvalidArgumentException('Month must be YYYY-MM: ' . $month);
-		}
+		$month = $this->invoiceMonth(month: $month);
 
 		$events = $this->fetchEventsForMonth(tenantId: $tenantId, month: $month);
 		$unbilled = array_values(array_filter($events, static fn ($e) => ($e['invoiceRef'] ?? null) === null));
 		$summary = $this->aggregate(events: $unbilled);
-		$amount = (float)$summary['totalAmount'];
-		$currency = 'EUR';
-		if ($unbilled !== []) {
-			$currency = (string)($unbilled[0]['currency'] ?? 'EUR');
-		}
-
-		$result = [
-			'tenantId' => $tenantId,
-			'month' => $month,
-			'eventCount' => count($unbilled),
-			'amount' => $amount,
-			'currency' => $currency,
-			'exported' => false,
-			'invoiceRef' => null,
-			'error' => null,
-		];
+		$result = $this->invoiceResult(tenantId: $tenantId, month: $month, unbilled: $unbilled, summary: $summary);
 
 		if ($unbilled === []) {
 			$result['error'] = 'no unbilled events';
@@ -162,6 +156,76 @@ class TenantBillingService {
 			return $result;
 		}
 
+		return $this->exportUnbilled(tenantId: $tenantId, month: $month, unbilled: $unbilled, result: $result);
+	}//end runInvoicing()
+
+	/**
+	 * The month to invoice, with `previous` resolved, checked.
+	 *
+	 * @param string $month YYYY-MM, or `previous` for the month before this one.
+	 *
+	 * @return string The month as YYYY-MM.
+	 *
+	 * @throws InvalidArgumentException When month is malformed.
+	 *
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-an-administrator-sees-and-runs-a-tenants-monthly-billing-req-tq-bill-01
+	 */
+	private function invoiceMonth(string $month): string {
+		if ($month === self::PREVIOUS_MONTH) {
+			$month = (new DateTimeImmutable('first day of last month'))->format('Y-m');
+		}
+
+		if (preg_match('/^[0-9]{4}-(0[1-9]|1[0-2])$/', $month) !== 1) {
+			throw new InvalidArgumentException('Month must be YYYY-MM: ' . $month);
+		}
+
+		return $month;
+	}//end invoiceMonth()
+
+	/**
+	 * The invoicing answer before anything is exported.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param string $month YYYY-MM.
+	 * @param array<int, array<string, mixed>> $unbilled The month's unbilled events.
+	 * @param array<string, mixed> $summary The aggregate of the unbilled events.
+	 *
+	 * @return array{tenantId:string, month:string, eventCount:int, amount:float, currency:string, exported:bool, invoiceRef:?string, error:?string}
+	 *
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-an-administrator-sees-and-runs-a-tenants-monthly-billing-req-tq-bill-01
+	 */
+	private function invoiceResult(string $tenantId, string $month, array $unbilled, array $summary): array {
+		$amount = (float)$summary['totalAmount'];
+		$currency = 'EUR';
+		if ($unbilled !== []) {
+			$currency = (string)($unbilled[0]['currency'] ?? 'EUR');
+		}
+
+		return [
+			'tenantId' => $tenantId,
+			'month' => $month,
+			'eventCount' => count($unbilled),
+			'amount' => $amount,
+			'currency' => $currency,
+			'exported' => false,
+			'invoiceRef' => null,
+			'error' => null,
+		];
+	}//end invoiceResult()
+
+	/**
+	 * Export the unbilled events as one invoice and stamp them.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param string $month YYYY-MM.
+	 * @param array<int, array<string, mixed>> $unbilled The month's unbilled events.
+	 * @param array<string, mixed> $result The answer so far, in the shape this method returns.
+	 *
+	 * @return array{tenantId:string, month:string, eventCount:int, amount:float, currency:string, exported:bool, invoiceRef:?string, error:?string}
+	 *
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-an-administrator-sees-and-runs-a-tenants-monthly-billing-req-tq-bill-01
+	 */
+	private function exportUnbilled(string $tenantId, string $month, array $unbilled, array $result): array {
 		$payload = $this->shillinq->buildInvoicePayload(tenantId: $tenantId, month: $month, events: $unbilled);
 		$exportRc = $this->shillinq->exportInvoice(payload: $payload);
 		if ($exportRc['success'] !== true) {
@@ -175,7 +239,7 @@ class TenantBillingService {
 		$this->markExported(events: $unbilled, invoiceRef: $invoiceRef);
 
 		return $result;
-	}//end runInvoicing()
+	}//end exportUnbilled()
 
 	/**
 	 * Emit a billing event. Insert-only — invoiceRef stays NULL until the
@@ -216,7 +280,7 @@ class TenantBillingService {
 		try {
 			return $objectService->saveObject(
 				object: $event,
-				register: Application::REGISTER_SLUG,
+				register: AppIdentity::REGISTER_SLUG,
 				schema: 'tenantBillingEvent',
 				uuid: null,
 			);
@@ -321,27 +385,58 @@ class TenantBillingService {
 			}
 
 			$event['invoiceRef'] = $invoiceRef;
-			try {
-				$uuid = (string)($event['uuid'] ?? $event['id'] ?? '');
-				$uuidArg = null;
-				if ($uuid !== '') {
-					$uuidArg = $uuid;
-				}
-
-				$objectService->saveObject(
-					object: $event,
-					register: Application::REGISTER_SLUG,
-					schema: 'tenantBillingEvent',
-					uuid: $uuidArg,
-				);
-				$updated++;
-			} catch (Throwable $e) {
-				$this->logger->error('Dossiq: markExported write failed', ['exception' => $e->getMessage()]);
-			}
-		}//end foreach
+			$updated += $this->writeExported(objectService: $objectService, event: $event);
+		}
 
 		return $updated;
 	}//end markExported()
+
+	/**
+	 * Write one exported event back, counting it when the write succeeds.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param array<string, mixed> $event         The event row, invoice ref set.
+	 *
+	 * @return int 1 when the event was written, 0 when the write failed.
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-daily-billing-export-to-shillinq-req-007-b
+	 */
+	private function writeExported(object $objectService, array $event): int {
+		try {
+			$uuidArg = $this->uuidArgOf(event: $event);
+
+			$objectService->saveObject(
+				object: $event,
+				register: AppIdentity::REGISTER_SLUG,
+				schema: 'tenantBillingEvent',
+				uuid: $uuidArg,
+			);
+			return 1;
+		} catch (Throwable $e) {
+			$this->logger->error('Dossiq: markExported write failed', ['exception' => $e->getMessage()]);
+		}
+
+		return 0;
+	}//end writeExported()
+
+	/**
+	 * The uuid an event row is saved under, or null for a row that has none.
+	 *
+	 * @param array<string, mixed> $event The event row.
+	 *
+	 * @return string|null The uuid, or null.
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-daily-billing-export-to-shillinq-req-007-b
+	 */
+	private function uuidArgOf(array $event): ?string {
+		$uuid = (string)($event['uuid'] ?? $event['id'] ?? '');
+		$uuidArg = null;
+		if ($uuid !== '') {
+			$uuidArg = $uuid;
+		}
+
+		return $uuidArg;
+	}//end uuidArgOf()
 
 	/**
 	 * Fetch all events for a given month for a tenant.
@@ -366,25 +461,51 @@ class TenantBillingService {
 		}
 
 		try {
-			// ObjectService::findAll() takes a single $config array — the previous
-			// named-argument form threw "Unknown named parameter $register" and
-			// was swallowed by the catch below. Register/schema live inside
-			// `filters`; limit/offset are top-level config keys.
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => Application::REGISTER_SLUG,
-						'schema' => 'tenantBillingEvent',
-						'tenantRef' => $tenantId,
-					],
-					'limit' => 5000,
-					'offset' => 0,
-				]
-			);
+			$rows = $objectService->findAll($this->eventsQuery(tenantId: $tenantId));
 		} catch (Throwable $e) {
 			return [];
 		}
 
+		return $this->eventsInMonth(rows: $rows, month: $month);
+	}//end fetchEventsForMonth()
+
+	/**
+	 * The findAll() config that reads a tenant's billing events.
+	 *
+	 * ObjectService::findAll() takes a single $config array — the previous
+	 * named-argument form threw "Unknown named parameter $register" and
+	 * was swallowed by the catch. Register/schema live inside
+	 * `filters`; limit/offset are top-level config keys.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 *
+	 * @return array<string, mixed> The config.
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-daily-billing-export-to-shillinq-req-007-b
+	 */
+	private function eventsQuery(string $tenantId): array {
+		return [
+			'filters' => [
+				'register' => AppIdentity::REGISTER_SLUG,
+				'schema' => 'tenantBillingEvent',
+				'tenantRef' => $tenantId,
+			],
+			'limit' => 5000,
+			'offset' => 0,
+		];
+	}//end eventsQuery()
+
+	/**
+	 * The rows, read as events, that occurred in the month.
+	 *
+	 * @param mixed  $rows  What findAll() answered.
+	 * @param string $month YYYY-MM.
+	 *
+	 * @return array<int, array<string,mixed>>
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-daily-billing-export-to-shillinq-req-007-b
+	 */
+	private function eventsInMonth(mixed $rows, string $month): array {
 		if (is_array($rows) === false) {
 			$rows = [];
 		}
@@ -397,7 +518,7 @@ class TenantBillingService {
 		return array_values(
 			array_filter($events, static fn (array $e): bool => str_starts_with((string)($e['occurredAt'] ?? ''), $month))
 		);
-	}//end fetchEventsForMonth()
+	}//end eventsInMonth()
 
 	/**
 	 * Resolve the OpenRegister ObjectService when available.

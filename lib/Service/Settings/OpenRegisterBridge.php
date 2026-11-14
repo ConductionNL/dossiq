@@ -98,7 +98,7 @@ class OpenRegisterBridge {
 	 *
 	 * @return object|null The OpenRegister ObjectService or null when unavailable
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function objectService(): ?object {
 		if ($this->isAvailable() === false) {
@@ -136,7 +136,7 @@ class OpenRegisterBridge {
 	 *
 	 * @return object|null OpenRegister's ObjectGrantResolver, or null when unavailable.
 	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	public function objectGrantResolver(): ?object {
 		if ($this->isAvailable() === false) {
@@ -166,14 +166,14 @@ class OpenRegisterBridge {
 	 * rather than worked around with a self-addressed HTTP call, which is what
 	 * ADR-080 D2/D3 forbids.
 	 *
-	 * Same lazy-resolve contract as {@see self::objectService()} and
-	 * {@see self::approvalService()}: OpenRegister is an optional runtime
-	 * dependency, so the class is resolved through the container at call time
-	 * rather than type-hinted in the constructor, and callers MUST handle null.
+	 * Same lazy-resolve contract as {@see self::objectService()}: OpenRegister is an
+	 * optional runtime dependency, so the class is resolved through the
+	 * container at call time rather than type-hinted in the constructor, and
+	 * callers MUST handle null.
 	 *
 	 * @return object|null The OpenRegister FileService or null when unavailable
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function fileService(): ?object {
 		if ($this->isAvailable() === false) {
@@ -192,38 +192,6 @@ class OpenRegisterBridge {
 	}//end fileService()
 
 	/**
-	 * Lazily resolve OpenRegister's ApprovalService for parafering chain delegation.
-	 *
-	 * Per ADR-022 (apps consume OpenRegister abstractions) the parafering
-	 * (sign-off routing) chain-state backend is OpenRegister's
-	 * `approval-workflow` capability, exposed through
-	 * `OCA\OpenRegister\Service\ApprovalService`. OpenRegister is an optional
-	 * runtime dependency, so — exactly like getObjectService() — the class is
-	 * resolved through the container at call time rather than type-hinted in the
-	 * constructor. Callers MUST handle the null case (graceful degradation to
-	 * the legacy in-array path during the migration window).
-	 *
-	 * @return object|null The OpenRegister ApprovalService or null when unavailable
-	 *
-	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
-	 */
-	public function approvalService(): ?object {
-		if ($this->isAvailable() === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\ApprovalService');
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq: Could not access OpenRegister ApprovalService',
-				['exception' => $e->getMessage()]
-			);
-			return null;
-		}
-	}//end approvalService()
-
-	/**
 	 * Lazily resolve an OpenRegister DI class by fully-qualified name.
 	 *
 	 * Generic helper for the parafering approval bridge to reach OpenRegister's
@@ -234,7 +202,7 @@ class OpenRegisterBridge {
 	 *
 	 * @return object|null The resolved service, or null when unavailable
 	 *
-	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
+	 * @spec openspec/changes/archive/2026-06-14-migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
 	 */
 	public function classNamed(string $class): ?object {
 		if ($this->isAvailable() === false) {

@@ -114,6 +114,9 @@ baseline-uncovered violations in *untouched* files; zero new ones introduced).
 
 ### AcController Decomposition (5 suppressions)
 
+Built 2026-11-13 (partial, branch quality/build-method-decomposition): the consumer lookups moved out of `AcController` into `lib/Controller/Support/ApplicatieDirectory.php` (requested clientId, token client_id for the refusal message, list by primary then extra clientId), beside the earlier `ApplicatieRules` and `ApplicatieRepresentation`. The controller's three class-level PHPMD suppressions (ExcessiveClassComplexity, CyclomaticComplexity, NPathComplexity) are gone with PHPMD green. Behaviour pinned by the unchanged `AcControllerCharacterisationTest` (35 tests, mapper call order included); new `ApplicatieDirectoryTest`. 038 to 040 stay open: there is no autorisatie-creation or scope-validation handler yet.
+
+
 - [ ] **TASK-DECOMP-038**: Extract `AcController/AutorisatieHandler.php` with scope validation, client verification, autorisatie creation (REQ-DECOMP-09a)
 - [ ] **TASK-DECOMP-039**: Create `ScopeValidator` with scope format, existence, combination rules (REQ-DECOMP-09c)
 - [ ] **TASK-DECOMP-040**: Update AcController to delegate to handler
@@ -528,3 +531,66 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Seen, not changed: the publish routes run no business rule, so the CT-02b publish guard
         (`ZgwBusinessRulesService::guardCaseTypePublish`) does not run on them, and they check no
         ZGW scope (the contract test says so).
+  - [x] 8j `DeadlineReportingService` (1: ExcessiveClassComplexity 74 against 50) and
+        `AiService` (1: its ExcessiveClassComplexity suppression was stale; PHPMD reports nothing
+        without it). The service held three reports. The annual payout statement moved to
+        `Reporting/AnnualPayoutStatement` (`forYear()`, the read, the year filter, the rows, the
+        warnings and the summary; 15), and the dashboard KPI counters to
+        `Termijn/TermDashboardFigures::tally()` (12), which already computed the dashboard's
+        running figures and stays at 43. The service reads the instances, builds the quarterly
+        report and keeps `generateDwangsomAuditReport()` and `getTermijnKpi()` as they were; it
+        adds each statement row's generic key names itself, as before. Measured after: 48, no
+        CouplingBetweenObjects finding (13 would have been one, so the statement replaced the
+        `PayoutReader` constructor parameter instead of joining it; the container wires the
+        reader into the statement). One test built the service with `payouts:` and now passes
+        the statement; no assertion changed.
+        Characterisation, green on the old code first: `DeadlineReportingServiceTest` (23, the
+        statement's whole shape, the year filter, the finance app's payouts, every KPI case),
+        `StatutoryTermParityTest`, `DeadlineReportingControllerContractTest` and
+        `ReportingToolsTest` (61 in all), unchanged and green after.
+        Own tests: `tests/Unit/Service/Reporting/AnnualPayoutStatementTest` (2) and
+        `tests/Unit/Service/Termijn/TermDashboardFiguresTallyTest` (2); breaking the year filter
+        or the overrun count turns them red (checked).
+  - [x] 8k `EngineTaskGateway` (1: ExcessiveClassComplexity). The gateway keeps every call to the
+        engine (mirror, reassign, find, claim, complete, cancel, the key lookup and the lazy
+        resolution). The two translations that call nothing leave as pure classes it builds, so
+        its constructor and the container are unchanged: `Task/EngineTaskPayload` (what the
+        engine is sent: the key, the copied fields, the candidates, the declaration and the
+        decoded checklist) and `Task/EngineTaskRow` (an engine task read back in the register's
+        vocabulary, each optional column asked for before its getter is called). Bodies moved
+        unchanged; `toEnginePayload()` and `find()` delegate. The frozen key prefix is the
+        gateway's public `SOURCE_KEY_PREFIX`, which `sourceKey()` and the payload both read.
+        TooManyPublicMethods stays, for the reason its docblock gives (one seam onto the engine).
+        Characterisation: `EngineTaskGatewayTest` (17, payload in its order, every miss of a
+        find, the magic columns of an Entity), green on the old class first and unchanged after
+        but for two `@uses` lines in each file that builds the gateway.
+        Own tests: `tests/Unit/Service/Task/EngineTaskPayloadTest` (4) and `EngineTaskRowTest`
+        (3); breaking the once-key precedence or the date format turns them red (checked).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8l `CasePlanProjectionService` (1: ExcessiveClassComplexity 103 against 50; its
+        TooManyMethods finding, 34 against 25, goes too). The service keeps the reads (caseType,
+        published caseModel), the plan creation and its three public conversion methods,
+        which now delegate. The conversion leaves as pure classes the service builds, so its
+        constructor and the container are unchanged: `SentryConverter` (one sentry, its on- and
+        if-part and a criteria list, through the closed tables; the three table constants
+        live here and the service keeps them as aliases), `CaseModelConverter` (the flat
+        planItems list into the nested tree, every structural refusal) and
+        `CaseModelSearchHits` (the first plain row of a lookup, planItems decoded from JSON
+        text). Bodies moved unchanged, refusal messages included. phpmd: zero findings on the
+        four files.
+        Characterisation: `CasePlanProjectionServiceTest` (34), `CasePlanModelLookupTest` (3),
+        `CmmnRetirementTest`, `CasePlanDrain`, `CasePlanProjectionListenerTest`,
+        `BackgroundReadsRunAsSystemTest` and `tests/Unit/Architecture`, green on the old class
+        first and unchanged after but for `@uses` lines.
+        Own tests: `SentryConverterTest` (5), `CaseModelConverterTest` (5) and
+        `CaseModelSearchHitsTest` (2); breaking the sentry position, the `required` flag or the
+        undecodable-text fallback turns them red (checked).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8m `ZtcCrossReferenceEnricher` (1: ExcessiveClassComplexity 52 against 50). Turning a
+        stored uuid list (an array or a JSON string) into Catalogi URLs moved to the new
+        `Zgw/ZtcStoredUuidUrls` (`urls()`, with `storedIds()` and `prefixedUrls()`); the enricher
+        builds it in its constructor, so its constructor, interface and container binding are
+        unchanged, and the swallowing catch in `enrichBesluittype()` stays where the allowlist has it.
+        Characterisation: the existing `ZtcCrossReferenceTest` (8), `ZtcRelatedTypeLookupTest` and
+        `ZtcWriteGateGoldenTest`, green before and after. Own test: `ZtcStoredUuidUrlsTest` (2).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.

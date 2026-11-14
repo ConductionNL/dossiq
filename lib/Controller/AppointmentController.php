@@ -24,9 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\AppointmentService;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AppointmentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -37,24 +37,24 @@ use OCP\IUserSession;
 /**
  * Controller exposing citizen appointment endpoints.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class AppointmentController extends Controller {
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param AppointmentService $appointmentService The appointment service.
+	 * @param AppointmentServiceInterface $appointmentService The appointment service.
 	 * @param IUserSession $userSession The user session.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 */
 	public function __construct(
 		IRequest $request,
-		private AppointmentService $appointmentService,
+		private AppointmentServiceInterface $appointmentService,
 		private IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -64,7 +64,7 @@ class AppointmentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function index(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -99,7 +99,7 @@ class AppointmentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function create(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -120,7 +120,19 @@ class AppointmentController extends Controller {
 			);
 		}
 
-		$data = [
+		$result = $this->appointmentService->bookAppointment($caseId, $this->requestedBooking());
+		return new JSONResponse(['success' => true, 'appointment' => $result]);
+	}//end create()
+
+	/**
+	 * The booking the request asks for, with the default duration of 30 minutes.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function requestedBooking(): array {
+		return [
 			'productId' => $this->request->getParam('productId'),
 			'locationId' => $this->request->getParam('locationId'),
 			'dateTime' => $this->request->getParam('dateTime'),
@@ -130,10 +142,7 @@ class AppointmentController extends Controller {
 			'citizenPhone' => $this->request->getParam('citizenPhone'),
 			'notes' => $this->request->getParam('notes'),
 		];
-
-		$result = $this->appointmentService->bookAppointment($caseId, $data);
-		return new JSONResponse(['success' => true, 'appointment' => $result]);
-	}//end create()
+	}//end requestedBooking()
 
 	/**
 	 * Cancel an existing appointment.
@@ -144,7 +153,7 @@ class AppointmentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function cancel(string $appointmentId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -172,7 +181,7 @@ class AppointmentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function noShow(string $appointmentId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -208,7 +217,7 @@ class AppointmentController extends Controller {
 	 * mutating routes (cancel/noShow) DO carry an appointment id and are guarded
 	 * by mayMutateAppointment() — this one has nothing of that shape.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function timeslots(): JSONResponse {
 		if ($this->userSession->getUser() === null) {

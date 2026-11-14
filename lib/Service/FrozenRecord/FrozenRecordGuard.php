@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\FrozenRecord;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\FrozenRecordGuardInterface;
 
 /**
  * The freeze rule, with no knowledge of which record it guards.
@@ -43,7 +44,7 @@ use OCA\Dossiq\Exception\RefusedException;
  *
  * @spec openspec/specs/frozen-record/spec.md
  */
-class FrozenRecordGuard {
+class FrozenRecordGuard implements FrozenRecordGuardInterface {
 
 	/**
 	 * Whether the stored record is frozen.
@@ -204,30 +205,12 @@ class FrozenRecordGuard {
 	 * @param mixed $right The incoming value.
 	 *
 	 * @return bool True when equal.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) CanonicalValue is the one stateless canonical form shared with the seal.
 	 */
 	private function same(mixed $left, mixed $right): bool {
-		return $this->canonical(value: $left) === $this->canonical(value: $right);
+		return CanonicalValue::formOf(value: $left) === CanonicalValue::formOf(value: $right);
 	}//end same()
-
-	/**
-	 * Sort object keys at every depth; leave lists in order.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return mixed The canonical value.
-	 */
-	private function canonical(mixed $value): mixed {
-		if (is_array($value) === false) {
-			return $value;
-		}
-
-		$canonical = array_map(fn (mixed $item): mixed => $this->canonical(value: $item), $value);
-		if (array_is_list($canonical) === false) {
-			ksort($canonical, SORT_STRING);
-		}
-
-		return $canonical;
-	}//end canonical()
 
 	/**
 	 * Whether a value counts as not yet written.

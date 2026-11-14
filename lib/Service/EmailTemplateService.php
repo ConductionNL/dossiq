@@ -22,13 +22,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\EmailTemplateServiceInterface;
 use OCA\Dossiq\Service\Email\EmailTemplateRepository;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -40,9 +41,9 @@ use RuntimeException;
  * is the template domain itself — versioning, seeding and placeholder
  * resolution.
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
  */
-class EmailTemplateService {
+class EmailTemplateService implements EmailTemplateServiceInterface {
 
 	/**
 	 * Default templates seeded when a caseType has no email templates.
@@ -65,30 +66,6 @@ class EmailTemplateService {
 		'startDatum' => 'startDate',
 		'einddatum' => 'endDate',
 		'behandelaar' => 'handler',
-	];
-
-	private const DEFAULT_TEMPLATES = [
-		[
-			'slug' => 'ontvangstbevestiging',
-			'name' => 'Ontvangstbevestiging',
-			'subject' => 'Bevestiging ontvangst zaak {{zaakNummer}}',
-			'body' => 'Geachte {{contactNaam}},\n\nWij hebben uw aanvraag {{zaakNummer}} ontvangen op {{startDate}}.'
-				. '\n\nMet vriendelijke groet,\n{{handler}}',
-		],
-		[
-			'slug' => 'informatieverzoek',
-			'name' => 'Informatieverzoek',
-			'subject' => 'Aanvullende informatie nodig voor zaak {{zaakNummer}}',
-			'body' => 'Geachte {{contactNaam}},\n\nVoor de behandeling van zaak {{zaakNummer}} hebben wij aanvullende informatie nodig.'
-				. '\n\nMet vriendelijke groet,\n{{handler}}',
-		],
-		[
-			'slug' => 'decision',
-			'name' => 'Besluit',
-			'subject' => 'Besluit zaak {{zaakNummer}}',
-			'body' => 'Geachte {{contactNaam}},\n\nWij hebben besloten in uw zaak {{zaakNummer}}. Het besluit is op {{endDate}} genomen.'
-				. '\n\nMet vriendelijke groet,\n{{handler}}',
-		],
 	];
 
 	/**
@@ -131,7 +108,7 @@ class EmailTemplateService {
 	 *
 	 * @return array<string, mixed> The saved object.
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function createTemplate(string $caseTypeId, array $data): array {
 		$payload = [
@@ -143,7 +120,7 @@ class EmailTemplateService {
 			'isActive' => true,
 		];
 
-		return $this->repository->saveTemplate(payload: $payload);
+		return $this->repository->saveTemplate(payload: $this->withDelivery(payload: $payload, data: $data, existing: []));
 	}//end createTemplate()
 
 	/**
@@ -157,7 +134,7 @@ class EmailTemplateService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function updateTemplate(string $templateId, array $data): array {
 		$existing = $this->repository->findTemplate(templateId: $templateId);
@@ -165,9 +142,24 @@ class EmailTemplateService {
 			throw new RuntimeException('Template not found');
 		}
 
-		$currentVersion = (int)($existing['version'] ?? 1);
+		$this->deactivate(existing: $existing, templateId: $templateId);
 
-		// Mark the prior version inactive so the active filter only sees the new copy.
+		$payload = $this->nextVersion(existing: $existing, data: $data);
+
+		return $this->repository->saveTemplate(payload: $this->withDelivery(payload: $payload, data: $data, existing: $existing));
+	}//end updateTemplate()
+
+	/**
+	 * Mark the prior version inactive so the active filter only sees the new copy; a failure is logged.
+	 *
+	 * @param array<string, mixed> $existing   The current version.
+	 * @param string               $templateId Existing template id/slug.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function deactivate(array $existing, string $templateId): void {
 		$previous = $existing;
 		$previous['isActive'] = false;
 		try {
@@ -178,8 +170,22 @@ class EmailTemplateService {
 				['template' => $templateId, 'error' => $e->getMessage()]
 			);
 		}
+	}//end deactivate()
 
-		$payload = [
+	/**
+	 * The next version's payload: the edit over the current version, one version up and active.
+	 *
+	 * @param array<string, mixed> $existing The current version.
+	 * @param array<string, mixed> $data     New payload.
+	 *
+	 * @return array<string, mixed> The new version, before its delivery fields.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function nextVersion(array $existing, array $data): array {
+		$currentVersion = (int)($existing['version'] ?? 1);
+
+		return [
 			'caseType' => $existing['caseType'] ?? '',
 			'name' => (string)($data['name'] ?? ($existing['name'] ?? '')),
 			'subject' => (string)($data['subject'] ?? ($existing['subject'] ?? '')),
@@ -188,9 +194,35 @@ class EmailTemplateService {
 			'isActive' => true,
 			'previousVersion' => $existing['id'] ?? null,
 		];
+	}//end nextVersion()
 
-		return $this->repository->saveTemplate(payload: $payload);
-	}//end updateTemplate()
+	/**
+	 * Add when and how a template goes out: `moment` (a case event),
+	 * `channel` and `messageCategory`, from the edit or else the version it
+	 * replaces. An edit that names a field as null or empty clears it; a field
+	 * neither names is left out.
+	 *
+	 * @param array<string, mixed> $payload  The template to save.
+	 * @param array<string, mixed> $data     The edit.
+	 * @param array<string, mixed> $existing The version it replaces, or [].
+	 *
+	 * @return array<string, mixed> The payload with the delivery fields.
+	 *
+	 * @spec openspec/changes/case-type-messages-moment-channel/specs/case-types/spec.md
+	 */
+	private function withDelivery(array $payload, array $data, array $existing): array {
+		foreach (['moment', 'channel', 'messageCategory'] as $field) {
+			$value = $existing[$field] ?? null;
+			if (array_key_exists($field, $data) === true) {
+				$value = $data[$field];
+			}
+			if (is_string($value) === true && $value !== '') {
+				$payload[$field] = $value;
+			}
+		}
+
+		return $payload;
+	}//end withDelivery()
 
 	/**
 	 * List active templates for a caseType.
@@ -199,7 +231,7 @@ class EmailTemplateService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function listTemplates(string $caseTypeId): array {
 		return $this->repository->findActiveByCaseType(caseTypeId: $caseTypeId);
@@ -216,7 +248,7 @@ class EmailTemplateService {
 	 *
 	 * @return array<string, array<int, string>>
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
@@ -257,7 +289,7 @@ class EmailTemplateService {
 	 *
 	 * @throws \RuntimeException When the case is final or inputs are missing.
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function prefillDraft(string $caseId, string $templateId): array {
 		$template = $this->repository->findTemplate(templateId: $templateId);
@@ -265,6 +297,23 @@ class EmailTemplateService {
 			throw new RuntimeException('Template not found');
 		}
 
+		$case = $this->draftableCase(caseId: $caseId);
+
+		return $this->rendered(template: $template, case: $case) + ['caseId' => $caseId, 'templateId' => $templateId];
+	}//end prefillDraft()
+
+	/**
+	 * The case a draft is written for, refused when it is missing or final.
+	 *
+	 * @param string $caseId Case UUID.
+	 *
+	 * @return array<string, mixed> The case.
+	 *
+	 * @throws \RuntimeException When the case is missing or final.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function draftableCase(string $caseId): array {
 		$case = $this->repository->findCase(caseId: $caseId);
 		if ($case === null) {
 			throw new RuntimeException('Case not found');
@@ -274,12 +323,47 @@ class EmailTemplateService {
 			throw new RuntimeException('Case is in a final state — drafting is disabled');
 		}
 
+		return $case;
+	}//end draftableCase()
+
+	/**
+	 * The template's subject and body resolved against the case.
+	 *
+	 * @param array<string, mixed> $template The template.
+	 * @param array<string, mixed> $case     The case.
+	 *
+	 * @return array{subject: string, body: string, unresolved: array<int, string>}
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function rendered(array $template, array $case): array {
 		$vars = $this->buildVariableMap(case: $case);
 		$rawSubject = (string)($template['subject'] ?? '');
 		$rawBody = (string)($template['body'] ?? '');
 		$subject = $this->resolve(text: $rawSubject, vars: $vars);
 		$body = $this->resolve(text: $rawBody, vars: $vars);
-		$unresolved = array_values(
+		$unresolved = $this->unresolvedIn(rawSubject: $rawSubject, rawBody: $rawBody, vars: $vars);
+
+		return [
+			'subject' => $subject,
+			'body' => $body,
+			'unresolved' => $unresolved,
+		];
+	}//end rendered()
+
+	/**
+	 * The variable names the subject and body name but the map does not hold.
+	 *
+	 * @param string                $rawSubject The template subject.
+	 * @param string                $rawBody    The template body.
+	 * @param array<string, string> $vars       Variable map.
+	 *
+	 * @return array<int, string> The unresolved names, each once.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function unresolvedIn(string $rawSubject, string $rawBody, array $vars): array {
+		return array_values(
 			array_unique(
 				array_merge(
 					$this->collectUnresolved(text: $rawSubject, vars: $vars),
@@ -287,55 +371,7 @@ class EmailTemplateService {
 				)
 			)
 		);
-
-		return [
-			'subject' => $subject,
-			'body' => $body,
-			'unresolved' => $unresolved,
-			'caseId' => $caseId,
-			'templateId' => $templateId,
-		];
-	}//end prefillDraft()
-
-	/**
-	 * Seed the three Dutch defaults for a caseType (idempotent by slug).
-	 *
-	 * @param string $caseTypeId CaseType id/slug.
-	 *
-	 * @return int Number of templates created on this run.
-	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
-	 */
-	public function seedDefaultTemplates(string $caseTypeId): int {
-		$existing = $this->listTemplates(caseTypeId: $caseTypeId);
-		$existingNames = array_column($existing, 'name');
-
-		$created = 0;
-		foreach (self::DEFAULT_TEMPLATES as $default) {
-			if (in_array($default['name'], $existingNames, true) === true) {
-				continue;
-			}
-
-			try {
-				$this->createTemplate(
-					caseTypeId: $caseTypeId,
-					data: [
-						'name' => $default['name'],
-						'subject' => $default['subject'],
-						'body' => $default['body'],
-					]
-				);
-				$created++;
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Failed to seed default email template',
-					['caseType' => $caseTypeId, 'template' => $default['name'], 'error' => $e->getMessage()]
-				);
-			}
-		}//end foreach
-
-		return $created;
-	}//end seedDefaultTemplates()
+	}//end unresolvedIn()
 
 	/**
 	 * Resolve `{{name}}` placeholders against the variable map.
@@ -345,7 +381,7 @@ class EmailTemplateService {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function resolve(string $text, array $vars): string {
 		return (string)preg_replace_callback(
@@ -370,7 +406,7 @@ class EmailTemplateService {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function collectUnresolved(string $text, array $vars): array {
 		if (preg_match_all('/{{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*}}/', $text, $matches) === false) {

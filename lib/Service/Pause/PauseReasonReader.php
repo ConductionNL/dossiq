@@ -32,13 +32,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Pause;
 
+use OCA\Dossiq\Kernel\Contracts\PauseReasonReaderInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermDeclarationReader;
@@ -46,14 +47,14 @@ use OCA\Dossiq\Service\TermDeclarationReader;
 /**
  * The reasons a case type allows a term to be suspended for (REQ-TERM-011).
  *
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) {@see PauseReason} is a vocabulary:
  * constants and pure functions over an array, with no state and nothing to
  * inject. Making it an instance would add a constructor dependency to every
  * class that names a category, to hide a `::` behind a `->`.
  */
-class PauseReasonReader {
+class PauseReasonReader implements PauseReasonReaderInterface {
 	use SearchesObjects;
 
 	/**
@@ -75,7 +76,7 @@ class PauseReasonReader {
 	 *
 	 * @return array<int, array<string, mixed>> The reasons, empty when none are declared.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function forCaseType(string $caseTypeId): array {
 		return $this->reasonsIn(caseTypeRow: $this->caseTypeRow(caseTypeId: $caseTypeId));
@@ -91,7 +92,7 @@ class PauseReasonReader {
 	 *
 	 * @return array<int, array<string, mixed>> The reasons, empty when none are declared.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function reasonsIn(array $caseTypeRow): array {
 		$row = $caseTypeRow;
@@ -123,7 +124,7 @@ class PauseReasonReader {
 	 *
 	 * @return array<int, array<string, mixed>> The reasons, empty when none are declared.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function forCase(string $caseId): array {
 		return $this->reasonsIn(caseTypeRow: $this->caseTypeForCase(caseId: $caseId));
@@ -140,7 +141,7 @@ class PauseReasonReader {
 	 *
 	 * @return array<string, mixed> The row, empty when the case names no type.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function caseTypeForCase(string $caseId): array {
 		$context = $this->declarations->caseContext(caseId: $caseId);
@@ -159,7 +160,7 @@ class PauseReasonReader {
 	 *
 	 * @return array<string, mixed>|null The reason, or null when this case type does not declare it.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function findForCase(string $caseId, string $key): ?array {
 		$wanted = trim($key);
@@ -189,7 +190,7 @@ class PauseReasonReader {
 	 *
 	 * @return array<string, mixed>|null The reason, or null when the pause carries none.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function forInstance(array $instance): ?array {
 		$key = trim((string)($instance['pauseReason'] ?? ''));

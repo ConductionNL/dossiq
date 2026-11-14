@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCP\IL10N;
 /**
  * Cases and tasks routed to the reader by an active substitution.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class CoveredWorkSource implements QueueSource {
 	/**
@@ -48,7 +48,7 @@ class CoveredWorkSource implements QueueSource {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly SubstitutionService $substitutions,
@@ -61,7 +61,7 @@ class CoveredWorkSource implements QueueSource {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function name(): string {
 		return 'covered-work';
@@ -72,7 +72,7 @@ class CoveredWorkSource implements QueueSource {
 	 *
 	 * @return string The label.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function label(): string {
 		return $this->l10n->t('Work you are covering');
@@ -83,7 +83,7 @@ class CoveredWorkSource implements QueueSource {
 	 *
 	 * @return string The closing condition.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function closesWhen(): string {
 		return $this->l10n->t('Covered work leaves when your colleague is back, or when the work is done.');
@@ -94,7 +94,7 @@ class CoveredWorkSource implements QueueSource {
 	 *
 	 * @return array<int, string> The mechanism ids.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function mechanisms(): array {
 		return ['notification:substitutionRegisteredForSubstitute'];
@@ -107,7 +107,7 @@ class CoveredWorkSource implements QueueSource {
 	 *
 	 * @return array<int, QueueItem> The items.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function itemsFor(string $userId): array {
 		$work = $this->substitutions->getSubstitutedWorkFor(userId: $userId);
@@ -138,7 +138,7 @@ class CoveredWorkSource implements QueueSource {
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function rowsOf(array $work, string $key): array {
 		$rows = ($work[$key] ?? []);
@@ -164,24 +164,16 @@ class CoveredWorkSource implements QueueSource {
 	 *
 	 * @return QueueItem|null The item, or null when the row cannot be marked.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function itemOf(array $row, string $subjectType, string $route, string $dateKey): ?QueueItem {
 		$id = trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
-		$context = ($row['_substituted'] ?? []);
-		$absentee = '';
-		if (is_array($context) === true) {
-			$absentee = trim((string)($context['absentee'] ?? ''));
-		}
-
+		$absentee = $this->absenteeOf(row: $row);
 		if ($id === '' || $absentee === '') {
 			return null;
 		}
 
-		$due = null;
-		if (is_string($row[$dateKey] ?? null) === true && trim((string)$row[$dateKey]) !== '') {
-			$due = trim((string)$row[$dateKey]);
-		}
+		$due = $this->dueOf(row: $row, dateKey: $dateKey);
 
 		return new QueueItem(
 			source: $this->name(),
@@ -194,4 +186,38 @@ class CoveredWorkSource implements QueueSource {
 			route: ['name' => $route, 'params' => ['id' => $id]]
 		);
 	}//end itemOf()
+
+	/**
+	 * Whom a covered row is covered for.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string The absentee, or '' when the row carries no `_substituted` block.
+	 */
+	private function absenteeOf(array $row): string {
+		$context = ($row['_substituted'] ?? []);
+		$absentee = '';
+		if (is_array($context) === true) {
+			$absentee = trim((string)($context['absentee'] ?? ''));
+		}
+
+		return $absentee;
+	}//end absenteeOf()
+
+	/**
+	 * The row's date, trimmed.
+	 *
+	 * @param array<string, mixed> $row     The row.
+	 * @param string               $dateKey The property holding its date.
+	 *
+	 * @return string|null The date, or null when it is not set.
+	 */
+	private function dueOf(array $row, string $dateKey): string|null {
+		$due = null;
+		if (is_string($row[$dateKey] ?? null) === true && trim((string)$row[$dateKey]) !== '') {
+			$due = trim((string)$row[$dateKey]);
+		}
+
+		return $due;
+	}//end dueOf()
 }//end class
