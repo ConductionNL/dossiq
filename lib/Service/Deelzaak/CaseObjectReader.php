@@ -68,18 +68,14 @@ class CaseObjectReader implements CaseObjectReaderInterface {
 	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	public function fetchCaseById(string $caseUuid): ?array {
-		if ($caseUuid === '') {
-			return null;
-		}
-
-		$objectService = $this->settingsService->getObjectService();
+		$objectService = $this->objectServiceFor(caseUuid: $caseUuid);
 		if ($objectService === null) {
 			return null;
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($schema) === true) {
+		if ($this->hasCaseTable(register: $register, schema: $schema) === false) {
 			return null;
 		}
 
@@ -95,6 +91,33 @@ class CaseObjectReader implements CaseObjectReaderInterface {
 
 		return $this->toArray(obj: $obj);
 	}//end fetchCaseById()
+
+	/**
+	 * OpenRegister's object service to look a case up with, null for an empty uuid or when it is absent.
+	 *
+	 * @param string $caseUuid The case uuid.
+	 *
+	 * @return object|null
+	 */
+	private function objectServiceFor(string $caseUuid): ?object {
+		if ($caseUuid === '') {
+			return null;
+		}
+
+		return $this->settingsService->getObjectService();
+	}//end objectServiceFor()
+
+	/**
+	 * Whether both the register and the case schema are configured.
+	 *
+	 * @param mixed $register The register id.
+	 * @param mixed $schema   The case schema id.
+	 *
+	 * @return bool
+	 */
+	private function hasCaseTable(mixed $register, mixed $schema): bool {
+		return empty($register) === false && empty($schema) === false;
+	}//end hasCaseTable()
 
 	/**
 	 * Load a caseType by id or slug.
