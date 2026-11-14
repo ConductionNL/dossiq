@@ -518,7 +518,7 @@ class DrcController extends ZgwController {
 		$needsFileId = ($fileId > 0 && (int)($objectData['fileId'] ?? 0) !== $fileId);
 
 		if ($needsSize === true || $needsFileId === true) {
-			$objectData = $this->withFileFacts(objectData: $objectData, needsSize: $needsSize, fileSize: $fileSize, fileId: $fileId);
+			$objectData = $this->withFileFacts(objectData: $objectData, fileSize: $fileSize, fileId: $fileId);
 			$objectData = $this->saveWholeEio(objectData: $objectData, objectUuid: $objectUuid, mappingConfig: $mappingConfig);
 		}
 
@@ -545,14 +545,13 @@ class DrcController extends ZgwController {
 	 * Stamp the stored file's size (when the document has none) and its file id on a document.
 	 *
 	 * @param array $objectData The saved document.
-	 * @param bool $needsSize Whether the document still lacks a fileSize.
 	 * @param int $fileSize The stored file's size.
 	 * @param int $fileId The stored file's id, 0 when unresolved.
 	 *
 	 * @return array The stamped document.
 	 */
-	private function withFileFacts(array $objectData, bool $needsSize, int $fileSize, int $fileId): array {
-		if ($needsSize === true) {
+	private function withFileFacts(array $objectData, int $fileSize, int $fileId): array {
+		if (empty($objectData['fileSize']) === true) {
 			$objectData['fileSize'] = $fileSize;
 		}
 
@@ -1865,7 +1864,10 @@ class DrcController extends ZgwController {
 		$eioConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
 		if ($eioConfig !== null) {
 			try {
-				$this->writeUsageRightsIndication(objectService: $objectService, eioConfig: $eioConfig, eioUuid: $eioUuid, value: null);
+				$this->writeUsageRightsIndication(
+					document: new EioDocument(objectService: $objectService, mappingConfig: $eioConfig, uuid: $eioUuid),
+					value: null
+				);
 			} catch (\Throwable $e) {
 				$this->zgwService->getLogger()->warning(
 					'drc-006: Failed to clear indicatieGebruiksrecht: ' . $e->getMessage()
@@ -1877,31 +1879,29 @@ class DrcController extends ZgwController {
 	/**
 	 * Write usageRightsIndication on a document and save it.
 	 *
-	 * @param object $objectService The object service.
-	 * @param array $eioConfig The EIO mapping.
-	 * @param string $eioUuid The EIO UUID.
-	 * @param bool|null $value The value to set (true or null).
+	 * @param EioDocument $document The document, its object service and its mapping.
+	 * @param bool|null   $value    The value to set (true or null).
 	 *
 	 * @return void
 	 *
 	 * @throws \Throwable When finding or saving the document fails.
 	 */
-	private function writeUsageRightsIndication(object $objectService, array $eioConfig, string $eioUuid, ?bool $value): void {
-		$eioObj = $objectService->find(
-			$eioUuid,
-			register: $eioConfig['sourceRegister'],
-			schema: $eioConfig['sourceSchema']
+	private function writeUsageRightsIndication(EioDocument $document, ?bool $value): void {
+		$eioObj = $document->objectService->find(
+			$document->uuid,
+			register: $document->mappingConfig['sourceRegister'],
+			schema: $document->mappingConfig['sourceSchema']
 		);
 		$eioData = $this->objectToArray(row: $eioObj);
 
 		$eioData['usageRightsIndication'] = $value;
 
 		unset($eioData['@self'], $eioData['id'], $eioData['organisation']);
-		$objectService->saveObject(
-			register: $eioConfig['sourceRegister'],
-			schema: $eioConfig['sourceSchema'],
+		$document->objectService->saveObject(
+			register: $document->mappingConfig['sourceRegister'],
+			schema: $document->mappingConfig['sourceSchema'],
 			object: $eioData,
-			uuid: $eioUuid
+			uuid: $document->uuid
 		);
 	}//end writeUsageRightsIndication()
 
@@ -1929,22 +1929,23 @@ class DrcController extends ZgwController {
 			return;
 		}
 
-		$this->setUsageRightsIndicationOrWarn(objectService: $objectService, eioConfig: $eioConfig, eioUuid: $ioMatches[1], value: $value);
+		$this->setUsageRightsIndicationOrWarn(
+			document: new EioDocument(objectService: $objectService, mappingConfig: $eioConfig, uuid: $ioMatches[1]),
+			value: $value
+		);
 	}//end setIndicatieGebruiksrecht()
 
 	/**
 	 * Write usageRightsIndication on a document, logging a failure instead of raising it.
 	 *
-	 * @param object $objectService The object service.
-	 * @param array $eioConfig The EIO mapping.
-	 * @param string $eioUuid The EIO UUID.
-	 * @param bool|null $value The value to set (true or null).
+	 * @param EioDocument $document The document, its object service and its mapping.
+	 * @param bool|null   $value    The value to set (true or null).
 	 *
 	 * @return void
 	 */
-	private function setUsageRightsIndicationOrWarn(object $objectService, array $eioConfig, string $eioUuid, ?bool $value): void {
+	private function setUsageRightsIndicationOrWarn(EioDocument $document, ?bool $value): void {
 		try {
-			$this->writeUsageRightsIndication(objectService: $objectService, eioConfig: $eioConfig, eioUuid: $eioUuid, value: $value);
+			$this->writeUsageRightsIndication(document: $document, value: $value);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning(
 				'drc-006: Failed to set indicatieGebruiksrecht: ' . $e->getMessage()
@@ -2066,16 +2067,25 @@ class DrcController extends ZgwController {
 			$mergedSize = $this->mergeUploadedChunks(objectData: $objectData, uuid: $uuid, totalParts: $totalParts, mappingConfig: $mappingConfig);
 
 			return $this->chunkProgress(
-				progress: ['sequenceNumber' => $sequenceNumber, 'size' => $chunkSize, 'uploadComplete' => true, 'bestandsomvang' => $mergedSize],
-				uploadedParts: $uploadedParts,
-				totalParts: $totalParts
+				progress: [
+					'sequenceNumber' => $sequenceNumber,
+					'size' => $chunkSize,
+					'uploadComplete' => true,
+					'bestandsomvang' => $mergedSize,
+					'uploadedParts' => $uploadedParts,
+					'totalParts' => $totalParts,
+				]
 			);
 		}//end if
 
 		return $this->chunkProgress(
-			progress: ['sequenceNumber' => $sequenceNumber, 'size' => $chunkSize, 'uploadComplete' => false],
-			uploadedParts: $uploadedParts,
-			totalParts: $totalParts
+			progress: [
+				'sequenceNumber' => $sequenceNumber,
+				'size' => $chunkSize,
+				'uploadComplete' => false,
+				'uploadedParts' => $uploadedParts,
+				'totalParts' => $totalParts,
+			]
 		);
 	}//end receiveChunk()
 
@@ -2206,15 +2216,14 @@ class DrcController extends ZgwController {
 	/**
 	 * The answer to a stored chunk: the chunk's facts, then how many parts are in.
 	 *
-	 * @param array $progress The chunk's sequenceNumber, size, uploadComplete (and bestandsomvang when complete).
-	 * @param int $uploadedParts The number of parts uploaded so far.
-	 * @param int $totalParts The number of parts expected.
+	 * @param array $progress The chunk's sequenceNumber, size, uploadComplete (and bestandsomvang when complete),
+	 *                        then the number of parts uploaded so far and the number expected.
 	 *
 	 * @return JSONResponse
 	 */
-	private function chunkProgress(array $progress, int $uploadedParts, int $totalParts): JSONResponse {
+	private function chunkProgress(array $progress): JSONResponse {
 		return new JSONResponse(
-			data: array_merge($progress, ['uploadedParts' => $uploadedParts, 'totalParts' => $totalParts]),
+			data: $progress,
 			statusCode: Http::STATUS_OK
 		);
 	}//end chunkProgress()
