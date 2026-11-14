@@ -32,7 +32,7 @@ final class SummaryTarget {
 	 * Constructor.
 	 *
 	 * @param object $objectService OpenRegister's object service
-	 * @param array{register $target  string, schema: string, fields: array<int, string>}:The register, schema and fields
+	 * @param array{register: string, schema: string, fields: array<int, string>} $target The register, schema and fields
 	 */
 	public function __construct(
 		public readonly object $objectService,

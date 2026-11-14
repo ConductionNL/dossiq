@@ -34,7 +34,7 @@ final class UploadedDocumentProfile {
 	 * @param string $type The document type uuid
 	 * @param string $classification The confidentiality, already checked
 	 * @param string $direction The direction, already coerced onto the enum
-	 * @param array{sender $correspondents  string, recipients: array<int, string>}:Who the document is from and to
+	 * @param array{sender: string, recipients: array<int, string>} $correspondents Who the document is from and to
 	 */
 	public function __construct(
 		public readonly string $type,
