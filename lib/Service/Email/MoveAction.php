@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Kernel\Contracts\MoveActionInterface;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
 use Psr\Log\LoggerInterface;
 
@@ -49,7 +50,7 @@ use Psr\Log\LoggerInterface;
  *  `FilterVerdict::accept()`, `AuthenticationVerdict::unknown()`), which hold no
  *  state and exist so a caller cannot build a half-built value.
  */
-class MoveAction {
+class MoveAction implements MoveActionInterface {
 
 	/**
 	 * The name the intake log records against a move.

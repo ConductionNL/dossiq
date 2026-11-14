@@ -31,9 +31,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Ai\AiAuditService;
-use OCA\Dossiq\Service\AiService;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\AiAuditServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\AiServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -72,21 +72,21 @@ class AiController extends Controller {
 	 * Constructor for AiController.
 	 *
 	 * @param IRequest $request The request object
-	 * @param AiService $aiService The AI service
-	 * @param AiAuditService $auditService The AI oversight audit service
+	 * @param AiServiceInterface $aiService The AI service
+	 * @param AiAuditServiceInterface $auditService The AI oversight audit service
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger interface
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
-		private AiService $aiService,
-		private AiAuditService $auditService,
+		private AiServiceInterface $aiService,
+		private AiAuditServiceInterface $auditService,
 		private IUserSession $userSession,
 		private LoggerInterface $logger,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

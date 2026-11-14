@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\CaseFileCollectorInterface;
 use OCP\Files\File;
 
 /**
@@ -40,7 +41,7 @@ use OCP\Files\File;
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/document-provenance/spec.md#requirement-a-collected-document-carries-its-provenance-for-any-case-type-req-dpv-001
  */
-class CaseFileCollector {
+class CaseFileCollector implements CaseFileCollectorInterface {
 
 	/**
 	 * Constructor.

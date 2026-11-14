@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Kernel\Contracts\EmailTemplateRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
@@ -46,7 +47,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
  */
-class EmailTemplateRepository {
+class EmailTemplateRepository implements EmailTemplateRepositoryInterface {
 
 	use SearchesObjects;
 

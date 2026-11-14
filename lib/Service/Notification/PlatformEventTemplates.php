@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Notification;
 
+use OCA\Dossiq\Kernel\Contracts\PlatformEventTemplatesInterface;
+
 /**
  * Dutch wording for the platform events a case instance raises.
  *
@@ -30,43 +32,7 @@ namespace OCA\Dossiq\Service\Notification;
  *
  * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-dossiq-fills-the-platforms-dutch-template-gaps-req-urs-07
  */
-final class PlatformEventTemplates {
-
-	/**
-	 * The Dutch text dossiq offers for each platform event it raises.
-	 *
-	 * The variable names are the ones the event declares in the `variables` map
-	 * of `GET /api/notification-templates`. A token this event does not carry
-	 * renders as itself, which is why each entry names only that event's own.
-	 *
-	 * @var array<string, array{subject: string, body: string}>
-	 */
-	public const DUTCH = [
-		'object_created' => [
-			'subject' => 'Nieuw: {{title}}',
-			'body' => '{{actor}} heeft {{title}} aangemaakt in {{schema}}. Open het om te zien wat erin staat.',
-		],
-		'object_updated' => [
-			'subject' => '{{title}} is gewijzigd',
-			'body' => '{{actor}} heeft {{title}} in {{schema}} gewijzigd. Bekijk wat er anders is.',
-		],
-		'object_transitioned' => [
-			'subject' => '{{title}}: van {{from}} naar {{to}}',
-			'body' => '{{title}} staat nu op {{to}} en was {{from}}. Kijk of er iets van je wordt verwacht.',
-		],
-		'retention_holds_skipped' => [
-			'subject' => 'Bewaartermijn: {{skippedCount}} records overgeslagen',
-			'body' => 'De opschoning van {{schemaSlug}} liet {{skippedCount}} records staan. Ze liggen vast onder een blokkade.',
-		],
-		'destruction_holds_skipped' => [
-			'subject' => 'Vernietiging: {{skippedCount}} records overgeslagen',
-			'body' => 'De vernietiging van {{schemaSlug}} liet {{skippedCount}} records staan. Ze liggen vast onder een blokkade.',
-		],
-		'destruction_review_pending' => [
-			'subject' => '{{pendingCount}} records wachten op een beoordelaar',
-			'body' => 'Van {{schemaSlug}} wachten {{pendingCount}} records op iemand die de vernietiging beoordeelt.',
-		],
-	];
+final class PlatformEventTemplates implements PlatformEventTemplatesInterface {
 
 	/**
 	 * The Dutch text for one event, or null when dossiq offers none.

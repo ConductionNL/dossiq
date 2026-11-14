@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller\Support;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IUser;
@@ -44,11 +44,11 @@ final class CaseCaller {
 	 * Constructor.
 	 *
 	 * @param IUserSession    $userSession The session.
-	 * @param CaseAccessGuard $accessGuard The per-case guard.
+	 * @param CaseAccessGuardInterface $accessGuard The per-case guard.
 	 */
 	public function __construct(
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseAccessGuardInterface $accessGuard,
 	) {
 	}//end __construct()
 

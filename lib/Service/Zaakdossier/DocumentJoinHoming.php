@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentJoinHomingInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -28,7 +29,7 @@ use Throwable;
  *
  * @spec openspec/specs/document-projection/spec.md
  */
-class DocumentJoinHoming {
+class DocumentJoinHoming implements DocumentJoinHomingInterface {
 
 	/**
 	 * @param DocumentProjectionService $projection The projection that moves the file.

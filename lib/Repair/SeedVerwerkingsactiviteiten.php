@@ -35,7 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\OpenRegister\Db\Verwerkingsactiviteit;
 use OCA\OpenRegister\Db\VerwerkingsactiviteitMapper;
 use OCP\Migration\IOutput;
@@ -78,14 +78,14 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService OpenRegister availability check.
+	 * @param SettingsServiceInterface $settingsService OpenRegister availability check.
 	 * @param ContainerInterface $container DI container (lazy OR mapper resolution).
 	 * @param LoggerInterface $logger Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private SettingsService $settingsService,
+		private SettingsServiceInterface $settingsService,
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
 	) {

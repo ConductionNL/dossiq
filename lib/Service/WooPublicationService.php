@@ -36,15 +36,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
-use OCA\Dossiq\Service\Publication\CatalogTransport;
-use OCA\Dossiq\Service\Publication\PublicationSources;
+use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
+use OCA\Dossiq\Kernel\Contracts\WooPublicationServiceInterface;
 use OCA\Dossiq\Service\Assessment\NothingToDisclose;
+use OCA\Dossiq\Service\Publication\CatalogTransport;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\Publication\PublicationSources;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
-use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
 use OCA\Dossiq\Woo\WooCaseLedger;
-use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
@@ -65,7 +66,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
-class WooPublicationService {
+class WooPublicationService implements WooPublicationServiceInterface {
 
 	/**
 	 * The OpenCatalogi app identifier.
@@ -123,8 +124,8 @@ class WooPublicationService {
 	 * @param LoggerInterface $logger Logger.
 	 * @param WooDossierReturn|null $dossierReturn Brings the decision back to its source dossier (C6).
 	 * @param WooCaseLedger|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
-	 * @param WooCaseDocuments|null $caseDocuments Loads a case document with its file content.
-	 * @param PagesSeen|null $pagesSeen The pages seen per document; publishing waits for the required ones.
+	 * @param WooCaseDocumentsInterface|null $caseDocuments Loads a case document with its file content.
+	 * @param PagesSeenInterface|null $pagesSeen The pages seen per document; publishing waits for the required ones.
 	 * @param NothingToDisclose|null $nothingToDisclose Whether the case records that nothing can be made public,
 	 *        so the decision is published alone; without it an empty disclosable set is refused as before.
 	 */
@@ -136,8 +137,8 @@ class WooPublicationService {
 		LoggerInterface $logger,
 		private readonly ?WooDossierReturn $dossierReturn = null,
 		?WooCaseLedger $caseLedger = null,
-		?WooCaseDocuments $caseDocuments = null,
-		private readonly ?PagesSeen $pagesSeen = null,
+		?WooCaseDocumentsInterface $caseDocuments = null,
+		private readonly ?PagesSeenInterface $pagesSeen = null,
 		private readonly ?NothingToDisclose $nothingToDisclose = null,
 	) {
 		$this->caseLedger = ($caseLedger ?? new WooCaseLedger(settingsService: $settingsService, logger: $logger));
@@ -374,9 +375,6 @@ class WooPublicationService {
 			'withheldRecord' => $withheld['record'],
 		];
 	}//end publish()
-
-
-
 
 	/**
 	 * The disclosable documents whose file could not be read.

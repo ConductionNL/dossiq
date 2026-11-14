@@ -27,26 +27,27 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Review;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\ReviewWritesInterface;
 
 /**
  * A person's writes on a review, each followed by the grants a new review needs.
  *
  * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-rule-of-the-case-reads-the-whole-case-req-cra-011
  */
-class ReviewWrites {
+class ReviewWrites implements ReviewWritesInterface {
 
 	/**
 	 * Constructor.
 	 *
 	 * @param DocumentRelevance  $reviews        The reviews.
-	 * @param CaseReviewerAccess $reviewerAccess Shares a review that was just created with the people on its case.
+	 * @param CaseReviewerAccessInterface $reviewerAccess Shares a review that was just created with the people on its case.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly DocumentRelevance $reviews,
-		private readonly CaseReviewerAccess $reviewerAccess,
+		private readonly CaseReviewerAccessInterface $reviewerAccess,
 	) {
 	}//end __construct()
 

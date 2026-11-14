@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Workflow;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WorkflowLifecycleGuardInterface;
 use OCA\Dossiq\Service\Task\TaskDeclarationValidator;
 use Psr\Log\LoggerInterface;
 
@@ -49,7 +50,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
  */
-class WorkflowLifecycleGuard {
+class WorkflowLifecycleGuard implements WorkflowLifecycleGuardInterface {
 
 	/**
 	 * Lifecycle states. Mirrors the enum on the workflowTemplate schema.

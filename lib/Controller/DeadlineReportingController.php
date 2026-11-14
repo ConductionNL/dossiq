@@ -29,10 +29,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\ReportingAudienceGuard;
-use OCA\Dossiq\Service\DeadlineReportingService;
-use OCA\Dossiq\Service\Reporting\ReportingAudience;
-use OCA\Dossiq\Service\Term\FirstResponseOutcome;
-use OCA\Dossiq\Service\Termijn\PenaltyPaymentRows;
+use OCA\Dossiq\Kernel\Contracts\DeadlineReportingServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\FirstResponseOutcomeInterface;
+use OCA\Dossiq\Kernel\Contracts\PenaltyPaymentRowsInterface;
+use OCA\Dossiq\Kernel\Contracts\ReportingAudienceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -56,24 +56,24 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param DeadlineReportingService $service Reporting service.
+	 * @param DeadlineReportingServiceInterface $service Reporting service.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
-	 * @param ReportingAudience $audience Who may read a figure about every case.
-	 * @param FirstResponseOutcome|null $firstResponse The first-response figures.
-	 * @param PenaltyPaymentRows|null   $penaltyPayments The forfeited penalty payments by case.
+	 * @param ReportingAudienceInterface $audience Who may read a figure about every case.
+	 * @param FirstResponseOutcomeInterface|null $firstResponse The first-response figures.
+	 * @param PenaltyPaymentRowsInterface|null   $penaltyPayments The forfeited penalty payments by case.
 	 *        Nullable so an instance that never wired it answers "not available"
 	 *        rather than failing to construct the three reports beside it.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DeadlineReportingService $service,
+		private readonly DeadlineReportingServiceInterface $service,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly ReportingAudience $audience,
-		private readonly ?FirstResponseOutcome $firstResponse = null,
-		private readonly ?PenaltyPaymentRows $penaltyPayments = null,
+		private readonly ReportingAudienceInterface $audience,
+		private readonly ?FirstResponseOutcomeInterface $firstResponse = null,
+		private readonly ?PenaltyPaymentRowsInterface $penaltyPayments = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

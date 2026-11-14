@@ -185,6 +185,8 @@ describe('the connection declaration', () => {
 			'pdok',
 			'berichtenbox',
 			'templates',
+			'smartdocuments',
+			'xential',
 		])
 		const orders = connections.map((c) => c.order)
 		expect([...orders].sort((a, b) => a - b)).toEqual(orders)

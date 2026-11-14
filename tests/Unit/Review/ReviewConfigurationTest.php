@@ -58,4 +58,27 @@ class ReviewConfigurationTest extends TestCase {
 		$this->assertSame(['export' => ['mode' => 'sample', 'sampleSize' => 5]], $configuration->reviewDepth(caseId: 'case-c'));
 		$this->assertSame([], $configuration->forCase(caseId: 'case-unknown'));
 	}//end testTheCaseTypeConfiguresTheReview()
+
+	/**
+	 * A review block or a depth that is not a map configures nothing.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedBlockConfiguresNothing(): void {
+		$store = new InMemoryRegister();
+		$store->seed(schema: 'caseType', uuid: 'ct-text', row: ['documentReview' => 'yes']);
+		$store->seed(schema: 'caseType', uuid: 'ct-depth', row: ['documentReview' => ['reviewDepth' => 'everything', 'batchSize' => 25]]);
+		$store->seed(schema: 'case', uuid: 'case-text', row: ['caseType' => 'ct-text']);
+		$store->seed(schema: 'case', uuid: 'case-depth', row: ['caseType' => ['uuid' => 'ct-depth']]);
+		$config = ['register' => 'dossiq', 'case_schema' => 'case', 'case_type_schema' => 'caseType'];
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
+		$configuration = new ReviewConfiguration(settingsService: $settings);
+
+		$this->assertSame([], $configuration->forCase(caseId: 'case-text'));
+		$this->assertSame([], $configuration->reviewDepth(caseId: 'case-text'));
+		$this->assertSame(['reviewDepth' => 'everything', 'batchSize' => 25], $configuration->forCase(caseId: 'case-depth'));
+		$this->assertSame([], $configuration->reviewDepth(caseId: 'case-depth'));
+	}//end testAMalformedBlockConfiguresNothing()
 }//end class

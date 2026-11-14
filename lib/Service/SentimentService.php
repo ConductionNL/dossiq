@@ -29,12 +29,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\SentimentServiceInterface;
+
 /**
  * Trigger-word detection and sentiment scoring for KCC contactmomenten.
  *
  * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
  */
-class SentimentService {
+class SentimentService implements SentimentServiceInterface {
 	/**
 	 * Trigger words that always warrant escalation when present.
 	 */

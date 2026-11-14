@@ -29,10 +29,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\FreezeRegistryInterface;
+use OCA\Dossiq\Kernel\Contracts\FrozenRecordGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\RecordSealInterface;
 use OCA\Dossiq\Service\FrozenRecord\FreezeDefinition;
-use OCA\Dossiq\Service\FrozenRecord\FreezeRegistry;
-use OCA\Dossiq\Service\FrozenRecord\FrozenRecordGuard;
-use OCA\Dossiq\Service\FrozenRecord\RecordSeal;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -56,15 +56,15 @@ class FrozenRecordListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param FreezeRegistry $registry The configured freeze entries.
-	 * @param FrozenRecordGuard $guard The freeze rule.
-	 * @param RecordSeal $seal Seals the record as it freezes.
+	 * @param FreezeRegistryInterface $registry The configured freeze entries.
+	 * @param FrozenRecordGuardInterface $guard The freeze rule.
+	 * @param RecordSealInterface $seal Seals the record as it freezes.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private readonly FreezeRegistry $registry,
-		private readonly FrozenRecordGuard $guard,
-		private readonly RecordSeal $seal,
+		private readonly FreezeRegistryInterface $registry,
+		private readonly FrozenRecordGuardInterface $guard,
+		private readonly RecordSealInterface $seal,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

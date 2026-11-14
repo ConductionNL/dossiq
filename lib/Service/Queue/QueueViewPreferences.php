@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service\Queue;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\QueueViewPreferencesInterface;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
 
@@ -44,7 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/my-work/spec.md
  */
-class QueueViewPreferences {
+class QueueViewPreferences implements QueueViewPreferencesInterface {
 	/**
 	 * The preference holding the groups hidden for a day, as JSON.
 	 *

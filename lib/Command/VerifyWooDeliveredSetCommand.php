@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Woo\WooDeliveredSetVerifier;
+use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetVerifierInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -42,10 +42,10 @@ class VerifyWooDeliveredSetCommand extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param WooDeliveredSetVerifier $verifier Recomputes the hashes.
+	 * @param WooDeliveredSetVerifierInterface $verifier Recomputes the hashes.
 	 */
 	public function __construct(
-		private readonly WooDeliveredSetVerifier $verifier,
+		private readonly WooDeliveredSetVerifierInterface $verifier,
 	) {
 		parent::__construct();
 	}//end __construct()

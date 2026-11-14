@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Email;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCP\IUser;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -40,6 +41,8 @@ use RuntimeException;
  * Pattern validation, candidate extraction and case resolution.
  *
  * @covers \OCA\Dossiq\Service\Email\CaseNumberRecognizer
+ * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses   \OCA\Dossiq\Support\SuppressesWarnings
  */
 final class CaseNumberRecognizerTest extends TestCase {
 
@@ -327,4 +330,118 @@ final class CaseNumberRecognizerTest extends TestCase {
 			$this->recognizer()->resolveCases(candidates: ['2026-000142'], objectService: $service, register: '3', schema: '5', owner: $this->owner)
 		);
 	}//end testASearchFailureIsLoggedAndLinksNothing()
+
+	/**
+	 * A non-capturing group is not a capture group for the case number.
+	 *
+	 * @return void
+	 */
+	public function testANonCapturingGroupIsRefused(): void {
+		$this->assertSame(
+			'The pattern has no capture group for the case number.',
+			$this->recognizer()->validatePattern(pattern: '/(?:\d{4})/')
+		);
+		$this->assertNull($this->recognizer()->validatePattern(pattern: '#(\d{4})#'));
+	}//end testANonCapturingGroupIsRefused()
+
+	/**
+	 * A configured recognizer is used as it is, trimmed.
+	 *
+	 * @return void
+	 */
+	public function testAConfiguredPatternIsLoaded(): void {
+		$this->settings->method('getConfigValue')->willReturn(' /ZK-(\d+)/ ');
+		$this->logger->expects($this->never())->method('error');
+
+		$this->assertSame('/ZK-(\d+)/', $this->recognizer()->loadPattern());
+	}//end testAConfiguredPatternIsLoaded()
+
+	/**
+	 * Look-alikes are left alone, an empty capture is not a candidate, and a pattern that errors at run time finds nothing.
+	 *
+	 * @return void
+	 */
+	public function testLookAlikesEmptyCapturesAndBrokenPatternsYieldNothing(): void {
+		$recognizer = $this->recognizer();
+
+		$this->assertSame(
+			['2025-0042'],
+			$recognizer->extractCaseNumberCandidates(
+				text: 'niet 12026-00421, tel 06-12345678, of 1899-1234, wel 2025-0042',
+				pattern: CaseNumberRecognizer::DEFAULT_PATTERN
+			)
+		);
+		$this->assertSame(['7'], $recognizer->extractCaseNumberCandidates(text: 'a- b-7', pattern: '/-\s*(\d*)/'));
+		$this->assertSame([], $recognizer->extractCaseNumberCandidates(text: 'abc', pattern: '/(unclosed/'));
+	}//end testLookAlikesEmptyCapturesAndBrokenPatternsYieldNothing()
+
+	/**
+	 * On the slug path, one readable case links with the row's numeric ids, and the search is scoped to the owner's organisation with RBAC on.
+	 *
+	 * @return void
+	 */
+	public function testTheSlugPathLinksOneReadableCaseScopedToTheOwner(): void {
+		$store = new InMemoryRegister();
+		$store->seed(
+			schema: 'case',
+			uuid: 'uuid-2026-0042',
+			row: ['identifier' => '2026-0042', '@self' => ['id' => 'uuid-2026-0042', 'register' => 5, 'schema' => 7]]
+		);
+		$this->access->method('hasCaseReadAccess')->with('uuid-2026-0042', $this->owner)->willReturn(true);
+
+		$cases = $this->recognizer()->resolveCases(
+			candidates: ['2026-0042'],
+			objectService: $store,
+			register: 'dossiq',
+			schema: 'case',
+			owner: $this->owner
+		);
+		$this->assertSame([['uuid' => 'uuid-2026-0042', 'identifier' => '2026-0042', 'registerId' => 5, 'schemaId' => 7]], $cases);
+
+		$service = $this->objectService([]);
+		$this->recognizer()->resolveCases(
+			candidates: ['2026-0042'],
+			objectService: $service,
+			register: 'dossiq',
+			schema: 'case',
+			owner: $this->owner
+		);
+		$this->assertSame(
+			[
+				'slugs'                  => ['dossiq', 'case'],
+				'identifier'             => '2026-0042',
+				'_limit'                 => 10,
+				'_rbac'                  => true,
+				'_multitenancy'          => true,
+				'_multitenancy_explicit' => true,
+			],
+			$service->queries[0]
+		);
+	}//end testTheSlugPathLinksOneReadableCaseScopedToTheOwner()
+
+	/**
+	 * A loose search hit is held to exact equality, and a number nobody uses links nothing, silently.
+	 *
+	 * @return void
+	 */
+	public function testANearMissOrUnknownNumberLinksNothingSilently(): void {
+		$this->access->expects($this->never())->method('hasCaseReadAccess');
+		$this->logger->expects($this->never())->method('warning');
+
+		$nearMiss = $this->objectService([['identifier' => '2026-0042-1', '@self' => ['id' => 'near']]]);
+		$this->assertSame(
+			[],
+			$this->recognizer()->resolveCases(candidates: ['2026-0042'], objectService: $nearMiss, register: 'dossiq', schema: 'case', owner: $this->owner)
+		);
+		$this->assertSame(
+			[],
+			$this->recognizer()->resolveCases(
+				candidates: ['2026-9999'],
+				objectService: new InMemoryRegister(),
+				register: 'dossiq',
+				schema: 'case',
+				owner: $this->owner
+			)
+		);
+	}//end testANearMissOrUnknownNumberLinksNothingSilently()
 }//end class

@@ -30,10 +30,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\ContactMomentService;
-use OCA\Dossiq\Service\SentimentService;
+use OCA\Dossiq\Kernel\Contracts\ContactMomentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SentimentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -56,18 +56,18 @@ class SentimentAnalysisJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time The time factory.
-	 * @param SettingsService $settingsService The settings service.
-	 * @param SentimentService $sentimentService The sentiment service.
-	 * @param ContactMomentService $contactMomentService The contactmoment service.
+	 * @param SettingsServiceInterface $settingsService The settings service.
+	 * @param SentimentServiceInterface $sentimentService The sentiment service.
+	 * @param ContactMomentServiceInterface $contactMomentService The contactmoment service.
 	 * @param IAppManager $appManager The app manager.
 	 * @param LoggerInterface $logger The logger.
 	 * @param BackgroundServiceAccount $serviceAccount The account the pass writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly SettingsService $settingsService,
-		private readonly SentimentService $sentimentService,
-		private readonly ContactMomentService $contactMomentService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly SentimentServiceInterface $sentimentService,
+		private readonly ContactMomentServiceInterface $contactMomentService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,

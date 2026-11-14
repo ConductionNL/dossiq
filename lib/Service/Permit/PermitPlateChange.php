@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Permit;
 
+use OCA\Dossiq\Kernel\Contracts\PermitPlateChangeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Throwable;
 
@@ -27,7 +28,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-contribution/spec.md
  */
-class PermitPlateChange {
+class PermitPlateChange implements PermitPlateChangeInterface {
 	/**
 	 * @param SettingsService $settingsService Register, schemas and OpenRegister.
 	 */

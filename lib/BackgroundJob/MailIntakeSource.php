@@ -24,8 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\Service\Email\InboundMailIntake;
-use OCA\Dossiq\Service\Email\IntakeAccount;
+use OCA\Dossiq\Kernel\Contracts\InboundMailIntakeInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeAccountInterface;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
 
 /**
@@ -38,13 +38,13 @@ final class MailIntakeSource {
 	 * Constructor.
 	 *
 	 * @param MailGatewayInterface $gateway The mail gateway.
-	 * @param IntakeAccount        $account The account and folder intake reads.
-	 * @param InboundMailIntake    $intake  The intake path.
+	 * @param IntakeAccountInterface        $account The account and folder intake reads.
+	 * @param InboundMailIntakeInterface    $intake  The intake path.
 	 */
 	public function __construct(
 		public readonly MailGatewayInterface $gateway,
-		public readonly IntakeAccount $account,
-		public readonly InboundMailIntake $intake,
+		public readonly IntakeAccountInterface $account,
+		public readonly InboundMailIntakeInterface $intake,
 	) {
 	}//end __construct()
 }//end class

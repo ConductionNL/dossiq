@@ -14,11 +14,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentProjectionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -65,17 +65,17 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 	private const PAGE_SIZE = 200;
 
 	/**
-	 * @param SettingsService $settingsService OpenRegister access and the configured register.
-	 * @param DocumentRecordStore $store Document records, to resolve a record id to its file.
-	 * @param DocumentProjectionService $projection Object folders.
+	 * @param SettingsServiceInterface $settingsService OpenRegister access and the configured register.
+	 * @param DocumentRecordStoreInterface $store Document records, to resolve a record id to its file.
+	 * @param DocumentProjectionServiceInterface $projection Object folders.
 	 * @param IRootFolder $rootFolder Files by id.
 	 * @param IAppConfig $appConfig The version gate.
 	 * @param LoggerInterface $logger Where each attachment without a file is named.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly DocumentRecordStore $store,
-		private readonly DocumentProjectionService $projection,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly DocumentRecordStoreInterface $store,
+		private readonly DocumentProjectionServiceInterface $projection,
 		private readonly IRootFolder $rootFolder,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,

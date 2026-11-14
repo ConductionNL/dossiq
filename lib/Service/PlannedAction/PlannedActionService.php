@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\PlannedAction;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PlannedActionServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -47,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/task-management/spec.md
  */
-class PlannedActionService {
+class PlannedActionService implements PlannedActionServiceInterface {
 
 	use SearchesObjects;
 

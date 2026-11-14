@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Settings\ConfigKeys;
 use OCA\Dossiq\Service\Settings\ConfigurationImport;
@@ -43,7 +44,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
-class SettingsService {
+class SettingsService implements SettingsServiceInterface {
 	/**
 	 * Configuration keys that contain secrets and must be redacted for non-admin callers.
 	 *
@@ -182,7 +183,7 @@ class SettingsService {
 	 * The three collaborators are constructed here rather than injected so the
 	 * container-facing signature stays `(appConfig, appManager, container,
 	 * logger)` — the shape the bespoke factory in
-	 * {@see \OCA\Dossiq\AppInfo\Registrar\BespokeServiceRegistrar} and ~180
+	 * {@see \OCA\Dossiq\Service\Registrar\BespokeServiceRegistrar} and ~180
 	 * injection sites already use.
 	 *
 	 * @param IAppConfig $appConfig The app configuration service

@@ -42,8 +42,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\BackgroundJob\AcknowledgementDispatchJob;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCP\BackgroundJob\IJobList;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -62,13 +62,13 @@ class AcknowledgementOnCreateListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param IJobList                 $jobList      The background job list.
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Schema id-to-slug resolver.
 	 * @param LoggerInterface          $logger       The logger.
 	 * @param ReceiptMoment            $receipt      Tells a receipt from a draft save.
 	 */
 	public function __construct(
 		private readonly IJobList $jobList,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
 		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {

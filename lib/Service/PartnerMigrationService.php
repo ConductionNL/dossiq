@@ -51,6 +51,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\PartnerMigrationServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\Organisation;
 use OCP\App\IAppManager;
@@ -63,7 +64,7 @@ use Throwable;
  *
  * @spec openspec/specs/partner-organisations/spec.md
  */
-class PartnerMigrationService {
+class PartnerMigrationService implements PartnerMigrationServiceInterface {
 
 	use SearchesObjects;
 
@@ -401,7 +402,6 @@ class PartnerMigrationService {
 
 		return [];
 	}//end toRow()
-
 
 	/**
 	 * Resolve OR's OrganisationMapper from the DI container.

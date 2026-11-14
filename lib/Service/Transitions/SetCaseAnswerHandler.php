@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\SetCaseAnswerHandlerInterface;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
@@ -35,7 +36,7 @@ use Throwable;
  *
  * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
-class SetCaseAnswerHandler implements ActionHandlerInterface {
+class SetCaseAnswerHandler implements ActionHandlerInterface, SetCaseAnswerHandlerInterface {
 
 	/**
 	 * Constructor.

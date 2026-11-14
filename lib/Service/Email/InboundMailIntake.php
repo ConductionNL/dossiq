@@ -47,6 +47,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Kernel\Contracts\InboundMailIntakeInterface;
 use OCA\Dossiq\Service\Email\Filters\FilterOutcome;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
 use Psr\Log\LoggerInterface;
@@ -72,7 +73,7 @@ use Throwable;
  *  ten steps of the intake path, and this is the one class allowed to know all of
  *  them. Bundling them behind a holder would hide which step is missing when one is.
  */
-class InboundMailIntake {
+class InboundMailIntake implements InboundMailIntakeInterface {
 
 	/**
 	 * The subject-tag pattern carrying a case identifier.

@@ -40,11 +40,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseEmailMatchService;
-use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
-use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
-use OCA\Dossiq\Service\Email\MailMessageSource;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailMatchPreferencesInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailMatchServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseNumberRecognizerInterface;
+use OCA\Dossiq\Kernel\Contracts\MailMessageSourceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -65,20 +65,20 @@ class CaseEmailMatchController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest                  $request         Inbound request.
-	 * @param CaseEmailMatchService     $matcher         The instance toggle.
-	 * @param CaseEmailMatchPreferences $preferences     The caller's settings and status.
-	 * @param CaseNumberRecognizer      $recognizer      Validates a pattern before it is stored.
-	 * @param MailMessageSource         $messages        The caller's Mail accounts.
-	 * @param SettingsService           $settingsService The instance settings.
+	 * @param CaseEmailMatchServiceInterface     $matcher         The instance toggle.
+	 * @param CaseEmailMatchPreferencesInterface $preferences     The caller's settings and status.
+	 * @param CaseNumberRecognizerInterface      $recognizer      Validates a pattern before it is stored.
+	 * @param MailMessageSourceInterface         $messages        The caller's Mail accounts.
+	 * @param SettingsServiceInterface           $settingsService The instance settings.
 	 * @param IUserSession              $userSession     The session.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseEmailMatchService $matcher,
-		private readonly CaseEmailMatchPreferences $preferences,
-		private readonly CaseNumberRecognizer $recognizer,
-		private readonly MailMessageSource $messages,
-		private readonly SettingsService $settingsService,
+		private readonly CaseEmailMatchServiceInterface $matcher,
+		private readonly CaseEmailMatchPreferencesInterface $preferences,
+		private readonly CaseNumberRecognizerInterface $recognizer,
+		private readonly MailMessageSourceInterface $messages,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -145,8 +145,11 @@ class CaseEmailMatchController extends Controller {
 	public function getInstanceSettings(): JSONResponse {
 		return new JSONResponse(
 			[
-				CaseEmailMatchService::INSTANCE_TOGGLE_KEY => $this->settingsService->getConfigValue(CaseEmailMatchService::INSTANCE_TOGGLE_KEY, 'no'),
-				CaseNumberRecognizer::PATTERN_KEY => $this->settingsService->getConfigValue(CaseNumberRecognizer::PATTERN_KEY),
+				CaseEmailMatchServiceInterface::INSTANCE_TOGGLE_KEY => $this->settingsService->getConfigValue(
+					CaseEmailMatchServiceInterface::INSTANCE_TOGGLE_KEY,
+					'no'
+				),
+				CaseNumberRecognizerInterface::PATTERN_KEY => $this->settingsService->getConfigValue(CaseNumberRecognizerInterface::PATTERN_KEY),
 			]
 		);
 	}//end getInstanceSettings()
@@ -163,24 +166,24 @@ class CaseEmailMatchController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function saveInstanceSettings(): JSONResponse {
-		$pattern = trim((string)$this->request->getParam(CaseNumberRecognizer::PATTERN_KEY, ''));
+		$pattern = trim((string)$this->request->getParam(CaseNumberRecognizerInterface::PATTERN_KEY, ''));
 		if ($pattern !== '') {
 			$reason = $this->recognizer->validatePattern(pattern: $pattern);
 			if ($reason !== null) {
 				return new JSONResponse(
-					['message' => $reason, 'field' => CaseNumberRecognizer::PATTERN_KEY],
+					['message' => $reason, 'field' => CaseNumberRecognizerInterface::PATTERN_KEY],
 					Http::STATUS_BAD_REQUEST
 				);
 			}
 		}
 
 		$enabled = 'no';
-		if (filter_var($this->request->getParam(CaseEmailMatchService::INSTANCE_TOGGLE_KEY, 'no'), FILTER_VALIDATE_BOOLEAN) === true) {
+		if (filter_var($this->request->getParam(CaseEmailMatchServiceInterface::INSTANCE_TOGGLE_KEY, 'no'), FILTER_VALIDATE_BOOLEAN) === true) {
 			$enabled = 'yes';
 		}
 
-		$this->settingsService->setConfigValue(CaseEmailMatchService::INSTANCE_TOGGLE_KEY, $enabled);
-		$this->settingsService->setConfigValue(CaseNumberRecognizer::PATTERN_KEY, $pattern);
+		$this->settingsService->setConfigValue(CaseEmailMatchServiceInterface::INSTANCE_TOGGLE_KEY, $enabled);
+		$this->settingsService->setConfigValue(CaseNumberRecognizerInterface::PATTERN_KEY, $pattern);
 
 		return $this->getInstanceSettings();
 	}//end saveInstanceSettings()

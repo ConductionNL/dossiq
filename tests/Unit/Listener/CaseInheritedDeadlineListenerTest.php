@@ -22,7 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar;
 use OCA\Dossiq\Listener\CaseInheritedDeadlineListener;
 use OCA\Dossiq\Listener\CaseTypeParentCycleListener;
 use OCA\Dossiq\Service\CaseTypeResolver;
@@ -38,7 +38,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\CaseInheritedDeadlineListener
- * @covers \OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar
  * @uses   \OCA\Dossiq\Service\CaseTypeResolver
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\CaseType\InheritedRowValues

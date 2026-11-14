@@ -24,7 +24,7 @@ namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -55,7 +55,7 @@ class CaseReplyDraftController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest        $request         The request.
-	 * @param CaseAccessGuard $caseAccessGuard The per-case access check.
+	 * @param CaseAccessGuardInterface $caseAccessGuard The per-case access check.
 	 * @param IUserSession    $userSession     The session.
 	 * @param IConfig         $config          Where the user's draft is kept.
 	 * @param IL10N           $l10n            The translations.
@@ -64,7 +64,7 @@ class CaseReplyDraftController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IConfig $config,
 		private readonly IL10N $l10n,

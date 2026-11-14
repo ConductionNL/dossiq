@@ -14,11 +14,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\People;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\FileRequestServiceInterface;
+use OCA\Dossiq\Service\Pipelinq\PartyRefusalReader;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCP\Constants;
 use OCP\Files\Folder;
 use OCP\IUser;
-use OCA\Dossiq\Service\Pipelinq\PartyRefusalReader;
 use OCP\IUserSession;
 use OCP\Share\IManager as IShareManager;
 use OCP\Share\IShare;
@@ -36,7 +37,7 @@ use Throwable;
  *
  * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
  */
-class FileRequestService {
+class FileRequestService implements FileRequestServiceInterface {
 
 	/**
 	 * How long a request stands when the caller names no expiry.

@@ -6,9 +6,11 @@
  * Main application class for the Dossiq case management app.
  *
  * This class is deliberately thin. Every actual registration lives in a
- * dedicated registrar under `lib/AppInfo/Registrar/`, so the class references
- * each subsystem needs (listeners, adapters, middleware, widgets) sit with that
- * subsystem instead of accumulating on the bootstrap class. Application only
+ * registrar in the component it wires (`lib/Listener/Registrar/`,
+ * `lib/Service/Registrar/`, `lib/Middleware/`, `lib/Repair/`, `lib/Dashboard/`),
+ * so the class references each subsystem needs (listeners, adapters,
+ * middleware, widgets) sit with that subsystem instead of accumulating on the
+ * bootstrap class. Application only
  * knows the three phases: bind services, wire listeners, boot.
  *
  * @category AppInfo
@@ -31,11 +33,17 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo;
 
 use OCA\Dossiq\AppInfo\Registrar\BootRegistrar;
-use OCA\Dossiq\AppInfo\Registrar\LifecycleRegistrar;
-use OCA\Dossiq\AppInfo\Registrar\ListenerRegistrar;
-use OCA\Dossiq\AppInfo\Registrar\ServiceRegistrar;
+use OCA\Dossiq\Contribution\ContributionContractRegistrar;
+use OCA\Dossiq\Integration\IntegrationContractRegistrar;
+use OCA\Dossiq\Notification\NotificationContractRegistrar;
+use OCA\Dossiq\Portal\PortalContractRegistrar;
+use OCA\Dossiq\Review\ReviewContractRegistrar;
+use OCA\Dossiq\Service\Registrar\LifecycleRegistrar;
+use OCA\Dossiq\Listener\Registrar\ListenerRegistrar;
+use OCA\Dossiq\Service\Registrar\ServiceRegistrar;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Mcp\DossiqScannableServices;
+use OCA\Dossiq\Woo\WooContractRegistrar;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -130,6 +138,12 @@ class Application extends App implements IBootstrap {
 		// What this app hands to OpenRegister's lifecycle engine.
 		(new LifecycleRegistrar())->register(context: $context);
 		(new ServiceRegistrar())->register(context: $context);
+		(new ContributionContractRegistrar())->register(context: $context);
+		(new IntegrationContractRegistrar())->register(context: $context);
+		(new NotificationContractRegistrar())->register(context: $context);
+		(new PortalContractRegistrar())->register(context: $context);
+		(new ReviewContractRegistrar())->register(context: $context);
+		(new WooContractRegistrar())->register(context: $context);
 		(new ListenerRegistrar())->register(context: $context);
 	}//end register()
 

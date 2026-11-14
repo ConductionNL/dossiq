@@ -38,12 +38,12 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
-use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
-use OCA\Dossiq\Service\SociaalDomein\CasePlanReview;
-use OCA\Dossiq\Service\SociaalDomein\CrossDomainExistence;
-use OCA\Dossiq\Service\SociaalDomein\FamilyPlanAccess;
-use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
+use OCA\Dossiq\Kernel\Contracts\CasePlanGoalsInterface;
+use OCA\Dossiq\Kernel\Contracts\CasePlanInterventionsInterface;
+use OCA\Dossiq\Kernel\Contracts\CasePlanReviewInterface;
+use OCA\Dossiq\Kernel\Contracts\CrossDomainExistenceInterface;
+use OCA\Dossiq\Kernel\Contracts\FamilyPlanAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\SociaalDomeinStoreInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -68,12 +68,12 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @param string                $appName       The app name.
 	 * @param IRequest              $request       The request.
-	 * @param SociaalDomeinStore    $store         The one reader of these schemas.
-	 * @param CasePlanGoals         $goals         The plan's goals.
-	 * @param CasePlanInterventions $interventions The plan's interventions.
-	 * @param CasePlanReview        $review        The plan's reviews.
-	 * @param CrossDomainExistence  $existence     The cross-domain lookup.
-	 * @param FamilyPlanAccess $planAccess    The case check every plan write runs first.
+	 * @param SociaalDomeinStoreInterface    $store         The one reader of these schemas.
+	 * @param CasePlanGoalsInterface         $goals         The plan's goals.
+	 * @param CasePlanInterventionsInterface $interventions The plan's interventions.
+	 * @param CasePlanReviewInterface        $review        The plan's reviews.
+	 * @param CrossDomainExistenceInterface  $existence     The cross-domain lookup.
+	 * @param FamilyPlanAccessInterface $planAccess    The case check every plan write runs first.
 	 * @param LoggerInterface       $logger        The logger.
 	 *
 	 * @return void
@@ -83,12 +83,12 @@ class SociaalDomeinPlanController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly SociaalDomeinStore $store,
-		private readonly CasePlanGoals $goals,
-		private readonly CasePlanInterventions $interventions,
-		private readonly CasePlanReview $review,
-		private readonly CrossDomainExistence $existence,
-		private readonly FamilyPlanAccess $planAccess,
+		private readonly SociaalDomeinStoreInterface $store,
+		private readonly CasePlanGoalsInterface $goals,
+		private readonly CasePlanInterventionsInterface $interventions,
+		private readonly CasePlanReviewInterface $review,
+		private readonly CrossDomainExistenceInterface $existence,
+		private readonly FamilyPlanAccessInterface $planAccess,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -111,7 +111,7 @@ class SociaalDomeinPlanController extends Controller {
 				return $this->denied(status: $status);
 			}
 
-			$plan = $this->store->read(schema: CasePlanReview::SCHEMA, id: $planId);
+			$plan = $this->store->read(schema: CasePlanReviewInterface::SCHEMA, id: $planId);
 			if ($plan === null) {
 				return new JSONResponse(['error' => 'Family plan not found'], Http::STATUS_NOT_FOUND);
 			}
@@ -146,7 +146,7 @@ class SociaalDomeinPlanController extends Controller {
 
 			$plans = [];
 			if (trim($caseId) !== '') {
-				$plans = $this->store->rows(schema: CasePlanReview::SCHEMA, filters: ['caseId' => $caseId]);
+				$plans = $this->store->rows(schema: CasePlanReviewInterface::SCHEMA, filters: ['caseId' => $caseId]);
 			}
 
 			if ($plans === []) {
@@ -202,7 +202,7 @@ class SociaalDomeinPlanController extends Controller {
 		try {
 			$status = $this->planAccess->planWrite(
 				planId: $planId,
-				recordSchema: CasePlanGoals::SCHEMA,
+				recordSchema: CasePlanGoalsInterface::SCHEMA,
 				recordId: trim((string)$this->request->getParam('id', ''))
 			);
 			if ($status !== Http::STATUS_OK) {
@@ -293,7 +293,7 @@ class SociaalDomeinPlanController extends Controller {
 	private function interventionAccess(string $planId): int {
 		$status = $this->planAccess->planWrite(
 			planId: $planId,
-			recordSchema: CasePlanInterventions::SCHEMA,
+			recordSchema: CasePlanInterventionsInterface::SCHEMA,
 			recordId: trim((string)$this->request->getParam('id', ''))
 		);
 		if ($status === Http::STATUS_OK) {
@@ -377,7 +377,7 @@ class SociaalDomeinPlanController extends Controller {
 	#[NoAdminRequired]
 	public function grounds(): JSONResponse {
 		$grounds = [];
-		foreach (CrossDomainExistence::GROUNDS as $id => $label) {
+		foreach (CrossDomainExistenceInterface::GROUNDS as $id => $label) {
 			$grounds[] = ['id' => $id, 'label' => $label];
 		}
 

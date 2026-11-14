@@ -195,4 +195,43 @@ class ObjectUpdateRightTest extends TestCase {
 		$this->assertFalse($this->right(null)->allows(object: $this->object(), schema: 's'));
 		$this->assertFalse($this->right(new UpdateRightHandlerDouble(true), false)->allows(object: $this->object(), schema: 's'));
 	}//end testNoAnswerIsARefusal()
+
+	/**
+	 * An object that names no schema is checked against the given one, and one without an owner asks for none.
+	 *
+	 * @return void
+	 */
+	public function testWithoutItsOwnSchemaOrOwnerTheGivenSchemaAndNoOwnerAreUsed(): void {
+		$objects = [
+			'no accessors' => new \stdClass(),
+			'empty values' => new class {
+				/**
+				 * The schema, empty.
+				 *
+				 * @return string The schema.
+				 */
+				public function getSchema(): string {
+					return '';
+				}//end getSchema()
+
+				/**
+				 * The owner, not a string.
+				 *
+				 * @return int The owner.
+				 */
+				public function getOwner(): int {
+					return 7;
+				}//end getOwner()
+			},
+		];
+
+		foreach ($objects as $label => $object) {
+			$handler = new UpdateRightHandlerDouble(true);
+			$lookedUp = [];
+
+			$this->assertTrue($this->right($handler, true, $lookedUp)->allows(object: $object, schema: 'inspectionChecklistRun'), $label);
+			$this->assertSame(['inspectionChecklistRun'], $lookedUp, $label);
+			$this->assertNull($handler->asked['objectOwner'], $label);
+		}
+	}//end testWithoutItsOwnSchemaOrOwnerTheGivenSchemaAndNoOwnerAreUsed()
 }//end class

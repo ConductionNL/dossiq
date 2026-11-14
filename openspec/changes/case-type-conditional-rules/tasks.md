@@ -33,9 +33,13 @@ the engine task carries as its `key`.
       shows them on the Rules tab above the case schema's OpenRegister rules
 - [x] Test the rows (unit: every condition kind, operator, action kind and moment in words, a status by its name,
       the read check before the answer)
-- [ ] Implement "Regel toevoegen" and the row menu (Edit, Turn off, Delete): the form over this type's own fields,
+- [x] Implement "Regel toevoegen" and the row menu (Edit, Turn off, Delete): the form over this type's own fields,
       tasks, variants, document types and templates, on the library's `CnConditionListEditor`
-- [ ] Test the form (vitest: the form writes the model)
+      (`src/modals/CaseTypeRuleDialog.vue`, opened from `src/views/settings/tabs/RulesTab.vue` on the Rules tab;
+      conversion and choices in `src/services/caseTypeRules.js`; a published version offers no add and no row menu)
+- [x] Test the form (vitest: the form writes the model)
+      (`tests/vitest/caseTypeConditionalRules.spec.js`: adds a rule through the form and stores it on the case type,
+      sends a message to a role, freezes a published version; `tests/vitest/caseTypeRulesConversion.spec.js`)
 
 ### Task 0: OpenRegister, a scoped rule inventory (built first, in OpenRegister)
 - **spec_ref**: `openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rule-inventory-can-be-asked-for-one-case-types-rules`

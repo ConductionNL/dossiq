@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PayoutServiceInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
@@ -49,7 +50,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/payout/spec.md
  */
-class PayoutService {
+class PayoutService implements PayoutServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -294,7 +295,6 @@ class PayoutService {
 
 		return $row;
 	}//end withdrawFromFinance()
-
 
 	/**
 	 * Raise a prepared payout in the finance app again under a new reference,

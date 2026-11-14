@@ -46,19 +46,20 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue;
 
-use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Notification\NotificationRouting;
 use InvalidArgumentException;
-use Throwable;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DigestPreferencesInterface;
+use OCA\Dossiq\Service\Notification\NotificationRouting;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * The reader's digest settings.
  *
  * @spec openspec/specs/my-work/spec.md
  */
-class DigestPreferences {
+class DigestPreferences implements DigestPreferencesInterface {
 	/**
 	 * Whether this person wants the digest.
 	 *
@@ -79,13 +80,6 @@ class DigestPreferences {
 	 * @var string
 	 */
 	public const PREF_LAST_SENT = 'work_digest_last_sent';
-
-	/**
-	 * The hour a digest arrives when nobody chose one.
-	 *
-	 * @var int
-	 */
-	public const DEFAULT_HOUR = 8;
 
 	/**
 	 * Constructor.

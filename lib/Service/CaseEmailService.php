@@ -28,13 +28,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Email\OutboundMailRules;
 use OCA\Dossiq\Exception\RecipientOptedOutException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailServiceInterface;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\OutboundCaseMail;
+use OCA\Dossiq\Service\Email\OutboundMailRules;
 use OCA\Dossiq\Service\Email\ReceivedEmail;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
 use OCA\Dossiq\Service\Email\SentCaseMail;
@@ -49,7 +50,7 @@ use RuntimeException;
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  * @spec openspec/specs/case-history-surface/spec.md
  */
-class CaseEmailService {
+class CaseEmailService implements CaseEmailServiceInterface {
 
 	/**
 	 * Regex pattern for extracting case number from email subject.

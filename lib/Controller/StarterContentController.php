@@ -33,10 +33,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Starter\CaseTypeRetirementService;
-use OCA\Dossiq\Service\Starter\DomainCopyService;
-use OCA\Dossiq\Service\Starter\ReusableProcessStepService;
-use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeRetirementServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DomainCopyServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ReusableProcessStepServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ShippedConfigurationServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -80,18 +80,18 @@ class StarterContentController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest                    $request    The HTTP request.
-	 * @param ShippedConfigurationService $shipped    What shipped and what changed.
-	 * @param CaseTypeRetirementService   $retirement Retire and restore.
-	 * @param DomainCopyService           $domains    The domain copy.
-	 * @param ReusableProcessStepService  $steps      The shared process steps.
+	 * @param ShippedConfigurationServiceInterface $shipped    What shipped and what changed.
+	 * @param CaseTypeRetirementServiceInterface   $retirement Retire and restore.
+	 * @param DomainCopyServiceInterface           $domains    The domain copy.
+	 * @param ReusableProcessStepServiceInterface  $steps      The shared process steps.
 	 * @param LoggerInterface             $logger     Logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly ShippedConfigurationService $shipped,
-		private readonly CaseTypeRetirementService $retirement,
-		private readonly DomainCopyService $domains,
-		private readonly ReusableProcessStepService $steps,
+		private readonly ShippedConfigurationServiceInterface $shipped,
+		private readonly CaseTypeRetirementServiceInterface $retirement,
+		private readonly DomainCopyServiceInterface $domains,
+		private readonly ReusableProcessStepServiceInterface $steps,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

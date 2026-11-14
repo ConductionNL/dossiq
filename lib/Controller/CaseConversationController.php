@@ -36,10 +36,10 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Conversation\CaseCaptureService;
-use OCA\Dossiq\Service\Conversation\CaseConversationService;
-use OCA\Dossiq\Service\Conversation\MajorCaseDeclaration;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseCaptureServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseConversationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\MajorCaseDeclarationInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -64,31 +64,31 @@ class CaseConversationController extends Controller {
 	 * @var array<string, int>
 	 */
 	private const REASON_STATUS = [
-		CaseConversationService::REASON_NO_TALK => Http::STATUS_SERVICE_UNAVAILABLE,
-		CaseConversationService::REASON_NO_CASE => Http::STATUS_NOT_FOUND,
-		CaseConversationService::REASON_UNKNOWN_ROOM => Http::STATUS_NOT_FOUND,
-		CaseConversationService::REASON_UNRESOLVED_RESPONDERS => Http::STATUS_CONFLICT,
-		CaseCaptureService::REASON_NOT_A_CAPTURE => Http::STATUS_BAD_REQUEST,
-		CaseCaptureService::REASON_EMPTY => Http::STATUS_BAD_REQUEST,
+		CaseConversationServiceInterface::REASON_NO_TALK => Http::STATUS_SERVICE_UNAVAILABLE,
+		CaseConversationServiceInterface::REASON_NO_CASE => Http::STATUS_NOT_FOUND,
+		CaseConversationServiceInterface::REASON_UNKNOWN_ROOM => Http::STATUS_NOT_FOUND,
+		CaseConversationServiceInterface::REASON_UNRESOLVED_RESPONDERS => Http::STATUS_CONFLICT,
+		CaseCaptureServiceInterface::REASON_NOT_A_CAPTURE => Http::STATUS_BAD_REQUEST,
+		CaseCaptureServiceInterface::REASON_EMPTY => Http::STATUS_BAD_REQUEST,
 	];
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest                 $request         Inbound request.
-	 * @param CaseConversationService  $conversations   Conversations and the record they leave.
-	 * @param MajorCaseDeclaration     $major           Declaring a case major, and closing its channel.
-	 * @param CaseCaptureService       $captures        Voice notes and screen captures.
-	 * @param CaseAccessGuard          $caseAccessGuard Per-case authorization, failing closed.
+	 * @param CaseConversationServiceInterface  $conversations   Conversations and the record they leave.
+	 * @param MajorCaseDeclarationInterface     $major           Declaring a case major, and closing its channel.
+	 * @param CaseCaptureServiceInterface       $captures        Voice notes and screen captures.
+	 * @param CaseAccessGuardInterface          $caseAccessGuard Per-case authorization, failing closed.
 	 * @param IUserSession             $userSession     Current user session.
 	 * @param LoggerInterface          $logger          Logger, used by the refusal translator.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseConversationService $conversations,
-		private readonly MajorCaseDeclaration $major,
-		private readonly CaseCaptureService $captures,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseConversationServiceInterface $conversations,
+		private readonly MajorCaseDeclarationInterface $major,
+		private readonly CaseCaptureServiceInterface $captures,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

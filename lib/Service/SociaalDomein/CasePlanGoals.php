@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Service\SociaalDomein;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CasePlanGoalsInterface;
 
 /**
  * Save, read and close the goals of one case or one plan.
@@ -49,14 +50,7 @@ use OCA\Dossiq\Exception\RefusedException;
  *
  * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
-class CasePlanGoals {
-
-	/**
-	 * The schema slug goals are stored under.
-	 *
-	 * @var string
-	 */
-	public const SCHEMA = 'casePlanGoal';
+class CasePlanGoals implements CasePlanGoalsInterface {
 
 	/**
 	 * The states a goal can be in.

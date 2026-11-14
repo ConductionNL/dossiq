@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Onboarding\WalkthroughCompletion;
+use OCA\Dossiq\Kernel\Contracts\WalkthroughCompletionInterface;
 use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
@@ -48,13 +48,13 @@ class WalkthroughSeenInitialStateListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param IInitialState         $initialState The initial state of the page.
-	 * @param WalkthroughCompletion $completion   Whether the caller has seen the tour.
+	 * @param WalkthroughCompletionInterface $completion   Whether the caller has seen the tour.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly IInitialState $initialState,
-		private readonly WalkthroughCompletion $completion,
+		private readonly WalkthroughCompletionInterface $completion,
 	) {
 	}//end __construct()
 
@@ -75,6 +75,6 @@ class WalkthroughSeenInitialStateListener implements IEventListener {
 			return;
 		}
 
-		$this->initialState->provideInitialState(WalkthroughCompletion::STATE_KEY, $this->completion->seen());
+		$this->initialState->provideInitialState(WalkthroughCompletionInterface::STATE_KEY, $this->completion->seen());
 	}//end handle()
 }//end class

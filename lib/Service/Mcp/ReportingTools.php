@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Mcp;
 
+use OCA\Dossiq\Kernel\Contracts\ReportingToolsInterface;
 use OCA\Dossiq\Service\Dashboard\DashboardWidgetScope;
 use OCA\Dossiq\Service\DeadlineReportingService;
 use OCA\Dossiq\Service\DoorlooptijdService;
@@ -44,7 +45,7 @@ use OCP\IUserSession;
  *
  * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-202-curated-aggregation-reads
  */
-class ReportingTools {
+class ReportingTools implements ReportingToolsInterface {
 
 	/**
 	 * Constructor.

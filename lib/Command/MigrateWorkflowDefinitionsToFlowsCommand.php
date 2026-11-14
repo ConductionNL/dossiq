@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\Workflow\WorkflowTemplateFlowMigrator;
+use OCA\Dossiq\Kernel\Contracts\WorkflowTemplateFlowMigratorInterface;
 use OCP\IUser;
 use OCP\IUserManager;
 use Symfony\Component\Console\Command\Command;
@@ -46,11 +46,11 @@ class MigrateWorkflowDefinitionsToFlowsCommand extends Command {
 	/**
 	 * Wire the command against the migrator.
 	 *
-	 * @param WorkflowTemplateFlowMigrator $migrator The migrator.
+	 * @param WorkflowTemplateFlowMigratorInterface $migrator The migrator.
 	 * @param IUserManager $userManager Resolves the acting user.
 	 */
 	public function __construct(
-		private readonly WorkflowTemplateFlowMigrator $migrator,
+		private readonly WorkflowTemplateFlowMigratorInterface $migrator,
 		private readonly IUserManager $userManager,
 	) {
 		parent::__construct();

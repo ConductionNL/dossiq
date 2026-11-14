@@ -37,8 +37,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Custody\CaseCustodyChain;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseCustodyChainInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -65,16 +65,16 @@ class BackfillCaseCustody implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService Bridge to OpenRegister.
-	 * @param CaseCustodyChain $custody         The chain the holdings are written into.
+	 * @param SettingsServiceInterface  $settingsService Bridge to OpenRegister.
+	 * @param CaseCustodyChainInterface $custody         The chain the holdings are written into.
 	 * @param IAppConfig       $appConfig       App configuration.
 	 * @param LoggerInterface  $logger          Logger.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseCustodyChain $custody,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseCustodyChainInterface $custody,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {

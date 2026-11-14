@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
+use OCA\Dossiq\Kernel\Contracts\PackageInstallerInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -48,12 +48,12 @@ class PackageController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest         $request     The request.
-	 * @param PackageInstaller $installer   Installs and lists the packages.
+	 * @param PackageInstallerInterface $installer   Installs and lists the packages.
 	 * @param IUserSession     $userSession The session, for the body-side guard.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PackageInstaller $installer,
+		private readonly PackageInstallerInterface $installer,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -98,8 +98,8 @@ class PackageController extends Controller {
 
 		$outcome = $this->installer->install(id: $id);
 		$status = match ($outcome['status']) {
-			PackageInstaller::INSTALLED, PackageInstaller::CURRENT => Http::STATUS_OK,
-			PackageInstaller::REFUSED => Http::STATUS_UNPROCESSABLE_ENTITY,
+			PackageInstallerInterface::INSTALLED, PackageInstallerInterface::CURRENT => Http::STATUS_OK,
+			PackageInstallerInterface::REFUSED => Http::STATUS_UNPROCESSABLE_ENTITY,
 			default => Http::STATUS_INTERNAL_SERVER_ERROR,
 		};
 
@@ -127,7 +127,7 @@ class PackageController extends Controller {
 
 		$outcomes = $this->installer->reloadInstalled();
 		$status = Http::STATUS_OK;
-		if (in_array(PackageInstaller::FAILED, array_column($outcomes, 'status'), true) === true) {
+		if (in_array(PackageInstallerInterface::FAILED, array_column($outcomes, 'status'), true) === true) {
 			$status = Http::STATUS_INTERNAL_SERVER_ERROR;
 		}
 

@@ -44,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
+use OCA\Dossiq\Kernel\Contracts\PortalAssertionVerifierInterface;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
@@ -52,12 +53,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
  */
-class PortalAssertionVerifier {
-
-	/**
-	 * The header portaliq attaches the assertion to.
-	 */
-	public const HEADER = 'X-Portal-Subject';
+class PortalAssertionVerifier implements PortalAssertionVerifierInterface {
 
 	/**
 	 * The only accepted algorithm.

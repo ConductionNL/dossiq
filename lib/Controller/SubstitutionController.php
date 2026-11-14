@@ -35,10 +35,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseReassignmentService;
+use OCA\Dossiq\Kernel\Contracts\CaseReassignmentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SubstitutionAuditServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SubstitutionServiceInterface;
 use OCA\Dossiq\Service\Substitution\SubstitutionAccessGuard;
-use OCA\Dossiq\Service\SubstitutionAuditService;
-use OCA\Dossiq\Service\SubstitutionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -56,20 +56,20 @@ class SubstitutionController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param SubstitutionService $substitutionService Substitution domain logic.
-	 * @param SubstitutionAuditService $auditService Capacity audit.
+	 * @param SubstitutionServiceInterface $substitutionService Substitution domain logic.
+	 * @param SubstitutionAuditServiceInterface $auditService Capacity audit.
 	 * @param SubstitutionAccessGuard $accessGuard Authorization + lookups.
-	 * @param CaseReassignmentService $reassignmentService Builds the caseload selection.
+	 * @param CaseReassignmentServiceInterface $reassignmentService Builds the caseload selection.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly SubstitutionService $substitutionService,
-		private readonly SubstitutionAuditService $auditService,
+		private readonly SubstitutionServiceInterface $substitutionService,
+		private readonly SubstitutionAuditServiceInterface $auditService,
 		private readonly SubstitutionAccessGuard $accessGuard,
-		private readonly CaseReassignmentService $reassignmentService,
+		private readonly CaseReassignmentServiceInterface $reassignmentService,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

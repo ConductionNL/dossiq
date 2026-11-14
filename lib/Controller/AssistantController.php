@@ -30,10 +30,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use Exception;
-use OCA\Dossiq\Service\Assistant\CaseAssistantService;
-use OCA\Dossiq\Service\Ai\CaseTypeAiFeatures;
-use OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient;
-use OCA\Dossiq\Service\Assistant\HermiqAssistantClient;
+use OCA\Dossiq\Kernel\Contracts\CaseAssistantServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeAiFeaturesInterface;
+use OCA\Dossiq\Kernel\Contracts\HermiqAiFeatureClientInterface;
+use OCA\Dossiq\Kernel\Contracts\HermiqAssistantClientInterface;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -61,26 +61,26 @@ class AssistantController extends Controller {
 	 *
 	 * @param string $appName The application name.
 	 * @param IRequest $request The request object.
-	 * @param CaseAssistantService $caseAssistantService Turn orchestration.
-	 * @param HermiqAssistantClient $hermiqClient Availability check for the UI gate.
+	 * @param CaseAssistantServiceInterface $caseAssistantService Turn orchestration.
+	 * @param HermiqAssistantClientInterface $hermiqClient Availability check for the UI gate.
 	 * @param IUserSession $userSession Resolves the requesting user.
 	 * @param IL10N $l10n Localization service for translations.
 	 * @param LoggerInterface $logger Structured logger.
-	 * @param CaseTypeAiFeatures|null $aiFeatures Reads what a case type declared.
-	 * @param HermiqAiFeatureClient|null $aiFeatureClient Reads where each declared feature runs.
+	 * @param CaseTypeAiFeaturesInterface|null $aiFeatures Reads what a case type declared.
+	 * @param HermiqAiFeatureClientInterface|null $aiFeatureClient Reads where each declared feature runs.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseAssistantService $caseAssistantService,
-		private readonly HermiqAssistantClient $hermiqClient,
+		private readonly CaseAssistantServiceInterface $caseAssistantService,
+		private readonly HermiqAssistantClientInterface $hermiqClient,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		// Nullable and last, so every existing construction of this controller
 		// keeps working; the container supplies both.
-		private readonly ?CaseTypeAiFeatures $aiFeatures = null,
-		private readonly ?HermiqAiFeatureClient $aiFeatureClient = null,
+		private readonly ?CaseTypeAiFeaturesInterface $aiFeatures = null,
+		private readonly ?HermiqAiFeatureClientInterface $aiFeatureClient = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -147,7 +147,7 @@ class AssistantController extends Controller {
 		}
 
 		$caseType = (array)$this->request->getParam('caseType', []);
-		$surface = (string)$this->request->getParam('surface', CaseTypeAiFeatures::SURFACE_CASE);
+		$surface = (string)$this->request->getParam('surface', CaseTypeAiFeaturesInterface::SURFACE_CASE);
 
 		$declared = $this->aiFeatures->onSurface(caseType: $caseType, surface: $surface);
 		if ($declared === []) {

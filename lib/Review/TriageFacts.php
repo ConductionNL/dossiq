@@ -25,8 +25,8 @@ namespace OCA\Dossiq\Review;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
-use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\Dossiq\Kernel\Contracts\CaseDocumentProvenanceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -65,16 +65,16 @@ class TriageFacts {
 	/**
 	 * Constructor.
 	 *
-	 * @param WooCaseDocuments       $caseDocuments The document records.
-	 * @param CaseDocumentProvenance $provenance    Custodian, source system and mail headers per document.
+	 * @param WooCaseDocumentsInterface       $caseDocuments The document records.
+	 * @param CaseDocumentProvenanceInterface $provenance    Custodian, source system and mail headers per document.
 	 * @param DocumentText           $text          The extracted text per document.
 	 * @param LoggerInterface        $logger        The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly WooCaseDocuments $caseDocuments,
-		private readonly CaseDocumentProvenance $provenance,
+		private readonly WooCaseDocumentsInterface $caseDocuments,
+		private readonly CaseDocumentProvenanceInterface $provenance,
 		private readonly DocumentText $text,
 		private readonly LoggerInterface $logger,
 	) {

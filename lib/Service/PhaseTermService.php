@@ -47,6 +47,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\PhaseTermServiceInterface;
 use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
 
@@ -60,7 +61,7 @@ use Psr\Log\LoggerInterface;
  * nothing to inject. Making it an instance would add a constructor dependency
  * to every class that names a kind, to hide a `::` behind a `->`.
  */
-class PhaseTermService {
+class PhaseTermService implements PhaseTermServiceInterface {
 	/**
 	 * The status a stopped phase term carries.
 	 *

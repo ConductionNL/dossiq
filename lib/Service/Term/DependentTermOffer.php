@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Term;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\DependentTermOfferInterface;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\Relation\CaseRelationCodec;
@@ -54,17 +55,11 @@ use Throwable;
  *
  * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
  */
-class DependentTermOffer {
+class DependentTermOffer implements DependentTermOfferInterface {
 	/**
 	 * The kind of task this service writes, and the only kind it settles.
 	 */
 	public const TASK_KIND = 'term-follow';
-
-	/**
-	 * The term events that move a date and therefore make an offer. A start,
-	 * a completion and a notification move nothing, so they make none.
-	 */
-	public const MOVING_EVENTS = ['verleng', 'pauze'];
 
 	/**
 	 * How many waiting cases one moved term will write tasks for (ADR-058).
