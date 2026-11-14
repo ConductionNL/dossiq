@@ -316,7 +316,7 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 			schema: $schema,
 			organisation: $organisation,
 		);
-		if ($rows === null) {
+		if ($rows === false) {
 			return false;
 		}
 
@@ -333,11 +333,11 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 	 * @param string $schema        The mandate schema id.
 	 * @param string $organisation  The organisation UUID, for the log.
 	 *
-	 * @return array<int, array<string, mixed>>|null The rows, or null when the register could not be read.
+	 * @return array<int, array<string, mixed>>|false The rows, or false when the register could not be read.
 	 *
 	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md#requirement-the-overview-reads-decisions-from-the-mandate-register
 	 */
-	private function activeMandateRows(object $objectService, string $register, string $schema, string $organisation): ?array {
+	private function activeMandateRows(object $objectService, string $register, string $schema, string $organisation): array|false {
 		try {
 			$rows = $this->searchObjectsAsArraysUnscoped(
 				objectService: $objectService,
@@ -350,7 +350,7 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 				'Dossiq MandaatCheckService: mandate register could not be read for an organisation',
 				['organisation' => $organisation, 'exception' => $e->getMessage()]
 			);
-			return null;
+			return false;
 		}
 
 		return $rows;

@@ -145,7 +145,7 @@ class DossierCompiler {
 			objectService: $objectService,
 			register: $register,
 			docSchema: $docSchema,
-			caseUuids: $caseUuids,
+			uuids: $caseUuids,
 		);
 
 		return $this->orderDocuments(documents: $documents);
@@ -178,15 +178,15 @@ class DossierCompiler {
 	 * @param object             $objectService The OpenRegister ObjectService.
 	 * @param string             $register      The register id.
 	 * @param string             $docSchema     The caseDocument schema id.
-	 * @param array<int, string> $caseUuids     The cases whose documents belong in the dossier.
+	 * @param array<int, string> $uuids         The cases whose documents belong in the dossier.
 	 *
 	 * @return array<int, array<string, mixed>> The documents, unordered.
 	 *
 	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
 	 */
-	private function documentsOf(object $objectService, string $register, string $docSchema, array $caseUuids): array {
+	private function documentsOf(object $objectService, string $register, string $docSchema, array $uuids): array {
 		$documents = [];
-		foreach ($caseUuids as $uuid) {
+		foreach ($uuids as $uuid) {
 			$documents = array_merge(
 				$documents,
 				$this->collectCaseDocuments(
