@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Pipelinq;
 
+use OCA\Dossiq\Kernel\Contracts\ProgrammeConsumerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -36,7 +37,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08
  */
-class ProgrammeConsumer {
+class ProgrammeConsumer implements ProgrammeConsumerInterface {
 
 	/**
 	 * The figure when pipelinq cannot answer for a programme's progress.

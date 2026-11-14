@@ -39,8 +39,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseMergeService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseMergeServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -68,15 +68,15 @@ class PublicCaseSurvivorController extends Controller {
 	 *
 	 * @param string           $appName         The app name.
 	 * @param IRequest         $request         The HTTP request.
-	 * @param CaseMergeService $mergeService    Follows `mergedInto` to its end.
-	 * @param SettingsService  $settingsService Register ids and OpenRegister's services.
+	 * @param CaseMergeServiceInterface $mergeService    Follows `mergedInto` to its end.
+	 * @param SettingsServiceInterface  $settingsService Register ids and OpenRegister's services.
 	 * @param LoggerInterface  $logger          Logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseMergeService $mergeService,
-		private readonly SettingsService $settingsService,
+		private readonly CaseMergeServiceInterface $mergeService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);

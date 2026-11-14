@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Support;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseAssigneeWriterInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -41,7 +42,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseAssigneeWriter {
+class CaseAssigneeWriter implements CaseAssigneeWriterInterface {
 
 	use WritesReassignments;
 

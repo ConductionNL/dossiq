@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\TermijnTimerRegistrar;
+use OCA\Dossiq\Listener\Registrar\TermijnTimerRegistrar;
 use OCA\Dossiq\Listener\AdviceTimerFiredListener;
 use OCA\Dossiq\Listener\AdviceTimerListener;
 use OCA\Dossiq\Listener\BezwaarArchiveTimerFiredListener;

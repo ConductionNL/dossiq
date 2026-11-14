@@ -28,8 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseTypeViews;
-use OCA\Dossiq\Service\MenuCaseTypesService;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeViewsInterface;
+use OCA\Dossiq\Kernel\Contracts\MenuCaseTypesServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -49,16 +49,16 @@ class ManifestController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param MenuCaseTypesService $menuCaseTypes The per-user menu choice
+	 * @param MenuCaseTypesServiceInterface $menuCaseTypes The per-user menu choice
 	 * @param IUserSession $userSession User session
-	 * @param CaseTypeViews $caseTypeViews The view of the case list per case type
+	 * @param CaseTypeViewsInterface $caseTypeViews The view of the case list per case type
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly MenuCaseTypesService $menuCaseTypes,
+		private readonly MenuCaseTypesServiceInterface $menuCaseTypes,
 		private readonly IUserSession $userSession,
-		private readonly CaseTypeViews $caseTypeViews,
+		private readonly CaseTypeViewsInterface $caseTypeViews,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -108,7 +108,7 @@ class ManifestController extends Controller {
 			[
 				'menu' => [],
 				'pages' => [
-					['id' => CaseTypeViews::PAGE, 'config' => [CaseTypeViews::DEFAULT_VIEWS_KEY => $views]],
+					['id' => CaseTypeViewsInterface::PAGE, 'config' => [CaseTypeViewsInterface::DEFAULT_VIEWS_KEY => $views]],
 				],
 			]
 		);

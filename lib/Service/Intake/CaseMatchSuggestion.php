@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Kernel\Contracts\CaseMatchSuggestionInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -38,7 +39,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/kcc-routing/spec.md
  */
-class CaseMatchSuggestion {
+class CaseMatchSuggestion implements CaseMatchSuggestionInterface {
 	use SearchesObjects;
 
 	/**

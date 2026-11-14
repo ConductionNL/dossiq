@@ -16,7 +16,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Workflow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WorkflowTemplateFlowMigratorInterface;
 use OCA\Dossiq\Service\Flow\FlowMigrationSummary;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
@@ -49,7 +50,7 @@ use Throwable;
  *
  * @spec openspec/specs/workflow-definitions-to-flow/spec.md
  */
-class WorkflowTemplateFlowMigrator {
+class WorkflowTemplateFlowMigrator implements WorkflowTemplateFlowMigratorInterface {
 
 	use SearchesObjects;
 	use ProjectsOntoFlows;
@@ -64,7 +65,6 @@ class WorkflowTemplateFlowMigrator {
 	 * @var string
 	 */
 	private const MARKER_PREFIX = 'dossiq:workflowTemplate:';
-
 
 	/**
 	 * Templates read per pass.
@@ -120,7 +120,6 @@ class WorkflowTemplateFlowMigrator {
 		);
 
 	}//end migrate()
-
 
 	/**
 	 * Walk every template and project it, inside the acting user's context.
@@ -331,7 +330,6 @@ class WorkflowTemplateFlowMigrator {
 
 	}//end nodeId()
 
-
 	/**
 	 * The flow document to store.
 	 *
@@ -345,7 +343,7 @@ class WorkflowTemplateFlowMigrator {
 		return [
 			'name' => (string)($template['title'] ?? 'Workflow'),
 			'description' => $this->description(template: $template),
-			'app' => Application::APP_ID,
+			'app' => AppIdentity::APP_ID,
 			// DISABLED. The template still drives cases through
 			// StatusTransitionService; an enabled projection would move the
 			// same case a second time on every status change.
@@ -438,7 +436,7 @@ class WorkflowTemplateFlowMigrator {
 		try {
 			$rows = $this->batchOf(store: $store);
 		} catch (Throwable $e) {
-			$context = ['app' => Application::APP_ID, 'exception' => $e->getMessage()];
+			$context = ['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()];
 			$this->logger->warning('Dossiq: could not list status types for the flow projection', $context);
 
 			return [];
@@ -481,7 +479,7 @@ class WorkflowTemplateFlowMigrator {
 		try {
 			return $this->batchOf(store: $store);
 		} catch (Throwable $e) {
-			$context = ['app' => Application::APP_ID, 'exception' => $e->getMessage()];
+			$context = ['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()];
 			$this->logger->warning('Dossiq: could not list workflow templates', $context);
 
 			return [];
@@ -525,8 +523,5 @@ class WorkflowTemplateFlowMigrator {
 			filters: ['_limit' => self::BATCH_LIMIT],
 		);
 	}//end batchOf()
-
-
-
 
 }//end class

@@ -17,8 +17,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use DateTime;
-use OCA\Dossiq\Service\AssigneeResolver;
-use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Kernel\Contracts\AssigneeResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\EngineTaskGatewayInterface;
 use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunContext;
@@ -164,10 +164,10 @@ class DossiqAskPersonNode implements IFlowNode {
      * container, and the suites that build it by hand — keeps working. It
      * needs nothing this node was not already given.
      *
-     * @param AssigneeResolver    $assignees   The app's one answer to who work goes to.
+     * @param AssigneeResolverInterface    $assignees   The app's one answer to who work goes to.
      * @param IL10N               $l10n        The localisation service.
      * @param LoggerInterface     $logger      The logger.
-     * @param EngineTaskGateway   $engineTasks The seam onto OpenRegister's task engine.
+     * @param EngineTaskGatewayInterface   $engineTasks The seam onto OpenRegister's task engine.
      * @param IUserSession        $userSession The acting identity the engine records.
      * @param TaskFormReader|null $forms       The engine's own form reader, which
      *                                         is what refuses a declaration nobody
@@ -183,10 +183,10 @@ class DossiqAskPersonNode implements IFlowNode {
      * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function __construct(
-        private readonly AssigneeResolver $assignees,
+        private readonly AssigneeResolverInterface $assignees,
         private readonly IL10N $l10n,
         private readonly LoggerInterface $logger,
-        EngineTaskGateway $engineTasks,
+        EngineTaskGatewayInterface $engineTasks,
         IUserSession $userSession,
         private readonly ?TaskFormReader $forms = null,
     ) {

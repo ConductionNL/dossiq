@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Activity;
 
 use DateTimeInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseActivityStampInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -42,16 +43,9 @@ use Throwable;
  *
  * @spec openspec/specs/case-last-activity-at/spec.md
  */
-class CaseActivityStamp {
+class CaseActivityStamp implements CaseActivityStampInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * The case property the stamp sets.
-	 *
-	 * @var string
-	 */
-	public const FIELD = 'lastActivityAt';
 
 	/**
 	 * Constructor.

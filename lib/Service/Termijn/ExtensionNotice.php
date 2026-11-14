@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use OCA\Dossiq\Exception\NoticeNotSentException;
+use OCA\Dossiq\Kernel\Contracts\ExtensionNoticeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnNotificationService;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
  */
-class ExtensionNotice {
+class ExtensionNotice implements ExtensionNoticeInterface {
 
 	use SearchesObjects;
 

@@ -33,8 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Bezwaar\HearingService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\HearingServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\ActsOnStatusEntry;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -66,13 +66,13 @@ class BezwaarHearingScheduledListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param HearingService $hearingService Hearing domain service
-	 * @param SettingsService $settingsService Schema slug bridge
+	 * @param HearingServiceInterface $hearingService Hearing domain service
+	 * @param SettingsServiceInterface $settingsService Schema slug bridge
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
-		private readonly HearingService $hearingService,
-		private readonly SettingsService $settingsService,
+		private readonly HearingServiceInterface $hearingService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

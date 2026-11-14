@@ -84,7 +84,10 @@ jobs:
       - name: Checkout and install the apps dossiq runs on
         run: |
           for app in openregister decidiq integriq; do
-            git clone --depth 1 --branch development "https://github.com/ConductionNL/${app}.git" "server/apps/${app}"
+            # openregister develops on main since 2026-11-09 (ADR-122); development is frozen.
+            branch=development
+            if [ "$app" = "openregister" ]; then branch=main; fi
+            git clone --depth 1 --branch "$branch" "https://github.com/ConductionNL/${app}.git" "server/apps/${app}"
             if [ -f "server/apps/${app}/composer.json" ]; then
               (cd "server/apps/${app}" && composer install --no-progress --prefer-dist --optimize-autoloader --no-dev)
             fi

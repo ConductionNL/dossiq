@@ -47,6 +47,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Dso;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\DsoDeadlineTimerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -60,7 +61,7 @@ use Throwable;
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class DsoDeadlineTimer {
+class DsoDeadlineTimer implements DsoDeadlineTimerInterface {
 
 	/**
 	 * The engine class, resolved lazily so dossiq runs without OpenRegister.
@@ -70,46 +71,11 @@ class DsoDeadlineTimer {
 	public const ENGINE_CLASS = 'OCA\\OpenRegister\\Service\\Flow\\Timer\\FlowTimerService';
 
 	/**
-	 * The metadata source the fired listener recognises the timer by.
-	 *
-	 * @var string
-	 */
-	public const METADATA_SOURCE = 'dossiq-dso';
-
-	/**
 	 * The suffix that keeps the timer's subject apart from the case's own timers.
 	 *
 	 * @var string
 	 */
 	public const SUBJECT_SUFFIX = ':dso';
-
-	/**
-	 * The DSO statuses whose decision term runs.
-	 *
-	 * @var string[]
-	 */
-	public const OPEN_STATUSES = ['submitted', 'in_handling'];
-
-	/**
-	 * The rung message of the warning band.
-	 *
-	 * @var string
-	 */
-	public const MESSAGE_WARNING = 'dso-termijn-waarschuwing';
-
-	/**
-	 * The rung message of the critical band.
-	 *
-	 * @var string
-	 */
-	public const MESSAGE_CRITICAL = 'dso-termijn-kritiek';
-
-	/**
-	 * Outcome: a timer is armed.
-	 *
-	 * @var string
-	 */
-	public const ARMED = 'armed';
 
 	/**
 	 * Outcome: the case is no longer open for DSO and its timer is cancelled.
@@ -119,25 +85,11 @@ class DsoDeadlineTimer {
 	public const CANCELLED = 'cancelled';
 
 	/**
-	 * Outcome: the deadline is today or past; the caller marks it overdue now.
-	 *
-	 * @var string
-	 */
-	public const DUE = 'due';
-
-	/**
 	 * Outcome: nothing to time.
 	 *
 	 * @var string
 	 */
 	public const SKIPPED = 'skipped';
-
-	/**
-	 * Outcome: the engine is absent or refused.
-	 *
-	 * @var string
-	 */
-	public const UNAVAILABLE = 'unavailable';
 
 	/**
 	 * Build the service.

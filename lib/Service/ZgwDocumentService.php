@@ -25,12 +25,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use RuntimeException;
+use OCA\Dossiq\Kernel\Contracts\ZgwDocumentServiceInterface;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for managing binary document storage in the DRC.
@@ -64,7 +65,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  */
-class ZgwDocumentService {
+class ZgwDocumentService implements ZgwDocumentServiceInterface {
 	/**
 	 * The account documents were stored under before this service moved to the
 	 * OpenRegister object folder. Read-only, and nothing writes here any more.

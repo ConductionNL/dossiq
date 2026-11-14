@@ -33,8 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email\Filters;
 
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Email\InboundMessage;
-use OCA\Dossiq\AppInfo\Application;
 use OCP\IAppConfig;
 
 /**
@@ -114,7 +114,7 @@ class OwnNotificationLoopFilter implements InboundMailFilter {
 		}
 
 		$ourAddress = strtolower(trim(
-			$this->appConfig->getValueString(Application::APP_ID, 'email_from_address', '')
+			$this->appConfig->getValueString(AppIdentity::APP_ID, 'email_from_address', '')
 		));
 		if ($ourAddress === '') {
 			return FilterVerdict::pass(filterName: self::NAME);

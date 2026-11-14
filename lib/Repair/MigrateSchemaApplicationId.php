@@ -9,7 +9,7 @@
  *   - a REGISTER by slug alone      -> RegisterMapper::find(slug)
  *   - a SCHEMA by the PAIR          -> SchemaMapper::findByApplicationAndSlug(slug, application)
  *
- * `SettingsService` passes `appId: Application::APP_ID`, which is now
+ * `SettingsService` passes `appId: AppIdentity::APP_ID`, which is now
  * `dossiq`. Every schema this app already owns still carries
  * `application = 'procest'`, so the pair matches nothing — and
  * ImportHandler's not-found branch is not an error path, it is the "create a
@@ -48,6 +48,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\DB\Exception;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;

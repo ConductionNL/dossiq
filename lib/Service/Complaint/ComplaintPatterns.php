@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Complaint;
 
+use OCA\Dossiq\Kernel\Contracts\ComplaintPatternsInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IL10N;
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
  */
-class ComplaintPatterns {
+class ComplaintPatterns implements ComplaintPatternsInterface {
 	use SearchesObjects;
 
 	public const TARGET_PER_MONTH = 'complaint_target_per_month';

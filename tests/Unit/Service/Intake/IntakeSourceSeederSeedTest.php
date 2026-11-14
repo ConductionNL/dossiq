@@ -459,4 +459,67 @@ class IntakeSourceSeederSeedTest extends TestCase {
 		$this->assertFalse(condition: $result['available']);
 		$this->assertSame(expected: [], actual: $mapper->calls);
 	}//end testAnAbsentServiceReportsNotAvailable()
+
+	/**
+	 * A hit whose data or uuid cannot be read is refreshed from the catalogue alone, by a null uuid.
+	 *
+	 * Each channel gets a hit of a different unreadable shape: an entity whose
+	 * getObject() and getUuid() answer the wrong types, a serialisable whose
+	 * JSON is no array, an object with no accessor at all and an array whose
+	 * id is no string. None of them may lend the row stray data or a uuid.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableHitIsRefreshedFromTheCatalogueAloneByANullUuid(): void {
+		$wrongTypes = new class {
+			/**
+			 * @return mixed
+			 */
+			public function getObject(): mixed {
+				return 'not a row';
+			}
+
+			/**
+			 * @return mixed
+			 */
+			public function getUuid(): mixed {
+				return 42;
+			}
+		};
+		$scalarJson = new class implements \JsonSerializable {
+			/**
+			 * @return mixed
+			 */
+			public function jsonSerialize(): mixed {
+				return 'not a row';
+			}
+		};
+		$hits = [
+			'dossiq-mail' => [$wrongTypes],
+			'dossiq-portal' => [$scalarJson],
+			'dossiq-api' => [new \stdClass()],
+			'dossiq-kcc' => [['id' => 5, 'enabled' => true]],
+		];
+		$objects = $this->objectService(find: static fn (string $slug): array => ($hits[$slug] ?? []));
+		$seeder = $this->seeder(services: [self::OBJECT_SERVICE => $objects, self::REGISTER_MAPPER => $this->registerMapper()]);
+		$catalogue = $seeder->catalogue();
+
+		$result = $seeder->seed();
+
+		$this->assertSame(['available' => true, 'created' => 1, 'updated' => 4, 'refused' => []], $result);
+		foreach ([0, 1, 2] as $index) {
+			$this->assertNull($objects->saves[$index]['uuid'], $catalogue[$index]['slug']);
+			$this->assertSame(
+				$seeder->refreshedRow(existing: [], source: $catalogue[$index]),
+				$objects->saves[$index]['object'],
+				$catalogue[$index]['slug']
+			);
+			$this->assertArrayNotHasKey('enabled', $objects->saves[$index]['object']);
+		}
+
+		// The array hit keeps its own data but lends no uuid that is not a string.
+		$this->assertNull($objects->saves[3]['uuid']);
+		$this->assertTrue($objects->saves[3]['object']['enabled']);
+		$this->assertSame('dossiq-kcc', $objects->saves[3]['object']['slug']);
+	}//end testAnUnreadableHitIsRefreshedFromTheCatalogueAloneByANullUuid()
 }//end class

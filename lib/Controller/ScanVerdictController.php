@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Documents\ScanVerdictReader;
+use OCA\Dossiq\Kernel\Contracts\ScanVerdictReaderInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -40,14 +40,14 @@ class ScanVerdictController extends Controller {
 	/**
 	 * @param string            $appName     The app id.
 	 * @param IRequest          $request     The request.
-	 * @param ScanVerdictReader $verdicts    Reads what the scanner recorded.
+	 * @param ScanVerdictReaderInterface $verdicts    Reads what the scanner recorded.
 	 * @param IRootFolder       $rootFolder  Resolves the node as the caller.
 	 * @param IUserSession      $userSession Who asks.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ScanVerdictReader $verdicts,
+		private readonly ScanVerdictReaderInterface $verdicts,
 		private readonly IRootFolder $rootFolder,
 		private readonly IUserSession $userSession,
 	) {

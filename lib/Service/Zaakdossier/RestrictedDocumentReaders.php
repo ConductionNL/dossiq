@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\RestrictedDocumentReadersInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use Throwable;
 
@@ -34,7 +35,7 @@ use Throwable;
  *
  * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-openregisters-own-api-applies-the-same-rule-to-the-record
  */
-class RestrictedDocumentReaders {
+class RestrictedDocumentReaders implements RestrictedDocumentReadersInterface {
 
 	/**
 	 * Constructor.

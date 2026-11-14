@@ -41,10 +41,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Task\CaseTaskActions;
-use OCA\Dossiq\Service\Task\TaskAttachmentService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTaskActionsInterface;
+use OCA\Dossiq\Kernel\Contracts\TaskAttachmentServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -77,21 +77,21 @@ class CaseTaskController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest              $request     The HTTP request.
-	 * @param CaseTaskActions       $tasks       Completes and claims a task, with dossiq's refusals in front.
-	 * @param TaskAttachmentService $attachments Holds a file against an open task.
-	 * @param CaseAccessGuard       $caseAccess  Per-case authorization, fails closed.
+	 * @param CaseTaskActionsInterface       $tasks       Completes and claims a task, with dossiq's refusals in front.
+	 * @param TaskAttachmentServiceInterface $attachments Holds a file against an open task.
+	 * @param CaseAccessGuardInterface       $caseAccess  Per-case authorization, fails closed.
 	 * @param IUserSession          $userSession The current session.
 	 * @param LoggerInterface       $logger      The logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseTaskActions $tasks,
-		private readonly TaskAttachmentService $attachments,
-		private readonly CaseAccessGuard $caseAccess,
+		private readonly CaseTaskActionsInterface $tasks,
+		private readonly TaskAttachmentServiceInterface $attachments,
+		private readonly CaseAccessGuardInterface $caseAccess,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

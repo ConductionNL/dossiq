@@ -33,10 +33,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Activity\CaseActivityStamp;
-use OCA\Dossiq\Service\CaseDateNormaliser;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseActivityStampInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -101,15 +101,15 @@ class BackfillCaseLastActivity implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService Names the register and the case schema, and hands out the object service.
+	 * @param SettingsServiceInterface    $settingsService Names the register and the case schema, and hands out the object service.
 	 * @param IAppConfig         $appConfig       Holds the completion key.
-	 * @param CaseDateNormaliser $dates           Reads and writes every date, and is the clock that passes over dates in the future.
+	 * @param CaseDateNormaliserInterface $dates           Reads and writes every date, and is the clock that passes over dates in the future.
 	 * @param LoggerInterface    $logger          Records a case that refused.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
-		private readonly CaseDateNormaliser $dates,
+		private readonly CaseDateNormaliserInterface $dates,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -133,7 +133,7 @@ class BackfillCaseLastActivity implements IRepairStep {
 	 * @spec openspec/specs/case-last-activity-at/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, '') === self::DONE) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, '') === self::DONE) {
 			return;
 		}
 
@@ -155,7 +155,7 @@ class BackfillCaseLastActivity implements IRepairStep {
 		);
 
 		if ((int)($tally['failed'] ?? 0) === 0) {
-			$this->appConfig->setValueString(Application::APP_ID, self::CONFIG_KEY, self::DONE);
+			$this->appConfig->setValueString(AppIdentity::APP_ID, self::CONFIG_KEY, self::DONE);
 		}
 	}//end run()
 
@@ -195,7 +195,7 @@ class BackfillCaseLastActivity implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the lastActivityAt backfill could not read the cases',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 			);
 			$output->info('lastActivityAt backfill: the cases could not be read, skipped.');
 			return null;
@@ -213,7 +213,7 @@ class BackfillCaseLastActivity implements IRepairStep {
 	 * @spec openspec/specs/case-last-activity-at/spec.md
 	 */
 	public function dateFor(array $case, DateTimeInterface $now): string {
-		if (trim((string)($case[CaseActivityStamp::FIELD] ?? '')) !== '') {
+		if (trim((string)($case[CaseActivityStampInterface::FIELD] ?? '')) !== '') {
 			return '';
 		}
 
@@ -313,13 +313,13 @@ class BackfillCaseLastActivity implements IRepairStep {
 				register: $run->register,
 				schema: $run->schema,
 				id: $uuid,
-				changes: [CaseActivityStamp::FIELD => $run->todo[$uuid]]
+				changes: [CaseActivityStampInterface::FIELD => $run->todo[$uuid]]
 			);
 			$run->tally['dated']++;
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the lastActivityAt backfill failed for one case',
-				['app' => Application::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
 			);
 			$run->tally['failed']++;
 		}

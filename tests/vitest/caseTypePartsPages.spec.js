@@ -61,7 +61,8 @@ describe('the parts of a case type', () => {
 		const tabs = appended('case-type-panels').content.tabs
 		const holds = (label) => tabs.find((tab) => tab.label === label).widgetIds
 		expect(holds('Fields')).toEqual(expect.arrayContaining(['case-type-fields-editor']))
-		expect(holds('Rules')).toEqual(['case-type-rules'])
+		// The case type's own rules as sentences (case-type-conditional-rules Task 3), above the schema's rules.
+		expect(holds('Rules')).toEqual(['case-type-rule-rows', 'case-type-rules'])
 		// The workflow canvas has a page of its own, CaseTypeFlow (case-type-page-follows-its-boards).
 		expect(holds('Message templates')).toEqual(['case-type-messages-editor'])
 		const types = overlay.configPatch.widgets
@@ -72,6 +73,8 @@ describe('the parts of a case type', () => {
 		expect(types['case-type-messages-editor'].type).toBe('CaseTypeMessagesEditorWidget')
 		expect(types['case-type-workflow-editor'].type).toBe('CaseTypeWorkflowEditorWidget')
 		expect(types['case-type-rules'].type).toBe('CaseTypeRulesWidget')
+		expect(appended('case-type-rule-rows').type).toBe('record-list')
+		expect(appended('case-type-rule-rows').content.endpointSource.url).toBe('/apps/dossiq/api/case-types/@objectId/rules')
 	})
 
 	it('edits the general fields the old editor had on the case type cards', () => {

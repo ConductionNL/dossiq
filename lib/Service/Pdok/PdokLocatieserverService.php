@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Pdok;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
@@ -142,7 +142,7 @@ class PdokLocatieserverService {
 			method: 'suggest',
 			params: $params,
 			ttl: (int)$this->appConfig->getValueString(
-				Application::APP_ID,
+				AppIdentity::APP_ID,
 				'pdok_cache_suggest_ttl_seconds',
 				(string)self::DEFAULT_SUGGEST_TTL
 			),
@@ -169,7 +169,7 @@ class PdokLocatieserverService {
 			method: 'free',
 			params: $params,
 			ttl: (int)$this->appConfig->getValueString(
-				Application::APP_ID,
+				AppIdentity::APP_ID,
 				'pdok_cache_lookup_ttl_seconds',
 				(string)self::DEFAULT_LOOKUP_TTL
 			),
@@ -190,7 +190,7 @@ class PdokLocatieserverService {
 			method: 'lookup',
 			params: ['id' => $id],
 			ttl: (int)$this->appConfig->getValueString(
-				Application::APP_ID,
+				AppIdentity::APP_ID,
 				'pdok_cache_lookup_ttl_seconds',
 				(string)self::DEFAULT_LOOKUP_TTL
 			),
@@ -212,7 +212,7 @@ class PdokLocatieserverService {
 			method: 'reverse',
 			params: ['lat' => $lat, 'lon' => $lng],
 			ttl: (int)$this->appConfig->getValueString(
-				Application::APP_ID,
+				AppIdentity::APP_ID,
 				'pdok_cache_lookup_ttl_seconds',
 				(string)self::DEFAULT_LOOKUP_TTL
 			),
@@ -268,7 +268,7 @@ class PdokLocatieserverService {
 
 		$read->started = microtime(as_float: true);
 		$read->source = $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'pdok_locatieserver_source',
 			''
 		);
@@ -293,7 +293,7 @@ class PdokLocatieserverService {
 	 */
 	private function fetchBody(LocatieserverCall $read): string {
 		$endpoint = $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'pdok_locatieserver_endpoint',
 			self::DEFAULT_ENDPOINT
 		);
@@ -534,7 +534,7 @@ class PdokLocatieserverService {
 	 */
 	private function directFallback(string $path, array $params): string {
 		$endpoint = $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'pdok_locatieserver_endpoint',
 			self::DEFAULT_ENDPOINT
 		);

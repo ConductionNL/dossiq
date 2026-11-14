@@ -87,4 +87,45 @@ describe('MessageTemplateSelect', () => {
 		await mountSelect({ caseTypeId: '' })
 		expect(mockGet).not.toHaveBeenCalled()
 	})
+
+	it('offers every template when the host names no channel', async () => {
+		const w = mount(MessageTemplateSelect, { props: { caseId: 'c-1', caseTypeId: 'ct-1' } })
+		await flushPromises()
+		expect(w.findComponent({ name: 'NcSelect' }).props('options').map((o) => o.id)).toEqual(['t-status', 't-mail', 't-any'])
+	})
+
+	it('shows nothing when the templates cannot be read', async () => {
+		mockGet.mockRejectedValue(new Error('offline'))
+		const w = await mountSelect()
+		expect(w.vm.templates).toEqual([])
+		expect(w.findComponent({ name: 'NcSelect' }).exists()).toBe(false)
+	})
+
+	it('says so when the template cannot be filled in, and fills nothing', async () => {
+		mockPost.mockRejectedValue(new Error('render failed'))
+		const w = await mountSelect()
+		w.findComponent({ name: 'NcSelect' }).vm.$emit('update:modelValue', TEMPLATES[2])
+		await flushPromises()
+		expect(w.emitted('fill')).toBeUndefined()
+		expect(w.find('[role="alert"]').text()).toBe('The template could not be filled in for this case.')
+
+		mockPost.mockResolvedValue({ data: { subject: 'S', body: 'B', unresolved: [] } })
+		w.findComponent({ name: 'NcSelect' }).vm.$emit('update:modelValue', TEMPLATES[0])
+		await flushPromises()
+		expect(w.find('[role="alert"]').exists()).toBe(false)
+	})
+
+	it('renders nothing when the choice is cleared or there is no case', async () => {
+		const w = await mountSelect()
+		w.findComponent({ name: 'NcSelect' }).vm.$emit('update:modelValue', null)
+		await flushPromises()
+		expect(w.vm.chosen).toBeNull()
+
+		const noCase = await mountSelect({ caseId: '' })
+		noCase.findComponent({ name: 'NcSelect' }).vm.$emit('update:modelValue', TEMPLATES[0])
+		await flushPromises()
+		expect(noCase.vm.chosen).toEqual(TEMPLATES[0])
+		expect(mockPost).not.toHaveBeenCalled()
+		expect(noCase.emitted('fill')).toBeUndefined()
+	})
 })

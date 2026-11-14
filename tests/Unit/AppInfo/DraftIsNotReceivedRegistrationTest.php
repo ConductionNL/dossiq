@@ -25,8 +25,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar;
-use OCA\Dossiq\AppInfo\Registrar\WorkflowListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\WorkflowListenerRegistrar;
 use OCA\Dossiq\BackgroundJob\AcknowledgementDispatchJob;
 use OCA\Dossiq\BackgroundJob\ReportGroupingJob;
 use OCA\Dossiq\Listener\AcknowledgementOnCreateListener;
@@ -52,16 +52,16 @@ use Psr\Log\LoggerInterface;
 /**
  * The create listeners skip a draft and run when it is sent.
  *
- * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
- * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar
- * @covers \OCA\Dossiq\AppInfo\Registrar\WorkflowListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\IntakeFormListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\WorkflowListenerRegistrar
  * @covers \OCA\Dossiq\Listener\AcknowledgementOnCreateListener
  * @covers \OCA\Dossiq\Listener\CaseNumberListener
  * @covers \OCA\Dossiq\Listener\CasePlanProjectionListener
  * @covers \OCA\Dossiq\Listener\DeadlineCaseCreatedListener
  * @covers \OCA\Dossiq\Listener\ReportGroupingOnCreateListener
  * @uses   \OCA\Dossiq\Service\Intake\ReceiptMoment
- * @uses   \OCA\Dossiq\AppInfo\Registrar\TaskListenerRegistrar
+ * @uses   \OCA\Dossiq\Listener\Registrar\TaskListenerRegistrar
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */

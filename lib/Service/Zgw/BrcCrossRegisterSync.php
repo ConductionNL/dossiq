@@ -30,8 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 
 /**
@@ -45,12 +45,12 @@ class BrcCrossRegisterSync {
 	/**
 	 * Constructor.
 	 *
-	 * @param ZgwService $zgwService The shared ZGW service.
-	 * @param SettingsService $settingsService The settings service.
+	 * @param ZgwServiceInterface $zgwService The shared ZGW service.
+	 * @param SettingsServiceInterface $settingsService The settings service.
 	 */
 	public function __construct(
-		private readonly ZgwService $zgwService,
-		private readonly SettingsService $settingsService,
+		private readonly ZgwServiceInterface $zgwService,
+		private readonly SettingsServiceInterface $settingsService,
 	) {
 	}//end __construct()
 
