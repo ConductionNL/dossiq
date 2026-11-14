@@ -446,28 +446,7 @@ class OpenCatalogiApiClient {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	private function storeObject(string $register, string $schema, array $object, ?string $uuid): array {
-		$objectService = $this->requireObjectService();
-
-		try {
-			$saved = $objectService->saveObject(
-				object: $object,
-				register: $register,
-				schema: $schema,
-				uuid: $uuid,
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'OpenCatalogiApiClient: object write failed',
-				[
-					'app' => AppIdentity::APP_ID,
-					'register' => $register,
-					'schema' => $schema,
-					'uuid' => ($uuid ?? ''),
-					'error' => $e->getMessage(),
-				],
-			);
-			throw new RuntimeException(self::DOMAIN_ERROR, 0, $e);
-		}//end try
+		$saved = $this->saveOrFail(register: $register, schema: $schema, object: $object, uuid: $uuid);
 
 		$data = $this->objectData(entity: $saved);
 		$identifier = $this->objectIdentifier(entity: $saved);
@@ -477,6 +456,34 @@ class OpenCatalogiApiClient {
 
 		return $data;
 	}//end storeObject()
+
+	/**
+	 * Save one object through OpenRegister, logging and wrapping any failure.
+	 *
+	 * @param string               $register The register slug.
+	 * @param string               $schema   The schema slug.
+	 * @param array<string, mixed> $object   The object data to store.
+	 * @param string|null          $uuid     The uuid to update, or null to create.
+	 *
+	 * @return mixed The saved entity.
+	 *
+	 * @throws RuntimeException 'opencatalogi_api_error' on any write failure.
+	 */
+	private function saveOrFail(string $register, string $schema, array $object, ?string $uuid): mixed {
+		$objectService = $this->requireObjectService();
+
+		try {
+			$saved = $objectService->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'OpenCatalogiApiClient: object write failed',
+				['app' => AppIdentity::APP_ID, 'register' => $register, 'schema' => $schema, 'uuid' => ($uuid ?? ''), 'error' => $e->getMessage()],
+			);
+			throw new RuntimeException(self::DOMAIN_ERROR, 0, $e);
+		}//end try
+
+		return $saved;
+	}//end saveOrFail()
 
 	/**
 	 * The property data of whatever OpenRegister returned.
