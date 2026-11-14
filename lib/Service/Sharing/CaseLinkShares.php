@@ -265,6 +265,27 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 		array $documents,
 		array $extra,
 	): array {
+		$share = new MintedShare(
+			caseId: $caseId,
+			label: $label,
+			createdBy: $createdBy,
+			link: $link,
+			capabilities: (array)($link['capabilities'] ?? []),
+			documents: $documents,
+			extra: $extra
+		);
+
+		return $this->storeShare(share: $share);
+	}//end store()
+
+	/**
+	 * Write the share record of a minted link, when the share store is configured.
+	 *
+	 * @param MintedShare $share The minted share.
+	 *
+	 * @return array<string, mixed> The stored share, or an error array.
+	 */
+	private function storeShare(MintedShare $share): array {
 		$objectService = $this->gateway->objectService();
 		if ($objectService === null) {
 			return ['error' => 'OpenRegister is not available'];
@@ -273,19 +294,8 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_share_schema');
 		if (empty($register) === true || empty($schema) === true) {
-			return $this->notConfiguredError(caseId: $caseId, register: $register, schema: $schema);
+			return $this->notConfiguredError(caseId: $share->caseId, register: $register, schema: $schema);
 		}
-
-		$capabilities = (array)($link['capabilities'] ?? []);
-		$share = new MintedShare(
-			caseId: $caseId,
-			label: $label,
-			createdBy: $createdBy,
-			link: $link,
-			capabilities: $capabilities,
-			documents: $documents,
-			extra: $extra
-		);
 
 		try {
 			$result = $objectService->saveObject(
@@ -294,21 +304,21 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 				schema: (int)$schema,
 			);
 		} catch (\Throwable $e) {
-			return $this->rolledBackError(caseId: $caseId, exception: $e);
+			return $this->rolledBackError(caseId: $share->caseId, exception: $e);
 		}
 
 		$this->logger->info(
 			'Dossiq: case access link minted',
 			[
-				'caseId' => $caseId,
-				'createdBy' => $createdBy,
-				'capabilities' => $capabilities,
-				'documents' => count($documents),
+				'caseId' => $share->caseId,
+				'createdBy' => $share->createdBy,
+				'capabilities' => $share->capabilities,
+				'documents' => count($share->documents),
 			]
 		);
 
 		return $this->gateway->toArray($result);
-	}//end store()
+	}//end storeShare()
 
 	/**
 	 * Log and describe a share that cannot be recorded because the case share schema is not configured.
