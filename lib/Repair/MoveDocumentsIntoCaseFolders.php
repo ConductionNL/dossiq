@@ -134,9 +134,26 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 			return;
 		}
 
-		$moved = 0;
-		$skipped = 0;
-		$missing = 0;
+		$counts = $this->moveEveryPage(objectService: $objectService, register: $register, infoSchema: $infoSchema);
+
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::DONE_VERSION);
+		$output->info(
+			'Dossiq documents: moved ' . $counts['moved'] . ' file(s) into their case, left ' . $counts['skipped']
+			. ' already home or without a case, ' . $counts['missing'] . ' named in the log.'
+		);
+	}//end moveAll()
+
+	/**
+	 * Page through every record with a file and move each one.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register.
+	 * @param string $infoSchema    The informatieobject schema.
+	 *
+	 * @return array{moved: int, skipped: int, missing: int} The outcomes counted.
+	 */
+	private function moveEveryPage(object $objectService, string $register, string $infoSchema): array {
+		$counts = ['moved' => 0, 'skipped' => 0, 'missing' => 0];
 		$page = 1;
 		$full = true;
 		while ($full === true) {
@@ -147,30 +164,40 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 				filters: ['_limit' => self::PAGE_SIZE, '_page' => $page],
 			);
 			$full = (count($rows) === self::PAGE_SIZE);
-			foreach ($rows as $row) {
-				$outcome = $this->moveOne(row: $row);
-				if ($outcome === 'moved') {
-					$moved++;
-				}
-
-				if ($outcome === 'skipped') {
-					$skipped++;
-				}
-
-				if ($outcome === 'missing') {
-					$missing++;
-				}
-			}
+			$counts = $this->moveRows(rows: $rows, counts: $counts);
 
 			$page++;
 		}
 
-		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::DONE_VERSION);
-		$output->info(
-			'Dossiq documents: moved ' . $moved . ' file(s) into their case, left ' . $skipped
-			. ' already home or without a case, ' . $missing . ' named in the log.'
-		);
-	}//end moveAll()
+		return $counts;
+	}//end moveEveryPage()
+
+	/**
+	 * Move each row of one page and add its outcome to the counts.
+	 *
+	 * @param array<int, array<string, mixed>>              $rows   The page's rows.
+	 * @param array{moved: int, skipped: int, missing: int} $counts The counts so far.
+	 *
+	 * @return array{moved: int, skipped: int, missing: int} The counts.
+	 */
+	private function moveRows(array $rows, array $counts): array {
+		foreach ($rows as $row) {
+			$outcome = $this->moveOne(row: $row);
+			if ($outcome === 'moved') {
+				$counts['moved']++;
+			}
+
+			if ($outcome === 'skipped') {
+				$counts['skipped']++;
+			}
+
+			if ($outcome === 'missing') {
+				$counts['missing']++;
+			}
+		}
+
+		return $counts;
+	}//end moveRows()
 
 	/**
 	 * Move one record's file, when it has one and a case to go to.

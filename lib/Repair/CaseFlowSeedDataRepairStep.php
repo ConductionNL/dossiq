@@ -53,6 +53,8 @@ use Throwable;
  * Loads `lib/Settings/case_flow_seed_data.json` into OpenRegister.
  *
  * @spec openspec/specs/case-flow-human-steps/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseFlowSeedDataRepairStep implements IRepairStep {
 
@@ -507,35 +509,68 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 				continue;
 			}
 
-			$statusName = (string)($case['status'] ?? '');
-			unset($case['caseTypeSlug']);
-
-			$case['caseType'] = $caseTypeId;
-
-			// A case whose status name does not resolve is written WITHOUT a
-			// status rather than with a dangling one: an unresolvable
-			// reference reads as a real status everywhere it is displayed.
-			unset($case['status']);
-			if (isset($statusesByName[$statusName]) === true) {
-				$case['status'] = $statusesByName[$statusName];
-			}
-
-			try {
-				$objectService->saveObject(
-					object: $case,
-					register: $schemas['register'],
-					schema: $schemas['case']
-				);
-				$created++;
-			} catch (Throwable $e) {
-				$output->warning(
-					'Case-flow seed: could not create case "' . (string)($case['title'] ?? '') . '": ' . $e->getMessage()
-				);
-			}
+			$case = $this->seedCaseRow(case: $case, caseTypeId: $caseTypeId, statusesByName: $statusesByName);
+			$created += $this->saveSeedCase(objectService: $objectService, schemas: $schemas, case: $case, output: $output);
 		}//end foreach
 
 		return $created;
 	}//end seedCases()
+
+	/**
+	 * The seed case as it is written: bound to the case type, its status resolved by name.
+	 *
+	 * @param array<string,mixed>  $case           The seed case.
+	 * @param string               $caseTypeId     The created case type.
+	 * @param array<string,string> $statusesByName Status ids, keyed by name.
+	 *
+	 * @return array<string,mixed> The case to write.
+	 *
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
+	 */
+	private function seedCaseRow(array $case, string $caseTypeId, array $statusesByName): array {
+		$statusName = (string)($case['status'] ?? '');
+		unset($case['caseTypeSlug']);
+
+		$case['caseType'] = $caseTypeId;
+
+		// A case whose status name does not resolve is written WITHOUT a
+		// status rather than with a dangling one: an unresolvable
+		// reference reads as a real status everywhere it is displayed.
+		unset($case['status']);
+		if (isset($statusesByName[$statusName]) === true) {
+			$case['status'] = $statusesByName[$statusName];
+		}
+
+		return $case;
+	}//end seedCaseRow()
+
+	/**
+	 * Save one seed case, warning when it cannot be created.
+	 *
+	 * @param object               $objectService The ObjectService.
+	 * @param array<string,string> $schemas       Register and schema names.
+	 * @param array<string,mixed>  $case          The case to write.
+	 * @param IOutput              $output        Output sink.
+	 *
+	 * @return integer 1 when created, 0 otherwise.
+	 *
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
+	 */
+	private function saveSeedCase(object $objectService, array $schemas, array $case, IOutput $output): int {
+		try {
+			$objectService->saveObject(
+				object: $case,
+				register: $schemas['register'],
+				schema: $schemas['case']
+			);
+			return 1;
+		} catch (Throwable $e) {
+			$output->warning(
+				'Case-flow seed: could not create case "' . (string)($case['title'] ?? '') . '": ' . $e->getMessage()
+			);
+			return 0;
+		}
+	}//end saveSeedCase()
 
 
 

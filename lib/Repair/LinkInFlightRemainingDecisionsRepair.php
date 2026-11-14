@@ -258,18 +258,65 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 			'errors' => 0,
 		];
 
-		// The config key is the PROVISIONING guard, not the identifier the
-		// calls take: an empty value means this surface's schema was never
-		// configured, which is a silent skip rather than a failure to read.
-		if ($this->settingsService->getConfigValue(key: $configKey) === '') {
-			return $counts;
-		}
-
-		$schemaSlug = (self::SURFACE_SCHEMA_SLUGS[$configKey] ?? '');
+		$schemaSlug = $this->surfaceSchemaSlug(configKey: $configKey);
 		if ($schemaSlug === '') {
 			return $counts;
 		}
 
+		$objects = $this->listSurface(objectService: $objectService, output: $output, schemaSlug: $schemaSlug);
+		if ($objects === null) {
+			return $counts;
+		}
+
+		foreach ($objects as $obj) {
+			$outcome = $this->linkObject(
+				objectService: $objectService,
+				output: $output,
+				schemaSlug: $schemaSlug,
+				raise: $raise,
+				obj: $obj,
+			);
+			if ($outcome !== '') {
+				$counts[$outcome]++;
+			}
+		}//end foreach
+
+		return $counts;
+	}//end linkSurface()
+
+	/**
+	 * The schema slug of a surface, or '' when the surface is not provisioned.
+	 *
+	 * @param string $configKey Config key that provisions the surface's schema.
+	 *
+	 * @return string The schema slug, or ''.
+	 */
+	private function surfaceSchemaSlug(string $configKey): string {
+		// The config key is the PROVISIONING guard, not the identifier the
+		// calls take: an empty value means this surface's schema was never
+		// configured, which is a silent skip rather than a failure to read.
+		if ($this->settingsService->getConfigValue(key: $configKey) === '') {
+			return '';
+		}
+
+		$schemaSlug = (self::SURFACE_SCHEMA_SLUGS[$configKey] ?? '');
+		if ($schemaSlug === '') {
+			return '';
+		}
+
+		return $schemaSlug;
+	}//end surfaceSchemaSlug()
+
+	/**
+	 * List the objects of one surface schema.
+	 *
+	 * @param object  $objectService The OpenRegister object service.
+	 * @param IOutput $output        The migration output interface.
+	 * @param string  $schemaSlug    The surface schema's slug in dossiq's register.
+	 *
+	 * @return array<int, array<string, mixed>>|null The rows, or null when listing failed.
+	 */
+	private function listSurface(object $objectService, IOutput $output, string $schemaSlug): ?array {
 		try {
 			// ObjectService::findAll() takes a single $config array — the
 			// previous named-argument call (register:/schema:/limit:) threw
@@ -289,24 +336,11 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 				'LinkInFlightRemainingDecisionsRepair: list failed',
 				['schema' => $schemaSlug, 'error' => $e->getMessage()]
 			);
-			return $counts;
+			return null;
 		}//end try
 
-		foreach ($objects as $obj) {
-			$outcome = $this->linkObject(
-				objectService: $objectService,
-				output: $output,
-				schemaSlug: $schemaSlug,
-				raise: $raise,
-				obj: $obj,
-			);
-			if ($outcome !== '') {
-				$counts[$outcome]++;
-			}
-		}//end foreach
-
-		return $counts;
-	}//end linkSurface()
+		return $objects;
+	}//end listSurface()
 
 	/**
 	 * Link a single in-flight object forward to a decidesk Decision.
@@ -328,6 +362,40 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 		array $obj,
 	): string {
 		$objUuid = (string)($obj['uuid'] ?? ($obj['id'] ?? ''));
+		$skip = $this->skipOutcomeOf(obj: $obj);
+		if ($skip !== null) {
+			return $skip;
+		}
+
+		try {
+			$newRef = $this->raiseAndPersist(
+				objectService: $objectService,
+				schemaSlug: $schemaSlug,
+				raise: $raise,
+				obj: $obj,
+			);
+			$output->info('Linked ' . $schemaSlug . ' ' . $objUuid . ' → decidesk Decision ' . $newRef);
+			return 'linked';
+		} catch (RuntimeException $e) {
+			// Decidesk leaf unavailable — warn + skip; never fail the migration.
+			$output->warning('Could not link ' . $schemaSlug . ' ' . $objUuid . ': ' . $e->getMessage() . ' — skipping.');
+			$this->logger->warning(
+				'LinkInFlightRemainingDecisionsRepair: could not link object',
+				['schema' => $schemaSlug, 'uuid' => $objUuid, 'error' => $e->getMessage()]
+			);
+			return 'errors';
+		}//end try
+	}//end linkObject()
+
+	/**
+	 * The outcome of an object that is not linked, or null when it must be linked.
+	 *
+	 * @param array<string, mixed> $obj The object row.
+	 *
+	 * @return string|null '' when not countable, 'skipped' when already decided, or null.
+	 */
+	private function skipOutcomeOf(array $obj): ?string {
+		$objUuid = (string)($obj['uuid'] ?? ($obj['id'] ?? ''));
 		$decisionRef = (string)($obj['decisionRef'] ?? '');
 		$besluitRef = (string)($obj['besluitRef'] ?? '');
 		$status = (string)($obj['status'] ?? '');
@@ -342,34 +410,41 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 			return 'skipped';
 		}
 
-		try {
-			$newRef = $raise($obj);
+		return null;
+	}//end skipOutcomeOf()
 
-			// Persist the decisionRef so the outcome can complete in
-			// decidesk. Merge the existing object — no field is dropped.
-			// A loaded object carries a JSON-encoded property DECODED while
-			// the schema still declares it a string, so a bare array_merge
-			// writes an array into it and OpenRegister refuses the save.
-			$objectService->saveObject(
-				object: $this->jsonProperties->mergeForWrite(
-					stored: $obj,
-					updates: ['decisionRef' => $newRef],
-					schemaSlug: $schemaSlug,
-				),
-				register: AppIdentity::REGISTER_SLUG,
-				schema: $schemaSlug,
-				uuid: $objUuid,
-			);
-			$output->info('Linked ' . $schemaSlug . ' ' . $objUuid . ' → decidesk Decision ' . $newRef);
-			return 'linked';
-		} catch (RuntimeException $e) {
-			// Decidesk leaf unavailable — warn + skip; never fail the migration.
-			$output->warning('Could not link ' . $schemaSlug . ' ' . $objUuid . ': ' . $e->getMessage() . ' — skipping.');
-			$this->logger->warning(
-				'LinkInFlightRemainingDecisionsRepair: could not link object',
-				['schema' => $schemaSlug, 'uuid' => $objUuid, 'error' => $e->getMessage()]
-			);
-			return 'errors';
-		}//end try
-	}//end linkObject()
+	/**
+	 * Raise the decidesk Decision for an object and persist its reference.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param string               $schemaSlug    The surface schema's slug in dossiq's register.
+	 * @param callable             $raise         Callback raising the decidesk Decision.
+	 * @param array<string, mixed> $obj           The object row to link.
+	 *
+	 * @return string The new decision reference.
+	 *
+	 * @throws RuntimeException When the decidesk leaf is unavailable.
+	 */
+	private function raiseAndPersist(object $objectService, string $schemaSlug, callable $raise, array $obj): string {
+		$objUuid = (string)($obj['uuid'] ?? ($obj['id'] ?? ''));
+		$newRef = $raise($obj);
+
+		// Persist the decisionRef so the outcome can complete in
+		// decidesk. Merge the existing object — no field is dropped.
+		// A loaded object carries a JSON-encoded property DECODED while
+		// the schema still declares it a string, so a bare array_merge
+		// writes an array into it and OpenRegister refuses the save.
+		$objectService->saveObject(
+			object: $this->jsonProperties->mergeForWrite(
+				stored: $obj,
+				updates: ['decisionRef' => $newRef],
+				schemaSlug: $schemaSlug,
+			),
+			register: AppIdentity::REGISTER_SLUG,
+			schema: $schemaSlug,
+			uuid: $objUuid,
+		);
+
+		return $newRef;
+	}//end raiseAndPersist()
 }//end class

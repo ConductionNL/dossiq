@@ -95,34 +95,9 @@ class RecallSamples implements RecallSamplesInterface {
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-the-recall-is-estimated-from-an-elusion-sample-with-its-uncertainty-req-wrs-002
 	 */
 	public function draw(string $caseId, int $size, string $assignee, string $userId, ?int $seed = null): array {
-		if ($assignee === '') {
-			throw new RefusedException(
-				rule: 'review-recall-assignee-unknown',
-				sentence: 'Choose the reviewer of the sample.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		$this->batches->assertReviewerAdmitted(assignee: $assignee);
-		$reviews = $this->reviews->forCase(caseId: $caseId);
-		$nullSet = [];
-		$found = 0;
-		foreach ($this->caseDocuments->idsFor(caseId: $caseId) as $ref) {
-			if ((string)(($reviews[$ref] ?? [])['relevance'] ?? '') === DocumentRelevance::IN_SCOPE) {
-				$found++;
-				continue;
-			}
-
-			$nullSet[] = $ref;
-		}
-
-		if ($size < 1 || $size > count($nullSet)) {
-			throw new RefusedException(
-				rule: 'review-recall-size',
-				sentence: 'Choose a sample size between 1 and the number of documents set aside or not yet marked.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$this->assertAssigneeChosen(assignee: $assignee);
+		[$nullSet, $found] = $this->nullSetOf(caseId: $caseId);
+		$this->assertSampleSizeFits(size: $size, nullSetSize: count($nullSet));
 
 		$seed = ($seed ?? random_int(1, PHP_INT_MAX));
 		$documents = $this->depth->drawSample(items: $nullSet, size: $size, seed: $seed);
@@ -151,6 +126,70 @@ class RecallSamples implements RecallSamplesInterface {
 
 		return $this->save(sample: $sample);
 	}//end draw()
+
+	/**
+	 * Refuse a sample without a reviewer, or with one not admitted to review.
+	 *
+	 * @param string $assignee The reviewer of the sample.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When no reviewer is chosen or the reviewer is not admitted.
+	 */
+	private function assertAssigneeChosen(string $assignee): void {
+		if ($assignee === '') {
+			throw new RefusedException(
+				rule: 'review-recall-assignee-unknown',
+				sentence: 'Choose the reviewer of the sample.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		$this->batches->assertReviewerAdmitted(assignee: $assignee);
+	}//end assertAssigneeChosen()
+
+	/**
+	 * The case's null set (documents not marked in scope) and the count found in scope.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array{0: list<mixed>, 1: int} The null set and the in-scope count.
+	 */
+	private function nullSetOf(string $caseId): array {
+		$reviews = $this->reviews->forCase(caseId: $caseId);
+		$nullSet = [];
+		$found = 0;
+		foreach ($this->caseDocuments->idsFor(caseId: $caseId) as $ref) {
+			if ((string)(($reviews[$ref] ?? [])['relevance'] ?? '') === DocumentRelevance::IN_SCOPE) {
+				$found++;
+				continue;
+			}
+
+			$nullSet[] = $ref;
+		}
+
+		return [$nullSet, $found];
+	}//end nullSetOf()
+
+	/**
+	 * Refuse a sample size that does not fit the null set.
+	 *
+	 * @param int $size        The sample size.
+	 * @param int $nullSetSize The number of documents in the null set.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the size is below 1 or above the null set.
+	 */
+	private function assertSampleSizeFits(int $size, int $nullSetSize): void {
+		if ($size < 1 || $size > $nullSetSize) {
+			throw new RefusedException(
+				rule: 'review-recall-size',
+				sentence: 'Choose a sample size between 1 and the number of documents set aside or not yet marked.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertSampleSizeFits()
 
 	/**
 	 * Judge one sampled document in or out of scope, in the sample only; estimate when it was the last.

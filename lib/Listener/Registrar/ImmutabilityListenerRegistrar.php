@@ -64,6 +64,23 @@ class ImmutabilityListenerRegistrar {
 	 * @spec openspec/specs/subsidieverlening-keten/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
+		$this->registerFrozenRecordGuards(context: $context);
+		$this->registerBewijsstukGuards(context: $context);
+		$this->registerChecklistRunGuards(context: $context);
+		$this->registerBeschikkingGuards(context: $context);
+		$this->registerWooDeliveredSetGuards(context: $context);
+	}//end register()
+
+	/**
+	 * Register the generic frozen-record guard.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md
+	 */
+	private function registerFrozenRecordGuards(IRegistrationContext $context): void {
 		// Frozen record (capability C04, decision 182): the generic freeze a
 		// package switches on per record kind through `frozen_records`. With
 		// nothing configured it guards nothing. Written fully qualified and
@@ -80,7 +97,18 @@ class ImmutabilityListenerRegistrar {
 			event: ObjectLeavingEvent::class,
 			listener: \OCA\Dossiq\Listener\FrozenRecordListener::class
 		);
+	}//end registerFrozenRecordGuards()
 
+	/**
+	 * Register the bewijsstuk guard (REQ-SUB-007).
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md
+	 */
+	private function registerBewijsstukGuards(IRegistrationContext $context): void {
 		// REQ-SUB-007: a bewijsstuk linked to a vaststelling is immutable.
 		// This is the production call site for
 		// BewijsstukService::assertMutable(), which previously had none.
@@ -96,7 +124,18 @@ class ImmutabilityListenerRegistrar {
 			event: ObjectLeavingEvent::class,
 			listener: BewijsstukImmutabilityListener::class
 		);
+	}//end registerBewijsstukGuards()
 
+	/**
+	 * Register the checklist run guard (REQ-IC-8).
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md
+	 */
+	private function registerChecklistRunGuards(IRegistrationContext $context): void {
 		// REQ-IC-8: a submitted inspectionChecklistRun is append-only. The
 		// listener existed but was never referenced by any registrar, so the
 		// rule was not enforced by anything.
@@ -108,7 +147,18 @@ class ImmutabilityListenerRegistrar {
 			event: ObjectLeavingEvent::class,
 			listener: ChecklistRunImmutabilityListener::class
 		);
+	}//end registerChecklistRunGuards()
 
+	/**
+	 * Register the beschikking guard (REQ-BES-008).
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md
+	 */
+	private function registerBeschikkingGuards(IRegistrationContext $context): void {
 		// REQ-BES-008: a beschikking at `signed` or later is frozen. The rule
 		// was enforced only inside BeschikkingService::updateFields(), one
 		// method behind one route, while the frontend writes through
@@ -125,7 +175,18 @@ class ImmutabilityListenerRegistrar {
 			event: ObjectLeavingEvent::class,
 			listener: BeschikkingImmutabilityListener::class
 		);
+	}//end registerBeschikkingGuards()
 
+	/**
+	 * Register the Woo delivered set guard (REQ-WDS-002).
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md
+	 */
+	private function registerWooDeliveredSetGuards(IRegistrationContext $context): void {
 		// Woo delivered sets (REQ-WDS-002): a frozen delivered set
 		// and the assessments it names refuse change, through every writer.
 		$context->registerEventListener(
@@ -140,5 +201,5 @@ class ImmutabilityListenerRegistrar {
 			event: ObjectLeavingEvent::class,
 			listener: WooDeliveredSetGuard::class
 		);
-	}//end register()
+	}//end registerWooDeliveredSetGuards()
 }//end class

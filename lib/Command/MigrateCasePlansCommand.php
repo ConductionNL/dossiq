@@ -93,6 +93,26 @@ class MigrateCasePlansCommand extends Command {
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$dryRun = ($input->getOption('dry-run') === true);
+		$reports = $this->migrate(input: $input, dryRun: $dryRun);
+		$unmappable = $this->printReports(reports: $reports, output: $output);
+
+		$output->writeln(sprintf('%d case(s) reported, %d unmappable.', count($reports), $unmappable));
+		if ($unmappable > 0 && $input->getOption('strict') === true) {
+			return 1;
+		}
+
+		return 0;
+	}//end execute()
+
+	/**
+	 * Migrate the named cases, or every case when none is named.
+	 *
+	 * @param InputInterface $input  The input.
+	 * @param boolean        $dryRun Whether to only report.
+	 *
+	 * @return array<int, array<string, mixed>> One report per case.
+	 */
+	private function migrate(InputInterface $input, bool $dryRun): array {
 		$cases = $input->getArgument('case');
 		if (is_array($cases) === false) {
 			$cases = [];
@@ -107,6 +127,18 @@ class MigrateCasePlansCommand extends Command {
 			$reports = $this->migration->migrateAll(dryRun: $dryRun);
 		}
 
+		return $reports;
+	}//end migrate()
+
+	/**
+	 * Print one line per case report.
+	 *
+	 * @param array<int, array<string, mixed>> $reports The reports.
+	 * @param OutputInterface                  $output  The output.
+	 *
+	 * @return integer How many cases were unmappable.
+	 */
+	private function printReports(array $reports, OutputInterface $output): int {
 		$unmappable = 0;
 		foreach ($reports as $report) {
 			if ($report['outcome'] === CasePlanMigrationServiceInterface::UNMAPPABLE) {
@@ -125,11 +157,6 @@ class MigrateCasePlansCommand extends Command {
 			);
 		}
 
-		$output->writeln(sprintf('%d case(s) reported, %d unmappable.', count($reports), $unmappable));
-		if ($unmappable > 0 && $input->getOption('strict') === true) {
-			return 1;
-		}
-
-		return 0;
-	}//end execute()
+		return $unmappable;
+	}//end printReports()
 }//end class
