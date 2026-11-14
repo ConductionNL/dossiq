@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Relation;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\OutcomeCascadeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -51,7 +52,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-an-outcome-cascade-runs-its-configured-steps-req-lcr-5
  */
-class OutcomeCascade {
+class OutcomeCascade implements OutcomeCascadeInterface {
 
 	use SearchesObjects;
 

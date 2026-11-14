@@ -31,9 +31,9 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\RoleResolverService;
-use OCA\Dossiq\Service\Routing\CaseRouter;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseRouterInterface;
+use OCA\Dossiq\Kernel\Contracts\RoleResolverServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\ObjectArray;
 use OCA\Dossiq\Service\Support\RowList;
 use OCP\AppFramework\Controller;
@@ -60,9 +60,9 @@ class RoutingController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param RoleResolverService $resolver Resolver service
-	 * @param CaseRouter $router Routes a case to one person and arms its take-back window
-	 * @param SettingsService $settingsService Settings bridge
+	 * @param RoleResolverServiceInterface $resolver Resolver service
+	 * @param CaseRouterInterface $router Routes a case to one person and arms its take-back window
+	 * @param SettingsServiceInterface $settingsService Settings bridge
 	 * @param IUserSession $userSession User session
 	 * @param IGroupManager $groupManager Group manager
 	 * @param LoggerInterface $logger Logger
@@ -70,9 +70,9 @@ class RoutingController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly RoleResolverService $resolver,
-		private readonly CaseRouter $router,
-		private readonly SettingsService $settingsService,
+		private readonly RoleResolverServiceInterface $resolver,
+		private readonly CaseRouterInterface $router,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,

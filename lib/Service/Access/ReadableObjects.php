@@ -22,7 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
-use OCA\Dossiq\Integration\CaseLeafProvider;
+use OCA\Dossiq\Kernel\Contracts\CaseLeafProviderInterface;
+use OCA\Dossiq\Kernel\Contracts\ReadableObjectsInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -36,7 +37,7 @@ use OCP\IUserSession;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class ReadableObjects {
+class ReadableObjects implements ReadableObjectsInterface {
 
 	use SearchesObjects;
 
@@ -101,7 +102,7 @@ class ReadableObjects {
 		}
 
 		$carried = [];
-		foreach (CaseLeafProvider::PARTY_SCHEMAS as $schema) {
+		foreach (CaseLeafProviderInterface::PARTY_SCHEMAS as $schema) {
 			$open = array_values(array_unique(array_filter($refs, static fn (string $ref): bool => isset($carried[$ref]) === false)));
 			$carried += $this->carriedIn(schema: $schema, refs: $open);
 		}

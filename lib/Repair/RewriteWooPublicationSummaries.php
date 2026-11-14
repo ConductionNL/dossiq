@@ -42,7 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCP\Migration\IOutput;
@@ -84,11 +84,11 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister and the configured schemas.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

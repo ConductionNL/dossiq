@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Tenant;
 
+use OCA\Dossiq\Kernel\Contracts\OnboardingStepGuideInterface;
 use OCA\Dossiq\Service\TenantOnboardingService;
 use OCP\IL10N;
 use OCP\IURLGenerator;
@@ -37,7 +38,7 @@ use OCP\IURLGenerator;
  *
  * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
  */
-class OnboardingStepGuide {
+class OnboardingStepGuide implements OnboardingStepGuideInterface {
 	/**
 	 * Where each step is done, as an admin settings section; a step without one has no link.
 	 *

@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use DateTimeInterface;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\EvidenceMetadataServiceInterface;
 
 /**
  * Validates and enriches offline field-evidence metadata.
@@ -44,7 +45,7 @@ use InvalidArgumentException;
  *
  * @psalm-suppress UnusedClass
  */
-class EvidenceMetadataService {
+class EvidenceMetadataService implements EvidenceMetadataServiceInterface {
 	/**
 	 * GPS accuracy threshold (metres) above which a warning is raised.
 	 */

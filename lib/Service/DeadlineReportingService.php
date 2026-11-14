@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\DeadlineReportingServiceInterface;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Reporting\AnnualPayoutStatement;
 use OCA\Dossiq\Service\Reporting\PerTypeRows;
@@ -43,8 +44,8 @@ use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Termijn\TermCaseTypeResolver;
 use OCA\Dossiq\Service\Termijn\TermDashboardFigures;
 use OCA\Dossiq\Service\Termijn\TermOutcome;
-use RuntimeException;
 use OCP\IL10N;
+use RuntimeException;
 
 /**
  * Quarterly KPI + annual dwangsom audit + dashboard KPI reports.
@@ -55,7 +56,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/termijn-reporting/spec.md
  */
-class DeadlineReportingService {
+class DeadlineReportingService implements DeadlineReportingServiceInterface {
 	use SearchesObjects;
 
 	/**

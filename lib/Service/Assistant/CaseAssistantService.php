@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Assistant;
 
 use Exception;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAssistantServiceInterface;
 use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IConfig;
@@ -49,7 +50,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
  */
-class CaseAssistantService {
+class CaseAssistantService implements CaseAssistantServiceInterface {
 	/**
 	 * Maximum accepted `message` length (characters).
 	 *

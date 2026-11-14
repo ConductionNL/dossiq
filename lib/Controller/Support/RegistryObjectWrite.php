@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller\Support;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Mandaat\MandaatRegistryService;
+use OCA\Dossiq\Kernel\Contracts\MandaatRegistryServiceInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -48,9 +48,9 @@ final class RegistryObjectWrite {
 	/**
 	 * The registry service.
 	 *
-	 * @var MandaatRegistryService
+	 * @var MandaatRegistryServiceInterface
 	 */
-	public MandaatRegistryService $registry;
+	public MandaatRegistryServiceInterface $registry;
 
 	/**
 	 * The request whose body is saved.

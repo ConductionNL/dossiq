@@ -35,8 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Access\ReadableObjects;
-use OCA\Dossiq\Service\Pipelinq\PipelinqGateway;
+use OCA\Dossiq\Kernel\Contracts\PipelinqGatewayInterface;
+use OCA\Dossiq\Kernel\Contracts\ReadableObjectsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -63,14 +63,14 @@ class PartyTicketController extends Controller {
 	 *
 	 * @param string          $appName The app name.
 	 * @param IRequest        $request The HTTP request.
-	 * @param PipelinqGateway $gateway     The one seam that names pipelinq.
-	 * @param ReadableObjects $readable    Whether a caller is signed in, and which master entities they may read.
+	 * @param PipelinqGatewayInterface $gateway     The one seam that names pipelinq.
+	 * @param ReadableObjectsInterface $readable    Whether a caller is signed in, and which master entities they may read.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PipelinqGateway $gateway,
-		private readonly ReadableObjects $readable,
+		private readonly PipelinqGatewayInterface $gateway,
+		private readonly ReadableObjectsInterface $readable,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

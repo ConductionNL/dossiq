@@ -37,7 +37,7 @@ namespace OCA\Dossiq\Service\Termijn;
 
 use DateTime;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Notification\Notifier;
+use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Notification\IManager as INotificationManager;
@@ -155,9 +155,9 @@ class TermHandlerNotice {
 	 * @return void
 	 */
 	private function send(string $assignee, array $params): void {
-		$subject = Notifier::SUBJECT_TERM_NEARING;
+		$subject = NotifierInterface::SUBJECT_TERM_NEARING;
 		if ($params['daysRemaining'] === 0) {
-			$subject = Notifier::SUBJECT_TERM_EXCEEDED;
+			$subject = NotifierInterface::SUBJECT_TERM_EXCEEDED;
 		}
 
 		$notification = $this->notifications->createNotification();

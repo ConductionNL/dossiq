@@ -79,4 +79,59 @@ class DocumentCaseWriteGuardTest extends TestCase {
 		);
 		self::assertNull(actual: $this->guard()->firstRefused(user: $user, documentIds: ['on-two', 'on-none']));
 	}//end testNamesTheFirstRefusedDocumentOfABatch()
+
+	/**
+	 * Each listing row says whether the caller may change its access: every case of the document must allow it, and
+	 * a row without an id may not.
+	 *
+	 * @return void
+	 */
+	public function testEachRowCarriesWhetherItsAccessMayBeChanged(): void {
+		$user = $this->createMock(originalClassName: IUser::class);
+
+		self::assertSame(
+			expected: [
+				['id' => 'on-two', 'titel' => 'A', 'canChangeAccess' => true],
+				['id' => 'also-on-x', 'canChangeAccess' => false],
+				['id' => 'on-none', 'canChangeAccess' => true],
+				['titel' => 'no id', 'canChangeAccess' => false],
+			],
+			actual: $this->guard()->withChangeRight(
+				user: $user,
+				documents: [['id' => 'on-two', 'titel' => 'A'], ['id' => 'also-on-x'], ['id' => 'on-none'], ['titel' => 'no id']]
+			)
+		);
+	}//end testEachRowCarriesWhetherItsAccessMayBeChanged()
+
+	/**
+	 * A listing asks each case once however many documents share it, and stops at a refused case.
+	 *
+	 * @return void
+	 */
+	public function testEachCaseIsAskedOnceForAListing(): void {
+		$user  = $this->createMock(originalClassName: IUser::class);
+		$store = $this->createMock(originalClassName: DocumentCaseIds::class);
+		$store->method('caseIdsOf')->willReturnCallback(
+			callback: static fn (string $recordId): array => [
+				'd1' => ['case-a', 'case-x', 'case-b'],
+				'd2' => ['case-a'],
+				'd3' => ['case-x'],
+			][$recordId]
+		);
+		$asked   = [];
+		$uploads = $this->createMock(originalClassName: DossierUploadHandler::class);
+		$uploads->method('hasCaseUploadAccess')->willReturnCallback(
+			callback: static function (IUser $user, string $caseId) use (&$asked): bool {
+				$asked[] = $caseId;
+				return $caseId !== 'case-x';
+			}
+		);
+		$guard = new DocumentCaseWriteGuard(caseIds: $store, uploads: $uploads);
+
+		self::assertSame(
+			expected: ['d1' => false, 'd2' => true, 'd3' => false],
+			actual: $guard->writableDocuments(user: $user, documentIds: ['d1', 'd2', 'd3'])
+		);
+		self::assertSame(expected: ['case-a', 'case-x'], actual: $asked);
+	}//end testEachCaseIsAskedOnceForAListing()
 }//end class

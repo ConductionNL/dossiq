@@ -48,8 +48,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\IntegrationModeInterface;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
-use OCA\Dossiq\Service\External\IntegrationMode;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -76,12 +76,12 @@ class CarryBagCheckSetting implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param IAppConfig $appConfig App config.
-	 * @param IntegrationMode $integrationMode Reads the old BAG settings the way the deleted client did.
+	 * @param IntegrationModeInterface $integrationMode Reads the old BAG settings the way the deleted client did.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
-		private readonly IntegrationMode $integrationMode,
+		private readonly IntegrationModeInterface $integrationMode,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -140,9 +140,9 @@ class CarryBagCheckSetting implements IRepairStep {
 	private function oldClientWasOn(): bool {
 		$mode = $this->integrationMode->resolve(
 			integration: 'bag',
-			allowed: [IntegrationMode::TEST, IntegrationMode::LIVE]
+			allowed: [IntegrationModeInterface::TEST, IntegrationModeInterface::LIVE]
 		);
-		if ($mode !== IntegrationMode::LOG) {
+		if ($mode !== IntegrationModeInterface::LOG) {
 			return true;
 		}
 

@@ -37,8 +37,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Service\HoldOrder;
 use OCP\EventDispatcher\Event;
@@ -97,12 +97,12 @@ class BezwaarLegalHoldListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container The DI container (OR services resolved lazily).
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Schema id-to-slug resolver.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

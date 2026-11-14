@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\MandaatCheckServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -46,7 +47,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class MandaatCheckService {
+class MandaatCheckService implements MandaatCheckServiceInterface {
 	use SearchesObjects;
 
 	public const REDEN_NIET_BEVOEGD = 'non_competent';

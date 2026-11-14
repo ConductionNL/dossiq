@@ -48,8 +48,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ConfiguredRegistryServiceInterface;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
-use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCA\OpenRegister\AppHost\Service\GenericStoreService;
 use OCA\OpenRegister\AppHost\Service\StoreDescriptor;
@@ -122,7 +122,7 @@ class StoreController extends Controller {
 	 * @param IUserSession $userSession Current Nextcloud user session.
 	 * @param IAppConfig $appConfig App config store holding the registry connection.
 	 * @param GenericStoreService $storeService Engine-owned store discovery client.
-	 * @param ConfiguredRegistryService $registry Dossiq's configured object-write seam.
+	 * @param ConfiguredRegistryServiceInterface $registry Dossiq's configured object-write seam.
 	 * @param StoreActionAuthorizer|null $actionAuthorizer Decides who may publish (OpenRegister); absent, nobody may.
 	 *
 	 * @return void
@@ -133,7 +133,7 @@ class StoreController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly IAppConfig $appConfig,
 		private readonly GenericStoreService $storeService,
-		private readonly ConfiguredRegistryService $registry,
+		private readonly ConfiguredRegistryServiceInterface $registry,
 		private readonly ?StoreActionAuthorizer $actionAuthorizer = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

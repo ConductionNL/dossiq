@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Onboarding;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WalkthroughCompletionInterface;
 use OCP\IConfig;
 use OCP\IUserSession;
 
@@ -45,14 +46,7 @@ use OCP\IUserSession;
  *
  * @spec openspec/specs/first-load-onboarding/spec.md#requirement-the-welcome-tour-comes-before-the-support-note-req-flo-001
  */
-class WalkthroughCompletion {
-
-	/**
-	 * The initial-state key the frontend reads.
-	 *
-	 * @var string
-	 */
-	public const STATE_KEY = 'walkthrough_seen';
+class WalkthroughCompletion implements WalkthroughCompletionInterface {
 
 	/**
 	 * The manifest's `walkthrough.completionConfigKey`.

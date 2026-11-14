@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service\Money;
 use DateTimeImmutable;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PaymentScheduleOverviewInterface;
 use OCA\Dossiq\Service\SettingsService;
 
 /**
@@ -41,7 +42,7 @@ use OCA\Dossiq\Service\SettingsService;
  *
  * @spec openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten/spec.md#requirement-a-handler-runs-a-grant-from-its-case-page-req-sub-case-01
  */
-class PaymentScheduleOverview {
+class PaymentScheduleOverview implements PaymentScheduleOverviewInterface {
 	/**
 	 * Decisions read for one case.
 	 */

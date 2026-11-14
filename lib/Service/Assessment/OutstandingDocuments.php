@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Assessment;
 
+use OCA\Dossiq\Kernel\Contracts\OutstandingDocumentsInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
@@ -39,7 +40,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
  *
  * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-answers-which-documents-still-wait-for-an-assessment-req-das-001
  */
-class OutstandingDocuments {
+class OutstandingDocuments implements OutstandingDocumentsInterface {
 	use SearchesObjects;
 
 	/**

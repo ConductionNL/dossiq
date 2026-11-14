@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AiServiceInterface;
 use OCA\Dossiq\Service\Ai\AiAuditLog;
 use OCA\Dossiq\Service\Ai\AiEndpointGuard;
 use OCA\Dossiq\Service\Ai\AiModelIdentity;
@@ -63,7 +64,7 @@ use RuntimeException;
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
  * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-1-1
  */
-class AiService {
+class AiService implements AiServiceInterface {
 	/**
 	 * Per operation: the label of its unavailable message, the log line and the
 	 * answer prefix of a failure, the result key recorded as confidence (null:

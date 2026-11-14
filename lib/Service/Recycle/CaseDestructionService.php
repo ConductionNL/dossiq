@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Recycle;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\CaseDestructionServiceInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
@@ -58,7 +59,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseDestructionService {
+class CaseDestructionService implements CaseDestructionServiceInterface {
 
 	/**
 	 * The case-type property naming the group that may destroy.

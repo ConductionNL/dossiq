@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentIntegrityVerifierInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/document-integrity-check/spec.md#requirement-stored-checksums-are-checked-again-and-the-check-is-recorded
  */
-class DocumentIntegrityVerifier {
+class DocumentIntegrityVerifier implements DocumentIntegrityVerifierInterface {
 
 	use SearchesObjects;
 

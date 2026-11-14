@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Dashboard;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
 use OCP\IURLGenerator;
 
 /**
@@ -38,7 +38,7 @@ class QueueWidgetItems {
 	 * Constructor.
 	 *
 	 * @param IURLGenerator      $url   Builds absolute addresses.
-	 * @param CaseDateNormaliser $dates The organisation's calendar.
+	 * @param CaseDateNormaliserInterface $dates The organisation's calendar.
 	 *
 	 * @return void
 	 *
@@ -46,7 +46,7 @@ class QueueWidgetItems {
 	 */
 	public function __construct(
 		private readonly IURLGenerator $url,
-		private readonly CaseDateNormaliser $dates,
+		private readonly CaseDateNormaliserInterface $dates,
 	) {
 	}//end __construct()
 

@@ -44,7 +44,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -78,11 +78,11 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Names the register and the schemas, and hands out the object service.
+	 * @param SettingsServiceInterface $settingsService Names the register and the schemas, and hands out the object service.
 	 * @param LoggerInterface $logger          Records a row that refused.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

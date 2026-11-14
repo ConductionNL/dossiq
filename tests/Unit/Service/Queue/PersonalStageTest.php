@@ -182,4 +182,45 @@ class PersonalStageTest extends TestCase {
 
 		self::assertSame('', $this->stages->get(userId: 'alice', caseId: 'case-1'));
 	}
+
+	/**
+	 * A config read that throws the one exception `getValueString` declares is
+	 * caught: the person reads as having set no stages, and the fault is
+	 * logged rather than swallowed as a programming error.
+	 *
+	 * @return void
+	 */
+	public function testAThrownConfigReadReadsAsNoStagesAndIsLogged(): void {
+		$config = $this->createMock(IUserConfig::class);
+		$config->method('getValueString')->willThrowException(new \InvalidArgumentException('bad app id'));
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects(self::once())->method('warning')
+			->with('Dossiq: the personal stages could not be read: bad app id');
+
+		$stages = new PersonalStageService(userConfig: $config, logger: $logger);
+
+		self::assertSame([], $stages->all(userId: 'alice'));
+	}
+
+	/**
+	 * A reader cannot hoard more than the cap of stages: setting one past the
+	 * cap drops the oldest, so the preference cannot grow without bound.
+	 *
+	 * @return void
+	 */
+	public function testSettingPastTheCapDropsTheOldestStage(): void {
+		$full = [];
+		for ($i = 0; $i < PersonalStageService::MAX_STAGES; $i++) {
+			$full['case-' . $i] = 'Stage ' . $i;
+		}
+
+		$this->prefs['alice|' . PersonalStageService::PREF_STAGES] = json_encode($full);
+
+		$this->stages->set(userId: 'alice', caseId: 'case-new', stage: 'Newest');
+		$stored = $this->stages->all(userId: 'alice');
+
+		self::assertCount(PersonalStageService::MAX_STAGES, $stored);
+		self::assertArrayHasKey('case-new', $stored);
+		self::assertArrayNotHasKey('case-0', $stored, 'The oldest stage was dropped to make room.');
+	}
 }//end class

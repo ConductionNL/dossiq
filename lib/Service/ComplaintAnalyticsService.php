@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAnalyticsServiceInterface;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
@@ -33,7 +34,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
  */
-class ComplaintAnalyticsService {
+class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 
 	/**
 	 * Minimum complaints per employee slice before employee data is shown (privacy).

@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BelplanRoutingServiceInterface;
 use OCA\Dossiq\Service\Support\CastArray;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -42,7 +43,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
-class BelplanRoutingService {
+class BelplanRoutingService implements BelplanRoutingServiceInterface {
 	use SearchesObjects;
 
 	/**

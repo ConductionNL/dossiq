@@ -48,7 +48,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Pause\PauseChaseService;
+use OCA\Dossiq\Kernel\Contracts\PauseChaseServiceInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\App\IAppManager;
@@ -67,14 +67,14 @@ class PauseChaseJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory             $time           The time factory.
-	 * @param PauseChaseService        $chases         The reminders and the escalation.
+	 * @param PauseChaseServiceInterface        $chases         The reminders and the escalation.
 	 * @param IAppManager              $appManager     Whether OpenRegister is there to read from.
 	 * @param LoggerInterface          $logger         Logger.
 	 * @param BackgroundServiceAccount $serviceAccount The account the sweep writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly PauseChaseService $chases,
+		private readonly PauseChaseServiceInterface $chases,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,

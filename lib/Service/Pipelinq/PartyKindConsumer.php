@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Pipelinq;
 
+use OCA\Dossiq\Kernel\Contracts\PartyKindConsumerInterface;
 use OCA\Dossiq\Service\People\PartyVocabulary;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -35,9 +36,8 @@ use Throwable;
  *
  * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
  */
-class PartyKindConsumer {
+class PartyKindConsumer implements PartyKindConsumerInterface {
 	use SearchesObjects;
-
 
 	/**
 	 * How a dossiq case type is named to pipelinq.

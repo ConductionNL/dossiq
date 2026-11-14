@@ -28,9 +28,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\PackageInstallerInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 
@@ -46,12 +46,12 @@ class InstallShippedPackages implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param PackageInstaller $installer The package installer.
-	 * @param SettingsService  $settings  Resolves the OpenRegister object service.
+	 * @param PackageInstallerInterface $installer The package installer.
+	 * @param SettingsServiceInterface  $settings  Resolves the OpenRegister object service.
 	 */
 	public function __construct(
-		private readonly PackageInstaller $installer,
-		private readonly SettingsService $settings,
+		private readonly PackageInstallerInterface $installer,
+		private readonly SettingsServiceInterface $settings,
 	) {
 	}//end __construct()
 
@@ -116,7 +116,7 @@ class InstallShippedPackages implements IRepairStep {
 				$line .= ' ' . $error;
 			}
 
-			if ($outcome['status'] === PackageInstaller::INSTALLED || $outcome['status'] === PackageInstaller::CURRENT) {
+			if ($outcome['status'] === PackageInstallerInterface::INSTALLED || $outcome['status'] === PackageInstallerInterface::CURRENT) {
 				$output->info($line);
 				continue;
 			}
@@ -124,7 +124,7 @@ class InstallShippedPackages implements IRepairStep {
 			$output->warning($line);
 		}
 
-		if (in_array(PackageInstaller::INSTALLED, array_column($outcomes, 'status'), true) === true) {
+		if (in_array(PackageInstallerInterface::INSTALLED, array_column($outcomes, 'status'), true) === true) {
 			$this->importRegisterAgain(output: $output);
 		}
 	}//end run()

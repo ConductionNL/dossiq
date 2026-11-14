@@ -41,6 +41,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Term;
 
+use OCA\Dossiq\Kernel\Contracts\TermStatusClockInterface;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-declares-the-statuses-its-clock-runs-in-with-thresholds-as-days-or-shares-req-tcf-03
  */
-class TermStatusClock {
+class TermStatusClock implements TermStatusClockInterface {
 	/**
 	 * Nothing was needed.
 	 */

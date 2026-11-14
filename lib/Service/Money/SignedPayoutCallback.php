@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Money;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SignedPayoutCallbackInterface;
 use OCP\IAppConfig;
 use OCP\IRequest;
 
@@ -39,14 +40,7 @@ use OCP\IRequest;
  *
  * @spec openspec/specs/payout/spec.md
  */
-class SignedPayoutCallback {
-
-	/**
-	 * The app config key of the shared secret. A stored key: frozen.
-	 *
-	 * @var string
-	 */
-	public const SECRET_KEY = MoneyConfigKeys::PAYOUT_CALLBACK_SECRET_KEY;
+class SignedPayoutCallback implements SignedPayoutCallbackInterface {
 
 	/**
 	 * The header the finance app signs with.

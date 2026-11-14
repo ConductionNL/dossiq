@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentCaseWriteGuardInterface;
 use OCP\IUser;
 
 /**
@@ -36,7 +37,7 @@ use OCP\IUser;
  *
  * @spec openspec/specs/document-writes-need-every-case/spec.md#requirement-a-document-write-needs-the-change-right-on-every-case-of-the-document
  */
-class DocumentCaseWriteGuard {
+class DocumentCaseWriteGuard implements DocumentCaseWriteGuardInterface {
 
 	/**
 	 * Constructor.

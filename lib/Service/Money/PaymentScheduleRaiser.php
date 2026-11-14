@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Money;
 use DateTimeImmutable;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PaymentScheduleRaiserInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -40,7 +41,7 @@ use Throwable;
  *
  * @spec openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten/spec.md#requirement-advances-are-a-payment-schedule-raised-with-finance-when-due-req-sub-case-02
  */
-class PaymentScheduleRaiser {
+class PaymentScheduleRaiser implements PaymentScheduleRaiserInterface {
 	/**
 	 * The schema whose objects carry a payment schedule.
 	 */

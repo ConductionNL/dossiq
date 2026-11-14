@@ -30,9 +30,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Starter\CaseTemplateService;
-use OCA\Dossiq\Service\Starter\ContentTemplateService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTemplateServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ContentTemplateServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -59,17 +59,17 @@ class TemplateStartController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest               $request  The HTTP request.
-	 * @param CaseTemplateService    $cases    The case templates.
-	 * @param ContentTemplateService $content  The template library.
-	 * @param CaseAccessGuard        $guard    Who may write to a case.
+	 * @param CaseTemplateServiceInterface    $cases    The case templates.
+	 * @param ContentTemplateServiceInterface $content  The template library.
+	 * @param CaseAccessGuardInterface        $guard    Who may write to a case.
 	 * @param IUserSession           $session  Who is asking.
 	 * @param LoggerInterface        $logger   Logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseTemplateService $cases,
-		private readonly ContentTemplateService $content,
-		private readonly CaseAccessGuard $guard,
+		private readonly CaseTemplateServiceInterface $cases,
+		private readonly ContentTemplateServiceInterface $content,
+		private readonly CaseAccessGuardInterface $guard,
 		private readonly IUserSession $session,
 		private readonly LoggerInterface $logger,
 	) {

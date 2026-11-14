@@ -40,8 +40,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Email\SavedMailImport;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\SavedMailImportInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -77,16 +77,16 @@ class SavedMailController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest        $request         Inbound request.
-	 * @param SavedMailImport $import          Hands the bytes to integriq's reader.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization.
+	 * @param SavedMailImportInterface $import          Hands the bytes to integriq's reader.
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization.
 	 * @param IRootFolder     $rootFolder      Resolves the node as the caller.
 	 * @param IUserSession    $userSession     The caller.
 	 * @param LoggerInterface $logger          Logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly SavedMailImport $import,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly SavedMailImportInterface $import,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IRootFolder $rootFolder,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
@@ -164,7 +164,7 @@ class SavedMailController extends Controller {
 		if ($read->node->getSize() > self::MAX_BYTES) {
 			return new JSONResponse(
 				[
-					'outcome' => SavedMailImport::OUTCOME_KEPT,
+					'outcome' => SavedMailImportInterface::OUTCOME_KEPT,
 					'reason' => 'This file is too large to read as a message. It is unchanged on this case.',
 				]
 			);

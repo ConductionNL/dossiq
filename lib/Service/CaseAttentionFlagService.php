@@ -46,6 +46,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseAttentionFlagServiceInterface;
 use OCA\Dossiq\Service\Support\CaseReadAndPatch;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -55,7 +56,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseAttentionFlagService {
+class CaseAttentionFlagService implements CaseAttentionFlagServiceInterface {
 
 	/**
 	 * The two acts a history row can record.

@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service\CaseType;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeRightsByRoleInterface;
 use OCA\Dossiq\Service\Access\CaseTypeRightsMatrixRows;
 use OCA\Dossiq\Service\Access\OrganisationRoles;
 use OCA\Dossiq\Service\CaseTypeResolver;
@@ -45,7 +46,7 @@ use OCP\IL10N;
  * @spec openspec/changes/case-type-rights-by-role/specs/case-types/spec.md
  * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md
  */
-class CaseTypeRightsByRole {
+class CaseTypeRightsByRole implements CaseTypeRightsByRoleInterface {
 
 	/**
 	 * Department values that stand for every department.

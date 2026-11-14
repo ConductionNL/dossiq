@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ZgwMappingServiceInterface;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
@@ -37,7 +38,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
-class ZgwMappingService {
+class ZgwMappingService implements ZgwMappingServiceInterface {
 	/**
 	 * Prefix for ZGW mapping config keys in IAppConfig.
 	 */

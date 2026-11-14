@@ -51,12 +51,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Cases;
 
+use OCA\Dossiq\Kernel\Contracts\ExternalHomeInterface;
+
 /**
  * Reads a case's external-home declaration, and says what it means for an act.
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class ExternalHome {
+class ExternalHome implements ExternalHomeInterface {
 
 	/**
 	 * The case field naming the application that holds the work.

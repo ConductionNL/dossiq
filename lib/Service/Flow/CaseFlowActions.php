@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Flow;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseFlowActionsInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -52,7 +53,7 @@ use Throwable;
  *
  * @spec openspec/specs/workflow-definition-engine/spec.md
  */
-class CaseFlowActions {
+class CaseFlowActions implements CaseFlowActionsInterface {
 
 	/**
 	 * OpenRegister's flow service, resolved by name.

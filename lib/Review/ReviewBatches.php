@@ -22,13 +22,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
-use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\EngineTaskGatewayInterface;
+use OCA\Dossiq\Kernel\Contracts\ReviewBatchesInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCP\IL10N;
 use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
@@ -47,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
  */
-class ReviewBatches {
+class ReviewBatches implements ReviewBatchesInterface {
 
 	use SearchesObjects;
 
@@ -69,27 +70,27 @@ class ReviewBatches {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance $reviews The reviews the batch is written on.
-	 * @param WooCaseDocuments $caseDocuments Where a case's documents are.
+	 * @param WooCaseDocumentsInterface $caseDocuments Where a case's documents are.
 	 * @param ReviewConfiguration $configuration The case type's review configuration and each document's depth.
-	 * @param EngineTaskGateway $tasks The task seam that hands the reviewer the batch.
+	 * @param EngineTaskGatewayInterface $tasks The task seam that hands the reviewer the batch.
 	 * @param IUserManager $userManager Whether the reviewer exists.
 	 * @param IL10N $l10n The translations, for the task's title.
-	 * @param CaseReviewerAccess $reviewerAccess Who may read the case's private review records.
+	 * @param CaseReviewerAccessInterface $reviewerAccess Who may read the case's private review records.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly DocumentRelevance $reviews,
-		private readonly WooCaseDocuments $caseDocuments,
+		private readonly WooCaseDocumentsInterface $caseDocuments,
 		private readonly ReviewConfiguration $configuration,
-		private readonly EngineTaskGateway $tasks,
+		private readonly EngineTaskGatewayInterface $tasks,
 		private readonly IUserManager $userManager,
 		private readonly IL10N $l10n,
-		private readonly CaseReviewerAccess $reviewerAccess,
+		private readonly CaseReviewerAccessInterface $reviewerAccess,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

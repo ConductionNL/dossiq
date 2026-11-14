@@ -68,6 +68,7 @@ namespace OCA\Dossiq\Service\Notes;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\NotePushInterface;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -80,7 +81,7 @@ use Throwable;
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
-class NotePush {
+class NotePush implements NotePushInterface {
 
 	/**
 	 * The app-config key naming the reserved informatieobjecttype for a note.

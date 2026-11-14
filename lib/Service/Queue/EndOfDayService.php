@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service\Queue;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Dossiq\Kernel\Contracts\EndOfDayServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCP\IL10N;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/end-of-day-manifest/spec.md
  */
-class EndOfDayService {
+class EndOfDayService implements EndOfDayServiceInterface {
 
 	private const READ_STATE = 'OCA\\OpenRegister\\Service\\Interaction\\ReadStateService';
 

@@ -38,7 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -54,12 +54,12 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister.
 	 * @param IAppConfig      $appConfig       App configuration.
 	 * @param LoggerInterface $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {

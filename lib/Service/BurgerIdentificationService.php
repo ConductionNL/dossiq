@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BurgerIdentificationServiceInterface;
 use OCP\Contacts\IManager as IContactsManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -41,7 +42,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
  */
-class BurgerIdentificationService {
+class BurgerIdentificationService implements BurgerIdentificationServiceInterface {
 	/**
 	 * Weighting per identificatievraag dimension (must sum to 1.0).
 	 *

@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WithheldListRecorderInterface;
 use OCP\IL10N;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
  */
-class WithheldListRecorder {
+class WithheldListRecorder implements WithheldListRecorderInterface {
 
 	/**
 	 * Opencatalogi's record door. Named as a string: the class is absent on an
@@ -55,11 +56,6 @@ class WithheldListRecorder {
 	 * The source dossiq records under.
 	 */
 	public const SOURCE = 'dossiq';
-
-	/**
-	 * Opencatalogi is installed but has no record door.
-	 */
-	public const REASON_TOO_OLD = 'opencatalogi-too-old';
 
 	/**
 	 * The record door threw.

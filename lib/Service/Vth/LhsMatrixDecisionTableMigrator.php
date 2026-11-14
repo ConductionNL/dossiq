@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Vth;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\LhsMatrixDecisionTableMigratorInterface;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -55,7 +56,7 @@ use Throwable;
  *
  * @spec openspec/specs/lhs-decision-table/spec.md
  */
-class LhsMatrixDecisionTableMigrator {
+class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorInterface {
 
 	use SearchesObjects;
 
