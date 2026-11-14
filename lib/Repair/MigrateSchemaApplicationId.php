@@ -131,6 +131,27 @@ class MigrateSchemaApplicationId implements IRepairStep {
 			return;
 		}
 
+		[$moved, $refused] = $this->repointAll(candidates: $candidates, taken: $taken);
+
+		$output->info(
+			sprintf(
+				'MigrateSchemaApplicationId: %d schema(s) moved to %s, %d refused as duplicates.',
+				$moved,
+				self::NEW_APP_ID,
+				$refused
+			)
+		);
+	}//end run()
+
+	/**
+	 * Re-point every candidate slug that has no twin under the new application id.
+	 *
+	 * @param array<int, string> $candidates Slugs under the old application id.
+	 * @param array<int, string> $taken      Lower-cased slugs under the new application id.
+	 *
+	 * @return array{0: int, 1: int} The number moved and the number refused.
+	 */
+	private function repointAll(array $candidates, array $taken): array {
 		$moved = 0;
 		$refused = 0;
 		foreach ($candidates as $slug) {
@@ -149,15 +170,8 @@ class MigrateSchemaApplicationId implements IRepairStep {
 			}
 		}
 
-		$output->info(
-			sprintf(
-				'MigrateSchemaApplicationId: %d schema(s) moved to %s, %d refused as duplicates.',
-				$moved,
-				self::NEW_APP_ID,
-				$refused
-			)
-		);
-	}//end run()
+		return [$moved, $refused];
+	}//end repointAll()
 
 	/**
 	 * Slugs already claimed under the NEW application id.
