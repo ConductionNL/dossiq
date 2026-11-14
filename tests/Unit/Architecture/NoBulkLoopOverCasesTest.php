@@ -59,7 +59,7 @@ class NoBulkLoopOverCasesTest extends TestCase {
 	 * @var array<string, string>
 	 */
 	private const READERS = [
-		'lib/Service/Bulk/CaseTypeVersionGuard.php::caseTypeIdsOf' =>
+		'lib/Service/Bulk/CaseTypeVersionGuard.php::countCaseTypes' =>
 			'Reads each selected case type so the refusal can name both versions. '
 			. 'It happens BEFORE any job exists, which is the point of the refusal, '
 			. 'so there is no job to do it inside.',
