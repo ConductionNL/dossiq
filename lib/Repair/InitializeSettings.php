@@ -101,61 +101,9 @@ class InitializeSettings implements IRepairStep {
 			// schema config keys are still provisioned when the import is a no-op.
 			$result = $this->settingsService->loadConfiguration();
 
-			// Always reconcile EVERY *_schema appconfig key directly from
-			// OpenRegister (idempotent). loadConfiguration() only maps schema
-			// IDs that appear in the import RESULT; an already-imported instance
-			// returns an empty schema list, which previously left
-			// case_type_schema/status_type_schema/status_record_schema/
-			// workflow_template_schema unset and broke status-name resolution +
-			// the workflow board on a fresh deploy. Running the reconcile here
-			// guarantees the keys are provisioned even when the import is a
-			// no-op (or partially succeeds).
-			$reconciled = $this->settingsService->reconcileSchemaConfig();
-			$output->info('Dossiq schema config keys reconciled (' . $reconciled . ' written)');
+			$this->reconcileAfterImport(output: $output);
 
-			// Reconcile the declarative `x-openregister-*` annotation blocks
-			// (calculations / references / lifecycle) onto the live schema
-			// configuration. OpenRegister's import maps schema properties but
-			// does not reliably round-trip these schema-level annotation blocks
-			// on an already-imported instance, which would silently disable
-			// auto-deadline / auto-identifier / initial-status on create.
-			$reconciledCount = $this->settingsService->reconcileSchemaDeclarativeConfig();
-			$output->info(
-				'Dossiq declarative schema configuration reconciled (' . $reconciledCount . ' written)'
-			);
-
-			// 🔴 THE IMPORT REWRITES A SCHEMA'S PROPERTIES, AND THE PER-ROLE
-			// FIELD RULES LIVE ON THEM. The reconcile above puts the schema-level
-			// annotation blocks back; nothing puts back the
-			// `properties.<field>.authorization` blocks a case type projected,
-			// and OpenRegister answers a stripped field again the moment they are
-			// gone. Nothing errors when that happens: the field is simply in the
-			// response, for the role the rule exists to keep it from. So the
-			// ledger is re-applied on every upgrade, idempotently.
-			if ($this->fieldRoles->reapply() === true) {
-				$output->info('Dossiq per-role field rules re-applied to the case schema');
-			}
-
-			// 🔴 THE SAME IMPORT WRITES THE CASE SCHEMA'S AUTHORIZATION FROM THE
-			// REGISTER JSON, which carries the shipped block and not the handling
-			// team rules. Without this every team stops seeing its cases until a
-			// case type is saved (case-access-by-handling-team, REQ-ACC-10).
-			if ($this->teamAccess->reapply() === true) {
-				$output->info('Dossiq handling team rules written to the case schema');
-			}
-
-			if ($result['success'] === true) {
-				$version = ($result['version'] ?? 'unknown');
-				$output->info(
-					'Dossiq configuration imported successfully (version: ' . $version . ')'
-				);
-				return;
-			}
-
-			$message = ($result['message'] ?? 'unknown error');
-			$output->warning(
-				'Dossiq configuration import issue: ' . $message
-			);
+			$this->reportImport(output: $output, result: $result);
 		} catch (\Throwable $e) {
 			$output->warning('Could not auto-configure Dossiq: ' . $e->getMessage());
 			$this->logger->error(
@@ -164,4 +112,80 @@ class InitializeSettings implements IRepairStep {
 			);
 		}//end try
 	}//end run()
+
+	/**
+	 * Put back what the import leaves out: schema config keys, declarative
+	 * annotation blocks, per-role field rules and handling team rules.
+	 *
+	 * @param IOutput $output The output interface for progress reporting
+	 *
+	 * @return void
+	 */
+	private function reconcileAfterImport(IOutput $output): void {
+		// Always reconcile EVERY *_schema appconfig key directly from
+		// OpenRegister (idempotent). loadConfiguration() only maps schema
+		// IDs that appear in the import RESULT; an already-imported instance
+		// returns an empty schema list, which previously left
+		// case_type_schema/status_type_schema/status_record_schema/
+		// workflow_template_schema unset and broke status-name resolution +
+		// the workflow board on a fresh deploy. Running the reconcile here
+		// guarantees the keys are provisioned even when the import is a
+		// no-op (or partially succeeds).
+		$reconciled = $this->settingsService->reconcileSchemaConfig();
+		$output->info('Dossiq schema config keys reconciled (' . $reconciled . ' written)');
+
+		// Reconcile the declarative `x-openregister-*` annotation blocks
+		// (calculations / references / lifecycle) onto the live schema
+		// configuration. OpenRegister's import maps schema properties but
+		// does not reliably round-trip these schema-level annotation blocks
+		// on an already-imported instance, which would silently disable
+		// auto-deadline / auto-identifier / initial-status on create.
+		$reconciledCount = $this->settingsService->reconcileSchemaDeclarativeConfig();
+		$output->info(
+			'Dossiq declarative schema configuration reconciled (' . $reconciledCount . ' written)'
+		);
+
+		// 🔴 THE IMPORT REWRITES A SCHEMA'S PROPERTIES, AND THE PER-ROLE
+		// FIELD RULES LIVE ON THEM. The reconcile above puts the schema-level
+		// annotation blocks back; nothing puts back the
+		// `properties.<field>.authorization` blocks a case type projected,
+		// and OpenRegister answers a stripped field again the moment they are
+		// gone. Nothing errors when that happens: the field is simply in the
+		// response, for the role the rule exists to keep it from. So the
+		// ledger is re-applied on every upgrade, idempotently.
+		if ($this->fieldRoles->reapply() === true) {
+			$output->info('Dossiq per-role field rules re-applied to the case schema');
+		}
+
+		// 🔴 THE SAME IMPORT WRITES THE CASE SCHEMA'S AUTHORIZATION FROM THE
+		// REGISTER JSON, which carries the shipped block and not the handling
+		// team rules. Without this every team stops seeing its cases until a
+		// case type is saved (case-access-by-handling-team, REQ-ACC-10).
+		if ($this->teamAccess->reapply() === true) {
+			$output->info('Dossiq handling team rules written to the case schema');
+		}
+	}//end reconcileAfterImport()
+
+	/**
+	 * Report the outcome of the configuration import.
+	 *
+	 * @param IOutput              $output The output interface for progress reporting
+	 * @param array<string, mixed> $result The import result
+	 *
+	 * @return void
+	 */
+	private function reportImport(IOutput $output, array $result): void {
+		if ($result['success'] === true) {
+			$version = ($result['version'] ?? 'unknown');
+			$output->info(
+				'Dossiq configuration imported successfully (version: ' . $version . ')'
+			);
+			return;
+		}
+
+		$message = ($result['message'] ?? 'unknown error');
+		$output->warning(
+			'Dossiq configuration import issue: ' . $message
+		);
+	}//end reportImport()
 }//end class

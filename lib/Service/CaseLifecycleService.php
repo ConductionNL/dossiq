@@ -58,6 +58,8 @@ use RuntimeException;
  * The case lifecycle gestures the Actions menu offers.
  *
  * @spec openspec/specs/status-transition-engine/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseLifecycleService implements CaseLifecycleServiceInterface {
 
@@ -153,28 +155,11 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	public function suspend(string $caseId, string $reason, int $days, string $pauseReason = ''): array {
 		$case = $this->requireCase(caseId: $caseId);
 		$key = trim($pauseReason);
-		$rationale = $reason;
-		if ($key === '') {
-			$this->requireReason(reason: $reason);
-		}
+		$rationale = $this->suspendRationale(caseId: $caseId, reason: $reason, key: $key);
 
-		if ($key !== '') {
-			$rationale = $this->deadlines->pauseService->suspendRationale(caseId: $caseId, reason: $reason, pauseReason: $key);
-		}
+		$this->requireSuspendable(case: $case);
 
-		$caseType = $this->caseTypes->read(caseTypeId: (string)($case['caseType'] ?? ''));
-		if ($caseType['suspensionAllowed'] !== true) {
-			throw new RuntimeException('suspension_not_allowed');
-		}
-
-		if ($this->isSuspended(case: $case) === true) {
-			throw new RuntimeException('already_suspended');
-		}
-
-		$duration = $days;
-		if ($duration <= 0) {
-			$duration = 14;
-		}
+		$duration = $this->pauseDays(days: $days);
 
 		$this->onTermInstance(
 			caseId: $caseId,
@@ -195,6 +180,72 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 
 		return $this->state(caseId: $caseId);
 	}//end suspend()
+
+	/**
+	 * The rationale of a suspension: the handler's words, or the declared pause reason's.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string $reason Why the case is suspended, in the handler's words
+	 * @param string $key    The key of one of the case type's pause reasons, or ''
+	 *
+	 * @return string The rationale
+	 *
+	 * @throws RuntimeException When the reason is empty, or the pause reason is not one the case type declares
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function suspendRationale(string $caseId, string $reason, string $key): string {
+		$rationale = $reason;
+		if ($key === '') {
+			$this->requireReason(reason: $reason);
+		}
+
+		if ($key !== '') {
+			$rationale = $this->deadlines->pauseService->suspendRationale(caseId: $caseId, reason: $reason, pauseReason: $key);
+		}
+
+		return $rationale;
+	}//end suspendRationale()
+
+	/**
+	 * Refuse a suspension the case type forbids, or of a case already suspended.
+	 *
+	 * @param array<string, mixed> $case The case
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the case type forbids suspension or the case is already suspended
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function requireSuspendable(array $case): void {
+		$caseType = $this->caseTypes->read(caseTypeId: (string)($case['caseType'] ?? ''));
+		if ($caseType['suspensionAllowed'] !== true) {
+			throw new RuntimeException('suspension_not_allowed');
+		}
+
+		if ($this->isSuspended(case: $case) === true) {
+			throw new RuntimeException('already_suspended');
+		}
+	}//end requireSuspendable()
+
+	/**
+	 * The pause length in days, 14 when none was given.
+	 *
+	 * @param int $days How long the applicant is given, in days
+	 *
+	 * @return int The pause length
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function pauseDays(int $days): int {
+		$duration = $days;
+		if ($duration <= 0) {
+			$duration = 14;
+		}
+
+		return $duration;
+	}//end pauseDays()
 
 	/**
 	 * Resume a suspended case (hervatting).
@@ -259,6 +310,34 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 		$case = $this->requireCase(caseId: $caseId);
 		$this->requireReason(reason: $reason);
 
+		$caseType = $this->extendableCaseType(case: $case);
+
+		$current = (string)($case['plannedEndDate'] ?? ($case['deadline'] ?? ''));
+		$newEnd = $this->resolveNewEndDate(
+			current: $current,
+			named: $newEndDate,
+			period: (string)$caseType['extensionPeriod'],
+		);
+
+		$extended = $this->requestExtension(caseId: $caseId, reason: $reason, newEnd: $newEnd);
+
+		$this->journalExtension(caseId: $caseId, case: $case, reason: $reason, newEnd: $newEnd);
+
+		return $this->state(caseId: $caseId) + ['notice' => $this->extensionNoticeOf(extended: $extended)];
+	}//end extend()
+
+	/**
+	 * The case's type, refused when it does not allow another extension.
+	 *
+	 * @param array<string, mixed> $case The loaded case
+	 *
+	 * @return array<string, mixed> The case type
+	 *
+	 * @throws RuntimeException When the case type forbids extension or its limit is reached
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function extendableCaseType(array $case): array {
 		$caseType = $this->caseTypes->read(caseTypeId: (string)($case['caseType'] ?? ''));
 		if ($caseType['extensionAllowed'] !== true) {
 			throw new RuntimeException('extension_not_allowed');
@@ -268,14 +347,22 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 			throw new RuntimeException('extension_limit_reached');
 		}
 
-		$current = (string)($case['plannedEndDate'] ?? ($case['deadline'] ?? ''));
-		$newEnd = $this->resolveNewEndDate(
-			current: $current,
-			named: $newEndDate,
-			period: (string)$caseType['extensionPeriod'],
-		);
+		return $caseType;
+	}//end extendableCaseType()
 
-		$extended = $this->onTermInstance(
+	/**
+	 * Request the extension on the case's term instance.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string $reason Why the term is extended
+	 * @param string $newEnd The new end date (Y-m-d)
+	 *
+	 * @return array<string, mixed>|null The engine's answer, null when there is no term instance
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function requestExtension(string $caseId, string $reason, string $newEnd): ?array {
+		return $this->onTermInstance(
 			caseId: $caseId,
 			gesture: 'extend',
 			apply: fn (string $instanceId): array => $this->deadlines->extensionService->requestExtension(
@@ -284,7 +371,21 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 				newEndDate: $newEnd,
 			),
 		);
+	}//end requestExtension()
 
+	/**
+	 * Journal the extension on the case.
+	 *
+	 * @param string               $caseId Case UUID
+	 * @param array<string, mixed> $case   The case as loaded before the extension
+	 * @param string               $reason Why the term is extended
+	 * @param string               $newEnd The new end date (Y-m-d)
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function journalExtension(string $caseId, array $case, string $reason, string $newEnd): void {
 		$this->journal(
 			caseId: $caseId,
 			changes: [
@@ -293,9 +394,7 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 			],
 			entry: ['type' => 'extend', 'reason' => $reason, 'newEndDate' => $newEnd]
 		);
-
-		return $this->state(caseId: $caseId) + ['notice' => $this->extensionNoticeOf(extended: $extended)];
-	}//end extend()
+	}//end journalExtension()
 
 	/**
 	 * Reopen a closed case.
@@ -324,6 +423,59 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 			throw new RuntimeException('case_not_closed');
 		}
 
+		$initial = $this->reopenStatusOf(case: $case);
+
+		// REQ-LIFE-11: reopening keeps the ending in the record. The case is
+		// open again, and the fact that it was ended, by whom and when, is not
+		// undone by that; an archivist or a rechter asking what happened to
+		// this zaak has to be able to read it afterwards. So the ending is
+		// read off the journal BEFORE the fields it derives from are cleared,
+		// and written into the reopen entry rather than left to be inferred.
+		$ending = $this->endings->endingOf(case: $case);
+
+		$this->journalReopen(caseId: $caseId, initial: $initial, reason: $reason, ending: $ending);
+
+		$this->writeReopenRecord(caseId: $caseId, initial: $initial, fromStatus: $currentId, reason: $reason);
+
+		return $this->state(caseId: $caseId);
+	}//end reopen()
+
+	/**
+	 * Write the status record of the reopening.
+	 *
+	 * @param string $caseId     Case UUID
+	 * @param string $initial    The status the case goes back to
+	 * @param string $fromStatus The final status the case leaves
+	 * @param string $reason     Why the case is reopened
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function writeReopenRecord(string $caseId, string $initial, string $fromStatus, string $reason): void {
+		$this->store->writeStatusRecord(
+			caseId: $caseId,
+			toStatus: $initial,
+			fromStatus: $fromStatus,
+			label: 'Reopened',
+			comment: $reason,
+			evaluatedGuards: [],
+			noWorkflowTemplate: true,
+		);
+	}//end writeReopenRecord()
+
+	/**
+	 * The initial status of the case's type, which a reopened case goes back to.
+	 *
+	 * @param array<string, mixed> $case The loaded case
+	 *
+	 * @return string The initial status type id
+	 *
+	 * @throws RuntimeException When the case type has no initial status, or one of another case type
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function reopenStatusOf(array $case): string {
 		$caseTypeId = (string)($case['caseType'] ?? '');
 		$caseType = $this->caseTypes->read(caseTypeId: $caseTypeId);
 		$initial = (string)$caseType['initialStatus'];
@@ -338,14 +490,24 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 			throw new RuntimeException('initial_status_not_of_case_type');
 		}
 
-		// REQ-LIFE-11: reopening keeps the ending in the record. The case is
-		// open again, and the fact that it was ended, by whom and when, is not
-		// undone by that; an archivist or a rechter asking what happened to
-		// this zaak has to be able to read it afterwards. So the ending is
-		// read off the journal BEFORE the fields it derives from are cleared,
-		// and written into the reopen entry rather than left to be inferred.
-		$ending = $this->endings->endingOf(case: $case);
+		return $initial;
+	}//end reopenStatusOf()
 
+	/**
+	 * Journal the reopening, clearing the end date and the archival claim.
+	 *
+	 * @param string               $caseId  Case UUID
+	 * @param string               $initial The status the case goes back to
+	 * @param string               $reason  Why the case is reopened
+	 * @param array<string, mixed> $ending  The ending read off the journal
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function journalReopen(string $caseId, string $initial, string $reason, array $ending): void {
+		// The ending is kept as a nested record rather than flattened, so a
+		// reader cannot mistake the reopening's own actor for the ending's.
 		$this->journal(
 			caseId: $caseId,
 			// Zrc-008: reopening withdraws the archival claim as well as the end
@@ -359,27 +521,9 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 				'archiveNomination' => null,
 				'archiveActionDate' => null,
 			],
-			entry: [
-				'type' => 'reopen',
-				'reason' => $reason,
-				// Kept as a nested record rather than flattened, so a reader
-				// cannot mistake the reopening's own actor for the ending's.
-				'reopenedFrom' => $ending,
-			]
+			entry: ['type' => 'reopen', 'reason' => $reason, 'reopenedFrom' => $ending]
 		);
-
-		$this->store->writeStatusRecord(
-			caseId: $caseId,
-			toStatus: $initial,
-			fromStatus: $currentId,
-			label: 'Reopened',
-			comment: $reason,
-			evaluatedGuards: [],
-			noWorkflowTemplate: true,
-		);
-
-		return $this->state(caseId: $caseId);
-	}//end reopen()
+	}//end journalReopen()
 
 	/**
 	 * Whether the case's journal says it is suspended.

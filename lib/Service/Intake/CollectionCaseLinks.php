@@ -166,28 +166,12 @@ class CollectionCaseLinks {
 	private function writeCaseObjects(object $objectService, string $register, string $caseId, array $collection): void {
 		$schema = $this->settingsService->getConfigValue('case_object_schema');
 		foreach ((array)($collection['items'] ?? []) as $item) {
-			if (is_array($item) === false) {
-				continue;
-			}
-
-			$publication = trim((string)($item['publication'] ?? ''));
+			$publication = $this->publicationOf(item: $item);
 			if ($publication === '') {
 				continue;
 			}
 
-			$attachment = ($item['attachment'] ?? null);
-			if ($attachment !== null) {
-				$attachment = (string)$attachment;
-			}
-
-			$object = [
-				'case' => $caseId,
-				'objectType' => self::OBJECT_TYPE,
-				'objectUrl' => $this->urlGenerator->getAbsoluteURL($this->publicationPath(publicationId: $publication)),
-				// The schema declares a string, so the pair travels as JSON.
-				'objectIdentification' => (string)json_encode(['publication' => $publication, 'attachment' => $attachment]),
-				'description' => $this->describe(objectService: $objectService, publication: $publication, note: (string)($item['note'] ?? '')),
-			];
+			$object = $this->caseObjectFor(objectService: $objectService, caseId: $caseId, item: $item, publication: $publication);
 
 			try {
 				$this->runAsSystemIfAvailable(
@@ -202,6 +186,47 @@ class CollectionCaseLinks {
 			}
 		}//end foreach
 	}//end writeCaseObjects()
+
+	/**
+	 * The publication a collection item names, or '' for an item that is not one.
+	 *
+	 * @param mixed $item The collection item.
+	 *
+	 * @return string The publication uuid, or ''.
+	 */
+	private function publicationOf(mixed $item): string {
+		if (is_array($item) === false) {
+			return '';
+		}
+
+		return trim((string)($item['publication'] ?? ''));
+	}//end publicationOf()
+
+	/**
+	 * The case object that links one collection item to the case.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param string               $caseId        The case.
+	 * @param array<string, mixed> $item          The collection item.
+	 * @param string               $publication   The publication uuid it names.
+	 *
+	 * @return array<string, mixed> The case object.
+	 */
+	private function caseObjectFor(object $objectService, string $caseId, array $item, string $publication): array {
+		$attachment = ($item['attachment'] ?? null);
+		if ($attachment !== null) {
+			$attachment = (string)$attachment;
+		}
+
+		return [
+			'case' => $caseId,
+			'objectType' => self::OBJECT_TYPE,
+			'objectUrl' => $this->urlGenerator->getAbsoluteURL($this->publicationPath(publicationId: $publication)),
+			// The schema declares a string, so the pair travels as JSON.
+			'objectIdentification' => (string)json_encode(['publication' => $publication, 'attachment' => $attachment]),
+			'description' => $this->describe(objectService: $objectService, publication: $publication, note: (string)($item['note'] ?? '')),
+		];
+	}//end caseObjectFor()
 
 	/**
 	 * What a case object says: the publication's title and the resident's note.

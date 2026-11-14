@@ -163,35 +163,53 @@ class StatusChecklist {
 				continue;
 			}
 
-			$declaration = $this->declarationFor(
-				caseId: $caseId,
-				statusTypeId: $statusTypeId,
-				title: $item['title']
-			);
-
-			// A task this case type switched off is not created at all. Two
-			// case types can share a process and differ on one step, which is
-			// exactly what the per-task block exists for.
-			if ($declaration['enabled'] === false) {
-				continue;
+			$action = $this->actionFor(caseId: $caseId, statusTypeId: $statusTypeId, title: $item['title']);
+			if ($action !== null) {
+				$actions[] = $action;
 			}
-
-			$actions[] = [
-				'type' => 'createTask',
-				'title' => $item['title'],
-				'workflowStepId' => $statusTypeId,
-				'assignee' => self::CHECKLIST_ASSIGNEE,
-				// The declaration travels WITH the action rather than being
-				// read again by the handler. The handler would have to know
-				// the case type, the status and the title to find it, which is
-				// three lookups to answer a question this method has already
-				// answered.
-				'declaration' => $declaration,
-			];
 		}
 
 		return $actions;
 	}//end actionsFor()
+
+	/**
+	 * The createTask action for one checklist item, or null when this case type switched the task off.
+	 *
+	 * @param string $caseId       The case entering the status.
+	 * @param string $statusTypeId The statusType UUID being entered.
+	 * @param string $title        The checklist item's title.
+	 *
+	 * @return array{type: string, title: string, workflowStepId: string, assignee: string, declaration: array<string, mixed>}|null The action.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function actionFor(string $caseId, string $statusTypeId, string $title): ?array {
+		$declaration = $this->declarationFor(
+			caseId: $caseId,
+			statusTypeId: $statusTypeId,
+			title: $title
+		);
+
+		// A task this case type switched off is not created at all. Two
+		// case types can share a process and differ on one step, which is
+		// exactly what the per-task block exists for.
+		if ($declaration['enabled'] === false) {
+			return null;
+		}
+
+		return [
+			'type' => 'createTask',
+			'title' => $title,
+			'workflowStepId' => $statusTypeId,
+			'assignee' => self::CHECKLIST_ASSIGNEE,
+			// The declaration travels WITH the action rather than being
+			// read again by the handler. The handler would have to know
+			// the case type, the status and the title to find it, which is
+			// three lookups to answer a question this method has already
+			// answered.
+			'declaration' => $declaration,
+		];
+	}//end actionFor()
 
 	/**
 	 * The per-task declaration this case type holds for one checklist item.

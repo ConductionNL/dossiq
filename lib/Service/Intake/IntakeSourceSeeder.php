@@ -192,55 +192,76 @@ class IntakeSourceSeeder implements IntakeSourceSeederInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function upsertAll(object $objectService, string $register): array {
-		$created = 0;
-		$updated = 0;
+		$tally = ['created' => 0, 'updated' => 0];
 		$refused = [];
 
 		foreach ($this->catalogue() as $source) {
-			$slug = (string)$source['slug'];
-			try {
-				$existing = $this->findBySlug(
-					objectService: $objectService,
-					register: $register,
-					slug: $slug
-				);
+			$outcome = $this->upsertOne(objectService: $objectService, register: $register, source: $source);
+			if ($outcome === 'refused') {
+				$refused[] = (string)$source['slug'];
+				continue;
+			}
 
-				if ($existing === null) {
-					$objectService->saveObject(
-						register: $register,
-						schema: self::SCHEMA_SLUG,
-						object: $this->newRow(source: $source)
-					);
-					$created++;
-					continue;
-				}
+			$tally[$outcome]++;
+		}
 
-				$objectService->saveObject(
-					register: $register,
-					schema: self::SCHEMA_SLUG,
-					object: $this->refreshedRow(existing: $this->dataOf(object: $existing), source: $source),
-					uuid: $this->uuidOf(object: $existing)
-				);
-				$updated++;
-			} catch (Throwable $e) {
-				// \Throwable rather than \Exception: an OpenRegister refusal can
-				// surface as a PHP Error, and one refused channel must not abort
-				// the upgrade that is seeding the other four.
-				$refused[] = $slug;
-				$this->logger->error(
-					'Dossiq: failed to seed an intake source',
-					['slug' => $slug, 'exception' => $e->getMessage()]
-				);
-			}//end try
-		}//end foreach
-
-		return [
-			'available' => true,
-			'created' => $created,
-			'updated' => $updated,
-			'refused' => $refused,
-		];
+		return ['available' => true, 'created' => $tally['created'], 'updated' => $tally['updated'], 'refused' => $refused];
 	}//end seed()
+
+	/**
+	 * Create or refresh one channel, logging a refusal.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param string               $register      The intake-sources register id.
+	 * @param array<string, mixed> $source        The catalogue definition.
+	 *
+	 * @return string 'created', 'updated' or 'refused'.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function upsertOne(object $objectService, string $register, array $source): string {
+		$slug = (string)$source['slug'];
+		try {
+			return $this->writeSource(objectService: $objectService, register: $register, source: $source);
+		} catch (Throwable $e) {
+			// \Throwable rather than \Exception: an OpenRegister refusal can
+			// surface as a PHP Error, and one refused channel must not abort
+			// the upgrade that is seeding the other four.
+			$this->logger->error(
+				'Dossiq: failed to seed an intake source',
+				['slug' => $slug, 'exception' => $e->getMessage()]
+			);
+			return 'refused';
+		}
+	}//end upsertOne()
+
+	/**
+	 * Write one channel: a new row when it is missing, a refreshed one otherwise.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param string               $register      The intake-sources register id.
+	 * @param array<string, mixed> $source        The catalogue definition.
+	 *
+	 * @return string 'created' or 'updated'.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function writeSource(object $objectService, string $register, array $source): string {
+		$existing = $this->findBySlug(objectService: $objectService, register: $register, slug: (string)$source['slug']);
+
+		if ($existing === null) {
+			$objectService->saveObject(register: $register, schema: self::SCHEMA_SLUG, object: $this->newRow(source: $source));
+			return 'created';
+		}
+
+		$objectService->saveObject(
+			register: $register,
+			schema: self::SCHEMA_SLUG,
+			object: $this->refreshedRow(existing: $this->dataOf(object: $existing), source: $source),
+			uuid: $this->uuidOf(object: $existing)
+		);
+		return 'updated';
+	}//end writeSource()
 
 	/**
 	 * A new row: the catalogue's own fields, switched off.

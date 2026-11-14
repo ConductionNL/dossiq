@@ -62,6 +62,8 @@ use Psr\Log\LoggerInterface;
  * constants and four pure predicates over an array, with no state, no I/O and
  * nothing to inject. Making it an instance would add a constructor dependency
  * to every class that names a kind, to hide a `::` behind a `->`.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseTermsService implements CaseTermsServiceInterface {
 	/**
@@ -212,16 +214,45 @@ class CaseTermsService implements CaseTermsServiceInterface {
 		$existing = $this->sources->termService->getTermijnInstanceForZaak(caseId: $caseId);
 
 		if ($existing !== null && TermKind::ofInstance($existing) === TermKind::STATUTORY) {
-			return $this->sources->termService->updateTermijnInstance(
-				termInstanceId: (string)($existing['id'] ?? ''),
-				patch: [
-					'kind' => TermKind::STATUTORY,
-					'endDateCalculated' => $end,
-					'endDateCurrent' => $end,
-				]
-			);
+			return $this->restateStatutoryEnd(existing: $existing, end: $end);
 		}
 
+		return $this->saveStatutory(caseId: $caseId, start: $start, end: $end);
+	}//end bindStatutory()
+
+	/**
+	 * Move an existing statutory term to the fixed closing date.
+	 *
+	 * @param array<string, mixed> $existing The case's statutory instance.
+	 * @param string $end The end date, as `Y-m-d`.
+	 *
+	 * @return array<string, mixed>|null The instance.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	private function restateStatutoryEnd(array $existing, string $end): ?array {
+		return $this->sources->termService->updateTermijnInstance(
+			termInstanceId: (string)($existing['id'] ?? ''),
+			patch: [
+				'kind' => TermKind::STATUTORY,
+				'endDateCalculated' => $end,
+				'endDateCurrent' => $end,
+			]
+		);
+	}//end restateStatutoryEnd()
+
+	/**
+	 * Save a new statutory term ending on the fixed closing date.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param DateTimeImmutable $start When the clock starts.
+	 * @param string $end The end date, as `Y-m-d`.
+	 *
+	 * @return array<string, mixed>|null The instance.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	private function saveStatutory(string $caseId, DateTimeImmutable $start, string $end): ?array {
 		return $this->sources->termService->saveTermInstance(
 			instance: [
 				'case' => $caseId,
@@ -234,7 +265,7 @@ class CaseTermsService implements CaseTermsServiceInterface {
 				'notificatiesVerstuurd' => [],
 			]
 		);
-	}//end bindStatutory()
+	}//end saveStatutory()
 
 	/**
 	 * Bind one lead-time clock, on the administered calendar.
@@ -400,16 +431,70 @@ class CaseTermsService implements CaseTermsServiceInterface {
 		$terms = $this->termsForCase(caseId: $caseId, now: $today);
 		$phases = $this->sources->declarations->phasesOf(caseTypeId: $caseTypeId);
 
+		return $this->progressOf(terms: $terms, phases: $phases, statusTypeId: $statusTypeId, today: $today);
+	}//end progressFor()
+
+	/**
+	 * The progress figures of a case's terms and phases.
+	 *
+	 * @param array<int, array<string, mixed>> $terms The case's terms.
+	 * @param array<int, mixed> $phases The case type's phases.
+	 * @param string $statusTypeId The phase the case is in now.
+	 * @param DateTimeImmutable $today The day to judge against.
+	 *
+	 * @return array{progress: int, daysLeft: int, phasesDone: int, phasesTotal: int,
+	 *               termConsumed: int, phaseOverdue: bool, plannedOverdue: bool,
+	 *               statutoryOverdue: bool}
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function progressOf(array $terms, array $phases, string $statusTypeId, DateTimeImmutable $today): array {
 		$statutory = $this->firstOfKind(terms: $terms, kind: TermKind::STATUTORY);
 		$consumed = $this->consumedPercent(term: $statutory, today: $today);
 		$done = $this->phasesDone(phases: $phases, statusTypeId: $statusTypeId);
 		$total = count($phases);
 
+		$byPhases = $this->progressByPhases(done: $done, total: $total, consumed: $consumed);
+
+		return [
+			'progress' => max(0, min(100, (int)round(((($byPhases + $consumed) / 2))))),
+			'daysLeft' => $this->daysLeftOf(statutory: $statutory),
+			'phasesDone' => $done,
+			'phasesTotal' => $total,
+			'termConsumed' => $consumed,
+		] + $this->overdueFlags(terms: $terms);
+	}//end progressOf()
+
+	/**
+	 * The share of phases done, as a percentage, or the term consumed without phases.
+	 *
+	 * @param int $done The phases done.
+	 * @param int $total The phases declared.
+	 * @param int $consumed The share of the statutory term consumed.
+	 *
+	 * @return int The percentage.
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function progressByPhases(int $done, int $total, int $consumed): int {
 		$byPhases = $consumed;
 		if ($total > 0) {
 			$byPhases = (int)round((($done / $total) * 100));
 		}
 
+		return $byPhases;
+	}//end progressByPhases()
+
+	/**
+	 * The days left on the statutory term.
+	 *
+	 * @param array<string, mixed>|null $statutory The statutory term, or null.
+	 *
+	 * @return int The days left.
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function daysLeftOf(?array $statutory): int {
 		// A case with no statutory term reads zero days left rather than
 		// nothing. There is no honest number here, and a null would have to be
 		// rendered as something anyway.
@@ -418,17 +503,25 @@ class CaseTermsService implements CaseTermsServiceInterface {
 			$daysLeft = (int)($statutory['daysLeft'] ?? 0);
 		}
 
+		return $daysLeft;
+	}//end daysLeftOf()
+
+	/**
+	 * Whether any phase, planned or statutory term is overdue.
+	 *
+	 * @param array<int, array<string, mixed>> $terms The case's terms.
+	 *
+	 * @return array{phaseOverdue: bool, plannedOverdue: bool, statutoryOverdue: bool}
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function overdueFlags(array $terms): array {
 		return [
-			'progress' => max(0, min(100, (int)round(((($byPhases + $consumed) / 2))))),
-			'daysLeft' => $daysLeft,
-			'phasesDone' => $done,
-			'phasesTotal' => $total,
-			'termConsumed' => $consumed,
 			'phaseOverdue' => $this->anyOverdue(terms: $terms, kind: TermKind::PHASE),
 			'plannedOverdue' => $this->anyOverdue(terms: $terms, kind: TermKind::PLANNED),
 			'statutoryOverdue' => $this->anyOverdue(terms: $terms, kind: TermKind::STATUTORY),
 		];
-	}//end progressFor()
+	}//end overdueFlags()
 
 	/**
 	 * Everything the case page needs about the clocks, in one read.

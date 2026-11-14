@@ -156,25 +156,7 @@ class SociaalDomeinStore implements SociaalDomeinStoreInterface {
 				schema: 'case',
 				filters: ['subjectBsn' => $bsn]
 			);
-			$contacts = [];
-			foreach ($cases as $case) {
-				if (($case['isFinalStatus'] ?? false) === true) {
-					continue;
-				}
-
-				$type = $this->findObjectAsArray(
-					objectService: $objectService,
-					register: self::REGISTER,
-					schema: 'caseType',
-					id: (string)($case['caseType'] ?? '')
-				);
-				$domain = $this->domainOfCategory(category: trim((string)($type['category'] ?? '')));
-				if ($domain === '' || isset($contacts[$domain]) === true) {
-					continue;
-				}
-
-				$contacts[$domain] = $this->contactOf(case: $case, domain: $domain);
-			}
+			$contacts = $this->openContactsOf(objectService: $objectService, cases: $cases);
 		} catch (Throwable $e) {
 			$this->refuseIndeterminate(
 				rule: 'sociaal-domein-unreadable',
@@ -185,6 +167,67 @@ class SociaalDomeinStore implements SociaalDomeinStoreInterface {
 
 		return $contacts;
 	}//end openCaseContactsAbout()
+
+	/**
+	 * Domain => contact for the first open case per domain.
+	 *
+	 * @param object                           $objectService The OpenRegister object service.
+	 * @param array<int, array<string, mixed>> $cases         The person's cases.
+	 *
+	 * @return array<string, string> Domain => contact.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function openContactsOf(object $objectService, array $cases): array {
+		$contacts = [];
+		foreach ($cases as $case) {
+			if ($this->isFinal(caseData: $case) === true) {
+				continue;
+			}
+
+			$domain = $this->domainOfCase(objectService: $objectService, caseData: $case);
+			if ($domain === '' || isset($contacts[$domain]) === true) {
+				continue;
+			}
+
+			$contacts[$domain] = $this->contactOf(case: $case, domain: $domain);
+		}
+
+		return $contacts;
+	}//end openContactsOf()
+
+	/**
+	 * Whether a case sits in a final status.
+	 *
+	 * @param array<string, mixed> $caseData The case.
+	 *
+	 * @return bool True when the case is closed.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function isFinal(array $caseData): bool {
+		return ($caseData['isFinalStatus'] ?? false) === true;
+	}//end isFinal()
+
+	/**
+	 * The domain of a case's case type, or '' when it is none of the three.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param array<string, mixed> $caseData      The case.
+	 *
+	 * @return string The domain.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function domainOfCase(object $objectService, array $caseData): string {
+		$type = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: self::REGISTER,
+			schema: 'caseType',
+			id: (string)($caseData['caseType'] ?? '')
+		);
+		return $this->domainOfCategory(category: trim((string)($type['category'] ?? '')));
+	}//end domainOfCase()
 
 	/**
 	 * The domain a case type category belongs to, or '' when it is none of the three.
@@ -314,20 +357,10 @@ class SociaalDomeinStore implements SociaalDomeinStoreInterface {
 	 */
 	public function write(string $schema, array $object): array {
 		$objectService = $this->objectService();
-		$declaredId = trim((string)($object['id'] ?? ''));
-		$uuid = null;
-		if ($declaredId !== '') {
-			$uuid = $declaredId;
-		}
+		$uuid = $this->declaredUuid(object: $object);
 
 		try {
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: self::REGISTER,
-				schema: $schema,
-				object: $object,
-				uuid: $uuid
-			);
+			$saved = $this->saveObjectAsArray(objectService: $objectService, register: self::REGISTER, schema: $schema, object: $object, uuid: $uuid);
 		} catch (Throwable $e) {
 			$this->refuseIndeterminate(
 				rule: 'sociaal-domein-not-written',
@@ -336,6 +369,40 @@ class SociaalDomeinStore implements SociaalDomeinStoreInterface {
 			);
 		}
 
+		return $this->savedOrRefused(saved: $saved);
+	}//end write()
+
+	/**
+	 * The id the object declares, or null for a new one.
+	 *
+	 * @param array<string, mixed> $object The object.
+	 *
+	 * @return string|null The uuid.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 */
+	private function declaredUuid(array $object): ?string {
+		$declaredId = trim((string)($object['id'] ?? ''));
+		$uuid = null;
+		if ($declaredId !== '') {
+			$uuid = $declaredId;
+		}
+
+		return $uuid;
+	}//end declaredUuid()
+
+	/**
+	 * The stored object, refusing when the store handed back nothing readable.
+	 *
+	 * @param array<string, mixed>|null $saved The stored object, or null.
+	 *
+	 * @return array<string, mixed> The stored object.
+	 *
+	 * @throws RefusedException When nothing readable was stored.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 */
+	private function savedOrRefused(?array $saved): array {
 		if ($saved === null) {
 			// 🔴 NOT A SILENT NULL. `saveObjectAsArray` answers null when the
 			// store hands back a shape it cannot read, and a caller that took
@@ -348,7 +415,7 @@ class SociaalDomeinStore implements SociaalDomeinStoreInterface {
 		}
 
 		return $saved;
-	}//end write()
+	}//end savedOrRefused()
 
 	/**
 	 * The object service, or a refusal naming what is missing.

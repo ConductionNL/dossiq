@@ -138,17 +138,7 @@ class AdvisoryBodyService implements AdvisoryBodyServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
 	 */
 	public function save(array $data, string $id = ''): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('advisory_body_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			throw new RuntimeException('Advisory body schema not configured');
-		}
+		[$objectService, $register, $schema] = $this->requireSaveTarget();
 
 		$saveArgs = [$register, $schema, $data];
 		if ($id !== '') {
@@ -157,14 +147,7 @@ class AdvisoryBodyService implements AdvisoryBodyServiceInterface {
 
 		$result = $objectService->saveObject(...$saveArgs);
 
-		$savedId = '';
-		if ($id !== '') {
-			$savedId = $id;
-		}
-
-		if (is_object($result) === true) {
-			$savedId = $result->getUuid();
-		}
+		$savedId = $this->savedIdOf(result: $result, id: $id);
 
 		$this->logger->info(
 			'Advisory body saved: ' . $savedId,
@@ -177,6 +160,54 @@ class AdvisoryBodyService implements AdvisoryBodyServiceInterface {
 
 		return ['id' => $savedId];
 	}//end save()
+
+	/**
+	 * The object service, register and schema an advisory body is saved to.
+	 *
+	 * @return array{0: object, 1: string, 2: string} The object service, register and schema
+	 *
+	 * @throws \RuntimeException If OpenRegister is unavailable or schema not configured
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
+	 */
+	private function requireSaveTarget(): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('advisory_body_schema');
+
+		if (empty($register) === true || empty($schema) === true) {
+			throw new RuntimeException('Advisory body schema not configured');
+		}
+
+		return [$objectService, $register, $schema];
+	}//end requireSaveTarget()
+
+	/**
+	 * The id of the saved advisory body: the stored object's uuid, else the id it was saved under.
+	 *
+	 * @param mixed  $result What the save answered
+	 * @param string $id     The UUID for update (empty for create)
+	 *
+	 * @return mixed The saved id, empty when unknown
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
+	 */
+	private function savedIdOf(mixed $result, string $id): mixed {
+		$savedId = '';
+		if ($id !== '') {
+			$savedId = $id;
+		}
+
+		if (is_object($result) === true) {
+			$savedId = $result->getUuid();
+		}
+
+		return $savedId;
+	}//end savedIdOf()
 
 	/**
 	 * Delete an advisory body by ID.

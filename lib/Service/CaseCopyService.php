@@ -130,6 +130,38 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	 */
 	public function copy(string $caseId, array $options = []): array {
 		$context = $this->context();
+		$source = $this->requireSource(context: $context, caseId: $caseId);
+
+		$payload = $this->buildPayload(source: $source, caseId: $caseId, options: $options);
+
+		$created = $this->writeCopy(context: $context, payload: $payload, caseId: $caseId);
+		$newId = (string)($created['id'] ?? '');
+
+		$linked = $this->linkIfAsked(context: $context, caseId: $caseId, newId: $newId, options: $options);
+
+		$this->logger->info(
+			'CaseCopyService: copied a case',
+			['source' => $caseId, 'copy' => $newId, 'documents' => $linked]
+		);
+
+		$created['documentsLinked'] = $linked;
+
+		return $created;
+	}//end copy()
+
+	/**
+	 * The source case.
+	 *
+	 * @param array{objectService: object, register: string, caseSchema: string} $context The object service, register and case schema.
+	 * @param string               $caseId  The source case's OpenRegister id.
+	 *
+	 * @return array<string, mixed> The source case.
+	 *
+	 * @throws RuntimeException `case_not_found` when the source does not resolve.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function requireSource(array $context, string $caseId): array {
 		$source = $this->fetch(
 			objectService: $context['objectService'],
 			register: $context['register'],
@@ -141,8 +173,23 @@ class CaseCopyService implements CaseCopyServiceInterface {
 			throw new RuntimeException('case_not_found');
 		}
 
-		$payload = $this->buildPayload(source: $source, caseId: $caseId, options: $options);
+		return $source;
+	}//end requireSource()
 
+	/**
+	 * Write the copy.
+	 *
+	 * @param array{objectService: object, register: string, caseSchema: string} $context The object service, register and case schema.
+	 * @param array<string, mixed> $payload The new case's properties.
+	 * @param string               $caseId  The source case's id.
+	 *
+	 * @return array<string, mixed> The new case.
+	 *
+	 * @throws RuntimeException `copy_failed` when the write is refused or answers no id.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function writeCopy(array $context, array $payload, string $caseId): array {
 		try {
 			$created = $this->toArray(
 				value: $context['objectService']->saveObject(
@@ -165,6 +212,22 @@ class CaseCopyService implements CaseCopyServiceInterface {
 			throw new RuntimeException('copy_failed');
 		}
 
+		return $created;
+	}//end writeCopy()
+
+	/**
+	 * Link the source's documents to the copy when the caller asked for them.
+	 *
+	 * @param array{objectService: object, register: string, caseSchema: string} $context The object service, register and case schema.
+	 * @param string                                  $caseId  The source case's id.
+	 * @param string                                  $newId   The copy's id.
+	 * @param array{title?: string, documents?: bool} $options The caller's options.
+	 *
+	 * @return int The number of documents linked.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function linkIfAsked(array $context, string $caseId, string $newId, array $options): int {
 		$linked = 0;
 		if (($options['documents'] ?? false) === true) {
 			$linked = $this->linkDocuments(
@@ -175,15 +238,8 @@ class CaseCopyService implements CaseCopyServiceInterface {
 			);
 		}
 
-		$this->logger->info(
-			'CaseCopyService: copied a case',
-			['source' => $caseId, 'copy' => $newId, 'documents' => $linked]
-		);
-
-		$created['documentsLinked'] = $linked;
-
-		return $created;
-	}//end copy()
+		return $linked;
+	}//end linkIfAsked()
 
 	/**
 	 * The payload the copy is written from.

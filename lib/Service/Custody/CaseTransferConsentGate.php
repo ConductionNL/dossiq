@@ -408,6 +408,18 @@ class CaseTransferConsentGate {
 			return [];
 		}
 
+		return $this->namingReceiver(rows: $rows, receiver: $receiver);
+	}//end consentsFor()
+
+	/**
+	 * The consent rows whose recipient parties name this receiver.
+	 *
+	 * @param array<int, array<string, mixed>> $rows     The recorded consents.
+	 * @param string                           $receiver The receiving organisation.
+	 *
+	 * @return array<int, array<string, mixed>> The candidates.
+	 */
+	private function namingReceiver(array $rows, string $receiver): array {
 		$named = [];
 		foreach ($rows as $row) {
 			foreach ((array)($row['recipientParties'] ?? []) as $party) {
@@ -419,7 +431,7 @@ class CaseTransferConsentGate {
 		}
 
 		return $named;
-	}//end consentsFor()
+	}//end namingReceiver()
 
 	/**
 	 * Shape one verdict.

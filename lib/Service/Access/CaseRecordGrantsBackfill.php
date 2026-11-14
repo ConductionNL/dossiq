@@ -230,6 +230,22 @@ class CaseRecordGrantsBackfill implements CaseRecordGrantsBackfillInterface {
 	 * @return bool False when OpenRegister has no special rights or refused the write.
 	 */
 	private function giveTheGrantRight(array $caseTypes): bool {
+		$schemas = $this->privateSchemas(caseTypes: $caseTypes);
+		if ($schemas === []) {
+			return true;
+		}
+
+		return $this->giveOn(schemas: $schemas);
+	}//end giveTheGrantRight()
+
+	/**
+	 * The configured slugs of the record schemas the case types declare private, sorted.
+	 *
+	 * @param list<string> $caseTypes The declaring case types.
+	 *
+	 * @return list<string> The schema slugs.
+	 */
+	private function privateSchemas(array $caseTypes): array {
 		$schemas = [];
 		foreach ($caseTypes as $caseTypeId) {
 			foreach ($this->access->declarationFor(caseType: $this->resolver->effectiveCaseType(caseTypeId: $caseTypeId))['records'] as $record) {
@@ -242,10 +258,18 @@ class CaseRecordGrantsBackfill implements CaseRecordGrantsBackfillInterface {
 
 		$schemas = array_keys($schemas);
 		sort($schemas);
-		if ($schemas === []) {
-			return true;
-		}
 
+		return $schemas;
+	}//end privateSchemas()
+
+	/**
+	 * Give the background service group the special right on these schemas, in every organisation.
+	 *
+	 * @param list<string> $schemas The schema slugs.
+	 *
+	 * @return bool False when OpenRegister has no special rights or refused the write.
+	 */
+	private function giveOn(array $schemas): bool {
 		try {
 			$rights = $this->container->get(self::SPECIAL_RIGHTS);
 			$rights->giveInEveryOrganisation(
@@ -265,7 +289,7 @@ class CaseRecordGrantsBackfill implements CaseRecordGrantsBackfillInterface {
 		}
 
 		return true;
-	}//end giveTheGrantRight()
+	}//end giveOn()
 
 	/**
 	 * Reconcile the cases of one case type, a page at a time.

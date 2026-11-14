@@ -249,16 +249,7 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 			throw new RuntimeException('Bezwaar case not found');
 		}
 
-		$related = [];
-		$existing = ($case['relatedCases'] ?? []);
-		if (is_array($existing) === true) {
-			foreach ($existing as $entry) {
-				$uuid = $this->extractUuid(value: $entry);
-				if ($uuid !== '') {
-					$related[$uuid] = $uuid;
-				}
-			}
-		}
+		$related = $this->relatedOf(case: $case);
 
 		if (isset($related[$relatedCaseId]) === true) {
 			// Already linked — nothing to do.
@@ -270,6 +261,28 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 
 		$objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
 	}//end linkRelatedCase()
+
+	/**
+	 * The related case UUIDs the case already carries, keyed by themselves.
+	 *
+	 * @param array<string, mixed> $case The bezwaar case.
+	 *
+	 * @return array<string, string> The related case UUIDs.
+	 */
+	private function relatedOf(array $case): array {
+		$related = [];
+		$existing = ($case['relatedCases'] ?? []);
+		if (is_array($existing) === true) {
+			foreach ($existing as $entry) {
+				$uuid = $this->extractUuid(value: $entry);
+				if ($uuid !== '') {
+					$related[$uuid] = $uuid;
+				}
+			}
+		}
+
+		return $related;
+	}//end relatedOf()
 
 	/**
 	 * Build the objection record payload.

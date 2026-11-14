@@ -94,17 +94,43 @@ class ComplaintPatterns implements ComplaintPatternsInterface {
 		}
 
 		$months = $period->trailingMonths();
-		$complaints = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: [
-				'receiptDate' => ['gte' => min($months[0].'-01', $period->previous()->firstDay()), 'lte' => $period->lastDay()],
-				'_limit' => 10000,
-			]
-		);
+		$filters = $this->receiptFilters(period: $period, months: $months);
+		$complaints = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 		$dispositions = $this->dispositions(objectService: $objectService, register: $register);
 		$figures = $this->figures->compute(period: $period, complaints: $complaints, dispositions: $dispositions);
+
+		return $this->patterns(period: $period, figures: $figures, months: $months);
+	}//end forQuarter()
+
+	/**
+	 * The search filters for the complaints received in the trailing months and the quarter before.
+	 *
+	 * @param QuarterPeriod $period The quarter.
+	 * @param array<int, string> $months The trailing months, oldest first.
+	 *
+	 * @return array<string, mixed> The filters.
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	private function receiptFilters(QuarterPeriod $period, array $months): array {
+		return [
+			'receiptDate' => ['gte' => min($months[0].'-01', $period->previous()->firstDay()), 'lte' => $period->lastDay()],
+			'_limit' => 10000,
+		];
+	}//end receiptFilters()
+
+	/**
+	 * The answer for one quarter, from the computed figures and the targets.
+	 *
+	 * @param QuarterPeriod $period The quarter.
+	 * @param array<string, mixed> $figures The computed figures.
+	 * @param array<int, string> $months The trailing months, oldest first.
+	 *
+	 * @return array<string, mixed> The answer.
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	private function patterns(QuarterPeriod $period, array $figures, array $months): array {
 		$targets = $this->targets();
 
 		return [
@@ -118,7 +144,7 @@ class ComplaintPatterns implements ComplaintPatternsInterface {
 			'byMonth' => $figures['byMonth'] + ['target' => array_fill(0, count($months), $targets[self::TARGET_PER_MONTH])],
 			'resolutionByCategory' => $figures['handling']['resolutionByCategory'],
 		];
-	}//end forQuarter()
+	}//end patterns()
 
 	/**
 	 * The final disposition per complaint id; one awaiting approval is not final.

@@ -101,6 +101,19 @@ class LhsController extends Controller {
 			return $this->unauthenticated();
 		}
 
+		return $this->recommendAs(user: $user);
+	}//end recommend()
+
+	/**
+	 * Read the triple, check the caller may write on the case, and recommend.
+	 *
+	 * @param IUser $user The signed-in user.
+	 *
+	 * @return JSONResponse The persisted lhsRecommendation row, or the refusal
+	 *
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
+	 */
+	private function recommendAs(IUser $user): JSONResponse {
 		$caseId = (string)$this->request->getParam('caseId', '');
 		$severity = (string)$this->request->getParam('severity', '');
 		$behaviour = (string)$this->request->getParam('behaviour', '');
@@ -116,21 +129,36 @@ class LhsController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
+		return $this->recommendFor(caseId: $caseId, severity: $severity, behaviour: $behaviour, actorType: $actorType);
+	}//end recommendAs()
+
+	/**
+	 * Persist the recommendation for the triple on the case.
+	 *
+	 * @param string $caseId    The case.
+	 * @param string $severity  The ernst.
+	 * @param string $behaviour The gedrag.
+	 * @param string $actorType The actor type.
+	 *
+	 * @return JSONResponse The persisted lhsRecommendation row, or the failure
+	 *
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
+	 */
+	private function recommendFor(string $caseId, string $severity, string $behaviour, string $actorType): JSONResponse {
 		try {
-			return new JSONResponse(
-				$this->lhsService->recommend(
-					caseId: $caseId,
-					severity: $severity,
-					behaviour: $behaviour,
-					actorType: $actorType,
-					lhsVersion: $this->requestedVersion(),
-					inspection: $this->requestedInspection(),
-				)
+			$row = $this->lhsService->recommend(
+				caseId: $caseId,
+				severity: $severity,
+				behaviour: $behaviour,
+				actorType: $actorType,
+				lhsVersion: $this->requestedVersion(),
+				inspection: $this->requestedInspection(),
 			);
+			return new JSONResponse($row);
 		} catch (Throwable $e) {
 			return $this->recommendFailed(exception: $e);
 		}
-	}//end recommend()
+	}//end recommendFor()
 
 	/**
 	 * The LHS version the request pins, or null for the current one.
