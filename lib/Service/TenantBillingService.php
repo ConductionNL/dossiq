@@ -130,33 +130,12 @@ class TenantBillingService implements TenantBillingServiceInterface {
 	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-an-administrator-sees-and-runs-a-tenants-monthly-billing-req-tq-bill-01
 	 */
 	public function runInvoicing(string $tenantId, string $month): array {
-		if ($month === self::PREVIOUS_MONTH) {
-			$month = (new DateTimeImmutable('first day of last month'))->format('Y-m');
-		}
-
-		if (preg_match('/^[0-9]{4}-(0[1-9]|1[0-2])$/', $month) !== 1) {
-			throw new InvalidArgumentException('Month must be YYYY-MM: ' . $month);
-		}
+		$month = $this->invoiceMonth(month: $month);
 
 		$events = $this->fetchEventsForMonth(tenantId: $tenantId, month: $month);
 		$unbilled = array_values(array_filter($events, static fn ($e) => ($e['invoiceRef'] ?? null) === null));
 		$summary = $this->aggregate(events: $unbilled);
-		$amount = (float)$summary['totalAmount'];
-		$currency = 'EUR';
-		if ($unbilled !== []) {
-			$currency = (string)($unbilled[0]['currency'] ?? 'EUR');
-		}
-
-		$result = [
-			'tenantId' => $tenantId,
-			'month' => $month,
-			'eventCount' => count($unbilled),
-			'amount' => $amount,
-			'currency' => $currency,
-			'exported' => false,
-			'invoiceRef' => null,
-			'error' => null,
-		];
+		$result = $this->invoiceResult(tenantId: $tenantId, month: $month, unbilled: $unbilled, summary: $summary);
 
 		if ($unbilled === []) {
 			$result['error'] = 'no unbilled events';
@@ -177,6 +156,76 @@ class TenantBillingService implements TenantBillingServiceInterface {
 			return $result;
 		}
 
+		return $this->exportUnbilled(tenantId: $tenantId, month: $month, unbilled: $unbilled, result: $result);
+	}//end runInvoicing()
+
+	/**
+	 * The month to invoice, with `previous` resolved, checked.
+	 *
+	 * @param string $month YYYY-MM, or `previous` for the month before this one.
+	 *
+	 * @return string The month as YYYY-MM.
+	 *
+	 * @throws InvalidArgumentException When month is malformed.
+	 *
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-an-administrator-sees-and-runs-a-tenants-monthly-billing-req-tq-bill-01
+	 */
+	private function invoiceMonth(string $month): string {
+		if ($month === self::PREVIOUS_MONTH) {
+			$month = (new DateTimeImmutable('first day of last month'))->format('Y-m');
+		}
+
+		if (preg_match('/^[0-9]{4}-(0[1-9]|1[0-2])$/', $month) !== 1) {
+			throw new InvalidArgumentException('Month must be YYYY-MM: ' . $month);
+		}
+
+		return $month;
+	}//end invoiceMonth()
+
+	/**
+	 * The invoicing answer before anything is exported.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param string $month YYYY-MM.
+	 * @param array<int, array<string, mixed>> $unbilled The month's unbilled events.
+	 * @param array<string, mixed> $summary The aggregate of the unbilled events.
+	 *
+	 * @return array{tenantId:string, month:string, eventCount:int, amount:float, currency:string, exported:bool, invoiceRef:?string, error:?string}
+	 *
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-an-administrator-sees-and-runs-a-tenants-monthly-billing-req-tq-bill-01
+	 */
+	private function invoiceResult(string $tenantId, string $month, array $unbilled, array $summary): array {
+		$amount = (float)$summary['totalAmount'];
+		$currency = 'EUR';
+		if ($unbilled !== []) {
+			$currency = (string)($unbilled[0]['currency'] ?? 'EUR');
+		}
+
+		return [
+			'tenantId' => $tenantId,
+			'month' => $month,
+			'eventCount' => count($unbilled),
+			'amount' => $amount,
+			'currency' => $currency,
+			'exported' => false,
+			'invoiceRef' => null,
+			'error' => null,
+		];
+	}//end invoiceResult()
+
+	/**
+	 * Export the unbilled events as one invoice and stamp them.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param string $month YYYY-MM.
+	 * @param array<int, array<string, mixed>> $unbilled The month's unbilled events.
+	 * @param array<string, mixed> $result The answer so far, in the shape this method returns.
+	 *
+	 * @return array{tenantId:string, month:string, eventCount:int, amount:float, currency:string, exported:bool, invoiceRef:?string, error:?string}
+	 *
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-an-administrator-sees-and-runs-a-tenants-monthly-billing-req-tq-bill-01
+	 */
+	private function exportUnbilled(string $tenantId, string $month, array $unbilled, array $result): array {
 		$payload = $this->shillinq->buildInvoicePayload(tenantId: $tenantId, month: $month, events: $unbilled);
 		$exportRc = $this->shillinq->exportInvoice(payload: $payload);
 		if ($exportRc['success'] !== true) {
@@ -190,7 +239,7 @@ class TenantBillingService implements TenantBillingServiceInterface {
 		$this->markExported(events: $unbilled, invoiceRef: $invoiceRef);
 
 		return $result;
-	}//end runInvoicing()
+	}//end exportUnbilled()
 
 	/**
 	 * Emit a billing event. Insert-only — invoiceRef stays NULL until the
