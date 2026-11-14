@@ -98,6 +98,20 @@ class InstalledPackageExamples {
 			return $this->outcome(status: PackageInstaller::REFUSED, id: $id, version: '', message: "No package named '{$id}' is shipped.");
 		}
 
+		return $this->forShippedPackage(id: $id, package: $package);
+	}//end forPackage()
+
+	/**
+	 * Write the example rows of a shipped package, when it is valid and current here.
+	 *
+	 * @param string               $id      The package id.
+	 * @param array<string, mixed> $package The shipped package.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	private function forShippedPackage(string $id, array $package): array {
 		$validation = $this->validator->validateShipped(package: $package);
 		$run = new PackageInstallRun(id: $id, manifest: (array)($validation['manifest'] ?? []), package: $package, overLocalChanges: false);
 		if ($validation['valid'] === false) {
@@ -105,21 +119,43 @@ class InstalledPackageExamples {
 		}
 
 		if ($this->ledger->isPackageCurrent(set: $id, version: $run->version, digest: $run->digest) === false) {
-			return $this->outcome(
-				status: PackageInstaller::REFUSED,
-				id: $id,
-				version: $run->version,
-				message: "Package '{$id}' {$run->version} is not what is installed here; its next install writes its examples.",
-			);
+			return $this->notCurrent(id: $id, run: $run);
 		}
 
-		$examples = new PackageExamples(appConfig: $this->appConfig, logger: $this->logger);
-		$groups = array_values(
-			array_filter(
-				$examples->groups(run: $run, packages: $this->packages, references: $this->references),
-				static fn (array $group): bool => $group['rows'] !== []
-			)
+		return $this->examplesOf(id: $id, run: $run);
+	}//end forShippedPackage()
+
+	/**
+	 * The refusal for a package installed as other content than it ships now.
+	 *
+	 * @param string            $id  The package id.
+	 * @param PackageInstallRun $run The install.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	private function notCurrent(string $id, PackageInstallRun $run): array {
+		return $this->outcome(
+			status: PackageInstaller::REFUSED,
+			id: $id,
+			version: $run->version,
+			message: "Package '{$id}' {$run->version} is not what is installed here; its next install writes its examples.",
 		);
+	}//end notCurrent()
+
+	/**
+	 * Write the package's example groups, or say it has none.
+	 *
+	 * @param string            $id  The package id.
+	 * @param PackageInstallRun $run The install.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	private function examplesOf(string $id, PackageInstallRun $run): array {
+		$groups = $this->nonEmptyGroups(run: $run);
 		if ($groups === []) {
 			return $this->outcome(
 				status: PackageInstaller::CURRENT,
@@ -130,7 +166,27 @@ class InstalledPackageExamples {
 		}
 
 		return $this->write(run: $run, groups: $groups);
-	}//end forPackage()
+	}//end examplesOf()
+
+	/**
+	 * The package's example groups that hold rows.
+	 *
+	 * @param PackageInstallRun $run The install.
+	 *
+	 * @return array<int, array<string, mixed>> The example groups, none empty.
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	private function nonEmptyGroups(PackageInstallRun $run): array {
+		$examples = new PackageExamples(appConfig: $this->appConfig, logger: $this->logger);
+
+		return array_values(
+			array_filter(
+				$examples->groups(run: $run, packages: $this->packages, references: $this->references),
+				static fn (array $group): bool => $group['rows'] !== []
+			)
+		);
+	}//end nonEmptyGroups()
 
 	/**
 	 * Write a current package's example groups and record them under it.
@@ -143,12 +199,7 @@ class InstalledPackageExamples {
 	private function write(PackageInstallRun $run, array $groups): array {
 		$missing = array_column($groups, 'missing');
 		if ($missing !== []) {
-			return $this->outcome(
-				status: PackageInstaller::REFUSED,
-				id: $run->id,
-				version: $run->version,
-				message: "The examples of package '{$run->id}' need " . implode('; ', array_column($groups, 'reason')) . '.',
-			) + ['missing' => array_values(array_unique($missing))];
+			return $this->missingRefusal(run: $run, groups: $groups, missing: $missing);
 		}
 
 		$result = $this->writer->writePackage(package: $run->id, groups: $groups);
@@ -157,17 +208,59 @@ class InstalledPackageExamples {
 		}
 
 		if ($this->recordRows(run: $run, written: $result['written'], adopted: $result['adopted']) === false) {
-			$this->writer->undo(written: $result['written']);
-
-			return $this->outcome(
-				status: PackageInstaller::FAILED,
-				id: $run->id,
-				version: $run->version,
-				message: "The examples of package '{$run->id}' were not written: a row could not be recorded in the shipped-set ledger,"
-					. ' so every row was taken back.',
-			);
+			return $this->takenBack(run: $run, written: $result['written']);
 		}
 
+		return $this->written(run: $run, result: $result);
+	}//end write()
+
+	/**
+	 * The refusal for examples that need something the instance lacks.
+	 *
+	 * @param PackageInstallRun                $run     The install.
+	 * @param array<int, array<string, mixed>> $groups  The example groups.
+	 * @param array<int, mixed>                $missing What the groups miss.
+	 *
+	 * @return array<string, mixed> The outcome, with `missing`.
+	 */
+	private function missingRefusal(PackageInstallRun $run, array $groups, array $missing): array {
+		return $this->outcome(
+			status: PackageInstaller::REFUSED,
+			id: $run->id,
+			version: $run->version,
+			message: "The examples of package '{$run->id}' need " . implode('; ', array_column($groups, 'reason')) . '.',
+		) + ['missing' => array_values(array_unique($missing))];
+	}//end missingRefusal()
+
+	/**
+	 * Take every written row back after the ledger refused one, and say so.
+	 *
+	 * @param PackageInstallRun                $run     The install.
+	 * @param array<int, array<string, mixed>> $written The rows written.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 */
+	private function takenBack(PackageInstallRun $run, array $written): array {
+		$this->writer->undo(written: $written);
+
+		return $this->outcome(
+			status: PackageInstaller::FAILED,
+			id: $run->id,
+			version: $run->version,
+			message: "The examples of package '{$run->id}' were not written: a row could not be recorded in the shipped-set ledger,"
+				. ' so every row was taken back.',
+		);
+	}//end takenBack()
+
+	/**
+	 * Log the written examples and answer with their counts.
+	 *
+	 * @param PackageInstallRun    $run    The install.
+	 * @param array<string, mixed> $result What the writer answered.
+	 *
+	 * @return array<string, mixed> The outcome, with the counts.
+	 */
+	private function written(PackageInstallRun $run, array $result): array {
 		$counts = ['written' => count($result['written']), 'adopted' => count($result['adopted']), 'skipped' => count($result['skipped'])];
 		$this->logger->info(
 			'Wrote the examples of package {id} {version}: {written} row(s) written, {adopted} adopted, {skipped} already present',
@@ -175,7 +268,7 @@ class InstalledPackageExamples {
 		);
 
 		return $this->outcome(status: PackageInstaller::INSTALLED, id: $run->id, version: $run->version, message: $result['message']) + $counts;
-	}//end write()
+	}//end written()
 
 	/**
 	 * One outcome, in the shape every package caller reads.
