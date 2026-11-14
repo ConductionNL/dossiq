@@ -146,32 +146,26 @@ class TranscriptionService implements TranscriptionServiceInterface {
 			return $this->persist(evidence: $evidence);
 		}
 
+		return $this->runTranscription(evidence: $evidence);
+	}//end process()
+
+	/**
+	 * Run one transcription attempt on a queued record.
+	 *
+	 * @param array<string, mixed> $evidence A queued FieldEvidence record.
+	 *
+	 * @return array<string, mixed> The updated record.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#Task-9
+	 */
+	private function runTranscription(array $evidence): array {
 		$evidence['transcriptionStatus'] = self::STATUS_RUNNING;
 		$evidence['transcriptionAttempts'] = ((int)($evidence['transcriptionAttempts'] ?? 0)) + 1;
 
 		try {
-			$text = $this->transcriber->transcribe(
-				blobRef: (string)($evidence['localBlobRef'] ?? ''),
-				language: (string)($evidence['language'] ?? 'nl')
-			);
+			$text = $this->transcriber->transcribe(blobRef: (string)($evidence['localBlobRef'] ?? ''), language: (string)($evidence['language'] ?? 'nl'));
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'TranscriptionService::process transcription failed: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID, 'evidenceId' => (string)($evidence['id'] ?? '')]
-			);
-			if ($evidence['transcriptionAttempts'] >= self::MAX_RETRIES) {
-				$evidence['transcriptionStatus'] = self::STATUS_FALLBACK;
-				$evidence['transcriptionNote'] = 'Auto-transcription failed after '
-					. self::MAX_RETRIES
-					. ' attempts; manual transcription required.';
-
-				return $this->persist(evidence: $evidence);
-			}
-
-			$evidence['transcriptionStatus'] = self::STATUS_QUEUED;
-			$evidence['transcriptionLastError'] = $e->getMessage();
-
-			return $this->persist(evidence: $evidence);
+			return $this->transcriptionFailed(evidence: $evidence, e: $e);
 		}//end try
 
 		$evidence['transcription'] = $text;
@@ -179,7 +173,50 @@ class TranscriptionService implements TranscriptionServiceInterface {
 		$evidence['transcriptionCompletedAt'] = date(format: 'c');
 
 		return $this->persist(evidence: $evidence);
-	}//end process()
+	}//end runTranscription()
+
+	/**
+	 * Log a failed attempt and queue the record again, or fall back after the last retry.
+	 *
+	 * @param array<string, mixed> $evidence The record being transcribed.
+	 * @param Throwable $e The failure.
+	 *
+	 * @return array<string, mixed> The updated record.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#Task-9
+	 */
+	private function transcriptionFailed(array $evidence, Throwable $e): array {
+		$this->logger->error(
+			'TranscriptionService::process transcription failed: ' . $e->getMessage(),
+			['app' => AppIdentity::APP_ID, 'evidenceId' => (string)($evidence['id'] ?? '')]
+		);
+		if ($evidence['transcriptionAttempts'] >= self::MAX_RETRIES) {
+			return $this->fallbackAfterRetries(evidence: $evidence);
+		}
+
+		$evidence['transcriptionStatus'] = self::STATUS_QUEUED;
+		$evidence['transcriptionLastError'] = $e->getMessage();
+
+		return $this->persist(evidence: $evidence);
+	}//end transcriptionFailed()
+
+	/**
+	 * Fall back to manual transcription once the retries are spent.
+	 *
+	 * @param array<string, mixed> $evidence The record being transcribed.
+	 *
+	 * @return array<string, mixed> The updated record.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#Task-9
+	 */
+	private function fallbackAfterRetries(array $evidence): array {
+		$evidence['transcriptionStatus'] = self::STATUS_FALLBACK;
+		$evidence['transcriptionNote'] = 'Auto-transcription failed after '
+			. self::MAX_RETRIES
+			. ' attempts; manual transcription required.';
+
+		return $this->persist(evidence: $evidence);
+	}//end fallbackAfterRetries()
 
 	/**
 	 * Mark a record as manually transcribed (operator-supplied text).
