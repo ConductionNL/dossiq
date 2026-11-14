@@ -226,29 +226,63 @@ class CaseReviewerAccess implements CaseReviewerAccessInterface {
 		$assignee = trim((string)($case['assignee'] ?? ''));
 		$reviewers = $this->reviewersOf(caseId: $caseId, declaration: $declaration);
 		$answer['status'] = 'reconciled';
+		$reconcileRow = $this->rowReconciler(assignee: $assignee, reviewers: $reviewers, declaration: $declaration);
 		foreach ($declaration['records'] as $declared) {
-			$schema = $this->settingsService->getConfigValue($declared['schemaKey']);
-			foreach ($this->lookup->rowsOf(schema: $schema, field: $declared['caseField'], caseId: $caseId) as $row) {
-				$result = $this->grants->reconcile(
-					schema: $schema,
-					uuid: (string)($row['id'] ?? ($row['uuid'] ?? '')),
-					readers: $this->recordReaders->toGrant(
-						rule: $declared,
-						record: $row,
-						assignee: $assignee,
-						reviewers: $reviewers,
-						hideOthers: $declaration['hideOthers']
-					),
-					group: $declaration['supervisorGroup']
-				);
-				$answer['granted'] += $result['granted'];
-				$answer['revoked'] += $result['revoked'];
-				$answer['refused'] += $result['refused'];
-			}
+			$answer = $this->reconcileRecords(answer: $answer, declared: $declared, caseId: $caseId, reconcileRow: $reconcileRow);
 		}
 
 		return $answer;
 	}//end reconcileDeclared()
+
+	/**
+	 * The step that reconciles the grants of one record row.
+	 *
+	 * @param string                      $assignee    The case's assignee.
+	 * @param array<string, list<string>> $reviewers   The reviewers named on the case, by the id of the row that names them.
+	 * @param array<string, mixed>        $declaration The case type's normalised declaration.
+	 *
+	 * @return callable(string, array<string, mixed>, array<string, mixed>): array{granted: int, revoked: int, refused: int}
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
+	 */
+	private function rowReconciler(string $assignee, array $reviewers, array $declaration): callable {
+		return fn (string $schema, array $declared, array $row): array => $this->grants->reconcile(
+			schema: $schema,
+			uuid: (string)($row['id'] ?? ($row['uuid'] ?? '')),
+			readers: $this->recordReaders->toGrant(
+				rule: $declared,
+				record: $row,
+				assignee: $assignee,
+				reviewers: $reviewers,
+				hideOthers: $declaration['hideOthers']
+			),
+			group: $declaration['supervisorGroup']
+		);
+	}//end rowReconciler()
+
+	/**
+	 * Reconcile the grants of every row of one declared record, adding up the counts.
+	 *
+	 * @param array<string, mixed> $answer       The answer so far.
+	 * @param array<string, mixed> $declared     The declared record (`schemaKey`, `caseField`, ...).
+	 * @param string               $caseId       The case uuid.
+	 * @param callable             $reconcileRow The step that reconciles one row.
+	 *
+	 * @return array{status: string, granted: int, revoked: int, refused: int}
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
+	 */
+	private function reconcileRecords(array $answer, array $declared, string $caseId, callable $reconcileRow): array {
+		$schema = $this->settingsService->getConfigValue($declared['schemaKey']);
+		foreach ($this->lookup->rowsOf(schema: $schema, field: $declared['caseField'], caseId: $caseId) as $row) {
+			$result = $reconcileRow($schema, $declared, $row);
+			$answer['granted'] += $result['granted'];
+			$answer['revoked'] += $result['revoked'];
+			$answer['refused'] += $result['refused'];
+		}
+
+		return $answer;
+	}//end reconcileRecords()
 
 	/**
 	 * Whether the user may change this record of the case: its author, a supervisor or an administrator.

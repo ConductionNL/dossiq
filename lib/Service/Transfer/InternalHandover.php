@@ -384,22 +384,46 @@ class InternalHandover {
 		}
 
 		try {
-			[$objectService, $register] = $this->context();
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_transfer_schema'),
-				filters: ['sourceTeam' => $team, 'status' => 'pending', '_limit' => self::PAGE_SIZE],
-			);
+			$rows = $this->pendingFrom(team: $team);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq handover: the outstanding handovers could not be read',
-				['team' => $team, 'exception' => $e->getMessage()],
-			);
+			$this->logger->warning('Dossiq handover: the outstanding handovers could not be read', ['team' => $team, 'exception' => $e->getMessage()]);
 
 			return [];
 		}
 
+		return $this->teamScoped(rows: $rows);
+	}//end outstandingFor()
+
+	/**
+	 * The pending transfer records a team sent.
+	 *
+	 * @param string $team The sending team's Nextcloud group id.
+	 *
+	 * @return array<int, array<string, mixed>> The pending transfers.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 */
+	private function pendingFrom(string $team): array {
+		[$objectService, $register] = $this->context();
+
+		return $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->schema(key: 'case_transfer_schema'),
+			filters: ['sourceTeam' => $team, 'status' => 'pending', '_limit' => self::PAGE_SIZE],
+		);
+	}//end pendingFrom()
+
+	/**
+	 * The transfers handed over to a team, not to one person.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The pending transfers.
+	 *
+	 * @return array<int, array<string, mixed>> The outstanding handovers.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 */
+	private function teamScoped(array $rows): array {
 		$outstanding = [];
 		foreach ($rows as $row) {
 			if (trim((string)($row['handoverScope'] ?? '')) === self::SCOPE_TEAM) {
@@ -408,7 +432,7 @@ class InternalHandover {
 		}
 
 		return $outstanding;
-	}//end outstandingFor()
+	}//end teamScoped()
 
 	/**
 	 * Settle a pending handover, accepted or refused, on the one custody trail.
@@ -656,33 +680,53 @@ class InternalHandover {
 		unset($record['@self'], $record['announcement']);
 
 		try {
-			[$objectService, $register] = $this->context();
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_transfer_schema'),
-				object: $record,
-				uuid: $uuid,
-			);
+			$saved = $this->storeTransferRow(record: $record, uuid: $uuid);
 		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: self::CASE_UNREADABLE,
-				sentence: 'The handover could not be recorded, so the case stays where it is.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
+			throw $this->unrecorded(previous: $e);
 		}
 
 		if ($saved === null) {
-			throw new RefusedException(
-				rule: self::CASE_UNREADABLE,
-				sentence: 'The handover could not be recorded, so the case stays where it is.',
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
+			throw $this->unrecorded(previous: null);
 		}
 
 		return $saved;
 	}//end saveTransfer()
+
+	/**
+	 * Write a transfer record.
+	 *
+	 * @param array<string, mixed> $record The record, without `@self` and `announcement`.
+	 * @param string|null          $uuid   The uuid to update, or null to create.
+	 *
+	 * @return array<string, mixed>|null The stored record, or null when the store answered nothing.
+	 */
+	private function storeTransferRow(array $record, ?string $uuid): ?array {
+		[$objectService, $register] = $this->context();
+
+		return $this->saveObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->schema(key: 'case_transfer_schema'),
+			object: $record,
+			uuid: $uuid,
+		);
+	}//end storeTransferRow()
+
+	/**
+	 * The refusal when a transfer record could not be stored.
+	 *
+	 * @param Throwable|null $previous The failure, when the store threw.
+	 *
+	 * @return RefusedException The refusal.
+	 */
+	private function unrecorded(?Throwable $previous): RefusedException {
+		return new RefusedException(
+			rule: self::CASE_UNREADABLE,
+			sentence: 'The handover could not be recorded, so the case stays where it is.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $previous,
+		);
+	}//end unrecorded()
 
 	/**
 	 * Apply changes to the stored case.

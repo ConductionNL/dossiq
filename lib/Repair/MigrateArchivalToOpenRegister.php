@@ -446,7 +446,21 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 			return 0;
 		}
 
-		$payload = [
+		$payload = $this->proofDocument(caseId: $caseId, proof: $proof);
+
+		return $this->saveProofDocument(objectService: $objectService, register: $register, docSchema: $docSchema, payload: $payload);
+	}//end exportProof()
+
+	/**
+	 * The caseDocument a proof record becomes.
+	 *
+	 * @param string               $caseId The case the proof belongs to.
+	 * @param array<string, mixed> $proof  The proof record.
+	 *
+	 * @return array<string, mixed> The caseDocument payload.
+	 */
+	private function proofDocument(string $caseId, array $proof): array {
+		return [
 			'case' => $caseId,
 			'title' => 'Bewijs van overbrenging (e-Depot)',
 			'description' => 'Gemigreerd proof-of-transfer; OpenRegister beheert voortaan overbrenging en bewijs.',
@@ -454,22 +468,30 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 			'source' => 'archief-migration',
 			'proofOfTransfer' => $proof,
 		];
+	}//end proofDocument()
 
+	/**
+	 * Save a proof's caseDocument, logging a failure and leaving the source in place.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $register      Register slug or id.
+	 * @param string               $docSchema     The case document schema.
+	 * @param array<string, mixed> $payload       The caseDocument payload, with its `case`.
+	 *
+	 * @return int 1 when exported, 0 otherwise.
+	 */
+	private function saveProofDocument(object $objectService, string $register, string $docSchema, array $payload): int {
 		try {
-			$objectService->saveObject(
-				object: $payload,
-				register: $register,
-				schema: $docSchema
-			);
+			$objectService->saveObject(object: $payload, register: $register, schema: $docSchema);
 			return 1;
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Archival migration: proof export failed — source record preserved in place',
-				['caseId' => $caseId, 'error' => $e->getMessage()]
+				['caseId' => $payload['case'], 'error' => $e->getMessage()]
 			);
 			return 0;
 		}
-	}//end exportProof()
+	}//end saveProofDocument()
 
 	/**
 	 * Resolve an OpenRegister collaborator by FQN, or null when unavailable.

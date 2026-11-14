@@ -110,33 +110,52 @@ class BezwaarDecisionListener implements IEventListener {
 		}
 
 		try {
-			$object = $this->updatedObject(event: $event);
+			$object = $this->objectionToRevert(event: $event);
 			if ($object === null) {
-				return;
-			}
-
-			if ($this->isObjectionSchema(object: $object) === false) {
-				return;
-			}
-
-			$status = (string)($object['status'] ?? '');
-			if ($status !== self::PROTECTED_STATUS) {
-				return;
-			}
-
-			if ($this->hasPublishedDecision(objection: $object) === true) {
 				return;
 			}
 
 			// Guard violated — revert.
 			$this->revertStatus(objection: $object, event: $event);
 		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq bezwaar-decision: guard derivation swallowed '
-				. 'exception: ' . $e->getMessage()
-			);
+			$this->logger->debug('Dossiq bezwaar-decision: guard derivation swallowed exception: ' . $e->getMessage());
 		}//end try
 	}//end handle()
+
+	/**
+	 * The updated bezwaar that entered the protected status without a published decision, or null.
+	 *
+	 * @param Event $event The update.
+	 *
+	 * @return array<string, mixed>|null The bezwaar to revert, or null when the guard holds.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function objectionToRevert(Event $event): ?array {
+		$object = $this->updatedObject(event: $event);
+		if ($object === null || $this->isObjectionSchema(object: $object) === false) {
+			return null;
+		}
+
+		if ($this->hasProtectedStatus(object: $object) === false || $this->hasPublishedDecision(objection: $object) === true) {
+			return null;
+		}
+
+		return $object;
+	}//end objectionToRevert()
+
+	/**
+	 * Whether the bezwaar is in the protected "Decision on objection" status.
+	 *
+	 * @param array<string, mixed> $object The bezwaar payload.
+	 *
+	 * @return bool
+	 */
+	private function hasProtectedStatus(array $object): bool {
+		$status = (string)($object['status'] ?? '');
+
+		return $status === self::PROTECTED_STATUS;
+	}//end hasProtectedStatus()
 
 	/**
 	 * Decide whether the bezwaar has at least one published
@@ -318,6 +337,18 @@ class BezwaarDecisionListener implements IEventListener {
 			return;
 		}
 
+		$this->writeBackStatus(target: $target, previous: $previous);
+	}//end revertStatus()
+
+	/**
+	 * Write the previous status back onto the bezwaar, logging the outcome.
+	 *
+	 * @param ObjectionObject $target   Where the bezwaar is stored.
+	 * @param string          $previous The status to restore.
+	 *
+	 * @return void
+	 */
+	private function writeBackStatus(ObjectionObject $target, string $previous): void {
 		try {
 			$this->patchObjectAsArray(
 				objectService: $target->objectService,
@@ -326,18 +357,28 @@ class BezwaarDecisionListener implements IEventListener {
 				id: $target->objectionId,
 				changes: ['status' => $previous]
 			);
-			$this->logger->warning(
-				'Dossiq bezwaar-decision: blocked transition into "'
-				. self::PROTECTED_STATUS . '" — no published bezwaarDecision; '
-				. 'reverted to "' . $previous . '"',
-				['bezwaarId' => $target->objectionId]
-			);
+			$this->logReverted(objectionId: $target->objectionId, previous: $previous);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq bezwaar-decision: revert failed: ' . $e->getMessage()
-			);
+			$this->logger->error('Dossiq bezwaar-decision: revert failed: ' . $e->getMessage());
 		}
-	}//end revertStatus()
+	}//end writeBackStatus()
+
+	/**
+	 * Log a blocked transition that was reverted.
+	 *
+	 * @param string $objectionId The bezwaar id.
+	 * @param string $previous    The status restored.
+	 *
+	 * @return void
+	 */
+	private function logReverted(string $objectionId, string $previous): void {
+		$this->logger->warning(
+			'Dossiq bezwaar-decision: blocked transition into "'
+			. self::PROTECTED_STATUS . '" — no published bezwaarDecision; '
+			. 'reverted to "' . $previous . '"',
+			['bezwaarId' => $objectionId]
+		);
+	}//end logReverted()
 
 	/**
 	 * Whether the object belongs to the `bezwaar` schema.

@@ -43,6 +43,9 @@ use Psr\Log\LoggerInterface;
  * external URL fetching, OpenRegister lookups, error builders.
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ * @SuppressWarnings(PHPMD.TooManyMethods)            The total is the sum of small private steps; each method stays under the method thresholds.
  */
 abstract class ZgwRulesBase {
 	use SearchesObjects;
@@ -517,34 +520,77 @@ abstract class ZgwRulesBase {
 	 */
 	protected function fetchExternalUrl(string $url): ?array {
 		$guard = $this->outboundGuard();
+		$address = $this->safeAddress(guard: $guard, url: $url);
+		if ($address === null) {
+			return null;
+		}
+
+		try {
+			$body = $this->fetchBody(guard: $guard, url: $url, address: $address);
+			return $this->jsonArray(body: $body);
+		} catch (\Throwable $e) {
+			$this->logger->warning('Failed to fetch external URL: ' . $e->getMessage(), ['url' => $url]);
+			return null;
+		}//end try
+	}//end fetchExternalUrl()
+
+	/**
+	 * The public address a URL resolves to, or null (logged) when it fails the SSRF check.
+	 *
+	 * @param OutboundUrlGuard $guard The outbound guard.
+	 * @param string           $url   The URL to fetch
+	 *
+	 * @return string|null The address to connect to, or null when blocked.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function safeAddress(OutboundUrlGuard $guard, string $url): ?string {
 		$address = $guard->publicAddress(url: $url);
 		if ($address === null) {
 			$this->logger->warning(
 				'fetchExternalUrl blocked: URL failed SSRF safety check',
 				['url' => substr($url, 0, 200)]
 			);
+		}
+
+		return $address;
+	}//end safeAddress()
+
+	/**
+	 * GET the URL from the inspected address.
+	 *
+	 * @param OutboundUrlGuard $guard   The outbound guard.
+	 * @param string           $url     The URL to fetch
+	 * @param string           $address The inspected address.
+	 *
+	 * @return string The response body.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function fetchBody(OutboundUrlGuard $guard, string $url, string $address): string {
+		return $this->httpGet(
+			url: $url,
+			options: (['timeout' => 10] + $guard->requestOptions(url: $url, address: $address))
+		);
+	}//end fetchBody()
+
+	/**
+	 * The body decoded as a JSON object or list, or null when it is neither.
+	 *
+	 * @param string $body The response body.
+	 *
+	 * @return array|null The decoded data.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function jsonArray(string $body): ?array {
+		$data = json_decode($body, true);
+		if (is_array($data) === false) {
 			return null;
 		}
 
-		try {
-			$body = $this->httpGet(
-				url: $url,
-				options: (['timeout' => 10] + $guard->requestOptions(url: $url, address: $address))
-			);
-			$data = json_decode($body, true);
-			if (is_array($data) === false) {
-				return null;
-			}
-
-			return $data;
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Failed to fetch external URL: ' . $e->getMessage(),
-				['url' => $url]
-			);
-			return null;
-		}//end try
-	}//end fetchExternalUrl()
+		return $data;
+	}//end jsonArray()
 
 	/**
 	 * The guard every outbound fetch of a rules class goes through.

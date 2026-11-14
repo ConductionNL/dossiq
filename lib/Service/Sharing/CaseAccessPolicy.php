@@ -121,14 +121,25 @@ class CaseAccessPolicy {
 			return true;
 		}
 
+		return $this->accessForLoadedCase(objectService: $objectService, config: $config, caseId: $caseId, userId: $userId);
+	}//end canUserAccessCase()
+
+	/**
+	 * Load the case and decide whether the user is its assignee or a sharer.
+	 *
+	 * @param object                    $objectService The OpenRegister ObjectService
+	 * @param array{0: string, 1: string} $config        The register and case schema ids
+	 * @param string                    $caseId        The case UUID
+	 * @param string                    $userId        The caller's user ID
+	 *
+	 * @return bool True when the user may proceed
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function accessForLoadedCase(object $objectService, array $config, string $caseId, string $userId): bool {
 		[$register, $caseSchema] = $config;
 
-		$caseData = $this->loadCaseForAccess(
-			objectService: $objectService,
-			caseId: $caseId,
-			register: $register,
-			caseSchema: $caseSchema
-		);
+		$caseData = $this->loadCaseForAccess(objectService: $objectService, caseId: $caseId, register: $register, caseSchema: $caseSchema);
 		if (is_bool($caseData) === true) {
 			return $caseData;
 		}
@@ -140,7 +151,7 @@ class CaseAccessPolicy {
 			userId: $userId,
 			register: $register
 		);
-	}//end canUserAccessCase()
+	}//end accessForLoadedCase()
 
 	/**
 	 * The configured register and case schema, or null when either is missing.
@@ -267,35 +278,39 @@ class CaseAccessPolicy {
 	 *
 	 * @return bool True when a share created by this user exists
 	 */
-	private function hasCreatedShareForCase(
-		object $objectService,
-		string $caseId,
-		string $userId,
-		int $register,
-	): bool {
+	private function hasCreatedShareForCase(object $objectService, string $caseId, string $userId, int $register): bool {
 		$shareSchema = $this->settingsService->getConfigValue('case_share_schema');
 		if (empty($shareSchema) === true) {
 			return false;
 		}
 
 		try {
-			$shares = $objectService->findAll(
-				['filters' => ['register' => $register, 'schema' => (int)$shareSchema, 'caseId' => $caseId]],
-			);
+			$shares = $objectService->findAll(['filters' => ['register' => $register, 'schema' => (int)$shareSchema, 'caseId' => $caseId]]);
 
-			foreach ($shares as $share) {
-				$shareData = $this->gateway->toArray(value: $share);
-				if (isset($shareData['createdBy']) === true && (string)$shareData['createdBy'] === $userId) {
-					return true;
-				}
-			}
+			return $this->anyCreatedBy(shares: $shares, userId: $userId);
 		} catch (\Throwable $e) {
-			$this->logger->debug(
-				'CaseSharingService: share lookup in canUserAccessCase failed',
-				['caseId' => $caseId, 'exception' => $e->getMessage()]
-			);
+			$this->logger->debug('CaseSharingService: share lookup in canUserAccessCase failed', ['caseId' => $caseId, 'exception' => $e->getMessage()]);
 		}//end try
 
 		return false;
 	}//end hasCreatedShareForCase()
+
+	/**
+	 * Whether any of the shares was created by the user.
+	 *
+	 * @param iterable $shares The case's share objects
+	 * @param string   $userId The caller's user ID
+	 *
+	 * @return bool True when one share names the user as its creator
+	 */
+	private function anyCreatedBy(iterable $shares, string $userId): bool {
+		foreach ($shares as $share) {
+			$shareData = $this->gateway->toArray(value: $share);
+			if (isset($shareData['createdBy']) === true && (string)$shareData['createdBy'] === $userId) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end anyCreatedBy()
 }//end class

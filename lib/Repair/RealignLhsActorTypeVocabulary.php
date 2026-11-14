@@ -124,31 +124,70 @@ class RealignLhsActorTypeVocabulary implements IRepairStep {
 			return;
 		}
 
-		$repaired = 0;
-
 		try {
-			$this->withSystemIdentity(
-				objectService: $objectService,
-				work: function () use ($objectService, &$repaired): void {
-					$repaired = $this->rewriteRows(objectService: $objectService);
-				}
-			);
+			$repaired = $this->rewriteAsSystem(objectService: $objectService);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: LHS actorType realignment failed',
-				['exception' => $e->getMessage()]
-			);
-			$output->warning('Dossiq: LHS actorType realignment could not run: ' . $e->getMessage());
+			$this->reportFailure(output: $output, error: $e);
 			return;
 		}
 
+		$this->reportRepaired(output: $output, repaired: $repaired);
+	}//end run()
+
+	/**
+	 * Rewrite the affected rows under the system identity.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 *
+	 * @return int How many rows were rewritten.
+	 *
+	 * @spec openspec/specs/lhs-decision-table/spec.md
+	 */
+	private function rewriteAsSystem(object $objectService): int {
+		$repaired = 0;
+
+		$this->withSystemIdentity(
+			objectService: $objectService,
+			work: function () use ($objectService, &$repaired): void {
+				$repaired = $this->rewriteRows(objectService: $objectService);
+			}
+		);
+
+		return $repaired;
+	}//end rewriteAsSystem()
+
+	/**
+	 * Log and report a realignment that could not run.
+	 *
+	 * @param IOutput   $output Output interface for progress reporting.
+	 * @param Throwable $error  The failure.
+	 *
+	 * @return void
+	 */
+	private function reportFailure(IOutput $output, Throwable $error): void {
+		$this->logger->error(
+			'Dossiq: LHS actorType realignment failed',
+			['exception' => $error->getMessage()]
+		);
+		$output->warning('Dossiq: LHS actorType realignment could not run: ' . $error->getMessage());
+	}//end reportFailure()
+
+	/**
+	 * Report how many recommendations were realigned.
+	 *
+	 * @param IOutput $output   Output interface for progress reporting.
+	 * @param int     $repaired How many rows were rewritten.
+	 *
+	 * @return void
+	 */
+	private function reportRepaired(IOutput $output, int $repaired): void {
 		if ($repaired === 0) {
 			$output->info('Dossiq: no LHS recommendations needed the actorType realignment.');
 			return;
 		}
 
 		$output->info(sprintf('Dossiq: realigned actorType on %d LHS recommendation(s).', $repaired));
-	}//end run()
+	}//end reportRepaired()
 
 	/**
 	 * Find and rewrite the affected rows.

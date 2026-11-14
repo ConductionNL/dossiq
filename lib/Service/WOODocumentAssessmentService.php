@@ -246,21 +246,11 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	 * @return array<string, mixed> `{error}` or `{saved, created, documentRef}`.
 	 */
 	private function storeAssessment(string $caseId, array $assessment, array $target): array {
-		$existing = $this->searchObjectsAsArraysUnscoped(
-			objectService: $target['objectService'],
-			register: $target['register'],
-			schema: $target['schema'],
-			filters: ['caseRef' => $caseId, 'documentRef' => $assessment['documentRef'], '_limit' => 1],
-		);
+		$existing = $this->existingAssessments(caseId: $caseId, assessment: $assessment, target: $target);
 
 		$uuid = null;
 		if (count($existing) > 0) {
-			$refusal = $this->reviewerAccess?->refusalFor(
-				caseId: $caseId,
-				record: $existing[0],
-				userId: $target['userId'],
-				reference: (string)$assessment['documentRef']
-			);
+			$refusal = $this->refusalOn(caseId: $caseId, record: $existing[0], assessment: $assessment, target: $target);
 			if ($refusal !== null) {
 				return ['error' => $refusal];
 			}
@@ -268,6 +258,56 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 			$uuid = (string)($existing[0]['id'] ?? $existing[0]['uuid'] ?? null);
 		}
 
+		return $this->saveAssessment(assessment: $assessment, target: $target, uuid: $uuid);
+	}//end storeAssessment()
+
+	/**
+	 * The case's stored assessments of the document, whoever can see them.
+	 *
+	 * @param string               $caseId     The case UUID.
+	 * @param array<string, mixed> $assessment The stamped assessment.
+	 * @param array<string, mixed> $target     The storage target and the acting user id.
+	 *
+	 * @return array<int, array<string, mixed>> At most one assessment.
+	 */
+	private function existingAssessments(string $caseId, array $assessment, array $target): array {
+		return $this->searchObjectsAsArraysUnscoped(
+			objectService: $target['objectService'],
+			register: $target['register'],
+			schema: $target['schema'],
+			filters: ['caseRef' => $caseId, 'documentRef' => $assessment['documentRef'], '_limit' => 1],
+		);
+	}//end existingAssessments()
+
+	/**
+	 * Why the acting user may not change the stored assessment, or null when they may.
+	 *
+	 * @param string               $caseId     The case UUID.
+	 * @param array<string, mixed> $record     The stored assessment.
+	 * @param array<string, mixed> $assessment The stamped assessment.
+	 * @param array<string, mixed> $target     The storage target and the acting user id.
+	 *
+	 * @return mixed The refusal, or null.
+	 */
+	private function refusalOn(string $caseId, array $record, array $assessment, array $target): mixed {
+		return $this->reviewerAccess?->refusalFor(
+			caseId: $caseId,
+			record: $record,
+			userId: $target['userId'],
+			reference: (string)$assessment['documentRef']
+		);
+	}//end refusalOn()
+
+	/**
+	 * Save the assessment, new or over the stored one.
+	 *
+	 * @param array<string, mixed> $assessment The stamped assessment.
+	 * @param array<string, mixed> $target     The storage target and the acting user id.
+	 * @param string|null          $uuid       The stored assessment's uuid, or null to create.
+	 *
+	 * @return array<string, mixed> `{saved, created, documentRef}`.
+	 */
+	private function saveAssessment(array $assessment, array $target, ?string $uuid): array {
 		$saved = $target['objectService']->saveObject(
 			object: $assessment,
 			register: $target['register'],
@@ -276,7 +316,7 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 		);
 
 		return ['saved' => $saved, 'created' => (int)($uuid === null), 'documentRef' => (string)$assessment['documentRef']];
-	}//end storeAssessment()
+	}//end saveAssessment()
 
 	/**
 	 * Mark the documents that just received a verdict in scope, where nobody marked them yet.

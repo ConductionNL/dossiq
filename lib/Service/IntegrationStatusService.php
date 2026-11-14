@@ -222,19 +222,7 @@ class IntegrationStatusService implements IntegrationStatusServiceInterface {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function record(string $key, string $status, string $message = ''): bool {
-		if (in_array($key, self::KEYS, true) === false) {
-			$this->logger->warning(
-				'Dossiq: refusing to report an unknown connection key',
-				['key' => $key]
-			);
-			return false;
-		}
-
-		if (in_array($status, self::STATUSES, true) === false) {
-			$this->logger->warning(
-				'Dossiq: refusing to report an unknown connection status',
-				['key' => $key, 'status' => $status]
-			);
+		if ($this->isKnownReport(key: $key, status: $status) === false) {
 			return false;
 		}
 
@@ -243,6 +231,46 @@ class IntegrationStatusService implements IntegrationStatusServiceInterface {
 			return false;
 		}
 
+		return $this->sendStatus(eventClass: $eventClass, key: $key, status: $status, message: $message);
+	}//end record()
+
+	/**
+	 * Whether the key and status are known, logging the one that is not.
+	 *
+	 * @param string $key    The connection key.
+	 * @param string $status The connection status.
+	 *
+	 * @return bool True when both are known.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function isKnownReport(string $key, string $status): bool {
+		if (in_array($key, self::KEYS, true) === false) {
+			$this->logger->warning('Dossiq: refusing to report an unknown connection key', ['key' => $key]);
+			return false;
+		}
+
+		if (in_array($status, self::STATUSES, true) === false) {
+			$this->logger->warning('Dossiq: refusing to report an unknown connection status', ['key' => $key, 'status' => $status]);
+			return false;
+		}
+
+		return true;
+	}//end isKnownReport()
+
+	/**
+	 * Send one connection status event.
+	 *
+	 * @param string $eventClass The resolved status event class.
+	 * @param string $key        The connection key.
+	 * @param string $status     The connection status.
+	 * @param string $message    What the probe reported.
+	 *
+	 * @return bool True when the report was sent.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function sendStatus(string $eventClass, string $key, string $status, string $message): bool {
 		return $this->send(
 			key: $key,
 			build: static fn (): object => new $eventClass(
@@ -252,7 +280,7 @@ class IntegrationStatusService implements IntegrationStatusServiceInterface {
 				message: $message,
 			)
 		);
-	}//end record()
+	}//end sendStatus()
 
 	/**
 	 * Ask integriq to resolve every connection whose settings the save touched.
