@@ -86,7 +86,9 @@ class BrcDocumentLinkHandler {
 		}
 
 		try {
-			$objects = $this->searchLinks(objectService: $objectService, request: $request, mappingConfig: $mappingConfig);
+			$objects = $this->searchLinks(
+				bio: new BioRequest(request: $request, objectService: $objectService, mappingConfig: $mappingConfig)
+			);
 			$baseUrl = $this->zgwService->buildBaseUrl($request, self::ZGW_API, $resource);
 			$mapped = $this->mapOutbound(objects: $objects, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
 
@@ -106,16 +108,16 @@ class BrcDocumentLinkHandler {
 	/**
 	 * Search the stored links the request's query parameters select, at most 100.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param IRequest             $request       The incoming request.
-	 * @param array<string, mixed> $mappingConfig The resource's mapping configuration.
+	 * @param BioRequest $bio The request, the object service and the mapping configuration.
 	 *
 	 * @return array<int, mixed> The stored objects.
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
-	private function searchLinks(object $objectService, IRequest $request, array $mappingConfig): array {
-		$params = $request->getParams();
+	private function searchLinks(BioRequest $bio): array {
+		$objectService = $bio->objectService;
+		$mappingConfig = $bio->mappingConfig;
+		$params = $bio->request->getParams();
 		$filters = $this->zgwService->translateQueryParams(
 			params: $params,
 			mappingConfig: $mappingConfig
@@ -186,7 +188,9 @@ class BrcDocumentLinkHandler {
 		}
 
 		try {
-			return $this->createChecked(request: $request, objectService: $objectService, mappingConfig: $mappingConfig);
+			return $this->createChecked(
+				bio: new BioRequest(request: $request, objectService: $objectService, mappingConfig: $mappingConfig)
+			);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'BRC create BIO error: ' . $e->getMessage(),
@@ -202,16 +206,15 @@ class BrcDocumentLinkHandler {
 	/**
 	 * Validate the request body against the business rules and create the BIO.
 	 *
-	 * @param IRequest             $request       The incoming request.
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param array<string, mixed> $mappingConfig The mapping configuration.
+	 * @param BioRequest $bio The request, the object service and the mapping configuration.
 	 *
 	 * @return JSONResponse
 	 */
-	private function createChecked(IRequest $request, object $objectService, array $mappingConfig): JSONResponse {
-		$body = $this->zgwService->getRequestBody($request);
+	private function createChecked(BioRequest $bio): JSONResponse {
+		$mappingConfig = $bio->mappingConfig;
+		$body = $this->zgwService->getRequestBody($bio->request);
 
-		$ruleResult = $this->validateCreate(body: $body, objectService: $objectService, mappingConfig: $mappingConfig);
+		$ruleResult = $this->validateCreate(body: $body, bio: $bio);
 		if ($ruleResult['valid'] === false) {
 			return new JSONResponse(data: $this->zgwService->buildValidationError($ruleResult), statusCode: $ruleResult['status']);
 		}
@@ -227,21 +230,20 @@ class BrcDocumentLinkHandler {
 			return new JSONResponse(data: ['detail' => 'Invalid mapping result'], statusCode: Http::STATUS_BAD_REQUEST);
 		}
 
-		$objectData = $this->saveCreated(objectService: $objectService, mappingConfig: $mappingConfig, englishData: $englishData);
+		$objectData = $this->saveCreated(bio: $bio, englishData: $englishData);
 
-		return $this->createdResponse(request: $request, objectData: $objectData, mappingConfig: $mappingConfig, enrichedBody: $enrichedBody);
+		return $this->createdResponse(bio: $bio, objectData: $objectData, enrichedBody: $enrichedBody);
 	}//end createChecked()
 
 	/**
 	 * Run the business rules on the create body (brc-003a, brc-008a).
 	 *
-	 * @param array<string, mixed> $body          The request body.
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param array<string, mixed> $mappingConfig The mapping configuration.
+	 * @param array<string, mixed> $body The request body.
+	 * @param BioRequest           $bio  The object service and the mapping configuration.
 	 *
 	 * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
 	 */
-	private function validateCreate(array $body, object $objectService, array $mappingConfig): array {
+	private function validateCreate(array $body, BioRequest $bio): array {
 		$resource = 'besluitinformatieobjecten';
 
 		return $this->zgwService->getBusinessRulesService()->validate(
@@ -249,24 +251,23 @@ class BrcDocumentLinkHandler {
 			resource: $resource,
 			action: 'create',
 			body: $body,
-			objectService: $objectService,
-			mappingConfig: $mappingConfig
+			objectService: $bio->objectService,
+			mappingConfig: $bio->mappingConfig
 		);
 	}//end validateCreate()
 
 	/**
 	 * Save the mapped BIO.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param array<string, mixed> $mappingConfig The mapping configuration.
-	 * @param array<string, mixed> $englishData   The mapped object.
+	 * @param BioRequest           $bio         The object service and the mapping configuration.
+	 * @param array<string, mixed> $englishData The mapped object.
 	 *
 	 * @return array<string, mixed> The stored BIO.
 	 */
-	private function saveCreated(object $objectService, array $mappingConfig, array $englishData): array {
-		$object = $objectService->saveObject(
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema'],
+	private function saveCreated(BioRequest $bio, array $englishData): array {
+		$object = $bio->objectService->saveObject(
+			register: $bio->mappingConfig['sourceRegister'],
+			schema: $bio->mappingConfig['sourceSchema'],
 			object: $englishData
 		);
 
@@ -276,18 +277,18 @@ class BrcDocumentLinkHandler {
 	/**
 	 * Sync the OIO into DRC, notify, and answer with the created BIO.
 	 *
-	 * @param IRequest             $request       The incoming request.
-	 * @param array<string, mixed> $objectData    The stored BIO.
-	 * @param array<string, mixed> $mappingConfig The mapping configuration.
-	 * @param array<string, mixed> $enrichedBody  The validated request body.
+	 * @param BioRequest           $bio          The request and the mapping configuration.
+	 * @param array<string, mixed> $objectData   The stored BIO.
+	 * @param array<string, mixed> $enrichedBody The validated request body.
 	 *
 	 * @return JSONResponse
 	 */
-	private function createdResponse(IRequest $request, array $objectData, array $mappingConfig, array $enrichedBody): JSONResponse {
+	private function createdResponse(BioRequest $bio, array $objectData, array $enrichedBody): JSONResponse {
+		$mappingConfig = $bio->mappingConfig;
 		$resource = 'besluitinformatieobjecten';
 		$objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
 
-		$baseUrl = $this->zgwService->buildBaseUrl($request, self::ZGW_API, $resource);
+		$baseUrl = $this->zgwService->buildBaseUrl($bio->request, self::ZGW_API, $resource);
 		$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
 		$mapped = $this->zgwService->applyOutboundMapping(
 			objectData: $objectData,
@@ -336,13 +337,14 @@ class BrcDocumentLinkHandler {
 		}
 
 		$object = $resource . ' ' . $uuid;
-		$bioObj = $this->readBio(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, object: $object);
+		$bio = new BioRequest(request: $request, objectService: $objectService, mappingConfig: $mappingConfig);
+		$bioObj = $this->readBio(bio: $bio, uuid: $uuid, object: $object);
 		if ($bioObj instanceof JSONResponse) {
 			return $bioObj;
 		}
 
 		try {
-			[$decisionUrl, $ioUrl] = $this->deleteBio(request: $request, objectService: $objectService, bioObj: $bioObj, uuid: $uuid);
+			[$decisionUrl, $ioUrl] = $this->deleteBio(bio: $bio, bioObj: $bioObj, uuid: $uuid);
 		} catch (\Throwable $e) {
 			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete BIO', object: $object);
 		}
@@ -357,22 +359,21 @@ class BrcDocumentLinkHandler {
 	/**
 	 * Read the BIO to delete, or the answer when it cannot be read or is missing.
 	 *
-	 * @param object $objectService OpenRegister's object service
-	 * @param array $mappingConfig The BIO mapping configuration
-	 * @param string $uuid The BIO UUID
-	 * @param string $object The object label for failure logging
+	 * @param BioRequest $bio    The object service and the BIO mapping configuration
+	 * @param string     $uuid   The BIO UUID
+	 * @param string     $object The object label for failure logging
 	 *
 	 * @return mixed The stored BIO, or the failure or 404 answer
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
-	private function readBio(object $objectService, array $mappingConfig, string $uuid, string $object): mixed {
+	private function readBio(BioRequest $bio, string $uuid, string $object): mixed {
 		try {
 			// Read the BIO to get besluit URL before deletion.
-			$bioObj = $objectService->find(
+			$bioObj = $bio->objectService->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				register: $bio->mappingConfig['sourceRegister'],
+				schema: $bio->mappingConfig['sourceSchema']
 			);
 		} catch (\Throwable $e) {
 			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete BIO', object: $object);
@@ -388,16 +389,15 @@ class BrcDocumentLinkHandler {
 	/**
 	 * Delete the BIO and return the besluit and informatieobject URLs it linked.
 	 *
-	 * @param IRequest $request The incoming request
-	 * @param object $objectService OpenRegister's object service
-	 * @param mixed $bioObj The stored BIO
-	 * @param string $uuid The BIO UUID
+	 * @param BioRequest $bio    The request and the object service
+	 * @param mixed      $bioObj The stored BIO
+	 * @param string     $uuid   The BIO UUID
 	 *
 	 * @return array{0: string, 1: mixed} The besluit URL and the informatieobject URL
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
-	private function deleteBio(IRequest $request, object $objectService, mixed $bioObj, string $uuid): array {
+	private function deleteBio(BioRequest $bio, mixed $bioObj, string $uuid): array {
 		$bioData = $this->objectToArray(row: $bioObj);
 
 		// Build the besluit URL from the stored decision UUID.
@@ -405,7 +405,7 @@ class BrcDocumentLinkHandler {
 		$decisionUrl = '';
 		if ($decisionUuid !== '') {
 			$decisionUrl = $this->zgwService->buildBaseUrl(
-				$request,
+				$bio->request,
 				self::ZGW_API,
 				'besluiten'
 			) . '/' . $decisionUuid;
@@ -414,7 +414,7 @@ class BrcDocumentLinkHandler {
 		$ioUrl = $bioData['document'] ?? '';
 
 		// Delete the BIO.
-		$objectService->deleteObject(uuid: $uuid);
+		$bio->objectService->deleteObject(uuid: $uuid);
 
 		return [$decisionUrl, $ioUrl];
 	}//end deleteBio()
