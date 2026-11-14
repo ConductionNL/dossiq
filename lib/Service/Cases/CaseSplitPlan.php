@@ -87,44 +87,15 @@ class CaseSplitPlan {
 
 		foreach (CaseSplitPolicy::PARTS as $part) {
 			foreach (($chosen[$part] ?? []) as $item) {
-				if (is_array($item) === false) {
-					continue;
+				$plan = $this->itemPlan(part: $part, item: $item, sourceId: $sourceId, newId: $newId);
+				if ($plan['refused'] !== null) {
+					$refused[] = $plan['refused'];
 				}
 
-				$id = trim((string)($item['id'] ?? ''));
-				if ($id === '') {
-					continue;
+				if ($plan['move'] !== null) {
+					$moves[] = $plan['move'];
+					$references[] = $plan['reference'];
 				}
-
-				// 🔴 A ROW THAT IS NOT ON THIS CASE IS NOT THIS SPLIT'S TO
-				// MOVE. The selection arrives from a client, and a plan that
-				// repointed any id handed to it would let a handler move a
-				// document off somebody else's case by editing one field in
-				// the request — a write to a record they may never have been
-				// allowed to read. A row whose own `case` names a different
-				// case is refused by name rather than skipped in silence: a
-				// selection that half happened with no word about the rest is
-				// the state nobody can reconstruct afterwards.
-				$owner = trim((string)($item['case'] ?? ''));
-				if ($owner !== '' && $owner !== $sourceId) {
-					$refused[] = ['part' => $part, 'id' => $id, 'case' => $owner];
-					continue;
-				}
-
-				$moves[] = [
-					'part' => $part,
-					'id' => $id,
-					// The item itself is repointed: after the split the new
-					// case HOLDS it, rather than both cases claiming it.
-					'changes' => ['case' => $newId],
-				];
-
-				$references[] = [
-					'part' => $part,
-					'id' => $id,
-					'label' => trim((string)($item['title'] ?? ($item['name'] ?? $id))),
-					'movedTo' => $newId,
-				];
 			}
 		}
 
@@ -139,6 +110,64 @@ class CaseSplitPlan {
 			],
 		];
 	}//end forSelection()
+
+	/**
+	 * What one chosen item becomes: a move with its reference, a refusal, or nothing.
+	 *
+	 * @param string $part     The part the item was chosen from.
+	 * @param mixed  $item     The chosen item.
+	 * @param string $sourceId The case being split.
+	 * @param string $newId    The case being split off.
+	 *
+	 * @return array{
+	 *     refused: array<string, string>|null,
+	 *     move: array<string, mixed>|null,
+	 *     reference: array<string, string>|null
+	 * } The item's plan; all null for an item that is skipped.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	private function itemPlan(string $part, mixed $item, string $sourceId, string $newId): array {
+		if (is_array($item) === false) {
+			return ['refused' => null, 'move' => null, 'reference' => null];
+		}
+
+		$id = trim((string)($item['id'] ?? ''));
+		if ($id === '') {
+			return ['refused' => null, 'move' => null, 'reference' => null];
+		}
+
+		// 🔴 A ROW THAT IS NOT ON THIS CASE IS NOT THIS SPLIT'S TO
+		// MOVE. The selection arrives from a client, and a plan that
+		// repointed any id handed to it would let a handler move a
+		// document off somebody else's case by editing one field in
+		// the request — a write to a record they may never have been
+		// allowed to read. A row whose own `case` names a different
+		// case is refused by name rather than skipped in silence: a
+		// selection that half happened with no word about the rest is
+		// the state nobody can reconstruct afterwards.
+		$owner = trim((string)($item['case'] ?? ''));
+		if ($owner !== '' && $owner !== $sourceId) {
+			return ['refused' => ['part' => $part, 'id' => $id, 'case' => $owner], 'move' => null, 'reference' => null];
+		}
+
+		return [
+			'refused' => null,
+			'move' => [
+				'part' => $part,
+				'id' => $id,
+				// The item itself is repointed: after the split the new
+				// case HOLDS it, rather than both cases claiming it.
+				'changes' => ['case' => $newId],
+			],
+			'reference' => [
+				'part' => $part,
+				'id' => $id,
+				'label' => trim((string)($item['title'] ?? ($item['name'] ?? $id))),
+				'movedTo' => $newId,
+			],
+		];
+	}//end itemPlan()
 
 	/**
 	 * The note recorded on the original case, naming what left it.

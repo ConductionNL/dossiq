@@ -110,49 +110,31 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function handle(Event $event): void {
-		// The create of a case that is not a draft, or the moment a draft is
-		// sent. A draft binds no statutory term (decision 180).
-		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
+		$payload = $this->createdCase(event: $event);
 		if ($payload === null) {
 			return;
 		}
 
-		if ($this->resolveSchemaSlug(payload: $payload) !== 'case') {
+		$identity = $this->caseIdentity(payload: $payload);
+		if ($identity === null) {
 			return;
 		}
 
-		$caseId = (string)($payload['id'] ?? ($payload['uuid'] ?? ''));
-		$caseTypeRef = (string)($payload['caseType'] ?? '');
-		if ($caseId === '' || $caseTypeRef === '') {
-			return;
-		}
+		$this->bindTerms(identity: $identity, payload: $payload);
+	}//end handle()
 
-		// 🔴 A `case` carries its case type as a UUID; a deadlineDefinition
-		// binds by SLUG. Handing the uuid straight to TermijnService matched
-		// no shipped case type, so no term was ever bound and no FlowTimer
-		// ever armed — and the refusal was invisible at the default loglevel.
-		$caseType = $this->caseTypeSlugs->toSlug(reference: $caseTypeRef);
-		if ($caseType === '') {
-			$this->logger->warning(
-				'Dossiq termijn: the case type behind a new case could not be resolved to a slug, '
-				. 'so no statutory term was started',
-				['case' => $caseId, 'caseType' => $caseTypeRef]
-			);
+	/**
+	 * Bind the statutory term and the other clocks to a new case.
+	 *
+	 * @param array{0: string, 1: string, 2: string} $identity The case id, case type reference and slug.
+	 * @param array<string, mixed>                   $payload  The case payload.
+	 *
+	 * @return void
+	 */
+	private function bindTerms(array $identity, array $payload): void {
+		[$caseId, $caseTypeRef, $caseType] = $identity;
 
-			return;
-		}
-
-		// Which term this case actually gets. One case type can carry several:
-		// one per participating organisation, per service and per priority,
-		// which is what lets a gemeenschappelijke regeling run one case type
-		// for five municipalities with five agreed norms. The resolution is
-		// made here, where the case's own values are in hand, and is recorded
-		// on the instance so a disputed date can be explained a year later.
-		$context = [
-			'organisation' => $this->referenced(value: ($payload['competentAuthority'] ?? null)),
-			'service' => $this->referenced(value: ($payload['procedureType'] ?? null)),
-			'priority' => $this->referenced(value: ($payload['priority'] ?? null)),
-		];
+		$context = $this->termContext(payload: $payload);
 		$resolution = $this->resolution?->resolve(caseType: $caseType, context: $context);
 
 		// The service norm, resolved by the same rule. A case type with no
@@ -194,7 +176,82 @@ class DeadlineCaseCreatedListener implements IEventListener {
 				['case' => $caseId, 'caseType' => $caseType, 'exception' => $e->getMessage()]
 			);
 		}//end try
-	}//end handle()
+	}//end bindTerms()
+
+	/**
+	 * The payload of a created (or sent) case, or null for anything else.
+	 *
+	 * @param Event $event Event.
+	 *
+	 * @return array<string, mixed>|null The case payload.
+	 */
+	private function createdCase(Event $event): ?array {
+		// The create of a case that is not a draft, or the moment a draft is
+		// sent. A draft binds no statutory term (decision 180).
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
+		if ($payload === null) {
+			return null;
+		}
+
+		if ($this->resolveSchemaSlug(payload: $payload) !== 'case') {
+			return null;
+		}
+
+		return $payload;
+	}//end createdCase()
+
+	/**
+	 * The case id, case type reference and case type slug of a new case.
+	 *
+	 * @param array<string, mixed> $payload The case payload.
+	 *
+	 * @return array{0: string, 1: string, 2: string}|null Null when the case cannot bind a term.
+	 */
+	private function caseIdentity(array $payload): ?array {
+		$caseId = (string)($payload['id'] ?? ($payload['uuid'] ?? ''));
+		$caseTypeRef = (string)($payload['caseType'] ?? '');
+		if ($caseId === '' || $caseTypeRef === '') {
+			return null;
+		}
+
+		// 🔴 A `case` carries its case type as a UUID; a deadlineDefinition
+		// binds by SLUG. Handing the uuid straight to TermijnService matched
+		// no shipped case type, so no term was ever bound and no FlowTimer
+		// ever armed — and the refusal was invisible at the default loglevel.
+		$caseType = $this->caseTypeSlugs->toSlug(reference: $caseTypeRef);
+		if ($caseType === '') {
+			$this->logger->warning(
+				'Dossiq termijn: the case type behind a new case could not be resolved to a slug, '
+				. 'so no statutory term was started',
+				['case' => $caseId, 'caseType' => $caseTypeRef]
+			);
+
+			return null;
+		}
+
+		return [$caseId, $caseTypeRef, $caseType];
+	}//end caseIdentity()
+
+	/**
+	 * The resolution context of a new case's term.
+	 *
+	 * @param array<string, mixed> $payload The case payload.
+	 *
+	 * @return array<string, mixed> The organisation, service and priority.
+	 */
+	private function termContext(array $payload): array {
+		// Which term this case actually gets. One case type can carry several:
+		// one per participating organisation, per service and per priority,
+		// which is what lets a gemeenschappelijke regeling run one case type
+		// for five municipalities with five agreed norms. The resolution is
+		// made here, where the case's own values are in hand, and is recorded
+		// on the instance so a disputed date can be explained a year later.
+		return [
+			'organisation' => $this->referenced(value: ($payload['competentAuthority'] ?? null)),
+			'service' => $this->referenced(value: ($payload['procedureType'] ?? null)),
+			'priority' => $this->referenced(value: ($payload['priority'] ?? null)),
+		];
+	}//end termContext()
 
 	/**
 	 * Bind the planned end, the internal target and the fixed closing date.

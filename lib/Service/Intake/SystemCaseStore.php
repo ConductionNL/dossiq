@@ -205,6 +205,35 @@ class SystemCaseStore {
 	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
 	 */
 	public function write(object $objectService, string $register, array $case, ?array $caseType = null): ?array {
+		$case = $this->withOpeningDefaults(objectService: $objectService, register: $register, case: $case, caseType: $caseType);
+
+		$written = $this->saveAsSystem(objectService: $objectService, register: $register, case: $case);
+		$saved = $written['saved'];
+		$failed = $written['failed'];
+
+		if ($failed === true) {
+			return null;
+		}
+
+		$this->announce(objectService: $objectService, saved: $saved);
+
+		return (new WrittenCase())->read(saved: $saved);
+	}//end write()
+
+	/**
+	 * The case with the opening fields it lacks taken from its case type.
+	 *
+	 * @param object                    $objectService The OpenRegister ObjectService.
+	 * @param string                    $register      The dossiq register.
+	 * @param array<string, mixed>      $case          The case to write.
+	 * @param array<string, mixed>|null $caseType      Its case type, or null to read it from `caseType`.
+	 *
+	 * @return array<string, mixed> The case.
+	 *
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
+	 */
+	private function withOpeningDefaults(object $objectService, string $register, array $case, ?array $caseType): array {
 		$caseTypeId = trim((string)($case['caseType'] ?? ''));
 		if ($caseType === null && $caseTypeId !== '') {
 			$caseType = $this->caseType(objectService: $objectService, register: $register, caseTypeId: $caseTypeId);
@@ -214,6 +243,22 @@ class SystemCaseStore {
 			$case = $this->openingDefaults->apply(case: $case, caseType: $caseType);
 		}
 
+		return $case;
+	}//end withOpeningDefaults()
+
+	/**
+	 * Write the case as the system, logging a failed write.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param string               $register      The dossiq register.
+	 * @param array<string, mixed> $case          The case to write.
+	 *
+	 * @return array{saved: mixed, failed: bool} What the write returned, and whether it failed.
+	 *
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
+	 */
+	private function saveAsSystem(object $objectService, string $register, array $case): array {
 		$saved  = null;
 		$failed = false;
 		try {
@@ -232,14 +277,8 @@ class SystemCaseStore {
 			$failed = true;
 		}
 
-		if ($failed === true) {
-			return null;
-		}
-
-		$this->announce(objectService: $objectService, saved: $saved);
-
-		return (new WrittenCase())->read(saved: $saved);
-	}//end write()
+		return ['saved' => $saved, 'failed' => $failed];
+	}//end saveAsSystem()
 
 	/**
 	 * Send the created event OpenRegister withheld, when it withheld one.

@@ -83,7 +83,24 @@ class PayoutRequester {
 			return null;
 		}
 
-		$arguments = [
+		$arguments = $this->baseArguments(payout: $payout);
+		$arguments = $this->withDeclaredArguments(arguments: $arguments, payout: $payout);
+
+		$event = new PayableRaisedEvent(...$arguments);
+		$this->dispatcher->dispatchTyped($event);
+
+		return self::answer(handled: $event->isHandled(), result: $event->getResult(), error: $event->getError());
+	}//end request()
+
+	/**
+	 * The payout command's arguments every finance app version declares.
+	 *
+	 * @param array<string, mixed> $payout The payout.
+	 *
+	 * @return array<string, mixed> The named arguments.
+	 */
+	private function baseArguments(array $payout): array {
+		return [
 			'sourceApp' => AppIdentity::APP_ID,
 			'amount' => ((int)$payout['amountCents']) / 100,
 			'payeeName' => (string)$payout['payeeName'],
@@ -95,6 +112,17 @@ class PayoutRequester {
 			'correlationId' => (string)($payout['correlationId'] ?? ''),
 			'dueOn' => (string)($payout['dueOn'] ?? ''),
 		];
+	}//end baseArguments()
+
+	/**
+	 * Add the newer arguments the installed finance app declares.
+	 *
+	 * @param array<string, mixed> $arguments The named arguments so far.
+	 * @param array<string, mixed> $payout    The payout.
+	 *
+	 * @return array<string, mixed> The named arguments.
+	 */
+	private function withDeclaredArguments(array $arguments, array $payout): array {
 		// An older shillinq lacks the newer parameters, and an unknown named
 		// argument is a fatal error, so each one goes only where it is declared.
 		$accepted = $this->acceptedParameters();
@@ -108,11 +136,8 @@ class PayoutRequester {
 			}
 		}
 
-		$event = new PayableRaisedEvent(...$arguments);
-		$this->dispatcher->dispatchTyped($event);
-
-		return self::answer(handled: $event->isHandled(), result: $event->getResult(), error: $event->getError());
-	}//end request()
+		return $arguments;
+	}//end withDeclaredArguments()
 
 	/**
 	 * The parameter names the installed finance app's payout command declares.

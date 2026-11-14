@@ -424,6 +424,36 @@ class DossiqAskPersonNode implements IFlowNode {
         $context = $call->context;
         $this->validateConfig(config: $config);
 
+        $resume = $this->resumeSlot(context: $context);
+
+        $taskId = trim((string) $resume->get(key: 'taskId', default: ''));
+        if ($taskId === '') {
+            $this->createTask(items: $items, config: $config, context: $context, resume: $resume);
+
+            throw $this->suspension(config: $config);
+        }
+
+        $task = $this->readTask(taskId: $taskId, config: $config, resume: $resume);
+        $this->assertCompleted(task: $task, taskId: $taskId, config: $config);
+
+        return $this->placeAnswer(
+            items: $items,
+            config: $config,
+            answer: $this->answerFor(task: $task, taskId: $taskId, context: $context, resume: $resume)
+        );
+
+    }//end execute()
+
+    /**
+     * This node's resume slot from the run context.
+     *
+     * @param array $context Run-level metadata.
+     *
+     * @return FlowNodeResumeState The slot.
+     *
+     * @throws RuntimeException When the node has no resume slot.
+     */
+    private function resumeSlot(array $context): FlowNodeResumeState {
         $resume = ($context[FlowNodeResumeState::CONTEXT_KEY] ?? null);
         if (($resume instanceof FlowNodeResumeState) === false) {
             // Without a slot there is nowhere to record that the task exists,
@@ -433,13 +463,22 @@ class DossiqAskPersonNode implements IFlowNode {
             throw new RuntimeException('dossiq.askPerson requires a node resume slot');
         }
 
-        $taskId = trim((string) $resume->get(key: 'taskId', default: ''));
-        if ($taskId === '') {
-            $this->createTask(items: $items, config: $config, context: $context, resume: $resume);
+        return $resume;
+    }//end resumeSlot()
 
-            throw $this->suspension(config: $config);
-        }
-
+    /**
+     * Read the task this run is waiting on.
+     *
+     * @param string              $taskId The task id.
+     * @param array               $config The step configuration.
+     * @param FlowNodeResumeState $resume This node's resume slot.
+     *
+     * @return array The task.
+     *
+     * @throws FlowSuspension When the task store is unreachable.
+     * @throws RuntimeException When the task is gone.
+     */
+    private function readTask(string $taskId, array $config, FlowNodeResumeState $resume): array {
         try {
             $task = $this->tasks->find(taskId: $taskId);
         } catch (Throwable $failure) {
@@ -462,6 +501,22 @@ class DossiqAskPersonNode implements IFlowNode {
             );
         }
 
+        return $task;
+    }//end readTask()
+
+    /**
+     * Suspend while the task is open, refuse when it ended without an answer.
+     *
+     * @param array  $task   The task.
+     * @param string $taskId The task id.
+     * @param array  $config The step configuration.
+     *
+     * @return void
+     *
+     * @throws FlowSuspension While the task is outstanding.
+     * @throws RuntimeException When the task ended other than completed.
+     */
+    private function assertCompleted(array $task, string $taskId, array $config): void {
         $status = strtolower(trim((string) ($task['status'] ?? '')));
         if (in_array($status, self::TERMINAL_STATUSES, true) === false) {
             // Reassigned, re-dated, a checklist item ticked: none of those is
@@ -478,14 +533,7 @@ class DossiqAskPersonNode implements IFlowNode {
                 )
             );
         }
-
-        return $this->placeAnswer(
-            items: $items,
-            config: $config,
-            answer: $this->answerFor(task: $task, taskId: $taskId, context: $context, resume: $resume)
-        );
-
-    }//end execute()
+    }//end assertCompleted()
 
 
     /**

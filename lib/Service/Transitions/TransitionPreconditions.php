@@ -263,25 +263,53 @@ class TransitionPreconditions {
 			statusId: $toStatus,
 			isClosing: $toIsClosing,
 		) as $obligation) {
-			if ($wanted !== '' && trim((string)($obligation['kind'] ?? '')) !== $wanted) {
+			if ($this->isOtherKind(obligation: $obligation, wanted: $wanted) === true) {
 				continue;
 			}
 
-			$label = trim((string)($dependency['label'] ?? ''));
-			if ($label !== '') {
-				return $label;
-			}
-
-			$title = $this->text->forReader(value: ($obligation['title'] ?? ''));
-			if ($title !== '') {
-				return $title;
-			}
-
-			return trim((string)($obligation['kind'] ?? ''));
+			return $this->obligationLabel(dependency: $dependency, obligation: $obligation);
 		}
 
 		return '';
 	}//end obligationReason()
+
+	/**
+	 * Whether the dependency asks for one obligation kind and this obligation is another.
+	 *
+	 * @param array<string, mixed> $obligation The blocking obligation.
+	 * @param string               $wanted     The kind the dependency names, or ''.
+	 *
+	 * @return bool True when the obligation is not the one the dependency means.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function isOtherKind(array $obligation, string $wanted): bool {
+		return $wanted !== '' && trim((string)($obligation['kind'] ?? '')) !== $wanted;
+	}//end isOtherKind()
+
+	/**
+	 * The reason an obligation gives: the dependency's label, else the obligation's title, else its kind.
+	 *
+	 * @param array<string, mixed> $dependency The normalised dependency.
+	 * @param array<string, mixed> $obligation The blocking obligation.
+	 *
+	 * @return string The reason.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function obligationLabel(array $dependency, array $obligation): string {
+		$label = trim((string)($dependency['label'] ?? ''));
+		if ($label !== '') {
+			return $label;
+		}
+
+		$title = $this->text->forReader(value: ($obligation['title'] ?? ''));
+		if ($title !== '') {
+			return $title;
+		}
+
+		return trim((string)($obligation['kind'] ?? ''));
+	}//end obligationLabel()
 
 	/**
 	 * Why an unfinished erasure is in the way, naming what is left.

@@ -254,6 +254,30 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 		$step = $this->stepFor(ask: new TransitionAsk(caseId: $caseId, transitionId: $transitionId, userId: $actor, resultTypeId: $resultTypeId));
 		$eval = $this->assertTransitionAllowed(step: $step);
 
+		return $this->carryOut(caseId: $caseId, step: $step, evaluatedGuards: $eval, comment: $comment);
+	}//end execute()
+
+	/**
+	 * Write an allowed move, retime the status clocks, record it and dispatch its actions.
+	 *
+	 * @param string                           $caseId          Case UUID
+	 * @param TransitionStep                   $step            The allowed move on the loaded case
+	 * @param array<int, array<string, mixed>> $evaluatedGuards The guard evaluation results
+	 * @param string|null                      $comment         Optional comment
+	 *
+	 * @return array{
+	 *     status: string,
+	 *     statusRecord: array<string, mixed>,
+	 *     dispatchedActions: array<int, array<string, mixed>>,
+	 *     failedActions: array<int, array{type: string, error: string}>,
+	 *     version: int,
+	 * }
+	 *
+	 * @throws RuntimeException When the transition names no target status, or the case changed since it was read
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function carryOut(string $caseId, TransitionStep $step, array $evaluatedGuards, ?string $comment): array {
 		$toStatus = $step->toStatus();
 		if ($toStatus === '') {
 			throw new RuntimeException('transition_missing_to_status');
@@ -274,9 +298,31 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 
 		[$record, $dispatched] = $this->recordAndDispatch(
 			step: $step->withCaseData(caseData: $saved),
-			move: $step->move(comment: $comment, evaluatedGuards: $eval)
+			move: $step->move(comment: $comment, evaluatedGuards: $evaluatedGuards)
 		);
 
+		return $this->executed(caseId: $caseId, record: $record, dispatched: $dispatched, savedVersion: $savedVersion);
+	}//end carryOut()
+
+	/**
+	 * The answer of an executed move.
+	 *
+	 * @param string                           $caseId       Case UUID
+	 * @param array<string, mixed>             $record       The status record
+	 * @param array<int, array<string, mixed>> $dispatched   The dispatched actions
+	 * @param int                              $savedVersion The case's new version
+	 *
+	 * @return array{
+	 *     status: string,
+	 *     statusRecord: array<string, mixed>,
+	 *     dispatchedActions: array<int, array<string, mixed>>,
+	 *     failedActions: array<int, array{type: string, error: string}>,
+	 *     version: int,
+	 * }
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function executed(string $caseId, array $record, array $dispatched, int $savedVersion): array {
 		$outcome = $this->actionOutcome(dispatched: $dispatched, caseId: $caseId);
 
 		return [
@@ -286,7 +332,7 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 			'failedActions' => $outcome['failedActions'],
 			'version' => $savedVersion,
 		];
-	}//end execute()
+	}//end executed()
 
 	/**
 	 * Load the case and the transition a move asks for.

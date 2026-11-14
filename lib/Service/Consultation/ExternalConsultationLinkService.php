@@ -104,20 +104,7 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	public function invite(string $consultationId, string $userId, ?string $password = null): array {
-		$consultation = $this->consultations->getConsultation(consultationId: $consultationId);
-		if ($consultation === null) {
-			throw new RuntimeException('That consultation is not there');
-		}
-
-		$caseId = trim((string)($consultation['parentCase'] ?? ''));
-		if ($caseId === '') {
-			throw new RuntimeException('A consultation without a case has nothing to publish');
-		}
-
-		$body = trim((string)($consultation['adviceAuthority'] ?? ''));
-		if ($body === '') {
-			throw new RuntimeException('Name the advisory body before you invite it');
-		}
+		[$consultation, $caseId, $body] = $this->invitable(consultationId: $consultationId);
 
 		$share = $this->shares->createTokenShare(
 			caseId: $caseId,
@@ -142,13 +129,57 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 			['consultationId' => $consultationId, 'advisoryBody' => $body]
 		);
 
+		return $this->withAddress(share: $share, consultation: $consultation);
+	}//end invite()
+
+	/**
+	 * The consultation, its case and its advisory body, when it can carry a link.
+	 *
+	 * @param string $consultationId The consultation UUID.
+	 *
+	 * @return array{0: array<string, mixed>, 1: string, 2: string} The consultation, the case id and the advisory body.
+	 *
+	 * @throws RuntimeException When the consultation cannot carry a link.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	private function invitable(string $consultationId): array {
+		$consultation = $this->consultations->getConsultation(consultationId: $consultationId);
+		if ($consultation === null) {
+			throw new RuntimeException('That consultation is not there');
+		}
+
+		$caseId = trim((string)($consultation['parentCase'] ?? ''));
+		if ($caseId === '') {
+			throw new RuntimeException('A consultation without a case has nothing to publish');
+		}
+
+		$body = trim((string)($consultation['adviceAuthority'] ?? ''));
+		if ($body === '') {
+			throw new RuntimeException('Name the advisory body before you invite it');
+		}
+
+		return [$consultation, $caseId, $body];
+	}//end invitable()
+
+	/**
+	 * The share with the address to send and the message that carries it.
+	 *
+	 * @param array<string, mixed> $share        The created share.
+	 * @param array<string, mixed> $consultation The consultation.
+	 *
+	 * @return array<string, mixed> The share with `responseUrl` and `message`.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	private function withAddress(array $share, array $consultation): array {
 		// The address to send: the configured response address, else the link.
 		$terms = $this->consultations->terms();
 		$share['responseUrl'] = $terms->responseAddress(linkUrl: (string)($share['url'] ?? ''));
 		$share['message'] = $terms->invitationMessage(consultation: $consultation, address: $share['responseUrl']);
 
 		return $share;
-	}//end invite()
+	}//end withAddress()
 
 	/**
 	 * Collect the advisory body's comment onto the consultation.
@@ -178,36 +209,75 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 		}
 
 		$caseId = trim((string)($consultation['parentCase'] ?? ''));
-		$share = $this->shareFor(consultationId: $consultationId, caseId: $caseId);
-		if ($share === null) {
-			throw new RuntimeException('That consultation carries no link, so nobody outside can have answered it');
-		}
-
-		$actorId = 'link:' . trim((string)($share['accessLinkUuid'] ?? ''));
-		$alreadyCollected = (int)($share['lastCollectedNote'] ?? 0);
-
-		$newest = $this->newestComment(
-			caseId: $caseId,
-			actorId: $actorId,
-			after: $alreadyCollected
-		);
+		$share = $this->requireShare(consultationId: $consultationId, caseId: $caseId);
+		$newest = $this->newestFromLink(caseId: $caseId, share: $share);
 
 		if ($newest === null) {
 			return ['collected' => false];
 		}
 
-		$recorded = $this->consultations->submitResponse(
-			consultationId: $consultationId,
-			response: [
-				'advice' => $advice,
-				'notes' => (string)($share['advisoryBody'] ?? '') . ': ' . (string)$newest['message'],
-			]
-		);
+		return $this->recordAdvice(consultationId: $consultationId, advice: $advice, share: $share, newest: $newest);
+	}//end collect()
 
-		$this->linkShares->markCollected(
-			shareId: (string)($share['id'] ?? $share['uuid'] ?? ''),
-			noteId: (int)$newest['id']
+	/**
+	 * The share this consultation was published through, or an exception when it has none.
+	 *
+	 * @param string $consultationId The consultation UUID.
+	 * @param string $caseId         The case the consultation hangs off.
+	 *
+	 * @return array<string, mixed> The share.
+	 *
+	 * @throws RuntimeException When the consultation carries no link.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	private function requireShare(string $consultationId, string $caseId): array {
+		$share = $this->shareFor(consultationId: $consultationId, caseId: $caseId);
+		if ($share === null) {
+			throw new RuntimeException('That consultation carries no link, so nobody outside can have answered it');
+		}
+
+		return $share;
+	}//end requireShare()
+
+	/**
+	 * The newest comment written through the share's link and not collected yet.
+	 *
+	 * @param string               $caseId The case the consultation hangs off.
+	 * @param array<string, mixed> $share  The share.
+	 *
+	 * @return array<string, mixed>|null The comment, or null when there is nothing new.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	private function newestFromLink(string $caseId, array $share): ?array {
+		$actorId = 'link:' . trim((string)($share['accessLinkUuid'] ?? ''));
+		$alreadyCollected = (int)($share['lastCollectedNote'] ?? 0);
+
+		return $this->newestComment(
+			caseId: $caseId,
+			actorId: $actorId,
+			after: $alreadyCollected
 		);
+	}//end newestFromLink()
+
+	/**
+	 * Record the comment as the consultation's response, and mark it collected on the share.
+	 *
+	 * @param string               $consultationId The consultation UUID.
+	 * @param string               $advice         The codified outcome the handler reads in the comment.
+	 * @param array<string, mixed> $share          The share.
+	 * @param array<string, mixed> $newest         The comment.
+	 *
+	 * @return array<string, mixed> What was recorded.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	private function recordAdvice(string $consultationId, string $advice, array $share, array $newest): array {
+		$notes = (string)($share['advisoryBody'] ?? '') . ': ' . (string)$newest['message'];
+		$recorded = $this->consultations->submitResponse(consultationId: $consultationId, response: ['advice' => $advice, 'notes' => $notes]);
+
+		$this->linkShares->markCollected(shareId: (string)($share['id'] ?? $share['uuid'] ?? ''), noteId: (int)$newest['id']);
 
 		return [
 			'collected' => true,
@@ -215,7 +285,7 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 			'noteId' => (int)$newest['id'],
 			'consultation' => $recorded,
 		];
-	}//end collect()
+	}//end recordAdvice()
 
 	/**
 	 * The share this consultation was published through.

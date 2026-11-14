@@ -103,29 +103,44 @@ class HouseholdCasesController extends Controller {
 		}
 
 		try {
-			$case = $this->household->readCase(caseId: $caseId);
-			if ($case === null) {
-				return new JSONResponse(['results' => []]);
-			}
-
-			$bsns = $this->household->householdBsns(case: $case);
-			if ($bsns === []) {
-				return new JSONResponse(['results' => []]);
-			}
-
-			$rows = $this->household->sameDomain(
-				case: $case,
-				bsns: $bsns,
-				canRead: fn (string $id): bool => $this->caseAccess->hasCaseReadAccess(caseId: $id, user: $user),
-			);
-
-			return new JSONResponse(['results' => array_merge($rows, $this->lookedUp(caseId: $caseId, user: $user))]);
+			return $this->householdCasesOf(caseId: $caseId, user: $user);
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'household-cases', e: $e);
 		} catch (Throwable $e) {
 			return $this->broke(op: 'household-cases', e: $e);
 		}//end try
 	}//end index()
+
+	/**
+	 * The household's other cases in the same domain the user may read, plus the ones looked up this session.
+	 *
+	 * @param string $caseId The case.
+	 * @param IUser $user The current user.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @throws RefusedException When the household cannot be read.
+	 * @throws Throwable When reading fails.
+	 */
+	private function householdCasesOf(string $caseId, IUser $user): JSONResponse {
+		$case = $this->household->readCase(caseId: $caseId);
+		if ($case === null) {
+			return new JSONResponse(['results' => []]);
+		}
+
+		$bsns = $this->household->householdBsns(case: $case);
+		if ($bsns === []) {
+			return new JSONResponse(['results' => []]);
+		}
+
+		$rows = $this->household->sameDomain(
+			case: $case,
+			bsns: $bsns,
+			canRead: fn (string $id): bool => $this->caseAccess->hasCaseReadAccess(caseId: $id, user: $user),
+		);
+
+		return new JSONResponse(['results' => array_merge($rows, $this->lookedUp(caseId: $caseId, user: $user))]);
+	}//end householdCasesOf()
 
 	/**
 	 * Look the household up in the other domains, on the chosen ground.

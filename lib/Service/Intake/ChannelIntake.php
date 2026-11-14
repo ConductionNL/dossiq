@@ -166,6 +166,32 @@ class ChannelIntake implements ChannelIntakeInterface {
 			return '';
 		}
 
+		$duplicate = $this->duplicateAnswer(channel: $channel, externalId: $externalId);
+		if ($duplicate !== null) {
+			return $duplicate;
+		}
+
+		return $this->openCase(
+			message: $message,
+			targetPayload: $targetPayload,
+			ruleName: $ruleName,
+			channel: $channel,
+			externalId: $externalId,
+		);
+	}//end caseFor()
+
+	/**
+	 * The answer for a message this intake cannot or need not open a case for.
+	 *
+	 * @param string $channel    The channel the message came in on.
+	 * @param string $externalId The message's own id on that channel.
+	 *
+	 * @return string|null '' when the log cannot answer, the existing case id when
+	 *                     the message was already handled, null to open a case.
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function duplicateAnswer(string $channel, string $externalId): ?string {
 		// 🔴 THE DUPLICATE CHECK COMES BEFORE EVERYTHING, AND IT NEEDS A PLACE
 		// TO READ. An unprovisioned log cannot answer "have I seen this", and
 		// opening a case on an unanswerable question is how a retry silently
@@ -193,6 +219,29 @@ class ChannelIntake implements ChannelIntakeInterface {
 			return $existing;
 		}
 
+		return null;
+	}//end duplicateAnswer()
+
+	/**
+	 * Open a case for a message not seen before, or say why not.
+	 *
+	 * @param array<string, mixed> $message       The message, as integriq stored it.
+	 * @param array<string, mixed> $targetPayload The rule's field mapping, already applied.
+	 * @param string               $ruleName      The rule that matched, for the log.
+	 * @param string               $channel       The channel the message came in on.
+	 * @param string               $externalId    The message's own id on that channel.
+	 *
+	 * @return string The case id, or '' when no case was opened.
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function openCase(
+		array $message,
+		array $targetPayload,
+		string $ruleName,
+		string $channel,
+		string $externalId,
+	): string {
 		$caseTypeId = $this->caseTypeIdIn(payload: $targetPayload);
 		if ($caseTypeId === '') {
 			$this->refuse(
@@ -227,7 +276,7 @@ class ChannelIntake implements ChannelIntakeInterface {
 		);
 
 		return $caseId;
-	}//end caseFor()
+	}//end openCase()
 
 	/**
 	 * Write the case, elevated, from fields this app chose.
@@ -244,11 +293,7 @@ class ChannelIntake implements ChannelIntakeInterface {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $caseSchema === '') {
-			$this->logger->warning(
-				'ChannelIntake: the register is not configured, so a routed message opened no case',
-				['caseType' => $caseTypeId]
-			);
+		if ($this->registerMissing(objectService: $objectService, register: $register, caseSchema: $caseSchema, caseTypeId: $caseTypeId) === true) {
 			return '';
 		}
 
@@ -271,6 +316,44 @@ class ChannelIntake implements ChannelIntakeInterface {
 			return '';
 		}
 
+		return $this->writtenCaseId(created: $created, caseTypeId: $caseTypeId);
+	}//end write()
+
+	/**
+	 * Whether the register is unconfigured, logging a warning when it is.
+	 *
+	 * @param object|null $objectService OpenRegister's ObjectService, or null.
+	 * @param string      $register      The configured register.
+	 * @param string      $caseSchema    The configured case schema.
+	 * @param string      $caseTypeId    The case type, for the log line.
+	 *
+	 * @return bool True when no case can be written.
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function registerMissing(?object $objectService, string $register, string $caseSchema, string $caseTypeId): bool {
+		if ($objectService === null || $register === '' || $caseSchema === '') {
+			$this->logger->warning(
+				'ChannelIntake: the register is not configured, so a routed message opened no case',
+				['caseType' => $caseTypeId]
+			);
+			return true;
+		}
+
+		return false;
+	}//end registerMissing()
+
+	/**
+	 * The id the written case answered, or '' (logged) when it answered none.
+	 *
+	 * @param mixed  $created    What the save returned.
+	 * @param string $caseTypeId The case type, for the log line.
+	 *
+	 * @return string The new case's id, or ''.
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function writtenCaseId(mixed $created, string $caseTypeId): string {
 		$row = $this->objectAsArray(value: $created);
 		$caseId = (string)($row['@self']['id'] ?? ($row['id'] ?? ''));
 		if ($caseId === '') {
@@ -282,7 +365,7 @@ class ChannelIntake implements ChannelIntakeInterface {
 		}
 
 		return $caseId;
-	}//end write()
+	}//end writtenCaseId()
 
 	/**
 	 * The case a routed message opens, before it is written.
@@ -304,6 +387,29 @@ class ChannelIntake implements ChannelIntakeInterface {
 			'startDate' => $this->facts->receivedDate(message: $message),
 		] + $this->facts->receivedAtField(message: $message);
 
+		$object = $this->withAcceptedFields(object: $object, payload: $payload);
+
+		// Decision 171: the channel is a slug enum, so a message's words
+		// ("E-mail", "brief") become their slug and the words are kept. A word
+		// that names no channel writes no channel, never a value the schema
+		// refuses, which would lose the whole case.
+		$object = $this->withChannelSlug(object: $object);
+
+		return $this->withInitialStatus(
+			object: $this->withCorrespondent(object: $object, message: $message),
+			caseTypeId: $caseTypeId,
+		);
+	}//end caseObjectFor()
+
+	/**
+	 * The case object with the accepted payload fields copied onto it.
+	 *
+	 * @param array<string, mixed> $object  The case object.
+	 * @param array<string, mixed> $payload What the channel parsed out of the message.
+	 *
+	 * @return array<string, mixed> The case object.
+	 */
+	private function withAcceptedFields(array $object, array $payload): array {
 		foreach (self::ACCEPTED_FIELDS as $field) {
 			$value = ($payload[$field] ?? null);
 			if (is_scalar($value) === false) {
@@ -318,12 +424,18 @@ class ChannelIntake implements ChannelIntakeInterface {
 			$object[$field] = $text;
 		}
 
-		// Decision 171: the channel is a slug enum, so a message's words
-		// ("E-mail", "brief") become their slug and the words are kept. A word
-		// that names no channel writes no channel, never a value the schema
-		// refuses, which would lose the whole case.
-		$object = $this->withChannelSlug(object: $object);
+		return $object;
+	}//end withAcceptedFields()
 
+	/**
+	 * The case object with its description and correspondent filled from the message.
+	 *
+	 * @param array<string, mixed> $object  The case object.
+	 * @param array<string, mixed> $message The message as the channel delivered it.
+	 *
+	 * @return array<string, mixed> The case object.
+	 */
+	private function withCorrespondent(array $object, array $message): array {
 		$description = trim((string)($message['text'] ?? ''));
 		if (($object['description'] ?? '') === '' && $description !== '') {
 			$object['description'] = $description;
@@ -343,6 +455,18 @@ class ChannelIntake implements ChannelIntakeInterface {
 			$object['initiatorType'] = 'contact';
 		}
 
+		return $object;
+	}//end withCorrespondent()
+
+	/**
+	 * The case object with the case type's initial status.
+	 *
+	 * @param array<string, mixed> $object     The case object.
+	 * @param string               $caseTypeId The case type the message routed to.
+	 *
+	 * @return array<string, mixed> The case object.
+	 */
+	private function withInitialStatus(array $object, string $caseTypeId): array {
 		// A case with no status is off every status-filtered lens, has no
 		// available transitions and reads as Unknown in the header. The status
 		// comes from the case TYPE and never from the message.
@@ -350,8 +474,9 @@ class ChannelIntake implements ChannelIntakeInterface {
 		if ($initial !== '') {
 			$object['status'] = $initial;
 		}
+
 		return $object;
-	}//end caseObjectFor()
+	}//end withInitialStatus()
 
 	/**
 	 * The case object with its channel words turned into a slug, the words

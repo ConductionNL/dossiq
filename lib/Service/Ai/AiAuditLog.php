@@ -125,12 +125,7 @@ class AiAuditLog {
 		$limit = $this->clampLimit(limit: $limit);
 		$offset = max(0, $offset);
 
-		$empty = [
-			'entries' => [],
-			'total' => null,
-			'limit' => $limit,
-			'offset' => $offset,
-		];
+		$empty = $this->page(entries: [], limit: $limit, offset: $offset);
 
 		try {
 			$storage = $this->storage();
@@ -138,32 +133,60 @@ class AiAuditLog {
 				return $empty;
 			}
 
-			$entries = $this->searchObjectsAsArrays(
-				objectService: $this->container->get('OCA\OpenRegister\Service\ObjectService'),
-				register: $storage['register'],
-				schema: $storage['schema'],
-				filters: $this->query(filters: $filters, limit: $limit, offset: $offset)
-			);
-
-			return [
-				'entries' => $entries,
-				// The array-normalising search bridge (searchObjectsAsArrays)
-				// does not expose a cheap row count for slug-resolved
-				// register/schema — a real total would require a second,
-				// uncapped fetch. Left null rather than faked; callers page
-				// by whether a full page of `limit` rows came back.
-				'total' => null,
-				'limit' => $limit,
-				'offset' => $offset,
-			];
+			return $this->pageFrom(storage: $storage, filters: $filters, limit: $limit, offset: $offset);
 		} catch (\Exception $e) {
-			$this->logger->error(
-				'Failed to list AI audit entries',
-				['error' => $e->getMessage()]
-			);
+			$this->logger->error('Failed to list AI audit entries', ['error' => $e->getMessage()]);
 			return $empty;
 		}//end try
 	}//end list()
+
+	/**
+	 * Read one page of audit entries from the storage, as the list answer.
+	 *
+	 * @param array{register: string, schema: string} $storage The storage config.
+	 * @param array<string, mixed>                    $filters Optional filters: 'caseId', 'type'.
+	 * @param int                                     $limit   Page size, already clamped.
+	 * @param int                                     $offset  Paging offset, already clamped.
+	 *
+	 * @return array{entries: array<int, array<string, mixed>>, total: int|null, limit: int, offset: int}
+	 *
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
+	 */
+	private function pageFrom(array $storage, array $filters, int $limit, int $offset): array {
+		$entries = $this->searchObjectsAsArrays(
+			objectService: $this->container->get('OCA\OpenRegister\Service\ObjectService'),
+			register: $storage['register'],
+			schema: $storage['schema'],
+			filters: $this->query(filters: $filters, limit: $limit, offset: $offset)
+		);
+
+		return $this->page(entries: $entries, limit: $limit, offset: $offset);
+	}//end pageFrom()
+
+	/**
+	 * One page of the list answer.
+	 *
+	 * @param array<int, array<string, mixed>> $entries The entries.
+	 * @param int                              $limit   Page size.
+	 * @param int                              $offset  Paging offset.
+	 *
+	 * @return array{entries: array<int, array<string, mixed>>, total: int|null, limit: int, offset: int}
+	 *
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
+	 */
+	private function page(array $entries, int $limit, int $offset): array {
+		return [
+			'entries' => $entries,
+			// The array-normalising search bridge (searchObjectsAsArrays)
+			// does not expose a cheap row count for slug-resolved
+			// register/schema — a real total would require a second,
+			// uncapped fetch. Left null rather than faked; callers page
+			// by whether a full page of `limit` rows came back.
+			'total' => null,
+			'limit' => $limit,
+			'offset' => $offset,
+		];
+	}//end page()
 
 	/**
 	 * Resolve the register + `ai_audit_entry_schema` the audit trail lives in.

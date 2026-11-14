@@ -279,6 +279,43 @@ class WooPublicationService implements WooPublicationServiceInterface {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
 	 */
 	public function publish(string $caseId, string $decisionId = ''): array {
+		$decisionId = $this->publishableDecisionId(caseId: $caseId, decisionId: $decisionId);
+		if (is_array($decisionId) === true) {
+			return $decisionId;
+		}
+
+		$source = $this->publicationSource(caseId: $caseId, decisionId: $decisionId);
+		if (isset($source['refusal']) === true) {
+			return $source['refusal'];
+		}
+
+		$payload = $this->buildPayload(case: $source['case'], decision: $source['decision']);
+
+		// The delivered set is written before anything goes out (REQ-WDS-001).
+		$delivered = $this->transport->deliver(
+			caseId: $caseId,
+			decisionId: $decisionId,
+			items: $source['delivery']['items'],
+			payload: $payload,
+			disclosable: $source['delivery']['documents'],
+			existingId: (string)($source['decision']['wooPublication']['publicationId'] ?? ''),
+		);
+		if (isset($delivered['reason']) === true) {
+			return ['available' => false, 'reason' => $delivered['reason']];
+		}
+
+		return $this->recordPublication(caseId: $caseId, source: $source, payload: $payload, delivered: $delivered);
+	}//end publish()
+
+	/**
+	 * The decision to publish, or the refusal when publishing cannot start.
+	 *
+	 * @param string $caseId     The case UUID.
+	 * @param string $decisionId The decision UUID, or '' to use the case's Woo decision.
+	 *
+	 * @return string|array<string, mixed> The decision id, or the refusal.
+	 */
+	private function publishableDecisionId(string $caseId, string $decisionId): string|array {
 		$availability = $this->checkAvailability();
 		if ($availability['available'] === false) {
 			return $availability;
@@ -298,6 +335,20 @@ class WooPublicationService implements WooPublicationServiceInterface {
 			return ['available' => false, 'reason' => 'pages_unseen', 'unseen' => $unseen];
 		}
 
+		return $decisionId;
+	}//end publishableDecisionId()
+
+	/**
+	 * The case, decision and delivery to publish from, or a refusal.
+	 *
+	 * @param string $caseId     The case UUID.
+	 * @param string $decisionId The decision UUID.
+	 *
+	 * @return array<string, mixed> `{refusal}` or `{objectService, register, decisionSchema, case, decision, delivery}`.
+	 *
+	 * @throws RuntimeException When the decision or case cannot be loaded.
+	 */
+	private function publicationSource(string $caseId, string $decisionId): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$decisionSchema = $this->settingsService->getConfigValue('decision_schema');
@@ -311,61 +362,48 @@ class WooPublicationService implements WooPublicationServiceInterface {
 		);
 
 		$delivery = $this->sources->delivery(objectService: $objectService, register: $register, caseId: $caseId);
-		$disclosable = $delivery['documents'];
-		$refusal = $this->documentRefusal(documents: $disclosable);
+		$refusal = $this->documentRefusal(documents: $delivery['documents']);
 		if ($refusal !== null) {
-			return $refusal;
+			return ['refusal' => $refusal];
 		}
 
-		if (count($disclosable) === 0
+		if (count($delivery['documents']) === 0
 			&& $this->nothingToDisclose?->recorded(case: $case, caseId: $caseId, assessments: $delivery['assessments']) !== true
 		) {
-			return ['available' => false, 'reason' => 'no_publishable_documents'];
+			return ['refusal' => ['available' => false, 'reason' => 'no_publishable_documents']];
 		}
 
-		$payload = $this->buildPayload(case: $case, decision: $decision);
-		$existingId = (string)($decision['wooPublication']['publicationId'] ?? '');
+		return [
+			'objectService' => $objectService,
+			'register' => $register,
+			'decisionSchema' => $decisionSchema,
+			'decisionId' => $decisionId,
+			'case' => $case,
+			'decision' => $decision,
+			'delivery' => $delivery,
+		];
+	}//end publicationSource()
 
-		// The delivered set is written before anything goes out (REQ-WDS-001).
-		$delivered = $this->transport->deliver(
-			caseId: $caseId,
-			decisionId: $decisionId,
-			items: $delivery['items'],
-			payload: $payload,
-			disclosable: $disclosable,
-			existingId: $existingId,
-		);
-		if (isset($delivered['reason']) === true) {
-			return ['available' => false, 'reason' => $delivered['reason']];
-		}
-
+	/**
+	 * Record a delivered publication on the decision, the case and the dossier.
+	 *
+	 * @param string               $caseId    The case UUID.
+	 * @param array<string, mixed> $source    The publication source.
+	 * @param array<string, mixed> $payload   The publication payload.
+	 * @param array<string, mixed> $delivered The delivery result.
+	 *
+	 * @return array<string, mixed> The publish result.
+	 */
+	private function recordPublication(string $caseId, array $source, array $payload, array $delivered): array {
 		$publicationId = $delivered['publicationId'];
-
 		$publicationUrl = $this->buildPublicationUrl(publicationId: $publicationId);
 
-		$decision['wooPublication'] = [
-			'publicationId' => $publicationId,
-			'publicationUrl' => $publicationUrl,
-			'status' => self::STATUS_PUBLISHED,
-			'category' => $payload['wooCategory'],
-			'publishedAt' => date('c'),
-		];
+		$this->saveDecisionPublication(source: $source, publicationId: $publicationId, publicationUrl: $publicationUrl, category: $payload['wooCategory']);
 
-		$objectService->saveObject(object: $decision, register: $register, schema: $decisionSchema, uuid: $decisionId);
+		$withheld = $this->caseLedger->recordWithheld(publicationId: $publicationId, assessments: $source['delivery']['assessments']);
+		$this->writePublishedCaseState(caseId: $caseId, publicationUrl: $publicationUrl, withheldNote: $withheld['note']);
 
-		$withheld = $this->caseLedger->recordWithheld(publicationId: $publicationId, assessments: $delivery['assessments']);
-		$this->caseLedger->writeCaseState(
-			caseId: $caseId,
-			changes: [
-				'wooPublicationStatus' => self::STATUS_PUBLISHED,
-				'wooPublicationUrl' => $this->caseLedger->absolute(path: $publicationUrl),
-				'wooWithheldNote' => $withheld['note'],
-			],
-		);
-
-		$this->dossierReturn?->append(case: $case, publicationId: $publicationId, title: (string)$payload['title']);
-
-		$this->dossierReturn?->tellTheResident(case: $case, caseId: $caseId, publicationId: $publicationId);
+		$this->returnToDossier(caseId: $caseId, source: $source, payload: $payload, publicationId: $publicationId);
 
 		return [
 			'available' => true,
@@ -374,7 +412,84 @@ class WooPublicationService implements WooPublicationServiceInterface {
 			'deliveredSet' => $delivered['setId'],
 			'withheldRecord' => $withheld['record'],
 		];
-	}//end publish()
+	}//end recordPublication()
+
+	/**
+	 * Note the publication on the decision and save it.
+	 *
+	 * @param array<string, mixed> $source         The publication source.
+	 * @param mixed                $publicationId  The publication id.
+	 * @param string               $publicationUrl The publication URL.
+	 * @param mixed                $category       The Woo category.
+	 *
+	 * @return void
+	 */
+	private function saveDecisionPublication(array $source, mixed $publicationId, string $publicationUrl, mixed $category): void {
+		$decision = $source['decision'];
+		$decision['wooPublication'] = $this->wooPublicationRecord(publicationId: $publicationId, publicationUrl: $publicationUrl, category: $category);
+
+		$source['objectService']->saveObject(
+			object: $decision,
+			register: $source['register'],
+			schema: $source['decisionSchema'],
+			uuid: $source['decisionId']
+		);
+	}//end saveDecisionPublication()
+
+	/**
+	 * The publication record kept on the decision.
+	 *
+	 * @param mixed  $publicationId  The publication id.
+	 * @param string $publicationUrl The publication URL.
+	 * @param mixed  $category       The Woo category.
+	 *
+	 * @return array<string, mixed> The record.
+	 */
+	private function wooPublicationRecord(mixed $publicationId, string $publicationUrl, mixed $category): array {
+		return [
+			'publicationId' => $publicationId,
+			'publicationUrl' => $publicationUrl,
+			'status' => self::STATUS_PUBLISHED,
+			'category' => $category,
+			'publishedAt' => date('c'),
+		];
+	}//end wooPublicationRecord()
+
+	/**
+	 * Write the published state onto the case.
+	 *
+	 * @param string $caseId         The case UUID.
+	 * @param string $publicationUrl The publication URL.
+	 * @param mixed  $withheldNote   The note on what was withheld.
+	 *
+	 * @return void
+	 */
+	private function writePublishedCaseState(string $caseId, string $publicationUrl, mixed $withheldNote): void {
+		$this->caseLedger->writeCaseState(
+			caseId: $caseId,
+			changes: [
+				'wooPublicationStatus' => self::STATUS_PUBLISHED,
+				'wooPublicationUrl' => $this->caseLedger->absolute(path: $publicationUrl),
+				'wooWithheldNote' => $withheldNote,
+			],
+		);
+	}//end writePublishedCaseState()
+
+	/**
+	 * Return the publication to the dossier and tell the resident.
+	 *
+	 * @param string               $caseId        The case UUID.
+	 * @param array<string, mixed> $source        The publication source.
+	 * @param array<string, mixed> $payload       The publication payload.
+	 * @param mixed                $publicationId The publication id.
+	 *
+	 * @return void
+	 */
+	private function returnToDossier(string $caseId, array $source, array $payload, mixed $publicationId): void {
+		$this->dossierReturn?->append(case: $source['case'], publicationId: $publicationId, title: (string)$payload['title']);
+
+		$this->dossierReturn?->tellTheResident(case: $source['case'], caseId: $caseId, publicationId: $publicationId);
+	}//end returnToDossier()
 
 	/**
 	 * The disclosable documents whose file could not be read.
@@ -477,14 +592,12 @@ class WooPublicationService implements WooPublicationServiceInterface {
 			return $availability;
 		}
 
-		if ($decisionId === '') {
-			$resolved = $this->caseLedger->resolveWooDecision(caseId: $caseId);
-			if ($resolved['decisionId'] === '') {
-				return $resolved['refusal'];
-			}
-
-			$decisionId = $resolved['decisionId'];
+		$resolved = $this->decisionToWithdraw(decisionId: $decisionId, caseId: $caseId);
+		if ($resolved['decisionId'] === '') {
+			return $resolved['refusal'];
 		}
+
+		$decisionId = $resolved['decisionId'];
 
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
@@ -510,15 +623,48 @@ class WooPublicationService implements WooPublicationServiceInterface {
 
 		$objectService->saveObject(object: $decision, register: $register, schema: $decisionSchema, uuid: $decisionId);
 
+		return $this->clearWithheld(publicationId: $publicationId, caseId: (string)($decision['case'] ?? $caseId));
+	}//end withdraw()
+
+	/**
+	 * The decision to withdraw: the one given, or the case's Woo decision.
+	 *
+	 * @param string $decisionId The decision UUID, or '' to use the case's Woo decision.
+	 * @param string $caseId     The case UUID; needed when no decision id is given.
+	 *
+	 * @return array<string, mixed> `{decisionId: string, refusal?: array}`; an empty id carries the refusal.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 */
+	private function decisionToWithdraw(string $decisionId, string $caseId): array {
+		if ($decisionId === '') {
+			return $this->caseLedger->resolveWooDecision(caseId: $caseId);
+		}
+
+		return ['decisionId' => $decisionId];
+	}//end decisionToWithdraw()
+
+	/**
+	 * Clear the withheld list of a withdrawn publication and record it on the case.
+	 *
+	 * @param string $publicationId The withdrawn publication.
+	 * @param string $caseId        The case the decision belongs to.
+	 *
+	 * @return array<string, mixed> `{available: true, withheldRecord: mixed}`.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	private function clearWithheld(string $publicationId, string $caseId): array {
 		// A withdrawn publication withholds nothing any more: its list is cleared.
 		$withheld = $this->caseLedger->recordWithheld(publicationId: $publicationId, assessments: []);
 		$this->caseLedger->writeCaseState(
-			caseId: (string)($decision['case'] ?? $caseId),
+			caseId: $caseId,
 			changes: ['wooPublicationStatus' => self::STATUS_WITHDRAWN, 'wooWithheldNote' => $withheld['note']],
 		);
 
 		return ['available' => true, 'withheldRecord' => $withheld['record']];
-	}//end withdraw()
+	}//end clearWithheld()
 
 	/**
 	 * Build a stable reference URL for a publication.

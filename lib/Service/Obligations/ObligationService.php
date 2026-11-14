@@ -242,9 +242,27 @@ class ObligationService {
 			return '';
 		}
 
+		$rows = $this->rowsForSource(source: $source);
+		if (is_array($rows) === false) {
+			return '';
+		}
+
+		return $this->firstRowId(rows: $rows);
+	}//end idForSource()
+
+	/**
+	 * The obligation rows a source placed, or null when the store is missing or the read failed.
+	 *
+	 * @param string $source The placing object's id.
+	 *
+	 * @return array<int, array<string, mixed>>|null The rows, or null.
+	 *
+	 * @spec openspec/specs/consultation-management/spec.md
+	 */
+	private function rowsForSource(string $source): ?array {
 		[$objectService, $register, $schema] = $this->store();
 		if ($objectService === null) {
-			return '';
+			return null;
 		}
 
 		$rows = null;
@@ -262,10 +280,19 @@ class ObligationService {
 			);
 		}
 
-		if (is_array($rows) === false) {
-			return '';
-		}
+		return $rows;
+	}//end rowsForSource()
 
+	/**
+	 * The id of the first row that carries one.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The obligation rows.
+	 *
+	 * @return string The id, or the empty string when no row has one.
+	 *
+	 * @spec openspec/specs/consultation-management/spec.md
+	 */
+	private function firstRowId(array $rows): string {
 		foreach ($rows as $row) {
 			$id = (string)(($row['id'] ?? ($row['@self']['id'] ?? '')));
 			if ($id !== '') {
@@ -274,7 +301,7 @@ class ObligationService {
 		}
 
 		return '';
-	}//end idForSource()
+	}//end firstRowId()
 
 	/**
 	 * The obligations that withhold a move into one status.
@@ -326,9 +353,33 @@ class ObligationService {
 			return false;
 		}
 
+		$payload = $this->obligationPayload(obligationId: $obligationId);
+		if ($payload === []) {
+			return false;
+		}
+
+		$payload['state'] = $state;
+		$payload[$field] = $this->dates->nowAsMoment();
+		if ($reason !== '') {
+			$payload[$reasonField] = $reason;
+		}
+
+		return $this->save(payload: $payload, context: $state) !== '';
+	}//end close()
+
+	/**
+	 * The stored obligation as an array, or an empty array when it cannot be read.
+	 *
+	 * @param string $obligationId The obligation.
+	 *
+	 * @return array<string, mixed> The obligation row, or an empty array.
+	 *
+	 * @spec openspec/specs/consultation-management/spec.md
+	 */
+	private function obligationPayload(string $obligationId): array {
 		[$objectService, $register, $schema] = $this->store();
 		if ($objectService === null) {
-			return false;
+			return [];
 		}
 
 		$row = null;
@@ -342,22 +393,11 @@ class ObligationService {
 		}
 
 		if ($row === null) {
-			return false;
+			return [];
 		}
 
-		$payload = $this->toArray(value: $row);
-		if ($payload === []) {
-			return false;
-		}
-
-		$payload['state'] = $state;
-		$payload[$field] = $this->dates->nowAsMoment();
-		if ($reason !== '') {
-			$payload[$reasonField] = $reason;
-		}
-
-		return $this->save(payload: $payload, context: $state) !== '';
-	}//end close()
+		return $this->toArray(value: $row);
+	}//end obligationPayload()
 
 	/**
 	 * Write one obligation row.

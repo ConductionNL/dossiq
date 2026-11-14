@@ -101,8 +101,8 @@ class TermMoveHistory {
 			return [];
 		}
 
-		$engine = $this->settings->getOpenRegisterClass(self::ENGINE_TIMERS);
-		if ($engine === null || method_exists($engine, 'history') === false) {
+		$engine = $this->historyEngine();
+		if ($engine === null) {
 			return [];
 		}
 
@@ -120,6 +120,35 @@ class TermMoveHistory {
 			return [];
 		}
 
+		return $this->movesIn(events: $events);
+	}//end movesFor()
+
+	/**
+	 * The engine's timer service when it can answer a history, else null.
+	 *
+	 * @return object|null The timer service.
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
+	 */
+	private function historyEngine(): ?object {
+		$engine = $this->settings->getOpenRegisterClass(self::ENGINE_TIMERS);
+		if ($engine === null || method_exists($engine, 'history') === false) {
+			return null;
+		}
+
+		return $engine;
+	}//end historyEngine()
+
+	/**
+	 * The superseded events of a timer history as rows.
+	 *
+	 * @param mixed $events What the engine answered.
+	 *
+	 * @return array<int, array<string, mixed>> The moves.
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
+	 */
+	private function movesIn(mixed $events): array {
 		if (is_iterable($events) === false) {
 			$events = [];
 		}
@@ -133,7 +162,7 @@ class TermMoveHistory {
 		}
 
 		return $moves;
-	}//end movesFor()
+	}//end movesIn()
 
 	/**
 	 * One superseded event as a row, or null when it is another kind.

@@ -163,27 +163,12 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 		$wooRequest = (new WooRequestForm())->normalise(request: $request);
 		$subjectRef = trim((string)$request['subjectRef']);
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		if ($objectService === null || $register === '') {
-			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'OpenRegister or the dossiq register is missing.');
-		}
-
-		$collection = null;
-		if ($wooRequest['collectionId'] !== '') {
-			$collection = $this->collections->owned(objectService: $objectService, collectionId: $wooRequest['collectionId'], subjectRef: $subjectRef);
-			if ($collection === null) {
-				throw new WooRequestRefused(WooRequestRefused::NOT_FOUND, 'No such dossier.');
-			}
-		}
+		[$objectService, $register] = $this->availableRegister();
+		$collection = $this->ownedCollection(objectService: $objectService, wooRequest: $wooRequest, subjectRef: $subjectRef);
 
 		$caseType = $this->caseType(objectService: $objectService, register: $register);
-		$saved = $this->writeCase(
-			objectService: $objectService,
-			register: $register,
-			caseType: $caseType,
-			request: $this->startedRequest(request: $request, wooRequest: $wooRequest),
-		);
+		$started = $this->startedRequest(request: $request, wooRequest: $wooRequest);
+		$saved = $this->writeCase(objectService: $objectService, register: $register, caseType: $caseType, request: $started);
 		$caseId = $saved['id'];
 
 		if ($collection !== null) {
@@ -196,11 +181,53 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 		// whose `deadline` is not computed yet leaves the key out rather than
 		// answering an empty value, and the confirmation then drops that
 		// sentence instead of promising a date of ''.
-		return [
-			'caseId' => $caseId,
-			'caseUrl' => $this->urlGenerator->getAbsoluteURL('/index.php/apps/dossiq/cases/' . $caseId),
-		] + $saved['answer'];
+		$caseUrl = $this->urlGenerator->getAbsoluteURL('/index.php/apps/dossiq/cases/' . $caseId);
+		return ['caseId' => $caseId, 'caseUrl' => $caseUrl] + $saved['answer'];
 	}//end start()
+
+	/**
+	 * The object service and the dossiq register, or a refusal when either is missing.
+	 *
+	 * @return array{0: object, 1: string} The object service and the register.
+	 *
+	 * @throws WooRequestRefused When OpenRegister or the dossiq register is missing.
+	 *
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 */
+	private function availableRegister(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		if ($objectService === null || $register === '') {
+			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'OpenRegister or the dossiq register is missing.');
+		}
+
+		return [$objectService, $register];
+	}//end availableRegister()
+
+	/**
+	 * The requester's own dossier the request starts from, or null when it names none.
+	 *
+	 * @param object                $objectService OpenRegister's object service.
+	 * @param array<string, string> $wooRequest    The request as the case keeps it.
+	 * @param string                $subjectRef    The requester.
+	 *
+	 * @return array<string, mixed>|null The dossier.
+	 *
+	 * @throws WooRequestRefused When the dossier does not exist or belongs to someone else.
+	 *
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 */
+	private function ownedCollection(object $objectService, array $wooRequest, string $subjectRef): ?array {
+		$collection = null;
+		if ($wooRequest['collectionId'] !== '') {
+			$collection = $this->collections->owned(objectService: $objectService, collectionId: $wooRequest['collectionId'], subjectRef: $subjectRef);
+			if ($collection === null) {
+				throw new WooRequestRefused(WooRequestRefused::NOT_FOUND, 'No such dossier.');
+			}
+		}
+
+		return $collection;
+	}//end ownedCollection()
 
 	/**
 	 * The request `start()` writes, as {@see self::writeCase()} takes it.

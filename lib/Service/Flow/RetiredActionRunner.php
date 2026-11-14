@@ -164,6 +164,26 @@ class RetiredActionRunner {
 			return ['type' => $type, 'ok' => false, 'error' => 'retired_action_needs_openregister'];
 		}
 
+		return $this->runSteps(
+			type: $type,
+			steps: $steps,
+			registry: $registry,
+			case: $case,
+			runContext: $this->runContext(context: $context),
+		);
+	}//end run()
+
+	/**
+	 * The context the steps run in: the acting user fills an empty run-as and triggered-by.
+	 *
+	 * @param array<string, mixed> $context The transition or task context; `userId` is who acts.
+	 *
+	 * @return array<string, mixed> The run context.
+	 *
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/webhook-steps-through-integriq/spec.md
+	 */
+	private function runContext(array $context): array {
 		$runContext = $context;
 		foreach ([self::RUN_AS, self::TRIGGERED_BY] as $ownerKey) {
 			if (trim((string)($runContext[$ownerKey] ?? '')) === '' && trim((string)($context['userId'] ?? '')) !== '') {
@@ -171,6 +191,24 @@ class RetiredActionRunner {
 			}
 		}
 
+		return $runContext;
+	}//end runContext()
+
+	/**
+	 * Run the steps in order, each on the previous one's items.
+	 *
+	 * @param string                                                        $type       The declared type.
+	 * @param array<int, array{type: string, config: array<string, mixed>}> $steps      The steps.
+	 * @param FlowNodeRegistry                                              $registry   OpenRegister's node catalogue.
+	 * @param array<string, mixed>                                          $case       The case.
+	 * @param array<string, mixed>                                          $runContext The run context.
+	 *
+	 * @return array{type: string, ok: bool, error?: string} The result row.
+	 *
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/webhook-steps-through-integriq/spec.md
+	 */
+	private function runSteps(string $type, array $steps, FlowNodeRegistry $registry, array $case, array $runContext): array {
 		$items = [['json' => $case]];
 		try {
 			foreach ($steps as $step) {
@@ -186,7 +224,7 @@ class RetiredActionRunner {
 		}
 
 		return ['type' => $type, 'ok' => true];
-	}//end run()
+	}//end runSteps()
 
 	/**
 	 * The steps a declaration becomes.

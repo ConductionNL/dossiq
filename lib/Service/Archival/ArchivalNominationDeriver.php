@@ -156,6 +156,22 @@ class ArchivalNominationDeriver {
 			return [];
 		}
 
+		$derived = $this->nominationAndClass(resultType: $resultType);
+
+		return $this->withActionDate(derived: $derived, resultType: $resultType, case: $case, endDate: $endDate);
+	}//end derive()
+
+	/**
+	 * The nomination and selectielijst class a resultaattype names, each only when set.
+	 *
+	 * @param array<string, mixed> $resultType The resultType row.
+	 *
+	 * @return array<string, string|null> `archiveNomination` and/or `selectionListClass`.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function nominationAndClass(array $resultType): array {
 		$derived = [];
 		$nomination = $this->nomination(resultType: $resultType);
 		if ($nomination !== null) {
@@ -171,6 +187,23 @@ class ArchivalNominationDeriver {
 			$derived['selectionListClass'] = $class;
 		}
 
+		return $derived;
+	}//end nominationAndClass()
+
+	/**
+	 * The derived fields with the archive action date added, empty when no base date derives.
+	 *
+	 * @param array<string, string|null> $derived    The fields derived so far.
+	 * @param array<string, mixed>       $resultType The resultType row.
+	 * @param array<string, mixed>       $case       The case payload, as it will be saved.
+	 * @param string                     $endDate    The case's end date (Y-m-d), the zrc-021 einddatum.
+	 *
+	 * @return array<string, string|null> The derived fields.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function withActionDate(array $derived, array $resultType, array $case, string $endDate): array {
 		$brondatum = $this->sourceDateProcedure(resultType: $resultType);
 		$baseDate = $this->baseDates->resolve(
 			method: (string)($brondatum['derivationMethod'] ?? ($brondatum['afleidingswijze'] ?? '')),
@@ -201,7 +234,7 @@ class ArchivalNominationDeriver {
 		);
 
 		return $derived;
-	}//end derive()
+	}//end withActionDate()
 
 	/**
 	 * The resultType a case's written result points at.

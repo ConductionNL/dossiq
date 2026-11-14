@@ -113,28 +113,12 @@ class CitizenLookupRecorder {
 	 *
 	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
-	public function record(
-		string $employeeId,
-		string $subjectId,
-		bool $allowed,
-		array $fields = [],
-		string $ground = '',
-	): bool {
+	public function record(string $employeeId, string $subjectId, bool $allowed, array $fields = [], string $ground = ''): bool {
 		try {
 			[$objectService, $register] = $this->target();
 
-			$this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: self::SCHEMA,
-				object: $this->row(
-					employeeId: $employeeId,
-					subjectId: $subjectId,
-					allowed: $allowed,
-					fields: $fields,
-					ground: $ground,
-				),
-			);
+			$row = $this->row(employeeId: $employeeId, subjectId: $subjectId, allowed: $allowed, fields: $fields, ground: $ground);
+			$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: self::SCHEMA, object: $row);
 
 			return true;
 		} catch (Throwable $e) {
@@ -142,19 +126,34 @@ class CitizenLookupRecorder {
 			// a PHP Error, and an audit that cannot be written must not take the
 			// contact centre down with it. See the class comment for why this
 			// fail-open is the right one here and nowhere else.
-			$this->logger->error(
-				'Dossiq: a citizen lookup could not be recorded. The lookup itself was not affected, '
-				. 'and it is now unaccountable.',
-				[
-					'employee' => $employeeId,
-					'allowed' => $allowed,
-					'exception' => $e->getMessage(),
-				]
-			);
-
-			return false;
-		}//end try
+			return $this->unrecorded(error: $e, employeeId: $employeeId, allowed: $allowed);
+		}
 	}//end record()
+
+	/**
+	 * Log that a lookup could not be recorded.
+	 *
+	 * @param Throwable $error      Why the row could not be written.
+	 * @param string    $employeeId The account that looked.
+	 * @param bool      $allowed    Whether the guard permitted it.
+	 *
+	 * @return bool Always false: the row was not written.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 */
+	private function unrecorded(Throwable $error, string $employeeId, bool $allowed): bool {
+		$this->logger->error(
+			'Dossiq: a citizen lookup could not be recorded. The lookup itself was not affected, '
+			. 'and it is now unaccountable.',
+			[
+				'employee' => $employeeId,
+				'allowed' => $allowed,
+				'exception' => $error->getMessage(),
+			]
+		);
+
+		return false;
+	}//end unrecorded()
 
 	/**
 	 * The row one lookup writes.

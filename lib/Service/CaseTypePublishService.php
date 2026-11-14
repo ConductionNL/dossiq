@@ -137,16 +137,60 @@ class CaseTypePublishService implements CaseTypePublishServiceInterface {
 		$findings = $this->validate(caseTypeId: $caseTypeId);
 		$warnings = $this->warnings(caseTypeId: $caseTypeId);
 		if ($findings !== []) {
-			return [
-				'published' => false,
-				'findings' => $findings,
-				'warnings' => $warnings,
-				'version' => null,
-			];
+			return $this->notPublished(findings: $findings, warnings: $warnings);
 		}
 
 		$today = $this->window->today();
 
+		$caseType = $this->publishableCaseType(caseTypeId: $caseTypeId);
+
+		if ($this->save(schemaKey: 'case_type_schema', object: $caseType) === false) {
+			return $this->notPublished(findings: ['The case type could not be saved.'], warnings: $warnings);
+		}
+
+		$this->window->closePrevious(
+			caseType: $caseType,
+			caseTypeId: $caseTypeId,
+			takesEffect: (string)($caseType['validFrom'] ?? $today)
+		);
+
+		$warnings = $this->publishProjections(caseTypeId: $caseTypeId, warnings: $warnings);
+
+		$version = $this->publishActiveTemplate(caseTypeId: $caseTypeId, changeNote: $changeNote);
+
+		return $this->published(caseTypeId: $caseTypeId, warnings: $warnings, version: $version);
+	}//end publish()
+
+	/**
+	 * The answer for a publish that did not happen.
+	 *
+	 * @param array<int, string> $findings Why it did not happen.
+	 * @param array<int, string> $warnings The warnings found beside them.
+	 *
+	 * @return array<string, mixed> `{published: false, findings: string[], warnings: string[], version: null}`.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function notPublished(array $findings, array $warnings): array {
+		return [
+			'published' => false,
+			'findings' => $findings,
+			'warnings' => $warnings,
+			'version' => null,
+		];
+	}//end notPublished()
+
+	/**
+	 * The stored case type, marked published, opened in its validity window,
+	 * with its entry requirements derived.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 *
+	 * @return array<string, mixed> The case type, ready to save.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function publishableCaseType(string $caseTypeId): array {
 		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
 		$caseType['isDraft'] = false;
 		if ((int)($caseType['version'] ?? 0) < 1) {
@@ -158,21 +202,20 @@ class CaseTypePublishService implements CaseTypePublishServiceInterface {
 			$caseType['entryRequirements'] = $this->rules->entryRequirements(caseType: $caseType);
 		}
 
-		if ($this->save(schemaKey: 'case_type_schema', object: $caseType) === false) {
-			return [
-				'published' => false,
-				'findings' => ['The case type could not be saved.'],
-				'warnings' => $warnings,
-				'version' => null,
-			];
-		}
+		return $caseType;
+	}//end publishableCaseType()
 
-		$this->window->closePrevious(
-			caseType: $caseType,
-			caseTypeId: $caseTypeId,
-			takesEffect: (string)($caseType['validFrom'] ?? $today)
-		);
-
+	/**
+	 * Write the field and role projections and the rules onto the case schema.
+	 *
+	 * @param string             $caseTypeId CaseType UUID.
+	 * @param array<int, string> $warnings   The warnings so far.
+	 *
+	 * @return array<int, string> The warnings, with the rules' own added.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function publishProjections(string $caseTypeId, array $warnings): array {
 		// What each status asks of the fields goes onto the case schema HERE,
 		// at the one moment a case type stops being a draft. Any earlier and a
 		// half-written status would start refusing saves on cases already
@@ -193,8 +236,21 @@ class CaseTypePublishService implements CaseTypePublishServiceInterface {
 			$warnings = array_merge($warnings, $this->rules->publish(caseTypeId: $caseTypeId));
 		}
 
-		$version = $this->publishActiveTemplate(caseTypeId: $caseTypeId, changeNote: $changeNote);
+		return $warnings;
+	}//end publishProjections()
 
+	/**
+	 * The answer for a publish that happened, logged when it carries warnings.
+	 *
+	 * @param string             $caseTypeId CaseType UUID.
+	 * @param array<int, string> $warnings   The warnings.
+	 * @param int|null           $version    The published template version.
+	 *
+	 * @return array<string, mixed> `{published: true, findings: [], warnings: string[], version: ?int}`.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function published(string $caseTypeId, array $warnings, ?int $version): array {
 		if ($warnings !== []) {
 			$this->logger->warning(
 				'Case type publish: published with warnings',
@@ -208,7 +264,7 @@ class CaseTypePublishService implements CaseTypePublishServiceInterface {
 			'warnings' => $warnings,
 			'version' => $version,
 		];
-	}//end publish()
+	}//end published()
 
 	/**
 	 * Mark the case type's active workflow template published, with the note.

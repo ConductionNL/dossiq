@@ -394,12 +394,12 @@ class AccrualNoticeService implements AccrualNoticeServiceInterface {
 			return self::AWB_DEFAULT_REGIME;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_definitie_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->definitionStore();
+		if ($store === null) {
 			return self::AWB_DEFAULT_REGIME;
 		}
+
+		[$objectService, $register, $schema] = $store;
 
 		try {
 			$def = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $defId);
@@ -411,7 +411,34 @@ class AccrualNoticeService implements AccrualNoticeServiceInterface {
 			return self::AWB_DEFAULT_REGIME;
 		}
 
-		$regime = $def['deviatingPenaltyPaymentRegime'] ?? null;
+		return $this->regimeOf(definition: $def);
+	}//end resolveRegime()
+
+	/**
+	 * The object service, register and deadline-definition schema, or null when any is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The store.
+	 */
+	private function definitionStore(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('termijn_definitie_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end definitionStore()
+
+	/**
+	 * The definition's deviating regime, or the AWB default when it declares none.
+	 *
+	 * @param array<string, mixed> $definition The deadline definition.
+	 *
+	 * @return array{plafond:int,grace:int,custom:bool,dailyTariff?:int}
+	 */
+	private function regimeOf(array $definition): array {
+		$regime = $definition['deviatingPenaltyPaymentRegime'] ?? null;
 		if (is_array($regime) === false) {
 			return self::AWB_DEFAULT_REGIME;
 		}
@@ -422,7 +449,7 @@ class AccrualNoticeService implements AccrualNoticeServiceInterface {
 			'dailyTariff' => (int)($regime['dailyTariff'] ?? 0),
 			'custom' => true,
 		];
-	}//end resolveRegime()
+	}//end regimeOf()
 
 	/**
 	 * Save to a configured schema.

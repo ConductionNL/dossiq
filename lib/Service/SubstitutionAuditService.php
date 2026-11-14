@@ -90,16 +90,7 @@ class SubstitutionAuditService implements SubstitutionAuditServiceInterface {
 		}
 
 		$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
-		if ($case === null) {
-			return null;
-		}
-
-		$stamp = new CapacityStamp();
-		$stamp->caseId = $caseId;
-		$stamp->actorId = $actorId;
-		$stamp->action = $action;
-		$stamp->absentee = (string)($case['assignee'] ?? '');
-		$entry = $this->capacityEntry(stamp: $stamp, case: $case);
+		$entry = $this->entryFor(caseId: $caseId, actorId: $actorId, action: $action, case: $case);
 		if ($entry === null) {
 			return null;
 		}
@@ -115,6 +106,32 @@ class SubstitutionAuditService implements SubstitutionAuditServiceInterface {
 
 		return $entry;
 	}//end stampIfSubstituted()
+
+	/**
+	 * The capacity entry of an action on a stored case, or null for a missing case or own work.
+	 *
+	 * @param string                    $caseId  The case being mutated.
+	 * @param string                    $actorId The acting user id.
+	 * @param string                    $action  A short action label.
+	 * @param array<string, mixed>|null $case    The stored case, or null.
+	 *
+	 * @return array<string, string>|null
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	private function entryFor(string $caseId, string $actorId, string $action, ?array $case): ?array {
+		if ($case === null) {
+			return null;
+		}
+
+		$stamp = new CapacityStamp();
+		$stamp->caseId = $caseId;
+		$stamp->actorId = $actorId;
+		$stamp->action = $action;
+		$stamp->absentee = (string)($case['assignee'] ?? '');
+
+		return $this->capacityEntry(stamp: $stamp, case: $case);
+	}//end entryFor()
 
 	/**
 	 * The activity entry of an action taken in a covered absentee's name, or null for own work.

@@ -538,21 +538,13 @@ class PauseChaseService implements PauseChaseServiceInterface {
 	 */
 	private function projectOntoCase(PauseStep $step): void {
 		$caseId = $step->caseId;
-		$objectService = $this->settings->getObjectService();
-		$register = (string)$this->settings->getConfigValue('register');
-		$schema = (string)$this->settings->getConfigValue('case_schema');
-		if ($objectService === null || $caseId === '' || $register === '' || $schema === '') {
+		$store = $this->caseStore();
+		if ($store === null || $caseId === '') {
 			return;
 		}
 
-		$changes = [
-			'pauseWaitingOn' => (string)$step->reason['waitingOn'],
-			'chasesSent' => $step->number,
-		];
-		$since = $this->chase->schedule->pauseStartMoment(date: (string)($step->instance['pauzeStartDatum'] ?? ''));
-		if ($since !== null) {
-			$changes['waitingSince'] = $since;
-		}
+		[$objectService, $register, $schema] = $store;
+		$changes = $this->waitingChanges(step: $step);
 
 		try {
 			$this->patchObjectAsArray(
@@ -569,6 +561,42 @@ class PauseChaseService implements PauseChaseServiceInterface {
 			);
 		}
 	}//end projectOntoCase()
+
+	/**
+	 * The object service, register and case schema, or null when any of them is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The case store.
+	 */
+	private function caseStore(): ?array {
+		$objectService = $this->settings->getObjectService();
+		$register = (string)$this->settings->getConfigValue('register');
+		$schema = (string)$this->settings->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end caseStore()
+
+	/**
+	 * The waiting facts to write onto the case for a reminder.
+	 *
+	 * @param PauseStep $step The reminder that went out.
+	 *
+	 * @return array<string, mixed> The case changes.
+	 */
+	private function waitingChanges(PauseStep $step): array {
+		$changes = [
+			'pauseWaitingOn' => (string)$step->reason['waitingOn'],
+			'chasesSent' => $step->number,
+		];
+		$since = $this->chase->schedule->pauseStartMoment(date: (string)($step->instance['pauzeStartDatum'] ?? ''));
+		if ($since !== null) {
+			$changes['waitingSince'] = $since;
+		}
+
+		return $changes;
+	}//end waitingChanges()
 
 	/**
 	 * Every suspended term instance.

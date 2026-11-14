@@ -86,6 +86,21 @@ class CaseTypeVersionGuard {
 			return;
 		}
 
+		$families = $this->familiesOf(caseTypeIds: $caseTypeIds);
+
+		$this->assertEachFamilyOneVersion(families: $families);
+	}//end assertOneVersion()
+
+	/**
+	 * The selection's case counts per case type family and version.
+	 *
+	 * @param array<string, int> $caseTypeIds How many selected cases sit on each case type.
+	 *
+	 * @return array<string, array{title: string, counts: array<int, int>}> The families.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function familiesOf(array $caseTypeIds): array {
 		$families = [];
 		foreach ($caseTypeIds as $caseTypeId => $caseCount) {
 			$caseType = $this->caseTypes->readCaseType(caseTypeId: (string)$caseTypeId);
@@ -103,6 +118,21 @@ class CaseTypeVersionGuard {
 			$families[$family]['counts'][$version] = (($families[$family]['counts'][$version] ?? 0) + $caseCount);
 		}
 
+		return $families;
+	}//end familiesOf()
+
+	/**
+	 * Refuse the first family whose cases run on two versions.
+	 *
+	 * @param array<string, array{title: string, counts: array<int, int>}> $families The families.
+	 *
+	 * @return void
+	 *
+	 * @throws MixedCaseTypeVersionsException When a family spans versions.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function assertEachFamilyOneVersion(array $families): void {
 		foreach ($families as $family) {
 			$counts = $family['counts'];
 			if (count($counts) < 2) {
@@ -118,7 +148,7 @@ class CaseTypeVersionGuard {
 				counts: array_map('intval', $counts),
 			);
 		}
-	}//end assertOneVersion()
+	}//end assertEachFamilyOneVersion()
 
 	/**
 	 * The case type of every selected case, and how many cases sit on it.

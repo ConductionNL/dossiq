@@ -116,13 +116,63 @@ class CaseAccessPolicy {
 			return true;
 		}
 
+		$config = $this->caseConfig();
+		if ($config === null) {
+			return true;
+		}
+
+		[$register, $caseSchema] = $config;
+
+		$caseData = $this->loadCaseForAccess(
+			objectService: $objectService,
+			caseId: $caseId,
+			register: $register,
+			caseSchema: $caseSchema
+		);
+		if (is_bool($caseData) === true) {
+			return $caseData;
+		}
+
+		return $this->isAssigneeOrSharer(
+			objectService: $objectService,
+			caseData: $caseData,
+			caseId: $caseId,
+			userId: $userId,
+			register: $register
+		);
+	}//end canUserAccessCase()
+
+	/**
+	 * The configured register and case schema, or null when either is missing.
+	 *
+	 * @return array{0: string, 1: string}|null The register and case schema ids
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function caseConfig(): ?array {
 		$register = $this->settingsService->getConfigValue('register');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
 
 		if (empty($register) === true || empty($caseSchema) === true) {
-			return true;
+			return null;
 		}
 
+		return [$register, $caseSchema];
+	}//end caseConfig()
+
+	/**
+	 * Load the case, or the access answer when it cannot be loaded.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param string $caseId The case UUID
+	 * @param string $register The configured register id
+	 * @param string $caseSchema The configured case schema id
+	 *
+	 * @return array<string, mixed>|bool The case data, false when the case is missing, true when loading failed
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function loadCaseForAccess(object $objectService, string $caseId, string $register, string $caseSchema): array|bool {
 		try {
 			$caseObj = $objectService->find($caseId, register: (int)$register, schema: (int)$caseSchema);
 			if ($caseObj === null) {
@@ -139,6 +189,23 @@ class CaseAccessPolicy {
 			return true;
 		}
 
+		return $caseData;
+	}//end loadCaseForAccess()
+
+	/**
+	 * Whether the user is an assignee of the case, or created a share for it.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param array<string, mixed> $caseData The case data
+	 * @param string $caseId The case UUID
+	 * @param string $userId The caller's user ID
+	 * @param string $register The configured register id
+	 *
+	 * @return bool True when the user may proceed
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function isAssigneeOrSharer(object $objectService, array $caseData, string $caseId, string $userId, string $register): bool {
 		// Direct assignee field, then the assignees array.
 		if ($this->isCaseAssignee(caseData: $caseData, userId: $userId) === true) {
 			return true;
@@ -157,7 +224,7 @@ class CaseAccessPolicy {
 		}
 
 		return false;
-	}//end canUserAccessCase()
+	}//end isAssigneeOrSharer()
 
 	/**
 	 * Whether a case names the given user as assignee.

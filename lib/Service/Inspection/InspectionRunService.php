@@ -218,6 +218,24 @@ class InspectionRunService implements InspectionRunServiceInterface {
 	 * @return array<string, mixed> The task fields.
 	 */
 	private function taskData(string $caseId, array $template, array $payload, string $actor): array {
+		$metadata = $this->metadataOf(payload: $payload);
+
+		$data = $this->baseTaskData(caseId: $caseId, template: $template, payload: $payload, actor: $actor);
+		if ($metadata !== []) {
+			$data['metadata'] = $metadata;
+		}
+
+		return $this->withRegister(data: $data);
+	}//end taskData()
+
+	/**
+	 * The metadata the request body carries, without empty values.
+	 *
+	 * @param array<string, mixed> $payload The request body.
+	 *
+	 * @return array<string, mixed> The metadata.
+	 */
+	private function metadataOf(array $payload): array {
 		$metadata = [];
 		foreach (self::METADATA as $key) {
 			if (array_key_exists($key, $payload) === true && $payload[$key] !== null && $payload[$key] !== '') {
@@ -225,7 +243,21 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			}
 		}
 
-		$data = [
+		return $metadata;
+	}//end metadataOf()
+
+	/**
+	 * The task fields every run carries.
+	 *
+	 * @param string               $caseId   The case uuid.
+	 * @param array<string, mixed> $template The frozen template.
+	 * @param array<string, mixed> $payload  The request body.
+	 * @param string               $actor    The inspector.
+	 *
+	 * @return array<string, mixed> The task fields.
+	 */
+	private function baseTaskData(string $caseId, array $template, array $payload, string $actor): array {
+		return [
 			'title' => 'Inspectie: ' . (string)($template['name'] ?? ''),
 			'kind' => self::KIND,
 			'appId' => 'dossiq',
@@ -237,10 +269,16 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			'templateSnapshot' => $template,
 			'startAt' => (string)($payload['inspectionDate'] ?? date(format: 'c')),
 		];
-		if ($metadata !== []) {
-			$data['metadata'] = $metadata;
-		}
+	}//end baseTaskData()
 
+	/**
+	 * The task fields with the case's register and schema, when both are configured.
+	 *
+	 * @param array<string, mixed> $data The task fields.
+	 *
+	 * @return array<string, mixed> The task fields.
+	 */
+	private function withRegister(array $data): array {
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
 		if ($register !== '' && $schema !== '') {
@@ -249,7 +287,7 @@ class InspectionRunService implements InspectionRunServiceInterface {
 		}
 
 		return $data;
-	}//end taskData()
+	}//end withRegister()
 
 	/**
 	 * The template a run is filled against.

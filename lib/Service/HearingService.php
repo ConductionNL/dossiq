@@ -78,13 +78,7 @@ class HearingService {
 	 */
 	public function scheduleHearing(string $complaintId, array $data): array {
 		$data = array_diff_key($data, CallerIdentity::KEYS);
-		if (empty($data['date']) === true) {
-			throw new RuntimeException('Hearing datum is required');
-		}
-
-		if (empty($data['type']) === true) {
-			throw new RuntimeException('Hearing type is required');
-		}
+		$this->requireHearingFields(data: $data);
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -100,14 +94,7 @@ class HearingService {
 
 		$data['complaint'] = $complaintId;
 
-		// Create Talk room for video hearings.
-		if ($data['type'] === 'videogesprek') {
-			$talkUrl = $this->createTalkRoom(complaintId: $complaintId);
-			$data['talkRoomUrl'] = $talkUrl;
-			if (empty($data['location']) === true) {
-				$data['location'] = $talkUrl;
-			}
-		}
+		$data = $this->withTalkRoom(complaintId: $complaintId, data: $data);
 
 		// Put the hearing on every participant's calendar before it is stored,
 		// so the id the schema reserves is written with the hearing itself.
@@ -120,12 +107,70 @@ class HearingService {
 			['app' => AppIdentity::APP_ID],
 		);
 
+		return $this->hearingAnswer(hearing: $hearing, data: $data);
+	}//end scheduleHearing()
+
+	/**
+	 * Refuse a hearing without a date or a type.
+	 *
+	 * @param array<string, mixed> $data Hearing data (datum, locatie, type, deelnemers)
+	 *
+	 * @return void
+	 *
+	 * @throws \RuntimeException If required fields missing
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function requireHearingFields(array $data): void {
+		if (empty($data['date']) === true) {
+			throw new RuntimeException('Hearing datum is required');
+		}
+
+		if (empty($data['type']) === true) {
+			throw new RuntimeException('Hearing type is required');
+		}
+	}//end requireHearingFields()
+
+	/**
+	 * The hearing data with a Talk room for a video hearing.
+	 *
+	 * @param string               $complaintId Complaint UUID
+	 * @param array<string, mixed> $data        Hearing data
+	 *
+	 * @return array<string, mixed> The hearing data.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function withTalkRoom(string $complaintId, array $data): array {
+		// Create Talk room for video hearings.
+		if ($data['type'] === 'videogesprek') {
+			$talkUrl = $this->createTalkRoom(complaintId: $complaintId);
+			$data['talkRoomUrl'] = $talkUrl;
+			if (empty($data['location']) === true) {
+				$data['location'] = $talkUrl;
+			}
+		}
+
+		return $data;
+	}//end withTalkRoom()
+
+	/**
+	 * The created hearing as an array.
+	 *
+	 * @param mixed                $hearing The saveObject() result.
+	 * @param array<string, mixed> $data    The hearing data that was saved.
+	 *
+	 * @return array<string, mixed> Created hearing
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function hearingAnswer(mixed $hearing, array $data): array {
 		if (is_array($hearing) === true) {
 			return $hearing;
 		}
 
 		return array_merge($data, ['id' => $hearing->getUuid()]);
-	}//end scheduleHearing()
+	}//end hearingAnswer()
 
 	/**
 	 * Get a hearing by ID.
