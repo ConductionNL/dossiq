@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantServiceInterface;
 use OCP\App\IAppManager;
 use OCP\IGroupManager;
 use Psr\Container\ContainerInterface;
@@ -48,7 +49,7 @@ use Throwable;
  *
  * @spec openspec/specs/tenant-organisation-boundary/spec.md
  */
-class TenantService {
+class TenantService implements TenantServiceInterface {
 	/**
 	 * The register that holds the anchors.
 	 *

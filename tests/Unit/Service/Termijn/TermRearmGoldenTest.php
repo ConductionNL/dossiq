@@ -147,8 +147,8 @@ class TermRearmGoldenTest extends TestCase {
 				['definitie', 'vergunning'],
 				['create', 'case-1', 'vergunning', null],
 				['complete', 't2', null, '', 'Termijn afgesloten bij herbinding naar een ander zaaktype: verkeerd zaaktype'],
-				['event', ['new-2', 'pauze', 'AWB 4:15', '', 5, null, '', 'system', []]],
-				['event', ['new-2', 'verdaging', 'AWB 4:14', 'Awb', 14, null, '', 'jan', []]],
+				['event', ['new-2', 'pauze', 'AWB 4:15', '', 5, null, '', 'system', [], []]],
+				['event', ['new-2', 'verdaging', 'AWB 4:14', 'Awb', 14, null, '', 'jan', [], []]],
 				['update', 'new-2', ['endDateCurrent' => '2026-09-12', 'countExtensions' => 1]],
 			],
 			$this->calls

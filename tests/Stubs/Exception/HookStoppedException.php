@@ -25,7 +25,6 @@ declare(strict_types=1);
 namespace OCA\OpenRegister\Exception;
 
 use Exception;
-use Throwable;
 
 if (class_exists('\\OCA\\OpenRegister\\Exception\\HookStoppedException', false) === false) {
 	/**
@@ -34,28 +33,16 @@ if (class_exists('\\OCA\\OpenRegister\\Exception\\HookStoppedException', false) 
 	class HookStoppedException extends Exception {
 
 		/**
-		 * Validation errors from the hook.
-		 *
-		 * @var array<string, mixed>
-		 */
-		private readonly array $errors;
-
-		/**
 		 * Constructor.
 		 *
-		 * @param string $message Error message.
-		 * @param array<string, mixed> $errors Hook validation errors.
-		 * @param int $code Error code.
-		 * @param Throwable|null $previous Previous exception.
+		 * @param string               $message Error message.
+		 * @param array<string, mixed> $errors  Hook validation errors.
 		 */
 		public function __construct(
 			string $message = 'Operation blocked by schema hook',
-			array $errors = [],
-			int $code = 0,
-			?Throwable $previous = null,
+			private readonly array $errors = [],
 		) {
-			$this->errors = $errors;
-			parent::__construct(message: $message, code: $code, previous: $previous);
+			parent::__construct(message: $message, code: 0);
 		}
 
 		/**

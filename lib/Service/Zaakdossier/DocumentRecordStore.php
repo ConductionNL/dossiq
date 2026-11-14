@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\KeepsLookupsInSchema;
@@ -31,7 +32,7 @@ use Throwable;
  *
  * @spec openspec/specs/document-projection/spec.md
  */
-class DocumentRecordStore {
+class DocumentRecordStore implements DocumentRecordStoreInterface {
 	use KeepsLookupsInSchema;
 	use SearchesObjects;
 

@@ -61,7 +61,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Publication;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
@@ -240,7 +240,7 @@ class OpenCatalogiApiClient {
 		if ($fileService === null) {
 			$this->logger->warning(
 				'OpenCatalogiApiClient: OpenRegister FileService unavailable',
-				['app' => Application::APP_ID, 'objectId' => $objectId],
+				['app' => AppIdentity::APP_ID, 'objectId' => $objectId],
 			);
 			throw new RuntimeException(self::DOMAIN_ERROR);
 		}
@@ -264,7 +264,7 @@ class OpenCatalogiApiClient {
 			$this->logger->warning(
 				'OpenCatalogiApiClient: file attach failed',
 				[
-					'app' => Application::APP_ID,
+					'app' => AppIdentity::APP_ID,
 					'objectId' => $objectId,
 					'fileName' => $fileName,
 					'error' => $e->getMessage(),
@@ -294,7 +294,7 @@ class OpenCatalogiApiClient {
 		} catch (Throwable $e) {
 			$this->logger->info(
 				'OpenCatalogiApiClient::resolveCatalog: discovery call failed, continuing with defaults',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()],
 			);
 			return null;
 		}
@@ -336,7 +336,7 @@ class OpenCatalogiApiClient {
 		if ($objectService === null) {
 			$this->logger->warning(
 				'OpenCatalogiApiClient: OpenRegister ObjectService unavailable',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			throw new RuntimeException(self::DOMAIN_ERROR);
 		}
@@ -375,7 +375,7 @@ class OpenCatalogiApiClient {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'OpenCatalogiApiClient: could not read the object to patch',
-				['app' => Application::APP_ID, 'id' => $id, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'id' => $id, 'error' => $e->getMessage()],
 			);
 			throw new RuntimeException(self::DOMAIN_ERROR, 0, $e);
 		}
@@ -411,7 +411,7 @@ class OpenCatalogiApiClient {
 			$this->logger->warning(
 				'OpenCatalogiApiClient: object write failed',
 				[
-					'app' => Application::APP_ID,
+					'app' => AppIdentity::APP_ID,
 					'register' => $register,
 					'schema' => $schema,
 					'uuid' => ($uuid ?? ''),
@@ -458,7 +458,7 @@ class OpenCatalogiApiClient {
 
 		$this->logger->warning(
 			'OpenCatalogiApiClient: OpenRegister returned an unreadable object shape',
-			['app' => Application::APP_ID, 'type' => get_debug_type($entity)],
+			['app' => AppIdentity::APP_ID, 'type' => get_debug_type($entity)],
 		);
 		throw new RuntimeException(self::DOMAIN_ERROR);
 	}//end objectData()
@@ -509,8 +509,8 @@ class OpenCatalogiApiClient {
 			],
 		];
 
-		$serviceUid = $this->appConfig->getValueString(Application::APP_ID, 'opencatalogi_service_uid', '');
-		$serviceAppPass = $this->appConfig->getValueString(Application::APP_ID, 'opencatalogi_service_app_password', '');
+		$serviceUid = $this->appConfig->getValueString(AppIdentity::APP_ID, 'opencatalogi_service_uid', '');
+		$serviceAppPass = $this->appConfig->getValueString(AppIdentity::APP_ID, 'opencatalogi_service_app_password', '');
 		if ($serviceUid !== '' && $serviceAppPass !== '') {
 			$options['auth'] = [$serviceUid, $serviceAppPass];
 		}
@@ -530,7 +530,7 @@ class OpenCatalogiApiClient {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'OpenCatalogiApiClient: catalog discovery request failed',
-				['app' => Application::APP_ID, 'url' => $url, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'url' => $url, 'error' => $e->getMessage()],
 			);
 			throw new RuntimeException(self::DOMAIN_ERROR, 0, $e);
 		}//end try

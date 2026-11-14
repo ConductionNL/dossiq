@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CasePlanProjectionServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -58,7 +59,7 @@ use UnexpectedValueException;
  *
  * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
  */
-class CasePlanProjectionService {
+class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 
 	use SearchesObjects;
 

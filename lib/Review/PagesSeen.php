@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Review;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
 
 /**
  * Records the pages a reviewer displayed on a document's review, and answers which required pages are still unseen.
@@ -35,7 +36,7 @@ use OCA\Dossiq\Exception\RefusedException;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
  */
-class PagesSeen {
+class PagesSeen implements PagesSeenInterface {
 
 	/**
 	 * Constructor.

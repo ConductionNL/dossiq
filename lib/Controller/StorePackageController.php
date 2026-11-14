@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Setup\CaseTypePackageChoice;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTypePackageChoiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -53,13 +53,13 @@ class StorePackageController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest              $request The request.
-	 * @param CaseTypePackageChoice $choice  The packages on offer and their install.
+	 * @param CaseTypePackageChoiceInterface $choice  The packages on offer and their install.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseTypePackageChoice $choice,
+		private readonly CaseTypePackageChoiceInterface $choice,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

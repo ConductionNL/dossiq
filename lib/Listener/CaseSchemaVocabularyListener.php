@@ -22,8 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\People\CaseRoleVocabulary;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseRoleVocabularyInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\OpenRegister\Event\SchemaUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -52,13 +52,13 @@ class CaseSchemaVocabularyListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService The configured case schema.
-	 * @param CaseRoleVocabulary $vocabulary      Writes the roles onto the case schema.
+	 * @param SettingsServiceInterface    $settingsService The configured case schema.
+	 * @param CaseRoleVocabularyInterface $vocabulary      Writes the roles onto the case schema.
 	 * @param LoggerInterface    $logger          Says why a sync failed.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseRoleVocabulary $vocabulary,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseRoleVocabularyInterface $vocabulary,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

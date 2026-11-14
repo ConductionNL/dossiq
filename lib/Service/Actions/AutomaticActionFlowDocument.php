@@ -27,7 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Actions;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+
 
 /**
  * Builds a migrated action's flow document.
@@ -72,7 +73,7 @@ class AutomaticActionFlowDocument {
 		return [
 			'name' => (string)($action['title'] ?? $action['slug']),
 			'description' => $this->description(action: $action),
-			'app' => Application::APP_ID,
+			'app' => AppIdentity::APP_ID,
 			'enabled' => true,
 			'trigger' => 'manual',
 			'notes' => $marker,

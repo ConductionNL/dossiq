@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\MandaatCheckServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -46,7 +47,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class MandaatCheckService {
+class MandaatCheckService implements MandaatCheckServiceInterface {
 	use SearchesObjects;
 
 	public const REDEN_NIET_BEVOEGD = 'non_competent';
@@ -282,6 +283,80 @@ class MandaatCheckService {
 			)
 		);
 	}//end activeRows()
+
+	/**
+	 * Whether an organisation holds a mandate that is active on the date.
+	 *
+	 * Active means status active and a validity window covering the date. The
+	 * register is read across organisations, because the question is asked
+	 * about a tenant from the admin's tenant page; only the yes or no leaves
+	 * this method. An unreadable register answers no.
+	 *
+	 * @param string            $organisation The organisation UUID.
+	 * @param DateTimeImmutable $date         The date.
+	 *
+	 * @return bool True when the organisation has an active mandate.
+	 *
+	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md#requirement-the-overview-reads-decisions-from-the-mandate-register
+	 */
+	public function hasActiveMandateFor(string $organisation, DateTimeImmutable $date): bool {
+		if (trim($organisation) === '') {
+			return false;
+		}
+
+		$store = $this->storeFor(schemaKey: 'mandaat_schema');
+		if ($store === null) {
+			return false;
+		}
+
+		[$objectService, $register, $schema] = $store;
+		try {
+			$rows = $this->searchObjectsAsArraysUnscoped(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['status' => 'active']
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq MandaatCheckService: mandate register could not be read for an organisation',
+				['organisation' => $organisation, 'exception' => $e->getMessage()]
+			);
+			return false;
+		}
+
+		$dateStr = $date->format('Y-m-d');
+		foreach ($rows as $row) {
+			if ((string)($row['status'] ?? '') === 'active'
+				&& self::organisationOf(row: $row) === $organisation
+				&& $this->isRowTemporallyValid(row: $row, dateStr: $dateStr) === true
+			) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end hasActiveMandateFor()
+
+	/**
+	 * The organisation that owns a row: its `@self` organisation, else its own field.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string The organisation UUID, or ''.
+	 */
+	private static function organisationOf(array $row): string {
+		$organisation = ($row['@self']['organisation'] ?? ($row['organisation'] ?? ''));
+		if (is_array($organisation) === true) {
+			$organisation = ($organisation['uuid'] ?? ($organisation['id'] ?? ''));
+		}
+
+		if (is_scalar($organisation) === false) {
+			return '';
+		}
+
+		return (string)$organisation;
+	}//end organisationOf()
 
 	/**
 	 * The object service, the register and one schema, or null when any is missing.

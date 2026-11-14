@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentWriteGateInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IUser;
@@ -41,7 +42,7 @@ use OCP\IUser;
  *
  * @spec openspec/specs/document-writes-need-every-case/spec.md
  */
-class DocumentWriteGate {
+class DocumentWriteGate implements DocumentWriteGateInterface {
 
 	/**
 	 * Constructor.

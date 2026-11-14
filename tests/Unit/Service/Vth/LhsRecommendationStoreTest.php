@@ -79,6 +79,7 @@ class LhsStoreObjectService {
  * The store reads and writes recommendations and reads the matrix, refusing loudly.
  *
  * @covers \OCA\Dossiq\Service\Vth\LhsRecommendationStore
+ * @uses   \OCA\Dossiq\Service\Support\ObjectArray
  *
  * @spec openspec/specs/enforcement-lhs/spec.md
  * @uses \OCA\Dossiq\Service\Support\ObjectArray

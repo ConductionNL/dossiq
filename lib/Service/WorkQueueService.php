@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\WorkQueueServiceInterface;
 use OCA\Dossiq\Service\Queue\CaseQueueSource;
 use OCA\Dossiq\Service\Queue\QueueCaseFacts;
 use OCA\Dossiq\Service\Queue\QueueScoringRun;
@@ -56,7 +57,7 @@ use Psr\Log\LoggerInterface;
  * scored is `Queue\QueueCaseFacts`. This class reads the cases and tasks,
  * ranks them, and counts the open work.
  */
-class WorkQueueService {
+class WorkQueueService implements WorkQueueServiceInterface {
 	use SearchesObjects;
 
 	/**

@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Mcp;
 
+use OCA\Dossiq\Kernel\Contracts\BeschikkingToolsInterface;
 use OCA\Dossiq\Service\BeschikkingService;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
@@ -40,7 +41,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-204-guard-enforcing-write-tools-one-per-action-on-the-owning-service
  */
-class BeschikkingTools {
+class BeschikkingTools implements BeschikkingToolsInterface {
 
 	use ToolEnvelopes;
 

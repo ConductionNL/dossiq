@@ -34,7 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Ai;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -172,8 +172,8 @@ class AiAuditLog {
 	 *                                                      or null when not configured.
 	 */
 	private function storage(): ?array {
-		$registerId = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		$schemaId = $this->appConfig->getValueString(Application::APP_ID, 'ai_audit_entry_schema', '');
+		$registerId = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
+		$schemaId = $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_audit_entry_schema', '');
 
 		if ($registerId === '' || $schemaId === '') {
 			$this->logger->warning('AI audit: register or schema ID not configured');

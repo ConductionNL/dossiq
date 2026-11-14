@@ -114,6 +114,9 @@ baseline-uncovered violations in *untouched* files; zero new ones introduced).
 
 ### AcController Decomposition (5 suppressions)
 
+Built 2026-11-13 (partial, branch quality/build-method-decomposition): the consumer lookups moved out of `AcController` into `lib/Controller/Support/ApplicatieDirectory.php` (requested clientId, token client_id for the refusal message, list by primary then extra clientId), beside the earlier `ApplicatieRules` and `ApplicatieRepresentation`. The controller's three class-level PHPMD suppressions (ExcessiveClassComplexity, CyclomaticComplexity, NPathComplexity) are gone with PHPMD green. Behaviour pinned by the unchanged `AcControllerCharacterisationTest` (35 tests, mapper call order included); new `ApplicatieDirectoryTest`. 038 to 040 stay open: there is no autorisatie-creation or scope-validation handler yet.
+
+
 - [ ] **TASK-DECOMP-038**: Extract `AcController/AutorisatieHandler.php` with scope validation, client verification, autorisatie creation (REQ-DECOMP-09a)
 - [ ] **TASK-DECOMP-039**: Create `ScopeValidator` with scope format, existence, combination rules (REQ-DECOMP-09c)
 - [ ] **TASK-DECOMP-040**: Update AcController to delegate to handler

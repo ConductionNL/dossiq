@@ -38,8 +38,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\CaseCaller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Cases\CaseSplitExecutor;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseSplitExecutorInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -63,8 +63,8 @@ class CaseSplitController extends Controller {
 	 *
 	 * @param string           $appName     The app name.
 	 * @param IRequest         $request     The request.
-	 * @param CaseSplitExecutor $splits    Carries out the plan CaseSplitPlan builds.
-	 * @param CaseAccessGuard  $accessGuard Per-case authorization, failing closed.
+	 * @param CaseSplitExecutorInterface $splits    Carries out the plan CaseSplitPlan builds.
+	 * @param CaseAccessGuardInterface  $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession     $userSession The session.
 	 * @param LoggerInterface  $logger      The logger.
 	 *
@@ -75,8 +75,8 @@ class CaseSplitController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseSplitExecutor $splits,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseSplitExecutorInterface $splits,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

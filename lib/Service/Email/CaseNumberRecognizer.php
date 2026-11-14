@@ -48,7 +48,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseNumberRecognizerInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -62,7 +63,7 @@ use Throwable;
  *
  * @spec openspec/specs/email-case-matching/spec.md
  */
-class CaseNumberRecognizer {
+class CaseNumberRecognizer implements CaseNumberRecognizerInterface {
 
 	use SearchesObjects;
 	use SuppressesWarnings;
@@ -78,13 +79,6 @@ class CaseNumberRecognizer {
 	 * @var string
 	 */
 	public const DEFAULT_PATTERN = '/(?<![\w-])(?:\[)?(?:[A-Z]{2,10}-)?((?:19|20)\d{2}-\d{4,6})(?:\])?(?![\w-])/u';
-
-	/**
-	 * App-config key for a configured recognizer. Empty means the default.
-	 *
-	 * @var string
-	 */
-	public const PATTERN_KEY = 'email_case_matching_pattern';
 
 	/**
 	 * Constructor.
@@ -165,7 +159,7 @@ class CaseNumberRecognizer {
 		if ($reason !== null) {
 			$this->logger->error(
 				'Dossiq: email case matching refused to run, the configured ' . self::PATTERN_KEY . ' is unusable: ' . $reason,
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}
@@ -260,7 +254,7 @@ class CaseNumberRecognizer {
 			if (count($hits) > 1) {
 				$this->logger->warning(
 					'Dossiq: a case number resolves to more than one case; the mail is linked to none of them',
-					['app' => Application::APP_ID, 'case' => $identifier, 'matches' => count($hits)]
+					['app' => AppIdentity::APP_ID, 'case' => $identifier, 'matches' => count($hits)]
 				);
 			}
 
@@ -278,7 +272,7 @@ class CaseNumberRecognizer {
 		if ($registerId <= 0 || $schemaId <= 0) {
 			$this->logger->warning(
 				'Dossiq: a matched case carries no numeric register or schema id; it is not linked rather than linked to id 0',
-				['app' => Application::APP_ID, 'case' => $identifier]
+				['app' => AppIdentity::APP_ID, 'case' => $identifier]
 			);
 			return null;
 		}
@@ -321,7 +315,7 @@ class CaseNumberRecognizer {
 				],
 			);
 		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: resolving a case number failed: ' . $e->getMessage(), ['app' => Application::APP_ID]);
+			$this->logger->warning('Dossiq: resolving a case number failed: ' . $e->getMessage(), ['app' => AppIdentity::APP_ID]);
 			return [];
 		}
 

@@ -31,6 +31,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -58,7 +59,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseDateNormaliser {
+class CaseDateNormaliser implements CaseDateNormaliserInterface {
 	/**
 	 * The zone used when neither the engine calendar nor the tenant answers.
 	 *

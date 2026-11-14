@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\SociaalDomein;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\FamilyPlanAccessInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Http;
 use OCP\IUserSession;
@@ -44,7 +45,7 @@ use OCP\IUserSession;
  *
  * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
  */
-class FamilyPlanAccess {
+class FamilyPlanAccess implements FamilyPlanAccessInterface {
 
 	/**
 	 * Constructor.

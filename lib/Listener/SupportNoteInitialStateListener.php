@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
@@ -83,7 +83,7 @@ class SupportNoteInitialStateListener implements IEventListener {
 	public function handle(Event $event): void {
 		if ($event instanceof BeforeTemplateRenderedEvent === false
 			|| $event->isLoggedIn() === false
-			|| $event->getResponse()->getApp() !== Application::APP_ID
+			|| $event->getResponse()->getApp() !== AppIdentity::APP_ID
 		) {
 			return;
 		}
@@ -98,9 +98,9 @@ class SupportNoteInitialStateListener implements IEventListener {
 	 */
 	private function shown(): bool {
 		try {
-			$value = $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, 'true');
+			$value = $this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, 'true');
 		} catch (AppConfigTypeConflictException $e) {
-			return $this->appConfig->getValueBool(Application::APP_ID, self::CONFIG_KEY, true);
+			return $this->appConfig->getValueBool(AppIdentity::APP_ID, self::CONFIG_KEY, true);
 		}
 
 		return in_array(strtolower(trim($value)), self::OFF, true) === false;

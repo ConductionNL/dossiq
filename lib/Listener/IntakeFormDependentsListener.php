@@ -27,11 +27,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Intake\BoundFormsCheck;
-use OCA\Dossiq\Service\Intake\IntakeFormBinding;
-use OCA\Dossiq\Service\Intake\IntakeFormBindings;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BoundFormsCheckInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeFormBindingInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeFormBindingsInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\OpenRegister\Event\FormDestinationDependentsEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -50,17 +50,17 @@ class IntakeFormDependentsListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService   $settingsService The configured case schema.
-	 * @param BoundFormsCheck    $check           Names a case type.
-	 * @param IntakeFormBindings $bindings        Lists the bound case types and takes a binding off.
-	 * @param IntakeFormBinding $binding         Reads a binding as a mapping.
+	 * @param SettingsServiceInterface   $settingsService The configured case schema.
+	 * @param BoundFormsCheckInterface    $check           Names a case type.
+	 * @param IntakeFormBindingsInterface $bindings        Lists the bound case types and takes a binding off.
+	 * @param IntakeFormBindingInterface $binding         Reads a binding as a mapping.
 	 * @param LoggerInterface   $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly BoundFormsCheck $check,
-		private readonly IntakeFormBindings $bindings,
-		private readonly IntakeFormBinding $binding,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly BoundFormsCheckInterface $check,
+		private readonly IntakeFormBindingsInterface $bindings,
+		private readonly IntakeFormBindingInterface $binding,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -75,7 +75,7 @@ class IntakeFormDependentsListener implements IEventListener {
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-publishing-a-case-type-must-re-check-the-forms-bound-to-it
 	 */
 	public function handle(Event $event): void {
-		$formClass = BoundFormsCheck::FORM_DEPENDENT;
+		$formClass = BoundFormsCheckInterface::FORM_DEPENDENT;
 		if (($event instanceof FormDestinationDependentsEvent) === false || class_exists($formClass) === false) {
 			return;
 		}
@@ -130,7 +130,7 @@ class IntakeFormDependentsListener implements IEventListener {
 		$caseTypeId = $names[0];
 		return new $formClass(
 			id: $caseTypeId,
-			app: Application::APP_ID,
+			app: AppIdentity::APP_ID,
 			title: $this->titleOf(caseType: $caseType),
 			author: $this->ownerOf(caseType: $caseType),
 			mapping: $this->binding->mappingFor(caseType: $caseType),

@@ -29,10 +29,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Controller\Support\JsonRequestBody;
-use OCA\Dossiq\Service\AdviceService;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AdviceServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -53,18 +53,18 @@ class AdviceController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The HTTP request
-	 * @param AdviceService $adviceService The advice service
+	 * @param AdviceServiceInterface $adviceService The advice service
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly AdviceService $adviceService,
+		private readonly AdviceServiceInterface $adviceService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -210,7 +210,7 @@ class AdviceController extends Controller {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Failed to create advice request for case ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['error' => 'Could not create advice request: ' . $e->getMessage()],

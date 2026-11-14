@@ -56,10 +56,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseEmailRepositoryInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
+use OCA\Dossiq\Kernel\Contracts\UnmatchedMailIntakeInterface;
 use OCA\Dossiq\Listener\Support\EventGetters;
-use OCA\Dossiq\Service\Email\CaseEmailRepository;
-use OCA\Dossiq\Service\Email\IntakeLog;
-use OCA\Dossiq\Service\Email\UnmatchedMailIntake;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\EventDispatcher\Event;
@@ -115,16 +115,16 @@ class MessageReceivedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseEmailRepository      $cases          Resolves a case reference and files the message.
-	 * @param UnmatchedMailIntake      $unmatched      The fallback rule, shared with the poller.
-	 * @param IntakeLog                $log            The per-message record, and the duplicate guard.
+	 * @param CaseEmailRepositoryInterface      $cases          Resolves a case reference and files the message.
+	 * @param UnmatchedMailIntakeInterface      $unmatched      The fallback rule, shared with the poller.
+	 * @param IntakeLogInterface                $log            The per-message record, and the duplicate guard.
 	 * @param LoggerInterface          $logger         Logger.
 	 * @param BackgroundServiceAccount $serviceAccount Writes for integriq's background work, which has no user.
 	 */
 	public function __construct(
-		private readonly CaseEmailRepository $cases,
-		private readonly UnmatchedMailIntake $unmatched,
-		private readonly IntakeLog $log,
+		private readonly CaseEmailRepositoryInterface $cases,
+		private readonly UnmatchedMailIntakeInterface $unmatched,
+		private readonly IntakeLogInterface $log,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
@@ -322,7 +322,7 @@ class MessageReceivedListener implements IEventListener {
 	 */
 	private function fileOnCase(MessageFiling $filing): void {
 		$this->file(caseId: $filing->caseId, message: $filing->message);
-		$filing->logOutcome = IntakeLog::OUTCOME_CASE;
+		$filing->logOutcome = IntakeLogInterface::OUTCOME_CASE;
 		$this->record(filing: $filing);
 	}//end fileOnCase()
 
@@ -344,7 +344,7 @@ class MessageReceivedListener implements IEventListener {
 	 */
 	private function decline(Event $event, MessageFiling $filing): void {
 		$filing->caseId = '';
-		$filing->logOutcome = IntakeLog::OUTCOME_INBOX;
+		$filing->logOutcome = IntakeLogInterface::OUTCOME_INBOX;
 		$filing->reason = $this->declineReason(reference: $filing->reference);
 		$this->record(filing: $filing);
 

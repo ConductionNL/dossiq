@@ -4,3 +4,5 @@
 - [x] 1.4 caseType.goalPrompt (caseType 1.45.0); both Woo request types set it
 - [x] 1.5 simple case page: case-goals record list in the Zaakplan card (tests/vitest/caseGoalsOnThePlan.spec.js, red first; needs nextcloud-vue feat/r34-case-goals-footer)
 - [ ] 2.1 Closing a case goal from the row (the existing close is under /api/family-plan-goals and has no case check; a case-scoped close is the next step)
+  - [x] 2.1a `POST /api/cases/{caseId}/goals/{goalId}/close` with the case update check first; a goal of another case or of a family plan only is not found (CasePlanGoals::closeOfCase; tests/Unit/Controller/CaseGoalControllerTest.php, tests/Unit/Service/SociaalDomein/CasePlanGoalTest.php)
+  - [ ] 2.1b The row's Close button on the case-goals record list: needs nextcloud-vue to hand a row action's dialog the row's id for its request URL (a `rowActions` open-modal resolves only the page's tokens today)

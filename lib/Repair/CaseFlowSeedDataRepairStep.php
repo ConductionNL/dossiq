@@ -40,7 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
@@ -68,7 +68,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService Settings and ObjectService bridge.
+	 * @param SettingsServiceInterface  $settingsService Settings and ObjectService bridge.
 	 * @param StatusTypeLookup $statuses        Reads a case type's statuses. REUSED rather
 	 *                                          than re-queried here: two readers of the
 	 *                                          same relationship drift, and this one is
@@ -84,7 +84,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 * @param CaseFlowSeedPhaseBackfill $phaseBackfill Which stored statuses still lack the seed's phase.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly StatusTypeLookup $statuses,
 		private readonly CaseFlowSeedIndex $index,
 		private readonly LoggerInterface $logger,

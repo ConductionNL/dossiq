@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Setup;
 
+use OCA\Dossiq\Kernel\Contracts\ActiveOrganisationProfileInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -39,21 +40,7 @@ use Throwable;
  *
  * @spec openspec/specs/first-time-setup/spec.md
  */
-class ActiveOrganisationProfile {
-
-	/**
-	 * The wizard field that holds the organisation's name.
-	 *
-	 * @var string
-	 */
-	public const NAME_FIELD = 'organisation_name';
-
-	/**
-	 * The wizard field that holds the address of the organisation's logo.
-	 *
-	 * @var string
-	 */
-	public const LOGO_FIELD = 'organisation_logo';
+class ActiveOrganisationProfile implements ActiveOrganisationProfileInterface {
 
 	/**
 	 * Constructor.

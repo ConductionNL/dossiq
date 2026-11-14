@@ -34,7 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\MenuCaseTypesServiceInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\CaseType\SupersededCaseTypes;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -48,7 +49,7 @@ use OCP\IUserManager;
  *
  * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
  */
-class MenuCaseTypesService {
+class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 
 	use SearchesObjects;
 
@@ -340,7 +341,7 @@ class MenuCaseTypesService {
 	public function chosen(string $userId, array $visible): array {
 		$stored = $this->config->getUserValue(
 			userId: $userId,
-			appName: Application::APP_ID,
+			appName: AppIdentity::APP_ID,
 			key: self::USER_KEY,
 			default: ''
 		);

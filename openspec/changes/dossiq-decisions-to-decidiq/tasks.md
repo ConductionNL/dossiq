@@ -35,7 +35,7 @@
 > The SECOND bullet is unchanged and still blocked on decidiq.
 
 - [ ] Waiting on Q-dossiq-L6-4 (open, 10 Oct): OpenRegister's step carries the table inline and has no store for named tables, while the admin tab, `RetiredNodeTranslator` and the VTH LHS lookup still read stored rows. Retire the DMN stack (schema `decisionTable`, `DecisionTableService`, `DecisionTableController` + 5 `/api/decisions` routes, `EvaluateDecisionHandler`, `DossiqTxEvaluateDecisionNode`, `DecisionTablesTab.vue`, `MigrateLhsToDecisionTablesCommand`, `LhsMatrixDecisionTableMigrator`) and shrink the test's DMN allowlist to empty.
-- [ ] BLOCKED on decidiq: add `woo-decision` to `DecisionIntegrationService::ALLOWED_TYPES` (and its pinned schema enum homes), then repoint `WOODecisionService`'s raise through the delegation seam; the assembly and Art. 5.1/5.2 guard stay.
+- [x] (decidiq ships `woo-decision` in `DecisionTypeRegistry::DEFAULT_TYPES` since decision-types-as-configuration) add `woo-decision` to `DecisionIntegrationService::ALLOWED_TYPES` (and its pinned schema enum homes), then repoint `WOODecisionService`'s raise through the delegation seam; the assembly and Art. 5.1/5.2 guard stay.
 
 ## Phase 5: Ruben's calls (grey areas, design.md section 3)
 

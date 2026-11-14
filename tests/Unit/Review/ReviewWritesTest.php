@@ -160,4 +160,20 @@ class ReviewWritesTest extends TestCase {
 		$this->assertSame([], $this->shared);
 		$this->assertCount(1, $this->store->all('documentReview'));
 	}//end testARefusedWriteSharesNothing()
+	/**
+	 * A stored rule of the case reconciles the whole case and answers what the reconcile did.
+	 *
+	 * @return void
+	 */
+	public function testAStoredRuleReconcilesTheWholeCase(): void {
+		$access = $this->createMock(CaseReviewerAccess::class);
+		$access->expects($this->once())->method('reconcile')->with('case-x')
+			->willReturn(['status' => 'reconciled', 'granted' => 2, 'revoked' => 1, 'refused' => 0]);
+		$writes = new ReviewWrites(
+			reviews: $this->createMock(DocumentRelevance::class),
+			reviewerAccess: $access,
+		);
+
+		$this->assertSame(['status' => 'reconciled', 'granted' => 2, 'revoked' => 1, 'refused' => 0], $writes->ruleStored(caseId: 'case-x'));
+	}//end testAStoredRuleReconcilesTheWholeCase()
 }//end class

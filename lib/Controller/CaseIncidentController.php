@@ -39,8 +39,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\CaseCaller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Cases\IncidentStore;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\IncidentStoreInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -63,8 +63,8 @@ class CaseIncidentController extends Controller {
 	 *
 	 * @param string          $appName     The app name.
 	 * @param IRequest        $request     The request.
-	 * @param IncidentStore   $incidents   The dated events inside a case.
-	 * @param CaseAccessGuard $accessGuard Per-case authorization, failing closed.
+	 * @param IncidentStoreInterface   $incidents   The dated events inside a case.
+	 * @param CaseAccessGuardInterface $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession    $userSession The session.
 	 * @param LoggerInterface $logger      The logger.
 	 *
@@ -75,8 +75,8 @@ class CaseIncidentController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly IncidentStore $incidents,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly IncidentStoreInterface $incidents,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

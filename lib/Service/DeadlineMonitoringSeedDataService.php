@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\DeadlineMonitoringSeedDataServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -41,7 +42,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
-class DeadlineMonitoringSeedDataService {
+class DeadlineMonitoringSeedDataService implements DeadlineMonitoringSeedDataServiceInterface {
 	use SearchesObjects;
 
 	/**

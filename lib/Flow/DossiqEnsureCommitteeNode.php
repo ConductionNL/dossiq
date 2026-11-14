@@ -16,8 +16,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Flow;
 
-use OCA\Dossiq\Service\Bezwaar\CommitteeDelegationService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CommitteeDelegationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCP\IL10N;
@@ -70,8 +70,8 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
     /**
      * Constructor.
      *
-     * @param CommitteeDelegationService $delegation Raises the body in the decision app.
-     * @param SettingsService            $settings   Resolves OpenRegister and the schema slugs.
+     * @param CommitteeDelegationServiceInterface $delegation Raises the body in the decision app.
+     * @param SettingsServiceInterface            $settings   Resolves OpenRegister and the schema slugs.
      * @param IL10N                      $l10n       The localisation service.
      * @param LoggerInterface            $logger     The logger.
      *
@@ -80,8 +80,8 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
      * @spec openspec/changes/migrate-committees-to-decidiq/specs/migrate-committees-to-decidiq/spec.md
      */
     public function __construct(
-        private readonly CommitteeDelegationService $delegation,
-        private readonly SettingsService $settings,
+        private readonly CommitteeDelegationServiceInterface $delegation,
+        private readonly SettingsServiceInterface $settings,
         private readonly IL10N $l10n,
         private readonly LoggerInterface $logger,
     ) {

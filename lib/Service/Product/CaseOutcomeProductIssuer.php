@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Product;
 
+use OCA\Dossiq\Kernel\Contracts\CaseOutcomeProductIssuerInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-10-30-portal-permits-as-held-products/tasks.md#2.1
  */
-class CaseOutcomeProductIssuer {
+class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 	use SearchesObjects;
 
 	/**

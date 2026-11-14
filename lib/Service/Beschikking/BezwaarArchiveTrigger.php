@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
+use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTriggerInterface;
 use OCA\Dossiq\Service\BeschikkingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -46,15 +47,8 @@ use Throwable;
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class BezwaarArchiveTrigger {
+class BezwaarArchiveTrigger implements BezwaarArchiveTriggerInterface {
 	use SearchesObjects;
-
-	/**
-	 * The config key naming the bezwaarTrigger schema.
-	 *
-	 * @var string
-	 */
-	public const SCHEMA_CONFIG_KEY = 'bezwaar_trigger_schema';
 
 	/**
 	 * Outcome: the beschikking was archived and the trigger switched off.

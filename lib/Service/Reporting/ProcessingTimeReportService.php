@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Reporting;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\ProcessingTimeReportServiceInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
 use OCA\Dossiq\Service\Support\LanguageMapText;
@@ -41,22 +42,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
-class ProcessingTimeReportService {
-
-	/**
-	 * The blocks a `view` may name.
-	 *
-	 * @var string[]
-	 */
-	public const VIEWS = ['sla', 'distribution', 'trend', 'throughput', 'atRisk', 'breakdown'];
-
-	/**
-	 * The remaining share of the target at or below which an open record is
-	 * listed as at risk, unless the request names another.
-	 *
-	 * @var float
-	 */
-	public const DEFAULT_THRESHOLD = 0.25;
+class ProcessingTimeReportService implements ProcessingTimeReportServiceInterface {
 
 	/**
 	 * Constructor.

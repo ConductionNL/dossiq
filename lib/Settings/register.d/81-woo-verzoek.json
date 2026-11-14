@@ -169,6 +169,12 @@
               "assigneeMay": "update"
             },
             {
+              "schemaKey": "stopping_rule_schema",
+              "caseField": "case",
+              "readers": "assignee",
+              "assigneeMay": "update"
+            },
+            {
               "schemaKey": "document_review_schema",
               "caseField": "case",
               "readers": "own",

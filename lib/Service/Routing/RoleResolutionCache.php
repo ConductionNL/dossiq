@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Routing;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\ICache;
 use OCP\ICacheFactory;
 
@@ -67,7 +67,7 @@ class RoleResolutionCache {
 	 * @param ICacheFactory $cacheFactory Cache factory.
 	 */
 	public function __construct(ICacheFactory $cacheFactory) {
-		$this->cache = $cacheFactory->createLocal(Application::APP_ID . '_routing');
+		$this->cache = $cacheFactory->createLocal(AppIdentity::APP_ID . '_routing');
 	}//end __construct()
 
 	/**

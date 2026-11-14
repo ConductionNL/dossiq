@@ -24,12 +24,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Settings;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\QueueUrgencySettingsInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Prerequisites;
-use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCA\Dossiq\Service\CaseDefinition\PackageAdminTabs;
-use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
@@ -51,16 +51,16 @@ class AdminSettings implements IDelegatedSettings {
 	 *
 	 * @param IAppManager $appManager The app manager.
 	 * @param IInitialState $initialState The initial state service.
-	 * @param SettingsService $settingsService Reads the stored config values.
-	 * @param QueueUrgencySettings $queueUrgency The queue thresholds and weights.
+	 * @param SettingsServiceInterface $settingsService Reads the stored config values.
+	 * @param QueueUrgencySettingsInterface $queueUrgency The queue thresholds and weights.
 	 * @param ServerVersion        $serverVersion The Nextcloud this instance runs.
 	 * @param PackageAdminTabs     $packageTabs   The installed packages that declare an admin tab.
 	 */
 	public function __construct(
 		private IAppManager $appManager,
 		private IInitialState $initialState,
-		private SettingsService $settingsService,
-		private QueueUrgencySettings $queueUrgency,
+		private SettingsServiceInterface $settingsService,
+		private QueueUrgencySettingsInterface $queueUrgency,
 		private ServerVersion $serverVersion,
 		private PackageAdminTabs $packageTabs,
 	) {
@@ -83,7 +83,7 @@ class AdminSettings implements IDelegatedSettings {
 	 * @spec openspec/changes/vth-cases-run-end-to-end
 	 */
 	public function getForm(): TemplateResponse {
-		$version = $this->appManager->getAppVersion(appId: Application::APP_ID);
+		$version = $this->appManager->getAppVersion(appId: AppIdentity::APP_ID);
 
 		$this->initialState->provideInitialState('version', $version);
 		// What this instance actually has, read at page load and never cached.
@@ -149,7 +149,7 @@ class AdminSettings implements IDelegatedSettings {
 		);
 
 		return new TemplateResponse(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'settings/admin',
 			[]
 		);
