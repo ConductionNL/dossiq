@@ -116,13 +116,20 @@ class DocumentAccessExceptionRule implements DocumentAccessExceptionRuleInterfac
 			return true;
 		}
 
-		try {
-			$groups = $this->groupManager->getUserGroupIds($user);
-		} catch (Throwable $e) {
-			$groups = [];
-		}
+		return $this->admitsByGroupOrCase(user: $user, record: $record, exception: $exception);
+	}//end admits()
 
-		if (array_intersect(array_map('strval', $groups), $exception['groups']) !== []) {
+	/**
+	 * Whether the user is in a group the exception names, or handles a case the document is on.
+	 *
+	 * @param IUser                $user      The user.
+	 * @param array<string, mixed> $record    The document record.
+	 * @param array<string, mixed> $exception The record's access exception.
+	 *
+	 * @return bool
+	 */
+	private function admitsByGroupOrCase(IUser $user, array $record, array $exception): bool {
+		if (array_intersect(array_map('strval', $this->groupIdsOf(user: $user)), $exception['groups']) !== []) {
 			return true;
 		}
 
@@ -132,7 +139,24 @@ class DocumentAccessExceptionRule implements DocumentAccessExceptionRuleInterfac
 		}
 
 		return $this->handlesACaseOf(user: $user, documentId: $documentId);
-	}//end admits()
+	}//end admitsByGroupOrCase()
+
+	/**
+	 * The user's group ids, none when they cannot be read.
+	 *
+	 * @param IUser $user The user.
+	 *
+	 * @return array<int, string>
+	 */
+	private function groupIdsOf(IUser $user): array {
+		try {
+			$groups = $this->groupManager->getUserGroupIds($user);
+		} catch (Throwable $e) {
+			$groups = [];
+		}
+
+		return $groups;
+	}//end groupIdsOf()
 
 	/**
 	 * Whether a user may change one of the cases a document is on.
