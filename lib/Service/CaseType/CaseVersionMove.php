@@ -303,6 +303,22 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function assertSameChain(string $sourceId, string $targetId): void {
+		$this->assertTargetNamed(sourceId: $sourceId, targetId: $targetId);
+		$this->assertNotItself(sourceId: $sourceId, targetId: $targetId);
+		$this->assertOnChain(sourceId: $sourceId, targetId: $targetId);
+	}//end assertSameChain()
+
+	/**
+	 * Refuse a move that names no target.
+	 *
+	 * @param string $sourceId The case's current case type version id.
+	 * @param string $targetId The version to move to.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When either version is missing.
+	 */
+	private function assertTargetNamed(string $sourceId, string $targetId): void {
 		if ($sourceId === '' || $targetId === '') {
 			throw new RefusedException(
 				rule: 'version-move-target-missing',
@@ -310,7 +326,19 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end assertTargetNamed()
 
+	/**
+	 * Refuse a move to the version the case is already on.
+	 *
+	 * @param string $sourceId The case's current case type version id.
+	 * @param string $targetId The version to move to.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the target is the same version.
+	 */
+	private function assertNotItself(string $sourceId, string $targetId): void {
 		if ($sourceId === $targetId) {
 			throw new RefusedException(
 				rule: 'version-move-to-itself',
@@ -318,7 +346,19 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end assertNotItself()
 
+	/**
+	 * Refuse a target that is not a version of the case's own case type.
+	 *
+	 * @param string $sourceId The case's current case type version id.
+	 * @param string $targetId The version to move to.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the target is another case type.
+	 */
+	private function assertOnChain(string $sourceId, string $targetId): void {
 		foreach ($this->chain->versionsOf(caseTypeId: $sourceId) as $entry) {
 			if ($entry['id'] === $targetId) {
 				return;
@@ -330,7 +370,7 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 			sentence: 'That is a different case type, not another version of this one. Changing a case\'s type is a rebind and is not this act.',
 			status: RefusedException::STATUS_UNPROCESSABLE,
 		);
-	}//end assertSameChain()
+	}//end assertOnChain()
 
 	/**
 	 * Pin the case to the target version's own workflow template.

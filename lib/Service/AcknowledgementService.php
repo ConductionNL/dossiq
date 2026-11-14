@@ -830,7 +830,7 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
 
-		if ($objectService === null || $register === '' || $schema === '') {
+		if ($this->isConfigured(objectService: $objectService, register: $register, schema: $schema) === false) {
 			$this->logger->error(
 				'Dossiq acknowledgement: the register is not configured, so case {case} records nothing',
 				['case' => $caseId],
@@ -854,4 +854,17 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 			);
 		}
 	}//end write()
+
+	/**
+	 * Whether the object service, register and case schema are all there to write to.
+	 *
+	 * @param object|null $objectService OpenRegister's object service.
+	 * @param string      $register      The register id.
+	 * @param string      $schema        The case schema id.
+	 *
+	 * @return bool
+	 */
+	private function isConfigured(?object $objectService, string $register, string $schema): bool {
+		return $objectService !== null && $register !== '' && $schema !== '';
+	}//end isConfigured()
 }//end class
