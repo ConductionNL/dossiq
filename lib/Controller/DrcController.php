@@ -1985,7 +1985,9 @@ class DrcController extends ZgwController {
 		}
 
 		try {
-			return $this->receiveChunk(uuid: $uuid, objectService: $objectService, mappingConfig: $mappingConfig);
+			return $this->receiveChunk(
+				document: new EioDocument(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid)
+			);
 		} catch (\Throwable $e) {
 			return $this->loggedBadRequest(e: $e, logPrefix: 'DRC chunk upload error: ');
 		}//end try
@@ -2033,17 +2035,18 @@ class DrcController extends ZgwController {
 	/**
 	 * Check a chunk against the document's pending upload, read it from the body and store it.
 	 *
-	 * @param string $uuid The document UUID.
-	 * @param object $objectService The object service.
-	 * @param array $mappingConfig The EIO mapping.
+	 * @param EioDocument $document The document, its object service and its mapping.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @throws \Throwable When finding, storing or merging fails.
 	 */
-	private function receiveChunk(string $uuid, object $objectService, array $mappingConfig): JSONResponse {
+	private function receiveChunk(EioDocument $document): JSONResponse {
+		$uuid = $document->uuid;
+		$mappingConfig = $document->mappingConfig;
+
 		// Find the EIO object.
-		$existing = $objectService->find(
+		$existing = $document->objectService->find(
 			$uuid,
 			register: $mappingConfig['sourceRegister'],
 			schema: $mappingConfig['sourceSchema']
