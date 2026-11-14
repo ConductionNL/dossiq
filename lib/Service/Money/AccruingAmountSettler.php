@@ -82,12 +82,7 @@ class AccruingAmountSettler implements AccruingAmountSettlerInterface {
 		string $amountField = 'cumulativeAmount',
 		string $lockField = 'definitiveAmount',
 	): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue($schemaConfigKey);
-		if ($objectService === null || $register === '' || $schema === '') {
-			throw new RuntimeException('The store for ' . $schemaConfigKey . ' is not configured');
-		}
+		[$objectService, $register, $schema] = $this->storeFor(schemaConfigKey: $schemaConfigKey);
 
 		$row = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
 		if ($row === null) {
@@ -106,4 +101,24 @@ class AccruingAmountSettler implements AccruingAmountSettlerInterface {
 
 		return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $stopped) ?? $stopped);
 	}//end settle()
+
+	/**
+	 * The object service, register and schema of the store a config key names.
+	 *
+	 * @param string $schemaConfigKey The app config key naming the schema.
+	 *
+	 * @return array{0: object, 1: string, 2: string} The object service, register and schema.
+	 *
+	 * @throws RuntimeException When the store is not configured.
+	 */
+	private function storeFor(string $schemaConfigKey): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue($schemaConfigKey);
+		if ($objectService === null || $register === '' || $schema === '') {
+			throw new RuntimeException('The store for ' . $schemaConfigKey . ' is not configured');
+		}
+
+		return [$objectService, $register, $schema];
+	}//end storeFor()
 }//end class
