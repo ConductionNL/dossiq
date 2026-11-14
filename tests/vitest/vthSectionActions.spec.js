@@ -31,7 +31,8 @@ describe('the VTH section header actions', () => {
 	})
 
 	it('opens the checklist editor from the header, and the tab leaves its own button out', () => {
-		expect(admin).toContain('$refs.checklists.openEditor(null)')
+		expect(admin).toContain('@click="openNewChecklist"')
+		expect(admin).toMatch(/openNewChecklist\(\) \{[\s\S]*?openEditor\(null\)/)
 		expect(admin).toContain('<ChecklistTemplatesTab v-if="storesReady" ref="checklists" :hideAddButton="true" />')
 		expect(checklists).toContain('<div v-if="!hideAddButton" class="checklists-tab__header">')
 		expect(nl['Add checklist']).toBe('Checklist toevoegen')

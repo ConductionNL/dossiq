@@ -52,6 +52,8 @@ const t = (app, text, vars = {}) => text.replace(/\{(\w+)\}/g, (m, k) => (k in v
  */
 function page() {
 	const ctx = { ...AdminRoot.data.call({}), t }
+	// The VTH package is installed and declares its tab.
+	ctx.packageTabs = [{ id: 'vth', title: 'VTH', version: '1.4.0', lists: {} }]
 	for (const [name, def] of Object.entries(AdminRoot.computed)) {
 		Object.defineProperty(ctx, name, { get: () => def.call(ctx), configurable: true })
 	}
@@ -79,6 +81,26 @@ describe('tabs and titles', () => {
 		p.tabCounts = { vth: 3, mail: 'x' }
 		expect(p.adminTabs.find((tab) => tab.id === 'vth').count).toBe(3)
 		expect('count' in p.adminTabs.find((tab) => tab.id === 'mail')).toBe(false)
+	})
+
+	it('draws a tab per installed package that declares one, and none for a package not installed', () => {
+		const p = page()
+		p.packageTabs = [{ id: 'vth', title: 'VTH', lists: {} }, { id: 'jeugdwet', title: 'Jeugd', lists: {} }]
+		expect(p.adminTabs.map((tab) => tab.id)).toEqual(['general', 'system', 'integrations', 'mail', 'map-layers', 'vth', 'jeugdwet', 'substitution', 'advanced'])
+		expect(p.adminTabs.find((tab) => tab.id === 'jeugdwet').label).toBe('Jeugd')
+		p.packageTabs = []
+		expect(p.adminTabs.map((tab) => tab.id)).not.toContain('vth')
+		expect(p.adminTabs.map((tab) => tab.id)).not.toContain('subsidie')
+	})
+
+	it('opens the checklist editor on a new checklist from the package tab', () => {
+		const p = page()
+		const openEditor = vi.fn()
+		p.$refs = { checklists: [{ openEditor }] }
+		p.openNewChecklist()
+		expect(openEditor).toHaveBeenCalledWith(null)
+		p.$refs = {}
+		expect(() => p.openNewChecklist()).not.toThrow()
 	})
 
 	it('titles the page after the tab, keeping an abbreviation in capitals', () => {

@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
+use OCA\Dossiq\Service\CaseDefinition\PackageAdminTabs;
 use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -98,8 +99,23 @@ class AdminSettingsFormTest extends TestCase {
 			settingsService: $settingsService,
 			queueUrgency: new QueueUrgencySettings(settings: $settingsService),
 			serverVersion: $serverVersion,
+			packageTabs: $this->packageTabs(),
 		);
 	}//end form()
+
+	/**
+	 * The installed package tabs the form reads: one package with a tab.
+	 *
+	 * @return PackageAdminTabs
+	 */
+	private function packageTabs(): PackageAdminTabs {
+		$tabs = $this->createMock(PackageAdminTabs::class);
+		$tabs->method('installed')->willReturn(
+			[['id' => 'vth', 'version' => '1.4.0', 'title' => 'VTH', 'lists' => ['caseTypes' => [['id' => 'ct-1', 'title' => 'Sloopmelding', 'status' => '']]]]]
+		);
+
+		return $tabs;
+	}//end packageTabs()
 
 	/**
 	 * The form renders the admin template and provides every tab's state.
@@ -112,9 +128,12 @@ class AdminSettingsFormTest extends TestCase {
 		self::assertSame('settings/admin', $response->getTemplateName());
 		self::assertSame('dossiq', $response->getApp());
 		self::assertSame('1.4.2', $this->provided['version']);
-		foreach (['prerequisites', 'ownerApps', 'dependencyApps', 'publicationSettings', 'consultationSettings', 'mandaatSettings', 'queueUrgencySettings', 'menu_structure'] as $key) {
+		foreach (['prerequisites', 'ownerApps', 'dependencyApps', 'publicationSettings', 'consultationSettings', 'mandaatSettings', 'queueUrgencySettings', 'menu_structure', 'packageAdminTabs'] as $key) {
 			self::assertArrayHasKey($key, $this->provided, $key);
 		}
+
+		self::assertSame(['vth'], array_column($this->provided['packageAdminTabs'], 'id'));
+		self::assertSame('VTH', $this->provided['packageAdminTabs'][0]['title']);
 
 		self::assertSame(
 			['Openregister', 'Integriq', 'Filinq', 'Pipelinq', 'Portaliq', 'Humaniq'],

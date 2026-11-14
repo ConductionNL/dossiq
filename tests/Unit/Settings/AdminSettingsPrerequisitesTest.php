@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
+use OCA\Dossiq\Service\CaseDefinition\PackageAdminTabs;
 use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -60,6 +61,7 @@ class AdminSettingsPrerequisitesTest extends TestCase {
 			settingsService: $settingsService,
 			queueUrgency: new QueueUrgencySettings($settingsService),
 			serverVersion: $serverVersion,
+			packageTabs: $this->createMock(PackageAdminTabs::class),
 		);
 		$settings->getForm();
 
@@ -96,6 +98,7 @@ class AdminSettingsPrerequisitesTest extends TestCase {
 			settingsService: $settingsService,
 			queueUrgency: new QueueUrgencySettings(settings: $settingsService),
 			serverVersion: $this->serverVersion(major: 34),
+			packageTabs: $this->createMock(PackageAdminTabs::class),
 		);
 		$settings->getForm();
 

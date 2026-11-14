@@ -28,6 +28,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\QueueUrgencySettingsInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Prerequisites;
+use OCA\Dossiq\Service\CaseDefinition\PackageAdminTabs;
 use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
@@ -53,6 +54,7 @@ class AdminSettings implements IDelegatedSettings {
 	 * @param SettingsServiceInterface $settingsService Reads the stored config values.
 	 * @param QueueUrgencySettingsInterface $queueUrgency The queue thresholds and weights.
 	 * @param ServerVersion        $serverVersion The Nextcloud this instance runs.
+	 * @param PackageAdminTabs     $packageTabs   The installed packages that declare an admin tab.
 	 */
 	public function __construct(
 		private IAppManager $appManager,
@@ -60,6 +62,7 @@ class AdminSettings implements IDelegatedSettings {
 		private SettingsServiceInterface $settingsService,
 		private QueueUrgencySettingsInterface $queueUrgency,
 		private ServerVersion $serverVersion,
+		private PackageAdminTabs $packageTabs,
 	) {
 	}//end __construct()
 
@@ -77,6 +80,7 @@ class AdminSettings implements IDelegatedSettings {
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
 	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/changes/vth-cases-run-end-to-end
 	 */
 	public function getForm(): TemplateResponse {
 		$version = $this->appManager->getAppVersion(appId: AppIdentity::APP_ID);
@@ -164,6 +168,14 @@ class AdminSettings implements IDelegatedSettings {
 		$this->initialState->provideInitialState(
 			MenuStructure::KEY,
 			(new MenuStructure())->normalise(stored: $this->settingsService->getConfigValue(MenuStructure::KEY, ''))
+		);
+
+		// One tab per installed package that declares one, with the ids of
+		// what it installed, read from the shipped-set ledger. This page is
+		// admin-only, so the list never reaches anybody else.
+		$this->initialState->provideInitialState(
+			'packageAdminTabs',
+			$this->packageTabs->installed()
 		);
 	}//end provideTabState()
 

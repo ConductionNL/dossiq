@@ -9,6 +9,12 @@
  * package is valid is {@see PackageValidator}'s question, and whether it may
  * be installed here is {@see PackageInstaller}'s.
  *
+ * The manifest keys are `id`, `title`, `summary`, `version`, `requires`,
+ * `parts`, `install` and `description`, checked by {@see ShippedPackageRules},
+ * plus the optional `adminTab` ({@see PackageAdminTab}): a package may declare
+ * a tab of its own in the app's Nextcloud admin settings, with a `title` and
+ * the `lists` of configuration it shows.
+ *
  * @category Service
  * @package  OCA\Dossiq\Service\CaseDefinition
  *
