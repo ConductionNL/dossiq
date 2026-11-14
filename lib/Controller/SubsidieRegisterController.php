@@ -102,10 +102,28 @@ class SubsidieRegisterController extends Controller {
 			return [];
 		}
 
+		$entries = [];
+		foreach ($this->grantedDecisions(objectService: $objectService, config: $config) as $decision) {
+			$entry = $this->feedEntryOf(objectService: $objectService, config: $config, decision: $decision);
+			if ($entry !== null) {
+				$entries[] = $entry;
+			}
+		}
+
+		return $entries;
+	}//end collectEntries()
+
+	/**
+	 * The granted beschikkingen, [] when they cannot be read.
+	 *
+	 * @param object $objectService The ObjectService.
+	 * @param array{register: string, beschikkingSchema: string, aanvraagSchema: string, regelingSchema: string} $config The feed configuration.
+	 *
+	 * @return iterable<mixed> The granted beschikkingen.
+	 */
+	private function grantedDecisions(object $objectService, array $config): iterable {
 		$register = $config['register'];
 		$decisionSchema = $config['beschikkingSchema'];
-		$requestSchema = $config['aanvraagSchema'];
-		$regelingSchema = $config['regelingSchema'];
 
 		try {
 			$beschikkingen = $objectService->findAll(
@@ -115,26 +133,38 @@ class SubsidieRegisterController extends Controller {
 			return [];
 		}
 
-		$entries = [];
-		foreach ($beschikkingen as $decision) {
-			$decision = $this->toArray(value: $decision);
-			$requestId = (string)($decision['subsidieaanvraag'] ?? '');
-			if ($requestId === '') {
-				continue;
-			}
+		return $beschikkingen;
+	}//end grantedDecisions()
 
-			$request = $this->safeFind(objectService: $objectService, register: $register, schema: $requestSchema, id: $requestId);
-			$regeling = [];
-			$regelingId = (string)($request['subsidyScheme'] ?? '');
-			if ($regelingId !== '') {
-				$regeling = $this->safeFind(objectService: $objectService, register: $register, schema: $regelingSchema, id: $regelingId);
-			}
+	/**
+	 * The feed entry of one beschikking with its aanvraag and regeling, or null when it names no aanvraag.
+	 *
+	 * @param object $objectService The ObjectService.
+	 * @param array{register: string, beschikkingSchema: string, aanvraagSchema: string, regelingSchema: string} $config The feed configuration.
+	 * @param mixed $decision The beschikking.
+	 *
+	 * @return array|null The feed entry.
+	 */
+	private function feedEntryOf(object $objectService, array $config, mixed $decision): ?array {
+		$register = $config['register'];
+		$requestSchema = $config['aanvraagSchema'];
+		$regelingSchema = $config['regelingSchema'];
 
-			$entries[] = $this->exporter->toFeedEntry($request, $regeling, $decision);
-		}//end foreach
+		$decision = $this->toArray(value: $decision);
+		$requestId = (string)($decision['subsidieaanvraag'] ?? '');
+		if ($requestId === '') {
+			return null;
+		}
 
-		return $entries;
-	}//end collectEntries()
+		$request = $this->safeFind(objectService: $objectService, register: $register, schema: $requestSchema, id: $requestId);
+		$regeling = [];
+		$regelingId = (string)($request['subsidyScheme'] ?? '');
+		if ($regelingId !== '') {
+			$regeling = $this->safeFind(objectService: $objectService, register: $register, schema: $regelingSchema, id: $regelingId);
+		}
+
+		return $this->exporter->toFeedEntry($request, $regeling, $decision);
+	}//end feedEntryOf()
 
 	/**
 	 * Resolve and validate the register/schema configuration for the feed.
