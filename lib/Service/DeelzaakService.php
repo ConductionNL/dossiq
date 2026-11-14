@@ -171,6 +171,20 @@ class DeelzaakService implements DeelzaakServiceInterface {
 			],
 		);
 
+		return $this->tallyByParent(rows: $rows, counts: $counts);
+	}//end getSubCaseCounts()
+
+	/**
+	 * Add each sub-case row to the bucket of its parent.
+	 *
+	 * @param array<int, array<string, mixed>> $rows   The sub-case rows.
+	 * @param array<string, int>               $counts The buckets, keyed by parent UUID.
+	 *
+	 * @return array<string, int>
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T03
+	 */
+	private function tallyByParent(array $rows, array $counts): array {
 		foreach ($rows as $row) {
 			$parent = (string)($row['parentCase'] ?? '');
 			if ($parent !== '' && isset($counts[$parent]) === true) {
@@ -179,7 +193,7 @@ class DeelzaakService implements DeelzaakServiceInterface {
 		}
 
 		return $counts;
-	}//end getSubCaseCounts()
+	}//end tallyByParent()
 
 	/**
 	 * Seed a zero count for every usable parent UUID, dropping non-string and empty entries.
