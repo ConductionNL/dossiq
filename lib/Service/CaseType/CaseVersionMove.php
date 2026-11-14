@@ -214,11 +214,13 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 		$preview = $this->movablePreview(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId);
 
 		$this->applyMove(
-			caseId: $caseId,
-			targetCaseTypeId: $targetCaseTypeId,
-			preview: $preview,
-			reason: $reason,
-			actorUid: $actorUid,
+			act: new VersionMoveAct(
+				caseId: $caseId,
+				targetCaseTypeId: $targetCaseTypeId,
+				preview: $preview,
+				reason: $reason,
+				actorUid: $actorUid,
+			)
 		);
 
 		$preview['moved'] = true;
@@ -256,11 +258,7 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 	/**
 	 * Write the case onto the target version, with its status, template and journal entry.
 	 *
-	 * @param string               $caseId           The case uuid.
-	 * @param string               $targetCaseTypeId The version to move onto.
-	 * @param array<string, mixed> $preview          The preview being applied.
-	 * @param string               $reason           Why the case is being moved.
-	 * @param string               $actorUid         Who is moving it.
+	 * @param VersionMoveAct $act The case, target version, preview, reason and actor.
 	 *
 	 * @return void
 	 *
@@ -268,20 +266,16 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
-	private function applyMove(string $caseId, string $targetCaseTypeId, array $preview, string $reason, string $actorUid): void {
+	private function applyMove(VersionMoveAct $act): void {
+		$caseId = $act->caseId;
+		$targetCaseTypeId = $act->targetCaseTypeId;
 		$case = $this->readCase(caseId: $caseId);
 		$sourceId = $this->store->referenceId(value: ($case['caseType'] ?? ''));
 
 		$case['caseType'] = $targetCaseTypeId;
-		$case['status'] = (string)$preview['status']['targetStatusId'];
+		$case['status'] = (string)$act->preview['status']['targetStatusId'];
 		$case = $this->rebindTemplate(case: $case, targetCaseTypeId: $targetCaseTypeId);
-		$case = $this->journal(
-			case: $case,
-			sourceId: $sourceId,
-			preview: $preview,
-			reason: $reason,
-			actorUid: $actorUid
-		);
+		$case = $this->journal(case: $case, sourceId: $sourceId, act: $act);
 
 		$this->write(caseId: $caseId, case: $case);
 
@@ -291,7 +285,7 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 				'case' => $caseId,
 				'from' => $sourceId,
 				'to' => $targetCaseTypeId,
-				'actor' => $actorUid,
+				'actor' => $act->actorUid,
 			]
 		);
 	}//end applyMove()
@@ -367,15 +361,14 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 	 *
 	 * @param array<string, mixed> $case     The case being moved.
 	 * @param string               $sourceId The version it is leaving.
-	 * @param array<string, mixed> $preview  What the move changes.
-	 * @param string               $reason   Why it is moving.
-	 * @param string               $actorUid Who moved it.
+	 * @param VersionMoveAct       $act      What the move changes, why, and who moved it.
 	 *
 	 * @return array<string, mixed> The case, with the entry appended.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
-	private function journal(array $case, string $sourceId, array $preview, string $reason, string $actorUid): array {
+	private function journal(array $case, string $sourceId, VersionMoveAct $act): array {
+		$preview = $act->preview;
 		$entries = [];
 		$raw = ($case['activity'] ?? null);
 		if (is_string($raw) === true && trim($raw) !== '') {
@@ -397,8 +390,8 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 			'toVersion' => ($preview['to']['version'] ?? null),
 			'status' => (string)$preview['status']['to'],
 			'fieldsRemoved' => $preview['fields']['removed'],
-			'reason' => $reason,
-			'actor' => $actorUid,
+			'reason' => $act->reason,
+			'actor' => $act->actorUid,
 			'timestamp' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 		];
 
