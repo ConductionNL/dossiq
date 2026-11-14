@@ -216,40 +216,22 @@ class WorkflowDeployer {
 	 *
 	 * @return array{kind: string, id: string, message: string} What became of it.
 	 */
-	private function deployWorkflow(
-		object $objectService,
-		string $register,
-		string $schema,
-		string $name,
-		string|false $content,
-		string $strategy,
-	): array {
+	private function deployWorkflow(object $objectService, string $register, string $schema, string $name,
+		string|false $content, string $strategy): array {
 		$template = $this->decodedTemplate(content: $content);
 		if (is_array($template) === false) {
 			return $this->unreadableTemplate(name: $name, content: $content);
 		}
 
 		$packageId = $this->existingId(row: $template);
-		$conflict = ($packageId !== '' && $this->holds(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $packageId
-		) === true);
+		$conflict = ($packageId !== '' && $this->holds(objectService: $objectService, register: $register, schema: $schema, id: $packageId) === true);
 
 		if ($conflict === true && $strategy === self::STRATEGY_SKIP) {
 			return ['kind' => 'skipped', 'id' => $packageId, 'message' => ''];
 		}
 
-		return $this->storeTemplate(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			name: $name,
-			template: $template,
-			packageId: $packageId,
-			conflict: $conflict,
-		);
+		return $this->storeTemplate(objectService: $objectService, register: $register, schema: $schema, name: $name,
+			template: $template, packageId: $packageId, conflict: $conflict);
 	}//end deployWorkflow()
 
 	/**
@@ -300,34 +282,14 @@ class WorkflowDeployer {
 	 *
 	 * @return array{kind: string, id: string, message: string} What became of it.
 	 */
-	private function storeTemplate(
-		object $objectService,
-		string $register,
-		string $schema,
-		string $name,
-		array $template,
-		string $packageId,
-		bool $conflict,
-	): array {
+	private function storeTemplate(object $objectService, string $register, string $schema, string $name,
+		array $template, string $packageId, bool $conflict): array {
 		try {
-			$templateUuid = null;
-			if ($packageId !== '') {
-				$templateUuid = $packageId;
-			}
-
-			$stored = $objectService->saveObject(
-				$this->withoutMetadata(row: $template),
-				register: $register,
-				schema: $schema,
-				uuid: $templateUuid
-			);
+			$templateUuid = self::templateUuid(packageId: $packageId);
+			$stored = $objectService->saveObject($this->withoutMetadata(row: $template), register: $register, schema: $schema, uuid: $templateUuid);
 		} catch (\Throwable $e) {
-			return [
-				'kind' => 'error',
-				'id' => '',
-				'message' => "Workflow '{$name}' could not be deployed: " . $e->getMessage(),
-			];
-		}//end try
+			return ['kind' => 'error', 'id' => '', 'message' => "Workflow '{$name}' could not be deployed: " . $e->getMessage()];
+		}
 
 		$id = $this->storedId(stored: $stored);
 		if ($conflict === true) {
@@ -336,6 +298,22 @@ class WorkflowDeployer {
 
 		return ['kind' => 'created', 'id' => $id, 'message' => ''];
 	}//end storeTemplate()
+
+	/**
+	 * The uuid a template is stored under: the package's id, or null for a new one.
+	 *
+	 * @param string $packageId The id the package gives it, or ''.
+	 *
+	 * @return string|null The uuid, or null.
+	 */
+	private static function templateUuid(string $packageId): ?string {
+		$templateUuid = null;
+		if ($packageId !== '') {
+			$templateUuid = $packageId;
+		}
+
+		return $templateUuid;
+	}//end templateUuid()
 
 	/**
 	 * What the workflow deployment amounts to, said in the caller's vocabulary.
