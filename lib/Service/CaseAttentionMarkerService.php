@@ -373,47 +373,74 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 
 		$raised = [];
 		foreach ($this->declarationsFor(caseTypeId: $caseTypeId) as $declaration) {
-			$condition = (string)$declaration['raiseWhen'];
-			$id = (string)$declaration['id'];
-
-			if ($this->conditions === null
-				|| $this->conditions->unanswerable(condition: $condition, context: $context) === true
-			) {
-				// The rows this condition reads were not fetched, so this save
-				// learnt nothing about it. Keep what was standing; clearing it
-				// would say the work was done on no evidence at all.
-				$kept = $this->keep(marker: $id, case: $case);
-				if ($kept !== null) {
-					$raised[] = $kept;
-				}
-
-				continue;
-			}
-
-			$reason = $this->conditions->reasonFor(
-				condition: $condition,
+			$marker = $this->markerFor(
+				declaration: $declaration,
 				case: $case,
 				now: $now,
-				context: $context
+				context: $context,
+				standing: $standing,
 			);
-
-			if ($reason === '') {
-				continue;
+			if ($marker !== null) {
+				$raised[] = $marker;
 			}
-
-			$raised[] = [
-				'marker' => $id,
-				'tab' => (string)$declaration['tab'],
-				'reason' => $reason,
-				// A marker that is still standing keeps the moment it FIRST
-				// became true. Restamping it on every save would make a
-				// three-week-old problem read as new on each edit.
-				'raisedAt' => ($standing[$id] ?? $now->format('c')),
-			];
 		}
 
 		return $raised;
 	}//end evaluate()
+
+	/**
+	 * The marker one declaration raises on this case, or null when it raises none.
+	 *
+	 * @param array<string, mixed>  $declaration The marker declaration.
+	 * @param array<string, mixed>  $case        The case being judged.
+	 * @param DateTimeImmutable     $now         Today, for the conditions that ask.
+	 * @param array<string, mixed>  $context     The related rows, from `contextFor()`.
+	 * @param array<string, string> $standing    The raisedAt of each standing marker, by id.
+	 *
+	 * @return array<string, mixed>|null The raised marker, or null.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function markerFor(
+		array $declaration,
+		array $case,
+		DateTimeImmutable $now,
+		array $context,
+		array $standing,
+	): ?array {
+		$condition = (string)$declaration['raiseWhen'];
+		$id = (string)$declaration['id'];
+
+		if ($this->conditions === null
+			|| $this->conditions->unanswerable(condition: $condition, context: $context) === true
+		) {
+			// The rows this condition reads were not fetched, so this save
+			// learnt nothing about it. Keep what was standing; clearing it
+			// would say the work was done on no evidence at all.
+			return $this->keep(marker: $id, case: $case);
+		}
+
+		$reason = $this->conditions->reasonFor(
+			condition: $condition,
+			case: $case,
+			now: $now,
+			context: $context
+		);
+
+		if ($reason === '') {
+			return null;
+		}
+
+		return [
+			'marker' => $id,
+			'tab' => (string)$declaration['tab'],
+			'reason' => $reason,
+			// A marker that is still standing keeps the moment it FIRST
+			// became true. Restamping it on every save would make a
+			// three-week-old problem read as new on each edit.
+			'raisedAt' => ($standing[$id] ?? $now->format('c')),
+		];
+	}//end markerFor()
 
 	/**
 	 * A marker already standing on the case, exactly as it stands.
