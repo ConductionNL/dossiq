@@ -178,18 +178,7 @@ class MilestoneStallTimer implements MilestoneStallTimerInterface {
 	 * @return array<int, array<string, mixed>> The escalation rules.
 	 */
 	private function escalationRules(): array {
-		return [
-			[
-				'trigger'        => 'slaBreached',
-				'offset'         => 0,
-				'offsetUnit'     => 'calendarDays',
-				'notifyRole'     => [],
-				'escalateToRole' => [],
-				'priority'       => 'normal',
-				'message'        => 'mijlpaal-vertraagd',
-				'openIncident'   => false,
-			],
-		];
+		return [FlowTimerEngine::rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'mijlpaal-vertraagd')];
 	}//end escalationRules()
 
 	/**
@@ -226,11 +215,6 @@ class MilestoneStallTimer implements MilestoneStallTimerInterface {
 	 * @return FlowTimerEngine
 	 */
 	private function timers(): FlowTimerEngine {
-		return new FlowTimerEngine(
-			settingsService: $this->settingsService,
-			logger: $this->logger,
-			owner: 'Dossiq milestone',
-			timer: 'stall timer'
-		);
+		return new FlowTimerEngine(settingsService: $this->settingsService, logger: $this->logger, owner: 'Dossiq milestone', timer: 'stall timer');
 	}//end timers()
 }//end class

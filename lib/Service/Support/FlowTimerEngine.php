@@ -138,6 +138,31 @@ final class FlowTimerEngine {
 	}//end cancel()
 
 	/**
+	 * One escalation rule of normal priority that notifies no role and opens no incident.
+	 *
+	 * @param string $trigger The trigger: slaBreached or preBreach.
+	 * @param int    $offset  The offset from the trigger.
+	 * @param string $unit    The unit of the offset.
+	 * @param string $message The message key.
+	 *
+	 * @return array<string, mixed> The rule.
+	 *
+	 * @spec exclude shared plumbing of the timer services; each timer carries its own spec
+	 */
+	public static function rule(string $trigger, int $offset, string $unit, string $message): array {
+		return [
+			'trigger'        => $trigger,
+			'offset'         => $offset,
+			'offsetUnit'     => $unit,
+			'notifyRole'     => [],
+			'escalateToRole' => [],
+			'priority'       => 'normal',
+			'message'        => $message,
+			'openIncident'   => false,
+		];
+	}//end rule()
+
+	/**
 	 * The engine, or null when OpenRegister does not ship it.
 	 *
 	 * @return object|null

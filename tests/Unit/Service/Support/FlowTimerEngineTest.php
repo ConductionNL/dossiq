@@ -143,4 +143,25 @@ final class FlowTimerEngineTest extends TestCase {
 		self::assertSame(FlowTimerEngine::UNAVAILABLE, $timers->arm(config: static fn (): array => ['title' => 'T'], logContext: ['case' => 'c1']));
 		self::assertSame(FlowTimerEngine::UNAVAILABLE, $timers->cancel(subjectUuid: 'c1', reason: 'r', logContext: ['case' => 'c1']));
 	}//end testRefusalIsLoggedAndUnavailable()
+
+	/**
+	 * A rule is of normal priority, notifies no role and opens no incident.
+	 *
+	 * @return void
+	 */
+	public function testRuleShape(): void {
+		self::assertSame(
+			[
+				'trigger'        => 'preBreach',
+				'offset'         => 5,
+				'offsetUnit'     => 'businessDays',
+				'notifyRole'     => [],
+				'escalateToRole' => [],
+				'priority'       => 'normal',
+				'message'        => 'm',
+				'openIncident'   => false,
+			],
+			FlowTimerEngine::rule(trigger: 'preBreach', offset: 5, unit: 'businessDays', message: 'm')
+		);
+	}//end testRuleShape()
 }//end class

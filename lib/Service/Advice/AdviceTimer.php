@@ -341,11 +341,6 @@ class AdviceTimer implements AdviceTimerInterface {
 	 * @return FlowTimerEngine
 	 */
 	private function timers(): FlowTimerEngine {
-		return new FlowTimerEngine(
-			settingsService: $this->settingsService,
-			logger: $this->logger,
-			owner: 'Dossiq advice',
-			timer: 'advice timer'
-		);
+		return new FlowTimerEngine(settingsService: $this->settingsService, logger: $this->logger, owner: 'Dossiq advice', timer: 'advice timer');
 	}//end timers()
 }//end class

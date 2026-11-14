@@ -224,18 +224,7 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 	 * @return array<int, array<string, mixed>> The escalation rules.
 	 */
 	private function escalationRules(): array {
-		return [
-			[
-				'trigger'        => 'slaBreached',
-				'offset'         => 0,
-				'offsetUnit'     => 'calendarDays',
-				'notifyRole'     => [],
-				'escalateToRole' => [],
-				'priority'       => 'normal',
-				'message'        => 'bezwaartermijn-verstreken',
-				'openIncident'   => false,
-			],
-		];
+		return [FlowTimerEngine::rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'bezwaartermijn-verstreken')];
 	}//end escalationRules()
 
 	/**
@@ -289,11 +278,6 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 	 * @return FlowTimerEngine
 	 */
 	private function timers(): FlowTimerEngine {
-		return new FlowTimerEngine(
-			settingsService: $this->settingsService,
-			logger: $this->logger,
-			owner: 'Dossiq bezwaar',
-			timer: 'bezwaartermijn timer'
-		);
+		return new FlowTimerEngine(settingsService: $this->settingsService, logger: $this->logger, owner: 'Dossiq bezwaar', timer: 'bezwaartermijn timer');
 	}//end timers()
 }//end class

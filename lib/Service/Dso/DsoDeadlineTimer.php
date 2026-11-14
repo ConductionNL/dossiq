@@ -203,16 +203,7 @@ class DsoDeadlineTimer implements DsoDeadlineTimerInterface {
 	 * @return array<string, mixed>
 	 */
 	private function rule(string $trigger, int $offset, string $unit, string $message): array {
-		return [
-			'trigger'        => $trigger,
-			'offset'         => $offset,
-			'offsetUnit'     => $unit,
-			'notifyRole'     => [],
-			'escalateToRole' => [],
-			'priority'       => 'normal',
-			'message'        => $message,
-			'openIncident'   => false,
-		];
+		return FlowTimerEngine::rule(trigger: $trigger, offset: $offset, unit: $unit, message: $message);
 	}//end rule()
 
 	/**
@@ -250,11 +241,6 @@ class DsoDeadlineTimer implements DsoDeadlineTimerInterface {
 	 * @return FlowTimerEngine
 	 */
 	private function timers(): FlowTimerEngine {
-		return new FlowTimerEngine(
-			settingsService: $this->settingsService,
-			logger: $this->logger,
-			owner: 'Dossiq DSO',
-			timer: 'DSO term timer'
-		);
+		return new FlowTimerEngine(settingsService: $this->settingsService, logger: $this->logger, owner: 'Dossiq DSO', timer: 'DSO term timer');
 	}//end timers()
 }//end class
