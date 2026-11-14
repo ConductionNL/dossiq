@@ -363,32 +363,16 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	 *
 	 * @return bool True when the seat moved.
 	 */
-	private function moveCoordinatorSeat(
-		string $caseId,
-		string $toUser,
-		string $fromUser,
-		string $actor,
-		string $batchId,
-		string $now,
-	): bool {
+	private function moveCoordinatorSeat(string $caseId, string $toUser, string $fromUser,
+		string $actor, string $batchId, string $now): bool {
 		try {
 			$this->seats->nameCoordinator(caseId: $caseId, participant: $toUser);
-			$this->recordOnCase(
-				caseId: $caseId,
-				record: [
-					'fromUser' => $fromUser,
-					'toUser' => $toUser,
-					'actor' => $actor,
-					'seat' => CaseSeats::COORDINATOR,
-					'batchId' => $batchId,
-					'movedAt' => $now,
-				],
-			);
+			$record = ['fromUser' => $fromUser, 'toUser' => $toUser, 'actor' => $actor,
+				'seat' => CaseSeats::COORDINATOR, 'batchId' => $batchId, 'movedAt' => $now];
+			$this->recordOnCase(caseId: $caseId, record: $record);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq leaver handover: a coordinator seat could not be moved',
-				['caseId' => $caseId, 'exception' => $e->getMessage()],
-			);
+			$context = ['caseId' => $caseId, 'exception' => $e->getMessage()];
+			$this->logger->warning('Dossiq leaver handover: a coordinator seat could not be moved', $context);
 
 			return false;
 		}
