@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Dso;
 
+use OCA\Dossiq\Kernel\Contracts\DsoDoorsturenNotifierInterface;
 use OCP\EventDispatcher\GenericEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 
@@ -38,7 +39,7 @@ use OCP\EventDispatcher\IEventDispatcher;
  *
  * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
  */
-class DsoDoorsturenNotifier {
+class DsoDoorsturenNotifier implements DsoDoorsturenNotifierInterface {
 	/**
 	 * The event name downstream listeners bind to.
 	 *

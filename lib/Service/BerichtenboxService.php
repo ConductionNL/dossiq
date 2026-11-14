@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\BerichtenboxServiceInterface;
 use OCA\Dossiq\Service\Berichtenbox\BerichtenboxJournal;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
@@ -42,7 +43,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/berichtenbox-integration/spec.md
  */
-class BerichtenboxService {
+class BerichtenboxService implements BerichtenboxServiceInterface {
 	/**
 	 * Constructor.
 	 *
@@ -233,8 +234,6 @@ class BerichtenboxService {
 		return $stored;
 	}//end storedSend()
 
-
-
 	/**
 	 * Log what became of the send, at the level the outcome deserves.
 	 *
@@ -414,8 +413,6 @@ class BerichtenboxService {
 
 		return $data;
 	}//end storedMessage()
-
-
 
 	/**
 	 * Get sent messages for a case.

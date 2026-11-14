@@ -2,10 +2,13 @@
 
 ## 1. Resolver
 
-- [ ] 1.1 Add `lib/Service/Zgw/ApiCredentialResolver.php` with `resolve(IRequest $request): ?object` following design D1 (bearer JWT through `ZgwJwtValidator`, then `X-Api-Key`, then the trusted-proxy certificate header). First credential present decides.
+- [x] 1.1 Add `lib/Service/Zgw/ApiCredentialResolver.php` with `resolve(IRequest $request): ?object` following design D1 (bearer JWT through `ZgwJwtValidator`, then `X-Api-Key`, then the trusted-proxy certificate header). First credential present decides.
+  - Built and tested; not yet called (listed in `NoDarkCapabilityTest::DARK_TODAY` until 2.1 wires it). An `Authorization` header with another scheme is refused, not skipped.
 - [ ] 1.2 Move the consumer lookup and `bindConsumerUser` out of `ZgwJwtValidator` into the resolver so the user is bound once, whatever the credential; `ZgwJwtValidator` keeps token decoding, signature and timing only.
-- [ ] 1.3 API key match: query OpenRegister's `ConsumerMapper` for consumers with `authorizationType` `apiKey`, compare with `hash_equals`.
-- [ ] 1.4 Certificate match: read the header named by the new config key `public_api_client_cert_header` (add to `lib/Service/Settings/ConfigKeys.php`, default empty = off) only when the remote address is in `trusted_proxies`; compare the SHA-256 fingerprint with `authorizationConfiguration.certificateFingerprint`, case-insensitive.
+  - Partly: `ZgwJwtValidator::consumerFor()` verifies and returns the consumer without binding, and the resolver binds once. The issuer lookup still sits in the validator, and `validate()` (used by `ZgwService::validateJwtAuth`) still binds; both move when 2.1 lands.
+- [x] 1.3 API key match: query OpenRegister's `ConsumerMapper` for consumers with `authorizationType` `apiKey`, compare with `hash_equals`.
+- [x] 1.4 Certificate match: read the header named by the new config key `public_api_client_cert_header` (add to `lib/Service/Settings/ConfigKeys.php`, default empty = off) only when the remote address is in `trusted_proxies`; compare the SHA-256 fingerprint with `authorizationConfiguration.certificateFingerprint`, case-insensitive.
+  - The connection address is the raw `REMOTE_ADDR`, not `IRequest::getRemoteAddress()` (which answers the forwarded client behind a trusted proxy); `trusted_proxies` entries are matched as addresses or ranges through `OCP\Security\Ip\IFactory`. Colons in a fingerprint are ignored.
 
 ## 2. Middleware
 
@@ -18,7 +21,7 @@
 
 ## 4. Tests
 
-- [ ] 4.1 `tests/Unit/Service/Zgw/ApiCredentialResolverTest.php`: JWT ok, API key ok, certificate ok from a trusted proxy, certificate ignored from an untrusted address, bad JWT does not fall through, revoked consumer refused.
+- [x] 4.1 `tests/Unit/Service/Zgw/ApiCredentialResolverTest.php`: JWT ok, API key ok, certificate ok from a trusted proxy, certificate ignored from an untrusted address, bad JWT does not fall through, revoked consumer refused.
 - [ ] 4.2 Update `tests/Unit/Middleware/ZgwAuthMiddlewareTest.php` and `tests/Unit/Service/ZgwJwtValidatorTest.php` for the moved lookup.
 - [ ] 4.3 Newman: add an API-key request and an out-of-scope API-key request (403) to `tests/integration/dossiq.postman_collection.json`.
 

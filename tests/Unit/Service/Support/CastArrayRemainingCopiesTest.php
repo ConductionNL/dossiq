@@ -45,6 +45,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\CaseVoorbladService
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\CastArray
  */
 class CastArrayRemainingCopiesTest extends TestCase {
 	/**

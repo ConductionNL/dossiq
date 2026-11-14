@@ -28,9 +28,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Settings\SettingValueRules;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingValueRulesInterface;
 use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
@@ -50,11 +50,11 @@ class DisplaySettingsInitialStateListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param IInitialState   $initialState The initial state of the page.
-	 * @param SettingsService $settings     The app config reader.
+	 * @param SettingsServiceInterface $settings     The app config reader.
 	 */
 	public function __construct(
 		private readonly IInitialState $initialState,
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 	) {
 	}//end __construct()
 
@@ -70,13 +70,13 @@ class DisplaySettingsInitialStateListener implements IEventListener {
 	public function handle(Event $event): void {
 		if ($event instanceof BeforeTemplateRenderedEvent === false
 			|| $event->isLoggedIn() === false
-			|| $event->getResponse()->getApp() !== Application::APP_ID
+			|| $event->getResponse()->getApp() !== AppIdentity::APP_ID
 		) {
 			return;
 		}
 
 		$format = $this->settings->getConfigValue('date_format', self::DEFAULT_DATE_FORMAT);
-		if (in_array($format, SettingValueRules::CHOICES['date_format'], true) === false) {
+		if (in_array($format, SettingValueRulesInterface::CHOICES['date_format'], true) === false) {
 			$format = self::DEFAULT_DATE_FORMAT;
 		}
 

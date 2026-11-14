@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\PersonalAgendaItemServiceInterface;
 use OCP\Calendar\ICalendarIsWritable;
 use OCP\Calendar\ICreateFromString;
 use OCP\Calendar\IManager as ICalendarManager;
@@ -47,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/specs/my-work/spec.md
  */
-class PersonalAgendaItemService {
+class PersonalAgendaItemService implements PersonalAgendaItemServiceInterface {
 	/**
 	 * The category that marks an event as one of ours.
 	 *

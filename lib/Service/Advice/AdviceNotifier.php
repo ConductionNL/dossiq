@@ -35,7 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Advice;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -81,7 +81,7 @@ class AdviceNotifier {
 		try {
 			$notification = $this->notificationManager->createNotification();
 			$notification
-				->setApp(Application::APP_ID)
+				->setApp(AppIdentity::APP_ID)
 				->setUser($userId)
 				->setDateTime(new DateTime())
 				->setObject('advice', $objectId)
@@ -95,7 +95,7 @@ class AdviceNotifier {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to send advice notification: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 		}
 	}//end sendUserNotification()

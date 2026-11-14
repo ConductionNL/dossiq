@@ -32,9 +32,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
 use OCP\Files\Folder;
@@ -61,12 +61,12 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Settings service (config + ObjectService).
+	 * @param SettingsServiceInterface $settingsService Settings service (config + ObjectService).
 	 * @param IRootFolder $rootFolder Nextcloud root folder.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IRootFolder $rootFolder,
 		private readonly LoggerInterface $logger,
 	) {
@@ -205,7 +205,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			} catch (\Throwable $e) {
 				$this->logger->warning(
 					'Dossiq backfill: failed for ' . $fileName . ': ' . $e->getMessage(),
-					['app' => Application::APP_ID],
+					['app' => AppIdentity::APP_ID],
 				);
 			}
 		}//end foreach

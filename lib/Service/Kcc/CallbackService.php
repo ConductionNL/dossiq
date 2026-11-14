@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service\Kcc;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Kernel\Contracts\CallbackServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\AppFramework\OCS\OCSBadRequestException;
@@ -45,7 +46,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
  */
-class CallbackService {
+class CallbackService implements CallbackServiceInterface {
 	/**
 	 * Maximum number of callback attempts before the request fails.
 	 */

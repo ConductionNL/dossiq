@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\PersonListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\PersonListenerRegistrar;
 use OCA\Dossiq\Listener\CaseSchemaVocabularyListener;
 use OCA\Dossiq\Listener\PersonLinkListener;
 use OCA\Dossiq\Listener\RoleTypeVocabularyListener;

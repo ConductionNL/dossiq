@@ -33,7 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\Team\CaseTeamMigration;
+use OCA\Dossiq\Kernel\Contracts\CaseTeamMigrationInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
@@ -50,12 +50,12 @@ class MigrateCaseTeamsCommand extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTeamMigration $migration The one service that moves a case's team.
+	 * @param CaseTeamMigrationInterface $migration The one service that moves a case's team.
 	 *
 	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	public function __construct(
-		private readonly CaseTeamMigration $migration,
+		private readonly CaseTeamMigrationInterface $migration,
 	) {
 		parent::__construct();
 	}//end __construct()

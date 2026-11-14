@@ -269,4 +269,35 @@ class CaseCustodyQueryTest extends TestCase {
 
 		return $settings;
 	}//end settings()
+	/**
+	 * An unreadable moment has no holder.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function testAnUnreadableMomentHasNoHolder(): void {
+		self::assertNull($this->query()->holderOn(caseId: 'case-1', asOf: 'last spring'));
+	}//end testAnUnreadableMomentHasNoHolder()
+
+	/**
+	 * A holding that starts after the window, or whose start cannot be read, is not in it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function testAHoldingStartingLaterOrUndatedIsOutsideTheWindow(): void {
+		$query = $this->query();
+
+		self::assertSame([], $query->heldBy(organisationUnit: 'toezicht', from: '2026-01-01', to: '2026-03-09'), 'Toezicht only took the case on 10 March.');
+
+		$this->store->seed(
+			schema: 'caseCustody',
+			uuid: 'undated',
+			row: ['caseId' => 'case-9', 'organisationUnit' => 'toezicht', 'from' => 'ooit', 'until' => '', 'open' => true, 'sequence' => 1],
+		);
+		$year = $query->heldBy(organisationUnit: 'toezicht', from: '2026-01-01', to: '2026-12-31');
+		self::assertSame(['case-1'], array_column($year, 'caseId'), 'A holding without a readable start is not counted.');
+	}//end testAHoldingStartingLaterOrUndatedIsOutsideTheWindow()
 }//end class

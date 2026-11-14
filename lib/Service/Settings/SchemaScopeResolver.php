@@ -56,6 +56,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Settings;
 
+use OCA\Dossiq\Kernel\Contracts\SchemaScopeResolverInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -66,21 +67,7 @@ use Throwable;
  *
  * @spec openspec/specs/milestone-tracking/spec.md
  */
-class SchemaScopeResolver {
-
-	/**
-	 * The payload belongs to the named schema.
-	 *
-	 * @var string
-	 */
-	public const IN_SCOPE = 'in-scope';
-
-	/**
-	 * The payload belongs to a different schema.
-	 *
-	 * @var string
-	 */
-	public const OUT_OF_SCOPE = 'out-of-scope';
+class SchemaScopeResolver implements SchemaScopeResolverInterface {
 
 	/**
 	 * Nothing available could tell the two apart.

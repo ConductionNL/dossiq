@@ -29,8 +29,8 @@ namespace OCA\Dossiq\Tests\Support\StubDrift;
  * be loadable — which also means this works in a bare container where
  * OpenRegister's own dependencies are absent.
  *
- * What it deliberately does NOT model: inheritance. Every entry here is
- * DECLARED on the class in question. For an `OCP\AppFramework\Db\Entity`
+ * Every entry here is DECLARED on the class in question; withInherited()
+ * lets a caller add what a parent declares. For an `OCP\AppFramework\Db\Entity`
  * subclass that omission would be fatal to the comparison, because such a
  * class serves `getFoo()`/`setFoo()` for every declared property through
  * `__call` and declares neither — so properties are collected too, and the
@@ -90,6 +90,26 @@ final class ClassApi {
 			$body['parent'],
 		);
 	}//end fromFile()
+
+	/**
+	 * This API with what a parent declares and this class does not.
+	 *
+	 * A method or constant the class declares itself wins over the parent's.
+	 * The parent name and the declared properties stay this class's own.
+	 *
+	 * @param self $parent The parent class's API.
+	 *
+	 * @return self
+	 */
+	public function withInherited(self $parent): self {
+		return new self(
+			$this->name,
+			($this->methods + $parent->methods),
+			($this->constants + $parent->constants),
+			$this->properties,
+			$this->parent,
+		);
+	}//end withInherited()
 
 	/**
 	 * Cut the token stream down to one class's body.

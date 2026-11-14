@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\LinkedDocumentsReaderInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\Folder;
@@ -30,7 +31,7 @@ use Throwable;
  *
  * @spec openspec/specs/document-projection/spec.md
  */
-class LinkedDocumentsReader {
+class LinkedDocumentsReader implements LinkedDocumentsReaderInterface {
 	use SearchesObjects;
 
 	/**

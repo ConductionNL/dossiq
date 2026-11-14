@@ -113,4 +113,26 @@ class RequestCatalogueTest extends TestCase {
 
 		self::assertSame([['type' => 'melding', 'title' => 'Melding openbare ruimte', 'description' => 'Iets kapot op straat']], $entries);
 	}//end testATranslatableTitleAndDescriptionAreReadAsText()
+
+	/**
+	 * A case type without a title or name is offered under its type, never under an empty title.
+	 *
+	 * @return void
+	 */
+	public function testAnUntitledCaseTypeIsOfferedUnderItsType(): void {
+		$entries = $this->catalogue(
+			[
+				['id' => 'ct-1', 'identifier' => 'melding', 'aiFeatures' => ['conversational-intake' => 'intake']],
+				['id' => 'ct-2', 'identifier' => 'klacht', 'name' => 'Klacht', 'aiFeatures' => ['conversational-intake' => 'intake']],
+			]
+		)->entries();
+
+		self::assertSame(
+			[
+				['type' => 'klacht', 'title' => 'Klacht', 'description' => ''],
+				['type' => 'melding', 'title' => 'melding', 'description' => ''],
+			],
+			$entries
+		);
+	}//end testAnUntitledCaseTypeIsOfferedUnderItsType()
 }//end class

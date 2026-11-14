@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\FrozenRecord;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\FrozenRecordGuardInterface;
 
 /**
  * The freeze rule, with no knowledge of which record it guards.
@@ -43,7 +44,7 @@ use OCA\Dossiq\Exception\RefusedException;
  *
  * @spec openspec/specs/frozen-record/spec.md
  */
-class FrozenRecordGuard {
+class FrozenRecordGuard implements FrozenRecordGuardInterface {
 
 	/**
 	 * Whether the stored record is frozen.

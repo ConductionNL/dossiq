@@ -30,8 +30,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\TenantAuditTrailService;
-use OCA\Dossiq\Service\TenantBillingService;
+use OCA\Dossiq\Kernel\Contracts\TenantAuditTrailServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantBillingServiceInterface;
 use OCA\OpenRegister\Event\OrganisationUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -56,14 +56,14 @@ class OrganisationStatusChangeListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param TenantAuditTrailService $auditTrail  Writes the audit row on the tenant anchor.
-	 * @param TenantBillingService    $billing     Reads this month's billing events.
+	 * @param TenantAuditTrailServiceInterface $auditTrail  Writes the audit row on the tenant anchor.
+	 * @param TenantBillingServiceInterface    $billing     Reads this month's billing events.
 	 * @param IUserSession            $userSession The acting user, when there is one.
 	 * @param LoggerInterface         $logger      Logger.
 	 */
 	public function __construct(
-		private readonly TenantAuditTrailService $auditTrail,
-		private readonly TenantBillingService $billing,
+		private readonly TenantAuditTrailServiceInterface $auditTrail,
+		private readonly TenantBillingServiceInterface $billing,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

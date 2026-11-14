@@ -44,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Kernel\Contracts\CaseRecordGrantsBackfillInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
@@ -60,7 +61,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-existing-records-are-reconciled-on-upgrade-req-cra-012
  */
-class CaseRecordGrantsBackfill {
+class CaseRecordGrantsBackfill implements CaseRecordGrantsBackfillInterface {
 
 	/**
 	 * Cases per page.

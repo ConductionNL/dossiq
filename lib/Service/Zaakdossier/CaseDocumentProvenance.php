@@ -34,14 +34,15 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\Dossiq\Kernel\Contracts\CaseDocumentProvenanceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 
 /**
  * Reads and filters the provenance of the documents on a case.
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/document-provenance/spec.md#requirement-a-collected-document-carries-its-provenance-for-any-case-type-req-dpv-001
  */
-class CaseDocumentProvenance {
+class CaseDocumentProvenance implements CaseDocumentProvenanceInterface {
 
 	/**
 	 * The provenance fields, in the order a reader shows them.
@@ -49,21 +50,16 @@ class CaseDocumentProvenance {
 	public const FIELDS = ['source', 'sourceSystem', 'custodian', 'location', 'terms', 'searchedAt', 'searchedBy'];
 
 	/**
-	 * The fields a selection of documents can be filtered on.
-	 */
-	public const FILTER_FIELDS = ['custodian', 'sourceSystem', 'source'];
-
-	/**
 	 * Constructor.
 	 *
 	 * @param DocumentRecordStore $store         A document's record and its join to the case.
-	 * @param WooCaseDocuments    $caseDocuments Which documents are on the case.
+	 * @param WooCaseDocumentsInterface    $caseDocuments Which documents are on the case.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly DocumentRecordStore $store,
-		private readonly WooCaseDocuments $caseDocuments,
+		private readonly WooCaseDocumentsInterface $caseDocuments,
 	) {
 	}//end __construct()
 
@@ -252,6 +248,58 @@ class CaseDocumentProvenance {
 
 		return $mails;
 	}//end mailForCase()
+
+	/**
+	 * The conversation a collected mail belongs to, as its provenance records it.
+	 *
+	 * @param string                    $caseId     The case uuid.
+	 * @param string                    $documentId The document uuid.
+	 * @param array<string, mixed>|null $record     The document's record when the caller already has it.
+	 *
+	 * @return array{threadId: string, messageId: string, parentIds: list<string>, sentAt: string}
+	 *         Every field empty for a document that is no collected mail.
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
+	 */
+	public function threadOf(string $caseId, string $documentId, ?array $record = null): array {
+		$stored = $this->stored(caseId: $caseId, documentId: $documentId, record: $record);
+		$parentIds = [];
+		foreach ((array)($stored['parentIds'] ?? []) as $parentId) {
+			$parentId = trim($this->scalar(value: $parentId));
+			if ($parentId !== '') {
+				$parentIds[] = $parentId;
+			}
+		}
+
+		return [
+			'threadId' => trim($this->scalar(value: ($stored['threadId'] ?? ''))),
+			'messageId' => trim($this->scalar(value: ($stored['messageId'] ?? ''))),
+			'parentIds' => $parentIds,
+			'sentAt' => trim($this->scalar(value: ($stored['sentAt'] ?? ''))),
+		];
+	}//end threadOf()
+
+	/**
+	 * The conversation of every collected mail on the case.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array<string, array{threadId: string, messageId: string, parentIds: list<string>, sentAt: string}>
+	 *         threadOf() per document uuid, only documents that carry a thread.
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
+	 */
+	public function threadsForCase(string $caseId): array {
+		$threads = [];
+		foreach ($this->caseDocuments->idsFor(caseId: $caseId) as $documentId) {
+			$thread = $this->threadOf(caseId: $caseId, documentId: (string)$documentId);
+			if ($thread['threadId'] !== '') {
+				$threads[(string)$documentId] = $thread;
+			}
+		}
+
+		return $threads;
+	}//end threadsForCase()
 
 	/**
 	 * A list of addresses, lower-cased, from a list or a single address.

@@ -57,6 +57,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\Custody\StoredInstant
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseTakeoverEscalationTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -270,4 +271,44 @@ class CaseTakeoverEscalationTest extends TestCase {
 
 		return $settings;
 	}//end settings()
+	/**
+	 * Each way the case type gives no usable period falls back to the default of three days.
+	 *
+	 * @return array<string, array{0: string}>
+	 */
+	public static function noDeclaredPeriod(): array {
+		return [
+			'the case type declares zero days' => ['zero'],
+			'the case has no case type'        => ['untyped'],
+			'the case type cannot be read'     => ['unreadable'],
+			'the case is gone'                 => ['gone'],
+		];
+	}//end noDeclaredPeriod()
+
+	/**
+	 * Without a usable declared period the holder has the default three days.
+	 *
+	 * @param string $situation What is wrong with the declaration.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider noDeclaredPeriod
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	public function testWithoutAUsablePeriodTheDefaultApplies(string $situation): void {
+		$takeovers = $this->takeovers();
+		$takeovers->request(caseId: 'case-1', requestedBy: 'sofie', reason: 'Mijn wijk');
+
+		match ($situation) {
+			'zero' => $this->store->rows['caseType']['ct-vergunning']['takeoverAnswerPeriodDays'] = 0,
+			'untyped' => $this->store->rows['case']['case-1']['caseType'] = '',
+			'unreadable' => $this->store->refusedToCaller = ['caseType'],
+			'gone' => $this->store->deleteObject(schema: 'case', uuid: 'case-1'),
+		};
+
+		self::assertSame(CaseTakeoverRequest::DEFAULT_ANSWER_DAYS, 3);
+		self::assertSame([], $takeovers->escalateOverdue(now: $this->inDays(days: 2)), 'Two days is inside the default.');
+		self::assertCount(1, $takeovers->escalateOverdue(now: $this->inDays(days: 3)), 'Three days is the default period.');
+	}//end testWithoutAUsablePeriodTheDefaultApplies()
 }//end class

@@ -41,13 +41,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\BezwaarAuditTrailInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
-use Psr\Container\ContainerInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -78,15 +78,15 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService Register and schema configuration, and the ObjectService.
-	 * @param BezwaarAuditTrail  $auditTrail      Writes the copied rows.
+	 * @param SettingsServiceInterface    $settingsService Register and schema configuration, and the ObjectService.
+	 * @param BezwaarAuditTrailInterface  $auditTrail      Writes the copied rows.
 	 * @param ContainerInterface $container       Resolves OpenRegister's AuditTrailMapper, to read what was already copied.
 	 * @param IAppManager        $appManager      OpenRegister availability check.
 	 * @param LoggerInterface    $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly BezwaarAuditTrail $auditTrail,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly BezwaarAuditTrailInterface $auditTrail,
 		private readonly ContainerInterface $container,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
@@ -213,7 +213,7 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 				register: $register,
 				schema: $schema,
 				objectUuid: $uuid,
-				action: BezwaarAuditTrail::ACTION_PREFIX.$event,
+				action: BezwaarAuditTrailInterface::ACTION_PREFIX.$event,
 				context: $entry + ['migratedFrom' => 'auditTrail', 'migratedIndex' => $index],
 				actorId: 'system',
 			);
@@ -243,7 +243,7 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 		}
 
 		$rows = $this->container->get('OCA\\OpenRegister\\Db\\AuditTrailMapper')->findAll(
-			filters: ['object_uuid' => $objectUuid, 'action' => BezwaarAuditTrail::ACTION_PREFIX.'*']
+			filters: ['object_uuid' => $objectUuid, 'action' => BezwaarAuditTrailInterface::ACTION_PREFIX.'*']
 		);
 
 		$indexes = [];

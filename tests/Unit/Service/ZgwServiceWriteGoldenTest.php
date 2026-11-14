@@ -43,6 +43,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Zgw\ResourceRoute
  * @covers \OCA\Dossiq\Service\Zgw\ResourceWrite
  * @covers \OCA\Dossiq\Service\Zgw\RuleFlags
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwInboundMapping
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwOutboundMapping
  */
 class ZgwServiceWriteGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

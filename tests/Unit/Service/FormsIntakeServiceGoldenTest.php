@@ -35,6 +35,8 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\FormsIntakeService
  * @uses \OCA\Dossiq\Service\Intake\IntakeFormBinding
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  */
 class FormsIntakeServiceGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

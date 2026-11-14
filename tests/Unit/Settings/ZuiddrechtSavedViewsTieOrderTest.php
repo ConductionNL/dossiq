@@ -67,7 +67,7 @@ class ZuiddrechtSavedViewsTieOrderTest extends TestCase {
 	 */
 	public function testEqualDeadlinesKeepTheOrderTheyCameIn(): void {
 		$sorted = array_filter($this->views(), static fn (array $view): bool => (($view['query']['sort'][0]['key'] ?? null) === 'deadline'));
-		$this->assertCount(expectedCount: 5, haystack: $sorted);
+		$this->assertCount(expectedCount: 6, haystack: $sorted);
 		foreach ($sorted as $key => $view) {
 			$this->assertSame(expected: ['key' => 'receivedAt', 'order' => 'asc'], actual: ($view['query']['sort'][1] ?? null), message: $key);
 		}

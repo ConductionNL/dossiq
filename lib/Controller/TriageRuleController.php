@@ -22,10 +22,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Review\TriageRules;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\TriageRulesInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -49,8 +49,8 @@ class TriageRuleController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest        $request         The request.
-	 * @param TriageRules     $rules           The triage rules.
-	 * @param CaseAccessGuard $caseAccessGuard The per-case access check.
+	 * @param TriageRulesInterface     $rules           The triage rules.
+	 * @param CaseAccessGuardInterface $caseAccessGuard The per-case access check.
 	 * @param IUserSession    $userSession     The session.
 	 * @param IL10N           $l10n            The translations.
 	 *
@@ -58,12 +58,12 @@ class TriageRuleController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly TriageRules $rules,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly TriageRulesInterface $rules,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

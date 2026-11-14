@@ -68,6 +68,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseAttentionMarkerServiceInterface;
 use OCA\Dossiq\Service\Support\ReferenceId;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -77,7 +78,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseAttentionMarkerService {
+class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface {
 
 	/**
 	 * The panels of the case page a marker may point at.

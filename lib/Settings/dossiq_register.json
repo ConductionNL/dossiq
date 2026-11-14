@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.94"
+        "version": "0.20.95"
     },
     "x-openregister": {
         "type": "application",
@@ -694,7 +694,7 @@
                     },
                     "iv3TaskField": {
                         "type": "string",
-                        "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type for the quarterly CBS cost report (e.g. \"8.1\" Ruimtelijke ordening). Validated against the shipped taakveld list (Iv3TaakveldList); unset = cases of this type are reported as uncategorized.",
+                        "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type (e.g. \"8.1\" Ruimtelijke ordening, or a 2023 refinement code such as \"6.71a\", stored as given). The code list is Shillinq's BbvTaakveld catalogue; without Shillinq the code is typed. Dossiq reports nothing from this field: costs per taakveld are Shillinq's Iv3 report.",
                         "title": "IV3 Task Field"
                     },
                     "obligationKinds": {

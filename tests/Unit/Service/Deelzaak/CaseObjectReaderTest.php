@@ -57,6 +57,8 @@ class CaseObjectReaderObjectService {
  * @covers \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
  *
  * @spec openspec/specs/deelzaak-support/spec.md
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseObjectReaderTest extends TestCase {
 

@@ -33,7 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Ai;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 
 /**
@@ -62,8 +62,8 @@ class AiModelIdentity {
 	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
 	 */
 	public function identifier(): string {
-		$type = $this->appConfig->getValueString(Application::APP_ID, 'ai_model_type', 'local');
-		$name = $this->appConfig->getValueString(Application::APP_ID, 'ai_model_name', 'unknown');
+		$type = $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_model_type', 'local');
+		$name = $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_model_name', 'unknown');
 
 		return $type . '/' . $name;
 	}//end identifier()

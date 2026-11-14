@@ -47,6 +47,13 @@ final class RecordingMessage implements IMessage {
 	public string $htmlBody = '';
 
 	/**
+	 * The sender, address to display name, as set.
+	 *
+	 * @var array<string, string>
+	 */
+	public array $from = [];
+
+	/**
 	 * @var array<mixed>
 	 */
 	public array $to = [];
@@ -82,6 +89,7 @@ final class RecordingMessage implements IMessage {
 	}
 
 	public function setFrom(array $addresses): IMessage {
+		$this->from = $addresses;
 		return $this;
 	}
 

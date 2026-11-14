@@ -47,6 +47,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\QuickActionService
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\CastArray
  */
 class CastArrayCopiesTest extends TestCase {
 	/**

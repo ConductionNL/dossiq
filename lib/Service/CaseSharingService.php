@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseSharingServiceInterface;
 use OCA\Dossiq\Service\CaseShare\ShareStore;
 use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
 use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
@@ -56,7 +57,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
-class CaseSharingService {
+class CaseSharingService implements CaseSharingServiceInterface {
 	/**
 	 * Hard-coded allow-list of case-summary fields that may ever cross a
 	 * federation boundary. A field NOT in this list is rejected outright by

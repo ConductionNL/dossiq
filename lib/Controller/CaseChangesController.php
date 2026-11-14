@@ -29,7 +29,7 @@ namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\Service\Board\CaseChangesFeed;
+use OCA\Dossiq\Kernel\Contracts\CaseChangesFeedInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -57,14 +57,14 @@ class CaseChangesController extends Controller {
 	 * @param IRequest        $request     Request.
 	 * @param IUserSession    $userSession User session.
 	 * @param LoggerInterface $logger      Logger.
-	 * @param CaseChangesFeed $feed        The changes.
+	 * @param CaseChangesFeedInterface $feed        The changes.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseChangesFeed $feed,
+		private readonly CaseChangesFeedInterface $feed,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

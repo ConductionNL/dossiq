@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\SociaalDomein;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CasePlanReviewInterface;
 use OCA\Dossiq\Service\Support\StoredArray;
 
 /**
@@ -46,14 +47,7 @@ use OCA\Dossiq\Service\Support\StoredArray;
  *
  * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
-class CasePlanReview {
-
-	/**
-	 * The schema slug a family plan is stored under.
-	 *
-	 * @var string
-	 */
-	public const SCHEMA = 'gezinsplan';
+class CasePlanReview implements CasePlanReviewInterface {
 
 	/**
 	 * Constructor.
@@ -89,7 +83,6 @@ class CasePlanReview {
 		if ($today === '') {
 			$today = (new DateTimeImmutable())->format('Y-m-d');
 		}
-
 
 		return ($due < $today);
 	}//end isDue()

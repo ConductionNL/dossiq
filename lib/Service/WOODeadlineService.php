@@ -32,10 +32,11 @@ namespace OCA\Dossiq\Service;
 
 use DateTime;
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\Termijn\TermDefinitions;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WOODeadlineServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 
@@ -46,7 +47,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
  */
-class WOODeadlineService {
+class WOODeadlineService implements WOODeadlineServiceInterface {
 
 	use SearchesObjects;
 
@@ -181,7 +182,7 @@ class WOODeadlineService {
 		$deadline = (string)($term['endDateCurrent'] ?? '');
 		$this->logger->info(
 			'WOO deadline extended for case ' . $caseId . ' to ' . $deadline,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return [
@@ -388,7 +389,7 @@ class WOODeadlineService {
 			}
 
 			$notification = $this->notificationManager->createNotification();
-			$notification->setApp(Application::APP_ID)
+			$notification->setApp(AppIdentity::APP_ID)
 				->setUser($userId)
 				->setDateTime(new DateTime())
 				->setObject('woo_deadline', $caseId)
@@ -401,10 +402,9 @@ class WOODeadlineService {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Failed to send WOO deadline notification: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'caseId' => $caseId],
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId],
 			);
 		}//end try
 	}//end sendDeadlineNotification()
-
 
 }//end class

@@ -55,6 +55,7 @@ use ReflectionNamedType;
  * @covers \OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class ConfiguredSchemaReadsTest extends TestCase {
 	/**

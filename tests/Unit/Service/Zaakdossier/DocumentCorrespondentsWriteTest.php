@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
  * @uses \OCA\Dossiq\Service\Zaakdossier\Dispatch
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class DocumentCorrespondentsWriteTest extends TestCase {
 	private const CONFIG = [

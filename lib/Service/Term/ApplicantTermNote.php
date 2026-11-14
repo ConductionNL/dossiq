@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Term;
 
 use DateInterval;
+use OCA\Dossiq\Kernel\Contracts\ApplicantTermNoteInterface;
 use OCA\Dossiq\Service\Support\ReadableDay;
 use Throwable;
 
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-applicant-reads-the-decision-date-and-the-state-of-the-term-req-wds-002
  */
-class ApplicantTermNote {
+class ApplicantTermNote implements ApplicantTermNoteInterface {
 
 	/**
 	 * The case field that holds the sentence.
