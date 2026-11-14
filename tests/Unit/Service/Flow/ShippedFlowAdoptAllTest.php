@@ -292,4 +292,23 @@ class ShippedFlowAdoptAllTest extends TestCase {
 		self::assertSame('owner "admin", still disabled', $plain['rows'][0]['detail']);
 		self::assertSame(['find new', 'adopt flow:new'], $this->calls);
 	}//end testADryRunWritesNothingAndAnUnenabledAdoptionSaysSo()
+
+	/**
+	 * A flow the user already owns but left disabled is enabled when asked; a dry run without enabling adds no clause.
+	 *
+	 * @return void
+	 */
+	public function testAnOwnedDisabledFlowIsEnabledAndAPlainDryRunSaysNothingMore(): void {
+		$owned = [self::flow('mine', false, 'admin')];
+
+		$enabled = $this->adoption($this->objectService(), $owned)->adoptAll($this->admin(), true, false);
+		self::assertSame('adopted', $enabled['rows'][0]['outcome']);
+		self::assertSame('owner "admin", enabled', $enabled['rows'][0]['detail']);
+		self::assertSame(['find mine', 'adopt flow:mine', 'save mine {"enabled":true}'], $this->calls);
+
+		$this->calls = [];
+		$dry = $this->adoption($this->objectService(), [self::flow('new', false, null)])->adoptAll($this->admin(), false, true);
+		self::assertSame('would be adopted by "admin"', $dry['rows'][0]['detail']);
+		self::assertSame([], $this->calls);
+	}//end testAnOwnedDisabledFlowIsEnabledAndAPlainDryRunSaysNothingMore()
 }//end class
