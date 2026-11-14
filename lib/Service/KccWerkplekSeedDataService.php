@@ -79,9 +79,7 @@ class KccWerkplekSeedDataService implements KccWerkplekSeedDataServiceInterface 
 			return ['success' => false, 'message' => $seed['failure']];
 		}
 
-		$counts = ['quickActions' => 0, 'belplannen' => 0, 'skipped' => 0, 'failed' => 0];
-
-		$this->seedAsSystem(objectService: $objectService, targets: $targets, data: $seed['data'], counts: $counts);
+		$counts = $this->seedAsSystem(targets: ['objectService' => $objectService] + $targets, data: $seed['data']);
 
 		return $this->seedOutcome(counts: $counts);
 	}//end seed()
@@ -139,19 +137,16 @@ class KccWerkplekSeedDataService implements KccWerkplekSeedDataServiceInterface 
 	/**
 	 * Seed the quick-actions and belplannen, elevated to the system user.
 	 *
-	 * @param object                                                                  $objectService OpenRegister ObjectService.
-	 * @param array{register: string, quickActionSchema: string, belplanSchema: string} $targets       The register and schemas.
-	 * @param array<mixed>                                                            $data          The decoded seed file.
-	 * @param array<string, int>                                                      $counts        Counter accumulator (by reference).
+	 * @param array<string, mixed> $targets `objectService` (OpenRegister's), `register`, `quickActionSchema`
+	 *                                      and `belplanSchema`.
+	 * @param array<mixed>         $data    The decoded seed file.
 	 *
-	 * @return void
+	 * @return array<string, int> The per-kind counts: quickActions, belplannen, skipped and failed.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/specs.md
 	 */
-	private function seedAsSystem(object $objectService, array $targets, array $data, array &$counts): void {
-		$register = $targets['register'];
-		$quickActionSchema = $targets['quickActionSchema'];
-		$belplanSchema = $targets['belplanSchema'];
+	private function seedAsSystem(array $targets, array $data): array {
+		$counts = ['quickActions' => 0, 'belplannen' => 0, 'skipped' => 0, 'failed' => 0];
 
 		// This service is only ever invoked from boot-time repair steps
 		// (SeedKccWerkplekData, SeedDeadlineMonitoringData) — never from a live
@@ -159,31 +154,36 @@ class KccWerkplekSeedDataService implements KccWerkplekSeedDataServiceInterface 
 		// duration of this call. Anonymous callers are otherwise fail-closed
 		// by OpenRegister RBAC (#1955) on every boot.
 		$this->runAsSystemIfAvailable(
-			objectService: $objectService,
-			operation: function () use ($objectService, $register, $quickActionSchema, $belplanSchema, $data, &$counts): void {
-				$this->seedRows(
-					target: new KccSeedTarget(
-						objectService: $objectService,
-						register: $register,
-						schema: $quickActionSchema,
-						counterKey: 'quickActions'
+			objectService: $targets['objectService'],
+			operation: function () use ($targets, $data, &$counts): void {
+				$outcomes = array_merge(
+					$this->seedRows(
+						target: new KccSeedTarget(
+							objectService: $targets['objectService'],
+							register: $targets['register'],
+							schema: $targets['quickActionSchema'],
+							counterKey: 'quickActions'
+						),
+						rows: (array)($data['kccQuickActions'] ?? []),
 					),
-					rows: (array)($data['kccQuickActions'] ?? []),
-					counts: $counts,
+					$this->seedRows(
+						target: new KccSeedTarget(
+							objectService: $targets['objectService'],
+							register: $targets['register'],
+							schema: $targets['belplanSchema'],
+							counterKey: 'belplannen'
+						),
+						rows: (array)($data['belplannen'] ?? []),
+					)
 				);
 
-				$this->seedRows(
-					target: new KccSeedTarget(
-						objectService: $objectService,
-						register: $register,
-						schema: $belplanSchema,
-						counterKey: 'belplannen'
-					),
-					rows: (array)($data['belplannen'] ?? []),
-					counts: $counts,
-				);
+				foreach ($outcomes as $outcome) {
+					$counts[$outcome]++;
+				}
 			}
 		);
+
+		return $counts;
 	}//end seedAsSystem()
 
 	/**
@@ -222,55 +222,43 @@ class KccWerkplekSeedDataService implements KccWerkplekSeedDataServiceInterface 
 	/**
 	 * Seed a list of rows into one schema, skipping ids that already exist.
 	 *
-	 * @param KccSeedTarget      $target The object service, register, schema and counter key.
-	 * @param array<int, mixed>  $rows   Seed rows.
-	 * @param array<string, int> $counts Counter accumulator (by reference).
+	 * @param KccSeedTarget     $target The object service, register, schema and counter key.
+	 * @param array<int, mixed> $rows   Seed rows.
 	 *
-	 * @return void
+	 * @return array<int, string> The counter each row raises: `skipped`, `failed` or the target's key;
+	 *                            none for a row that is not an array.
 	 */
-	private function seedRows(KccSeedTarget $target, array $rows, array &$counts): void {
+	private function seedRows(KccSeedTarget $target, array $rows): array {
 		$existingIds = $this->existingIds(target: $target);
 
+		$outcomes = [];
 		foreach ($rows as $row) {
-			$outcome = $this->seedRow(target: $target, row: $row, existingIds: $existingIds);
-			if ($outcome !== '') {
-				$counts[$outcome]++;
+			if (is_array($row) === false) {
+				continue;
 			}
+
+			$rowId = (string)($row['id'] ?? '');
+			if ($rowId !== '' && in_array($rowId, $existingIds, true) === true) {
+				$outcomes[] = 'skipped';
+				continue;
+			}
+
+			$outcomes[] = $this->saveRow(target: $target, row: $row);
 		}
+
+		return $outcomes;
 	}//end seedRows()
-
-	/**
-	 * Seed one row unless its id already exists.
-	 *
-	 * @param KccSeedTarget     $target      The object service, register, schema and counter key.
-	 * @param mixed             $row         The seed row.
-	 * @param array<int, mixed> $existingIds The ids already in the schema.
-	 *
-	 * @return string The counter to raise: `skipped`, `failed` or the target's key; '' for a row that is not an array.
-	 */
-	private function seedRow(KccSeedTarget $target, mixed $row, array $existingIds): string {
-		if (is_array($row) === false) {
-			return '';
-		}
-
-		$rowId = (string)($row['id'] ?? '');
-		if ($rowId !== '' && in_array($rowId, $existingIds, true) === true) {
-			return 'skipped';
-		}
-
-		return $this->saveRow(target: $target, row: $row, rowId: $rowId);
-	}//end seedRow()
 
 	/**
 	 * Write one seed row.
 	 *
 	 * @param KccSeedTarget        $target The object service, register, schema and counter key.
 	 * @param array<string, mixed> $row    The seed row.
-	 * @param string               $rowId  Its id, or ''.
 	 *
 	 * @return string The target's counter key, or `failed`.
 	 */
-	private function saveRow(KccSeedTarget $target, array $row, string $rowId): string {
+	private function saveRow(KccSeedTarget $target, array $row): string {
+		$rowId = (string)($row['id'] ?? '');
 		$schema = $target->schema;
 		try {
 			// ObjectService::saveObject()'s first parameter is the
