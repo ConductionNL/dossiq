@@ -164,8 +164,7 @@ class RetiredActionRunner {
 			return ['type' => $type, 'ok' => false, 'error' => 'retired_action_needs_openregister'];
 		}
 
-		return $this->runSteps(
-			type: $type,
+		return ['type' => $type] + $this->runSteps(
 			steps: $steps,
 			registry: $registry,
 			case: $case,
@@ -197,18 +196,17 @@ class RetiredActionRunner {
 	/**
 	 * Run the steps in order, each on the previous one's items.
 	 *
-	 * @param string                                                        $type       The declared type.
 	 * @param array<int, array{type: string, config: array<string, mixed>}> $steps      The steps.
 	 * @param FlowNodeRegistry                                              $registry   OpenRegister's node catalogue.
 	 * @param array<string, mixed>                                          $case       The case.
 	 * @param array<string, mixed>                                          $runContext The run context.
 	 *
-	 * @return array{type: string, ok: bool, error?: string} The result row.
+	 * @return array{ok: bool, error?: string} The result row, without its type.
 	 *
 	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 * @spec openspec/specs/webhook-steps-through-integriq/spec.md
 	 */
-	private function runSteps(string $type, array $steps, FlowNodeRegistry $registry, array $case, array $runContext): array {
+	private function runSteps(array $steps, FlowNodeRegistry $registry, array $case, array $runContext): array {
 		$items = [['json' => $case]];
 		try {
 			foreach ($steps as $step) {
@@ -220,10 +218,10 @@ class RetiredActionRunner {
 				$message = 'action_failed';
 			}
 
-			return ['type' => $type, 'ok' => false, 'error' => $message];
+			return ['ok' => false, 'error' => $message];
 		}
 
-		return ['type' => $type, 'ok' => true];
+		return ['ok' => true];
 	}//end runSteps()
 
 	/**

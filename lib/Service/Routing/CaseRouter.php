@@ -166,8 +166,7 @@ class CaseRouter implements CaseRouterInterface {
 			return self::NOT_DUE;
 		}
 
-		$routing = $this->routingOf(case: $case);
-		if ($this->stillUnaccepted(case: $case, routing: $routing, routedTo: $routedTo, routedAt: $routedAt) === false) {
+		if ($this->stillUnaccepted(case: $case, routedTo: $routedTo, routedAt: $routedAt) === false) {
 			return self::NOT_DUE;
 		}
 
@@ -356,14 +355,14 @@ class CaseRouter implements CaseRouterInterface {
 	/**
 	 * Whether the routing the window was armed for still stands unaccepted.
 	 *
-	 * @param array<string, mixed> $case     The fresh case.
-	 * @param array<string, mixed> $routing  Its routing record.
+	 * @param array<string, mixed> $case     The fresh case, with its routing record.
 	 * @param string               $routedTo The person the window was armed for.
 	 * @param string               $routedAt The moment the window was armed for.
 	 *
 	 * @return bool
 	 */
-	private function stillUnaccepted(array $case, array $routing, string $routedTo, string $routedAt): bool {
+	private function stillUnaccepted(array $case, string $routedTo, string $routedAt): bool {
+		$routing = $this->routingOf(case: $case);
 		if (trim((string) ($case['endDate'] ?? '')) !== '') {
 			return false;
 		}

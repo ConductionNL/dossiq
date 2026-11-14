@@ -72,39 +72,39 @@ class ProcessingTimeReportController extends Controller {
 			return $denied;
 		}
 
-		$period    = $this->request->getParam('period', ReportPeriodInterface::DEFAULT_PRESET);
-		$caseType  = $this->request->getParam('caseType');
-		$view      = $this->request->getParam('view');
-		$threshold = $this->request->getParam('threshold', ProcessingTimeReportServiceInterface::DEFAULT_THRESHOLD);
+		$query = [
+			'period' => $this->request->getParam('period', ReportPeriodInterface::DEFAULT_PRESET),
+			'caseType' => $this->request->getParam('caseType'),
+			'view' => $this->request->getParam('view'),
+			'threshold' => $this->request->getParam('threshold', ProcessingTimeReportServiceInterface::DEFAULT_THRESHOLD),
+		];
 
-		$refusal = $this->badRequest(period: $period, caseType: $caseType, view: $view, threshold: $threshold);
+		$refusal = $this->badRequest(query: $query);
 		if ($refusal !== null) {
 			return $refusal;
 		}
 
-		return $this->report(period: $period, caseType: $caseType, view: $view, threshold: $threshold);
+		return $this->report(query: $query);
 	}//end show()
 
 	/**
 	 * The report for a well-formed query, or 500 when it could not be made.
 	 *
-	 * @param mixed $period    The period parameter.
-	 * @param mixed $caseType  The case type parameter.
-	 * @param mixed $view      The view parameter.
-	 * @param mixed $threshold The threshold parameter.
+	 * @param array{period: mixed, caseType: mixed, view: mixed, threshold: mixed} $query The period, case type, view and
+	 *                                                                             threshold parameters.
 	 *
 	 * @return JSONResponse The report, or 500.
 	 *
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
-	private function report(mixed $period, mixed $caseType, mixed $view, mixed $threshold): JSONResponse {
+	private function report(array $query): JSONResponse {
 		try {
 			return new JSONResponse(
 				$this->reports->getReport(
-					period: (string)$period,
-					caseType: $this->emptyToNull(value: $caseType),
-					view: $this->emptyToNull(value: $view),
-					threshold: (float)$threshold,
+					period: (string)$query['period'],
+					caseType: $this->emptyToNull(value: $query['caseType']),
+					view: $this->emptyToNull(value: $query['view']),
+					threshold: (float)$query['threshold'],
 				)
 			);
 		} catch (Throwable $e) {
@@ -140,14 +140,16 @@ class ProcessingTimeReportController extends Controller {
 	/**
 	 * The refusal a malformed query earns, or null when it reads.
 	 *
-	 * @param mixed $period    The period preset as it arrived.
-	 * @param mixed $caseType  The record type filter as it arrived.
-	 * @param mixed $view      The block name as it arrived.
-	 * @param mixed $threshold The at-risk threshold as it arrived.
+	 * @param array{period: mixed, caseType: mixed, view: mixed, threshold: mixed} $query The period preset, record type filter,
+	 *                                                                             block name and at-risk threshold as they arrived.
 	 *
 	 * @return JSONResponse|null The refusal, or null.
 	 */
-	private function badRequest(mixed $period, mixed $caseType, mixed $view, mixed $threshold): ?JSONResponse {
+	private function badRequest(array $query): ?JSONResponse {
+		$period    = $query['period'];
+		$caseType  = $query['caseType'];
+		$view      = $query['view'];
+		$threshold = $query['threshold'];
 		$message = null;
 		if ($this->periods->isPreset(preset: $period) === false) {
 			$message = 'period must be one of '.implode(', ', ReportPeriodInterface::PRESETS);

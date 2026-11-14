@@ -134,8 +134,9 @@ class CollectionCaseLinks {
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
 	 */
 	public function link(object $objectService, string $register, string $caseId, array $collection): void {
-		$this->writeCaseObjects(objectService: $objectService, register: $register, caseId: $caseId, collection: $collection);
-		$this->recordSource(objectService: $objectService, collection: $collection, caseId: $caseId);
+		$link = new CollectionLink(objectService: $objectService, register: $register, caseId: $caseId, collection: $collection);
+		$this->writeCaseObjects(link: $link);
+		$this->recordSource(link: $link);
 	}//end link()
 
 	/**
@@ -156,22 +157,21 @@ class CollectionCaseLinks {
 	/**
 	 * One case object per collection item.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param string               $register      The dossiq register.
-	 * @param string               $caseId        The case.
-	 * @param array<string, mixed> $collection    The collection.
+	 * @param CollectionLink $link The object service, the dossiq register, the case and the collection.
 	 *
 	 * @return void
 	 */
-	private function writeCaseObjects(object $objectService, string $register, string $caseId, array $collection): void {
+	private function writeCaseObjects(CollectionLink $link): void {
+		$objectService = $link->objectService;
+		$register = $link->register;
 		$schema = $this->settingsService->getConfigValue('case_object_schema');
-		foreach ((array)($collection['items'] ?? []) as $item) {
+		foreach ((array)($link->collection['items'] ?? []) as $item) {
 			$publication = $this->publicationOf(item: $item);
 			if ($publication === '') {
 				continue;
 			}
 
-			$object = $this->caseObjectFor(objectService: $objectService, caseId: $caseId, item: $item, publication: $publication);
+			$object = $this->caseObjectFor(link: $link, item: $item, publication: $publication);
 
 			try {
 				$this->runAsSystemIfAvailable(
@@ -181,7 +181,7 @@ class CollectionCaseLinks {
 			} catch (Throwable $e) {
 				$this->logger->error(
 					'CollectionCaseLinks: a collection item could not be linked to the case',
-					['case' => $caseId, 'publication' => $publication, 'error' => $e->getMessage()]
+					['case' => $link->caseId, 'publication' => $publication, 'error' => $e->getMessage()]
 				);
 			}
 		}//end foreach
@@ -205,26 +205,25 @@ class CollectionCaseLinks {
 	/**
 	 * The case object that links one collection item to the case.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param string               $caseId        The case.
-	 * @param array<string, mixed> $item          The collection item.
-	 * @param string               $publication   The publication uuid it names.
+	 * @param CollectionLink       $link        The object service and the case.
+	 * @param array<string, mixed> $item        The collection item.
+	 * @param string               $publication The publication uuid it names.
 	 *
 	 * @return array<string, mixed> The case object.
 	 */
-	private function caseObjectFor(object $objectService, string $caseId, array $item, string $publication): array {
+	private function caseObjectFor(CollectionLink $link, array $item, string $publication): array {
 		$attachment = ($item['attachment'] ?? null);
 		if ($attachment !== null) {
 			$attachment = (string)$attachment;
 		}
 
 		return [
-			'case' => $caseId,
+			'case' => $link->caseId,
 			'objectType' => self::OBJECT_TYPE,
 			'objectUrl' => $this->urlGenerator->getAbsoluteURL($this->publicationPath(publicationId: $publication)),
 			// The schema declares a string, so the pair travels as JSON.
 			'objectIdentification' => (string)json_encode(['publication' => $publication, 'attachment' => $attachment]),
-			'description' => $this->describe(objectService: $objectService, publication: $publication, note: (string)($item['note'] ?? '')),
+			'description' => $this->describe(objectService: $link->objectService, publication: $publication, note: (string)($item['note'] ?? '')),
 		];
 	}//end caseObjectFor()
 
@@ -266,25 +265,22 @@ class CollectionCaseLinks {
 	/**
 	 * Append the case to the collection's `sourceOf`, once, leaving its items alone.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param array<string, mixed> $collection    The collection as read.
-	 * @param string               $caseId        The case.
+	 * @param CollectionLink $link The object service, the dossiq register, the case and the collection.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
 	 */
-	private function recordSource(object $objectService, array $collection, string $caseId): void {
-		$reference = self::SOURCE_PREFIX . $caseId;
-		$sourceOf = array_values(array_filter((array)($collection['sourceOf'] ?? []), 'is_string'));
+	private function recordSource(CollectionLink $link): void {
+		$reference = self::SOURCE_PREFIX . $link->caseId;
+		$sourceOf = array_values(array_filter((array)($link->collection['sourceOf'] ?? []), 'is_string'));
 		if (in_array($reference, $sourceOf, true) === true) {
 			return;
 		}
 
-		$collectionId = (string)$collection['id'];
-		$data = $this->withSource(collection: $collection, sourceOf: array_merge($sourceOf, [$reference]));
+		$data = $this->withSource(collection: $link->collection, sourceOf: array_merge($sourceOf, [$reference]));
 
-		$this->saveSource(objectService: $objectService, data: $data, collectionId: $collectionId, caseId: $caseId);
+		$this->saveSource(link: $link, data: $data);
 	}//end recordSource()
 
 	/**
@@ -308,24 +304,23 @@ class CollectionCaseLinks {
 	/**
 	 * Save the collection, logging when it cannot learn about the case.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param array<string, mixed> $data          The collection to save.
-	 * @param string               $collectionId  The collection's id.
-	 * @param string               $caseId        The case.
+	 * @param CollectionLink       $link The object service, the case and the collection, with its id.
+	 * @param array<string, mixed> $data The collection to save.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
 	 */
-	private function saveSource(object $objectService, array $data, string $collectionId, string $caseId): void {
+	private function saveSource(CollectionLink $link, array $data): void {
+		$collectionId = (string)$link->collection['id'];
 		try {
-			$this->saveCollection(objectService: $objectService, data: $data, collectionId: $collectionId);
+			$this->saveCollection(objectService: $link->objectService, data: $data, collectionId: $collectionId);
 		} catch (Throwable $e) {
 			// The case exists and is the resident's; a collection that does not
 			// learn about it loses a link, not the request.
 			$this->logger->warning(
 				'CollectionCaseLinks: the collection could not record the case it started',
-				['collection' => $collectionId, 'case' => $caseId, 'error' => $e->getMessage()]
+				['collection' => $collectionId, 'case' => $link->caseId, 'error' => $e->getMessage()]
 			);
 		}
 	}//end saveSource()

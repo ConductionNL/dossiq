@@ -438,9 +438,7 @@ class AdviceService implements AdviceServiceInterface {
 
 		$register = $this->settingsService->getConfigValue('register');
 
-		$external = (($data['kind'] ?? '') === 'external');
-
-		$payload = $this->advicePayload(caseId: $caseId, data: $data, requestedBy: $requestedBy, external: $external);
+		$payload = $this->advicePayload(caseId: $caseId, data: $data, requestedBy: $requestedBy);
 
 		$savedRecord = $this->savedAdvice(objectService: $objectService, register: $register, payload: $payload);
 
@@ -448,7 +446,7 @@ class AdviceService implements AdviceServiceInterface {
 			advice: ['objectService' => $objectService, 'register' => $register, 'data' => $data, 'payload' => $payload, 'saved' => $savedRecord]
 		);
 
-		$this->notifyAdviseurUnlessExternal(caseId: $caseId, payload: $payload, savedRecord: $savedRecord, external: $external);
+		$this->notifyAdviseurUnlessExternal(payload: $payload, savedRecord: $savedRecord);
 
 		$this->logger->info('Advice request created for case ' . $caseId . ' by ' . $requestedBy, ['app' => AppIdentity::APP_ID]);
 
@@ -476,20 +474,18 @@ class AdviceService implements AdviceServiceInterface {
 	/**
 	 * Notify the adviseur of a new request, unless the advisor is external.
 	 *
-	 * @param string $caseId UUID of the case
-	 * @param array<string, mixed> $payload The adviceRequest payload
+	 * @param array<string, mixed> $payload The adviceRequest payload, with its case and its type
 	 * @param array<string, mixed> $savedRecord The saved adviceRequest
-	 * @param bool $external Whether the advisor is an external organisation
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-6
 	 */
-	private function notifyAdviseurUnlessExternal(string $caseId, array $payload, array $savedRecord, bool $external): void {
+	private function notifyAdviseurUnlessExternal(array $payload, array $savedRecord): void {
 		// An external advisor is an organisation name, not a user: nobody to notify.
-		if ($external === false) {
+		if ($payload['type'] !== 'extern') {
 			$this->notifier->notifyAdviseur(
-				caseId: $caseId,
+				caseId: $payload['case'],
 				payload: $payload,
 				saved: $savedRecord,
 			);
@@ -502,7 +498,6 @@ class AdviceService implements AdviceServiceInterface {
 	 * @param string               $caseId      UUID of the case
 	 * @param array<string, mixed> $data        Advice request data (adviseur, deadline, vraag, etc.)
 	 * @param string               $requestedBy User UID of the requester
-	 * @param bool                 $external    Whether the advisor is an external organisation
 	 *
 	 * @return array<string, mixed> The payload.
 	 *
@@ -510,7 +505,7 @@ class AdviceService implements AdviceServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-6
 	 */
-	private function advicePayload(string $caseId, array $data, string $requestedBy, bool $external): array {
+	private function advicePayload(string $caseId, array $data, string $requestedBy): array {
 		// The deadline used to be stored verbatim, so 31-01-2028 became an
 		// advice request nobody could act on and nobody was told about. It is
 		// parsed here, and an unreadable value refuses the write.
@@ -520,7 +515,7 @@ class AdviceService implements AdviceServiceInterface {
 		}
 
 		$type = 'intern';
-		if ($external === true) {
+		if (($data['kind'] ?? '') === 'external') {
 			$type = 'extern';
 		}
 

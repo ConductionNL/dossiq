@@ -396,10 +396,7 @@ class ContactMomentService implements ContactMomentServiceInterface {
 		try {
 			return $this->appendActivity(
 				caseId: $caseId,
-				interactionId: $interactionId,
-				type: $type,
-				employeeName: $employeeName,
-				summary: $summary,
+				entry: ['type' => $type, 'interactionId' => $interactionId, 'employee' => $employeeName, 'summary' => $summary],
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -413,23 +410,15 @@ class ContactMomentService implements ContactMomentServiceInterface {
 	/**
 	 * Read the case's activity list, append the entry and patch it back.
 	 *
-	 * @param string $caseId        The case UUID.
-	 * @param string $interactionId The contactmoment UUID.
-	 * @param string $type          The activity type.
-	 * @param string $employeeName  The handling medewerker.
-	 * @param string $summary       A short summary of the activity.
+	 * @param string                                                                         $caseId The case UUID.
+	 * @param array{type: string, interactionId: string, employee: string, summary: string} $entry  The activity type, the contactmoment UUID,
+	 *                                                                                              the handling medewerker and a short summary.
 	 *
 	 * @return bool True on success, false when the register is not configured.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
 	 */
-	private function appendActivity(
-		string $caseId,
-		string $interactionId,
-		string $type,
-		string $employeeName,
-		string $summary,
-	): bool {
+	private function appendActivity(string $caseId, array $entry): bool {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return false;
@@ -443,13 +432,7 @@ class ContactMomentService implements ContactMomentServiceInterface {
 
 		$case = $this->normalize(result: $objectService->find($caseId, register: $register, schema: $caseSchema));
 
-		$activity = $this->activityWith(
-			case: $case,
-			type: $type,
-			interactionId: $interactionId,
-			employeeName: $employeeName,
-			summary: $summary,
-		);
+		$activity = $this->activityWith(case: $case, entry: $entry);
 
 		// A patch, not a save: a uuid save of `['activity' => ...]` alone
 		// replaces the case and wipes every other field on it.
@@ -466,31 +449,16 @@ class ContactMomentService implements ContactMomentServiceInterface {
 	/**
 	 * The case's activity list with a timestamped entry appended.
 	 *
-	 * @param array<string, mixed> $case          The case.
-	 * @param string               $type          The activity type.
-	 * @param string               $interactionId The contactmoment UUID.
-	 * @param string               $employeeName  The handling medewerker.
-	 * @param string               $summary       A short summary of the activity.
+	 * @param array<string, mixed>                                                           $case  The case.
+	 * @param array{type: string, interactionId: string, employee: string, summary: string} $entry The entry to append, without its time.
 	 *
 	 * @return array<int, mixed> The activity list.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
 	 */
-	private function activityWith(
-		array $case,
-		string $type,
-		string $interactionId,
-		string $employeeName,
-		string $summary,
-	): array {
+	private function activityWith(array $case, array $entry): array {
 		$activity = array_values((array)($case['activity'] ?? []));
-		$activity[] = [
-			'type' => $type,
-			'interactionId' => $interactionId,
-			'employee' => $employeeName,
-			'summary' => $summary,
-			'timestamp' => $this->dates->nowAsMoment(),
-		];
+		$activity[] = $entry + ['timestamp' => $this->dates->nowAsMoment()];
 
 		return $activity;
 	}//end activityWith()
