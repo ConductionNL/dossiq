@@ -169,12 +169,34 @@ class BeschikkingService implements BeschikkingServiceInterface {
 		$resolvedTemplate = ($templateId ?? 'tpl-default');
 		$version = $this->templateAdapter->resolveVersion($resolvedTemplate, $effectiveDate);
 
+		$decision = $this->newDecision(caseId: $caseId, version: $version, overrides: $overrides);
+		$decision = $this->withOverrideFields(decision: $decision, overrides: $overrides);
+
+		$saved = $this->repository->save(decision: $decision);
+		return $this->markRequiredFields(decision: $saved);
+	}//end compose()
+
+	/**
+	 * Render the chosen template version and build the beschikking draft around it.
+	 *
+	 * @param string               $caseId    The case UUID.
+	 * @param array<string, mixed> $version   The resolved template version.
+	 * @param array<string, mixed> $overrides Optional geadresseerde/field overrides.
+	 *
+	 * @return array<string, mixed> The beschikking to save.
+	 *
+	 * @throws RefusedException 503 when no number can be reserved for it.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function newDecision(string $caseId, array $version, array $overrides): array {
 		$composition = $this->templateAdapter->render(
 			$version['templateId'],
 			['caseId' => $caseId, 'overrides' => $overrides],
 		);
 
-		$decision = [
+		return [
 			'caseId' => $caseId,
 			// THE NUMBER IS WRITTEN HERE, AT BIRTH (decision 167). It was
 			// declared and never written, so the first beschikking served would
@@ -208,7 +230,20 @@ class BeschikkingService implements BeschikkingServiceInterface {
 			// has to act on.
 			'legalRemediesClause' => $this->remedy->clauseFor(caseId: $caseId),
 		];
+	}//end newDecision()
 
+	/**
+	 * Copy the non-empty object fields and the successor pointer from the overrides.
+	 *
+	 * @param array<string, mixed> $decision  The beschikking to save.
+	 * @param array<string, mixed> $overrides Optional geadresseerde/field overrides.
+	 *
+	 * @return array<string, mixed> The beschikking to save.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function withOverrideFields(array $decision, array $overrides): array {
 		// Only when there is something in them. Both are `type: object`, and
 		// an empty PHP array is saved as the JSON LIST `[]`, which the
 		// schema refuses: a compose with no addressee yet was a failed save.
@@ -226,9 +261,8 @@ class BeschikkingService implements BeschikkingServiceInterface {
 			$decision['supersedes'] = $supersedes;
 		}
 
-		$saved = $this->repository->save(decision: $decision);
-		return $this->markRequiredFields(decision: $saved);
-	}//end compose()
+		return $decision;
+	}//end withOverrideFields()
 
 	/**
 	 * Load a single beschikking by id. [T06]
