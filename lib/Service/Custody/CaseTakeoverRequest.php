@@ -154,14 +154,9 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 		}
 
 		$case = $this->store->requireCase(caseId: $caseId);
-		$holder = trim((string)($case['assignee'] ?? ''));
-		$unit = trim((string)($case['assignedGroup'] ?? ''));
-
-		$open = $this->custody->openHoldingFor(caseId: $caseId);
-		if ($open !== null) {
-			$unit = trim((string)($open['organisationUnit'] ?? $unit));
-			$holder = trim((string)($open['handler'] ?? $holder));
-		}
+		$holding = $this->holdingOf(caseId: $caseId, case: $case);
+		$holder = $holding['holder'];
+		$unit = $holding['unit'];
 
 		if ($holder !== '' && $holder === $requestedBy) {
 			throw new RefusedException(
@@ -171,6 +166,70 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 			);
 		}
 
+		$record = $this->storeRequest(
+			case: $case,
+			caseId: $caseId,
+			requestedBy: $requestedBy,
+			holder: $holder,
+			unit: $unit,
+			reason: $reason,
+		);
+
+		$this->logger->info(
+			'Dossiq takeover: a case was asked for',
+			['caseId' => $caseId, 'requestedBy' => $requestedBy, 'holder' => $holder, 'unit' => $unit],
+		);
+
+		return $record;
+	}//end request()
+
+	/**
+	 * Who holds the case and in which unit, the open holding winning over the case fields.
+	 *
+	 * @param string               $caseId The case being asked for.
+	 * @param array<string, mixed> $case   The case.
+	 *
+	 * @return array{holder: string, unit: string} The holder and the holding unit.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function holdingOf(string $caseId, array $case): array {
+		$holder = trim((string)($case['assignee'] ?? ''));
+		$unit = trim((string)($case['assignedGroup'] ?? ''));
+
+		$open = $this->custody->openHoldingFor(caseId: $caseId);
+		if ($open !== null) {
+			$unit = trim((string)($open['organisationUnit'] ?? $unit));
+			$holder = trim((string)($open['handler'] ?? $holder));
+		}
+
+		return ['holder' => $holder, 'unit' => $unit];
+	}//end holdingOf()
+
+	/**
+	 * Write the pending request, and again with its task when one was raised.
+	 *
+	 * @param array<string, mixed> $case        The case being asked for.
+	 * @param string               $caseId      The case id.
+	 * @param string               $requestedBy Who wants it.
+	 * @param string               $holder      Who holds it.
+	 * @param string               $unit        The holding unit.
+	 * @param string               $reason      Why they should have it.
+	 *
+	 * @return array<string, mixed> The request as stored.
+	 *
+	 * @throws RefusedException When the record cannot be written.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function storeRequest(
+		array $case,
+		string $caseId,
+		string $requestedBy,
+		string $holder,
+		string $unit,
+		string $reason,
+	): array {
 		$now = (new DateTimeImmutable())->format('c');
 		$record = $this->store->write(
 			record: [
@@ -190,13 +249,8 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 			$record = $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
 		}
 
-		$this->logger->info(
-			'Dossiq takeover: a case was asked for',
-			['caseId' => $caseId, 'requestedBy' => $requestedBy, 'holder' => $holder, 'unit' => $unit],
-		);
-
 		return $record;
-	}//end request()
+	}//end storeRequest()
 
 	/**
 	 * The holder accepts: the case moves to the asker and a holding opens.

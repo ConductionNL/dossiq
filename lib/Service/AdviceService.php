@@ -441,43 +441,11 @@ class AdviceService implements AdviceServiceInterface {
 
 		$register = $this->settingsService->getConfigValue('register');
 
-		// The deadline used to be stored verbatim, so 31-01-2028 became an
-		// advice request nobody could act on and nobody was told about. It is
-		// parsed here, and an unreadable value refuses the write.
-		$deadline = null;
-		if (($data['deadline'] ?? null) !== null && $data['deadline'] !== '') {
-			$deadline = $this->dates->toCalendarDate($data['deadline'], 'deadline');
-		}
-
 		$external = (($data['kind'] ?? '') === 'external');
-		$type     = 'intern';
-		if ($external === true) {
-			$type = 'extern';
-		}
 
-		// The adviesAanvraag schema is the one the list, the transitions and
-		// the reminders read (AdviceRepository), so a request is written there.
-		$payload = [
-			'case' => $caseId,
-			'requestedBy' => $requestedBy,
-			'advisor' => (string)($data['advisor'] ?? ''),
-			'type' => $type,
-			'subject' => (string)($data['subject'] ?? ''),
-			'deadline' => $deadline,
-			'status' => 'requested',
-			'questions' => (string)($data['question'] ?? ''),
-		];
+		$payload = $this->advicePayload(caseId: $caseId, data: $data, requestedBy: $requestedBy, external: $external);
 
-		$saved = $objectService->saveObject(
-			register: $register,
-			schema: $this->adviceSchema(),
-			object: $payload
-		);
-
-		$savedRecord = [];
-		if (is_array($saved) === true) {
-			$savedRecord = $saved;
-		}
+		$savedRecord = $this->savedAdvice(objectService: $objectService, register: $register, payload: $payload);
 
 		$this->delegateAdviceDecision(
 			advice: [
@@ -505,6 +473,74 @@ class AdviceService implements AdviceServiceInterface {
 
 		return $savedRecord;
 	}//end requestAdvice()
+
+	/**
+	 * The adviceRequest payload, with the deadline parsed.
+	 *
+	 * @param string               $caseId      UUID of the case
+	 * @param array<string, mixed> $data        Advice request data (adviseur, deadline, vraag, etc.)
+	 * @param string               $requestedBy User UID of the requester
+	 * @param bool                 $external    Whether the advisor is an external organisation
+	 *
+	 * @return array<string, mixed> The payload.
+	 *
+	 * @throws \InvalidArgumentException If the deadline is not a date this system can read
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-6
+	 */
+	private function advicePayload(string $caseId, array $data, string $requestedBy, bool $external): array {
+		// The deadline used to be stored verbatim, so 31-01-2028 became an
+		// advice request nobody could act on and nobody was told about. It is
+		// parsed here, and an unreadable value refuses the write.
+		$deadline = null;
+		if (($data['deadline'] ?? null) !== null && $data['deadline'] !== '') {
+			$deadline = $this->dates->toCalendarDate($data['deadline'], 'deadline');
+		}
+
+		$type = 'intern';
+		if ($external === true) {
+			$type = 'extern';
+		}
+
+		// The adviesAanvraag schema is the one the list, the transitions and
+		// the reminders read (AdviceRepository), so a request is written there.
+		return [
+			'case' => $caseId,
+			'requestedBy' => $requestedBy,
+			'advisor' => (string)($data['advisor'] ?? ''),
+			'type' => $type,
+			'subject' => (string)($data['subject'] ?? ''),
+			'deadline' => $deadline,
+			'status' => 'requested',
+			'questions' => (string)($data['question'] ?? ''),
+		];
+	}//end advicePayload()
+
+	/**
+	 * Save the adviceRequest payload and answer the stored record.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param string               $register      The register id.
+	 * @param array<string, mixed> $payload       The adviceRequest payload.
+	 *
+	 * @return array<string, mixed> The stored record, or [] when the save answered no array.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-6
+	 */
+	private function savedAdvice(object $objectService, string $register, array $payload): array {
+		$saved = $objectService->saveObject(
+			register: $register,
+			schema: $this->adviceSchema(),
+			object: $payload
+		);
+
+		$savedRecord = [];
+		if (is_array($saved) === true) {
+			$savedRecord = $saved;
+		}
+
+		return $savedRecord;
+	}//end savedAdvice()
 
 	/**
 	 * Raise the decidesk `advice` Decision for a new advice request and

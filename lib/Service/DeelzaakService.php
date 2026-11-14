@@ -344,6 +344,34 @@ class DeelzaakService implements DeelzaakServiceInterface {
 			return $empty;
 		}
 
+		$progress = $this->unlinkAllPages(
+			parentCaseUuid: $parentCaseUuid,
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+		);
+
+		return $this->unlinkResult(
+			parentCaseUuid: $parentCaseUuid,
+			unlinked: $progress['unlinked'],
+			failed: $progress['failed'],
+			total: $progress['total'],
+		);
+	}//end unlinkSubCases()
+
+	/**
+	 * Detach every sub-case of a parent, page by page, until a page brings nothing new.
+	 *
+	 * @param string $parentCaseUuid Parent UUID.
+	 * @param object $objectService  OpenRegister ObjectService.
+	 * @param string $register       Register id.
+	 * @param string $schema         Case schema id.
+	 *
+	 * @return array{unlinked: int, failed: int, total: int} What was detached, what failed, and how many were seen.
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	private function unlinkAllPages(string $parentCaseUuid, object $objectService, string $register, string $schema): array {
 		$unlinked = 0;
 		$failed = 0;
 
@@ -378,8 +406,22 @@ class DeelzaakService implements DeelzaakServiceInterface {
 			}
 		}//end while
 
-		$total = count($seen);
+		return ['unlinked' => $unlinked, 'failed' => $failed, 'total' => count($seen)];
+	}//end unlinkAllPages()
 
+	/**
+	 * The unlink result, logged as an error when any sub-case stayed linked.
+	 *
+	 * @param string $parentCaseUuid Parent UUID.
+	 * @param int    $unlinked       Sub-cases detached.
+	 * @param int    $failed         Sub-cases whose detach failed.
+	 * @param int    $total          Sub-cases seen.
+	 *
+	 * @return array{unlinked: int, failed: int, total: int, complete: bool} The result.
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	private function unlinkResult(string $parentCaseUuid, int $unlinked, int $failed, int $total): array {
 		if ($failed > 0) {
 			$this->logger->error(
 				'Sub-case unlink did not complete; the parent must not be deleted',
@@ -393,7 +435,7 @@ class DeelzaakService implements DeelzaakServiceInterface {
 			'total' => $total,
 			'complete' => ($failed === 0),
 		];
-	}//end unlinkSubCases()
+	}//end unlinkResult()
 
 	/**
 	 * Detach one page of sub-cases, skipping any already attempted.

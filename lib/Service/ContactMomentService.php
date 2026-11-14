@@ -323,38 +323,13 @@ class ContactMomentService implements ContactMomentServiceInterface {
 		}
 
 		try {
-			$objectService = $this->settingsService->getObjectService();
-			if ($objectService === null) {
-				return false;
-			}
-
-			$register = $this->settingsService->getConfigValue('register');
-			$caseSchema = $this->settingsService->getConfigValue('case_schema');
-			if ($register === '' || $caseSchema === '') {
-				return false;
-			}
-
-			$case = $this->normalize(result: $objectService->find($caseId, register: $register, schema: $caseSchema));
-
-			$activity = array_values((array)($case['activity'] ?? []));
-			$activity[] = [
-				'type' => $type,
-				'interactionId' => $interactionId,
-				'employee' => $employeeName,
-				'summary' => $summary,
-				'timestamp' => $this->dates->nowAsMoment(),
-			];
-
-			// A patch, not a save: a uuid save of `['activity' => ...]` alone
-			// replaces the case and wipes every other field on it.
-			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				id: $caseId,
-				changes: ['activity' => $activity]
+			return $this->appendActivity(
+				caseId: $caseId,
+				interactionId: $interactionId,
+				type: $type,
+				employeeName: $employeeName,
+				summary: $summary,
 			);
-			return true;
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to record case activity: ' . $e->getMessage(),
@@ -363,6 +338,91 @@ class ContactMomentService implements ContactMomentServiceInterface {
 			return false;
 		}//end try
 	}//end recordActivity()
+
+	/**
+	 * Read the case's activity list, append the entry and patch it back.
+	 *
+	 * @param string $caseId        The case UUID.
+	 * @param string $interactionId The contactmoment UUID.
+	 * @param string $type          The activity type.
+	 * @param string $employeeName  The handling medewerker.
+	 * @param string $summary       A short summary of the activity.
+	 *
+	 * @return bool True on success, false when the register is not configured.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
+	 */
+	private function appendActivity(
+		string $caseId,
+		string $interactionId,
+		string $type,
+		string $employeeName,
+		string $summary,
+	): bool {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return false;
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$caseSchema = $this->settingsService->getConfigValue('case_schema');
+		if ($register === '' || $caseSchema === '') {
+			return false;
+		}
+
+		$case = $this->normalize(result: $objectService->find($caseId, register: $register, schema: $caseSchema));
+
+		$activity = $this->activityWith(
+			case: $case,
+			type: $type,
+			interactionId: $interactionId,
+			employeeName: $employeeName,
+			summary: $summary,
+		);
+
+		// A patch, not a save: a uuid save of `['activity' => ...]` alone
+		// replaces the case and wipes every other field on it.
+		$this->patchObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $caseSchema,
+			id: $caseId,
+			changes: ['activity' => $activity]
+		);
+		return true;
+	}//end appendActivity()
+
+	/**
+	 * The case's activity list with a timestamped entry appended.
+	 *
+	 * @param array<string, mixed> $case          The case.
+	 * @param string               $type          The activity type.
+	 * @param string               $interactionId The contactmoment UUID.
+	 * @param string               $employeeName  The handling medewerker.
+	 * @param string               $summary       A short summary of the activity.
+	 *
+	 * @return array<int, mixed> The activity list.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
+	 */
+	private function activityWith(
+		array $case,
+		string $type,
+		string $interactionId,
+		string $employeeName,
+		string $summary,
+	): array {
+		$activity = array_values((array)($case['activity'] ?? []));
+		$activity[] = [
+			'type' => $type,
+			'interactionId' => $interactionId,
+			'employee' => $employeeName,
+			'summary' => $summary,
+			'timestamp' => $this->dates->nowAsMoment(),
+		];
+
+		return $activity;
+	}//end activityWith()
 
 	/**
 	 * Link an unidentified contactmoment to an identified burger.
