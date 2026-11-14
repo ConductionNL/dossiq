@@ -138,6 +138,25 @@ class CaseMergeService implements CaseMergeServiceInterface {
 			return $caseId;
 		}
 
+		$survivor = $this->walkMergeChain(caseId: $caseId, current: $current);
+		if ($survivor !== null) {
+			return $survivor;
+		}
+
+		$this->logger->warning('Dossiq: a merged-case chain is longer than ' . self::MAX_HOPS . ' hops');
+
+		return $caseId;
+	}//end resolveSurvivor()
+
+	/**
+	 * Follow `mergedInto` for at most MAX_HOPS hops.
+	 *
+	 * @param string $caseId  The case uuid a caller matched.
+	 * @param string $current The trimmed uuid to start from.
+	 *
+	 * @return string|null The survivor, the input on a cycle, or null when the chain is too long.
+	 */
+	private function walkMergeChain(string $caseId, string $current): string|null {
 		$seen = [];
 		for ($hop = 0; $hop < self::MAX_HOPS; $hop++) {
 			if (isset($seen[$current]) === true) {
@@ -146,24 +165,37 @@ class CaseMergeService implements CaseMergeServiceInterface {
 			}
 
 			$seen[$current] = true;
-
-			$case = $this->store->readCase(caseId: $current);
-			if ($case === null) {
-				return $current;
-			}
-
-			$next = $this->store->referencedId(value: ($case['mergedInto'] ?? null));
-			if ($next === '' || $next === $current) {
+			$next = $this->mergedInto(current: $current);
+			if ($next === '') {
 				return $current;
 			}
 
 			$current = $next;
 		}
 
-		$this->logger->warning('Dossiq: a merged-case chain is longer than ' . self::MAX_HOPS . ' hops');
+		return null;
+	}//end walkMergeChain()
 
-		return $caseId;
-	}//end resolveSurvivor()
+	/**
+	 * The case one case was merged into, '' when it is unreadable or was not merged.
+	 *
+	 * @param string $current The case uuid.
+	 *
+	 * @return string
+	 */
+	private function mergedInto(string $current): string {
+		$case = $this->store->readCase(caseId: $current);
+		if ($case === null) {
+			return '';
+		}
+
+		$next = $this->store->referencedId(value: ($case['mergedInto'] ?? null));
+		if ($next === '' || $next === $current) {
+			return '';
+		}
+
+		return $next;
+	}//end mergedInto()
 
 	/**
 	 * Whether this case may be merged away.
