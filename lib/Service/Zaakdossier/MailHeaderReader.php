@@ -117,16 +117,39 @@ class MailHeaderReader {
 		} catch (Throwable $e) {
 			// A mail the parser refuses is still collected, marked unreadable (REQ-WRR-003).
 			// The parser's message can carry header fragments; log only its class.
-			$this->logger->info(
-				'Dossiq: the headers of a collected mail could not be read, so it is marked unreadable',
-				['app' => AppIdentity::APP_ID, 'fileId' => $file->getId(), 'error' => get_class($e)]
-			);
+			$this->logUnreadable(file: $file, error: $e);
 			return $unreadable;
 		}
 
+		return $this->mailOf(headers: $headers);
+	}//end read()
+
+	/**
+	 * Log that a collected mail's headers could not be read.
+	 *
+	 * @param File $file The mail file.
+	 * @param Throwable $error Why the parser refused it.
+	 *
+	 * @return void
+	 */
+	private function logUnreadable(File $file, Throwable $error): void {
+		$this->logger->info(
+			'Dossiq: the headers of a collected mail could not be read, so it is marked unreadable',
+			['app' => AppIdentity::APP_ID, 'fileId' => $file->getId(), 'error' => get_class($error)]
+		);
+	}//end logUnreadable()
+
+	/**
+	 * The header fields as `provenance.mail` stores them, or unreadable when they name no sender.
+	 *
+	 * @param array<string, mixed> $headers The parsed headers.
+	 *
+	 * @return array<string, mixed> `{from, to, cc, date?, messageId}`, or `{unreadable: true}`.
+	 */
+	private function mailOf(array $headers): array {
 		$from = $this->addresses(value: ($headers['from'] ?? null));
 		if ($from === []) {
-			return $unreadable;
+			return ['unreadable' => true];
 		}
 
 		$mail = [
@@ -136,13 +159,25 @@ class MailHeaderReader {
 			'messageId' => trim((string)($headers['messageId'] ?? ''), " \t<>"),
 		];
 
+		return $this->withDate(mail: $mail, headers: $headers);
+	}//end mailOf()
+
+	/**
+	 * The mail with its date added when the headers carry one.
+	 *
+	 * @param array<string, mixed> $mail The header fields read so far.
+	 * @param array<string, mixed> $headers The parsed headers.
+	 *
+	 * @return array<string, mixed> The header fields.
+	 */
+	private function withDate(array $mail, array $headers): array {
 		$date = ($headers['date'] ?? null);
 		if ($date instanceof DateTimeInterface) {
 			$mail['date'] = $date->format(DateTimeInterface::ATOM);
 		}
 
 		return $mail;
-	}//end read()
+	}//end withDate()
 
 	/**
 	 * The headers OpenRegister parsed from the file; empty when OpenRegister offers no parser.
