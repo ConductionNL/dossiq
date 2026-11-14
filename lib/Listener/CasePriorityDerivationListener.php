@@ -41,9 +41,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CasePriorityServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
-use OCA\Dossiq\Service\CasePriorityService;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -75,14 +75,14 @@ class CasePriorityDerivationListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService     $settingsService Schema slug bridge.
-	 * @param CasePriorityService $priorityService Where a priority comes from.
+	 * @param SettingsServiceInterface     $settingsService Schema slug bridge.
+	 * @param CasePriorityServiceInterface $priorityService Where a priority comes from.
 	 * @param IUserSession        $userSession     Who is making this edit.
 	 * @param LoggerInterface     $logger          Structured logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CasePriorityService $priorityService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CasePriorityServiceInterface $priorityService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

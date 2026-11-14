@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use OCP\Security\ISecureRandom;
@@ -69,14 +69,14 @@ class WooDossierReturn {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService           $settingsService Where OpenRegister and the collection schema are.
+	 * @param SettingsServiceInterface           $settingsService Where OpenRegister and the collection schema are.
 	 * @param ISecureRandom             $random          Makes the item id.
 	 * @param LoggerInterface           $logger          Logger.
 	 * @param WooDecisionNotice|null    $decisionNotice  Tells the resident the decision is published.
 	 * @param UnscopedObjectReader|null $reader          Reads unscoped; a fresh one when null.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly ISecureRandom $random,
 		private readonly LoggerInterface $logger,
 		private readonly ?WooDecisionNotice $decisionNotice = null,

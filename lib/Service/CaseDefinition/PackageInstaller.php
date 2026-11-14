@@ -35,7 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseDefinition;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PackageInstallerInterface;
 use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
@@ -45,27 +46,8 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
  */
-class PackageInstaller {
-
-	/**
-	 * The package was written and recorded.
-	 */
-	public const INSTALLED = 'installed';
-
-	/**
-	 * The package is already at this version here; nothing was written.
-	 */
-	public const CURRENT = 'current';
-
-	/**
-	 * The package was not written, for a reason the package or instance gives.
-	 */
-	public const REFUSED = 'refused';
-
-	/**
-	 * The write failed and was rolled back.
-	 */
-	public const FAILED = 'error';
+class PackageInstaller implements PackageInstallerInterface {
+	use StampsPackageRows;
 
 	/**
 	 * The settings key each case type collection is written to.
@@ -347,8 +329,7 @@ class PackageInstaller {
 	 * @return boolean True when everything was recorded.
 	 */
 	private function recordAll(PackageInstallRun $run, array $result): bool {
-		return $this->record(run: $run, written: $result['written'])
-			&& $this->record(run: $run, written: $this->notYetInThisPackage(id: $run->id, adopted: $result['adopted']))
+		return $this->recordRows(run: $run, written: $result['written'], adopted: $result['adopted'])
 			&& $this->ledger->recordPackage(set: $run->id, version: $run->version, digest: $run->digest);
 	}//end recordAll()
 
@@ -446,69 +427,10 @@ class PackageInstaller {
 	 * @return array<int, array<string, mixed>> The groups, as {@see self::groups()} returns them.
 	 */
 	private function exampleGroups(PackageInstallRun $run): array {
-		if (in_array('examples', $run->parts, true) === false) {
-			return [];
-		}
-
 		$examples = new PackageExamples(appConfig: $this->appConfig, logger: $this->logger);
-		$groups = [];
-		foreach ($examples->toWrite(package: $run->id, examples: $this->packages->rowsUnder(files: $run->files, dir: 'examples/')) as $example) {
-			$groups[] = $this->references->seedGroup(seed: $example);
-		}
 
-		return $groups;
+		return $examples->groups(run: $run, packages: $this->packages, references: $this->references);
 	}//end exampleGroups()
-
-	/**
-	 * Record every written row in the shipped-set ledger, under the package id.
-	 *
-	 * @param PackageInstallRun                $run     The install; its package id is the set name.
-	 * @param array<int, array<string, mixed>> $written The rows written.
-	 *
-	 * @return boolean True when every row was recorded.
-	 */
-	private function record(PackageInstallRun $run, array $written): bool {
-		foreach ($written as $row) {
-			$stamped = $this->ledger->stamp(
-				set: $run->id,
-				targetSchema: (string)$row['schema'],
-				targetObject: (string)$row['id'],
-				object: (array)$row['row'],
-				version: $run->version,
-				objectsKey: (string)($row['schemaKey'] ?? ''),
-			);
-			if ($stamped === false) {
-				return false;
-			}
-		}
-
-		return true;
-	}//end record()
-
-	/**
-	 * The adopted rows this package has not recorded before.
-	 *
-	 * An adopted row is stamped once, with the row as this instance holds it
-	 * at adoption. Stamping it again on every newer version would reset its
-	 * fingerprint and hide an edit made here since.
-	 *
-	 * @param string                           $id      The package id.
-	 * @param array<int, array<string, mixed>> $adopted The rows adopted this run.
-	 *
-	 * @return array<int, array<string, mixed>> The rows to record.
-	 */
-	private function notYetInThisPackage(string $id, array $adopted): array {
-		return array_values(
-			array_filter(
-				$adopted,
-				fn (array $row): bool => $this->ledger->stateOf(
-					targetSchema: (string)$row['schema'],
-					targetObject: (string)$row['id'],
-					object: (array)$row['row'],
-				)['set'] !== $id
-			)
-		);
-	}//end notYetInThisPackage()
 
 	/**
 	 * Apply the package's settings, each only when this instance never set it.
@@ -521,13 +443,13 @@ class PackageInstaller {
 	 * @return void
 	 */
 	private function applySettings(array $settings): void {
-		$present = $this->appConfig->getKeys(Application::APP_ID);
+		$present = $this->appConfig->getKeys(AppIdentity::APP_ID);
 		foreach ($settings as $key => $value) {
 			if (in_array((string)$key, $present, true) === true) {
 				continue;
 			}
 
-			$this->appConfig->setValueString(Application::APP_ID, (string)$key, $this->settingValue(value: $value));
+			$this->appConfig->setValueString(AppIdentity::APP_ID, (string)$key, $this->settingValue(value: $value));
 		}
 	}//end applySettings()
 

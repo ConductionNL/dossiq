@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\Iv3TaakveldListInterface;
 use RuntimeException;
 
 /**
@@ -36,7 +37,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-07-13-iv3-case-cost-reporting/tasks.md#1.2
  */
-class Iv3TaakveldList {
+class Iv3TaakveldList implements Iv3TaakveldListInterface {
 
 	/**
 	 * In-memory cache of the decoded taakveld bundle (per-request; this

@@ -38,8 +38,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use OCP\Mail\IMailer;
 use OCP\Mail\IMessage;
@@ -94,7 +94,7 @@ class OutboundCaseMail {
 			return ['transport' => $transport, 'from' => (string)$account['email'], 'account' => $account];
 		}
 
-		$from = trim($this->appConfig->getValueString(Application::APP_ID, 'email_from_address', ''));
+		$from = trim($this->appConfig->getValueString(AppIdentity::APP_ID, 'email_from_address', ''));
 		if ($from === '' || str_ends_with($from, '@example.nl') === true) {
 			throw new RefusedException(
 				rule: 'mail-sender-not-configured',
@@ -183,7 +183,7 @@ class OutboundCaseMail {
 	private function mailerMessage(array $sender, string $to): IMessage {
 		$message = $this->mailer->createMessage();
 		$message->setFrom(
-			[(string)$sender['from'] => $this->appConfig->getValueString(Application::APP_ID, 'email_from_name', 'Dossiq')]
+			[(string)$sender['from'] => $this->appConfig->getValueString(AppIdentity::APP_ID, 'email_from_name', 'Dossiq')]
 		);
 		$message->setTo([$to]);
 
@@ -206,7 +206,7 @@ class OutboundCaseMail {
 			// M4: the transport's text can carry the SMTP host; it stays in the log.
 			$this->logger->error(
 				'Dossiq: Nextcloud\'s mailer refused a case message',
-				['app' => Application::APP_ID, 'exception' => $e]
+				['app' => AppIdentity::APP_ID, 'exception' => $e]
 			);
 			throw new RefusedException(
 				rule: 'mail-transport-unavailable',

@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
@@ -117,7 +117,7 @@ class HearingService {
 
 		$this->logger->info(
 			'Hearing scheduled for complaint ' . $complaintId . ' on ' . $data['date'],
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		if (is_array($hearing) === true) {
@@ -209,7 +209,7 @@ class HearingService {
 
 		$this->logger->info(
 			'Hearing outcome recorded for hearing ' . $id,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		if (is_array($result) === true) {
@@ -239,7 +239,7 @@ class HearingService {
 
 		$this->logger->debug(
 			'Creating Talk room for complaint hearing',
-			['complaintId' => $complaintId, 'roomName' => $roomName, 'app' => Application::APP_ID],
+			['complaintId' => $complaintId, 'roomName' => $roomName, 'app' => AppIdentity::APP_ID],
 		);
 
 		$room = $this->talkBroker->createRoom(name: $roomName);

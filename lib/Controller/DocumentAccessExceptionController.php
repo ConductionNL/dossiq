@@ -26,9 +26,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionWriter;
-use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
-use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
+use OCA\Dossiq\Kernel\Contracts\DocumentAccessExceptionWriterInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentCaseWriteGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\InformatieobjectReaderInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -54,9 +54,9 @@ class DocumentAccessExceptionController extends Controller {
 	 * @param string                        $appName     The app name.
 	 * @param IRequest                      $request     The request.
 	 * @param IUserSession                  $userSession The caller.
-	 * @param DocumentCaseWriteGuard        $caseWrites  The change right on every case of the document.
-	 * @param InformatieobjectReader        $reader      The read rule on the document.
-	 * @param DocumentAccessExceptionWriter $writer      Writes the exception and restricts the file.
+	 * @param DocumentCaseWriteGuardInterface        $caseWrites  The change right on every case of the document.
+	 * @param InformatieobjectReaderInterface        $reader      The read rule on the document.
+	 * @param DocumentAccessExceptionWriterInterface $writer      Writes the exception and restricts the file.
 	 *
 	 * @return void
 	 */
@@ -64,9 +64,9 @@ class DocumentAccessExceptionController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly DocumentCaseWriteGuard $caseWrites,
-		private readonly InformatieobjectReader $reader,
-		private readonly DocumentAccessExceptionWriter $writer,
+		private readonly DocumentCaseWriteGuardInterface $caseWrites,
+		private readonly InformatieobjectReaderInterface $reader,
+		private readonly DocumentAccessExceptionWriterInterface $writer,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

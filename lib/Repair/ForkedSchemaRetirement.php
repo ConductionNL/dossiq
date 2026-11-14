@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use Throwable;
 
 /**
@@ -138,7 +138,7 @@ final class ForkedSchemaRetirement {
 
 		$twins = $this->schemaMapper->findAll(
 			filters: [
-				'application' => Application::APP_ID,
+				'application' => AppIdentity::APP_ID,
 				'slug' => $slug,
 			],
 			_rbac: false,

@@ -62,6 +62,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\Transitions\CapacityGuard
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class ResultArrayIntakeCopiesTest extends TestCase {
 	/**

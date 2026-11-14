@@ -37,6 +37,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -46,6 +47,7 @@ use RuntimeException;
 #[CoversClass(SignedIn::class)]
 #[CoversClass(CaseCaller::class)]
 #[CoversClass(ComplaintMutationGate::class)]
+#[UsesClass(\OCA\Dossiq\Controller\DeadlineNoticesController::class)]
 final class CallerGatesTest extends TestCase {
 	/**
 	 * A session with the given user, or none.

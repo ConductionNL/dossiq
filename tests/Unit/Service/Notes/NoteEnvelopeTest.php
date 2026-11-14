@@ -204,4 +204,119 @@ class NoteEnvelopeTest extends TestCase {
 		$this->assertContains($unreadable['creatiedatum'], [$before, $after]);
 		$this->assertContains($missing['creatiedatum'], [$before, $after]);
 	}//end testAnUnreadableOrMissingMomentIsDatedToday()
+
+	/**
+	 * The identificatie is the note's own id, prefixed, so a receiver can
+	 * recognise a resend of the same note; a note with no id still gets a
+	 * well-formed one rather than no identification at all.
+	 *
+	 * @return void
+	 */
+	public function testTheIdentificationNamesTheNote(): void {
+		$envelope = new NoteEnvelope();
+		$note = ['id' => 42, 'message' => 'Gebeld met de aanvrager'];
+
+		$built = $envelope->build(note: $note, caseId: 'case-1', informatieobjecttype: 'iot-1');
+		$this->assertSame(expected: 'dossiq-note-42', actual: $built['identificatie']);
+
+		$built = $envelope->build(note: ['message' => 'Zonder id'], caseId: 'case-1', informatieobjecttype: 'iot-1');
+		$this->assertSame(expected: 'dossiq-note-', actual: $built['identificatie']);
+	}//end testTheIdentificationNamesTheNote()
+
+	/**
+	 * The source organisation is passed through as given, and absent by
+	 * default: the RSIN is the instance's configuration, not this class's, so
+	 * an unset one travels as empty rather than as a guess.
+	 *
+	 * @return void
+	 */
+	public function testTheSourceOrganisationIsPassedThroughOrEmpty(): void {
+		$envelope = new NoteEnvelope();
+		$note = ['message' => 'Gebeld'];
+
+		$this->assertSame(
+			expected: '002564440',
+			actual: $envelope->build(note: $note, caseId: 'case-1', informatieobjecttype: 'iot-1', bronorganisatie: '002564440')['bronorganisatie']
+		);
+		$this->assertSame(
+			expected: '',
+			actual: $envelope->build(note: $note, caseId: 'case-1', informatieobjecttype: 'iot-1')['bronorganisatie']
+		);
+	}//end testTheSourceOrganisationIsPassedThroughOrEmpty()
+
+	/**
+	 * The text travels base64-encoded and unaltered: the body is not trimmed
+	 * per line, re-wrapped or stripped, so what the handler wrote is what the
+	 * receiver files.
+	 *
+	 * @return void
+	 */
+	public function testTheTextTravelsEncodedAndUnaltered(): void {
+		$body = "Eerste regel\n\n  Tweede regel met <b>opmaak</b> & een \"citaat\"\nDerde";
+
+		$built = (new NoteEnvelope())->build(
+			note: ['message' => '  ' . $body . '  '],
+			caseId: 'case-1',
+			informatieobjecttype: 'iot-1'
+		);
+
+		$this->assertSame(expected: $body, actual: base64_decode($built['inhoud'], true));
+		$this->assertSame(expected: 'Eerste regel', actual: $built['titel'], message: 'the title is the first line only');
+		$this->assertSame(expected: 'text/plain', actual: $built['formaat']);
+		$this->assertSame(expected: NoteEnvelope::LANGUAGE, actual: $built['taal']);
+	}//end testTheTextTravelsEncodedAndUnaltered()
+
+	/**
+	 * A title of exactly the limit is kept whole; one character more is cut
+	 * with an ellipsis and still fits the limit, so a receiver with a 100-char
+	 * column never refuses the document for its title.
+	 *
+	 * @return void
+	 */
+	public function testATitleOfExactlyTheLimitIsKeptWhole(): void {
+		$envelope = new NoteEnvelope();
+
+		$exact = str_repeat('a', 100);
+		$built = $envelope->build(note: ['message' => $exact], caseId: 'case-1', informatieobjecttype: 'iot-1');
+		$this->assertSame(expected: $exact, actual: $built['titel']);
+		$this->assertSame(expected: 100, actual: mb_strlen($built['titel']));
+
+		$built = $envelope->build(note: ['message' => str_repeat('a', 101)], caseId: 'case-1', informatieobjecttype: 'iot-1');
+		$this->assertSame(expected: str_repeat('a', 99) . "\u{2026}", actual: $built['titel']);
+		$this->assertSame(expected: 100, actual: mb_strlen($built['titel']));
+	}//end testATitleOfExactlyTheLimitIsKeptWhole()
+
+	/**
+	 * The title is counted in characters, not bytes: a multi-byte first line
+	 * is cut on a character boundary, never halfway through one.
+	 *
+	 * @return void
+	 */
+	public function testAMultiByteTitleIsCutOnACharacterBoundary(): void {
+		$built = (new NoteEnvelope())->build(
+			note: ['message' => str_repeat('é', 120)],
+			caseId: 'case-1',
+			informatieobjecttype: 'iot-1'
+		);
+
+		$this->assertSame(expected: str_repeat('é', 99) . "\u{2026}", actual: $built['titel']);
+		$this->assertSame(expected: 100, actual: mb_strlen($built['titel']));
+	}//end testAMultiByteTitleIsCutOnACharacterBoundary()
+
+	/**
+	 * The informatieobjecttype travels trimmed, and the case as given: the
+	 * case is the caller's own reference and is not reshaped here.
+	 *
+	 * @return void
+	 */
+	public function testTheReservedTypeTravelsTrimmed(): void {
+		$built = (new NoteEnvelope())->build(
+			note: ['message' => 'Gebeld'],
+			caseId: 'case-1',
+			informatieobjecttype: "  https://catalogi.example/iot/werknotitie\n"
+		);
+
+		$this->assertSame(expected: 'https://catalogi.example/iot/werknotitie', actual: $built['informatieobjecttype']);
+		$this->assertSame(expected: 'case-1', actual: $built['zaak']);
+	}//end testTheReservedTypeTravelsTrimmed()
 }//end class

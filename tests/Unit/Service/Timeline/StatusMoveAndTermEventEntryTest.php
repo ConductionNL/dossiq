@@ -45,6 +45,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Timeline\StatusMoveEntry
  * @covers \OCA\Dossiq\Service\Timeline\TermEventEntry
+ * @uses \OCA\Dossiq\Service\Timeline\StatusDisplayName
  */
 class StatusMoveAndTermEventEntryTest extends TestCase {
 

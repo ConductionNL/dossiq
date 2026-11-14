@@ -12,15 +12,15 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\AppInfo\Registrar\AppHostRegistrar;
+use OCA\Dossiq\Service\Registrar\AppHostRegistrar;
 use OCA\OpenRegister\AppHost\Bootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Dossiq\AppInfo\Registrar\AppHostRegistrar
+ * @covers \OCA\Dossiq\Service\Registrar\AppHostRegistrar
  * @uses \OCA\Dossiq\AppInfo\OpenRegisterAutoloader
- * @uses \OCA\Dossiq\AppInfo\Registrar\DashboardWidgetList
+ * @uses \OCA\Dossiq\Dashboard\DashboardWidgetList
  */
 class AppHostRegistrarTest extends TestCase {
 

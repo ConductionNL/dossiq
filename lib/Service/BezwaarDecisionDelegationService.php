@@ -36,12 +36,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\BezwaarDecisionDelegationServiceInterface;
+
 /**
  * Raises and consumes the decidesk `bezwaar-decision` Decision.
  *
  * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
-class BezwaarDecisionDelegationService {
+class BezwaarDecisionDelegationService implements BezwaarDecisionDelegationServiceInterface {
 	/**
 	 * Constructor.
 	 *

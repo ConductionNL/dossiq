@@ -44,7 +44,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BesluitMigrationServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -57,7 +58,7 @@ use Throwable;
  *
  * @spec openspec/specs/zgw-brc/spec.md#requirement-besluiten-move-onto-decidiq-only-when-asked-req-brc-021
  */
-class BesluitMigrationService {
+class BesluitMigrationService implements BesluitMigrationServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -338,7 +339,7 @@ class BesluitMigrationService {
 	 * @return string The stored id, or '' when the key is unset.
 	 */
 	private function localSchemaId(): string {
-		return trim($this->appConfig->getValueString(Application::APP_ID, self::DECISION_SCHEMA_KEY, ''));
+		return trim($this->appConfig->getValueString(AppIdentity::APP_ID, self::DECISION_SCHEMA_KEY, ''));
 	}//end localSchemaId()
 
 	/**
@@ -573,7 +574,7 @@ class BesluitMigrationService {
 			return false;
 		}
 
-		$this->appConfig->deleteKey(app: Application::APP_ID, key: self::DECISION_SCHEMA_KEY);
+		$this->appConfig->deleteKey(app: AppIdentity::APP_ID, key: self::DECISION_SCHEMA_KEY);
 
 		return true;
 	}//end detachLocalSchema()

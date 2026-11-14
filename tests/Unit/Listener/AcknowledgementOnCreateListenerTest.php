@@ -42,6 +42,8 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Listener\AcknowledgementOnCreateListener
  * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
+ * @uses \OCA\Dossiq\Service\WorkQueueService
  */
 class AcknowledgementOnCreateListenerTest extends TestCase {
 

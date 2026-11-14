@@ -35,12 +35,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\DependentTermOfferInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Term\DependentTermOffer;
-use OCA\Dossiq\Service\TermijnService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -64,15 +64,15 @@ class DependentTermListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService Schema ids and the object service.
-	 * @param TermijnService     $terms           Reads the instance the event names.
-	 * @param DependentTermOffer $offers          Writes the offer.
+	 * @param SettingsServiceInterface    $settingsService Schema ids and the object service.
+	 * @param TermijnServiceInterface     $terms           Reads the instance the event names.
+	 * @param DependentTermOfferInterface $offers          Writes the offer.
 	 * @param LoggerInterface    $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly TermijnService $terms,
-		private readonly DependentTermOffer $offers,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly TermijnServiceInterface $terms,
+		private readonly DependentTermOfferInterface $offers,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -93,7 +93,7 @@ class DependentTermListener implements IEventListener {
 				return;
 			}
 
-			if (in_array((string)($object['type'] ?? ''), DependentTermOffer::MOVING_EVENTS, true) === false) {
+			if (in_array((string)($object['type'] ?? ''), DependentTermOfferInterface::MOVING_EVENTS, true) === false) {
 				return;
 			}
 

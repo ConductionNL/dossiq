@@ -28,12 +28,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\TermijnService;
-use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Service\TermKind;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use Throwable;
 
 /**
@@ -46,14 +46,14 @@ class WooReceivedTerm {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService     $settingsService Resolves OpenRegister's term engine.
-	 * @param TermijnService|null $terms           The term instances of a case.
-	 * @param CaseTimeline|null   $timeline        Where a term that did not start is noted.
+	 * @param SettingsServiceInterface     $settingsService Resolves OpenRegister's term engine.
+	 * @param TermijnServiceInterface|null $terms           The term instances of a case.
+	 * @param CaseTimelineInterface|null   $timeline        Where a term that did not start is noted.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly ?TermijnService $terms = null,
-		private readonly ?CaseTimeline $timeline = null,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly ?TermijnServiceInterface $terms = null,
+		private readonly ?CaseTimelineInterface $timeline = null,
 	) {
 	}//end __construct()
 
@@ -69,7 +69,7 @@ class WooReceivedTerm {
 			return false;
 		}
 
-		return $this->settingsService->getOpenRegisterClass(TermijnTimerService::ENGINE_CLASS) !== null;
+		return $this->settingsService->getOpenRegisterClass(TermijnTimerServiceInterface::ENGINE_CLASS) !== null;
 	}//end isAvailable()
 
 	/**
@@ -153,10 +153,10 @@ class WooReceivedTerm {
 	public function noteNotStarted(string $caseId, string $reason): void {
 		$this->timeline?->record(
 			caseId: $caseId,
-			kind: TimelineKinds::TERM_EVENT,
+			kind: TimelineKindsInterface::TERM_EVENT,
 			message: 'De wettelijke termijn is niet gestart: ' . $reason,
 			fields: ['event' => 'not-started', 'term' => TermKind::STATUTORY],
-			visibility: CaseTimeline::INTERNAL,
+			visibility: CaseTimelineInterface::INTERNAL,
 		);
 	}//end noteNotStarted()
 

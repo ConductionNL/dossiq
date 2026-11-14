@@ -31,7 +31,8 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use DateTimeInterface;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseDefinitionExportServiceInterface;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
@@ -48,7 +49,7 @@ use ZipArchive;
  *
  * @spec openspec/changes/archive/retrofit-2026-05-24-annotate-procest/tasks.md#task-3
  */
-class CaseDefinitionExportService {
+class CaseDefinitionExportService implements CaseDefinitionExportServiceInterface {
 	/**
 	 * Version format for manifest.
 	 */
@@ -321,13 +322,13 @@ class CaseDefinitionExportService {
 	 */
 	private function bumpExportVersion(string $caseTypeId): array {
 		$previousVersion = $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'export_version_' . $caseTypeId,
 			'0.0'
 		);
 		$newVersion = $this->incrementVersion(version: $previousVersion);
 		$this->appConfig->setValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'export_version_' . $caseTypeId,
 			$newVersion
 		);
@@ -346,7 +347,7 @@ class CaseDefinitionExportService {
 	 */
 	private function sourceEnvironment(): string {
 		return $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'environment_name',
 			'unknown'
 		);
@@ -386,7 +387,6 @@ class CaseDefinitionExportService {
 			'title' => $this->text->textOf(value: ($export->caseType['title'] ?? null)),
 		];
 	}//end manifestCaseType()
-
 
 	/**
 	 * The slug a package is named after.

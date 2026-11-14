@@ -56,6 +56,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\DuplicatePolicyInterface;
 use OCP\IGroupManager;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -69,7 +70,7 @@ use Throwable;
  *
  * @spec openspec/specs/friendly-case-create-form/spec.md
  */
-class DuplicatePolicy {
+class DuplicatePolicy implements DuplicatePolicyInterface {
 
 	/**
 	 * The case-type property holding the policy.

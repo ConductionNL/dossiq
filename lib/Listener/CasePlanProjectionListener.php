@@ -30,9 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\CasePlanProjectionService;
+use OCA\Dossiq\Kernel\Contracts\CasePlanProjectionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -50,14 +50,14 @@ class CasePlanProjectionListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CasePlanProjectionService $projection   The caseModel-to-plan projection.
-	 * @param ObjectSchemaSlugResolver  $slugResolver Schema id-to-slug resolver.
+	 * @param CasePlanProjectionServiceInterface $projection   The caseModel-to-plan projection.
+	 * @param ObjectSchemaSlugResolverInterface  $slugResolver Schema id-to-slug resolver.
 	 * @param LoggerInterface           $logger       Logger.
 	 * @param ReceiptMoment $receipt Tells a received case from a draft (decision 180).
 	 */
 	public function __construct(
-		private readonly CasePlanProjectionService $projection,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly CasePlanProjectionServiceInterface $projection,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
 		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {

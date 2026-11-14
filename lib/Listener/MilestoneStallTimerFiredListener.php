@@ -29,9 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\MilestoneStallActsInterface;
+use OCA\Dossiq\Kernel\Contracts\MilestoneStallTimerInterface;
 use OCA\Dossiq\Listener\Support\TimerFire;
-use OCA\Dossiq\Service\Milestone\MilestoneStallActs;
-use OCA\Dossiq\Service\Milestone\MilestoneStallTimer;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
@@ -50,12 +50,12 @@ class MilestoneStallTimerFiredListener implements IEventListener {
 	/**
 	 * Build the listener.
 	 *
-	 * @param MilestoneStallActs       $acts           Reads the case and tells the assignee.
+	 * @param MilestoneStallActsInterface       $acts           Reads the case and tells the assignee.
 	 * @param BackgroundServiceAccount $serviceAccount The identity a cron-driven fire writes as.
 	 * @param LoggerInterface          $logger         Logs a failed fire.
 	 */
 	public function __construct(
-		private readonly MilestoneStallActs $acts,
+		private readonly MilestoneStallActsInterface $acts,
 		private readonly BackgroundServiceAccount $serviceAccount,
 		private readonly LoggerInterface $logger,
 	) {
@@ -75,7 +75,7 @@ class MilestoneStallTimerFiredListener implements IEventListener {
 			return;
 		}
 
-		$metadata = TimerFire::metadataFrom(event: $event, source: MilestoneStallTimer::METADATA_SOURCE);
+		$metadata = TimerFire::metadataFrom(event: $event, source: MilestoneStallTimerInterface::METADATA_SOURCE);
 		$caseId   = (string) ($metadata['caseId'] ?? '');
 		if ($metadata === null || $caseId === '' || TimerFire::isBreach(event: $event) === false) {
 			return;

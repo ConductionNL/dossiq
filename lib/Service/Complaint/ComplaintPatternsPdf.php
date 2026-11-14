@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Complaint;
 
+use OCA\Dossiq\Kernel\Contracts\ComplaintPatternsPdfInterface;
 use OCA\Dossiq\Service\Export\PlainTextPdf;
 use OCP\IL10N;
 
@@ -35,7 +36,7 @@ use OCP\IL10N;
  *
  * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
  */
-class ComplaintPatternsPdf {
+class ComplaintPatternsPdf implements ComplaintPatternsPdfInterface {
 	/**
 	 * Constructor.
 	 *

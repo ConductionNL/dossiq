@@ -187,4 +187,61 @@ class CaseGoalControllerTest extends TestCase {
 		self::assertSame(expected: Http::STATUS_UNPROCESSABLE_ENTITY, actual: $response->getStatus());
 		self::assertSame(expected: 'goal-needs-a-title', actual: $response->getData()['error']);
 	}//end testARefusedGoalSaysWhy()
+
+	/**
+	 * A handler closes a goal of the case with the state and observation sent.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-goals/tasks.md#2.1
+	 */
+	public function testAHandlerClosesAGoalOfTheCase(): void {
+		$this->guard->method('hasCaseMutationAccess')->with('case-1', self::anything())->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([
+			['state', '', 'met'],
+			['observation', '', 'Het besluit noemt de reden'],
+		]);
+		$this->goals->expects(self::once())->method('closeOfCase')
+			->with('case-1', 'g-1', 'met', 'Het besluit noemt de reden')
+			->willReturn(['id' => 'g-1', 'state' => 'met']);
+
+		$response = $this->controller->close(caseId: 'case-1', goalId: 'g-1');
+
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		self::assertSame(expected: ['id' => 'g-1', 'state' => 'met'], actual: $response->getData());
+	}//end testAHandlerClosesAGoalOfTheCase()
+
+	/**
+	 * 🔴 Someone who may not update the case cannot close its goal, and no goal is read.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-goals/tasks.md#2.1
+	 */
+	public function testANonHandlerCannotCloseAGoal(): void {
+		$this->guard->method('hasCaseMutationAccess')->willReturn(false);
+		$this->goals->expects(self::never())->method('closeOfCase');
+		$this->goals->expects(self::never())->method('close');
+
+		self::assertSame(expected: Http::STATUS_FORBIDDEN, actual: $this->controller->close(caseId: 'case-1', goalId: 'g-1')->getStatus());
+	}//end testANonHandlerCannotCloseAGoal()
+
+	/**
+	 * A refused close answers 422 with the rule.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-goals/tasks.md#2.1
+	 */
+	public function testARefusedCloseSaysWhy(): void {
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->goals->method('closeOfCase')->willThrowException(
+			new RefusedException(rule: 'goal-not-found', sentence: 'That goal could not be found.', status: RefusedException::STATUS_UNPROCESSABLE)
+		);
+
+		$response = $this->controller->close(caseId: 'case-1', goalId: 'g-other');
+
+		self::assertSame(expected: Http::STATUS_UNPROCESSABLE_ENTITY, actual: $response->getStatus());
+		self::assertSame(expected: 'goal-not-found', actual: $response->getData()['error']);
+	}//end testARefusedCloseSaysWhy()
 }//end class

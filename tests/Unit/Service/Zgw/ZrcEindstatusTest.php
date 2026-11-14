@@ -88,4 +88,61 @@ class ZrcEindstatusTest extends TestCase {
 		$this->assertNull($this->eindstatus(mapped: false)->explicitlyFinal($this->body(self::ST1)));
 		$this->assertFalse($this->eindstatus()->explicitlyFinal($this->body('b0000000-0000-0000-0000-0000000000ff')));
 	}
+	public function testWhenTheSearchQueryCannotBeBuiltTheSiblingsAreSearchedByRegisterAndSchema(): void {
+		$types = [
+			self::ST1 => ['caseType' => 'https://nc/catalogi/zaaktypen/' . self::ZT, 'order' => 1],
+			self::ST2 => ['caseType' => self::ZT, 'order' => 2],
+		];
+		$queries = [];
+		$store = new class($types, $queries) {
+			public function __construct(private array $types, private array &$queries) {
+			}
+
+			public function find(mixed $id, mixed ...$args): mixed {
+				return $this->types[(string)$id] ?? null;
+			}
+
+			public function buildSearchQuery(array $requestParams, mixed $register, mixed $schema): array {
+				throw new \RuntimeException('no query builder');
+			}
+
+			public function searchObjectsPaginated(array $query): array {
+				$this->queries[] = $query;
+				return ['results' => array_values($this->types)];
+			}
+		};
+		$mappings = $this->createMock(ZgwMappingService::class);
+		$mappings->method('getMapping')->willReturn(['sourceRegister' => '7', 'sourceSchema' => '8']);
+		$zgw = $this->createMock(ZgwService::class);
+		$zgw->method('getZgwMappingService')->willReturn($mappings);
+		$zgw->method('getObjectService')->willReturn($store);
+		$eindstatus = new ZrcEindstatus(zgwService: $zgw);
+
+		$this->assertFalse($eindstatus->finalState($this->body(self::ST1)), 'a lower volgnummer is not final');
+		$this->assertTrue($eindstatus->finalState($this->body(self::ST2)));
+		$this->assertSame(
+			['@self' => ['register' => 7, 'schema' => 8], 'caseType' => self::ZT],
+			$queries[0],
+			'the zaaktype URL is reduced to its uuid and the ids are cast to int'
+		);
+	}
+
+	public function testATypeWithoutVolgnummerOrZaaktypeIsNotFinalByOrder(): void {
+		$this->types = [
+			self::ST1 => ['caseType' => self::ZT, 'order' => 0],
+			self::ST2 => ['caseType' => '', 'order' => 5],
+			'b0000000-0000-0000-0000-000000000003' => ['caseType' => '', 'order' => 1],
+		];
+
+		$this->assertFalse($this->eindstatus()->finalState($this->body(self::ST1)), 'volgnummer 0 never wins');
+		$this->assertFalse($this->eindstatus()->finalState($this->body(self::ST2)), 'no zaaktype: types without one are not siblings');
+	}
+
+	public function testABodyWithoutAStatustypeUuidIsNone(): void {
+		$this->types = [self::ST1 => ['caseType' => self::ZT, 'order' => 1, 'isFinal' => true]];
+
+		$this->assertSame('none', $this->eindstatus()->finalState([]));
+		$this->assertSame('none', $this->eindstatus()->finalState(['statustype' => 'https://nc/catalogi/statustypen/not-a-uuid']));
+		$this->assertNull($this->eindstatus()->explicitlyFinal(['statustype' => '']));
+	}
 }//end class

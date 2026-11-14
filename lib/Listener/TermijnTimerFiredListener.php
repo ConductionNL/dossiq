@@ -9,9 +9,9 @@
  * instance's `notificatiesVerstuurd` list stays the ONE dedup source
  * (which also absorbs catch-up fires after the migration repair step);
  * the breach rung flips the instance to `exceeded` and records the
- * event; the hersteltermijn helper's rung records `pause-expired` only
- * while the instance is still paused; and every handled fire syncs the
- * dwangsom accrual derivation.
+ * event; the hersteltermijn helper's rung records `pause-expired` and
+ * resumes the term only while the instance is still paused; and every
+ * handled fire syncs the dwangsom accrual derivation.
  *
  * The listener never throws out of handle(): a domain failure is logged
  * and must not poison the engine sweep.
@@ -37,14 +37,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekResolutionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseObjectReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\DeadlineEscalationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DeadlinePauseServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\PauseChaseServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
 use OCA\Dossiq\Listener\Support\TimerFire;
-use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
-use OCA\Dossiq\Service\DeadlineEscalationService;
-use OCA\Dossiq\Service\Pause\PauseChaseService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\TermijnService;
-use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -73,28 +75,36 @@ class TermijnTimerFiredListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param TermijnService $termService Instance lookup, updates and events.
-	 * @param DeadlineEscalationService $escalationService Threshold bookkeeping and dispatch.
+	 * @param TermijnServiceInterface $termService Instance lookup, updates and events.
+	 * @param DeadlineEscalationServiceInterface $escalationService Threshold bookkeeping and dispatch.
 	 * @param LoggerInterface $logger Logger.
 	 * @param BackgroundServiceAccount $serviceAccount Who writes when the fire comes
 	 *        from cron with nobody signed in. OpenRegister's FlowTimerWorker is a
 	 *        background job, and OpenRegister refuses a write from nobody.
-	 * @param AanvullingsverzoekResolutionService|null $aanvullingen The request
+	 * @param AanvullingsverzoekResolutionServiceInterface|null $aanvullingen The request
 	 *        the hersteltermijn belonged to, so the day it runs out is recorded
 	 *        on the request and not only on the timer. Optional, so an instance
 	 *        without the schema fires exactly as it did before.
-	 * @param PauseChaseService|null $chases The reminders on a suspended term. The
+	 * @param PauseChaseServiceInterface|null $chases The reminders on a suspended term. The
 	 *        rung only says a moment arrived; this decides whether a reminder is
 	 *        actually due, against the count the instance carries. Optional, so a
 	 *        pause with no declared reason fires exactly as it did before.
+	 * @param DeadlinePauseServiceInterface|null $pauses Resumes a term whose pause ran out
+	 *        (REQ-TERM-080). Optional, so a build without it records the expiry
+	 *        and leaves the term paused, as it did before.
+	 * @param CaseObjectReaderInterface|null $cases Reads the case behind the term, for the
+	 *        handler the resume is told to and the title it names. Optional: without
+	 *        it the term still resumes, and nobody is told.
 	 */
 	public function __construct(
-		private readonly TermijnService $termService,
-		private readonly DeadlineEscalationService $escalationService,
+		private readonly TermijnServiceInterface $termService,
+		private readonly DeadlineEscalationServiceInterface $escalationService,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
-		private readonly ?AanvullingsverzoekResolutionService $aanvullingen = null,
-		private readonly ?PauseChaseService $chases = null,
+		private readonly ?AanvullingsverzoekResolutionServiceInterface $aanvullingen = null,
+		private readonly ?PauseChaseServiceInterface $chases = null,
+		private readonly ?DeadlinePauseServiceInterface $pauses = null,
+		private readonly ?CaseObjectReaderInterface $cases = null,
 	) {
 	}//end __construct()
 
@@ -140,7 +150,7 @@ class TermijnTimerFiredListener implements IEventListener {
 		$timer = $event->getTimer();
 		$metadata = ($timer->getMetadata() ?? []);
 		if ((string)$timer->getAppId() !== 'dossiq'
-			|| (string)($metadata['source'] ?? '') !== TermijnTimerService::METADATA_SOURCE
+			|| (string)($metadata['source'] ?? '') !== TermijnTimerServiceInterface::METADATA_SOURCE
 		) {
 			return;
 		}
@@ -160,7 +170,7 @@ class TermijnTimerFiredListener implements IEventListener {
 		}
 
 		$kind = (string)($metadata['kind'] ?? '');
-		if ($kind === TermijnTimerService::KIND_HERSTELTERMIJN) {
+		if ($kind === TermijnTimerServiceInterface::KIND_HERSTELTERMIJN) {
 			// Two kinds of rung live on the helper now. `slaBreached:0` is the
 			// hersteltermijn running out; every `preBreach:<days>` rung is a
 			// reminder due inside it. They are told apart by the trigger rather
@@ -249,12 +259,15 @@ class TermijnTimerFiredListener implements IEventListener {
 	 * The hersteltermijn helper fired: the pause ran out without an
 	 * aanvulling. The engine cannot cancel a single timer, so a helper
 	 * outliving an on-time aanvulling fires anyway — the still-paused
-	 * guard here is what drops it.
+	 * guard here is what drops it, and so a term the handler resumed
+	 * earlier is neither resumed again nor told about (REQ-TERM-080).
 	 *
 	 * @param array<string, mixed> $instance The TermijnInstance row.
 	 * @param string $instanceId Its id.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/expired-pause-resumes-the-term/tasks.md
 	 */
 	private function handlePauseExpiry(array $instance, string $instanceId): void {
 		if ((string)($instance['status'] ?? '') !== 'paused') {
@@ -269,17 +282,31 @@ class TermijnTimerFiredListener implements IEventListener {
 			daysImpact: 0,
 		);
 
-		// The timer says the hersteltermijn ran out. The REQUEST is what the
-		// file has to show when an application is refused for incompleteness
-		// under Awb 4:5, so the day it ran out is recorded there too, as a
-		// state. Nothing is deleted and nothing is rewritten: the items and the
-		// dates stay exactly as they were sent, which is the whole point of
-		// keeping an unanswered request.
-		//
-		// A failure here must not poison the engine sweep, and must not undo
-		// the event above: the term is correct either way, and the request can
-		// still be expired by hand.
 		$caseId = trim((string)($instance['case'] ?? ''));
+		$this->expireRequest(caseId: $caseId, instanceId: $instanceId);
+		$this->resumeExpired(caseId: $caseId, instanceId: $instanceId);
+	}//end handlePauseExpiry()
+
+	/**
+	 * Mark the request behind an expired pause as run out.
+	 *
+	 * The timer says the hersteltermijn ran out. The REQUEST is what the
+	 * file has to show when an application is refused for incompleteness
+	 * under Awb 4:5, so the day it ran out is recorded there too, as a
+	 * state. Nothing is deleted and nothing is rewritten: the items and the
+	 * dates stay exactly as they were sent, which is the whole point of
+	 * keeping an unanswered request.
+	 *
+	 * A failure here must not poison the engine sweep, and must not undo
+	 * the event before it: the term is correct either way, and the request
+	 * can still be expired by hand.
+	 *
+	 * @param string $caseId The case the term belongs to.
+	 * @param string $instanceId The term instance id.
+	 *
+	 * @return void
+	 */
+	private function expireRequest(string $caseId, string $instanceId): void {
 		if ($this->aanvullingen === null || $caseId === '') {
 			return;
 		}
@@ -292,7 +319,64 @@ class TermijnTimerFiredListener implements IEventListener {
 				['case' => $caseId, 'instance' => $instanceId, 'error' => $e->getMessage()]
 			);
 		}
-	}//end handlePauseExpiry()
+	}//end expireRequest()
+
+	/**
+	 * Resume the term whose pause ran out, and tell the case's handler.
+	 *
+	 * The handler is the case's assignee at the moment the pause ran out. A
+	 * case without one, or one that cannot be read, still resumes: the term
+	 * is the statutory part, the notice is the courtesy. A failure is logged
+	 * and must not poison the engine sweep.
+	 *
+	 * @param string $caseId The case the term belongs to.
+	 * @param string $instanceId The term instance id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/expired-pause-resumes-the-term/tasks.md
+	 */
+	private function resumeExpired(string $caseId, string $instanceId): void {
+		if ($this->pauses === null) {
+			return;
+		}
+
+		try {
+			$this->pauses->resumeAfterExpiry(termInstanceId: $instanceId, notice: $this->noticeFor(caseId: $caseId));
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq termijn: a term whose pause ran out could not be resumed',
+				['case' => $caseId, 'instance' => $instanceId, 'error' => $e->getMessage()]
+			);
+		}
+	}//end resumeExpired()
+
+	/**
+	 * Who the resume is told to, and the case it names.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, string> `notify` and `caseTitle`, empty when the case cannot be read.
+	 *
+	 * @spec openspec/changes/expired-pause-resumes-the-term/tasks.md
+	 */
+	private function noticeFor(string $caseId): array {
+		$case = null;
+		if ($this->cases !== null && $caseId !== '') {
+			$case = $this->cases->fetchCaseById(caseUuid: $caseId);
+		}
+
+		if ($case === null) {
+			return [];
+		}
+
+		$title = trim((string)($case['title'] ?? ''));
+		if ($title === '') {
+			$title = trim((string)($case['identifier'] ?? ''));
+		}
+
+		return ['notify' => trim((string)($case['assignee'] ?? '')), 'caseTitle' => $title];
+	}//end noticeFor()
 
 	/**
 	 * Map an engine rung key onto the domain threshold bucket.

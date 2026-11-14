@@ -22,6 +22,8 @@ use ReflectionMethod;
 
 /**
  * @covers \OCA\Dossiq\Controller\PublicCaseSurvivorController
+ * @uses \OCA\Dossiq\Service\Intake\CaseMatchSuggestion
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class PublicCaseSurvivorRenderTest extends TestCase {
 

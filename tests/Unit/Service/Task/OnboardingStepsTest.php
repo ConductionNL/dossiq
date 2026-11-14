@@ -44,6 +44,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
  * @uses \OCA\Dossiq\Service\TenantOrganisationResolver
  * @uses \OCA\Dossiq\Service\TenantService
+ * @uses \OCA\Dossiq\Service\OrganisationLookup
  */
 class OnboardingStepsTest extends TestCase {
 	use MakesTenantAnchors;

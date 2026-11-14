@@ -33,8 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseDocumentGenerationService;
-use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
+use OCA\Dossiq\Kernel\Contracts\CaseDocumentGenerationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DossierUploadHandlerInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -52,18 +52,18 @@ class CaseDocumentGenerationController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param CaseDocumentGenerationService $generationService Renders the
+	 * @param CaseDocumentGenerationServiceInterface $generationService Renders the
 	 *                                                        template and files
 	 *                                                        the result.
-	 * @param DossierUploadHandler $uploadHandler Supplies the case write guard
+	 * @param DossierUploadHandlerInterface $uploadHandler Supplies the case write guard
 	 *                                            the upload endpoint uses.
 	 * @param IUserSession $userSession The user session.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseDocumentGenerationService $generationService,
-		private readonly DossierUploadHandler $uploadHandler,
+		private readonly CaseDocumentGenerationServiceInterface $generationService,
+		private readonly DossierUploadHandlerInterface $uploadHandler,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);

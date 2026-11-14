@@ -41,8 +41,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCP\Migration\IOutput;
@@ -84,11 +84,11 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister and the configured schemas.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -148,7 +148,7 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 			} catch (Throwable $e) {
 				$this->logger->warning(
 					'Dossiq: the Woo summary rewrite could not read the ' . $name,
-					['app' => Application::APP_ID, 'error' => $e->getMessage()]
+					['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 				);
 				$output->info('Woo summary rewrite: ' . $name . ' could not be read, skipped.');
 				continue;
@@ -257,7 +257,7 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the Woo summary rewrite failed for one row',
-				['app' => Application::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
 			);
 			return 'failed';
 		}
@@ -296,7 +296,7 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 			} catch (Throwable $e) {
 				$this->logger->info(
 					'Dossiq: the Woo summary rewrite could not read a case title',
-					['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+					['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 				);
 			}
 		}

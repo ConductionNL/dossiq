@@ -25,8 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Checklist\ChecklistTemplateStore;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ChecklistTemplateStoreInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
 use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
@@ -49,7 +49,7 @@ class ChecklistTemplateController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param ChecklistTemplateStore $templates The template catalogue
+	 * @param ChecklistTemplateStoreInterface $templates The template catalogue
 	 * @param LoggerInterface $logger Logger
 	 *
 	 * @spec openspec/specs/inspection-checklists/spec.md
@@ -57,7 +57,7 @@ class ChecklistTemplateController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ChecklistTemplateStore $templates,
+		private readonly ChecklistTemplateStoreInterface $templates,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -105,7 +105,7 @@ class ChecklistTemplateController extends Controller {
 			// server fault, and its message already names the property.
 			$this->logger->info(
 				'Rejected checklist template create: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['message' => $e->getMessage()],
@@ -114,7 +114,7 @@ class ChecklistTemplateController extends Controller {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Failed to create checklist template: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['message' => 'Failed to create checklist: ' . $e->getMessage()],
@@ -148,7 +148,7 @@ class ChecklistTemplateController extends Controller {
 			// server fault, and its message already names the property.
 			$this->logger->info(
 				'Rejected checklist template update for ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['message' => $e->getMessage()],
@@ -157,7 +157,7 @@ class ChecklistTemplateController extends Controller {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Failed to update checklist template ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['message' => 'Failed to update checklist: ' . $e->getMessage()],

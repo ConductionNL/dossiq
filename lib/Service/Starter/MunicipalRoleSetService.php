@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Kernel\Contracts\MunicipalRoleSetServiceInterface;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCP\IUser;
@@ -46,7 +47,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
-class MunicipalRoleSetService {
+class MunicipalRoleSetService implements MunicipalRoleSetServiceInterface {
 
 	/**
 	 * The app config key naming the role type schema.
