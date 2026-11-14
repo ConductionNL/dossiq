@@ -48,6 +48,8 @@ use Throwable;
 /**
  * Moves another app's stored records onto cases, by the case type's declaration.
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ *
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
  */
 class CaseRecordImport implements CaseRecordImportInterface {
@@ -421,33 +423,42 @@ class CaseRecordImport implements CaseRecordImportInterface {
 			return $failed($placed['reason']);
 		}
 
-		$caseId = $placed['caseId'];
+		$moved = $this->moveAndStamp(run: $run, source: $source, sourceId: $sourceId, caseId: $placed['caseId']);
+		if (isset($moved['reason']) === true) {
+			return $failed($moved['reason']);
+		}
 
+		return ['requestId' => $sourceId, 'reference' => $reference, 'caseId' => $placed['caseId'],
+			'sourceTimer' => (string)($source[(string)($run['import']['sourceTimerField'] ?? '')] ?? ''), 'repointed' => $moved['repointed']];
+	}//end importOne()
+
+	/**
+	 * Move the records pointing at the source onto the case, then stamp the source as moved.
+	 *
+	 * @param array<string, mixed> $run      The run: objectService, caseType, import, existing.
+	 * @param array<string, mixed> $source   The source record.
+	 * @param string               $sourceId The source record's id.
+	 * @param string               $caseId   The case written for it.
+	 *
+	 * @return array{repointed?: mixed, reason?: string} How many references moved, or why the record is not moved.
+	 */
+	private function moveAndStamp(array $run, array $source, string $sourceId, string $caseId): array {
 		// References are moved before the stamp: a record whose references
 		// could not all be moved stays unstamped, so the next run tries again.
 		try {
-			$repointed = $this->references->repoint(
-				objectService: $run['objectService'],
-				import: $run['import'],
-				oldValues: [$sourceId, (string)($source['@self']['slug'] ?? '')],
-				caseId: $caseId
-			);
+			$oldValues = [$sourceId, (string)($source['@self']['slug'] ?? '')];
+			$repointed = $this->references->repoint(objectService: $run['objectService'], import: $run['import'], oldValues: $oldValues, caseId: $caseId);
 		} catch (Throwable $e) {
-			return $failed('The case ' . $caseId . ' was written, but the records pointing at the source could not all be moved onto it: ' . $e->getMessage());
+			$reason = 'The case ' . $caseId . ' was written, but the records pointing at the source could not all be moved onto it: ' . $e->getMessage();
+			return ['reason' => $reason];
 		}
 
 		if ($this->steps->store->stamp(objectService: $run['objectService'], import: $run['import'], sourceId: $sourceId, caseId: $caseId) === false) {
-			return $failed('The source app did not keep the stamp, so the record is not counted as moved.');
+			return ['reason' => 'The source app did not keep the stamp, so the record is not counted as moved.'];
 		}
 
-		return [
-			'requestId' => $sourceId,
-			'reference' => $reference,
-			'caseId' => $caseId,
-			'sourceTimer' => (string)($source[(string)($run['import']['sourceTimerField'] ?? '')] ?? ''),
-			'repointed' => $repointed,
-		];
-	}//end importOne()
+		return ['repointed' => $repointed];
+	}//end moveAndStamp()
 
 	/**
 	 * Map a record, write its case unless it has one, and carry its term.
@@ -466,31 +477,70 @@ class CaseRecordImport implements CaseRecordImportInterface {
 			return ['reason' => $e->getMessage()];
 		}
 
+		$caseId = $this->existingOrWritten(run: $run, mapped: $mapped);
+		if ($caseId === '') {
+			return ['reason' => 'The case could not be written.'];
+		}
+
+		return $this->withTerm(run: $run, caseId: $caseId, mapped: $mapped);
+	}//end placeCase()
+
+	/**
+	 * The case the record already has, or the one written for it ('' when the write failed).
+	 *
+	 * @param array<string, mixed> $run    The run: objectService, existing.
+	 * @param array<string, mixed> $mapped The mapped record.
+	 *
+	 * @return string The case id, or ''.
+	 */
+	private function existingOrWritten(array $run, array $mapped): string {
 		$caseId = $run['existing'];
 		if ($caseId === '') {
 			$caseId = $this->steps->store->writeCase(objectService: $run['objectService'], mapped: $mapped);
 		}
 
-		if ($caseId === '') {
-			return ['reason' => 'The case could not be written.'];
-		}
+		return $caseId;
+	}//end existingOrWritten()
 
+	/**
+	 * Carry the record's term onto its case, unless the import carries no term.
+	 *
+	 * @param array<string, mixed> $run    The run: caseType, import.
+	 * @param string               $caseId The case.
+	 * @param array<string, mixed> $mapped The mapped record, with its `term`.
+	 *
+	 * @return array{caseId: string}|array{reason: string} The case, or why its term could not be armed.
+	 */
+	private function withTerm(array $run, string $caseId, array $mapped): array {
 		if (($run['import']['carriesTerm'] ?? true) === false) {
 			return ['caseId' => $caseId];
 		}
 
-		$carried = $this->steps->term->carry(
-			caseId: $caseId,
-			term: $mapped['term'],
-			definitionSlug: (string)($caseType['identifier'] ?? ''),
-			extensionDays: $this->days(period: (string)($caseType['extensionPeriod'] ?? '')),
-		);
+		$carried = $this->carryTerm(caseType: $run['caseType'], caseId: $caseId, mapped: $mapped);
 		if ($mapped['term']['state'] !== TermCarryOver::STATE_CLOSED && in_array($carried['outcome'], self::ARMED, true) === false) {
 			return ['reason' => 'The case ' . $caseId . ' was written, but its term could not be armed (' . $carried['outcome'] . ').'];
 		}
 
 		return ['caseId' => $caseId];
-	}//end placeCase()
+	}//end withTerm()
+
+	/**
+	 * Carry the mapped term onto the case.
+	 *
+	 * @param array<string, mixed> $caseType The case type.
+	 * @param string               $caseId   The case.
+	 * @param array<string, mixed> $mapped   The mapped record, with its `term`.
+	 *
+	 * @return array<string, mixed> The carry result, with its `outcome`.
+	 */
+	private function carryTerm(array $caseType, string $caseId, array $mapped): array {
+		return $this->steps->term->carry(
+			caseId: $caseId,
+			term: $mapped['term'],
+			definitionSlug: (string)($caseType['identifier'] ?? ''),
+			extensionDays: $this->days(period: (string)($caseType['extensionPeriod'] ?? '')),
+		);
+	}//end carryTerm()
 
 	/**
 	 * An ISO 8601 period as days, 0 when absent or unreadable.

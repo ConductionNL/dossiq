@@ -83,6 +83,28 @@ class IntakeListenerRegistrar {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
+		$this->registerCaseIntakeListeners(context: $context);
+		$this->registerReportGroupingListeners(context: $context);
+		$this->registerBagValidationListeners(context: $context);
+		$this->registerIntakeRequirementsListeners(context: $context);
+		// The forms that open a case: a case type's own Forms binding, the
+		// forms of other apps bound to a case type, and dossiq's answer when
+		// OpenRegister asks which forms write into the case schema.
+		(new IntakeFormListenerRegistrar())->register(context: $context);
+
+		$this->registerReceiptDateListeners(context: $context);
+	}//end register()
+
+	/**
+	 * Register the listeners that open a case or a Woo request when an intake object is created.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerCaseIntakeListeners(IRegistrationContext $context): void {
 		// DSO Omgevingsloket: create a Dossiq zaak when a vergunningaanvraag is
 		// written by OpenRegister.
 		$context->registerEventListener(
@@ -95,7 +117,18 @@ class IntakeListenerRegistrar {
 			event: ObjectCreatedEvent::class,
 			listener: WooStartFromListener::class
 		);
+	}//end registerCaseIntakeListeners()
 
+	/**
+	 * Register the report-grouping listeners and the case creation on a DSO update.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerReportGroupingListeners(IRegistrationContext $context): void {
 		// A new case is placed once in hermiq's grouping of similar reports
 		// (ai-features-on-the-case, REQ-AIC-04). The job reads whether the case
 		// type declares the feature. The acknowledgement of receipt is queued
@@ -116,7 +149,18 @@ class IntakeListenerRegistrar {
 			event: ObjectUpdatedEvent::class,
 			listener: VergunningaanvraagCreatedListener::class
 		);
+	}//end registerReportGroupingListeners()
 
+	/**
+	 * Register the pre-persist BAG location validation.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerBagValidationListeners(IRegistrationContext $context): void {
 		// Bag-location-save-validation: pre-persist location source=bag
 		// enforcement (closes bag-register-adapter tasks.md item 4.1).
 		$context->registerEventListener(
@@ -127,7 +171,18 @@ class IntakeListenerRegistrar {
 			event: ObjectUpdatingEvent::class,
 			listener: LocationBagValidationListener::class
 		);
+	}//end registerBagValidationListeners()
 
+	/**
+	 * Register the intake requirements check on the creating and updating events.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerIntakeRequirementsListeners(IRegistrationContext $context): void {
 		// Intake-triage-and-refusal: a case type declares what must be answered
 		// before a case exists, and who may hold it. Enforced here rather than
 		// in the create form, because the form is one of five ways a case is
@@ -140,12 +195,18 @@ class IntakeListenerRegistrar {
 			event: ObjectUpdatingEvent::class,
 			listener: IntakeRequirementsListener::class
 		);
+	}//end registerIntakeRequirementsListeners()
 
-		// The forms that open a case: a case type's own Forms binding, the
-		// forms of other apps bound to a case type, and dossiq's answer when
-		// OpenRegister asks which forms write into the case schema.
-		(new IntakeFormListenerRegistrar())->register(context: $context);
-
+	/**
+	 * Register the receipt and start dates, set before the case is stored.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerReceiptDateListeners(IRegistrationContext $context): void {
 		// The receipt and start dates are SET BEFORE THE CASE IS STORED, above
 		// OpenRegister's materialised calculations, which run on the creating
 		// event at the default priority. The `startDate` calculation falls back
@@ -168,5 +229,5 @@ class IntakeListenerRegistrar {
 			listener: IntakeTermStartListener::class,
 			priority: self::RECEIPT_DATES_PRIORITY
 		);
-	}//end register()
+	}//end registerReceiptDateListeners()
 }//end class

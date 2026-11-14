@@ -190,8 +190,30 @@ class MigrateCasePlanStrings implements IRepairStep {
 			return 0;
 		}
 
-		$written = 0;
+		$written = $this->writeGoals(plan: $plan, planId: $planId);
+		$written += $this->writeInterventions(plan: $plan, planId: $planId);
 
+		if ($written > 0) {
+			$this->logger->info(
+				'MigrateCasePlanStrings: a family plan\'s text became goals and interventions',
+				['plan' => $planId, 'records' => $written]
+			);
+			$output->info('Dossiq: plan ' . $planId . ' carried ' . $written . ' records across');
+		}
+
+		return $written;
+	}//end migrateOne()
+
+	/**
+	 * Write one goal per old goal text.
+	 *
+	 * @param array<string, mixed> $plan   The plan.
+	 * @param string               $planId The plan id.
+	 *
+	 * @return integer How many records were written.
+	 */
+	private function writeGoals(array $plan, string $planId): int {
+		$written = 0;
 		foreach ($this->textsOf(plan: $plan, key: 'goals') as $text) {
 			$this->store->write(
 				schema: CasePlanGoalsInterface::SCHEMA,
@@ -207,6 +229,19 @@ class MigrateCasePlanStrings implements IRepairStep {
 			$written++;
 		}
 
+		return $written;
+	}//end writeGoals()
+
+	/**
+	 * Write one intervention per old deployment trajectory text.
+	 *
+	 * @param array<string, mixed> $plan   The plan.
+	 * @param string               $planId The plan id.
+	 *
+	 * @return integer How many records were written.
+	 */
+	private function writeInterventions(array $plan, string $planId): int {
+		$written = 0;
 		foreach ($this->textsOf(plan: $plan, key: 'deploymentTrajectories') as $text) {
 			$this->store->write(
 				schema: CasePlanInterventionsInterface::SCHEMA,
@@ -221,16 +256,8 @@ class MigrateCasePlanStrings implements IRepairStep {
 			$written++;
 		}
 
-		if ($written > 0) {
-			$this->logger->info(
-				'MigrateCasePlanStrings: a family plan\'s text became goals and interventions',
-				['plan' => $planId, 'records' => $written]
-			);
-			$output->info('Dossiq: plan ' . $planId . ' carried ' . $written . ' records across');
-		}
-
 		return $written;
-	}//end migrateOne()
+	}//end writeInterventions()
 
 	/**
 	 * Whether this plan already has records from the old shape.

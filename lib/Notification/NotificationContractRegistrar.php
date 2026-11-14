@@ -24,7 +24,8 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
  * Binds the Kernel contracts the Notification component implements, so callers in
- * other components get the same shared instance through the contract.
+ * other components get the same shared instance through the contract, and
+ * registers the notifier.
  *
  * @category Notification
  * @package  OCA\Dossiq\Notification
@@ -46,5 +47,10 @@ class NotificationContractRegistrar {
 	 */
 	public function register(IRegistrationContext $context): void {
 		$context->registerServiceAlias(NotifierInterface::class, Notifier::class);
+
+		// Note @mention notifications (nc-vue #207, ncvue-w2-leaves-adoption):
+		// MentionNotificationService raises `note_mention` notifications;
+		// this Notifier renders them for the bell menu.
+		$context->registerNotifierService(Notifier::class);
 	}//end register()
 }//end class

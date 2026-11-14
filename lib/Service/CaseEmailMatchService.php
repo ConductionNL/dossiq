@@ -16,7 +16,7 @@
  * per-user cursor over `mail_messages`, a batch cap, the leaf resolved through
  * the container, a `getLinkedEmails` pre-check before `linkEmail`, and a refusal
  * on an unconfigured register. Only the recognizer is new, and it lives in
- * {@see CaseNumberRecognizer}, the seam design decision D6 wants kept clean so
+ * {@see \OCA\Dossiq\Service\Email\CaseNumberRecognizer}, the seam design decision D6 wants kept clean so
  * the core can later move into the leaf.
  *
  * 🔴 THE WHOLE BATCH RUNS AS THE MAILBOX OWNER. A case number in a subject is
@@ -60,7 +60,6 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseEmailMatchServiceInterface;
 use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
 use OCA\Dossiq\Service\Email\CaseMailLeaf;
-use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
 use OCA\Dossiq\Service\Email\MailMatchSources;
 use OCP\IUser;
 use OCP\IUserManager;

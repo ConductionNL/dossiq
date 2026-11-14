@@ -12562,7 +12562,10 @@ OC.L10N.register(
         "{weeks} weeks": "{weeks} weken",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Close goal": "Doel afsluiten",
+        "What was observed": "Wat is er gezien",
+        "The goal is closed.": "Het doel is afgesloten."
     },
     "nplurals=2; plural=(n != 1);"
 )

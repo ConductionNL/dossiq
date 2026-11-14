@@ -64,6 +64,8 @@ use OCA\Dossiq\Kernel\Contracts\BezwaarCreationHookInterface;
 use OCA\Dossiq\Kernel\Contracts\BezwaarDecisionDelegationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\BounceActionInterface;
 use OCA\Dossiq\Kernel\Contracts\BoundFormsCheckInterface;
+use OCA\Dossiq\Kernel\Contracts\BrcCrossRegisterSyncInterface;
+use OCA\Dossiq\Kernel\Contracts\BrcDocumentLinkHandlerInterface;
 use OCA\Dossiq\Kernel\Contracts\BulkJobHandoffInterface;
 use OCA\Dossiq\Kernel\Contracts\BurgerIdentificationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CallbackServiceInterface;
@@ -463,8 +465,12 @@ use OCA\Dossiq\Kernel\Contracts\ZgwBusinessRulesServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwDocumentServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwJwtValidatorInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwMappingServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZgwRuleResultsInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZrcStatusEffectsInterface;
+use OCA\Dossiq\Kernel\Contracts\ZtcCrossReferenceEnricherInterface;
+use OCA\Dossiq\Kernel\Contracts\ZtcTypeNameResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\ZtcUrlValidityFilterInterface;
 use OCA\Dossiq\Service\Access\CaseDecisionAccess;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\Access\CaseRecordGrantsBackfill;
@@ -776,7 +782,13 @@ use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\Zaakdossier\LinkedDocumentsReader;
 use OCA\Dossiq\Service\Zaakdossier\MailPartiesReport;
 use OCA\Dossiq\Service\Zaakdossier\RestrictedDocumentReaders;
+use OCA\Dossiq\Service\Zgw\BrcCrossRegisterSync;
+use OCA\Dossiq\Service\Zgw\BrcDocumentLinkHandler;
+use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use OCA\Dossiq\Service\Zgw\ZrcStatusEffects;
+use OCA\Dossiq\Service\Zgw\ZtcCrossReferenceEnricher;
+use OCA\Dossiq\Service\Zgw\ZtcTypeNameResolver;
+use OCA\Dossiq\Service\Zgw\ZtcUrlValidityFilter;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -851,6 +863,8 @@ final class ContractBindings {
 		$context->registerServiceAlias(BezwaarDecisionDelegationServiceInterface::class, BezwaarDecisionDelegationService::class);
 		$context->registerServiceAlias(BounceActionInterface::class, BounceAction::class);
 		$context->registerServiceAlias(BoundFormsCheckInterface::class, BoundFormsCheck::class);
+		$context->registerServiceAlias(BrcCrossRegisterSyncInterface::class, BrcCrossRegisterSync::class);
+		$context->registerServiceAlias(BrcDocumentLinkHandlerInterface::class, BrcDocumentLinkHandler::class);
 		$context->registerServiceAlias(BulkJobHandoffInterface::class, BulkJobHandoff::class);
 		$context->registerServiceAlias(BurgerIdentificationServiceInterface::class, BurgerIdentificationService::class);
 		$context->registerServiceAlias(CallbackServiceInterface::class, CallbackService::class);
@@ -1250,7 +1264,11 @@ final class ContractBindings {
 		$context->registerServiceAlias(ZgwDocumentServiceInterface::class, ZgwDocumentService::class);
 		$context->registerServiceAlias(ZgwJwtValidatorInterface::class, ZgwJwtValidator::class);
 		$context->registerServiceAlias(ZgwMappingServiceInterface::class, ZgwMappingService::class);
+		$context->registerServiceAlias(ZgwRuleResultsInterface::class, ZgwRuleResults::class);
 		$context->registerServiceAlias(ZgwServiceInterface::class, ZgwService::class);
 		$context->registerServiceAlias(ZrcStatusEffectsInterface::class, ZrcStatusEffects::class);
+		$context->registerServiceAlias(ZtcCrossReferenceEnricherInterface::class, ZtcCrossReferenceEnricher::class);
+		$context->registerServiceAlias(ZtcTypeNameResolverInterface::class, ZtcTypeNameResolver::class);
+		$context->registerServiceAlias(ZtcUrlValidityFilterInterface::class, ZtcUrlValidityFilter::class);
 	}//end register()
 }//end class

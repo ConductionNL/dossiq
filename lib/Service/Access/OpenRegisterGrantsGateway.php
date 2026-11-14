@@ -133,6 +133,31 @@ class OpenRegisterGrantsGateway implements OpenRegisterGrantsGatewayInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function provenanceForCase(string $caseId, array $actions, ?string $userId = null): ?array {
+		$target = $this->handlerAndSchema();
+		if ($target === null) {
+			return null;
+		}
+
+		[$handler, $schema] = $target;
+		try {
+			$provenance = $handler->provenanceFor(schema: $schema, actions: $actions, userId: $userId, object: $this->caseObject(caseId: $caseId));
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq grants gateway: OpenRegister could not answer the provenance for a case',
+				['exception' => $e->getMessage(), 'caseId' => $caseId]);
+			return null;
+		}
+
+		return $this->provenanceOrNull(provenance: $provenance);
+	}//end provenanceForCase()
+
+	/**
+	 * OpenRegister's permission handler and the case schema, or null when either is missing.
+	 *
+	 * @return array{0: object, 1: object}|null The handler and the schema.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function handlerAndSchema(): ?array {
 		$handler = $this->permissionHandler();
 		if ($handler === null) {
 			return null;
@@ -143,27 +168,25 @@ class OpenRegisterGrantsGateway implements OpenRegisterGrantsGatewayInterface {
 			return null;
 		}
 
-		try {
-			$provenance = $handler->provenanceFor(
-				schema: $schema,
-				actions: $actions,
-				userId: $userId,
-				object: $this->caseObject(caseId: $caseId),
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq grants gateway: OpenRegister could not answer the provenance for a case',
-				['exception' => $e->getMessage(), 'caseId' => $caseId],
-			);
-			return null;
-		}
+		return [$handler, $schema];
+	}//end handlerAndSchema()
 
+	/**
+	 * The provenance when OpenRegister answered an array, else null.
+	 *
+	 * @param mixed $provenance OpenRegister's answer.
+	 *
+	 * @return array<string, array<string, mixed>>|null The provenance.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function provenanceOrNull(mixed $provenance): ?array {
 		if (is_array($provenance) === false) {
 			return null;
 		}
 
 		return $provenance;
-	}//end provenanceForCase()
+	}//end provenanceOrNull()
 
 	/**
 	 * Whether OpenRegister says, in its own words, that the caller may not write.

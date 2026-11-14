@@ -89,11 +89,28 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 		$objectService = $this->settingsService->getObjectService();
 		$register      = (string) $this->settingsService->getConfigValue('register');
 		$schema        = (string) $this->settingsService->getConfigValue(BezwaarArchiveTriggerInterface::SCHEMA_CONFIG_KEY);
-		if ($this->settingsService->isOpenRegisterAvailable() === false || $objectService === null || $register === '' || $schema === '') {
+		if ($this->migrationReady(objectService: $objectService, register: $register, schema: $schema) === false) {
 			$output->warning('OpenRegister or the bezwaarTrigger schema is not available. Skipping bezwaartermijn timer migration.');
 			return;
 		}
 
+		$counts = $this->syncAll(objectService: $objectService, register: $register, schema: $schema);
+
+		$this->report(output: $output, counts: $counts);
+	}//end run()
+
+	/**
+	 * Sync every active trigger under the system identity.
+	 *
+	 * @param object|null $objectService OpenRegister's object service.
+	 * @param string      $register      The register.
+	 * @param string      $schema        The bezwaarTrigger schema.
+	 *
+	 * @return array<string, int> The armed, due and failed counts.
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function syncAll(?object $objectService, string $register, string $schema): array {
 		$counts = ['armed' => 0, 'due' => 0, 'failed' => 0];
 
 		// No session, so OpenRegister sees Anonymous: the read and the archive
@@ -101,24 +118,27 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 		$this->withSystemIdentity(
 			objectService: $objectService,
 			work: function () use ($objectService, $register, $schema, &$counts): void {
-				try {
-					$triggers = $this->searchObjectsAsArrays(
-						objectService: $objectService,
-						register: $register,
-						schema: $schema,
-						filters: ['archiveTriggerActive' => true, '_limit' => 1000],
-					);
-				} catch (Throwable $e) {
-					$this->logger->error('Dossiq bezwaartermijn timer migration: the triggers could not be read', ['error' => $e->getMessage()]);
-					$triggers = [];
-				}
-
+				$triggers = $this->activeTriggers(objectService: $objectService, register: $register, schema: $schema);
 				foreach ($triggers as $trigger) {
 					$this->syncOne(trigger: $trigger, counts: $counts);
 				}
 			}
 		);
 
+		return $counts;
+	}//end syncAll()
+
+	/**
+	 * Log and print the migration's counts.
+	 *
+	 * @param IOutput            $output The output.
+	 * @param array<string, int> $counts The counts.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function report(IOutput $output, array $counts): void {
 		$this->logger->info('Dossiq bezwaartermijn timer migration complete', $counts);
 		$output->info(
 			sprintf(
@@ -128,7 +148,45 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 				$counts['failed']
 			)
 		);
-	}//end run()
+	}//end report()
+
+	/**
+	 * Whether OpenRegister and the bezwaarTrigger schema are available.
+	 *
+	 * @param object|null $objectService OpenRegister's object service.
+	 * @param string      $register      The register.
+	 * @param string      $schema        The bezwaarTrigger schema.
+	 *
+	 * @return bool
+	 */
+	private function migrationReady(?object $objectService, string $register, string $schema): bool {
+		return !($this->settingsService->isOpenRegisterAvailable() === false || $objectService === null || $register === '' || $schema === '');
+	}//end migrationReady()
+
+	/**
+	 * Read the active bezwaar archive triggers, or none when they cannot be read.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register.
+	 * @param string $schema        The bezwaarTrigger schema.
+	 *
+	 * @return array<int, array<string, mixed>> The triggers.
+	 */
+	private function activeTriggers(object $objectService, string $register, string $schema): array {
+		try {
+			$triggers = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['archiveTriggerActive' => true, '_limit' => 1000],
+			);
+		} catch (Throwable $e) {
+			$this->logger->error('Dossiq bezwaartermijn timer migration: the triggers could not be read', ['error' => $e->getMessage()]);
+			$triggers = [];
+		}
+
+		return $triggers;
+	}//end activeTriggers()
 
 	/**
 	 * Sync one trigger and count the outcome.

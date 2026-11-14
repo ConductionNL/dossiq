@@ -84,14 +84,7 @@ class CallbackService implements CallbackServiceInterface {
 			throw new OCSBadRequestException('customerPhone is required');
 		}
 
-		$scheduledFor = trim((string)($data['scheduledFor'] ?? ''));
-		if ($scheduledFor !== '') {
-			try {
-				$scheduledFor = (new DateTimeImmutable($scheduledFor))->format(DateTimeInterface::ATOM);
-			} catch (\Throwable $e) {
-				throw new OCSBadRequestException('Invalid scheduledFor');
-			}
-		}
+		$scheduledFor = $this->scheduledFor(data: $data);
 
 		$payload = [
 			'customerPhone' => $phone,
@@ -101,6 +94,45 @@ class CallbackService implements CallbackServiceInterface {
 			'preferredAgent' => trim((string)($data['preferredAgent'] ?? $agentId)),
 		];
 
+		return $this->withOptionalFields(payload: $payload, scheduledFor: $scheduledFor, data: $data);
+	}//end buildPayload()
+
+	/**
+	 * The requested callback moment as ISO 8601, or '' when none is asked.
+	 *
+	 * @param array<string, mixed> $data The request data.
+	 *
+	 * @return string The moment, or ''.
+	 *
+	 * @throws OCSBadRequestException When the moment cannot be read.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
+	 */
+	private function scheduledFor(array $data): string {
+		$scheduledFor = trim((string)($data['scheduledFor'] ?? ''));
+		if ($scheduledFor !== '') {
+			try {
+				$scheduledFor = (new DateTimeImmutable($scheduledFor))->format(DateTimeInterface::ATOM);
+			} catch (\Throwable $e) {
+				throw new OCSBadRequestException('Invalid scheduledFor');
+			}
+		}
+
+		return $scheduledFor;
+	}//end scheduledFor()
+
+	/**
+	 * Add the moment and the contactmoment reference to the payload when they are given.
+	 *
+	 * @param array<string, mixed> $payload      The payload so far.
+	 * @param string               $scheduledFor The moment, or ''.
+	 * @param array<string, mixed> $data         The request data.
+	 *
+	 * @return array<string, mixed> The callback payload.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
+	 */
+	private function withOptionalFields(array $payload, string $scheduledFor, array $data): array {
 		if ($scheduledFor !== '') {
 			$payload['scheduledFor'] = $scheduledFor;
 		}
@@ -110,7 +142,7 @@ class CallbackService implements CallbackServiceInterface {
 		}
 
 		return $payload;
-	}//end buildPayload()
+	}//end withOptionalFields()
 
 	/**
 	 * Schedule a new callback request.

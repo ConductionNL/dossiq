@@ -79,37 +79,7 @@ class BeschikkingAdapterRegistrar {
 		$context->registerService(
 			SigningAdapterInterface::class,
 			static function (ContainerInterface $c): SigningAdapterInterface {
-				$appManager = $c->get('OCP\\App\\IAppManager');
-				if ($appManager->isEnabledForUser('libresign') === true) {
-					return new LibresignSigningAdapter(
-						apiClient: new LibresignApiClient(
-							clientService: $c->get('OCP\\Http\\Client\\IClientService'),
-							urlGenerator: $c->get('OCP\\IURLGenerator'),
-							appConfig: $c->get('OCP\\IAppConfig'),
-							logger: $c->get('Psr\\Log\\LoggerInterface'),
-						),
-						appManager: $appManager,
-						appConfig: $c->get('OCP\\IAppConfig'),
-						userManager: $c->get('OCP\\IUserManager'),
-						rootFolder: $c->get('OCP\\Files\\IRootFolder'),
-						documentService: $c->get(ZgwDocumentService::class),
-						logger: $c->get('Psr\\Log\\LoggerInterface'),
-						signedVersionOf: static fn (string $originalId, int $signedFileId, string $signatory): bool => $c
-							->get(RestrictedDocumentReaders::class)
-							->inheritFromId(originalId: $originalId, fileId: $signedFileId, madeBy: $signatory),
-					);
-				}
-
-				$c->get('Psr\\Log\\LoggerInterface')->warning(
-					$c->get('OCP\\IL10N')->t(
-						'LibreSign is not installed or enabled. Digital signing falls back to '
-						. 'the built-in stub adapter — install and enable the LibreSign app to '
-						. 'sign beschikkingen with a real eIDAS-aligned signature.'
-					),
-					['app' => AppIdentity::APP_ID]
-				);
-
-				return $c->get(MockSigningAdapter::class);
+				return self::signingAdapter(container: $c);
 			}
 		);
 		// Beschikking archival is repointed onto OpenRegister's declarative
@@ -119,4 +89,87 @@ class BeschikkingAdapterRegistrar {
 		// vernietigingsdatum. The former app-local MockArchivalAdapter is retired.
 		$context->registerServiceAlias(ArchivalAdapterInterface::class, OpenRegisterArchivalAdapter::class);
 	}//end register()
+
+	/**
+	 * The LibreSign signing adapter when LibreSign is enabled, else the stub (logged).
+	 *
+	 * @param ContainerInterface $container The DI container.
+	 *
+	 * @return SigningAdapterInterface The adapter.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private static function signingAdapter(ContainerInterface $container): SigningAdapterInterface {
+		$appManager = $container->get('OCP\\App\\IAppManager');
+		if ($appManager->isEnabledForUser('libresign') === true) {
+			return self::libresignAdapter(container: $container, appManager: $appManager);
+		}
+
+		return self::stubAdapter(container: $container);
+	}//end signingAdapter()
+
+	/**
+	 * The LibreSign signing adapter.
+	 *
+	 * @param ContainerInterface    $container  The DI container.
+	 * @param \OCP\App\IAppManager $appManager The app manager.
+	 *
+	 * @return SigningAdapterInterface The adapter.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private static function libresignAdapter(ContainerInterface $container, $appManager): SigningAdapterInterface {
+		return new LibresignSigningAdapter(
+			apiClient: self::libresignApiClient(container: $container),
+			appManager: $appManager,
+			appConfig: $container->get('OCP\\IAppConfig'),
+			userManager: $container->get('OCP\\IUserManager'),
+			rootFolder: $container->get('OCP\\Files\\IRootFolder'),
+			documentService: $container->get(ZgwDocumentService::class),
+			logger: $container->get('Psr\\Log\\LoggerInterface'),
+			signedVersionOf: static fn (string $originalId, int $signedFileId, string $signatory): bool => $container
+				->get(RestrictedDocumentReaders::class)
+				->inheritFromId(originalId: $originalId, fileId: $signedFileId, madeBy: $signatory),
+		);
+	}//end libresignAdapter()
+
+	/**
+	 * The LibreSign API client.
+	 *
+	 * @param ContainerInterface $container The DI container.
+	 *
+	 * @return LibresignApiClient The client.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private static function libresignApiClient(ContainerInterface $container): LibresignApiClient {
+		return new LibresignApiClient(
+			clientService: $container->get('OCP\\Http\\Client\\IClientService'),
+			urlGenerator: $container->get('OCP\\IURLGenerator'),
+			appConfig: $container->get('OCP\\IAppConfig'),
+			logger: $container->get('Psr\\Log\\LoggerInterface'),
+		);
+	}//end libresignApiClient()
+
+	/**
+	 * The built-in stub signing adapter, with a warning that LibreSign is not there.
+	 *
+	 * @param ContainerInterface $container The DI container.
+	 *
+	 * @return SigningAdapterInterface The stub adapter.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private static function stubAdapter(ContainerInterface $container): SigningAdapterInterface {
+		$container->get('Psr\\Log\\LoggerInterface')->warning(
+			$container->get('OCP\\IL10N')->t(
+				'LibreSign is not installed or enabled. Digital signing falls back to '
+				. 'the built-in stub adapter — install and enable the LibreSign app to '
+				. 'sign beschikkingen with a real eIDAS-aligned signature.'
+			),
+			['app' => AppIdentity::APP_ID]
+		);
+
+		return $container->get(MockSigningAdapter::class);
+	}//end stubAdapter()
 }//end class

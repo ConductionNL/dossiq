@@ -95,6 +95,30 @@ class InstallShippedPackages implements IRepairStep {
 	 * @spec openspec/changes/repair-updates-installed-packages/specs/case-types/spec.md
 	 */
 	public function run(IOutput $output): void {
+		$outcomes = $this->reloadInstalledPackages();
+
+		if ($outcomes === []) {
+			$output->info('No shipped package installs automatically or is installed here.');
+			return;
+		}
+
+		foreach ($outcomes as $outcome) {
+			$this->reportOutcome(output: $output, outcome: $outcome);
+		}
+
+		if (in_array(PackageInstallerInterface::INSTALLED, array_column($outcomes, 'status'), true) === true) {
+			$this->importRegisterAgain(output: $output);
+		}
+	}//end run()
+
+	/**
+	 * Reload the installed shipped packages under the system identity.
+	 *
+	 * @return array<int, array<string, mixed>> One outcome per package.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function reloadInstalledPackages(): array {
 		// Under a system identity: an upgrade has no session, and OpenRegister
 		// refuses `create` for 'Anonymous'.
 		$outcomes = [];
@@ -105,29 +129,47 @@ class InstallShippedPackages implements IRepairStep {
 			}
 		);
 
-		if ($outcomes === []) {
-			$output->info('No shipped package installs automatically or is installed here.');
+		return $outcomes;
+	}//end reloadInstalledPackages()
+
+	/**
+	 * Report one package's outcome: info when it is installed or current, a warning otherwise.
+	 *
+	 * @param IOutput $output Where the step reports.
+	 * @param array<string, mixed> $outcome The package's outcome.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function reportOutcome(IOutput $output, array $outcome): void {
+		$line = $this->outcomeLine(outcome: $outcome);
+
+		if ($outcome['status'] === PackageInstallerInterface::INSTALLED || $outcome['status'] === PackageInstallerInterface::CURRENT) {
+			$output->info($line);
 			return;
 		}
 
-		foreach ($outcomes as $outcome) {
-			$line = $outcome['package'] . ' ' . $outcome['version'] . ': ' . $outcome['status'] . '. ' . $outcome['message'];
-			foreach ((array)($outcome['errors'] ?? []) as $error) {
-				$line .= ' ' . $error;
-			}
+		$output->warning($line);
+	}//end reportOutcome()
 
-			if ($outcome['status'] === PackageInstallerInterface::INSTALLED || $outcome['status'] === PackageInstallerInterface::CURRENT) {
-				$output->info($line);
-				continue;
-			}
-
-			$output->warning($line);
+	/**
+	 * One package's outcome as a line, with its errors.
+	 *
+	 * @param array<string, mixed> $outcome The package's outcome.
+	 *
+	 * @return string The line.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function outcomeLine(array $outcome): string {
+		$line = $outcome['package'] . ' ' . $outcome['version'] . ': ' . $outcome['status'] . '. ' . $outcome['message'];
+		foreach ((array)($outcome['errors'] ?? []) as $error) {
+			$line .= ' ' . $error;
 		}
 
-		if (in_array(PackageInstallerInterface::INSTALLED, array_column($outcomes, 'status'), true) === true) {
-			$this->importRegisterAgain(output: $output);
-		}
-	}//end run()
+		return $line;
+	}//end outcomeLine()
 
 	/**
 	 * Import the register configuration again, unforced, under the system identity.

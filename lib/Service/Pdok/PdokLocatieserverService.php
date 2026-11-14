@@ -250,28 +250,15 @@ class PdokLocatieserverService {
 	 *               when the call fails after exhausting retries.
 	 */
 	private function call(string $method, array $params, int $ttl): array {
-		$read = new LocatieserverCall();
-		$read->method = $method;
-		$read->params = $params;
-		$read->ttl = $ttl;
-		$read->queryString = http_build_query(data: $params);
-		$read->cacheKey = $method . '_' . md5(string: $read->queryString);
+		$read = $this->newCall(method: $method, params: $params, ttl: $ttl);
 
-		$cached = $this->cache->get($read->cacheKey);
+		$cached = $this->cachedRead(read: $read);
 		if ($cached !== null) {
-			$this->logger->debug(
-				'Dossiq PDOK Locatieserver cache hit',
-				['method' => $method, 'key' => $read->cacheKey]
-			);
 			return $cached;
 		}
 
 		$read->started = microtime(as_float: true);
-		$read->source = $this->appConfig->getValueString(
-			AppIdentity::APP_ID,
-			'pdok_locatieserver_source',
-			''
-		);
+		$read->source = $this->appConfig->getValueString(AppIdentity::APP_ID, 'pdok_locatieserver_source', '');
 
 		try {
 			$body = $this->fetchBody(read: $read);
@@ -281,6 +268,45 @@ class PdokLocatieserverService {
 
 		return $this->decodedAndCached(read: $read, body: $body);
 	}//end call()
+
+	/**
+	 * Describe one Locatieserver read with its query string and cache key.
+	 *
+	 * @param string               $method Endpoint suffix.
+	 * @param array<string, mixed> $params Query string parameters.
+	 * @param int                  $ttl    Cache TTL in seconds.
+	 *
+	 * @return LocatieserverCall
+	 */
+	private function newCall(string $method, array $params, int $ttl): LocatieserverCall {
+		$read = new LocatieserverCall();
+		$read->method = $method;
+		$read->params = $params;
+		$read->ttl = $ttl;
+		$read->queryString = http_build_query(data: $params);
+		$read->cacheKey = $method . '_' . md5(string: $read->queryString);
+
+		return $read;
+	}//end newCall()
+
+	/**
+	 * The cached answer for the read, logged as a cache hit, or null.
+	 *
+	 * @param LocatieserverCall $read The read.
+	 *
+	 * @return mixed The cached answer, or null on a miss.
+	 */
+	private function cachedRead(LocatieserverCall $read): mixed {
+		$cached = $this->cache->get($read->cacheKey);
+		if ($cached !== null) {
+			$this->logger->debug(
+				'Dossiq PDOK Locatieserver cache hit',
+				['method' => $read->method, 'key' => $read->cacheKey]
+			);
+		}
+
+		return $cached;
+	}//end cachedRead()
 
 	/**
 	 * The raw body of the read: through the gateway when a source is set, otherwise from PDOK.
@@ -378,25 +404,10 @@ class PdokLocatieserverService {
 		// (`proxy`, `proxyuserpwd`) and gives the status code directly instead
 		// of it having to be parsed back out of `wrapper_data`.
 		try {
-			$response = $this->clientService->newClient()->get(
-				$url,
-				[
-					'timeout' => 10,
-					'headers' => ['Accept' => 'application/json'],
-				]
-			);
+			$response = $this->clientService->newClient()->get($url, ['timeout' => 10, 'headers' => ['Accept' => 'application/json']]);
 		} catch (Throwable $e) {
-			$statusCode = $this->statusFromException(exception: $e);
-			if ($statusCode !== 0) {
-				throw new RuntimeException('PDOK Locatieserver HTTP ' . $statusCode, $statusCode);
-			}
-
-			$this->logger->warning(
-				'PDOK Locatieserver request failed',
-				['detail' => $e->getMessage()]
-			);
-			throw new RuntimeException('Network error contacting PDOK Locatieserver', 0);
-		}//end try
+			throw $this->requestFailure(exception: $e);
+		}
 
 		$statusCode = $response->getStatusCode();
 		if ($statusCode < 200 || $statusCode >= 300) {
@@ -406,6 +417,26 @@ class PdokLocatieserverService {
 		$this->recordSuccess();
 		return (string)$response->getBody();
 	}//end callDirect()
+
+	/**
+	 * The exception a failed request raises: the upstream status, or a network error (logged).
+	 *
+	 * @param Throwable $exception The exception raised by the HTTP client.
+	 *
+	 * @return RuntimeException
+	 */
+	private function requestFailure(Throwable $exception): RuntimeException {
+		$statusCode = $this->statusFromException(exception: $exception);
+		if ($statusCode !== 0) {
+			return new RuntimeException('PDOK Locatieserver HTTP ' . $statusCode, $statusCode);
+		}
+
+		$this->logger->warning(
+			'PDOK Locatieserver request failed',
+			['detail' => $exception->getMessage()]
+		);
+		return new RuntimeException('Network error contacting PDOK Locatieserver', 0);
+	}//end requestFailure()
 
 	/**
 	 * Recover the upstream HTTP status from a client exception.
@@ -569,33 +600,68 @@ class PdokLocatieserverService {
 			return;
 		}
 
-		$failures = $this->cache->get('failures');
-		if (is_array(value: $failures) === false) {
-			$failures = [];
-		}
+		$failures = $this->cachedFailures();
 
 		$now = time();
-		$failures = array_filter(
-			array: $failures,
-			callback: static function (int $failedAt) use ($now): bool {
-				return ($now - $failedAt) <= self::OUTAGE_WINDOW;
-			}
-		);
+		$failures = $this->withinWindow(failures: $failures, now: $now);
 
 		$failures[] = $now;
 
 		if (count(value: $failures) >= self::OUTAGE_THRESHOLD) {
-			$this->cache->set('degraded_until', ($now + self::DEGRADED_TTL), self::DEGRADED_TTL);
-			$this->cache->remove('failures');
-			$this->logger->warning(
-				'Dossiq PDOK Locatieserver: degraded state engaged',
-				['failureCount' => count(value: $failures), 'cooldownSec' => self::DEGRADED_TTL]
-			);
+			$this->engageDegraded(now: $now, failures: $failures);
 			return;
 		}
 
 		$this->cache->set('failures', array_values(array: $failures), self::OUTAGE_WINDOW);
 	}//end recordFailure()
+
+	/**
+	 * The failure timestamps in the cache, or none.
+	 *
+	 * @return array<int, int>
+	 */
+	private function cachedFailures(): array {
+		$failures = $this->cache->get('failures');
+		if (is_array(value: $failures) === false) {
+			$failures = [];
+		}
+
+		return $failures;
+	}//end cachedFailures()
+
+	/**
+	 * The failures inside the rolling window.
+	 *
+	 * @param array<int, int> $failures The failure timestamps.
+	 * @param int             $now      The current time.
+	 *
+	 * @return array<int, int>
+	 */
+	private function withinWindow(array $failures, int $now): array {
+		return array_filter(
+			array: $failures,
+			callback: static function (int $failedAt) use ($now): bool {
+				return ($now - $failedAt) <= self::OUTAGE_WINDOW;
+			}
+		);
+	}//end withinWindow()
+
+	/**
+	 * Flip into degraded state and clear the failure count.
+	 *
+	 * @param int             $now      The current time.
+	 * @param array<int, int> $failures The failures that hit the threshold.
+	 *
+	 * @return void
+	 */
+	private function engageDegraded(int $now, array $failures): void {
+		$this->cache->set('degraded_until', ($now + self::DEGRADED_TTL), self::DEGRADED_TTL);
+		$this->cache->remove('failures');
+		$this->logger->warning(
+			'Dossiq PDOK Locatieserver: degraded state engaged',
+			['failureCount' => count(value: $failures), 'cooldownSec' => self::DEGRADED_TTL]
+		);
+	}//end engageDegraded()
 
 	/**
 	 * Whether the service is currently in degraded state.

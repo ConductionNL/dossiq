@@ -95,42 +95,76 @@ class BounceNotificationFilter implements InboundMailFilter {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function decide(InboundMessage $message): FilterVerdict {
-		$contentType = strtolower($message->header(name: 'content-type'));
-		if (str_contains($contentType, 'report-type=delivery-status') === true) {
-			return FilterVerdict::reject(
-				filterName: self::NAME,
-				reason: 'The message is a multipart/report carrying a delivery status.'
-			);
-		}
-
-		// An empty Return-Path is the RFC 5321 null reverse-path, which exists
-		// so that a bounce cannot itself bounce. Nothing else sends one.
-		$returnPath = trim($message->header(name: 'return-path'));
-		if ($returnPath === '<>' || $returnPath === '') {
-			if ($message->hasHeader(name: 'return-path') === true) {
-				return FilterVerdict::reject(
-					filterName: self::NAME,
-					reason: 'The message carries the null return-path a bounce is sent with.'
-				);
-			}
-		}
-
-		if ($message->hasHeader(name: 'x-failed-recipients') === true) {
-			return FilterVerdict::reject(
-				filterName: self::NAME,
-				reason: 'The message names the recipients delivery failed for.'
-			);
-		}
-
-		$sender = $message->senderAddress();
-		$localPart = strtok($sender, '@');
-		if ($localPart !== false && in_array($localPart, self::POSTMASTER_LOCAL_PARTS, true) === true) {
-			return FilterVerdict::reject(
-				filterName: self::NAME,
-				reason: 'The sender is ' . $localPart . ', which is a mail server reporting rather than a person writing.'
-			);
+		$reason = ($this->headerReason(message: $message) ?? $this->senderReason(message: $message));
+		if ($reason !== null) {
+			return FilterVerdict::reject(filterName: self::NAME, reason: $reason);
 		}
 
 		return FilterVerdict::pass(filterName: self::NAME);
 	}//end decide()
+
+	/**
+	 * Why the message's headers mark it as a delivery failure report.
+	 *
+	 * @param InboundMessage $message The message.
+	 *
+	 * @return string|null The reason, or null when the headers do not.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function headerReason(InboundMessage $message): ?string {
+		$contentType = strtolower($message->header(name: 'content-type'));
+		if (str_contains($contentType, 'report-type=delivery-status') === true) {
+			return 'The message is a multipart/report carrying a delivery status.';
+		}
+
+		if ($this->hasNullReturnPath(message: $message) === true) {
+			return 'The message carries the null return-path a bounce is sent with.';
+		}
+
+		if ($message->hasHeader(name: 'x-failed-recipients') === true) {
+			return 'The message names the recipients delivery failed for.';
+		}
+
+		return null;
+	}//end headerReason()
+
+	/**
+	 * Whether the message carries a null return-path.
+	 *
+	 * @param InboundMessage $message The message.
+	 *
+	 * @return bool True when it carries one.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function hasNullReturnPath(InboundMessage $message): bool {
+		// An empty Return-Path is the RFC 5321 null reverse-path, which exists
+		// so that a bounce cannot itself bounce. Nothing else sends one.
+		$returnPath = trim($message->header(name: 'return-path'));
+		if ($returnPath === '<>' || $returnPath === '') {
+			return $message->hasHeader(name: 'return-path');
+		}
+
+		return false;
+	}//end hasNullReturnPath()
+
+	/**
+	 * Why the message's sender marks it as a mail server reporting.
+	 *
+	 * @param InboundMessage $message The message.
+	 *
+	 * @return string|null The reason, or null when the sender is not a postmaster address.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function senderReason(InboundMessage $message): ?string {
+		$sender = $message->senderAddress();
+		$localPart = strtok($sender, '@');
+		if ($localPart !== false && in_array($localPart, self::POSTMASTER_LOCAL_PARTS, true) === true) {
+			return 'The sender is ' . $localPart . ', which is a mail server reporting rather than a person writing.';
+		}
+
+		return null;
+	}//end senderReason()
 }//end class

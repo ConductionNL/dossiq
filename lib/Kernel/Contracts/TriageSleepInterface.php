@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Kernel\Contracts;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\Email\IntakeLog;
 
 /**
  * Contract of TriageSleep.
@@ -43,7 +42,7 @@ interface TriageSleepInterface {
 	 *
 	 * @var array<int, string>
 	 */
-	public const SLEEPABLE_OUTCOMES = [IntakeLog::OUTCOME_QUARANTINED, IntakeLog::OUTCOME_INBOX];
+	public const SLEEPABLE_OUTCOMES = [IntakeLogInterface::OUTCOME_QUARANTINED, IntakeLogInterface::OUTCOME_INBOX];
 
 	/**
 	 * The queue with its sleeping items taken out.

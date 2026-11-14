@@ -82,6 +82,22 @@ class ProcessingTimeReportController extends Controller {
 			return $refusal;
 		}
 
+		return $this->report(period: $period, caseType: $caseType, view: $view, threshold: $threshold);
+	}//end show()
+
+	/**
+	 * The report for a well-formed query, or 500 when it could not be made.
+	 *
+	 * @param mixed $period    The period parameter.
+	 * @param mixed $caseType  The case type parameter.
+	 * @param mixed $view      The view parameter.
+	 * @param mixed $threshold The threshold parameter.
+	 *
+	 * @return JSONResponse The report, or 500.
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function report(mixed $period, mixed $caseType, mixed $view, mixed $threshold): JSONResponse {
 		try {
 			return new JSONResponse(
 				$this->reports->getReport(
@@ -96,7 +112,7 @@ class ProcessingTimeReportController extends Controller {
 
 			return new JSONResponse(['message' => 'Report generation failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
-	}//end show()
+	}//end report()
 
 	/**
 	 * The 401/403 refusal for a caller who is not signed in or not in the reporting audience, else null.

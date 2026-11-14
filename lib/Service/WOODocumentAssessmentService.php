@@ -47,6 +47,9 @@ use RuntimeException;
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of
+ *  small private steps; each method stays under the method thresholds.
  */
 class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterface {
 
@@ -132,6 +135,60 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
 	 */
 	public function bulkUpsert(string $caseId, array $assessments): array {
+		$target = $this->assessmentTarget();
+		$target['userId'] = ($this->userSession->getUser()?->getUID() ?? 'system');
+
+		$tally = $this->upsertAll(caseId: $caseId, assessments: $assessments, target: $target);
+
+		$this->reviewerAccess?->reconcileAfterCreate(caseId: $caseId, created: $tally['created']);
+		$this->markJudgedInScope(caseId: $caseId, documentRefs: $tally['judged'], userId: $target['userId']);
+
+		$outstanding = $this->getOutstanding(caseId: $caseId);
+
+		$this->logger->info(
+			'WOO bulk-upsert: ' . count($tally['saved']) . ' saved, ' . $outstanding['count'] . ' outstanding for case ' . $caseId,
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return ['saved' => $tally['saved'], 'errors' => $tally['errors'], 'outstanding' => $outstanding];
+	}//end bulkUpsert()
+
+	/**
+	 * Upsert each assessment in turn, tallying what was saved, created and judged, and what failed.
+	 *
+	 * @param string                           $caseId      The case UUID
+	 * @param array<int, array<string, mixed>> $assessments Array of assessment payloads
+	 * @param array<string, mixed>             $target      Where assessments are stored, and by whom
+	 *
+	 * @return array{saved: array<int, mixed>, errors: array<int, mixed>, created: int, judged: array<int, mixed>} The tally.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
+	 */
+	private function upsertAll(string $caseId, array $assessments, array $target): array {
+		$tally = ['saved' => [], 'errors' => [], 'created' => 0, 'judged' => []];
+		foreach ($assessments as $assessment) {
+			$result = $this->upsertAssessment(caseId: $caseId, assessment: (array)$assessment, target: $target);
+			if (isset($result['error']) === true) {
+				$tally['errors'][] = $result['error'];
+				continue;
+			}
+
+			$tally['saved'][] = $result['saved'];
+			$tally['created'] += $result['created'];
+			$tally['judged'][] = $result['documentRef'];
+		}
+
+		return $tally;
+	}//end upsertAll()
+
+	/**
+	 * Where assessments are stored: the object service, register and schema.
+	 *
+	 * @return array<string, mixed> The object service, register and schema.
+	 *
+	 * @throws RuntimeException If OpenRegister is unavailable or the schema is not configured.
+	 */
+	private function assessmentTarget(): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -144,92 +201,122 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 			throw new RuntimeException('WOO assessment schema not configured');
 		}
 
-		$userId = ($this->userSession->getUser()?->getUID() ?? 'system');
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $assessmentSchema];
+	}//end assessmentTarget()
 
-		$saved = [];
-		$errors = [];
-		$created = 0;
-		$judged = [];
+	/**
+	 * Validate, stamp and store one assessment.
+	 *
+	 * @param string               $caseId     The case UUID.
+	 * @param array<string, mixed> $assessment The assessment payload.
+	 * @param array<string, mixed> $target     The storage target and the acting user id.
+	 *
+	 * @return array<string, mixed> `{error}` or `{saved, created, documentRef}`.
+	 */
+	private function upsertAssessment(string $caseId, array $assessment, array $target): array {
+		[$assessment, $unseen] = [array_diff_key($assessment, self::CALLER_IDENTITY), []];
+		if ($this->reviews !== null) {
+			$unseen = $this->reviews->pages()->refusalFor(caseId: $caseId, assessment: $assessment);
+		}
 
-		foreach ($assessments as $assessment) {
-			[$assessment, $unseen] = [array_diff_key((array)$assessment, self::CALLER_IDENTITY), []];
-			if ($this->reviews !== null) {
-				$unseen = $this->reviews->pages()->refusalFor(caseId: $caseId, assessment: $assessment);
+		$validationErrors = $this->validate(assessment: $assessment) + $unseen;
+		if (empty($validationErrors) === false) {
+			return ['error' => ['documentRef' => $assessment['documentRef'] ?? 'unknown', 'errors' => $validationErrors]];
+		}
+
+		$assessment['caseRef'] = $caseId;
+		$assessment['groundsListVersion'] = WooRefusalGrounds::LIST_VERSION;
+		$assessment['assessedBy'] = $target['userId'];
+		$assessment['assessedAt'] = date('Y-m-d\TH:i:s');
+
+		return $this->storeAssessment(caseId: $caseId, assessment: $assessment, target: $target);
+	}//end upsertAssessment()
+
+	/**
+	 * Update the case's assessment of the document, or create one.
+	 *
+	 * The existing assessment is read regardless of the caller, so an
+	 * assessment the caller cannot see is never assessed a second time
+	 * (REQ-CRA-003); only its uuid and owner are used, nothing of it is answered.
+	 *
+	 * @param string               $caseId     The case UUID.
+	 * @param array<string, mixed> $assessment The stamped assessment.
+	 * @param array<string, mixed> $target     The storage target and the acting user id.
+	 *
+	 * @return array<string, mixed> `{error}` or `{saved, created, documentRef}`.
+	 */
+	private function storeAssessment(string $caseId, array $assessment, array $target): array {
+		$existing = $this->existingAssessments(caseId: $caseId, assessment: $assessment, target: $target);
+
+		$uuid = null;
+		if (count($existing) > 0) {
+			$refusal = $this->refusalOn(caseId: $caseId, record: $existing[0], assessment: $assessment, target: $target);
+			if ($refusal !== null) {
+				return ['error' => $refusal];
 			}
 
-			$validationErrors = $this->validate(assessment: $assessment) + $unseen;
-			if (empty($validationErrors) === false) {
-				$errors[] = [
-					'documentRef' => $assessment['documentRef'] ?? 'unknown',
-					'errors' => $validationErrors,
-				];
-				continue;
-			}
+			$uuid = (string)($existing[0]['id'] ?? $existing[0]['uuid'] ?? null);
+		}
 
-			$assessment['caseRef'] = $caseId;
-			$assessment['groundsListVersion'] = WooRefusalGrounds::LIST_VERSION;
-			$assessment['assessedBy'] = $userId;
-			$assessment['assessedAt'] = date('Y-m-d\TH:i:s');
+		return $this->saveAssessment(assessment: $assessment, target: $target, uuid: $uuid);
+	}//end storeAssessment()
 
-			// Find existing assessment for this document in this case. Read
-			// regardless of the caller, so an assessment the caller cannot see
-			// is never assessed a second time (REQ-CRA-003); only its uuid and
-			// owner are used, nothing of it is answered.
-			$existing = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $assessmentSchema,
-				filters: ['caseRef' => $caseId, 'documentRef' => $assessment['documentRef'], '_limit' => 1],
-			);
+	/**
+	 * The case's stored assessments of the document, whoever can see them.
+	 *
+	 * @param string               $caseId     The case UUID.
+	 * @param array<string, mixed> $assessment The stamped assessment.
+	 * @param array<string, mixed> $target     The storage target and the acting user id.
+	 *
+	 * @return array<int, array<string, mixed>> At most one assessment.
+	 */
+	private function existingAssessments(string $caseId, array $assessment, array $target): array {
+		return $this->searchObjectsAsArraysUnscoped(
+			objectService: $target['objectService'],
+			register: $target['register'],
+			schema: $target['schema'],
+			filters: ['caseRef' => $caseId, 'documentRef' => $assessment['documentRef'], '_limit' => 1],
+		);
+	}//end existingAssessments()
 
-			if (count($existing) > 0) {
-				$refusal = $this->reviewerAccess?->refusalFor(
-					caseId: $caseId,
-					record: $existing[0],
-					userId: $userId,
-					reference: (string)$assessment['documentRef']
-				);
-				if ($refusal !== null) {
-					$errors[] = $refusal;
-					continue;
-				}
+	/**
+	 * Why the acting user may not change the stored assessment, or null when they may.
+	 *
+	 * @param string               $caseId     The case UUID.
+	 * @param array<string, mixed> $record     The stored assessment.
+	 * @param array<string, mixed> $assessment The stamped assessment.
+	 * @param array<string, mixed> $target     The storage target and the acting user id.
+	 *
+	 * @return mixed The refusal, or null.
+	 */
+	private function refusalOn(string $caseId, array $record, array $assessment, array $target): mixed {
+		return $this->reviewerAccess?->refusalFor(
+			caseId: $caseId,
+			record: $record,
+			userId: $target['userId'],
+			reference: (string)$assessment['documentRef']
+		);
+	}//end refusalOn()
 
-				$existingId = $existing[0]['id'] ?? $existing[0]['uuid'] ?? null;
-				$saved[] = $objectService->saveObject(
-					object: $assessment,
-					register: $register,
-					schema: $assessmentSchema,
-					uuid: (string)$existingId,
-				);
-				$judged[] = (string)$assessment['documentRef'];
-				continue;
-			}
-
-			$saved[] = $objectService->saveObject(
-				object: $assessment,
-				register: $register,
-				schema: $assessmentSchema,
-			);
-			$created++;
-			$judged[] = (string)$assessment['documentRef'];
-		}//end foreach
-
-		$this->reviewerAccess?->reconcileAfterCreate(caseId: $caseId, created: $created);
-		$this->markJudgedInScope(caseId: $caseId, documentRefs: $judged, userId: $userId);
-
-		$outstanding = $this->getOutstanding(caseId: $caseId);
-
-		$this->logger->info(
-			'WOO bulk-upsert: ' . count($saved) . ' saved, ' . $outstanding['count'] . ' outstanding for case ' . $caseId,
-			['app' => AppIdentity::APP_ID],
+	/**
+	 * Save the assessment, new or over the stored one.
+	 *
+	 * @param array<string, mixed> $assessment The stamped assessment.
+	 * @param array<string, mixed> $target     The storage target and the acting user id.
+	 * @param string|null          $uuid       The stored assessment's uuid, or null to create.
+	 *
+	 * @return array<string, mixed> `{saved, created, documentRef}`.
+	 */
+	private function saveAssessment(array $assessment, array $target, ?string $uuid): array {
+		$saved = $target['objectService']->saveObject(
+			object: $assessment,
+			register: $target['register'],
+			schema: $target['schema'],
+			uuid: $uuid,
 		);
 
-		return [
-			'saved' => $saved,
-			'errors' => $errors,
-			'outstanding' => $outstanding,
-		];
-	}//end bulkUpsert()
+		return ['saved' => $saved, 'created' => (int)($uuid === null), 'documentRef' => (string)$assessment['documentRef']];
+	}//end saveAssessment()
 
 	/**
 	 * Mark the documents that just received a verdict in scope, where nobody marked them yet.

@@ -53,6 +53,8 @@ use Throwable;
  * Loads `lib/Settings/case_flow_seed_data.json` into OpenRegister.
  *
  * @spec openspec/specs/case-flow-human-steps/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseFlowSeedDataRepairStep implements IRepairStep {
 
@@ -406,7 +408,30 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	private function seedStatuses(object $objectService, array $schemas, string $caseTypeId, array $statusTypes): int {
 		$present = array_flip($this->statuses->statusesOf(caseTypeId: $caseTypeId));
 
-		$created = 0;
+		$created = $this->createStatuses(
+			objectService: $objectService,
+			schemas: $schemas,
+			caseTypeId: $caseTypeId,
+			statuses: $this->missingStatuses(statusTypes: $statusTypes, present: $present)
+		);
+
+		$this->backfillPhases(objectService: $objectService, schemas: $schemas, caseTypeId: $caseTypeId, statusTypes: $statusTypes);
+
+		return $created;
+	}//end seedStatuses()
+
+	/**
+	 * The declared statuses with a name the case type does not have yet.
+	 *
+	 * @param array<int,mixed>     $statusTypes The statuses declared in the seed.
+	 * @param array<string, mixed> $present     The names the case type already has, as keys.
+	 *
+	 * @return array<int, array<string, mixed>> The statuses to create.
+	 *
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
+	 */
+	private function missingStatuses(array $statusTypes, array $present): array {
+		$missing = [];
 		foreach ($statusTypes as $status) {
 			if (is_array($status) === false) {
 				continue;
@@ -417,6 +442,27 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 				continue;
 			}
 
+			$missing[] = $status;
+		}
+
+		return $missing;
+	}//end missingStatuses()
+
+	/**
+	 * Create statuses on the case type.
+	 *
+	 * @param object                           $objectService The ObjectService.
+	 * @param array<string,string>             $schemas       Register and schema names.
+	 * @param string                           $caseTypeId    The owning case type.
+	 * @param array<int, array<string, mixed>> $statuses      The statuses to create.
+	 *
+	 * @return integer How many were created.
+	 *
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
+	 */
+	private function createStatuses(object $objectService, array $schemas, string $caseTypeId, array $statuses): int {
+		$created = 0;
+		foreach ($statuses as $status) {
 			$status['caseType'] = $caseTypeId;
 			$saved = $objectService->saveObject(
 				object: $status,
@@ -429,15 +475,8 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 			}
 		}
 
-		$this->backfillPhases(
-			objectService: $objectService,
-			schemas: $schemas,
-			caseTypeId: $caseTypeId,
-			statusTypes: $statusTypes
-		);
-
 		return $created;
-	}//end seedStatuses()
+	}//end createStatuses()
 
 	/**
 	 * Give the statuses an earlier run stored without a phase the seed's phase.
@@ -507,35 +546,68 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 				continue;
 			}
 
-			$statusName = (string)($case['status'] ?? '');
-			unset($case['caseTypeSlug']);
-
-			$case['caseType'] = $caseTypeId;
-
-			// A case whose status name does not resolve is written WITHOUT a
-			// status rather than with a dangling one: an unresolvable
-			// reference reads as a real status everywhere it is displayed.
-			unset($case['status']);
-			if (isset($statusesByName[$statusName]) === true) {
-				$case['status'] = $statusesByName[$statusName];
-			}
-
-			try {
-				$objectService->saveObject(
-					object: $case,
-					register: $schemas['register'],
-					schema: $schemas['case']
-				);
-				$created++;
-			} catch (Throwable $e) {
-				$output->warning(
-					'Case-flow seed: could not create case "' . (string)($case['title'] ?? '') . '": ' . $e->getMessage()
-				);
-			}
+			$case = $this->seedCaseRow(case: $case, caseTypeId: $caseTypeId, statusesByName: $statusesByName);
+			$created += $this->saveSeedCase(objectService: $objectService, schemas: $schemas, case: $case, output: $output);
 		}//end foreach
 
 		return $created;
 	}//end seedCases()
+
+	/**
+	 * The seed case as it is written: bound to the case type, its status resolved by name.
+	 *
+	 * @param array<string,mixed>  $case           The seed case.
+	 * @param string               $caseTypeId     The created case type.
+	 * @param array<string,string> $statusesByName Status ids, keyed by name.
+	 *
+	 * @return array<string,mixed> The case to write.
+	 *
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
+	 */
+	private function seedCaseRow(array $case, string $caseTypeId, array $statusesByName): array {
+		$statusName = (string)($case['status'] ?? '');
+		unset($case['caseTypeSlug']);
+
+		$case['caseType'] = $caseTypeId;
+
+		// A case whose status name does not resolve is written WITHOUT a
+		// status rather than with a dangling one: an unresolvable
+		// reference reads as a real status everywhere it is displayed.
+		unset($case['status']);
+		if (isset($statusesByName[$statusName]) === true) {
+			$case['status'] = $statusesByName[$statusName];
+		}
+
+		return $case;
+	}//end seedCaseRow()
+
+	/**
+	 * Save one seed case, warning when it cannot be created.
+	 *
+	 * @param object               $objectService The ObjectService.
+	 * @param array<string,string> $schemas       Register and schema names.
+	 * @param array<string,mixed>  $case          The case to write.
+	 * @param IOutput              $output        Output sink.
+	 *
+	 * @return integer 1 when created, 0 otherwise.
+	 *
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
+	 */
+	private function saveSeedCase(object $objectService, array $schemas, array $case, IOutput $output): int {
+		try {
+			$objectService->saveObject(
+				object: $case,
+				register: $schemas['register'],
+				schema: $schemas['case']
+			);
+			return 1;
+		} catch (Throwable $e) {
+			$output->warning(
+				'Case-flow seed: could not create case "' . (string)($case['title'] ?? '') . '": ' . $e->getMessage()
+			);
+			return 0;
+		}
+	}//end saveSeedCase()
 
 
 

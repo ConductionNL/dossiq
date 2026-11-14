@@ -145,6 +145,44 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 		$requestedBy = trim($requestedBy);
 		$reason = trim($reason);
 
+		$this->assertReasonGiven(reason: $reason);
+
+		$case = $this->store->requireCase(caseId: $caseId);
+		$holding = $this->holdingOf(caseId: $caseId, case: $case);
+		$holder = $holding['holder'];
+		$unit = $holding['unit'];
+
+		$this->assertNotHeldBy(holder: $holder, requestedBy: $requestedBy);
+
+		$record = $this->storeRequest(
+			case: $case,
+			caseId: $caseId,
+			requestedBy: $requestedBy,
+			holder: $holder,
+			unit: $unit,
+			reason: $reason,
+		);
+
+		$this->logger->info(
+			'Dossiq takeover: a case was asked for',
+			['caseId' => $caseId, 'requestedBy' => $requestedBy, 'holder' => $holder, 'unit' => $unit],
+		);
+
+		return $record;
+	}//end request()
+
+	/**
+	 * Refuse a request without a reason.
+	 *
+	 * @param string $reason Why they should have it, trimmed.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When no reason is given.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function assertReasonGiven(string $reason): void {
 		if ($reason === '') {
 			throw new RefusedException(
 				rule: self::REASON_MISSING,
@@ -152,8 +190,41 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end assertReasonGiven()
 
-		$case = $this->store->requireCase(caseId: $caseId);
+	/**
+	 * Refuse a request by the person who already holds the case.
+	 *
+	 * @param string $holder      The current holder, or ''.
+	 * @param string $requestedBy Who wants it.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the asker already holds the case.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function assertNotHeldBy(string $holder, string $requestedBy): void {
+		if ($holder !== '' && $holder === $requestedBy) {
+			throw new RefusedException(
+				rule: self::ALREADY_YOURS,
+				sentence: 'You already hold this case, so there is nobody to ask.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertNotHeldBy()
+
+	/**
+	 * Who holds the case and in which unit, the open holding winning over the case fields.
+	 *
+	 * @param string               $caseId The case being asked for.
+	 * @param array<string, mixed> $case   The case.
+	 *
+	 * @return array{holder: string, unit: string} The holder and the holding unit.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function holdingOf(string $caseId, array $case): array {
 		$holder = trim((string)($case['assignee'] ?? ''));
 		$unit = trim((string)($case['assignedGroup'] ?? ''));
 
@@ -163,14 +234,33 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 			$holder = trim((string)($open['handler'] ?? $holder));
 		}
 
-		if ($holder !== '' && $holder === $requestedBy) {
-			throw new RefusedException(
-				rule: self::ALREADY_YOURS,
-				sentence: 'You already hold this case, so there is nobody to ask.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		return ['holder' => $holder, 'unit' => $unit];
+	}//end holdingOf()
 
+	/**
+	 * Write the pending request, and again with its task when one was raised.
+	 *
+	 * @param array<string, mixed> $case        The case being asked for.
+	 * @param string               $caseId      The case id.
+	 * @param string               $requestedBy Who wants it.
+	 * @param string               $holder      Who holds it.
+	 * @param string               $unit        The holding unit.
+	 * @param string               $reason      Why they should have it.
+	 *
+	 * @return array<string, mixed> The request as stored.
+	 *
+	 * @throws RefusedException When the record cannot be written.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function storeRequest(
+		array $case,
+		string $caseId,
+		string $requestedBy,
+		string $holder,
+		string $unit,
+		string $reason,
+	): array {
 		$now = (new DateTimeImmutable())->format('c');
 		$record = $this->store->write(
 			record: [
@@ -190,13 +280,8 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 			$record = $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
 		}
 
-		$this->logger->info(
-			'Dossiq takeover: a case was asked for',
-			['caseId' => $caseId, 'requestedBy' => $requestedBy, 'holder' => $holder, 'unit' => $unit],
-		);
-
 		return $record;
-	}//end request()
+	}//end storeRequest()
 
 	/**
 	 * The holder accepts: the case moves to the asker and a holding opens.
@@ -406,14 +491,21 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 			return self::DEFAULT_ANSWER_DAYS;
 		}
 
+		return $this->declaredAnswerDays(caseTypeId: $caseTypeId);
+	}//end answerPeriodDays()
+
+	/**
+	 * The answer period the case type declares, or the default.
+	 *
+	 * @param string $caseTypeId The case type.
+	 *
+	 * @return int The number of days.
+	 */
+	private function declaredAnswerDays(string $caseTypeId): int {
 		try {
 			[$objectService, $register] = $this->store->context();
-			$caseType = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->store->schema(key: 'case_type_schema'),
-				id: $caseTypeId,
-			);
+			$schema = $this->store->schema(key: 'case_type_schema');
+			$caseType = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseTypeId);
 		} catch (Throwable $e) {
 			return self::DEFAULT_ANSWER_DAYS;
 		}
@@ -424,7 +516,7 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 		}
 
 		return $declared;
-	}//end answerPeriodDays()
+	}//end declaredAnswerDays()
 
 	/**
 	 * Raise the engine task that carries the request to the holder.

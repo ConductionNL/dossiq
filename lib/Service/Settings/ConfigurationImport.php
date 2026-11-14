@@ -142,9 +142,7 @@ class ConfigurationImport {
 		}
 
 		try {
-			$configurationService = $this->container->get(
-				'OCA\OpenRegister\Service\ConfigurationService'
-			);
+			$configurationService = $this->container->get('OCA\OpenRegister\Service\ConfigurationService');
 		} catch (\Exception $e) {
 			return $this->unreachableServiceAnswer(exception: $e);
 		}
@@ -154,7 +152,19 @@ class ConfigurationImport {
 			return $effective['error'];
 		}
 
-		$configData = $effective['data'];
+		return $this->importAnswer(configurationService: $configurationService, configData: $effective['data'], force: $force);
+	}//end loadConfiguration()
+
+	/**
+	 * Import the effective configuration through OpenRegister, and answer the import or why it failed.
+	 *
+	 * @param object $configurationService OpenRegister's ConfigurationService.
+	 * @param array $configData The effective configuration.
+	 * @param bool $force Whether to force re-import regardless of version
+	 *
+	 * @return array Import result
+	 */
+	private function importAnswer($configurationService, array $configData, bool $force): array {
 		$configVersion = ($configData['info']['version'] ?? '0.0.0');
 
 		try {
@@ -182,7 +192,7 @@ class ConfigurationImport {
 			// about which declaration is wrong; the shape below names it.
 			return $this->importFailedAnswer(exception: $e);
 		}//end try
-	}//end loadConfiguration()
+	}//end importAnswer()
 
 	/**
 	 * Auto-configure and reconcile the imported schemas, and answer the import.

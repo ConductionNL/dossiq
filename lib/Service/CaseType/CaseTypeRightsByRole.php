@@ -45,6 +45,8 @@ use OCP\IL10N;
  *
  * @spec openspec/changes/case-type-rights-by-role/specs/case-types/spec.md
  * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseTypeRightsByRole implements CaseTypeRightsByRoleInterface {
 
@@ -104,8 +106,28 @@ class CaseTypeRightsByRole implements CaseTypeRightsByRoleInterface {
 			return null;
 		}
 
+		$byRole = $this->grantsByRole(matrix: $caseType['rightsMatrix'] ?? []);
+
+		$statusNames = $this->statusNames(caseTypeId: $caseTypeId);
+		$decide = $this->decideByRole(caseType: $caseType, caseTypeId: $caseTypeId, roles: array_keys($byRole));
+
+		return $this->rowsOf(byRole: $byRole, statusNames: $statusNames, decide: $decide);
+	}//end rowsFor()
+
+	/**
+	 * What the current matrix rows grant, gathered per role.
+	 *
+	 * @param mixed $matrix The stored matrix.
+	 *
+	 * @return array<string, array{departments: array<int, string>, edit: array<int, array<int, string>>, documents: array<int, string>}>
+	 *         The departments read, the status sets edited and the document rights, per role.
+	 *
+	 * @spec openspec/changes/case-type-rights-by-role/specs/case-types/spec.md
+	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md
+	 */
+	private function grantsByRole(mixed $matrix): array {
 		$byRole = [];
-		foreach ($this->currentRows(matrix: $caseType['rightsMatrix'] ?? []) as $row) {
+		foreach ($this->currentRows(matrix: $matrix) as $row) {
 			$role = (string)$row['role'];
 			$byRole[$role] ??= ['departments' => [], 'edit' => [], 'documents' => []];
 			$verbs = array_values(array_filter((array)($row['actions'] ?? []), 'is_string'));
@@ -120,9 +142,22 @@ class CaseTypeRightsByRole implements CaseTypeRightsByRoleInterface {
 			$byRole[$role]['documents'] = array_merge($byRole[$role]['documents'], $this->documentRights(row: $row, verbs: $verbs));
 		}
 
-		$statusNames = $this->statusNames(caseTypeId: $caseTypeId);
-		$decide = $this->decideByRole(caseType: $caseType, caseTypeId: $caseTypeId, roles: array_keys($byRole));
+		return $byRole;
+	}//end grantsByRole()
 
+	/**
+	 * One row per role, in the words the rights tab shows.
+	 *
+	 * @param array<string, array<string, mixed>> $byRole      What each role is granted.
+	 * @param array<string, string>               $statusNames The status names, by id.
+	 * @param array<string, string>               $decide      The decide column, by role.
+	 *
+	 * @return array<int, array<string, string>> The rows.
+	 *
+	 * @spec openspec/changes/case-type-rights-by-role/specs/case-types/spec.md
+	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md
+	 */
+	private function rowsOf(array $byRole, array $statusNames, array $decide): array {
 		$rows = [];
 		foreach ($byRole as $role => $grant) {
 			$rows[] = [
@@ -135,7 +170,7 @@ class CaseTypeRightsByRole implements CaseTypeRightsByRoleInterface {
 		}
 
 		return $rows;
-	}//end rowsFor()
+	}//end rowsOf()
 
 	/**
 	 * The matrix rows that grant something today.

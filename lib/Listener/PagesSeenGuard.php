@@ -102,12 +102,7 @@ class PagesSeenGuard implements IEventListener {
 		}
 
 		$new = $this->fields(object: $incoming);
-		$verdict = (string)($new['classification'] ?? '');
-		if ($verdict === '') {
-			return;
-		}
-
-		if ($stored !== null && (string)($this->fields(object: $stored)['classification'] ?? '') === $verdict) {
+		if ($this->verdictChanged(new: $new, stored: $stored) === false) {
 			return;
 		}
 
@@ -117,6 +112,40 @@ class PagesSeenGuard implements IEventListener {
 			return;
 		}
 
+		$this->refuse(event: $event, documentRef: $documentRef, unseen: $unseen);
+	}//end inspect()
+
+	/**
+	 * Whether the incoming assessment carries a verdict the stored one does not.
+	 *
+	 * @param array<string, mixed> $new    The incoming assessment's fields.
+	 * @param ObjectEntity|null    $stored The stored assessment, or null on create.
+	 *
+	 * @return bool
+	 */
+	private function verdictChanged(array $new, ?ObjectEntity $stored): bool {
+		$verdict = (string)($new['classification'] ?? '');
+		if ($verdict === '') {
+			return false;
+		}
+
+		if ($stored !== null && (string)($this->fields(object: $stored)['classification'] ?? '') === $verdict) {
+			return false;
+		}
+
+		return true;
+	}//end verdictChanged()
+
+	/**
+	 * Refuse the write, naming the pages not yet seen.
+	 *
+	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event       The event to stop.
+	 * @param string                                  $documentRef The document.
+	 * @param array<int, mixed>                       $unseen      The pages not yet seen.
+	 *
+	 * @return void
+	 */
+	private function refuse(ObjectCreatingEvent|ObjectUpdatingEvent $event, string $documentRef, array $unseen): void {
 		$event->setErrors(
 			[
 				'message' => $this->pagesSeen->sentence(pages: $unseen),
@@ -127,7 +156,7 @@ class PagesSeenGuard implements IEventListener {
 		);
 		$event->stopPropagation();
 		$this->logger->info('Dossiq: refused a verdict before every required page was seen', ['document' => $documentRef, 'pages' => $unseen]);
-	}//end inspect()
+	}//end refuse()
 
 	/**
 	 * Whether the object is a `wooDocumentAssessment`.

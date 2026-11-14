@@ -719,10 +719,10 @@
     },
     {
       "file": "lib/Service/FormsIntakeService.php",
-      "method": "caseTypeBoundTo",
+      "method": "rowsBoundTo",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`caseTypeBoundTo()` looks up the case type a form hash is bound to. No binding and an unanswerable search are the same answer to the caller, which offers the ordinary case-type picker instead of a pre-selected one."
+      "reason": "`rowsBoundTo()` (for `caseTypeBoundTo()`) looks up the case type a form hash is bound to. No binding and an unanswerable search are the same answer to the caller, which offers the ordinary case-type picker instead of a pre-selected one."
     },
     {
       "file": "lib/Service/Intake/AdmissibilityJudgement.php",
@@ -873,10 +873,10 @@
     },
     {
       "file": "lib/Service/People/LeaverHandoverService.php",
-      "method": "draftsOf",
+      "method": "draftCaseTypeRows",
       "occurrence": 1,
       "class": "degradation",
-      "reason": "`draftsOf()` answers `return []` when the case type schema cannot be read; the catch logs at warning naming the person (\"the drafts could not be read\"). The drafts are a LISTING beside the act, not part of it, so an unreadable list must not stop a leaver handover that has cases and tasks to move."
+      "reason": "`draftCaseTypeRows()` answers `return []` when the case type schema cannot be read; the catch logs at warning naming the person (\"the drafts could not be read\"). The drafts are a LISTING beside the act, not part of it, so an unreadable list must not stop a leaver handover that has cases and tasks to move."
     },
     {
       "file": "lib/Service/People/PartyIndicatorReader.php",

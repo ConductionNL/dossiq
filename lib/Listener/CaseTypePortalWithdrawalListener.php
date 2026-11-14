@@ -39,7 +39,6 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Kernel\Contracts\PortalWithdrawalTargetInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\PreSaveCheck;
-use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -248,7 +247,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 * The moves of the flow the saved case type follows, whichever way they were stored.
 	 *
 	 * The flow is the one the incoming payload names in `workflowDefinition`,
-	 * else the type's active template ({@see CaseTypeStore::activeTemplate()}).
+	 * else the type's active template ({@see \OCA\Dossiq\Service\CaseTypeStore::activeTemplate()}).
 	 * Judging an update by the stored active template refused the shipped Woo
 	 * case type on every upgraded instance, because that instance still held
 	 * an older basis flow without the withdrawal move.

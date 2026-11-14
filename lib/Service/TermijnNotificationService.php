@@ -7,7 +7,7 @@
  * ingebrekestelling-receipt, dwangsom-payment and the rest of TEMPLATES) in
  * en/nl and hands them to {@see RequesterNoticeSender}, which puts each in the
  * requester's portal inbox, sends it as digital post or mails it through
- * {@see TermNoticeSender} (integriq first, each notice once), and records the
+ * {@see \OCA\Dossiq\Service\Termijn\TermNoticeSender} (integriq first, each notice once), and records the
  * delivery result on the case.
  *
  * It used to hand them to BerichtenboxRoutingService::routeToBerichtenbox(),
@@ -41,7 +41,6 @@ use OCA\Dossiq\Kernel\Contracts\TermijnNotificationServiceInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
 use OCA\Dossiq\Service\Term\TermNoticeSources;
-use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
 

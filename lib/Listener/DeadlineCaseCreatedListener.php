@@ -110,21 +110,150 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function handle(Event $event): void {
-		// The create of a case that is not a draft, or the moment a draft is
-		// sent. A draft binds no statutory term (decision 180).
-		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
+		$payload = $this->createdCase(event: $event);
 		if ($payload === null) {
 			return;
 		}
 
-		if ($this->resolveSchemaSlug(payload: $payload) !== 'case') {
+		$identity = $this->caseIdentity(payload: $payload);
+		if ($identity === null) {
 			return;
 		}
 
+		$this->bindTerms(identity: $identity, payload: $payload);
+	}//end handle()
+
+	/**
+	 * Bind the statutory term and the other clocks to a new case.
+	 *
+	 * @param array{0: string, 1: string, 2: string} $identity The case id, case type reference and slug.
+	 * @param array<string, mixed>                   $payload  The case payload.
+	 *
+	 * @return void
+	 */
+	private function bindTerms(array $identity, array $payload): void {
+		[$caseId, $caseTypeRef, $caseType] = $identity;
+
+		$context = $this->termContext(payload: $payload);
+		$resolution = $this->resolution?->resolve(caseType: $caseType, context: $context);
+
+		// The service norm, resolved by the same rule. A case type with no
+		// statutory term (a melding, a demo type) still has a clock the team
+		// works to, and it is bound beside the statutory term rather than as it.
+		$plannedDefinition = $this->resolution?->plannedDefinitionFor(caseType: $caseType, context: $context);
+
+		try {
+			// The term counts from receipt, not from the moment this row was
+			// written (REQ-OTE-02). Null only when no intake reader is wired,
+			// which is the old behaviour: the term starts now.
+			$this->createTerm(caseId: $caseId, caseType: $caseType, payload: $payload, resolution: $resolution);
+			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload, plannedDefinition: $plannedDefinition);
+		} catch (NoTermijnDefinitieException $e) {
+			// NOT debug. A case that matched no definition at all has no
+			// statutory clock running, which is exactly the state that hid a
+			// fleet-wide key mismatch behind a quiet log line. It is a valid
+			// configuration for a case type with no beslistermijn, so it is a
+			// warning rather than an error — but it is visible.
+			$this->warnNoDefinition(caseId: $caseId, caseType: $caseType, caseTypeRef: $caseTypeRef);
+
+			// A subsidy round declares a closing DATE and no lead time, so it
+			// has no TermijnDefinitie and a refusal here is the ordinary path
+			// rather than the broken one. The other clocks still bind, and the
+			// fixed date still becomes the statutory term.
+			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload, plannedDefinition: $plannedDefinition);
+		} catch (\Throwable $e) {
+			$this->logBindFailure(caseId: $caseId, caseType: $caseType, error: $e);
+		}//end try
+	}//end bindTerms()
+
+	/**
+	 * Create the case's term instance, counting from receipt when an intake reader is wired.
+	 *
+	 * @param string               $caseId     The case id.
+	 * @param string               $caseType   The case type slug.
+	 * @param array<string, mixed> $payload    The case payload.
+	 * @param array<string, mixed>|null $resolution The resolved term, if any.
+	 *
+	 * @return void
+	 *
+	 * @throws NoTermijnDefinitieException When no definition matches the case.
+	 */
+	private function createTerm(string $caseId, string $caseType, array $payload, ?array $resolution): void {
+		$this->termService->createTermijnInstance(
+			$caseId,
+			$caseType,
+			$this->intake?->termStartFor(case: $payload),
+			$resolution
+		);
+	}//end createTerm()
+
+	/**
+	 * Log, visibly, that a case runs without a statutory term.
+	 *
+	 * @param string $caseId      The case id.
+	 * @param string $caseType    The case type slug.
+	 * @param string $caseTypeRef The case type reference.
+	 *
+	 * @return void
+	 */
+	private function warnNoDefinition(string $caseId, string $caseType, string $caseTypeRef): void {
+		$this->logger->warning(
+			'Dossiq termijn: no active TermijnDefinitie for case type "' . $caseType . '", '
+			. 'so case ' . $caseId . ' runs without a statutory term',
+			['case' => $caseId, 'caseType' => $caseType, 'caseTypeId' => $caseTypeRef]
+		);
+	}//end warnNoDefinition()
+
+	/**
+	 * Log that a term could not be bound to a case.
+	 *
+	 * @param string     $caseId   The case id.
+	 * @param string     $caseType The case type slug.
+	 * @param \Throwable $error    What went wrong.
+	 *
+	 * @return void
+	 */
+	private function logBindFailure(string $caseId, string $caseType, \Throwable $error): void {
+		$this->logger->error(
+			'Dossiq termijn: could not bind a term to case ' . $caseId . ': ' . $error->getMessage(),
+			['case' => $caseId, 'caseType' => $caseType, 'exception' => $error->getMessage()]
+		);
+	}//end logBindFailure()
+
+	/**
+	 * The payload of a created (or sent) case, or null for anything else.
+	 *
+	 * @param Event $event Event.
+	 *
+	 * @return array<string, mixed>|null The case payload.
+	 */
+	private function createdCase(Event $event): ?array {
+		// The create of a case that is not a draft, or the moment a draft is
+		// sent. A draft binds no statutory term (decision 180).
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
+		if ($payload === null) {
+			return null;
+		}
+
+		if ($this->resolveSchemaSlug(payload: $payload) !== 'case') {
+			return null;
+		}
+
+		return $payload;
+	}//end createdCase()
+
+	/**
+	 * The case id, case type reference and case type slug of a new case.
+	 *
+	 * @param array<string, mixed> $payload The case payload.
+	 *
+	 * @return array{0: string, 1: string, 2: string}|null Null when the case cannot bind a term.
+	 */
+	private function caseIdentity(array $payload): ?array {
 		$caseId = (string)($payload['id'] ?? ($payload['uuid'] ?? ''));
 		$caseTypeRef = (string)($payload['caseType'] ?? '');
 		if ($caseId === '' || $caseTypeRef === '') {
-			return;
+			return null;
 		}
 
 		// 🔴 A `case` carries its case type as a UUID; a deadlineDefinition
@@ -139,62 +268,32 @@ class DeadlineCaseCreatedListener implements IEventListener {
 				['case' => $caseId, 'caseType' => $caseTypeRef]
 			);
 
-			return;
+			return null;
 		}
 
+		return [$caseId, $caseTypeRef, $caseType];
+	}//end caseIdentity()
+
+	/**
+	 * The resolution context of a new case's term.
+	 *
+	 * @param array<string, mixed> $payload The case payload.
+	 *
+	 * @return array<string, mixed> The organisation, service and priority.
+	 */
+	private function termContext(array $payload): array {
 		// Which term this case actually gets. One case type can carry several:
 		// one per participating organisation, per service and per priority,
 		// which is what lets a gemeenschappelijke regeling run one case type
 		// for five municipalities with five agreed norms. The resolution is
 		// made here, where the case's own values are in hand, and is recorded
 		// on the instance so a disputed date can be explained a year later.
-		$context = [
+		return [
 			'organisation' => $this->referenced(value: ($payload['competentAuthority'] ?? null)),
 			'service' => $this->referenced(value: ($payload['procedureType'] ?? null)),
 			'priority' => $this->referenced(value: ($payload['priority'] ?? null)),
 		];
-		$resolution = $this->resolution?->resolve(caseType: $caseType, context: $context);
-
-		// The service norm, resolved by the same rule. A case type with no
-		// statutory term (a melding, a demo type) still has a clock the team
-		// works to, and it is bound beside the statutory term rather than as it.
-		$plannedDefinition = $this->resolution?->plannedDefinitionFor(caseType: $caseType, context: $context);
-
-		try {
-			// The term counts from receipt, not from the moment this row was
-			// written (REQ-OTE-02). Null only when no intake reader is wired,
-			// which is the old behaviour: the term starts now.
-			$this->termService->createTermijnInstance(
-				$caseId,
-				$caseType,
-				$this->intake?->termStartFor(case: $payload),
-				$resolution
-			);
-			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload, plannedDefinition: $plannedDefinition);
-		} catch (NoTermijnDefinitieException $e) {
-			// NOT debug. A case that matched no definition at all has no
-			// statutory clock running, which is exactly the state that hid a
-			// fleet-wide key mismatch behind a quiet log line. It is a valid
-			// configuration for a case type with no beslistermijn, so it is a
-			// warning rather than an error — but it is visible.
-			$this->logger->warning(
-				'Dossiq termijn: no active TermijnDefinitie for case type "' . $caseType . '", '
-				. 'so case ' . $caseId . ' runs without a statutory term',
-				['case' => $caseId, 'caseType' => $caseType, 'caseTypeId' => $caseTypeRef]
-			);
-
-			// A subsidy round declares a closing DATE and no lead time, so it
-			// has no TermijnDefinitie and a refusal here is the ordinary path
-			// rather than the broken one. The other clocks still bind, and the
-			// fixed date still becomes the statutory term.
-			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload, plannedDefinition: $plannedDefinition);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq termijn: could not bind a term to case ' . $caseId . ': ' . $e->getMessage(),
-				['case' => $caseId, 'caseType' => $caseType, 'exception' => $e->getMessage()]
-			);
-		}//end try
-	}//end handle()
+	}//end termContext()
 
 	/**
 	 * Bind the planned end, the internal target and the fixed closing date.

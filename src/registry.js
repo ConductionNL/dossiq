@@ -116,6 +116,7 @@ import RecordStepsDialog from './dialogs/RecordStepsDialog.vue'
 // @spec openspec/specs/task-management/spec.md
 import RemedyLodgeDialog from './dialogs/RemedyLodgeDialog.vue'
 import RemindDialog from './dialogs/RemindDialog.vue'
+import RowRecordActionDialog from './dialogs/RowRecordActionDialog.vue'
 import SearchPlanDialog from './dialogs/SearchPlanDialog.vue'
 // @spec openspec/changes/handler-asks-the-applicant-for-missing-information/specs/termijn-pause-extension/spec.md#requirement-the-handler-asks-for-missing-information-from-the-case-page-req-avr-05
 import AanvullingVragenModal from './modals/AanvullingVragenModal.vue'
@@ -702,6 +703,13 @@ const registry = {
 		component: AanvullingVragenModal,
 		propsSchema: {},
 		_note: "Ask the applicant for missing information (board DqAanvullingVragen, REQ-AVR-05). Opened by the CaseDetail header action `request-information` as `type: open-modal`, offered while the case is open, not suspended and has no open aanvullingsverzoek. It posts to `POST /api/cases/{caseId}/information-request`, which sends the letter, suspends the statutory term and writes the record as one act; a refusal is shown as the server's own sentence and the form reports no success of its own. It reads the case type's pause reasons from the lifecycle answer and its `maxSuspensionDays` to bound the term; the server enforces both again.",
+	},
+	// @spec openspec/changes/case-goals/specs/case-goals/spec.md
+	RowRecordActionDialog: {
+		kind: 'modal',
+		component: RowRecordActionDialog,
+		propsSchema: {},
+		_note: "The library's CnActionDialog acting on one record-list row. A `rowActions` open-modal entry hands the clicked row over as `row` while its declared props resolve only the page's tokens; this passes the row on as CnActionDialog's `object`, so a request URL names both the page record (`@objectId`) and the row (`@object.id`). First used by the case-goals list's Close entry (POST /api/cases/{caseId}/goals/{goalId}/close, which checks the case update right first). The configuration (fields, reason, confirm, done text) is the manifest's.",
 	},
 	// @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	FileRequestDialog: {

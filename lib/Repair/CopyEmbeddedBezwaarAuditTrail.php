@@ -151,27 +151,11 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 		$failed = [];
 		$offset = 0;
 		do {
-			$rows = (array)$objectService->findAll(
-				['filters' => ['register' => $register, 'schema' => $schema], 'limit' => self::PAGE, 'offset' => $offset]
-			);
-			foreach ($this->normaliseObjectRows(rows: $rows) as $row) {
-				$uuid = (string)($row['@self']['id'] ?? ($row['id'] ?? ($row['uuid'] ?? '')));
-				$entries = $row['auditTrail'] ?? [];
-				if ($uuid === '' || is_array($entries) === false || $entries === []) {
-					continue;
-				}
-
-				try {
-					$copied += $this->copyRecord(register: $register, schema: $schema, uuid: $uuid, entries: array_values($entries));
-				} catch (Throwable $e) {
-					$failed[] = $uuid;
-					$output->warning('The bezwaar audit entries of '.$schema.' '.$uuid.' could not be copied: '.$e->getMessage());
-					$this->logger->error(
-						'Dossiq: embedded bezwaar audit entries not copied',
-						['schema' => $schema, 'object' => $uuid, 'exception' => $e->getMessage()]
-					);
-				}
-			}
+			$query = ['filters' => ['register' => $register, 'schema' => $schema], 'limit' => self::PAGE, 'offset' => $offset];
+			$rows = (array)$objectService->findAll($query);
+			[$pageCopied, $pageFailed] = $this->copyPage(rows: $rows, register: $register, schema: $schema, output: $output);
+			$copied += $pageCopied;
+			$failed = array_merge($failed, $pageFailed);
 
 			$offset += self::PAGE;
 			$more = (count($rows) === self::PAGE);
@@ -179,6 +163,73 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 
 		$output->info($schema.': '.$copied.' embedded bezwaar audit entries copied, '.count($failed).' records not copied.');
 	}//end copySchema()
+
+	/**
+	 * Copy the arrays of every record on one page.
+	 *
+	 * @param array<int, mixed> $rows The page of records.
+	 * @param string $register The register.
+	 * @param string $schema The schema.
+	 * @param IOutput $output Repair output.
+	 *
+	 * @return array{0: int, 1: list<string>} How many entries were copied, and the records that could not be.
+	 */
+	private function copyPage(array $rows, string $register, string $schema, IOutput $output): array {
+		$copied = 0;
+		$failed = [];
+		foreach ($this->normaliseObjectRows(rows: $rows) as $row) {
+			[$count, $failedUuid] = $this->copyRow(register: $register, schema: $schema, row: $row, output: $output);
+			$copied += $count;
+			if ($failedUuid !== null) {
+				$failed[] = $failedUuid;
+			}
+		}
+
+		return [$copied, $failed];
+	}//end copyPage()
+
+	/**
+	 * Copy one record's array, reporting a record that could not be copied.
+	 *
+	 * @param string $register The register.
+	 * @param string $schema The schema.
+	 * @param array<string, mixed> $row The record.
+	 * @param IOutput $output Repair output.
+	 *
+	 * @return array{0: int, 1: string|null} How many entries were copied, and the record when it could not be.
+	 */
+	private function copyRow(string $register, string $schema, array $row, IOutput $output): array {
+		$uuid = (string)($row['@self']['id'] ?? ($row['id'] ?? ($row['uuid'] ?? '')));
+		$entries = $row['auditTrail'] ?? [];
+		if ($uuid === '' || is_array($entries) === false || $entries === []) {
+			return [0, null];
+		}
+
+		try {
+			return [$this->copyRecord(register: $register, schema: $schema, uuid: $uuid, entries: array_values($entries)), null];
+		} catch (Throwable $e) {
+			$this->reportNotCopied(schema: $schema, uuid: $uuid, error: $e, output: $output);
+			return [0, $uuid];
+		}
+	}//end copyRow()
+
+	/**
+	 * Report a record whose entries could not be copied.
+	 *
+	 * @param string $schema The schema.
+	 * @param string $uuid The record.
+	 * @param Throwable $error Why the copy failed.
+	 * @param IOutput $output Repair output.
+	 *
+	 * @return void
+	 */
+	private function reportNotCopied(string $schema, string $uuid, Throwable $error, IOutput $output): void {
+		$output->warning('The bezwaar audit entries of '.$schema.' '.$uuid.' could not be copied: '.$error->getMessage());
+		$this->logger->error(
+			'Dossiq: embedded bezwaar audit entries not copied',
+			['schema' => $schema, 'object' => $uuid, 'exception' => $error->getMessage()]
+		);
+	}//end reportNotCopied()
 
 	/**
 	 * Copy one record's entries that are not on its trail yet, in order.

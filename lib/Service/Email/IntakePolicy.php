@@ -141,18 +141,24 @@ class IntakePolicy implements IntakePolicyInterface {
 			return self::DEFAULT_POLICY;
 		}
 
+		return $this->readPolicy(objectService: $objectService, register: $register, schema: $schema, caseTypeId: $caseTypeId);
+	}//end forCaseType()
+
+	/**
+	 * Read the case type and return its normalised intake policy.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The dossiq register.
+	 * @param string $schema        The case type schema.
+	 * @param string $caseTypeId    The case type uuid.
+	 *
+	 * @return string The policy, or the default when the case type cannot be read.
+	 */
+	private function readPolicy(object $objectService, string $register, string $schema, string $caseTypeId): string {
 		try {
-			$caseType = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $caseTypeId
-			);
+			$caseType = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseTypeId);
 		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: the case type behind an intake policy could not be read',
-				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
-			);
+			$this->logger->debug('Dossiq: the case type behind an intake policy could not be read', ['caseType' => $caseTypeId, 'error' => $e->getMessage()]);
 			return self::DEFAULT_POLICY;
 		}
 
@@ -161,7 +167,7 @@ class IntakePolicy implements IntakePolicyInterface {
 		}
 
 		return $this->normalise(value: (string)($caseType[self::PROPERTY] ?? ''));
-	}//end forCaseType()
+	}//end readPolicy()
 
 	/**
 	 * What to do with a message under one policy and one set of results.

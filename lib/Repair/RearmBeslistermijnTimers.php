@@ -107,6 +107,24 @@ class RearmBeslistermijnTimers implements IRepairStep {
 			return;
 		}
 
+		[$rows, $counts] = $this->rearmedAsSystem();
+
+		if ($rows === null) {
+			$output->warning('Term instances not readable (schemas unconfigured, or the read was refused). Skipping the term timer re-arm.');
+			return;
+		}
+
+		$this->report(output: $output, counts: $counts);
+	}//end run()
+
+	/**
+	 * Re-arm every term instance under the system identity.
+	 *
+	 * @return array{0: array<int, array<string, mixed>>|null, 1: array<string, int>} The rows read, or null when unreadable, and the counts.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 */
+	private function rearmedAsSystem(): array {
 		$rows = null;
 		$counts = ['rearmed' => 0, 'unchanged' => 0, 'failed' => 0];
 
@@ -120,11 +138,20 @@ class RearmBeslistermijnTimers implements IRepairStep {
 			}
 		);
 
-		if ($rows === null) {
-			$output->warning('Term instances not readable (schemas unconfigured, or the read was refused). Skipping the term timer re-arm.');
-			return;
-		}
+		return [$rows, $counts];
+	}//end rearmedAsSystem()
 
+	/**
+	 * Log and report the counts of a finished re-arm.
+	 *
+	 * @param IOutput $output Output sink.
+	 * @param array<string, int> $counts The counts.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 */
+	private function report(IOutput $output, array $counts): void {
 		$this->logger->info('Dossiq term timer re-arm complete', $counts);
 		$output->info(
 			sprintf(
@@ -134,7 +161,7 @@ class RearmBeslistermijnTimers implements IRepairStep {
 				$counts['failed']
 			)
 		);
-	}//end run()
+	}//end report()
 
 	/**
 	 * Re-arm one instance when it needs it.

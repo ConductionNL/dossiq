@@ -80,6 +80,8 @@ use Throwable;
 /**
  * Retires the `dossiq.demo` schema fork and restores the register's identity.
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ *
  * @spec exclude No canonical spec covers repairing the damage of a defective
  *  demo import. Pointing this at the first-time-setup spec would report
  *  conformance to a requirement that says nothing about the fork.
@@ -172,15 +174,19 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 			$objectService = null;
 		}
 
-		// The prune runs whether or not anything was retired THIS time. An
-		// instance repaired before the pruning existed still carries the
-		// dangling ids, and hanging it off the retirement would mean the one
-		// run that could clean them up had already happened.
-		$operation = function () use ($output): void {
-			$this->restoreRegisterIdentity(output: $output);
-			$this->retireForkedSchemas(output: $output);
-			$this->pruneDemoConfiguration(output: $output);
-		};
+		$this->repairAs(output: $output, objectService: $objectService);
+	}//end run()
+
+	/**
+	 * Restore the register, retire the fork and prune the configuration, as the system when possible.
+	 *
+	 * @param IOutput     $output        Repair output.
+	 * @param object|null $objectService OpenRegister's ObjectService, or null when unavailable.
+	 *
+	 * @return void
+	 */
+	private function repairAs(IOutput $output, ?object $objectService): void {
+		$operation = $this->repairSteps(output: $output);
 
 		try {
 			if ($objectService === null) {
@@ -192,13 +198,44 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 		} catch (Throwable $e) {
 			// A repair that cannot run must not fail an upgrade. The fork is a
 			// mess, not an outage.
-			$output->warning('Demo-fork repair could not complete: ' . $e->getMessage());
-			$this->logger->warning(
-				'Dossiq: demo-fork repair failed',
-				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
-			);
+			$this->reportRepairFailed(output: $output, error: $e);
 		}//end try
-	}//end run()
+	}//end repairAs()
+
+	/**
+	 * The repair's steps, as one operation.
+	 *
+	 * @param IOutput $output Repair output.
+	 *
+	 * @return callable The operation.
+	 */
+	private function repairSteps(IOutput $output): callable {
+		// The prune runs whether or not anything was retired THIS time. An
+		// instance repaired before the pruning existed still carries the
+		// dangling ids, and hanging it off the retirement would mean the one
+		// run that could clean them up had already happened.
+		return function () use ($output): void {
+			$this->restoreRegisterIdentity(output: $output);
+			$this->retireForkedSchemas(output: $output);
+			$this->pruneDemoConfiguration(output: $output);
+		};
+	}//end repairSteps()
+
+	/**
+	 * Report a repair that could not complete.
+	 *
+	 * @param IOutput   $output Repair output.
+	 * @param Throwable $error  Why it could not complete.
+	 *
+	 * @return void
+	 */
+	private function reportRepairFailed(IOutput $output, Throwable $error): void {
+		$output->warning('Demo-fork repair could not complete: ' . $error->getMessage());
+		$this->logger->warning(
+			'Dossiq: demo-fork repair failed',
+			['app' => AppIdentity::APP_ID, 'exception' => $error->getMessage()]
+		);
+	}//end reportRepairFailed()
 
 	/**
 	 * Give the register its own title, description, version and app id back.
@@ -414,27 +451,55 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 
 		$pruned = 0;
 		foreach ($configurations as $configuration) {
-			$kept = [];
-			foreach (($configuration->getSchemas() ?? []) as $id) {
-				try {
-					$schemaMapper->find($id, _rbac: false, _multitenancy: false);
-					$kept[] = $id;
-				} catch (Throwable $e) {
-					$pruned++;
-				}
-			}
-
-			$configuration->setSchemas($kept);
-			$configurationMapper->update($configuration);
+			$pruned += $this->pruneConfiguration(configurationMapper: $configurationMapper, schemaMapper: $schemaMapper, configuration: $configuration);
 		}
 
+		$this->reportPruned(output: $output, pruned: $pruned);
+	}//end pruneDemoConfiguration()
+
+	/**
+	 * Drop the schema ids of one configuration record that no longer resolve.
+	 *
+	 * @param object $configurationMapper OpenRegister's ConfigurationMapper.
+	 * @param object $schemaMapper        OpenRegister's SchemaMapper.
+	 * @param object $configuration       The configuration record.
+	 *
+	 * @return int How many ids were dropped.
+	 */
+	private function pruneConfiguration(object $configurationMapper, object $schemaMapper, object $configuration): int {
+		$pruned = 0;
+		$kept = [];
+		foreach (($configuration->getSchemas() ?? []) as $id) {
+			try {
+				$schemaMapper->find($id, _rbac: false, _multitenancy: false);
+				$kept[] = $id;
+			} catch (Throwable $e) {
+				$pruned++;
+			}
+		}
+
+		$configuration->setSchemas($kept);
+		$configurationMapper->update($configuration);
+
+		return $pruned;
+	}//end pruneConfiguration()
+
+	/**
+	 * Report how many dangling schema ids were dropped, when any were.
+	 *
+	 * @param IOutput $output Repair output.
+	 * @param int     $pruned How many ids were dropped.
+	 *
+	 * @return void
+	 */
+	private function reportPruned(IOutput $output, int $pruned): void {
 		if ($pruned > 0) {
 			$output->info(
 				'Demo-fork repair: dropped ' . $pruned . ' dangling schema id(s) from the demo '
 				. 'configuration record.'
 			);
 		}
-	}//end pruneDemoConfiguration()
+	}//end reportPruned()
 
 	/**
 	 * Every schema id that some register lists.
@@ -494,20 +559,46 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 			'version' => '',
 		];
 
-		if (is_readable(self::REGISTER_JSON) === false) {
+		$data = $this->shippedRegisterJson();
+		if ($data === null) {
 			return $identity;
+		}
+
+		return $this->identityFrom(identity: $identity, data: $data);
+	}//end shippedIdentity()
+
+	/**
+	 * The shipped register file, decoded.
+	 *
+	 * @return array<string, mixed>|null The decoded file, or null when it cannot be read.
+	 */
+	private function shippedRegisterJson(): ?array {
+		if (is_readable(self::REGISTER_JSON) === false) {
+			return null;
 		}
 
 		$raw = file_get_contents(self::REGISTER_JSON);
 		if ($raw === false) {
-			return $identity;
+			return null;
 		}
 
 		$data = json_decode($raw, true);
 		if (is_array($data) === false) {
-			return $identity;
+			return null;
 		}
 
+		return $data;
+	}//end shippedRegisterJson()
+
+	/**
+	 * The identity with the title and description from `info` and the version from the register block.
+	 *
+	 * @param array{title: string, description: string, version: string} $identity The empty identity.
+	 * @param array<string, mixed>                                        $data     The decoded register file.
+	 *
+	 * @return array{title: string, description: string, version: string} The shipped identity.
+	 */
+	private function identityFrom(array $identity, array $data): array {
 		$info = ($data['info'] ?? []);
 		if (is_array($info) === true) {
 			$identity['title'] = (string)($info['title'] ?? '');
@@ -520,5 +611,5 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 		}
 
 		return $identity;
-	}//end shippedIdentity()
+	}//end identityFrom()
 }//end class

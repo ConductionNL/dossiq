@@ -138,20 +138,61 @@ class StateMachineService implements StateMachineServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
 	 */
 	public function logTransition(string $decisionId, string $from, string $to, array $metadata = []): array {
+		$target = $this->logTarget();
+		if ($target === null) {
+			return [];
+		}
+
+		[$objectService, $register, $logSchema] = $target;
+		$record = $this->transitionRecord(decisionId: $decisionId, from: $from, to: $to, metadata: $metadata);
+
+		try {
+			$saved = $objectService->saveObject(object: $record, register: $register, schema: $logSchema);
+			return $this->toArray(value: $saved);
+		} catch (\Throwable $e) {
+			$this->logger->error('StateMachineService: failed to persist transition log', ['exception' => $e->getMessage(), 'decisionId' => $decisionId]);
+			return [];
+		}
+	}//end logTransition()
+
+	/**
+	 * Where the transition log is stored, or null (with a warning) when it cannot be.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The object service, register and log schema.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
+	 */
+	private function logTarget(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			$this->logger->warning('StateMachineService: storage unavailable, transition not logged');
-			return [];
+			return null;
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$logSchema = $this->settingsService->getConfigValue(key: 'state_machine_log_schema');
 		if ($register === '' || $logSchema === '') {
 			$this->logger->warning('StateMachineService: log schema not configured');
-			return [];
+			return null;
 		}
 
-		$record = [
+		return [$objectService, $register, $logSchema];
+	}//end logTarget()
+
+	/**
+	 * The stateMachineLog record of a transition.
+	 *
+	 * @param string               $decisionId The beschikking UUID.
+	 * @param string               $from       The source status.
+	 * @param string               $to         The target status.
+	 * @param array<string, mixed> $metadata   Actor/trigger/evidence metadata.
+	 *
+	 * @return array<string, mixed> The record.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
+	 */
+	private function transitionRecord(string $decisionId, string $from, string $to, array $metadata): array {
+		return [
 			'decisionId' => $decisionId,
 			'overgang' => [
 				'van' => $from,
@@ -163,18 +204,7 @@ class StateMachineService implements StateMachineServiceInterface {
 				'evidenceMaterial' => ($metadata['evidenceMaterial'] ?? null),
 			],
 		];
-
-		try {
-			$saved = $objectService->saveObject(object: $record, register: $register, schema: $logSchema);
-			return $this->toArray(value: $saved);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'StateMachineService: failed to persist transition log',
-				['exception' => $e->getMessage(), 'decisionId' => $decisionId],
-			);
-			return [];
-		}
-	}//end logTransition()
+	}//end transitionRecord()
 
 	/**
 	 * Refuse a content edit on a beschikking that has been signed.

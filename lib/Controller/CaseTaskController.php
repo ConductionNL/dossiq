@@ -233,8 +233,33 @@ class CaseTaskController extends Controller {
 	 *                      task answers.
 	 */
 	private function onTask(string $taskId, callable $run): JSONResponse {
+		$task = $this->readTask(taskId: $taskId);
+		if ($task instanceof JSONResponse) {
+			return $task;
+		}
+
+		if ($task === null) {
+			return new JSONResponse(['message' => 'That task could not be found', 'error' => 'task_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$caseId = (string)($task['objectUuid'] ?? '');
+		if ($caseId === '') {
+			return new JSONResponse(['message' => 'That task is not on a case', 'error' => 'case_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return $this->guarded(caseId: $caseId, write: true, run: static fn (): array => $run($task));
+	}//end onTask()
+
+	/**
+	 * Read a task, or the 503 when the engine cannot answer at all.
+	 *
+	 * @param string $taskId The task.
+	 *
+	 * @return array<string, mixed>|JSONResponse|null The task, null when it is missing, or the 503.
+	 */
+	private function readTask(string $taskId): array|JSONResponse|null {
 		try {
-			$task = $this->tasks->find(taskId: $taskId);
+			return $this->tasks->find(taskId: $taskId);
 		} catch (\Throwable $e) {
 			// The gateway answers null for a missing task and keeps its own
 			// failures, so reaching here means the ENGINE could not answer at
@@ -251,24 +276,7 @@ class CaseTaskController extends Controller {
 				Http::STATUS_SERVICE_UNAVAILABLE
 			);
 		}
-
-		if ($task === null) {
-			return new JSONResponse(
-				['message' => 'That task could not be found', 'error' => 'task_not_found'],
-				Http::STATUS_NOT_FOUND
-			);
-		}
-
-		$caseId = (string)($task['objectUuid'] ?? '');
-		if ($caseId === '') {
-			return new JSONResponse(
-				['message' => 'That task is not on a case', 'error' => 'case_not_found'],
-				Http::STATUS_NOT_FOUND
-			);
-		}
-
-		return $this->guarded(caseId: $caseId, write: true, run: static fn (): array => $run($task));
-	}//end onTask()
+	}//end readTask()
 
 	/**
 	 * The signed-in user's uid.
@@ -293,12 +301,26 @@ class CaseTaskController extends Controller {
 	 * @return JSONResponse The gesture's answer, or a refusal.
 	 */
 	private function guarded(string $caseId, bool $write, callable $run): JSONResponse {
+		$refused = $this->guardRefusal(caseId: $caseId, write: $write);
+		if ($refused !== null) {
+			return $refused;
+		}
+
+		return $this->runGesture(caseId: $caseId, run: $run);
+	}//end guarded()
+
+	/**
+	 * The refusal when nobody is signed in or the user may not act on the case, else null.
+	 *
+	 * @param string  $caseId The case UUID.
+	 * @param boolean $write  Whether the gesture writes.
+	 *
+	 * @return JSONResponse|null The 401 or 403, or null when the gesture may run.
+	 */
+	private function guardRefusal(string $caseId, bool $write): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['message' => 'You are not signed in', 'error' => 'not_authenticated'],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return new JSONResponse(['message' => 'You are not signed in', 'error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
 		if ($this->allowed(caseId: $caseId, user: $user, write: $write) === false) {
@@ -308,6 +330,18 @@ class CaseTaskController extends Controller {
 			);
 		}
 
+		return null;
+	}//end guardRefusal()
+
+	/**
+	 * Run an allowed gesture, turning its failures into refusals.
+	 *
+	 * @param string                           $caseId The case UUID.
+	 * @param callable(): array<string, mixed> $run    The gesture.
+	 *
+	 * @return JSONResponse The gesture's answer, or a refusal.
+	 */
+	private function runGesture(string $caseId, callable $run): JSONResponse {
 		try {
 			return new JSONResponse($run());
 		} catch (RuntimeException $e) {
@@ -318,12 +352,9 @@ class CaseTaskController extends Controller {
 				['exception' => $e->getMessage(), 'caseId' => $caseId],
 			);
 
-			return new JSONResponse(
-				['message' => 'That could not be done', 'error' => 'task_action_failed'],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
+			return new JSONResponse(['message' => 'That could not be done', 'error' => 'task_action_failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}//end try
-	}//end guarded()
+	}//end runGesture()
 
 	/**
 	 * Turn a named refusal into a response that says what was missing.

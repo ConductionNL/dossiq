@@ -136,6 +136,33 @@ class StoppingRules implements StoppingRulesInterface {
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
 	 */
 	public function declare(string $caseId, float $targetRecall, float $confidence, string $userId): array {
+		$this->requireInRange(targetRecall: $targetRecall, confidence: $confidence);
+
+		if ($this->reviewStarted(caseId: $caseId) === true) {
+			throw new RefusedException(rule: 'review-stopping-rule-locked', sentence: self::LOCKED, status: RefusedException::STATUS_REFUSED);
+		}
+
+		$uuid = $this->existingUuid(caseId: $caseId);
+
+		$rule = $this->ruleOf(caseId: $caseId, targetRecall: $targetRecall, confidence: $confidence, userId: $userId);
+
+		$saved = $this->save(rule: $rule, uuid: $uuid);
+		$this->reconcile(caseId: $caseId);
+
+		return $saved;
+	}//end declare()
+
+	/**
+	 * Refuse a target recall or confidence outside the allowed range.
+	 *
+	 * @param float $targetRecall The target recall.
+	 * @param float $confidence   The confidence.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When either is out of range.
+	 */
+	private function requireInRange(float $targetRecall, float $confidence): void {
 		if ($targetRecall < 0.5 || $targetRecall > 0.99 || in_array($confidence, self::CONFIDENCES, true) === false) {
 			throw new RefusedException(
 				rule: 'review-stopping-rule-out-of-range',
@@ -143,30 +170,44 @@ class StoppingRules implements StoppingRulesInterface {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end requireInRange()
 
-		if ($this->reviewStarted(caseId: $caseId) === true) {
-			throw new RefusedException(rule: 'review-stopping-rule-locked', sentence: self::LOCKED, status: RefusedException::STATUS_REFUSED);
-		}
-
+	/**
+	 * The uuid of the rule the case already declared, or null.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return string|null
+	 */
+	private function existingUuid(string $caseId): ?string {
 		$existing = $this->forCase(caseId: $caseId);
 		$uuid = null;
 		if ($existing !== null) {
 			$uuid = (string)($existing['id'] ?? ($existing['uuid'] ?? ''));
 		}
 
-		$rule = [
+		return $uuid;
+	}//end existingUuid()
+
+	/**
+	 * The stopping rule as declared now.
+	 *
+	 * @param string $caseId       The case uuid.
+	 * @param float  $targetRecall The target recall.
+	 * @param float  $confidence   The confidence.
+	 * @param string $userId       Who declares it.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function ruleOf(string $caseId, float $targetRecall, float $confidence, string $userId): array {
+		return [
 			'case' => $caseId,
 			'targetRecall' => $targetRecall,
 			'confidence' => $confidence,
 			'declaredBy' => $userId,
 			'declaredAt' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
 		];
-
-		$saved = $this->save(rule: $rule, uuid: $uuid);
-		$this->reconcile(caseId: $caseId);
-
-		return $saved;
-	}//end declare()
+	}//end ruleOf()
 
 	/**
 	 * Reconcile the case's reviewer access after the rule was stored.

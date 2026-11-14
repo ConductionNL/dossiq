@@ -101,6 +101,19 @@ class LhsController extends Controller {
 			return $this->unauthenticated();
 		}
 
+		return $this->recommendAs(user: $user);
+	}//end recommend()
+
+	/**
+	 * Read the triple, check the caller may write on the case, and recommend.
+	 *
+	 * @param IUser $user The signed-in user.
+	 *
+	 * @return JSONResponse The persisted lhsRecommendation row, or the refusal
+	 *
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
+	 */
+	private function recommendAs(IUser $user): JSONResponse {
 		$caseId = (string)$this->request->getParam('caseId', '');
 		$severity = (string)$this->request->getParam('severity', '');
 		$behaviour = (string)$this->request->getParam('behaviour', '');
@@ -116,21 +129,36 @@ class LhsController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
+		return $this->recommendFor(caseId: $caseId, severity: $severity, behaviour: $behaviour, actorType: $actorType);
+	}//end recommendAs()
+
+	/**
+	 * Persist the recommendation for the triple on the case.
+	 *
+	 * @param string $caseId    The case.
+	 * @param string $severity  The ernst.
+	 * @param string $behaviour The gedrag.
+	 * @param string $actorType The actor type.
+	 *
+	 * @return JSONResponse The persisted lhsRecommendation row, or the failure
+	 *
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
+	 */
+	private function recommendFor(string $caseId, string $severity, string $behaviour, string $actorType): JSONResponse {
 		try {
-			return new JSONResponse(
-				$this->lhsService->recommend(
-					caseId: $caseId,
-					severity: $severity,
-					behaviour: $behaviour,
-					actorType: $actorType,
-					lhsVersion: $this->requestedVersion(),
-					inspection: $this->requestedInspection(),
-				)
+			$row = $this->lhsService->recommend(
+				caseId: $caseId,
+				severity: $severity,
+				behaviour: $behaviour,
+				actorType: $actorType,
+				lhsVersion: $this->requestedVersion(),
+				inspection: $this->requestedInspection(),
 			);
+			return new JSONResponse($row);
 		} catch (Throwable $e) {
 			return $this->recommendFailed(exception: $e);
 		}
-	}//end recommend()
+	}//end recommendFor()
 
 	/**
 	 * The LHS version the request pins, or null for the current one.
@@ -303,14 +331,43 @@ class LhsController extends Controller {
 			return $this->unauthenticated();
 		}
 
-		$recommendationId = $this->resolveRecommendationId();
-		$intervention = (string)$this->request->getParam('intervention', '');
-		$justification = (string)$this->request->getParam('justification', '');
+		[$recommendationId, $intervention, $justification] = $this->overrideFields();
 		$hasBlank = in_array('', [$recommendationId, $intervention, $justification], true);
 		if ($hasBlank === true) {
 			return $this->badRequest(error: 'recommendationId, intervention en justification zijn verplicht');
 		}
 
+		return $this->applyOverride(user: $user, recommendationId: $recommendationId, intervention: $intervention, justification: $justification);
+	}//end override()
+
+	/**
+	 * The recommendation id, intervention and justification the override names.
+	 *
+	 * @return array{0: string, 1: string, 2: string} The three fields, '' when absent.
+	 *
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
+	 */
+	private function overrideFields(): array {
+		$recommendationId = $this->resolveRecommendationId();
+		$intervention = (string)$this->request->getParam('intervention', '');
+		$justification = (string)$this->request->getParam('justification', '');
+
+		return [$recommendationId, $intervention, $justification];
+	}//end overrideFields()
+
+	/**
+	 * Override the recommendation, answering a refusal or a failure as such.
+	 *
+	 * @param IUser  $user             The caller.
+	 * @param string $recommendationId The recommendation.
+	 * @param string $intervention     The chosen intervention.
+	 * @param string $justification    Why.
+	 *
+	 * @return JSONResponse The updated lhsRecommendation row, or the refusal.
+	 *
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
+	 */
+	private function applyOverride(IUser $user, string $recommendationId, string $intervention, string $justification): JSONResponse {
 		try {
 			$updated = $this->lhsService->override(
 				recommendationId: $recommendationId,
@@ -321,12 +378,25 @@ class LhsController extends Controller {
 		} catch (RuntimeException $e) {
 			return $this->overrideRefusal(exception: $e);
 		} catch (Throwable $e) {
-			$this->logger->error('Dossiq LHS override failed: ' . $e->getMessage());
-			return $this->serverError(error: 'LHS-override mislukt');
+			return $this->overrideFailure(exception: $e);
 		}//end try
 
 		return new JSONResponse($updated);
-	}//end override()
+	}//end applyOverride()
+
+	/**
+	 * Log an override that failed for another reason than a refusal.
+	 *
+	 * @param Throwable $exception The failure.
+	 *
+	 * @return JSONResponse The 500.
+	 *
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
+	 */
+	private function overrideFailure(Throwable $exception): JSONResponse {
+		$this->logger->error('Dossiq LHS override failed: ' . $exception->getMessage());
+		return $this->serverError(error: 'LHS-override mislukt');
+	}//end overrideFailure()
 
 	/**
 	 * The role the override is weighed under: `manager` only for a caller who

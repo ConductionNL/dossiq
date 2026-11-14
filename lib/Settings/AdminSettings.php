@@ -85,6 +85,26 @@ class AdminSettings implements IDelegatedSettings {
 	public function getForm(): TemplateResponse {
 		$version = $this->appManager->getAppVersion(appId: AppIdentity::APP_ID);
 
+		$this->provideInstanceState(version: $version);
+		$this->provideTabState();
+
+		return new TemplateResponse(
+			AppIdentity::APP_ID,
+			'settings/admin',
+			[]
+		);
+	}//end getForm()
+
+	/**
+	 * Provide the version, the prerequisites and the sibling apps this instance has.
+	 *
+	 * @param string $version The app version.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function provideInstanceState(string $version): void {
 		$this->initialState->provideInitialState('version', $version);
 		// What this instance actually has, read at page load and never cached.
 		// A cached answer is exactly the wrong thing to show somebody who has
@@ -111,6 +131,16 @@ class AdminSettings implements IDelegatedSettings {
 			'dependencyApps',
 			(new DependencyApps())->read(appManager: $this->appManager)
 		);
+	}//end provideInstanceState()
+
+	/**
+	 * Provide the stored settings each admin tab reads.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function provideTabState(): void {
 		// The publication card on VTH: the template and the publication date rule.
 		$this->initialState->provideInitialState(
 			'publicationSettings',
@@ -147,13 +177,7 @@ class AdminSettings implements IDelegatedSettings {
 			'packageAdminTabs',
 			$this->packageTabs->installed()
 		);
-
-		return new TemplateResponse(
-			AppIdentity::APP_ID,
-			'settings/admin',
-			[]
-		);
-	}//end getForm()
+	}//end provideTabState()
 
 	/**
 	 * Build the consultation tab's initial state.

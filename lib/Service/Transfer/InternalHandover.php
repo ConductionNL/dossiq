@@ -161,34 +161,78 @@ class InternalHandover {
 	): array {
 		$case = $this->requireCase(caseId: $caseId);
 		$team = $this->teams->require(team: $targetTeam);
-		$sourceTeam = trim((string)($case['assignedGroup'] ?? ''));
 
 		$reconciled = $this->seats->plan(case: $case, team: $team);
-		$now = (new DateTimeImmutable())->format('c');
+		$record = $this->recordHeader(caseId: $caseId, case: $case, team: $team)
+			+ $this->recordAct(reason: $reason, doorzending: $doorzending, initiatedBy: $initiatedBy, emptied: $reconciled['emptied']);
 
-		$record = [
+		return $this->applyHandover(case: $case, record: $record, reconciled: $reconciled);
+	}//end initiate()
+
+	/**
+	 * The case and team fields a new handover record opens with.
+	 *
+	 * @param string               $caseId The case uuid.
+	 * @param array<string, mixed> $case   The case.
+	 * @param string               $team   The receiving team.
+	 *
+	 * @return array<string, mixed> The leading fields of the record.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 */
+	private function recordHeader(string $caseId, array $case, string $team): array {
+		return [
 			'caseId' => $caseId,
 			'handoverScope' => self::SCOPE_TEAM,
-			'sourceTeam' => $sourceTeam,
+			'sourceTeam' => trim((string)($case['assignedGroup'] ?? '')),
 			'targetTeam' => $team,
 			'targetOrganization' => $team,
 			'sourceOrganization' => trim((string)($case['sourceOrganisation'] ?? '')),
+		];
+	}//end recordHeader()
+
+	/**
+	 * The fields of a new handover record that describe the act itself.
+	 *
+	 * @param string                            $reason      Why the case is moving.
+	 * @param bool                              $doorzending Whether this is a doorzending under Awb 2:3.
+	 * @param string                            $initiatedBy Who handed it on.
+	 * @param array<int, array<string, string>> $emptied     The seats the reconciliation empties.
+	 *
+	 * @return array<string, mixed> The trailing fields of the record.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `doorzending` is the declaration stored on the record.
+	 */
+	private function recordAct(string $reason, bool $doorzending, string $initiatedBy, array $emptied): array {
+		$now = (new DateTimeImmutable())->format('c');
+
+		return [
 			'reason' => $reason,
 			'doorzending' => $doorzending,
 			'requestedDate' => (new DateTimeImmutable())->format('Y-m-d'),
 			'status' => 'pending',
 			'initiatedBy' => $initiatedBy,
-			'emptiedSeats' => $reconciled['emptied'],
-			'custodyAuditTrail' => [
-				[
-					'event' => 'initiated',
-					'actor' => $initiatedBy,
-					'actorType' => 'local',
-					'cloudId' => '',
-					'timestamp' => $now,
-				],
-			],
+			'emptiedSeats' => $emptied,
+			'custodyAuditTrail' => $this->initiatedTrail(initiatedBy: $initiatedBy, timestamp: $now),
 		];
+	}//end recordAct()
+
+	/**
+	 * Record the handover, then move the case and its seats.
+	 *
+	 * @param array<string, mixed>                                                            $case       The case.
+	 * @param array<string, mixed>                                                            $record     The new transfer record.
+	 * @param array{emptied: array<int, array<string, string>>, changes: array<string, mixed>} $reconciled The seat reconciliation.
+	 *
+	 * @return array<string, mixed> The transfer record, carrying `announcement`.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 */
+	private function applyHandover(array $case, array $record, array $reconciled): array {
+		$caseId = (string) $record['caseId'];
+		$team = (string) $record['targetTeam'];
 
 		// RECORDED FIRST, THEN APPLIED. A seat emptied before the handover is
 		// on the record leaves a case with nobody on it and no trace of who had
@@ -201,31 +245,80 @@ class InternalHandover {
 		// ONE write, carrying the team and the seats together. Two writes would
 		// leave a window in which the case has moved and still names a handler
 		// who cannot open it.
-		$changes = array_merge(
-			$reconciled['changes'],
+		$changes = $this->withHandoverTo(changes: $reconciled['changes'], team: $team);
+		$this->writeCase(case: $case, changes: $changes);
+
+		$saved['announcement'] = $this->doorzending->announce(case: $case, transfer: $saved);
+
+		$this->logInitiated(record: $record);
+
+		return $saved;
+	}//end applyHandover()
+
+	/**
+	 * Log a handover to another team.
+	 *
+	 * @param array<string, mixed> $record The new transfer record.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 */
+	private function logInitiated(array $record): void {
+		$this->logger->info(
+			'Dossiq handover: a case was handed to another team',
+			[
+				'caseId' => $record['caseId'],
+				'from' => $record['sourceTeam'],
+				'to' => $record['targetTeam'],
+				'doorzending' => $record['doorzending'],
+				'emptiedSeats' => count($record['emptiedSeats']),
+			],
+		);
+	}//end logInitiated()
+
+	/**
+	 * The custody trail a new handover starts with.
+	 *
+	 * @param string $initiatedBy Who handed the case on.
+	 * @param string $timestamp   When, as an ISO 8601 string.
+	 *
+	 * @return array<int, array<string, string>> The trail with its one `initiated` entry.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 */
+	private function initiatedTrail(string $initiatedBy, string $timestamp): array {
+		return [
+			[
+				'event' => 'initiated',
+				'actor' => $initiatedBy,
+				'actorType' => 'local',
+				'cloudId' => '',
+				'timestamp' => $timestamp,
+			],
+		];
+	}//end initiatedTrail()
+
+	/**
+	 * The reconciled seat changes plus the team the case moves to.
+	 *
+	 * @param array<string, mixed> $changes The seat changes from the reconciliation.
+	 * @param string               $team    The receiving team.
+	 *
+	 * @return array<string, mixed> The one write to make on the case.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 */
+	private function withHandoverTo(array $changes, string $team): array {
+		return array_merge(
+			$changes,
 			[
 				'assignedGroup' => $team,
 				'handoverPending' => true,
 				'handoverTo' => $team,
 			],
 		);
-		$this->writeCase(case: $case, changes: $changes);
-
-		$saved['announcement'] = $this->doorzending->announce(case: $case, transfer: $saved);
-
-		$this->logger->info(
-			'Dossiq handover: a case was handed to another team',
-			[
-				'caseId' => $caseId,
-				'from' => $sourceTeam,
-				'to' => $team,
-				'doorzending' => $doorzending,
-				'emptiedSeats' => count($reconciled['emptied']),
-			],
-		);
-
-		return $saved;
-	}//end initiate()
+	}//end withHandoverTo()
 
 	/**
 	 * Accept a handover on the receiving team's behalf.
@@ -291,22 +384,46 @@ class InternalHandover {
 		}
 
 		try {
-			[$objectService, $register] = $this->context();
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_transfer_schema'),
-				filters: ['sourceTeam' => $team, 'status' => 'pending', '_limit' => self::PAGE_SIZE],
-			);
+			$rows = $this->pendingFrom(team: $team);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq handover: the outstanding handovers could not be read',
-				['team' => $team, 'exception' => $e->getMessage()],
-			);
+			$this->logger->warning('Dossiq handover: the outstanding handovers could not be read', ['team' => $team, 'exception' => $e->getMessage()]);
 
 			return [];
 		}
 
+		return $this->teamScoped(rows: $rows);
+	}//end outstandingFor()
+
+	/**
+	 * The pending transfer records a team sent.
+	 *
+	 * @param string $team The sending team's Nextcloud group id.
+	 *
+	 * @return array<int, array<string, mixed>> The pending transfers.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 */
+	private function pendingFrom(string $team): array {
+		[$objectService, $register] = $this->context();
+
+		return $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->schema(key: 'case_transfer_schema'),
+			filters: ['sourceTeam' => $team, 'status' => 'pending', '_limit' => self::PAGE_SIZE],
+		);
+	}//end pendingFrom()
+
+	/**
+	 * The transfers handed over to a team, not to one person.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The pending transfers.
+	 *
+	 * @return array<int, array<string, mixed>> The outstanding handovers.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 */
+	private function teamScoped(array $rows): array {
 		$outstanding = [];
 		foreach ($rows as $row) {
 			if (trim((string)($row['handoverScope'] ?? '')) === self::SCOPE_TEAM) {
@@ -315,7 +432,7 @@ class InternalHandover {
 		}
 
 		return $outstanding;
-	}//end outstandingFor()
+	}//end teamScoped()
 
 	/**
 	 * Settle a pending handover, accepted or refused, on the one custody trail.
@@ -339,6 +456,28 @@ class InternalHandover {
 			return $transfer;
 		}
 
+		$this->assertPending(current: $current);
+
+		$transfer = $this->settledRecord(transfer: $transfer, status: $status, actor: $actor, reason: $reason);
+
+		$saved = $this->saveTransfer(record: $transfer, uuid: $transferId);
+		$this->settleCase(transfer: $saved, status: $status);
+
+		$this->logSettled(transferId: $transferId, transfer: $transfer, status: $status, actor: $actor);
+
+		return $saved;
+	}//end settle()
+
+	/**
+	 * Refuse to change a handover that is no longer pending.
+	 *
+	 * @param string $current The handover's current status.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the handover is already settled.
+	 */
+	private function assertPending(string $current): void {
 		if ($current !== 'pending') {
 			throw new RefusedException(
 				rule: self::HANDOVER_SETTLED,
@@ -346,16 +485,22 @@ class InternalHandover {
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
+	}//end assertPending()
 
+	/**
+	 * The transfer record with the settlement written onto it.
+	 *
+	 * @param array<string, mixed> $transfer The pending record.
+	 * @param string               $status   'accepted' or 'rejected'.
+	 * @param string               $actor    Who settled it.
+	 * @param string               $reason   The refusal's reason, empty on an acceptance.
+	 *
+	 * @return array<string, mixed> The settled record, not yet saved.
+	 */
+	private function settledRecord(array $transfer, string $status, string $actor, string $reason): array {
 		$now = (new DateTimeImmutable())->format('c');
 		$trail = (array)($transfer['custodyAuditTrail'] ?? []);
-		$trail[] = [
-			'event' => $status,
-			'actor' => $actor,
-			'actorType' => 'local',
-			'cloudId' => '',
-			'timestamp' => $now,
-		];
+		$trail[] = $this->trailEntry(event: $status, actor: $actor, timestamp: $now);
 
 		$transfer['status'] = $status;
 		$transfer['acceptedBy'] = $actor;
@@ -365,16 +510,44 @@ class InternalHandover {
 			$transfer['rejectionReason'] = $reason;
 		}
 
-		$saved = $this->saveTransfer(record: $transfer, uuid: $transferId);
-		$this->settleCase(transfer: $saved, status: $status);
+		return $transfer;
+	}//end settledRecord()
 
+	/**
+	 * One local entry on the custody trail.
+	 *
+	 * @param string $event     The event.
+	 * @param string $actor     Who acted.
+	 * @param string $timestamp When, as an ISO 8601 string.
+	 *
+	 * @return array<string, string> The trail entry.
+	 */
+	private function trailEntry(string $event, string $actor, string $timestamp): array {
+		return [
+			'event' => $event,
+			'actor' => $actor,
+			'actorType' => 'local',
+			'cloudId' => '',
+			'timestamp' => $timestamp,
+		];
+	}//end trailEntry()
+
+	/**
+	 * Log a settled handover.
+	 *
+	 * @param string               $transferId The handover's uuid.
+	 * @param array<string, mixed> $transfer   The settled record.
+	 * @param string               $status     'accepted' or 'rejected'.
+	 * @param string               $actor      Who settled it.
+	 *
+	 * @return void
+	 */
+	private function logSettled(string $transferId, array $transfer, string $status, string $actor): void {
 		$this->logger->info(
 			'Dossiq handover: a handover was ' . $status,
 			['transferId' => $transferId, 'caseId' => trim((string)($transfer['caseId'] ?? '')), 'actor' => $actor],
 		);
-
-		return $saved;
-	}//end settle()
+	}//end logSettled()
 
 	/**
 	 * Bring the case in line with a settled handover.
@@ -507,33 +680,53 @@ class InternalHandover {
 		unset($record['@self'], $record['announcement']);
 
 		try {
-			[$objectService, $register] = $this->context();
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_transfer_schema'),
-				object: $record,
-				uuid: $uuid,
-			);
+			$saved = $this->storeTransferRow(record: $record, uuid: $uuid);
 		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: self::CASE_UNREADABLE,
-				sentence: 'The handover could not be recorded, so the case stays where it is.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
+			throw $this->unrecorded(previous: $e);
 		}
 
 		if ($saved === null) {
-			throw new RefusedException(
-				rule: self::CASE_UNREADABLE,
-				sentence: 'The handover could not be recorded, so the case stays where it is.',
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
+			throw $this->unrecorded(previous: null);
 		}
 
 		return $saved;
 	}//end saveTransfer()
+
+	/**
+	 * Write a transfer record.
+	 *
+	 * @param array<string, mixed> $record The record, without `@self` and `announcement`.
+	 * @param string|null          $uuid   The uuid to update, or null to create.
+	 *
+	 * @return array<string, mixed>|null The stored record, or null when the store answered nothing.
+	 */
+	private function storeTransferRow(array $record, ?string $uuid): ?array {
+		[$objectService, $register] = $this->context();
+
+		return $this->saveObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->schema(key: 'case_transfer_schema'),
+			object: $record,
+			uuid: $uuid,
+		);
+	}//end storeTransferRow()
+
+	/**
+	 * The refusal when a transfer record could not be stored.
+	 *
+	 * @param Throwable|null $previous The failure, when the store threw.
+	 *
+	 * @return RefusedException The refusal.
+	 */
+	private function unrecorded(?Throwable $previous): RefusedException {
+		return new RefusedException(
+			rule: self::CASE_UNREADABLE,
+			sentence: 'The handover could not be recorded, so the case stays where it is.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $previous,
+		);
+	}//end unrecorded()
 
 	/**
 	 * Apply changes to the stored case.

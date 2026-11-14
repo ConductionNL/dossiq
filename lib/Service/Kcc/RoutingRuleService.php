@@ -143,12 +143,46 @@ class RoutingRuleService implements RoutingRuleServiceInterface {
 
 		$team = (string)($routing['assignedTeam'] ?? '');
 		$agents = $this->listAgents();
-		$ranked = $this->routingEngine->rankAgents(
+		$ranked = $this->rankPrimaryTeam(agents: $agents, team: $team, contactMoment: $contactMoment, routing: $routing);
+
+		[$ranked, $escalated] = $this->withEscalation(ranked: $ranked, agents: $agents, contactMoment: $contactMoment, routing: $routing);
+
+		return $this->routingDecision(routing: $routing, team: $team, escalated: $escalated, ranked: $ranked);
+	}//end route()
+
+	/**
+	 * Rank the agents of the routed team for the contact moment.
+	 *
+	 * @param array<int, array<string, mixed>> $agents The agents.
+	 * @param string $team The routed team.
+	 * @param array<string, mixed> $contactMoment The contact moment.
+	 * @param array<string, mixed> $routing The routing decision.
+	 *
+	 * @return array<int, array<string, mixed>> The ranked agents.
+	 *
+	 * @spec openspec/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
+	 */
+	private function rankPrimaryTeam(array $agents, string $team, array $contactMoment, array $routing): array {
+		return $this->routingEngine->rankAgents(
 			agents: $agents,
 			team: $team,
 			contactMoment: array_merge($contactMoment, ['assignedDomain' => ($routing['assignedDomain'] ?? '')]),
 		);
+	}//end rankPrimaryTeam()
 
+	/**
+	 * Fall back to the escalation team when nobody in the primary team is available.
+	 *
+	 * @param array<int, array<string, mixed>> $ranked The primary team's ranking.
+	 * @param array<int, array<string, mixed>> $agents The agents.
+	 * @param array<string, mixed> $contactMoment The contact moment.
+	 * @param array<string, mixed> $routing The routing decision.
+	 *
+	 * @return array{0: array<int, array<string, mixed>>, 1: bool} The ranking, and whether it escalated.
+	 *
+	 * @spec openspec/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
+	 */
+	private function withEscalation(array $ranked, array $agents, array $contactMoment, array $routing): array {
 		// Escalation: if no agent is available in the primary team, fall back
 		// to the configured escalation team.
 		$escalated = false;
@@ -161,6 +195,22 @@ class RoutingRuleService implements RoutingRuleServiceInterface {
 			$escalated = true;
 		}
 
+		return [$ranked, $escalated];
+	}//end withEscalation()
+
+	/**
+	 * The routing decision with its agent suggestions.
+	 *
+	 * @param array<string, mixed> $routing The routing decision.
+	 * @param string $team The routed team.
+	 * @param bool $escalated Whether the escalation team was used.
+	 * @param array<int, array<string, mixed>> $ranked The ranked agents.
+	 *
+	 * @return array<string, mixed> The routing decision plus agent suggestions.
+	 *
+	 * @spec openspec/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
+	 */
+	private function routingDecision(array $routing, string $team, bool $escalated, array $ranked): array {
 		return [
 			'matched' => true,
 			'assignedDomain' => ($routing['assignedDomain'] ?? ''),
@@ -169,7 +219,7 @@ class RoutingRuleService implements RoutingRuleServiceInterface {
 			'escalated' => $escalated,
 			'suggestedAgents' => $ranked,
 		];
-	}//end route()
+	}//end routingDecision()
 
 	/**
 	 * List all KCC agents.
@@ -194,29 +244,9 @@ class RoutingRuleService implements RoutingRuleServiceInterface {
 	 * @throws OCSBadRequestException When validation fails.
 	 */
 	private function validateRule(array $data): array {
-		$name = trim((string)($data['name'] ?? ''));
-		if ($name === '') {
-			throw new OCSBadRequestException('Rule name is required');
-		}
+		$name = $this->requiredRuleName(data: $data);
 
-		$conditions = ($data['matchConditions'] ?? []);
-		if (is_array($conditions) === false) {
-			throw new OCSBadRequestException('matchConditions must be an array');
-		}
-
-		$valid = [];
-		foreach ($conditions as $condition) {
-			if (is_array($condition) === false) {
-				continue;
-			}
-
-			$type = (string)($condition['type'] ?? '');
-			if (in_array($type, ['keyword', 'regex', 'channel', 'customer_type', 'time_of_day', 'day_of_week'], true) === false) {
-				throw new OCSBadRequestException('Invalid condition type: ' . $type);
-			}
-
-			$valid[] = ['type' => $type, 'value' => (string)($condition['value'] ?? '')];
-		}
+		$valid = $this->validConditions(data: $data);
 
 		return [
 			'name' => $name,
@@ -228,6 +258,69 @@ class RoutingRuleService implements RoutingRuleServiceInterface {
 			'enabled' => (bool)($data['enabled'] ?? true),
 		];
 	}//end validateRule()
+
+	/**
+	 * The rule's name, refusing an empty one.
+	 *
+	 * @param array<string, mixed> $data The rule data.
+	 *
+	 * @return string The trimmed name.
+	 *
+	 * @throws OCSBadRequestException When the name is empty.
+	 */
+	private function requiredRuleName(array $data): string {
+		$name = trim((string)($data['name'] ?? ''));
+		if ($name === '') {
+			throw new OCSBadRequestException('Rule name is required');
+		}
+
+		return $name;
+	}//end requiredRuleName()
+
+	/**
+	 * The rule's match conditions, validated.
+	 *
+	 * @param array<string, mixed> $data The rule data.
+	 *
+	 * @return array<int, array{type: string, value: string}> The conditions.
+	 *
+	 * @throws OCSBadRequestException When the conditions are no array or a type is unknown.
+	 */
+	private function validConditions(array $data): array {
+		$conditions = ($data['matchConditions'] ?? []);
+		if (is_array($conditions) === false) {
+			throw new OCSBadRequestException('matchConditions must be an array');
+		}
+
+		$valid = [];
+		foreach ($conditions as $condition) {
+			if (is_array($condition) === false) {
+				continue;
+			}
+
+			$valid[] = $this->validCondition(condition: $condition);
+		}
+
+		return $valid;
+	}//end validConditions()
+
+	/**
+	 * One match condition, validated.
+	 *
+	 * @param array<string, mixed> $condition The condition.
+	 *
+	 * @return array{type: string, value: string} The condition.
+	 *
+	 * @throws OCSBadRequestException When the type is unknown.
+	 */
+	private function validCondition(array $condition): array {
+		$type = (string)($condition['type'] ?? '');
+		if (in_array($type, ['keyword', 'regex', 'channel', 'customer_type', 'time_of_day', 'day_of_week'], true) === false) {
+			throw new OCSBadRequestException('Invalid condition type: ' . $type);
+		}
+
+		return ['type' => $type, 'value' => (string)($condition['value'] ?? '')];
+	}//end validCondition()
 
 	/**
 	 * Resolve the ObjectService and register/schema identifiers.
