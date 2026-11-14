@@ -551,3 +551,19 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Own tests: `tests/Unit/Service/Reporting/AnnualPayoutStatementTest` (2) and
         `tests/Unit/Service/Termijn/TermDashboardFiguresTallyTest` (2); breaking the year filter
         or the overrun count turns them red (checked).
+  - [x] 8k `EngineTaskGateway` (1: ExcessiveClassComplexity). The gateway keeps every call to the
+        engine (mirror, reassign, find, claim, complete, cancel, the key lookup and the lazy
+        resolution). The two translations that call nothing leave as pure classes it builds, so
+        its constructor and the container are unchanged: `Task/EngineTaskPayload` (what the
+        engine is sent: the key, the copied fields, the candidates, the declaration and the
+        decoded checklist) and `Task/EngineTaskRow` (an engine task read back in the register's
+        vocabulary, each optional column asked for before its getter is called). Bodies moved
+        unchanged; `toEnginePayload()` and `find()` delegate. The frozen key prefix is the
+        gateway's public `SOURCE_KEY_PREFIX`, which `sourceKey()` and the payload both read.
+        TooManyPublicMethods stays, for the reason its docblock gives (one seam onto the engine).
+        Characterisation: `EngineTaskGatewayTest` (17, payload in its order, every miss of a
+        find, the magic columns of an Entity), green on the old class first and unchanged after
+        but for two `@uses` lines in each file that builds the gateway.
+        Own tests: `tests/Unit/Service/Task/EngineTaskPayloadTest` (4) and `EngineTaskRowTest`
+        (3); breaking the once-key precedence or the date format turns them red (checked).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
