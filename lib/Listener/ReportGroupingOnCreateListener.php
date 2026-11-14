@@ -31,8 +31,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\BackgroundJob\ReportGroupingJob;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCP\BackgroundJob\IJobList;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -50,14 +50,14 @@ class ReportGroupingOnCreateListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param IJobList                 $jobList      The job list.
-	 * @param ObjectSchemaSlugResolver $slugResolver Resolves the schema slug of a payload.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Resolves the schema slug of a payload.
 	 * @param ReceiptMoment $receipt Tells a received case from a draft (decision 180).
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly IJobList $jobList,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {
 	}//end __construct()

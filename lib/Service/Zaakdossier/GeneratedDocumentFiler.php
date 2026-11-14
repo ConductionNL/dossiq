@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\GeneratedDocumentFilerInterface;
 use OCA\Dossiq\Service\Actions\AddressesTheCase;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\Files\File;
@@ -51,19 +52,8 @@ use RuntimeException;
  *
  * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
-class GeneratedDocumentFiler {
+class GeneratedDocumentFiler implements GeneratedDocumentFilerInterface {
 	use AddressesTheCase;
-
-	/**
-	 * The metadata key that marks a request whose caller files the document itself.
-	 *
-	 * The Generate document button files the document so it can answer with
-	 * the informatieobject it made; the listener leaves such a document alone,
-	 * or the case would get it twice.
-	 *
-	 * @var string
-	 */
-	public const FILED_BY_CALLER = 'dossiqFiledByCaller';
 
 	/**
 	 * The metadata key naming the document type.

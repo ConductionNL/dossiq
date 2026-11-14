@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\People;
 
+use OCA\Dossiq\Kernel\Contracts\GemachtigdeRoleTypeSeederInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
@@ -59,7 +60,7 @@ use Throwable;
  *
  * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
  */
-class GemachtigdeRoleTypeSeeder {
+class GemachtigdeRoleTypeSeeder implements GemachtigdeRoleTypeSeederInterface {
 
 	use SearchesObjects;
 

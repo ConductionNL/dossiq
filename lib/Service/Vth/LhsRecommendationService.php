@@ -44,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Vth;
 
+use OCA\Dossiq\Kernel\Contracts\LhsRecommendationServiceInterface;
 use OCA\Dossiq\Service\Support\StoredArray;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -56,7 +57,7 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  */
-class LhsRecommendationService {
+class LhsRecommendationService implements LhsRecommendationServiceInterface {
 	/**
 	 * Severity ordering of the `interventie` enum, lowest -> highest.
 	 *
@@ -345,10 +346,6 @@ class LhsRecommendationService {
 		];
 	}//end overrideFields()
 
-
-
-
-
 	/**
 	 * Read the intervention straight off the matrix.
 	 *
@@ -411,6 +408,5 @@ class LhsRecommendationService {
 
 		return $index;
 	}//end indexCells()
-
 
 }//end class

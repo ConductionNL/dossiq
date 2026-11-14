@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service\Routing;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseRouterInterface;
 use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -52,7 +53,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/role-based-step-routing/spec.md#requirement-work-not-taken-up-returns-to-the-pool-req-rtp-03
  */
-class CaseRouter {
+class CaseRouter implements CaseRouterInterface {
 	use SearchesObjects;
 
 	/**

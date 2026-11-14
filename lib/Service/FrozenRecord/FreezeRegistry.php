@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\FrozenRecord;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\FreezeRegistryInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -48,7 +49,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/frozen-record/spec.md
  */
-class FreezeRegistry {
+class FreezeRegistry implements FreezeRegistryInterface {
 
 	/**
 	 * The app-config key holding the entries.

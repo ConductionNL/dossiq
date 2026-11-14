@@ -28,8 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Kcc\RoutingRuleService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\RoutingRuleServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -52,17 +52,17 @@ class KccRoutingController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param RoutingRuleService $routingRuleService The routing-rule service.
+	 * @param RoutingRuleServiceInterface $routingRuleService The routing-rule service.
 	 * @param IUserSession $userSession The user session.
 	 * @param IGroupManager $groupManager The group manager.
 	 */
 	public function __construct(
 		IRequest $request,
-		private RoutingRuleService $routingRuleService,
+		private RoutingRuleServiceInterface $routingRuleService,
 		private IUserSession $userSession,
 		private IGroupManager $groupManager,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

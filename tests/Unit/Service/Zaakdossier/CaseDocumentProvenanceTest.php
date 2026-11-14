@@ -211,6 +211,61 @@ class CaseDocumentProvenanceTest extends TestCase {
 	}//end testADocumentWithoutMailHeadersAnswersUnknown()
 
 	/**
+	 * REQ-WRC-006: a collected mail answers its conversation, parents trimmed and non-text values dropped.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
+	 */
+	public function testAMailAnswersItsConversation(): void {
+		$this->copied(id: 'mail-t', provenance: ['threadId' => ' t-1 ', 'messageId' => '<m2@gemeente.nl>', 'parentIds' => [' <m1@gemeente.nl> ', '', ['nested'], 7], 'sentAt' => ['not', 'text']]);
+
+		self::assertSame(
+			[
+				'threadId' => 't-1',
+				'messageId' => '<m2@gemeente.nl>',
+				'parentIds' => ['<m1@gemeente.nl>', '7'],
+				'sentAt' => '',
+			],
+			$this->provenance->threadOf(caseId: self::CASE_ID, documentId: 'mail-t')
+		);
+	}//end testAMailAnswersItsConversation()
+
+	/**
+	 * REQ-WRC-006: a record handed in is read as is, without asking the store.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
+	 */
+	public function testAThreadIsReadFromTheRecordHandedIn(): void {
+		$this->copied(id: 'mail-r', provenance: ['threadId' => 'stored']);
+
+		$thread = $this->provenance->threadOf(caseId: self::CASE_ID, documentId: 'mail-r', record: ['provenance' => ['threadId' => 'given']]);
+
+		self::assertSame('given', $thread['threadId']);
+		self::assertSame([], $thread['parentIds']);
+	}//end testAThreadIsReadFromTheRecordHandedIn()
+
+	/**
+	 * REQ-WRC-006: the case's conversations list only the documents that carry a thread.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
+	 */
+	public function testTheCasesThreadsListOnlyDocumentsWithAThread(): void {
+		$this->copied(id: 'mail-1', provenance: ['threadId' => 't-1', 'messageId' => '<a>']);
+		$this->copied(id: 'doc-2', provenance: ['source' => 'files']);
+		$this->copied(id: 'mail-3', provenance: ['threadId' => 't-1', 'messageId' => '<b>', 'parentIds' => ['<a>']]);
+
+		$threads = $this->provenance->threadsForCase(caseId: self::CASE_ID);
+
+		self::assertSame(['mail-1', 'mail-3'], array_keys($threads));
+		self::assertSame(['<a>'], $threads['mail-3']['parentIds']);
+	}//end testTheCasesThreadsListOnlyDocumentsWithAThread()
+
+	/**
 	 * REQ-WRC-006: a collected mail answers its conversation, trimmed, without empty or non-scalar parents.
 	 *
 	 * @return void

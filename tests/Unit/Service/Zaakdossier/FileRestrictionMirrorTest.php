@@ -3,8 +3,9 @@
 /**
  * File Restriction Mirror Test
  *
- * Where OpenRegister's restriction service does not resolve, the mirror says
- * so and refuses to restrict or free a file instead of silently doing nothing.
+ * A document's access exception is applied to its file through OpenRegister's
+ * FileRestrictionService, which is optional: an instance without it reports
+ * unavailable and refuses to restrict or lift rather than serving the bytes.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service\Zaakdossier
@@ -33,39 +34,125 @@ use RuntimeException;
  */
 class FileRestrictionMirrorTest extends TestCase {
 
-	protected function setUp(): void {
-		if (class_exists(FileRestrictionMirror::SERVICE) === true) {
-			self::markTestSkipped('OpenRegister\'s restriction service is installed beside this app');
+	/**
+	 * Define OpenRegister's service class, so the mirror sees it installed.
+	 *
+	 * @return void
+	 */
+	private function defineService(): void {
+		if (class_exists(FileRestrictionMirror::SERVICE) === false) {
+			eval('namespace OCA\OpenRegister\Service\File; class FileRestrictionService {}');
 		}
-	}//end setUp()
+	}//end defineService()
 
 	/**
-	 * A mirror whose container must not be asked: the service class is not there to resolve.
+	 * A recorder standing in for OpenRegister's service.
 	 *
-	 * @return FileRestrictionMirror
+	 * @return object The recorder, with its calls in `$calls`.
 	 */
-	private function mirror(): FileRestrictionMirror {
-		$container = $this->createMock(ContainerInterface::class);
-		$container->expects(self::never())->method('get');
+	private function recorder(): object {
+		return new class {
+			/** @var list<array<int, mixed>> */
+			public array $calls = [];
 
-		return new FileRestrictionMirror(container: $container);
-	}//end mirror()
+			public function restrict(int $fileId, array $users, array $groups, string $reason): void {
+				$this->calls[] = ['restrict', $fileId, $users, $groups, $reason];
+			}
 
-	public function testUnavailableWithoutOpenRegistersService(): void {
-		self::assertFalse($this->mirror()->isAvailable());
-	}//end testUnavailableWithoutOpenRegistersService()
+			public function lift(int $fileId): void {
+				$this->calls[] = ['lift', $fileId];
+			}
+		};
+	}//end recorder()
 
-	public function testRestrictIsRefusedWithoutTheService(): void {
+	/**
+	 * A container answering the service id with the given value or exception.
+	 *
+	 * @param mixed $answer The service, or a Throwable to throw.
+	 *
+	 * @return ContainerInterface The container.
+	 */
+	private function container(mixed $answer): ContainerInterface {
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
+		$get       = $container->method('get')->with(FileRestrictionMirror::SERVICE);
+		if ($answer instanceof \Throwable) {
+			$get->willThrowException($answer);
+		} else {
+			$get->willReturn($answer);
+		}
+
+		return $container;
+	}//end container()
+
+	/**
+	 * Without OpenRegister's class the mirror is unavailable and refuses, without asking the container.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 *
+	 * @return void
+	 */
+	public function testWithoutOpenRegisterTheMirrorIsUnavailableAndRefuses(): void {
+		$this->assertFalse(class_exists(FileRestrictionMirror::SERVICE));
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->expects($this->never())->method('get');
+		$mirror = new FileRestrictionMirror(container: $container);
+
+		$this->assertFalse($mirror->isAvailable());
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessage('OpenRegister on this instance cannot restrict a file');
+		$mirror->restrict(fileId: 7, users: ['hanna'], groups: [], reason: 'r');
+	}//end testWithoutOpenRegisterTheMirrorIsUnavailableAndRefuses()
 
-		$this->mirror()->restrict(42, ['alice'], ['juristen'], 'Privacy');
-	}//end testRestrictIsRefusedWithoutTheService()
+	/**
+	 * Restrict and lift reach OpenRegister's service with exactly what they were given.
+	 *
+	 * @return void
+	 */
+	public function testRestrictAndLiftAreHandedToOpenRegister(): void {
+		$this->defineService();
+		$service = $this->recorder();
+		$mirror  = new FileRestrictionMirror(container: $this->container(answer: $service));
 
-	public function testLiftIsRefusedWithoutTheService(): void {
+		$this->assertTrue($mirror->isAvailable());
+		$mirror->restrict(fileId: 42, users: ['hanna', 'pieter'], groups: ['woo-team'], reason: 'Bijzondere persoonsgegevens');
+		$mirror->lift(fileId: 42);
+
+		$this->assertSame(
+			expected: [
+				['restrict', 42, ['hanna', 'pieter'], ['woo-team'], 'Bijzondere persoonsgegevens'],
+				['lift', 42],
+			],
+			actual: $service->calls
+		);
+	}//end testRestrictAndLiftAreHandedToOpenRegister()
+
+	/**
+	 * A container that cannot build the service makes the mirror unavailable, and lift refuses.
+	 *
+	 * @return void
+	 */
+	public function testAContainerThatCannotBuildTheServiceRefuses(): void {
+		$this->defineService();
+		$mirror = new FileRestrictionMirror(container: $this->container(answer: new RuntimeException('no service')));
+
+		$this->assertFalse($mirror->isAvailable());
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessage('OpenRegister on this instance cannot restrict a file');
+		$mirror->lift(fileId: 42);
+	}//end testAContainerThatCannotBuildTheServiceRefuses()
 
-		$this->mirror()->lift(42);
-	}//end testLiftIsRefusedWithoutTheService()
+	/**
+	 * A container answering something that is not an object counts as no service.
+	 *
+	 * @return void
+	 */
+	public function testANonObjectAnswerIsNoService(): void {
+		$this->defineService();
+		$mirror = new FileRestrictionMirror(container: $this->container(answer: 'not a service'));
+
+		$this->assertFalse($mirror->isAvailable());
+		$this->expectException(RuntimeException::class);
+		$mirror->restrict(fileId: 1, users: [], groups: ['g'], reason: 'r');
+	}//end testANonObjectAnswerIsNoService()
 }//end class

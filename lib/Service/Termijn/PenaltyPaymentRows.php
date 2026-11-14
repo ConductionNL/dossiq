@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Termijn;
 
+use OCA\Dossiq\Kernel\Contracts\PenaltyPaymentRowsInterface;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\SettingsService;
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/specs/termijn-reporting/spec.md
  */
-class PenaltyPaymentRows {
+class PenaltyPaymentRows implements PenaltyPaymentRowsInterface {
 	use SearchesObjects;
 
 	/**

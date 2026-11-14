@@ -29,7 +29,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\ApplicatieDirectory;
 use OCA\Dossiq\Controller\Support\ApplicatieRepresentation;
 use OCA\Dossiq\Controller\Support\ApplicatieRules;
-use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -69,13 +69,13 @@ class AcController extends ZgwController {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The incoming request.
-	 * @param ZgwService $zgwService The shared ZGW service.
+	 * @param ZgwServiceInterface $zgwService The shared ZGW service.
 	 * @param IL10N $l10n The localization service.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ZgwService $zgwService,
+		private readonly ZgwServiceInterface $zgwService,
 		private readonly IL10N $l10n,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -149,7 +149,7 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -221,7 +221,7 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function create(): JSONResponse {
 		// C2: Gate writes on the ac.aanmaken scope. The credential, the refusal and
 		// the ZGW error body all live in requireAcScope().
@@ -268,7 +268,7 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function show(string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -312,7 +312,7 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $uuid): JSONResponse {
 		// C2: Gate writes on the ac.bijwerken scope. The credential, the refusal and
 		// the ZGW error body all live in requireAcScope().
@@ -389,7 +389,7 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $uuid): JSONResponse {
 		return $this->update(uuid: $uuid);
 	}//end patch()
@@ -408,7 +408,7 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $uuid): JSONResponse {
 		// C2: Gate writes on the ac.verwijderen scope. The credential, the refusal and
 		// the ZGW error body all live in requireAcScope().

@@ -34,7 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Conversation;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\MajorCaseDeclarationInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -42,7 +43,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class MajorCaseDeclaration {
+class MajorCaseDeclaration implements MajorCaseDeclarationInterface {
 
 	/**
 	 * What a major case's working channel is called when the case names itself
@@ -141,7 +142,7 @@ class MajorCaseDeclaration {
 
 		$this->logger->info(
 			'Case ' . $run->caseId . ' declared major, ' . count($run->responders) . ' responders pulled in',
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return ['ok' => true, 'alreadyMajor' => false, 'channel' => $channel];

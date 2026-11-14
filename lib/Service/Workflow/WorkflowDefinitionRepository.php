@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Workflow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -200,7 +200,7 @@ class WorkflowDefinitionRepository {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				$failure,
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -255,7 +255,7 @@ class WorkflowDefinitionRepository {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to list workflow definitions for caseType',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}
@@ -363,7 +363,7 @@ class WorkflowDefinitionRepository {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to save workflow definition',
-				['app' => Application::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}//end try
@@ -408,7 +408,7 @@ class WorkflowDefinitionRepository {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: refusing to update a row that cannot be read',
-				['app' => Application::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -416,7 +416,7 @@ class WorkflowDefinitionRepository {
 		if ($current === null) {
 			$this->logger->error(
 				'Dossiq: refusing to update a row that cannot be read',
-				['app' => Application::APP_ID, 'uuid' => $uuid]
+				['app' => AppIdentity::APP_ID, 'uuid' => $uuid]
 			);
 			return null;
 		}
@@ -474,7 +474,7 @@ class WorkflowDefinitionRepository {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to pin caseType.workflowDefinition',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 		}
 	}//end pinWorkflowDefinition()
@@ -521,7 +521,7 @@ class WorkflowDefinitionRepository {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to list statusTypes for caseType',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}
@@ -570,7 +570,7 @@ class WorkflowDefinitionRepository {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to count open cases for caseType',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return true;
 		}

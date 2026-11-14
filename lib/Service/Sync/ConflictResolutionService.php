@@ -41,6 +41,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Sync;
 
+use OCA\Dossiq\Kernel\Contracts\ConflictResolutionServiceInterface;
 use OCA\Dossiq\Service\Access\ObjectUpdateRight;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -55,22 +56,8 @@ use Throwable;
  *
  * @spec openspec/changes/inspection-conflict-card/tasks.md
  */
-class ConflictResolutionService {
+class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	use SearchesObjects;
-
-	/**
-	 * The device's version wins.
-	 *
-	 * @var string
-	 */
-	public const CLIENT_WINS = 'client_wins';
-
-	/**
-	 * The office's version wins.
-	 *
-	 * @var string
-	 */
-	public const SERVER_WINS = 'server_wins';
 
 	/**
 	 * The schema conflict records live in.

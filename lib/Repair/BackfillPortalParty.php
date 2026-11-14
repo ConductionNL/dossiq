@@ -13,11 +13,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RepairSchema;
 use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -55,12 +55,12 @@ class BackfillPortalParty implements IRepairStep {
 	private const PAGE_SIZE = 200;
 
 	/**
-	 * @param SettingsService $settingsService OpenRegister access and the configured register.
+	 * @param SettingsServiceInterface $settingsService OpenRegister access and the configured register.
 	 * @param IAppConfig      $appConfig       The version gate.
 	 * @param LoggerInterface $logger          Where a case that could not be written is named.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {
@@ -87,7 +87,7 @@ class BackfillPortalParty implements IRepairStep {
 	 * @spec openspec/changes/site-business-and-authorisation/specs/portal-contribution/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
 			return;
 		}
 
@@ -128,12 +128,12 @@ class BackfillPortalParty implements IRepairStep {
 			} catch (Throwable $e) {
 				$this->logger->warning(
 					'Dossiq portal party: case ' . $caseId . ' could not be given its party: ' . $e->getMessage(),
-					['app' => Application::APP_ID],
+					['app' => AppIdentity::APP_ID],
 				);
 			}
 		}//end foreach
 
-		$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::DONE_VERSION);
 		$output->info('Dossiq portal party: ' . $filled . ' case(s) now name the person they belong to.');
 	}//end report()
 }//end class

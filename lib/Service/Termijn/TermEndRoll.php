@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Termijn;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\TermEndRollInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermCalendarGuard;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -48,7 +49,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
-class TermEndRoll {
+class TermEndRoll implements TermEndRollInterface {
 	/**
 	 * Constructor.
 	 *

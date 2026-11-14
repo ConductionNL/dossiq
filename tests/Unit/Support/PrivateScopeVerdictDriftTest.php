@@ -15,10 +15,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Support;
 
 use OCA\Dossiq\Tests\Support\ShippedPrivateRecords;
+use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserManager;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
+use Psr\Log\NullLogger;
 use ReflectionClass;
 use ReflectionParameter;
 
@@ -66,6 +70,10 @@ final class PrivateScopeVerdictDriftTest extends TestCase {
 	private const GRANT_RESOLVER = 'OCA\\OpenRegister\\Service\\Rbac\\ObjectGrantResolver';
 
 	private const ENTITY = 'OCA\\OpenRegister\\Db\\ObjectEntity';
+
+	private const CHECK = 'OCA\\OpenRegister\\Service\\Object\\PermissionCheck';
+
+	private const SCHEMA = 'OCA\\OpenRegister\\Db\\Schema';
 
 	private const RECORD = '11111111-1111-4111-8111-111111111111';
 
@@ -166,7 +174,6 @@ final class PrivateScopeVerdictDriftTest extends TestCase {
 	 */
 	private function openRegisterSays(array $case): string {
 		$handler = new ReflectionClass(self::HANDLER);
-		$instance = $handler->newInstanceWithoutConstructor();
 
 		$key = implode(',', $case['userGroups']);
 		if (isset($this->managers[$key]) === false) {
@@ -202,6 +209,74 @@ final class PrivateScopeVerdictDriftTest extends TestCase {
 			}//end grantedObjectUuids()
 		};
 
+		$instance = $this->handlerWith(handler: $handler, userManager: $userManager, groupManager: $groupManager, grants: $grants);
+
+		$object = null;
+		if ($case['record'] !== null) {
+			$object = new (self::ENTITY)();
+			$object->setUuid(self::RECORD);
+			$object->setOwner($case['record']['owner']);
+			$object->setAuthorization($case['record']['authorization']);
+		}
+
+		// The five inputs travel in one PermissionCheck. The schema is not read
+		// by this rule; the check only requires one.
+		$check = new (self::CHECK)(schema: new (self::SCHEMA)(), action: $case['action']);
+		$check->authorization = $case['authorization'];
+		$check->userId = $case['user'];
+		$check->objectOwner = null;
+		$check->object = $object;
+
+		$answer = $handler->getMethod('privateScopeVerdict')->invoke($instance, $check);
+
+		return match ($answer) {
+			true => ShippedPrivateRecords::ADMIT,
+			false => ShippedPrivateRecords::DENY,
+			null => ShippedPrivateRecords::NOT_PRIVATE,
+		};
+	}//end openRegisterSays()
+
+	/**
+	 * OpenRegister's PermissionHandler with the doubled managers and grants.
+	 *
+	 * OpenRegister main builds the handler from four collaborator bundles; an
+	 * older checkout holds the collaborators as properties, which are set on an
+	 * instance built without its constructor.
+	 *
+	 * @param ReflectionClass<object> $handler      The handler class.
+	 * @param IUserManager            $userManager  The user manager double.
+	 * @param IGroupManager           $groupManager The group manager double.
+	 * @param object                  $grants       The grant resolver.
+	 *
+	 * @return object
+	 */
+	private function handlerWith(ReflectionClass $handler, IUserManager $userManager, IGroupManager $groupManager, object $grants): object {
+		$bundle = 'OCA\\OpenRegister\\Service\\Object\\Permission\\';
+		if (class_exists(class: $bundle . 'PermissionCallerServices') === true) {
+			return $handler->newInstance(
+				new ($bundle . 'PermissionCallerServices')(
+					$this->createStub(originalClassName: IUserSession::class),
+					$userManager,
+					$groupManager,
+					$this->createStub(originalClassName: IAppConfig::class)
+				),
+				new ($bundle . 'PermissionDataServices')(
+					$this->createStub(originalClassName: 'OCA\\OpenRegister\\Db\\SchemaMapperInterface'),
+					$this->createStub(originalClassName: 'OCA\\OpenRegister\\Db\\MagicMapperInterface'),
+					$this->createStub(originalClassName: ContainerInterface::class),
+					new NullLogger()
+				),
+				new ($bundle . 'PermissionRuleServices')(
+					$this->createStub(originalClassName: 'OCA\\OpenRegister\\Service\\ConditionMatcher'),
+					null,
+					new (self::SCOPE_RESOLVER)(),
+					$grants
+				),
+				new ($bundle . 'PermissionGrantServices')(new ($bundle . 'PermissionDenyServices')(), new ($bundle . 'PermissionDerivedGrantServices')())
+			);
+		}
+
+		$instance = $handler->newInstanceWithoutConstructor();
 		$collaborators = [
 			'userManager' => $userManager,
 			'groupManager' => $groupManager,
@@ -216,22 +291,8 @@ final class PrivateScopeVerdictDriftTest extends TestCase {
 			$handler->getProperty($property)->setValue($instance, $value);
 		}
 
-		$object = null;
-		if ($case['record'] !== null) {
-			$object = new (self::ENTITY)();
-			$object->setUuid(self::RECORD);
-			$object->setOwner($case['record']['owner']);
-			$object->setAuthorization($case['record']['authorization']);
-		}
-
-		$answer = $handler->getMethod('privateScopeVerdict')->invoke($instance, $case['authorization'], $object, $case['user'], null, $case['action']);
-
-		return match ($answer) {
-			true => ShippedPrivateRecords::ADMIT,
-			false => ShippedPrivateRecords::DENY,
-			null => ShippedPrivateRecords::NOT_PRIVATE,
-		};
-	}//end openRegisterSays()
+		return $instance;
+	}//end handlerWith()
 
 	/**
 	 * The comparison is against OpenRegister's file, not against a stub of it.
@@ -246,14 +307,23 @@ final class PrivateScopeVerdictDriftTest extends TestCase {
 		}
 
 		self::assertTrue(method_exists(self::HANDLER, 'privateScopeVerdict'), 'PermissionHandler::privateScopeVerdict() is gone: the model has no rule to follow.');
+		$parameters = (new ReflectionClass(self::HANDLER))->getMethod('privateScopeVerdict')->getParameters();
 		self::assertSame(
-			['authorization', 'object', 'userId', 'objectOwner', 'action'],
-			array_map(
-				static fn (ReflectionParameter $parameter): string => $parameter->getName(),
-				(new ReflectionClass(self::HANDLER))->getMethod('privateScopeVerdict')->getParameters()
+			expected: [self::CHECK],
+			actual: array_map(
+				static fn (ReflectionParameter $parameter): string => (string)$parameter->getType(),
+				$parameters
 			),
-			'privateScopeVerdict() reads other inputs than the model does.'
+			message: 'privateScopeVerdict() no longer takes one PermissionCheck: re-read the rule and this test.'
 		);
+
+		// The check must still carry exactly the inputs the model reads.
+		foreach (['authorization', 'object', 'userId', 'objectOwner', 'action'] as $input) {
+			self::assertTrue(
+				condition: property_exists(self::CHECK, $input),
+				message: 'PermissionCheck no longer carries $' . $input . ': privateScopeVerdict() reads other inputs than the model does.'
+			);
+		}
 	}//end testTheRuleIsReadFromOpenRegistersOwnSource()
 
 	/**

@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Portal;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Portal\PortalConversation;
 use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -523,6 +524,46 @@ class PortalContributionProviderTest extends TestCase {
 
 		$this->fail('the citizen contribution must declare the collection ' . $id);
 	}//end citizenCollection()
+
+	/**
+	 * The text an administrator saves above My cases reaches the portal: the
+	 * provider reads the `portal_intro_text` app setting and the My cases
+	 * collection of the citizen contribution carries it as `intro`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/admin-message-and-portal-texts/specs/admin-settings/spec.md#requirement-an-administrator-shall-set-the-message-and-portal-texts-in-the-admin-settings
+	 */
+	public function testTheSavedPortalTextIsShownAboveMyCases(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => ($key === 'portal_intro_text' ? 'Hier ziet u uw lopende zaken' : $default)
+		);
+		$provider = new PortalContributionProvider(caseTypes: $this->createMock(IntakeCaseTypes::class), settings: $settings);
+
+		$intros = [];
+		foreach ($provider->getContribution(['audience' => 'citizen'])['collections'] as $collection) {
+			$intros[(string)($collection['id'] ?? '')] = ($collection['intro'] ?? null);
+		}
+
+		$this->assertSame('Hier ziet u uw lopende zaken', ($intros['mijnZaken'] ?? null));
+		$this->assertNull(($this->citizenCollectionIntro()), 'without the setting My cases carries no text');
+	}//end testTheSavedPortalTextIsShownAboveMyCases()
+
+	/**
+	 * The intro of My cases from the provider built without settings.
+	 *
+	 * @return string|null The intro, or null when there is none.
+	 */
+	private function citizenCollectionIntro(): ?string {
+		foreach ($this->provider->getContribution(['audience' => 'citizen'])['collections'] as $collection) {
+			if (($collection['id'] ?? '') === 'mijnZaken') {
+				return ($collection['intro'] ?? null);
+			}
+		}
+
+		$this->fail('the citizen contribution must declare My cases');
+	}//end citizenCollectionIntro()
 
 	/**
 	 * One citizen action by its id.

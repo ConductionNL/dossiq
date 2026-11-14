@@ -24,9 +24,10 @@ namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StoppingRulesInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -44,14 +45,9 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
  */
-class StoppingRules {
+class StoppingRules implements StoppingRulesInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * The app config key of the stopping rule schema.
-	 */
-	public const SCHEMA_KEY = 'stopping_rule_schema';
 
 	/**
 	 * The confidences a rule may name.
@@ -59,14 +55,9 @@ class StoppingRules {
 	public const CONFIDENCES = [0.9, 0.95, 0.99];
 
 	/**
-	 * The refusal sentence once review started.
-	 */
-	public const LOCKED = 'A stopping rule is declared before review. Once a document is marked, it cannot change.';
-
-	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance $reviews Whether any document is marked yet.
 	 * @param LoggerInterface $logger The logger.
 	 * @param ReviewWrites $writes Grants the case's private records to the people on it once the rule is stored.
@@ -74,7 +65,7 @@ class StoppingRules {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly DocumentRelevance $reviews,
 		private readonly LoggerInterface $logger,
 		private readonly ReviewWrites $writes,
@@ -196,7 +187,7 @@ class StoppingRules {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: a stopping rule was stored but the reviewer access of its case could not be reconciled',
-				['app' => Application::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
 			);
 		}
 	}//end reconcile()
@@ -226,7 +217,7 @@ class StoppingRules {
 				uuid: $uuid,
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: a Stopping rule could not be stored', ['app' => Application::APP_ID, 'exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: a Stopping rule could not be stored', ['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]);
 			throw $this->unstored(previous: $e);
 		}
 

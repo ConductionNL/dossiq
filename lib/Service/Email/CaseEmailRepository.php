@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Kernel\Contracts\CaseEmailRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -51,7 +52,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseEmailRepository {
+class CaseEmailRepository implements CaseEmailRepositoryInterface {
 
 	use SearchesObjects;
 

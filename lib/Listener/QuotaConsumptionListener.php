@@ -28,9 +28,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\QuotaGateInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\QuotaGate;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCP\EventDispatcher\Event;
@@ -50,12 +50,12 @@ class QuotaConsumptionListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param QuotaGate          $gate         Checks and counts the quota.
-	 * @param ObjectSchemaSlugResolver $slugResolver Resolves the created object's schema slug.
+	 * @param QuotaGateInterface          $gate         Checks and counts the quota.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Resolves the created object's schema slug.
 	 */
 	public function __construct(
-		private readonly QuotaGate $gate,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly QuotaGateInterface $gate,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 	) {
 	}//end __construct()
 

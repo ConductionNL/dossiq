@@ -30,9 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseRouterInterface;
+use OCA\Dossiq\Kernel\Contracts\TakeBackWindowInterface;
 use OCA\Dossiq\Listener\Support\TimerFire;
-use OCA\Dossiq\Service\Routing\CaseRouter;
-use OCA\Dossiq\Service\Routing\TakeBackWindow;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
@@ -51,12 +51,12 @@ class TakeBackTimerFiredListener implements IEventListener {
 	/**
 	 * Build the listener.
 	 *
-	 * @param CaseRouter               $router         Takes the case back.
+	 * @param CaseRouterInterface               $router         Takes the case back.
 	 * @param BackgroundServiceAccount $serviceAccount The identity a cron-driven fire writes as.
 	 * @param LoggerInterface          $logger         Logs a failed fire.
 	 */
 	public function __construct(
-		private readonly CaseRouter $router,
+		private readonly CaseRouterInterface $router,
 		private readonly BackgroundServiceAccount $serviceAccount,
 		private readonly LoggerInterface $logger,
 	) {
@@ -101,7 +101,7 @@ class TakeBackTimerFiredListener implements IEventListener {
 	 * @return array<string, mixed>|null The metadata, carrying a case and where it was routed, or null.
 	 */
 	private function takeBackFire(FlowTimerFiredEvent $event): ?array {
-		$metadata = TimerFire::metadataFrom(event: $event, source: TakeBackWindow::METADATA_SOURCE);
+		$metadata = TimerFire::metadataFrom(event: $event, source: TakeBackWindowInterface::METADATA_SOURCE);
 		if ($metadata === null
 			|| (string) ($metadata['caseId'] ?? '') === ''
 			|| (string) ($metadata['routedTo'] ?? '') === ''

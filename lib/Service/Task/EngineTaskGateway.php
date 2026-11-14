@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Task;
 
+use OCA\Dossiq\Kernel\Contracts\EngineTaskGatewayInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Service\Task\TaskAnswer;
 use Psr\Container\ContainerInterface;
@@ -83,7 +84,7 @@ use Throwable;
  *
  * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
  */
-class EngineTaskGateway {
+class EngineTaskGateway implements EngineTaskGatewayInterface {
 
     /**
      * OpenRegister's task service, by name.
@@ -127,10 +128,6 @@ class EngineTaskGateway {
     public static function sourceKey(string $registerTaskId): string {
         return 'dossiq:caseTask:' . $registerTaskId;
     }//end sourceKey()
-
-
-
-
 
     /**
      * Whether a task with this key exists, or null when the engine cannot say.

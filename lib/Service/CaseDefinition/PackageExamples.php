@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseDefinition;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\DemoDataService;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
@@ -71,7 +71,7 @@ final class PackageExamples {
 			return [];
 		}
 
-		$decided = $this->appConfig->getValueString(Application::APP_ID, DemoDataService::DECIDED_KEY, '');
+		$decided = $this->appConfig->getValueString(AppIdentity::APP_ID, DemoDataService::DECIDED_KEY, '');
 		if ($decided !== DemoDataService::DECIDED_INSTALLED) {
 			$this->logger->info(
 				'Package {id}: example rows skipped, this instance has not opted into example data',

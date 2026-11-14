@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\Service\Ai\ReportGroupingConsumer;
+use OCA\Dossiq\Kernel\Contracts\ReportGroupingConsumerInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -52,14 +52,14 @@ class ReportGroupingJob extends QueuedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory             $time           The time factory.
-	 * @param ReportGroupingConsumer   $grouping       Places the case.
+	 * @param ReportGroupingConsumerInterface   $grouping       Places the case.
 	 * @param IJobList                 $jobList        The job list, to requeue without an account.
 	 * @param LoggerInterface          $logger         The logger.
 	 * @param BackgroundServiceAccount $serviceAccount The account the run reads and writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly ReportGroupingConsumer $grouping,
+		private readonly ReportGroupingConsumerInterface $grouping,
 		private readonly IJobList $jobList,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,

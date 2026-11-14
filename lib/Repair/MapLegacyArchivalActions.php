@@ -13,11 +13,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RepairSchema;
 use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -68,12 +68,12 @@ class MapLegacyArchivalActions implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService OpenRegister access and the configured register.
+	 * @param SettingsServiceInterface $settingsService OpenRegister access and the configured register.
 	 * @param IAppConfig      $appConfig       The version gate.
 	 * @param LoggerInterface $logger          Where each result type is named.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {
@@ -100,7 +100,7 @@ class MapLegacyArchivalActions implements IRepairStep {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
 			return;
 		}
 
@@ -133,7 +133,7 @@ class MapLegacyArchivalActions implements IRepairStep {
 		}
 
 		if ($tally['failed'] === 0) {
-			$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
+			$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::DONE_VERSION);
 		}
 
 		$output->info('Dossiq archival actions: ' . $tally['mapped'] . ' result type(s) mapped, ' . $tally['failed'] . ' left for the next run.');
@@ -163,14 +163,14 @@ class MapLegacyArchivalActions implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq archival actions: result type ' . $id . ' could not be written and keeps "' . $value . '" until the next run',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()],
 			);
 			return 'failed';
 		}
 
 		$this->logger->info(
 			sprintf('Dossiq archival actions: result type %s now reads "%s"; it held "%s"', $id, self::MAP[$value], $value),
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return 'mapped';

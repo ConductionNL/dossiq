@@ -33,7 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use Psr\Log\LoggerInterface;
@@ -65,7 +65,7 @@ class SystemCaseStore {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService             $settingsService The configured case and case type schemas.
+	 * @param SettingsServiceInterface             $settingsService The configured case and case type schemas.
 	 * @param LoggerInterface             $logger          Logger.
 	 * @param UnscopedObjectReader|null   $reader          Reads unscoped; a fresh one when null.
 	 * @param CaseCreationAnnouncer|null  $announcer       Announces the written case; null where
@@ -76,7 +76,7 @@ class SystemCaseStore {
 	 *                                                     one when null.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		?UnscopedObjectReader $reader = null,
 		private readonly ?CaseCreationAnnouncer $announcer = null,

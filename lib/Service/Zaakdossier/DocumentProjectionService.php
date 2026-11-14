@@ -13,7 +13,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentProjectionServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
@@ -39,7 +40,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/document-projection/spec.md
  */
-class DocumentProjectionService {
+class DocumentProjectionService implements DocumentProjectionServiceInterface {
 
 	use SearchesObjects;
 
@@ -280,7 +281,7 @@ class DocumentProjectionService {
 		// The move's file event finds the record by its file; without this it projects a second record.
 		$record = $this->withFileId(record: $move->record, fileId: $previousId);
 		$moved  = $node->move($caseFolder->getPath() . '/' . $move->fileName);
-		$this->logger->info($move->logLine(), ['app' => Application::APP_ID]);
+		$this->logger->info($move->logLine(), ['app' => AppIdentity::APP_ID]);
 		if ($moved->getId() !== $previousId) {
 			$this->saveFileId(record: ($this->store->findRecord(recordId: $move->recordId) ?? $record), fileId: $moved->getId());
 		}
@@ -386,7 +387,7 @@ class DocumentProjectionService {
 				if ($attempt >= self::FOLDER_LOCK_ATTEMPTS) {
 					$this->logger->warning(
 						'Dossiq: the folder of an object stayed locked',
-						['app' => Application::APP_ID, 'objectId' => $objectId, 'attempts' => $attempt]
+						['app' => AppIdentity::APP_ID, 'objectId' => $objectId, 'attempts' => $attempt]
 					);
 					throw new RuntimeException(message: 'object_folder_busy', previous: $e);
 				}

@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Routing\Strategy;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Routing\PoolMembership;
 use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 use OCP\IAppConfig;
@@ -132,14 +132,14 @@ class RoundRobinStrategy implements RoutingStrategyInterface {
 	private function nextInRotation(string $key, array $participants): string {
 		$count = count($participants);
 		$cursor = (int)$this->appConfig->getValueInt(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			$key,
 			0,
 		);
 
 		$pick = $participants[$cursor % $count];
 		$this->appConfig->setValueInt(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			$key,
 			(($cursor + 1) % max($count, 1)),
 		);

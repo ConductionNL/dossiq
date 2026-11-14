@@ -27,8 +27,9 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TenantOnboardingServiceInterface;
 use OCA\Dossiq\Service\Task\OnboardingSteps;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
  */
-class TenantOnboardingService {
+class TenantOnboardingService implements TenantOnboardingServiceInterface {
 	/**
 	 * The seven canonical onboarding steps.
 	 */
@@ -294,7 +295,7 @@ class TenantOnboardingService {
 			$rows = $objectService->findAll(
 				[
 					'filters' => [
-						'register' => Application::REGISTER_SLUG,
+						'register' => AppIdentity::REGISTER_SLUG,
 						'schema' => 'tenantOnboardingTask',
 						'tenantRef' => $tenantId,
 					],
@@ -426,7 +427,7 @@ class TenantOnboardingService {
 		}
 
 		try {
-			$anchor = $objectService->find($tenantId, register: Application::REGISTER_SLUG, schema: 'tenant', _rbac: false, _multitenancy: false);
+			$anchor = $objectService->find($tenantId, register: AppIdentity::REGISTER_SLUG, schema: 'tenant', _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			return 'basic';
 		}
@@ -456,7 +457,7 @@ class TenantOnboardingService {
 				[
 					'filters' => array_merge(
 						[
-							'register' => Application::REGISTER_SLUG,
+							'register' => AppIdentity::REGISTER_SLUG,
 							'schema' => $schema,
 						],
 						$filters

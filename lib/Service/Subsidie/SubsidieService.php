@@ -32,11 +32,12 @@ namespace OCA\Dossiq\Service\Subsidie;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\SubsidieServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\RowList;
-use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\TermijnTimerService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -48,7 +49,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
-class SubsidieService {
+class SubsidieService implements SubsidieServiceInterface {
 
 	use SearchesObjects;
 
@@ -81,11 +82,6 @@ class SubsidieService {
 		'rejected' => [],
 		'withdrawn' => [],
 	];
-
-	/**
-	 * Default AWB 4:13 decision term in weeks when the regeling is silent.
-	 */
-	public const DEFAULT_AANVRAAG_TERMIJN_WEKEN = 13;
 
 	/**
 	 * Constructor.

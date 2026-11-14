@@ -37,11 +37,11 @@ namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
-use OCA\Dossiq\Service\CaseDateNormaliser;
-use OCA\Dossiq\Service\CaseTypeSlugResolver;
-use OCA\Dossiq\Service\DeadlineExtensionService;
-use OCA\Dossiq\Service\DeadlinePauseService;
-use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\DeadlineExtensionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DeadlinePauseServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -66,22 +66,22 @@ class TermijnController extends Controller {
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param TermijnService $term Termijn service.
-	 * @param DeadlinePauseService $pause Pause service.
-	 * @param DeadlineExtensionService $extension Extension service.
-	 * @param CaseDateNormaliser $dates The one date write path.
-	 * @param CaseTypeSlugResolver $caseTypeSlugs Case-type uuid-to-slug resolver.
+	 * @param TermijnServiceInterface $term Termijn service.
+	 * @param DeadlinePauseServiceInterface $pause Pause service.
+	 * @param DeadlineExtensionServiceInterface $extension Extension service.
+	 * @param CaseDateNormaliserInterface $dates The one date write path.
+	 * @param CaseTypeSlugResolverInterface $caseTypeSlugs Case-type uuid-to-slug resolver.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly TermijnService $term,
-		private readonly DeadlinePauseService $pause,
-		private readonly DeadlineExtensionService $extension,
-		private readonly CaseDateNormaliser $dates,
-		private readonly CaseTypeSlugResolver $caseTypeSlugs,
+		private readonly TermijnServiceInterface $term,
+		private readonly DeadlinePauseServiceInterface $pause,
+		private readonly DeadlineExtensionServiceInterface $extension,
+		private readonly CaseDateNormaliserInterface $dates,
+		private readonly CaseTypeSlugResolverInterface $caseTypeSlugs,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

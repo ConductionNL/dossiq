@@ -37,16 +37,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekResolutionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseObjectReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\DeadlineEscalationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DeadlinePauseServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\PauseChaseServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
 use OCA\Dossiq\Listener\Support\TimerFire;
-use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
-use OCA\Dossiq\Service\DeadlineEscalationService;
-use OCA\Dossiq\Service\DeadlinePauseService;
-use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
-use OCA\Dossiq\Service\Pause\PauseChaseService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\TermijnService;
-use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -75,36 +75,36 @@ class TermijnTimerFiredListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param TermijnService $termService Instance lookup, updates and events.
-	 * @param DeadlineEscalationService $escalationService Threshold bookkeeping and dispatch.
+	 * @param TermijnServiceInterface $termService Instance lookup, updates and events.
+	 * @param DeadlineEscalationServiceInterface $escalationService Threshold bookkeeping and dispatch.
 	 * @param LoggerInterface $logger Logger.
 	 * @param BackgroundServiceAccount $serviceAccount Who writes when the fire comes
 	 *        from cron with nobody signed in. OpenRegister's FlowTimerWorker is a
 	 *        background job, and OpenRegister refuses a write from nobody.
-	 * @param AanvullingsverzoekResolutionService|null $aanvullingen The request
+	 * @param AanvullingsverzoekResolutionServiceInterface|null $aanvullingen The request
 	 *        the hersteltermijn belonged to, so the day it runs out is recorded
 	 *        on the request and not only on the timer. Optional, so an instance
 	 *        without the schema fires exactly as it did before.
-	 * @param PauseChaseService|null $chases The reminders on a suspended term. The
+	 * @param PauseChaseServiceInterface|null $chases The reminders on a suspended term. The
 	 *        rung only says a moment arrived; this decides whether a reminder is
 	 *        actually due, against the count the instance carries. Optional, so a
 	 *        pause with no declared reason fires exactly as it did before.
-	 * @param DeadlinePauseService|null $pauses Resumes a term whose pause ran out
+	 * @param DeadlinePauseServiceInterface|null $pauses Resumes a term whose pause ran out
 	 *        (REQ-TERM-080). Optional, so a build without it records the expiry
 	 *        and leaves the term paused, as it did before.
-	 * @param CaseObjectReader|null $cases Reads the case behind the term, for the
+	 * @param CaseObjectReaderInterface|null $cases Reads the case behind the term, for the
 	 *        handler the resume is told to and the title it names. Optional: without
 	 *        it the term still resumes, and nobody is told.
 	 */
 	public function __construct(
-		private readonly TermijnService $termService,
-		private readonly DeadlineEscalationService $escalationService,
+		private readonly TermijnServiceInterface $termService,
+		private readonly DeadlineEscalationServiceInterface $escalationService,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
-		private readonly ?AanvullingsverzoekResolutionService $aanvullingen = null,
-		private readonly ?PauseChaseService $chases = null,
-		private readonly ?DeadlinePauseService $pauses = null,
-		private readonly ?CaseObjectReader $cases = null,
+		private readonly ?AanvullingsverzoekResolutionServiceInterface $aanvullingen = null,
+		private readonly ?PauseChaseServiceInterface $chases = null,
+		private readonly ?DeadlinePauseServiceInterface $pauses = null,
+		private readonly ?CaseObjectReaderInterface $cases = null,
 	) {
 	}//end __construct()
 
@@ -150,7 +150,7 @@ class TermijnTimerFiredListener implements IEventListener {
 		$timer = $event->getTimer();
 		$metadata = ($timer->getMetadata() ?? []);
 		if ((string)$timer->getAppId() !== 'dossiq'
-			|| (string)($metadata['source'] ?? '') !== TermijnTimerService::METADATA_SOURCE
+			|| (string)($metadata['source'] ?? '') !== TermijnTimerServiceInterface::METADATA_SOURCE
 		) {
 			return;
 		}
@@ -170,7 +170,7 @@ class TermijnTimerFiredListener implements IEventListener {
 		}
 
 		$kind = (string)($metadata['kind'] ?? '');
-		if ($kind === TermijnTimerService::KIND_HERSTELTERMIJN) {
+		if ($kind === TermijnTimerServiceInterface::KIND_HERSTELTERMIJN) {
 			// Two kinds of rung live on the helper now. `slaBreached:0` is the
 			// hersteltermijn running out; every `preBreach:<days>` rung is a
 			// reminder due inside it. They are told apart by the trigger rather

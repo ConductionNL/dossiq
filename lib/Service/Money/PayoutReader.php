@@ -30,7 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Money;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PayoutReaderInterface;
 use OCA\Shillinq\Event\PayablesRequestedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 
@@ -39,7 +40,7 @@ use OCP\EventDispatcher\IEventDispatcher;
  *
  * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
  */
-class PayoutReader {
+class PayoutReader implements PayoutReaderInterface {
 	/**
 	 * Finance's payout state => the status dossiq's payout rows use.
 	 *
@@ -78,7 +79,7 @@ class PayoutReader {
 		}
 
 		$event = new PayablesRequestedEvent(
-			sourceApp: Application::APP_ID,
+			sourceApp: AppIdentity::APP_ID,
 			correlationIds: $correlationIds,
 			category: PayoutService::CATEGORY,
 			paidInYear: $paidInYear,

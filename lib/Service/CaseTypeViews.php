@@ -30,34 +30,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeViewsInterface;
+
 /**
  * The view of the case list for one case type, and its menu entry.
  *
  * @spec openspec/changes/case-type-pins-are-views/specs/case-type-navigation/spec.md
  */
-final class CaseTypeViews {
-
-	/**
-	 * The page the views filter.
-	 *
-	 * @var string
-	 */
-	public const PAGE = 'Cases';
-
-	/**
-	 * The manifest key a page declares its default views under.
-	 *
-	 * @var string
-	 */
-	public const DEFAULT_VIEWS_KEY = 'defaultSavedViews';
-
-	/**
-	 * The user preference (PreferencesController's `pref_` namespace) the
-	 * library keeps the views a user added to the menu under.
-	 *
-	 * @var string
-	 */
-	public const MENU_PREFERENCE = 'pref_cn_saved_view_menu';
+final class CaseTypeViews implements CaseTypeViewsInterface {
 
 	/**
 	 * The slug of the Woo requests view the Cases page ships for everybody.

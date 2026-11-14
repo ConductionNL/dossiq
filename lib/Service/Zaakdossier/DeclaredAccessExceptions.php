@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\DeclaredAccessExceptionsInterface;
 use RuntimeException;
 
 /**
@@ -34,7 +35,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/document-access-exception/spec.md#requirement-an-exception-written-straight-onto-a-document-is-applied-as-the-writer-applies-it
  */
-class DeclaredAccessExceptions {
+class DeclaredAccessExceptions implements DeclaredAccessExceptionsInterface {
 
 	/**
 	 * Constructor.
