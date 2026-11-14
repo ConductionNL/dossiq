@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Advice;
 
+use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\AdviceTimerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
@@ -136,11 +137,41 @@ class AdviceTimer implements AdviceTimerInterface {
 			return $this->cancel(adviceId: $adviceId, reason: 'Advice request '.$status) ?? self::CANCELLED;
 		}
 
+		return $this->syncOpen(advice: $advice, adviceId: $adviceId, status: $status);
+	}//end sync()
+
+	/**
+	 * Re-arm the timer of a request that is still open and has a deadline.
+	 *
+	 * @param array<string, mixed> $advice   The adviesAanvraag object.
+	 * @param string               $adviceId Its id.
+	 * @param string               $status   Its status.
+	 *
+	 * @return string One of the outcome constants.
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function syncOpen(array $advice, string $adviceId, string $status): string {
 		$deadline = $this->dates->tryParse($advice['deadline'] ?? null);
 		if ($status !== self::OPEN_STATUS || $deadline === null) {
 			return self::SKIPPED;
 		}
 
+		return $this->rearm(advice: $advice, adviceId: $adviceId, deadline: $deadline);
+	}//end syncOpen()
+
+	/**
+	 * Cancel the running timer and arm one for the current deadline.
+	 *
+	 * @param array<string, mixed> $advice   The adviesAanvraag object.
+	 * @param string               $adviceId Its id.
+	 * @param DateTimeImmutable    $deadline Its deadline.
+	 *
+	 * @return string One of the outcome constants.
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function rearm(array $advice, string $adviceId, DateTimeImmutable $deadline): string {
 		$today    = $this->dates->today();
 		$deadline = $deadline->setTimezone($this->dates->timeZone())->setTime(0, 0, 0);
 		$daysLeft = $this->days->signed(from: $today, to: $deadline);
@@ -155,7 +186,7 @@ class AdviceTimer implements AdviceTimerInterface {
 		}
 
 		return $this->arm(advice: $advice, adviceId: $adviceId, window: new TimerWindow(anchor: $today, slaDays: ($daysLeft + 1)));
-	}//end sync()
+	}//end rearm()
 
 	/**
 	 * Arm the timer.
