@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
+use OCA\Dossiq\Kernel\Contracts\ZrcStatusEffectsInterface;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\ZgwService;
@@ -42,7 +43,7 @@ use OCA\Dossiq\Support\NormalisesObjectRows;
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
-class ZrcStatusEffects {
+class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 	use NormalisesObjectRows;
 
 	/**

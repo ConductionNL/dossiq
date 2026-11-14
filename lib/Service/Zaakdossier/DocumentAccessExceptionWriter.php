@@ -24,7 +24,8 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentAccessExceptionWriterInterface;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -39,7 +40,7 @@ use Throwable;
  *
  * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-can-carry-an-access-exception-with-a-reason
  */
-class DocumentAccessExceptionWriter {
+class DocumentAccessExceptionWriter implements DocumentAccessExceptionWriterInterface {
 
 	/**
 	 * Constructor.
@@ -245,7 +246,7 @@ class DocumentAccessExceptionWriter {
 
 		$this->logger->info(
 			'Dossiq: access exception of a document changed',
-			['app' => Application::APP_ID, 'documentId' => (string)($record['id'] ?? ''), 'fileId' => $fileId]
+			['app' => AppIdentity::APP_ID, 'documentId' => (string)($record['id'] ?? ''), 'fileId' => $fileId]
 		);
 	}//end saveOrRestore()
 
@@ -277,7 +278,7 @@ class DocumentAccessExceptionWriter {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the file restriction could not be put back after a failed save',
-				['app' => Application::APP_ID, 'fileId' => $fileId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'fileId' => $fileId, 'exception' => $e->getMessage()]
 			);
 		}
 	}//end restoreFile()

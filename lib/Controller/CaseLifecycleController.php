@@ -50,10 +50,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseLifecycleService;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseLifecycleServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StatusTransitionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -94,20 +94,20 @@ class CaseLifecycleController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The HTTP request
-	 * @param CaseLifecycleService $lifecycle The lifecycle gestures
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
-	 * @param StatusTransitionService $transitionEngine Consulted for the reopen authority
-	 * @param SettingsService $settingsService Bridge to OpenRegister, which owns the recycle state
+	 * @param CaseLifecycleServiceInterface $lifecycle The lifecycle gestures
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
+	 * @param StatusTransitionServiceInterface $transitionEngine Consulted for the reopen authority
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister, which owns the recycle state
 	 * @param IUserSession $userSession The current session
 	 * @param LoggerInterface $logger The logger
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseLifecycleService $lifecycle,
-		private readonly CaseAccessGuard $caseAccessGuard,
-		private readonly StatusTransitionService $transitionEngine,
-		private readonly SettingsService $settingsService,
+		private readonly CaseLifecycleServiceInterface $lifecycle,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
+		private readonly StatusTransitionServiceInterface $transitionEngine,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

@@ -47,7 +47,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Settings;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -150,7 +150,7 @@ class SchemaSlugResolver {
 
 		$this->registerSchemaIds = [];
 
-		$registerId = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
+		$registerId = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
 		if ($registerId === '') {
 			return $this->registerSchemaIds;
 		}

@@ -29,7 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BoundFormsCheckInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -40,7 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-publishing-a-case-type-must-re-check-the-forms-bound-to-it
  */
-class BoundFormsCheck {
+class BoundFormsCheck implements BoundFormsCheckInterface {
 
 	/**
 	 * The event OpenRegister asks the owning apps for their forms with.
@@ -57,25 +58,11 @@ class BoundFormsCheck {
 	public const DEPENDENTS_CHECK = 'OCA\\OpenRegister\\Service\\Form\\FormDependentsCheck';
 
 	/**
-	 * The form an owning app announces.
-	 *
-	 * @var string
-	 */
-	public const FORM_DEPENDENT = 'OCA\\OpenRegister\\Service\\Form\\FormDependent';
-
-	/**
 	 * The owning app's setting: `unpublish` (default) or `refuse`. OpenRegister's own key.
 	 *
 	 * @var string
 	 */
 	public const BREAK_SETTING = 'formDestinationBreak';
-
-	/**
-	 * The rule a refused case type save names.
-	 *
-	 * @var string
-	 */
-	public const RULE = 'bound-form-invalid';
 
 	/**
 	 * Constructor.
@@ -179,7 +166,7 @@ class BoundFormsCheck {
 	 */
 	private function judged(object $form, array $caseType, array $names): ?array {
 		$fixed = ($form->mapping['fixed'] ?? null);
-		if ($form->app === Application::APP_ID || is_array($fixed) === false) {
+		if ($form->app === AppIdentity::APP_ID || is_array($fixed) === false) {
 			return null;
 		}
 

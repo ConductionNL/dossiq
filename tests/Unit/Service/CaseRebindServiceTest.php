@@ -73,6 +73,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Cases\RebindImpactRows
  * @uses \OCA\Dossiq\Service\Cases\RebindImpactRun
  * @uses \OCA\Dossiq\Service\Cases\RebindLanding
+ * @uses \OCA\Dossiq\Service\CaseType\WorkflowTemplateBinding
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseRebindServiceTest extends TestCase {
 

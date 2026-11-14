@@ -1,14 +1,21 @@
 <?php
 
 /**
- * Locks how the process-mining report is answered as JSON and as CSV.
+ * The report answer: the JSON of all views or one, and the CSV download of a phase matrix.
  *
- * SPDX-License-Identifier: EUPL-1.2
- * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * @category Tests
+ * @package  OCA\Dossiq\Tests\Unit\Service\ProcessMining
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
  */
 
 declare(strict_types=1);
@@ -19,123 +26,123 @@ use OCA\Dossiq\Service\Csv\CsvWriter;
 use OCA\Dossiq\Service\ProcessMining\ReportAnswer;
 use OCA\Dossiq\Service\ProcessMining\ReportViews;
 use OCP\IL10N;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A view answers only its own block plus the report's frame; no view answers everything; the CSV is the phase-days matrix.
+ * @covers \OCA\Dossiq\Service\ProcessMining\ReportAnswer
+ * @uses \OCA\Dossiq\Service\ProcessMining\ReportViews
+ * @uses \OCA\Dossiq\Service\Csv\CsvWriter
  */
-#[CoversClass(ReportAnswer::class)]
-#[UsesClass(ReportViews::class)]
-#[UsesClass(CsvWriter::class)]
-final class ReportAnswerTest extends TestCase {
-
-	private ReportViews $views;
-	private ReportAnswer $answer;
-
-	protected function setUp(): void {
-		$l10n = $this->createMock(IL10N::class);
-		$l10n->method('t')->willReturnCallback(
-			static fn (string $text): string => ['none' => 'geen', 'Case type' => 'Zaaktype'][$text] ?? $text
-		);
-		$this->views  = new ReportViews(l10n: $l10n);
-		$this->answer = new ReportAnswer(views: $this->views, l10n: $l10n);
-	}//end setUp()
+class ReportAnswerTest extends TestCase {
 
 	/**
-	 * A small report.
+	 * The answer over the real views and writer, with a translator that marks what it translated.
 	 *
-	 * @return array<string, mixed>
+	 * @return ReportAnswer
 	 */
-	private function report(): array {
-		return [
-			'period' => ['from' => '2026-01-01', 'to' => '2026-06-30'],
-			'clock' => 'wall',
+	private function answer(): ReportAnswer {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text): string => '['.$text.']');
+
+		return new ReportAnswer(views: new ReportViews(l10n: $l10n), l10n: $l10n, csvWriter: new CsvWriter());
+	}//end answer()
+
+	/**
+	 * One view keeps only the period, the clock and the truncation flag of the report, then the view's blocks.
+	 *
+	 * @return void
+	 */
+	public function testOneViewKeepsOnlyTheReportHeader(): void {
+		$report = [
+			'period' => '3m',
+			'clock' => 'wall-clock',
 			'truncated' => false,
-			'caseTypeFilter' => null,
-			'caseTypes' => [
-				[
-					'id' => 'permit',
-					'title' => 'Permit',
-					'caseVolume' => 3,
-					'reworkPercent' => 0,
-					'transitionCount' => 4,
-					'dwellTime' => [['statusName' => 'Intake', 'medianHours' => 48]],
-					'bottlenecks' => [],
-				],
-			],
-			'phaseDays' => [
-				'mean' => [
-					'columns' => ['Intake', 'Review'],
-					'rows' => [
-						['label' => 'Permit', 'values' => [2, 'none']],
-						['label' => '=SUM(A1)', 'values' => [1, 3]],
-					],
-				],
-				'median' => [
-					'columns' => ['Intake'],
-					'rows' => [['label' => 'Permit', 'values' => [1]]],
-				],
-			],
+			'caseTypes' => [['id' => 'permit']],
+			'throughputTrend' => ['2026-01' => 4, '2026-02' => 6],
 		];
-	}//end report()
-
-	public function testAViewAnswersTheFrameAndItsBlockOnly(): void {
-		$report = $this->report();
-
-		$json = $this->answer->json(report: $report, view: 'summary');
 
 		$this->assertSame(
-			[
-				'period' => $report['period'],
-				'clock' => 'wall',
+			expected: [
+				'period' => '3m',
+				'clock' => 'wall-clock',
 				'truncated' => false,
-				...$this->views->shape(report: $report, view: 'summary'),
+				'labels' => ['workingHours' => '[Hours, wall clock]', 'wallHours' => '[Wall-clock hours]'],
+				'throughput' => [4, 6],
 			],
-			$json
+			actual: $this->answer()->json(report: $report, view: 'throughput')
 		);
-		$this->assertArrayNotHasKey('caseTypes', $json);
-		$this->assertArrayNotHasKey('phaseDays', $json);
-	}//end testAViewAnswersTheFrameAndItsBlockOnly()
+	}//end testOneViewKeepsOnlyTheReportHeader()
 
-	public function testAViewOnAReportWithoutAFrameAnswersNulls(): void {
-		$json = $this->answer->json(report: [], view: 'dwell');
+	/**
+	 * A view on a report without a header still answers the header keys, as null.
+	 *
+	 * @return void
+	 */
+	public function testOneViewOnABareReportAnswersNullHeaders(): void {
+		$json = $this->answer()->json(report: [], view: 'throughput');
 
+		$this->assertSame(expected: ['period', 'clock', 'truncated', 'labels', 'throughput'], actual: array_keys($json));
 		$this->assertNull($json['period']);
 		$this->assertNull($json['clock']);
 		$this->assertNull($json['truncated']);
-	}//end testAViewOnAReportWithoutAFrameAnswersNulls()
+		$this->assertSame(expected: [], actual: $json['throughput']);
+	}//end testOneViewOnABareReportAnswersNullHeaders()
 
-	public function testNoViewAnswersTheWholeReportWithEveryBlock(): void {
-		$report = $this->report();
-		$expected = [...$report, ...$this->views->shape(report: $report, view: null)];
+	/**
+	 * Without a view, or with an empty or non-string one, the whole report comes back with every block after it.
+	 *
+	 * @return void
+	 */
+	public function testWithoutAViewTheWholeReportAndEveryBlock(): void {
+		$report = ['period' => 'all', 'clock' => 'working-calendar', 'caseTypes' => [], 'extra' => 'kept'];
 
-		$this->assertSame($expected, $this->answer->json(report: $report, view: null));
-		$this->assertSame($expected, $this->answer->json(report: $report, view: ''));
-		$this->assertSame($expected, $this->answer->json(report: $report, view: 5));
-	}//end testNoViewAnswersTheWholeReportWithEveryBlock()
+		foreach ([null, '', 5] as $view) {
+			$json = $this->answer()->json(report: $report, view: $view);
 
-	public function testTheCsvIsTheMeanMatrixWithTranslatedNoneAndABom(): void {
-		$csv = $this->answer->csv(report: $this->report(), statistic: 'mean');
+			$this->assertSame(
+				expected: ['period', 'clock', 'caseTypes', 'extra', 'labels', 'summary', 'dwell', 'throughput', 'bottlenecks', 'byAssignee'],
+				actual: array_keys($json),
+				message: var_export($view, true)
+			);
+			$this->assertSame(expected: 'kept', actual: $json['extra']);
+			$this->assertSame(expected: '[Working hours]', actual: $json['labels']['workingHours']);
+		}
+	}//end testWithoutAViewTheWholeReportAndEveryBlock()
+
+	/**
+	 * The CSV is the statistic's matrix with a byte order mark, a translated header and translated empty cells.
+	 *
+	 * @return void
+	 */
+	public function testTheCsvIsTheStatisticsMatrix(): void {
+		$report = [
+			'phaseDays' => [
+				'median' => [
+					'columns' => ['Intake', 2026],
+					'rows' => [
+						['label' => 'Permit', 'values' => [1.5, 'none']],
+						['values' => ['=SUM(A1)']],
+					],
+				],
+				'mean' => ['columns' => ['ignored'], 'rows' => []],
+			],
+		];
 
 		$this->assertSame(
-			"\u{FEFF}"
-			. "\"Zaaktype\",\"Intake\",\"Review\"\r\n"
-			. "\"Permit\",\"2\",\"geen\"\r\n"
-			. "\"'=SUM(A1)\",\"1\",\"3\"\r\n",
-			$csv
+			expected: "\u{FEFF}\"[Case type]\",\"Intake\",\"2026\"\r\n\"Permit\",\"1.5\",\"[none]\"\r\n\"\",\"'=SUM(A1)\"\r\n",
+			actual: $this->answer()->csv(report: $report, statistic: 'median')
 		);
-	}//end testTheCsvIsTheMeanMatrixWithTranslatedNoneAndABom()
+	}//end testTheCsvIsTheStatisticsMatrix()
 
-	public function testTheCsvReadsTheAskedStatistic(): void {
+	/**
+	 * A statistic the report does not hold is the header alone.
+	 *
+	 * @return void
+	 */
+	public function testAnAbsentStatisticIsTheHeaderAlone(): void {
 		$this->assertSame(
-			"\u{FEFF}\"Zaaktype\",\"Intake\"\r\n\"Permit\",\"1\"\r\n",
-			$this->answer->csv(report: $this->report(), statistic: 'median')
+			expected: "\u{FEFF}\"[Case type]\"\r\n",
+			actual: $this->answer()->csv(report: ['phaseDays' => []], statistic: 'mean')
 		);
-	}//end testTheCsvReadsTheAskedStatistic()
-
-	public function testACsvWithoutTheMatrixIsTheHeaderOnly(): void {
-		$this->assertSame("\u{FEFF}\"Zaaktype\"\r\n", $this->answer->csv(report: [], statistic: 'mean'));
-	}//end testACsvWithoutTheMatrixIsTheHeaderOnly()
+	}//end testAnAbsentStatisticIsTheHeaderAlone()
 }//end class

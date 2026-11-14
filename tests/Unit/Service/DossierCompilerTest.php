@@ -32,6 +32,7 @@ use RuntimeException;
  * Unit tests for DossierCompiler.
  *
  * @covers \OCA\Dossiq\Service\DossierCompiler
+ * @uses \OCA\Dossiq\Service\Support\ReferencedUuid
  */
 class DossierCompilerTest extends TestCase {
 

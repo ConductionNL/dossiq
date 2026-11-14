@@ -24,8 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -65,7 +65,7 @@ class ShipAssistantPrompts implements IRepairStep {
 	 *
 	 * @param ContainerInterface   $container   Resolves hermiq's library.
 	 * @param IAppManager          $appManager  Says whether hermiq is installed.
-	 * @param SettingsService|null $settings    Resolves OpenRegister for the system identity.
+	 * @param SettingsServiceInterface|null $settings    Resolves OpenRegister for the system identity.
 	 * @param string|null          $libraryFile The prompt library file; the shipped one when null.
 	 *
 	 * @return void
@@ -73,7 +73,7 @@ class ShipAssistantPrompts implements IRepairStep {
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly IAppManager $appManager,
-		private readonly ?SettingsService $settings=null,
+		private readonly ?SettingsServiceInterface $settings=null,
 		private readonly ?string $libraryFile=null,
 	) {
 	}//end __construct()

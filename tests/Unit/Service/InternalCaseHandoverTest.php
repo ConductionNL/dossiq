@@ -56,6 +56,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\People\CaseSeats
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class InternalCaseHandoverTest extends TestCase {
 

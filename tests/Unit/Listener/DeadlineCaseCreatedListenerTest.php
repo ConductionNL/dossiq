@@ -37,6 +37,9 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Listener\DeadlineCaseCreatedListener
  * @uses   \OCA\Dossiq\Service\Intake\IntakeTermStart
  * @uses   \OCA\Dossiq\Service\Intake\ReceiptMoment
+ * @uses \OCA\Dossiq\Listener\BezwaarDecisionListener
+ * @uses \OCA\Dossiq\Service\Support\ReferencedUuid
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class DeadlineCaseCreatedListenerTest extends TestCase {
 

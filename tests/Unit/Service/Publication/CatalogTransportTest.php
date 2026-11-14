@@ -24,6 +24,7 @@ use OCA\Dossiq\Service\Publication\CatalogTransport;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Woo\WooCaseLedger;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -156,4 +157,125 @@ class CatalogTransportTest extends TestCase {
 		self::assertSame('', $this->transport->depublish(publicationId: 'pub-1', decisionId: 'dec-1'));
 		self::assertSame('opencatalogi_api_error', $this->transport->depublish(publicationId: 'pub-broken', decisionId: 'dec-1'));
 	}//end testAWithdrawEndsReadAccess()
+
+
+	/**
+	 * The publication id is `id`, else `uuid`, else the one delivered before:
+	 * the files are attached to whichever it is, never to an empty id.
+	 *
+	 * @param array<string, mixed> $answer     What opencatalogi answered.
+	 * @param string               $existingId The id of an earlier delivery.
+	 * @param string               $expected   The id the files are attached to.
+	 *
+	 * @return void
+	 */
+	#[DataProvider('publicationAnswers')]
+	public function testThePublicationIdFallsBackToUuidThenToTheKnownOne(array $answer, string $existingId, string $expected): void {
+		$this->ledger->method('deliver')->willReturnCallback(
+			static fn (string $caseId, string $decisionId, array $items, callable $send): array => ['publicationId' => $send()]
+		);
+		$this->api->method('updatePublication')->willReturn($answer);
+		$this->api->method('createPublication')->willReturn($answer);
+		$this->api->expects(self::once())->method('attachFile')->with(
+			'publication',
+			'publication',
+			$expected,
+			'a.pdf',
+			'Ynl0ZXM=',
+			'application/octet-stream'
+		)->willReturn([]);
+
+		$delivered = $this->transport->deliver(
+			caseId: 'c',
+			decisionId: 'd',
+			items: [],
+			payload: [],
+			disclosable: [['fileName' => 'a.pdf', 'content' => 'Ynl0ZXM=']],
+			existingId: $existingId
+		);
+
+		self::assertSame($expected, $delivered['publicationId']);
+	}//end testThePublicationIdFallsBackToUuidThenToTheKnownOne()
+
+	/**
+	 * The answers opencatalogi can give and the id each one means.
+	 *
+	 * @return array<string, array{0: array<string, mixed>, 1: string, 2: string}>
+	 */
+	public static function publicationAnswers(): array {
+		return [
+			'id' => [['id' => 'pub-1', 'uuid' => 'uuid-1'], '', 'pub-1'],
+			'uuid only' => [['uuid' => 'uuid-1'], '', 'uuid-1'],
+			'neither, but known' => [['title' => 'Besluit'], 'pub-old', 'pub-old'],
+			'nothing at all' => [['title' => 'Besluit'], '', ''],
+		];
+	}//end publicationAnswers()
+
+	/**
+	 * A disclosable document names the file it attaches: its own file name and
+	 * format, else its title and the generic type, and never a title as the
+	 * file name when a file name is given.
+	 *
+	 * @return void
+	 */
+	public function testAFileIsNamedByTheDocumentAndFallsBackToItsTitle(): void {
+		$this->ledger->method('deliver')->willReturnCallback(
+			static fn (string $caseId, string $decisionId, array $items, callable $send): array => ['publicationId' => $send()]
+		);
+		$this->api->method('createPublication')->willReturn(['id' => 'pub-1']);
+
+		$attached = [];
+		$this->api->method('attachFile')->willReturnCallback(
+			static function (string $register, string $schema, string $objectId, string $fileName, string $base64Content, string $mimeType) use (&$attached): array {
+				$attached[] = [$fileName, $mimeType];
+				return [];
+			}
+		);
+
+		$this->transport->deliver(
+			caseId: 'c',
+			decisionId: 'd',
+			items: [],
+			payload: [],
+			disclosable: [
+				['fileName' => 'besluit.pdf', 'title' => 'Het besluit', 'format' => 'application/pdf', 'content' => 'Ynl0ZXM='],
+				['title' => 'Bijlage zonder bestandsnaam', 'content' => 'Ynl0ZXM='],
+				['content' => 'Ynl0ZXM='],
+				['title' => 'Niets bijgevoegd'],
+				['title' => 'Leeg', 'content' => ''],
+			],
+			existingId: ''
+		);
+
+		self::assertSame(
+			[
+				['besluit.pdf', 'application/pdf'],
+				['Bijlage zonder bestandsnaam', 'application/octet-stream'],
+				['document', 'application/octet-stream'],
+			],
+			$attached
+		);
+	}//end testAFileIsNamedByTheDocumentAndFallsBackToItsTitle()
+
+	/**
+	 * The delivery passes the case, the decision and the items to the ledger
+	 * untouched, and answers what the ledger answered.
+	 *
+	 * @return void
+	 */
+	public function testTheLedgerIsAskedWithTheCaseAndItsItems(): void {
+		$items = [['assessment' => 'as-1', 'deliveredRef' => 'doc-1']];
+		$this->ledger->expects(self::once())->method('deliver')->with(
+			'case-7',
+			'dec-9',
+			$items,
+			self::isInstanceOf(\Closure::class)
+		)->willReturn(['publicationId' => 'pub-1', 'setId' => 'set-1', 'setHash' => 'abc']);
+		$this->api->expects(self::never())->method('createPublication');
+
+		self::assertSame(
+			['publicationId' => 'pub-1', 'setId' => 'set-1', 'setHash' => 'abc'],
+			$this->transport->deliver(caseId: 'case-7', decisionId: 'dec-9', items: $items, payload: [], disclosable: [], existingId: '')
+		);
+	}//end testTheLedgerIsAskedWithTheCaseAndItsItems()
 }//end class

@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\DoorlooptijdServiceInterface;
 use OCA\Dossiq\Service\Doorlooptijd\CaseEnricher;
 use OCA\Dossiq\Service\Doorlooptijd\CaseTypeThroughputCalculator;
 use OCA\Dossiq\Service\Doorlooptijd\DeadlineComplianceCalculator;
@@ -46,7 +47,7 @@ use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
  *
  * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
  */
-class DoorlooptijdService {
+class DoorlooptijdService implements DoorlooptijdServiceInterface {
 
 	/**
 	 * Reads a configured schema, or answers an empty list when it cannot.

@@ -51,7 +51,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WOOAnonymisationAssistServiceInterface;
 use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCA\Dossiq\Service\Assistant\HermiqAnonymisationClient;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
@@ -63,7 +64,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
  */
-class WOOAnonymisationAssistService {
+class WOOAnonymisationAssistService implements WOOAnonymisationAssistServiceInterface {
 	/**
 	 * Maximum accepted document text length (characters) — bounded to keep
 	 * latency/cost predictable and mirrors the cap Hermiq's endpoint itself
@@ -194,7 +195,7 @@ class WOOAnonymisationAssistService {
 	 */
 	private function documentContext(string $documentRef): array {
 		return [
-			'app' => Application::APP_ID,
+			'app' => AppIdentity::APP_ID,
 			'objectType' => 'document',
 			'objectRef' => $documentRef,
 		];
@@ -472,7 +473,7 @@ class WOOAnonymisationAssistService {
 		return $this->buildProposal(
 			ruleSpans: $this->aiService->detectDeterministicPiiSpans(text: $text),
 			text: $text,
-			context: ['app' => Application::APP_ID, 'objectType' => 'document', 'objectRef' => $documentRef]
+			context: ['app' => AppIdentity::APP_ID, 'objectType' => 'document', 'objectRef' => $documentRef]
 		);
 	}//end spansFor()
 
@@ -524,7 +525,7 @@ class WOOAnonymisationAssistService {
 		} catch (HermiqAssistantException $e) {
 			$this->logger->warning(
 				'WOOAnonymisationAssistService: LLM-assisted detection failed, falling back to rules-only',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 			);
 
 			return [

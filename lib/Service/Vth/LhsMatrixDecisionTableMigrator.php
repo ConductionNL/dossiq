@@ -16,7 +16,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Vth;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\LhsMatrixDecisionTableMigratorInterface;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -55,7 +56,7 @@ use Throwable;
  *
  * @spec openspec/specs/lhs-decision-table/spec.md
  */
-class LhsMatrixDecisionTableMigrator {
+class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorInterface {
 
 	use SearchesObjects;
 
@@ -257,7 +258,7 @@ class LhsMatrixDecisionTableMigrator {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not project an LHS matrix onto a decision table',
-				['app' => Application::APP_ID, 'marker' => $marker, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'marker' => $marker, 'exception' => $e->getMessage()]
 			);
 
 			return ['outcome' => 'failed', 'marker' => $marker, 'detail' => $e->getMessage()];
@@ -289,12 +290,12 @@ class LhsMatrixDecisionTableMigrator {
 				objectService: $objectService,
 				register: $register,
 				schema: $tableSchema,
-				filters: ['owner' => Application::APP_ID, '_limit' => 200],
+				filters: ['owner' => AppIdentity::APP_ID, '_limit' => 200],
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not read existing decision tables',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 
 			return null;
@@ -490,7 +491,7 @@ class LhsMatrixDecisionTableMigrator {
 		return [
 			'name' => (string)($matrix['name'] ?? 'LHS'),
 			'key' => $this->tables->keyFor(key: LhsDecisionTableLookup::KEY_STEM . $version),
-			'owner' => Application::APP_ID,
+			'owner' => AppIdentity::APP_ID,
 			'description' => $this->descriptionFor(matrix: $matrix, marker: $marker),
 			// UNIQUE: the matrix is a grid, so exactly one cell answers a
 			// triple. Declaring UNIQUE means an overlapping pair is REFUSED
@@ -577,7 +578,7 @@ class LhsMatrixDecisionTableMigrator {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not list LHS matrices',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 
 			return [];

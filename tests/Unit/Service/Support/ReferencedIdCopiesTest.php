@@ -44,6 +44,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\Cases\CaseMergeStore
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\ReferencedUuid
  */
 class ReferencedIdCopiesTest extends TestCase {
 	/**

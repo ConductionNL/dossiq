@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\BesluitMaterialisationServiceInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -42,7 +43,7 @@ use Throwable;
  *
  * @spec openspec/specs/contract-decision-delegation/spec.md
  */
-class BesluitMaterialisationService {
+class BesluitMaterialisationService implements BesluitMaterialisationServiceInterface {
 	/**
 	 * Constructor.
 	 *

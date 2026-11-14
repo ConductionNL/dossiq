@@ -50,6 +50,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Dso\DsoIntakeCasePayload
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class DsoCaseServiceTest extends TestCase {
 

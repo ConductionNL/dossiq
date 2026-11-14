@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Cases;
 
+use OCA\Dossiq\Kernel\Contracts\ConnectedSystemCaseWriterInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
@@ -45,16 +46,9 @@ use RuntimeException;
  *
  * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-connected-system-writes-as-the-service-account
  */
-class ConnectedSystemCaseWriter {
+class ConnectedSystemCaseWriter implements ConnectedSystemCaseWriterInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * The operation is understood and is not carried out.
-	 *
-	 * @var string
-	 */
-	public const REFUSED = 'refused';
 
 	/**
 	 * The connection, or this instance, does not let the system write.

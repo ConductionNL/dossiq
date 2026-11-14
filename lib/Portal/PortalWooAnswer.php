@@ -28,13 +28,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
-use OCA\Dossiq\Service\AanvullingsverzoekService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekResolutionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
+use OCA\Dossiq\Kernel\Contracts\PortalWooAnswerInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
  */
-class PortalWooAnswer {
+class PortalWooAnswer implements PortalWooAnswerInterface {
 
 	use SearchesObjects;
 
@@ -65,20 +66,20 @@ class PortalWooAnswer {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService                     $settings   Bridge to OpenRegister.
-	 * @param AanvullingsverzoekService           $requests   The requests themselves.
-	 * @param AanvullingsverzoekResolutionService $resolution Records the answer on the open request.
+	 * @param SettingsServiceInterface                     $settings   Bridge to OpenRegister.
+	 * @param AanvullingsverzoekServiceInterface           $requests   The requests themselves.
+	 * @param AanvullingsverzoekResolutionServiceInterface $resolution Records the answer on the open request.
 	 * @param ApplicantPortalActs                 $acts       Tells the handler.
 	 * @param LoggerInterface                     $logger     Logger.
-	 * @param DocumentRecordStore|null            $documents  Stores the requester's files on the case.
+	 * @param DocumentRecordStoreInterface|null            $documents  Stores the requester's files on the case.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
-		private readonly AanvullingsverzoekService $requests,
-		private readonly AanvullingsverzoekResolutionService $resolution,
+		private readonly SettingsServiceInterface $settings,
+		private readonly AanvullingsverzoekServiceInterface $requests,
+		private readonly AanvullingsverzoekResolutionServiceInterface $resolution,
 		private readonly ApplicantPortalActs $acts,
 		private readonly LoggerInterface $logger,
-		private readonly ?DocumentRecordStore $documents = null,
+		private readonly ?DocumentRecordStoreInterface $documents = null,
 	) {
 	}//end __construct()
 
@@ -200,7 +201,7 @@ class PortalWooAnswer {
 		} catch (RefusedException $e) {
 			$this->logger->warning(
 				'Dossiq: a portal answer could not be recorded',
-				['app' => Application::APP_ID, 'case' => $caseId, 'rule' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'rule' => $e->getMessage()]
 			);
 			return ['status' => 503, 'body' => ['error' => 'unavailable']];
 		}
@@ -254,7 +255,7 @@ class PortalWooAnswer {
 			} catch (Throwable $e) {
 				$this->logger->warning(
 					'Dossiq: a file sent with a portal answer could not be stored on the case',
-					['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+					['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 				);
 			}
 		}
@@ -286,7 +287,7 @@ class PortalWooAnswer {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: a portal answer could not check its request',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 			);
 			return null;
 		}//end try
@@ -315,7 +316,7 @@ class PortalWooAnswer {
 		$request = $this->findObjectAsArray(
 			objectService: $run->objectService,
 			register: $run->register,
-			schema: AanvullingsverzoekService::SCHEMA,
+			schema: AanvullingsverzoekServiceInterface::SCHEMA,
 			id: $run->requestId
 		);
 		if ($this->isOpenFor(row: $request, subjectRef: $run->subjectRef, open: true) === false) {

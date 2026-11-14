@@ -54,6 +54,8 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\Transitions\CaseTypeReader
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Queue\QueueCaseFacts
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class ResultArrayContactCopiesTest extends TestCase {
 	/**

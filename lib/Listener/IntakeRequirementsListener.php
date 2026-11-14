@@ -43,9 +43,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -70,16 +70,16 @@ class IntakeRequirementsListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService  Schema slug bridge.
-	 * @param CaseTypeResolver   $caseTypeResolver The effective case type.
+	 * @param SettingsServiceInterface    $settingsService  Schema slug bridge.
+	 * @param CaseTypeResolverInterface   $caseTypeResolver The effective case type.
 	 * @param IntakeDeclarations $declarations The intake requirements, classification, assignee narrowing and duplicate policy of a case type.
 	 * @param IUserSession       $userSession      Who is filing the case.
 	 * @param LoggerInterface    $logger           Logger.
 	 * @param ReceiptMoment      $receipt          Tells a receipt from a draft save (decision 180).
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseTypeResolver $caseTypeResolver,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseTypeResolverInterface $caseTypeResolver,
 		private readonly IntakeDeclarations $declarations,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,

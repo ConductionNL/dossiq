@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DossierUploadHandlerInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\IUser;
@@ -44,7 +45,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
-class DossierUploadHandler {
+class DossierUploadHandler implements DossierUploadHandlerInterface {
 	/**
 	 * File extensions rejected outright as executable content.
 	 *

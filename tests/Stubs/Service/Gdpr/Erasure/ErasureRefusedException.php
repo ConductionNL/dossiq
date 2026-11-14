@@ -25,27 +25,32 @@ use Exception;
 use Throwable;
 
 /**
- * The platform's refusal, carrying a rule and the status to answer with.
+ * The platform's refusal, carrying a rule; it always answers 409 Conflict.
  */
 class ErasureRefusedException extends Exception {
 
 	/**
+	 * The status every refusal answers with.
+	 *
+	 * @var integer
+	 */
+	private const STATUS_CONFLICT = 409;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param string               $rule       Machine-readable rule id.
-	 * @param string               $reason     The sentence a person reads.
-	 * @param int                  $statusCode The HTTP status.
-	 * @param array<string, mixed> $context    Anything else the caller needs.
-	 * @param Throwable|null       $previous   Previous exception.
+	 * @param string               $rule     Machine-readable rule id.
+	 * @param string               $reason   The sentence a person reads.
+	 * @param array<string, mixed> $context  Anything else the caller needs.
+	 * @param Throwable|null       $previous Previous exception.
 	 */
 	public function __construct(
 		private readonly string $rule,
 		string $reason,
-		private readonly int $statusCode = 409,
 		private readonly array $context = [],
 		?Throwable $previous = null,
 	) {
-		parent::__construct($reason, 0, $previous);
+		parent::__construct(message: $reason, code: self::STATUS_CONFLICT, previous: $previous);
 	}//end __construct()
 
 	/**
@@ -63,7 +68,7 @@ class ErasureRefusedException extends Exception {
 	 * @return int
 	 */
 	public function getStatusCode(): int {
-		return $this->statusCode;
+		return (int)$this->getCode();
 	}//end getStatusCode()
 
 	/**

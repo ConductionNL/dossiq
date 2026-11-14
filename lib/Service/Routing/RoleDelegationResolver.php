@@ -38,7 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Routing;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -111,7 +111,7 @@ class RoleDelegationResolver {
 		if ($delegate === $participant) {
 			$this->logger->warning(
 				'Dossiq: delegation cycle detected',
-				['event' => 'RoleRoutingDelegationCycle', 'original' => $participant, 'delegate' => $delegate, 'app' => Application::APP_ID],
+				['event' => 'RoleRoutingDelegationCycle', 'original' => $participant, 'delegate' => $delegate, 'app' => AppIdentity::APP_ID],
 			);
 
 			return $participant;

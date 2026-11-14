@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CasePlanDrain;
 
+use OCA\Dossiq\Kernel\Contracts\CasePlanMigrationServiceInterface;
 use OCA\Dossiq\Service\CasePlanProjectionService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -49,16 +50,12 @@ use UnexpectedValueException;
  *
  * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-002-in-flight-cases-are-drained-losslessly
  */
-class CasePlanMigrationService {
+class CasePlanMigrationService implements CasePlanMigrationServiceInterface {
 	use SearchesObjects;
-
-	public const MIGRATED = 'migrated';
 
 	public const WOULD_MIGRATE = 'would_migrate';
 
 	public const EMPTY = 'empty';
-
-	public const UNMAPPABLE = 'unmappable';
 
 	/**
 	 * Page size for the case scan.

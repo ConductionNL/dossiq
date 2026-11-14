@@ -37,9 +37,10 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
-use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
+use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use OCA\Dossiq\Service\Timeline\TermEventEntry;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -49,7 +50,14 @@ use RuntimeException;
  *
  * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
-class TermijnService {
+class TermijnService implements TermijnServiceInterface {
+
+	/**
+	 * The fields of an event that say who it is told to, and what it tells them.
+	 *
+	 * @var array<int, string>
+	 */
+	public const NOTICE_FIELDS = ['notify', 'caseTitle', 'endDate'];
 
 	/**
 	 * What a case type's term definitions say.
@@ -536,10 +544,16 @@ class TermijnService {
 	 * @param array<int, string> $items What was asked for, or what came in. Awb 4:5
 	 *        joins asking to suspending, so the record that carries the suspension
 	 *        carries what was asked in the same row rather than in a second one.
+	 * @param array<string, string> $notice Who the event is told to and what it tells them:
+	 *        `notify` (a Nextcloud user id), `caseTitle` and `endDate`. Only those three
+	 *        keys are kept, and only when not empty. A notification rule on the event
+	 *        schema fires on a row that carries `notify`, so an event without a notice
+	 *        tells nobody, exactly as before.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/expired-pause-resumes-the-term/tasks.md
 	 */
 	public function recordEvent(
 		string $termInstanceId,
@@ -551,6 +565,7 @@ class TermijnService {
 		string $documentLink = '',
 		string $actor = 'system',
 		array $items = [],
+		array $notice = [],
 	): ?array {
 		$moment = ($moment ?? new DateTimeImmutable());
 		$event = [
@@ -567,6 +582,7 @@ class TermijnService {
 		}
 
 		$event = $this->withItems(event: $event, items: $items);
+		$event = $this->withNotice(event: $event, notice: $notice);
 
 		$saved = $this->store->save(schemaConfigKey: 'termijn_gebeurtenis_schema', object: $event);
 
@@ -574,6 +590,31 @@ class TermijnService {
 
 		return $saved;
 	}//end recordEvent()
+
+	/**
+	 * The event with the notice it carries, when there is one.
+	 *
+	 * Only the declared notice fields are kept, and an empty one is left off,
+	 * so the notification rule's `notify` filter reads an absent field rather
+	 * than an empty string, and the base fields can never be overwritten.
+	 *
+	 * @param array<string, mixed>  $event  The event row.
+	 * @param array<string, string> $notice The notice fields.
+	 *
+	 * @return array<string, mixed> The event row.
+	 *
+	 * @spec openspec/changes/expired-pause-resumes-the-term/tasks.md
+	 */
+	private function withNotice(array $event, array $notice): array {
+		foreach (self::NOTICE_FIELDS as $field) {
+			$value = trim((string)($notice[$field] ?? ''));
+			if ($value !== '') {
+				$event[$field] = $value;
+			}
+		}
+
+		return $event;
+	}//end withNotice()
 
 	/**
 	 * Mirror a recorded event as an entry on the case.

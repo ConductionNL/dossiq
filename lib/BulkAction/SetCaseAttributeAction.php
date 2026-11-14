@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\OpenRegister\BulkAction\BulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
 use OCA\OpenRegister\BulkAction\BulkStep;
@@ -94,7 +94,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register/schema configuration and the object service.
+	 * @param SettingsServiceInterface $settingsService Register/schema configuration and the object service.
 	 * @param IL10N           $l10n            Localisation, for the label an operator reads.
 	 *
 	 * @return void
@@ -102,7 +102,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()

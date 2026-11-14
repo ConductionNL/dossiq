@@ -88,6 +88,7 @@ interface RedactionProposalObjectServiceStub {
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
  * @uses \OCA\Dossiq\Review\DocumentRelevance
  * @uses \OCA\Dossiq\Review\PagesSeen
+ * @uses \OCA\Dossiq\Service\WooAssessmentLocation
  */
 class WOODocumentAssessmentServiceTest extends TestCase {
 

@@ -25,7 +25,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use Exception;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SamenwerkverzoekServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\EventDispatcher\GenericEvent;
@@ -45,7 +46,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
  */
-class SamenwerkverzoekService {
+class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 
 	use SearchesObjects;
 
@@ -91,12 +92,12 @@ class SamenwerkverzoekService {
 		$objectService = $this->getObjectService();
 
 		$register = $this->appConfig->getValueString(
-			app: Application::APP_ID,
+			app: AppIdentity::APP_ID,
 			key: 'register',
 			default: ''
 		);
 		$caseSchema = $this->appConfig->getValueString(
-			app: Application::APP_ID,
+			app: AppIdentity::APP_ID,
 			key: 'case_schema',
 			default: ''
 		);
@@ -115,7 +116,7 @@ class SamenwerkverzoekService {
 		$requestRef = (string)($case['permitApplicationRef'] ?? '');
 
 		$requestSchema = $this->appConfig->getValueString(
-			app: Application::APP_ID,
+			app: AppIdentity::APP_ID,
 			key: 'dso_samenwerkverzoek_schema',
 			default: 'samenwerkverzoek'
 		);
@@ -154,7 +155,7 @@ class SamenwerkverzoekService {
 		$this->logger->info(
 			'Dossiq SamenwerkverzoekService: samenwerking initiated',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'caseId' => $caseId,
 				'requestedCompetentAuthority' => $aangezochtGezag,
 			]
@@ -183,12 +184,12 @@ class SamenwerkverzoekService {
 		$objectService = $this->getObjectService();
 
 		$register = $this->appConfig->getValueString(
-			app: Application::APP_ID,
+			app: AppIdentity::APP_ID,
 			key: 'register',
 			default: ''
 		);
 		$requestSchema = $this->appConfig->getValueString(
-			app: Application::APP_ID,
+			app: AppIdentity::APP_ID,
 			key: 'dso_samenwerkverzoek_schema',
 			default: 'samenwerkverzoek'
 		);
@@ -230,7 +231,7 @@ class SamenwerkverzoekService {
 		$this->logger->info(
 			'Dossiq SamenwerkverzoekService: samenwerking responded',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'samenwerkId' => $samenwerkId,
 				'newStatus' => $request['status'],
 			]
@@ -265,7 +266,7 @@ class SamenwerkverzoekService {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq SamenwerkverzoekService: could not resolve IGroupManager: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 		}
 
