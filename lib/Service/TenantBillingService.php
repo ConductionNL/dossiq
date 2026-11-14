@@ -461,25 +461,51 @@ class TenantBillingService implements TenantBillingServiceInterface {
 		}
 
 		try {
-			// ObjectService::findAll() takes a single $config array — the previous
-			// named-argument form threw "Unknown named parameter $register" and
-			// was swallowed by the catch below. Register/schema live inside
-			// `filters`; limit/offset are top-level config keys.
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => AppIdentity::REGISTER_SLUG,
-						'schema' => 'tenantBillingEvent',
-						'tenantRef' => $tenantId,
-					],
-					'limit' => 5000,
-					'offset' => 0,
-				]
-			);
+			$rows = $objectService->findAll($this->eventsQuery(tenantId: $tenantId));
 		} catch (Throwable $e) {
 			return [];
 		}
 
+		return $this->eventsInMonth(rows: $rows, month: $month);
+	}//end fetchEventsForMonth()
+
+	/**
+	 * The findAll() config that reads a tenant's billing events.
+	 *
+	 * ObjectService::findAll() takes a single $config array — the previous
+	 * named-argument form threw "Unknown named parameter $register" and
+	 * was swallowed by the catch. Register/schema live inside
+	 * `filters`; limit/offset are top-level config keys.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 *
+	 * @return array<string, mixed> The config.
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-daily-billing-export-to-shillinq-req-007-b
+	 */
+	private function eventsQuery(string $tenantId): array {
+		return [
+			'filters' => [
+				'register' => AppIdentity::REGISTER_SLUG,
+				'schema' => 'tenantBillingEvent',
+				'tenantRef' => $tenantId,
+			],
+			'limit' => 5000,
+			'offset' => 0,
+		];
+	}//end eventsQuery()
+
+	/**
+	 * The rows, read as events, that occurred in the month.
+	 *
+	 * @param mixed  $rows  What findAll() answered.
+	 * @param string $month YYYY-MM.
+	 *
+	 * @return array<int, array<string,mixed>>
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-daily-billing-export-to-shillinq-req-007-b
+	 */
+	private function eventsInMonth(mixed $rows, string $month): array {
 		if (is_array($rows) === false) {
 			$rows = [];
 		}
@@ -492,7 +518,7 @@ class TenantBillingService implements TenantBillingServiceInterface {
 		return array_values(
 			array_filter($events, static fn (array $e): bool => str_starts_with((string)($e['occurredAt'] ?? ''), $month))
 		);
-	}//end fetchEventsForMonth()
+	}//end eventsInMonth()
 
 	/**
 	 * Resolve the OpenRegister ObjectService when available.
