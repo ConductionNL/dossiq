@@ -712,6 +712,43 @@
 				:fields="queueUrgencyFields" />
 
 			<CnSettingsSection
+				id="section-role-acts"
+				:name="t('dossiq', 'What each role may do')"
+				:description="
+					t(
+						'dossiq',
+						'The groups dossiq creates, with what membership allows. A member who holds only that role is refused anything not listed.',
+					)
+				">
+				<table class="dq-role-acts" data-testid="dossiq-role-acts">
+					<thead>
+						<tr>
+							<th scope="col">
+								{{ t('dossiq', 'Group') }}
+							</th>
+							<th scope="col">
+								{{ t('dossiq', 'Allows') }}
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr v-for="row in roleActRows" :key="row.group">
+							<th scope="row">
+								<code>{{ row.group }}</code>
+							</th>
+							<td>
+								<ul class="dq-role-acts__list">
+									<li v-for="act in row.acts" :key="act">
+										{{ act }}
+									</li>
+								</ul>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</CnSettingsSection>
+
+			<CnSettingsSection
 				:name="t('dossiq', 'Mandate matrix: administration')"
 				:description="
 					t(
@@ -826,6 +863,7 @@ import {
 	wooRefusalGroundColumns,
 	wooRefusalGroundSource,
 } from './adminSettingsBlocks.js'
+import { roleActRows } from './roleActs.js'
 
 export default {
 	name: 'AdminRoot',
@@ -907,10 +945,21 @@ export default {
 			publicationSettings: loadState('dossiq', 'publicationSettings', {}),
 			/** The installed packages that declare an admin tab, with what each installed. */
 			packageTabs: loadState('dossiq', 'packageAdminTabs', []),
+			roleActs: loadState('dossiq', 'roleActs', []),
 		}
 	},
 
 	computed: {
+		/**
+		 * The roles card's rows: each provisioned group with its acts in words.
+		 *
+		 * @return {Array<{group: string, acts: Array<string>}>} The rows.
+		 * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/case-access-control/spec.md#requirement-each-application-role-states-what-its-members-may-do-req-crs-14
+		 */
+		roleActRows() {
+			return roleActRows(this.t, this.roleActs)
+		},
+
 		/**
 		 * The tabs of the page, in the order the board draws them. Every
 		 * section the page had before sits on one of them. Integrations and
@@ -1656,6 +1705,26 @@ export default {
 </script>
 
 <style>
+/* The roles card (REQ-CRS-14): a group per row, its acts as a list. */
+.dq-role-acts {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.dq-role-acts th,
+.dq-role-acts td {
+	padding: calc(var(--default-grid-baseline) * 2);
+	border-bottom: 1px solid var(--color-border);
+	text-align: start;
+	vertical-align: top;
+}
+
+.dq-role-acts__list {
+	margin: 0;
+	padding-inline-start: calc(var(--default-grid-baseline) * 4);
+	list-style: disc;
+}
+
 /* A card whose text is its body, drawn as body text 16px under the title
    (DqBeheerGeavanceerd "Beslistabellen (DMN)"); the card's gap is 14px. */
 .dq-settings-body-text {

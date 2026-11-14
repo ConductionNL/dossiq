@@ -28,6 +28,8 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\QueueUrgencySettingsInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Prerequisites;
+use OCA\Dossiq\Repair\ProvisionAssignedGroups;
+use OCA\Dossiq\Service\Access\RoleActs;
 use OCA\Dossiq\Service\CaseDefinition\PackageAdminTabs;
 use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCP\App\IAppManager;
@@ -130,6 +132,11 @@ class AdminSettings implements IDelegatedSettings {
 		$this->initialState->provideInitialState(
 			'dependencyApps',
 			(new DependencyApps())->read(appManager: $this->appManager)
+		);
+		// What each provisioned role allows (REQ-CRS-14), in provisioning order.
+		$this->initialState->provideInitialState(
+			'roleActs',
+			(new RoleActs())->table(groups: ProvisionAssignedGroups::ASSIGNED_GROUPS)
 		);
 	}//end provideInstanceState()
 

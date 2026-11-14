@@ -128,10 +128,11 @@ class AdminSettingsFormTest extends TestCase {
 		self::assertSame('settings/admin', $response->getTemplateName());
 		self::assertSame('dossiq', $response->getApp());
 		self::assertSame('1.4.2', $this->provided['version']);
-		foreach (['prerequisites', 'ownerApps', 'dependencyApps', 'publicationSettings', 'consultationSettings', 'mandaatSettings', 'queueUrgencySettings', 'menu_structure', 'packageAdminTabs'] as $key) {
+		foreach (['prerequisites', 'ownerApps', 'dependencyApps', 'publicationSettings', 'consultationSettings', 'mandaatSettings', 'queueUrgencySettings', 'menu_structure', 'packageAdminTabs', 'roleActs'] as $key) {
 			self::assertArrayHasKey($key, $this->provided, $key);
 		}
 
+		self::assertSame(['export-ai-audit-log'], array_column($this->provided['roleActs'], 'acts', 'group')['auditors']);
 		self::assertSame(['vth'], array_column($this->provided['packageAdminTabs'], 'id'));
 		self::assertSame('VTH', $this->provided['packageAdminTabs'][0]['title']);
 
