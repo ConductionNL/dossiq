@@ -95,24 +95,73 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 	 *
 	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
 	 */
-	public function onBezwaarCreated(
-		string $objectionCaseId,
-		string $contestedDecisionId,
-		array $objectionPayload = [],
-	): array {
+	public function onBezwaarCreated(string $objectionCaseId, string $contestedDecisionId, array $objectionPayload = []): array {
+		$this->requireIds(objectionCaseId: $objectionCaseId, contestedDecisionId: $contestedDecisionId);
+
+		$objectService = $this->requireObjectService();
+
+		$schemas = $this->resolveSchemas();
+
+		$decision = $this->findContestedDecision(objectService: $objectService, schemas: $schemas, contestedDecisionId: $contestedDecisionId);
+
+		$primaryDecisionCase = $this->extractUuid(value: ($decision['case'] ?? ''));
+
+		$this->linkPrimairDecision(objectService: $objectService, register: $schemas['register'], caseSchema: $schemas['case'],
+			objectionCaseId: $objectionCaseId, primaryDecisionCase: $primaryDecisionCase, contestedDecisionId: $contestedDecisionId);
+
+		$objection = $this->buildObjection(objectionCaseId: $objectionCaseId, contestedDecisionId: $contestedDecisionId, payload: $objectionPayload);
+
+		$created = $objectService->saveObject(object: $objection, register: $schemas['register'], schema: $schemas['objection']);
+
+		return $this->toArray(value: $created) ?? $objection;
+	}//end onBezwaarCreated()
+
+	/**
+	 * Reject a call that lacks the bezwaar case id or the contested decision id.
+	 *
+	 * @param string $objectionCaseId UUID of the bezwaar case.
+	 * @param string $contestedDecisionId UUID of the contested decision.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When either id is blank.
+	 */
+	private function requireIds(string $objectionCaseId, string $contestedDecisionId): void {
 		if (trim($objectionCaseId) === '' || trim($contestedDecisionId) === '') {
 			throw new RuntimeException(
 				'bezwaar case id and contested decision id are required'
 			);
 		}
+	}//end requireIds()
 
+	/**
+	 * Resolve the OpenRegister ObjectService.
+	 *
+	 * @return object The OpenRegister ObjectService.
+	 *
+	 * @throws RuntimeException When OpenRegister is not available.
+	 */
+	private function requireObjectService(): object {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
-		$schemas = $this->resolveSchemas();
+		return $objectService;
+	}//end requireObjectService()
 
+	/**
+	 * Load the contested decision.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param array{register: string, case: string, decision: string, objection: string} $schemas Register + schema ids.
+	 * @param string $contestedDecisionId UUID of the contested decision.
+	 *
+	 * @return array<string, mixed> The contested decision.
+	 *
+	 * @throws RuntimeException When the contested decision cannot be found.
+	 */
+	private function findContestedDecision(object $objectService, array $schemas, string $contestedDecisionId): array {
 		$decision = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $schemas['register'],
@@ -123,27 +172,8 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 			throw new RuntimeException('Contested decision not found');
 		}
 
-		$primaryDecisionCase = $this->extractUuid(value: ($decision['case'] ?? ''));
-
-		$this->linkPrimairDecision(
-			objectService: $objectService,
-			register: $schemas['register'],
-			caseSchema: $schemas['case'],
-			objectionCaseId: $objectionCaseId,
-			primaryDecisionCase: $primaryDecisionCase,
-			contestedDecisionId: $contestedDecisionId
-		);
-
-		$objection = $this->buildObjection(
-			objectionCaseId: $objectionCaseId,
-			contestedDecisionId: $contestedDecisionId,
-			payload: $objectionPayload
-		);
-
-		$created = $objectService->saveObject(object: $objection, register: $schemas['register'], schema: $schemas['objection']);
-
-		return $this->toArray(value: $created) ?? $objection;
-	}//end onBezwaarCreated()
+		return $decision;
+	}//end findContestedDecision()
 
 	/**
 	 * Resolve and validate the register + schema ids needed by the hook.
