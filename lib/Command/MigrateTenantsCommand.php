@@ -34,8 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
+use OCA\Dossiq\Kernel\Contracts\SatelliteOrphanScannerInterface;
 use OCA\Dossiq\Kernel\Contracts\TenantMigrationServiceInterface;
-use OCA\Dossiq\Service\SatelliteOrphanScanner;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -51,11 +51,11 @@ class MigrateTenantsCommand extends Command {
 	 * Wire the command against the migration service.
 	 *
 	 * @param TenantMigrationServiceInterface  $migrationService Tenant → Organisation migrator.
-	 * @param SatelliteOrphanScanner  $orphanScanner    Read-only audit of the five satellites.
+	 * @param SatelliteOrphanScannerInterface  $orphanScanner    Read-only audit of the five satellites.
 	 */
 	public function __construct(
 		private readonly TenantMigrationServiceInterface $migrationService,
-		private readonly SatelliteOrphanScanner $orphanScanner,
+		private readonly SatelliteOrphanScannerInterface $orphanScanner,
 	) {
 		parent::__construct();
 	}//end __construct()

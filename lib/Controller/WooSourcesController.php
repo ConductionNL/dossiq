@@ -30,10 +30,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
-use OCA\Dossiq\Woo\WooCollectionQueries;
-use OCA\Dossiq\Woo\WooGatherAdd;
-use OCA\Dossiq\Woo\WooSearchPlans;
-use OCA\Dossiq\Woo\WooSources;
+use OCA\Dossiq\Kernel\Contracts\WooCollectionQueriesInterface;
+use OCA\Dossiq\Kernel\Contracts\WooGatherAddInterface;
+use OCA\Dossiq\Kernel\Contracts\WooSearchPlansInterface;
+use OCA\Dossiq\Kernel\Contracts\WooSourcesInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -55,24 +55,24 @@ class WooSourcesController extends Controller {
 	 *
 	 * @param string          $appName     The app name.
 	 * @param IRequest        $request     The request.
-	 * @param WooSources      $sources     The sources, and integriq's search.
-	 * @param WooGatherAdd    $gatherAdd   Adds picks to the case.
+	 * @param WooSourcesInterface      $sources     The sources, and integriq's search.
+	 * @param WooGatherAddInterface    $gatherAdd   Adds picks to the case.
 	 * @param CaseAccessGuardInterface $accessGuard Per-case read and change access, failing closed.
 	 * @param IUserSession    $userSession The caller.
 	 * @param IL10N           $l10n        Refusal sentences.
-	 * @param WooSearchPlans  $plans       The recorded search plan collection waits for (woo-request-corpus-collection).
-	 * @param WooCollectionQueries $queries Stores every search as a query someone else can re-run.
+	 * @param WooSearchPlansInterface  $plans       The recorded search plan collection waits for (woo-request-corpus-collection).
+	 * @param WooCollectionQueriesInterface $queries Stores every search as a query someone else can re-run.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly WooSources $sources,
-		private readonly WooGatherAdd $gatherAdd,
+		private readonly WooSourcesInterface $sources,
+		private readonly WooGatherAddInterface $gatherAdd,
 		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
-		private readonly WooSearchPlans $plans,
-		private readonly WooCollectionQueries $queries,
+		private readonly WooSearchPlansInterface $plans,
+		private readonly WooCollectionQueriesInterface $queries,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -169,7 +169,7 @@ class WooSourcesController extends Controller {
 	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
 	 */
 	private function searchRefusal(WooSourceSearch $search): ?JSONResponse {
-		if ($search->source !== WooSources::SOURCE_MICROSOFT365) {
+		if ($search->source !== WooSourcesInterface::SOURCE_MICROSOFT365) {
 			return new JSONResponse(
 				['error' => 'unsupported_source', 'message' => $this->l10n->t('This source is searched through the Nextcloud search, not here.')],
 				Http::STATUS_BAD_REQUEST

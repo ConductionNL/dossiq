@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TranscriptionServiceInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#Task-9
  */
-class TranscriptionService {
+class TranscriptionService implements TranscriptionServiceInterface {
 	/**
 	 * Recognised transcriptionStatus values.
 	 */
@@ -53,7 +54,6 @@ class TranscriptionService {
 	public const STATUS_RUNNING = 'running';
 	public const STATUS_DONE = 'done';
 	public const STATUS_FAILED = 'failed';
-	public const STATUS_FALLBACK = 'manual';
 
 	/**
 	 * Maximum allowed voice-memo duration in seconds (spec: 5 min).

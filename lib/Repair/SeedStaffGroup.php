@@ -43,8 +43,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTeamAccessProjectorInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Access\CaseTeamAccessProjector;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\IGroup;
@@ -89,7 +89,7 @@ class SeedStaffGroup implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface         $settingsService Names the register and the case schema, and hands out the object service.
-	 * @param CaseTeamAccessProjector $teamAccess      The one reader of every case type's handling teams.
+	 * @param CaseTeamAccessProjectorInterface $teamAccess      The one reader of every case type's handling teams.
 	 * @param IGroupManager           $groupManager    Reads the teams and holds the staff group.
 	 * @param IUserManager            $userManager     Resolves an assignee to an account.
 	 * @param IAppConfig              $appConfig       Holds the marker.
@@ -97,7 +97,7 @@ class SeedStaffGroup implements IRepairStep {
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly CaseTeamAccessProjector $teamAccess,
+		private readonly CaseTeamAccessProjectorInterface $teamAccess,
 		private readonly IGroupManager $groupManager,
 		private readonly IUserManager $userManager,
 		private readonly IAppConfig $appConfig,

@@ -31,12 +31,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\EngineInboxQueryInterface;
+use OCA\Dossiq\Kernel\Contracts\InspectionRunServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Inspection\InspectionRunCarryOver;
-use OCA\Dossiq\Service\Inspection\InspectionRunService;
 use OCA\Dossiq\Service\Inspection\InspectionTemplateMapper;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Task\EngineInboxQuery;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -89,12 +89,12 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface  $settingsService Bridge to OpenRegister and config.
-	 * @param EngineInboxQuery $inbox           The task inbox read.
+	 * @param EngineInboxQueryInterface $inbox           The task inbox read.
 	 * @param LoggerInterface  $logger          Logger.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly EngineInboxQuery $inbox,
+		private readonly EngineInboxQueryInterface $inbox,
 		private readonly LoggerInterface $logger,
 	) {
 		$this->carry = new InspectionRunCarryOver();
@@ -122,7 +122,7 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 	 */
 	public function run(IOutput $output): void {
 		$objects = $this->settingsService->getObjectService();
-		$tasks = $this->settingsService->getOpenRegisterClass(class: InspectionRunService::TASK_SERVICE);
+		$tasks = $this->settingsService->getOpenRegisterClass(class: InspectionRunServiceInterface::TASK_SERVICE);
 		$register = $this->settingsService->getConfigValue('register');
 		if ($objects === null || $tasks === null || $register === '') {
 			$output->warning('OpenRegister, its task layer or the register is not available. Skipping the inspection run carry-over.');
@@ -199,7 +199,7 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 				'isAdmin' => true,
 				'scope' => $this->inbox->scope(name: 'SCOPE_ALL'),
 				'objectUuid' => $caseId,
-				'kind' => InspectionRunService::KIND,
+				'kind' => InspectionRunServiceInterface::KIND,
 			],
 			limit: self::LIMIT,
 			failure: ['Dossiq: could not read the inspection tasks of a case', ['case' => $caseId]]

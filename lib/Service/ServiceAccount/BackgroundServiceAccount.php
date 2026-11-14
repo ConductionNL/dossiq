@@ -35,7 +35,7 @@ namespace OCA\Dossiq\Service\ServiceAccount;
 
 use DateTime;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Notification\Notifier;
+use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IUserManager;
@@ -167,7 +167,7 @@ class BackgroundServiceAccount extends ServiceAccount {
 				$this->notifications->markProcessed($notification);
 
 				$notification->setDateTime(new DateTime())
-					->setSubject(Notifier::SUBJECT_BACKGROUND_ACCOUNT_MISSING, ['reason' => $reason, 'group' => self::GROUP]);
+					->setSubject(NotifierInterface::SUBJECT_BACKGROUND_ACCOUNT_MISSING, ['reason' => $reason, 'group' => self::GROUP]);
 				$this->notifications->notify($notification);
 			}
 		} catch (Throwable $e) {

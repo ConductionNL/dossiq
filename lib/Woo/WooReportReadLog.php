@@ -27,6 +27,7 @@ use DateTimeInterface;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooReportReadLogInterface;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  */
-class WooReportReadLog {
+class WooReportReadLog implements WooReportReadLogInterface {
 
 	/**
 	 * The audit action of a throughput read.

@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\SendTemplateMessageHandlerInterface;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\RoleResolverService;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
-class SendTemplateMessageHandler implements ActionHandlerInterface {
+class SendTemplateMessageHandler implements ActionHandlerInterface, SendTemplateMessageHandlerInterface {
 
 	/**
 	 * Constructor.

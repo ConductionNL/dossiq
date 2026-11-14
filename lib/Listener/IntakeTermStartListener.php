@@ -44,10 +44,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseReceiptDatesInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeTermStartInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Intake\CaseReceiptDates;
-use OCA\Dossiq\Service\Intake\IntakeTermStart;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\EventDispatcher\Event;
@@ -69,8 +69,8 @@ class IntakeTermStartListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param IntakeTermStart          $intake          The two moments and the flag between them.
-	 * @param ObjectSchemaSlugResolver $slugResolver    Schema id-to-slug resolver.
+	 * @param IntakeTermStartInterface          $intake          The two moments and the flag between them.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver    Schema id-to-slug resolver.
 	 * @param SettingsServiceInterface          $settingsService Bridge to OpenRegister.
 	 * @param LoggerInterface          $logger          Records a case that went unstamped.
 	 * @param ReceiptClock $clock The receipt dates, the receipt moment and the time factory.
@@ -80,8 +80,8 @@ class IntakeTermStartListener implements IEventListener {
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function __construct(
-		private readonly IntakeTermStart $intake,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly IntakeTermStartInterface $intake,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ReceiptClock $clock,
@@ -224,8 +224,8 @@ class IntakeTermStartListener implements IEventListener {
 			return [];
 		}
 
-		if ($sentAt !== '' && trim((string)($case[IntakeTermStart::RECEIVED_AT] ?? '')) === '') {
-			$case[IntakeTermStart::RECEIVED_AT] = $sentAt;
+		if ($sentAt !== '' && trim((string)($case[IntakeTermStartInterface::RECEIVED_AT] ?? '')) === '') {
+			$case[IntakeTermStartInterface::RECEIVED_AT] = $sentAt;
 		}
 
 		$changes = [];
@@ -235,11 +235,11 @@ class IntakeTermStartListener implements IEventListener {
 
 		// The start date follows the term start this case was just given, or
 		// the one it already carries (decision 181, Q11).
-		$termStartsAt = trim((string)($changes[IntakeTermStart::TERM_STARTS_AT] ?? ($case[IntakeTermStart::TERM_STARTS_AT] ?? '')));
+		$termStartsAt = trim((string)($changes[IntakeTermStartInterface::TERM_STARTS_AT] ?? ($case[IntakeTermStartInterface::TERM_STARTS_AT] ?? '')));
 
 		$changes = array_merge($changes, $this->clock->receiptDates->changesFor(case: $case, termStartsAt: $termStartsAt));
 		if ($sentAt !== '') {
-			$changes[CaseReceiptDates::START_DATE] = $this->clock->receiptDates->startDateFor(case: $case, termStartsAt: $termStartsAt);
+			$changes[CaseReceiptDatesInterface::START_DATE] = $this->clock->receiptDates->startDateFor(case: $case, termStartsAt: $termStartsAt);
 		}
 
 		return $changes;

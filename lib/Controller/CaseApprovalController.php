@@ -36,8 +36,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ApprovalRequestInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
-use OCA\Dossiq\Service\Cases\ApprovalRequest;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -60,14 +60,14 @@ class CaseApprovalController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest        $request         The HTTP request.
-	 * @param ApprovalRequest $approvals       Starts the walk and records the link.
+	 * @param ApprovalRequestInterface $approvals       Starts the walk and records the link.
 	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization, failing closed.
 	 * @param IUserSession    $userSession     The current session.
 	 * @param LoggerInterface $logger          The logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly ApprovalRequest $approvals,
+		private readonly ApprovalRequestInterface $approvals,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,

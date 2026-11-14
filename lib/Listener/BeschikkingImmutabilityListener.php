@@ -44,8 +44,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StateMachineServiceInterface;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
-use OCA\Dossiq\Service\StateMachineService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -74,12 +74,12 @@ class BeschikkingImmutabilityListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface $settingsService Schema slug bridge.
-	 * @param StateMachineService $stateMachine Owns the REQ-BES-008 rule.
+	 * @param StateMachineServiceInterface $stateMachine Owns the REQ-BES-008 rule.
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly StateMachineService $stateMachine,
+		private readonly StateMachineServiceInterface $stateMachine,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -249,7 +249,7 @@ class BeschikkingImmutabilityListener implements IEventListener {
 	private function reject(ObjectUpdatingEvent|ObjectDeletingEvent $event, string $uuid): void {
 		$event->setErrors(
 			[
-				'message' => StateMachineService::IMMUTABLE_MESSAGE,
+				'message' => StateMachineServiceInterface::IMMUTABLE_MESSAGE,
 				'code' => self::ERROR_CODE,
 			]
 		);
@@ -274,7 +274,7 @@ class BeschikkingImmutabilityListener implements IEventListener {
 	 */
 	private function changedContentFields(array $stored, array $incoming): array {
 		$changed = [];
-		$guarded = array_merge(StateMachineService::CONTENT_FIELDS, StateMachineService::WRITE_ONCE_FIELDS);
+		$guarded = array_merge(StateMachineServiceInterface::CONTENT_FIELDS, StateMachineServiceInterface::WRITE_ONCE_FIELDS);
 		foreach ($guarded as $field) {
 			if (array_key_exists($field, $incoming) === false) {
 				continue;

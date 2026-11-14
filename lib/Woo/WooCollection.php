@@ -31,12 +31,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
+use OCA\Dossiq\Kernel\Contracts\CaseDocumentProvenanceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCollectionInterface;
 use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use RuntimeException;
 
 /**
@@ -44,7 +45,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-collection-is-reported-per-custodian-and-system-req-wrc-002
  */
-class WooCollection {
+class WooCollection implements WooCollectionInterface {
 
 	use SearchesObjects;
 
@@ -63,19 +64,19 @@ class WooCollection {
 	 *
 	 * @param SettingsServiceInterface              $settingsService The register and the exclusion schema.
 	 * @param WooCaseDocuments             $caseDocuments   Which documents are on the case.
-	 * @param DocumentRecordStore          $store           A document's record and its join to the case.
+	 * @param DocumentRecordStoreInterface          $store           A document's record and its join to the case.
 	 * @param WOODocumentAssessmentServiceInterface $assessments     Whether a document is assessed.
 	 * @param WooSearchPlans               $plans           The plan's custodians and systems.
-	 * @param CaseDocumentProvenance       $provenance      Where each document was found.
+	 * @param CaseDocumentProvenanceInterface       $provenance      Where each document was found.
 	 * @param CaseReviewerAccessInterface           $access          The read a count makes, and the grants of a new exclusion.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly WooCaseDocuments $caseDocuments,
-		private readonly DocumentRecordStore $store,
+		private readonly DocumentRecordStoreInterface $store,
 		private readonly WOODocumentAssessmentServiceInterface $assessments,
 		private readonly WooSearchPlans $plans,
-		private readonly CaseDocumentProvenance $provenance,
+		private readonly CaseDocumentProvenanceInterface $provenance,
 		private readonly CaseReviewerAccessInterface $access,
 	) {
 	}//end __construct()

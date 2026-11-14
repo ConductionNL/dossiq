@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Ai;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AiOversightDelegationServiceInterface;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -40,7 +41,7 @@ use Throwable;
  *
  * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
  */
-class AiOversightDelegationService {
+class AiOversightDelegationService implements AiOversightDelegationServiceInterface {
 
 	/**
 	 * Hermiq's published event class. Resolved by name so procest stays

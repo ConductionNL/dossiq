@@ -32,8 +32,8 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TenantMigrationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\TenantService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -58,13 +58,13 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 	 * @param TenantMigrationServiceInterface $migration       The migration, shared with the occ command.
 	 * @param SettingsServiceInterface        $settingsService Provides the ObjectService to run as system.
 	 * @param LoggerInterface        $logger          Logger.
-	 * @param TenantService          $tenants         Creates the audit anchor of a member organisation that has none.
+	 * @param TenantServiceInterface          $tenants         Creates the audit anchor of a member organisation that has none.
 	 */
 	public function __construct(
 		private readonly TenantMigrationServiceInterface $migration,
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
-		private readonly TenantService $tenants,
+		private readonly TenantServiceInterface $tenants,
 	) {
 	}//end __construct()
 

@@ -34,14 +34,15 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\Dossiq\Kernel\Contracts\CaseDocumentProvenanceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 
 /**
  * Reads and filters the provenance of the documents on a case.
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/document-provenance/spec.md#requirement-a-collected-document-carries-its-provenance-for-any-case-type-req-dpv-001
  */
-class CaseDocumentProvenance {
+class CaseDocumentProvenance implements CaseDocumentProvenanceInterface {
 
 	/**
 	 * The provenance fields, in the order a reader shows them.
@@ -49,21 +50,16 @@ class CaseDocumentProvenance {
 	public const FIELDS = ['source', 'sourceSystem', 'custodian', 'location', 'terms', 'searchedAt', 'searchedBy'];
 
 	/**
-	 * The fields a selection of documents can be filtered on.
-	 */
-	public const FILTER_FIELDS = ['custodian', 'sourceSystem', 'source'];
-
-	/**
 	 * Constructor.
 	 *
 	 * @param DocumentRecordStore $store         A document's record and its join to the case.
-	 * @param WooCaseDocuments    $caseDocuments Which documents are on the case.
+	 * @param WooCaseDocumentsInterface    $caseDocuments Which documents are on the case.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly DocumentRecordStore $store,
-		private readonly WooCaseDocuments $caseDocuments,
+		private readonly WooCaseDocumentsInterface $caseDocuments,
 	) {
 	}//end __construct()
 

@@ -33,8 +33,8 @@ use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
-use OCA\Dossiq\Service\Pause\PauseReasonReader;
-use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
+use OCA\Dossiq\Kernel\Contracts\CasePlanGoalsInterface;
+use OCA\Dossiq\Kernel\Contracts\PauseReasonReaderInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -59,16 +59,16 @@ class CaseGoalController extends Controller {
 	 * @param IRequest          $request         Inbound request.
 	 * @param IUserSession      $userSession     Current user session.
 	 * @param CaseAccessGuardInterface   $caseAccessGuard Per-case authorization (fails closed).
-	 * @param CasePlanGoals     $goals           The goal store's rules.
-	 * @param PauseReasonReader $caseTypes       The one walk from a case to its case type.
+	 * @param CasePlanGoalsInterface     $goals           The goal store's rules.
+	 * @param PauseReasonReaderInterface $caseTypes       The one walk from a case to its case type.
 	 * @param LoggerInterface   $logger          Logger.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
-		private readonly CasePlanGoals $goals,
-		private readonly PauseReasonReader $caseTypes,
+		private readonly CasePlanGoalsInterface $goals,
+		private readonly PauseReasonReaderInterface $caseTypes,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

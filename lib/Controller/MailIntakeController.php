@@ -37,16 +37,16 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\IntakeRoleGate;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BounceActionInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\FilterPipelineInterface;
 use OCA\Dossiq\Kernel\Contracts\InboundMailIntakeInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
-use OCA\Dossiq\Service\Email\BounceAction;
-use OCA\Dossiq\Service\Email\Filters\FilterPipeline;
+use OCA\Dossiq\Kernel\Contracts\IntakePolicyInterface;
+use OCA\Dossiq\Kernel\Contracts\JunkRulesInterface;
+use OCA\Dossiq\Kernel\Contracts\MoveActionInterface;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
 use OCA\Dossiq\Service\Email\InboundMessage;
-use OCA\Dossiq\Service\Email\IntakePolicy;
-use OCA\Dossiq\Service\Email\JunkRules;
-use OCA\Dossiq\Service\Email\MoveAction;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -92,11 +92,11 @@ class MailIntakeController extends Controller {
 	 *
 	 * @param IRequest          $request     Inbound request.
 	 * @param IntakeLogInterface         $log         The intake log.
-	 * @param IntakePolicy      $policy      Who may run intake, and the per-case-type policy.
-	 * @param FilterPipeline    $pipeline    The declared filter order.
-	 * @param JunkRules         $junkRules   The readable junk rules.
-	 * @param BounceAction      $bounce      The doorzendplicht act.
-	 * @param MoveAction        $move        The mailbox act.
+	 * @param IntakePolicyInterface      $policy      Who may run intake, and the per-case-type policy.
+	 * @param FilterPipelineInterface    $pipeline    The declared filter order.
+	 * @param JunkRulesInterface         $junkRules   The readable junk rules.
+	 * @param BounceActionInterface      $bounce      The doorzendplicht act.
+	 * @param MoveActionInterface        $move        The mailbox act.
 	 * @param InboundMailIntakeInterface $intake      The intake path, for a released message.
 	 * @param IUserSession      $userSession The caller.
 	 * @param ITimeFactory      $time        Clock.
@@ -105,11 +105,11 @@ class MailIntakeController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly IntakeLogInterface $log,
-		private readonly IntakePolicy $policy,
-		private readonly FilterPipeline $pipeline,
-		private readonly JunkRules $junkRules,
-		private readonly BounceAction $bounce,
-		private readonly MoveAction $move,
+		private readonly IntakePolicyInterface $policy,
+		private readonly FilterPipelineInterface $pipeline,
+		private readonly JunkRulesInterface $junkRules,
+		private readonly BounceActionInterface $bounce,
+		private readonly MoveActionInterface $move,
 		private readonly InboundMailIntakeInterface $intake,
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $time,

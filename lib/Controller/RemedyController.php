@@ -28,7 +28,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
-use OCA\Dossiq\Service\Remedy\RemedyLodging;
+use OCA\Dossiq\Kernel\Contracts\RemedyLodgingInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -54,14 +54,14 @@ class RemedyController extends Controller {
 	 *
 	 * @param string          $appName     The app name.
 	 * @param IRequest        $request     The request.
-	 * @param RemedyLodging   $lodging     Opens the remedy case and records its objection.
+	 * @param RemedyLodgingInterface   $lodging     Opens the remedy case and records its objection.
 	 * @param CaseAccessGuardInterface $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession    $userSession The session.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly RemedyLodging $lodging,
+		private readonly RemedyLodgingInterface $lodging,
 		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 	) {

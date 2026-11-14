@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\ZgwBusinessRulesServiceInterface;
 use OCA\Dossiq\Service\Zgw\LookupNotCompleted;
 use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use OCA\Dossiq\Service\Zgw\ZgwRulesDispatcher;
@@ -43,7 +44,7 @@ use OCA\Dossiq\Service\Zgw\ZgwRulesDispatcher;
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
-class ZgwBusinessRulesService {
+class ZgwBusinessRulesService implements ZgwBusinessRulesServiceInterface {
 	/**
 	 * The zrc-007 refusal of a write to a closed zaak without the geforceerd-bijwerken scope.
 	 *

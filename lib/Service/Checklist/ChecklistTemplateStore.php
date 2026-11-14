@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Checklist;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ChecklistTemplateStoreInterface;
 use OCA\Dossiq\Service\Inspection\InspectionTemplateMapper;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -45,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/specs/inspection-checklists/spec.md
  */
-class ChecklistTemplateStore {
+class ChecklistTemplateStore implements ChecklistTemplateStoreInterface {
 
 	use SearchesObjects;
 

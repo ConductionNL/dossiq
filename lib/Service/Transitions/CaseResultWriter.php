@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseResultWriterInterface;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
@@ -43,7 +44,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class CaseResultWriter {
+class CaseResultWriter implements CaseResultWriterInterface {
 
 	/**
 	 * Constructor.

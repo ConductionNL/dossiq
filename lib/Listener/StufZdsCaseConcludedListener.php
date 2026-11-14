@@ -33,8 +33,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Notification\Notifier;
-use OCA\Dossiq\Service\Stuf\NeedsInputDispatcher;
+use OCA\Dossiq\Kernel\Contracts\NeedsInputDispatcherInterface;
+use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -57,10 +57,10 @@ class StufZdsCaseConcludedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param NeedsInputDispatcher $needsInput Notifies the administrators.
+	 * @param NeedsInputDispatcherInterface $needsInput Notifies the administrators.
 	 */
 	public function __construct(
-		private readonly NeedsInputDispatcher $needsInput,
+		private readonly NeedsInputDispatcherInterface $needsInput,
 	) {
 
 	}//end __construct()
@@ -104,9 +104,9 @@ class StufZdsCaseConcludedListener implements IEventListener {
 	 */
 	private function subjectFor(string $code): string {
 		return match ($code) {
-			'CIRCUIT_OPEN' => Notifier::SUBJECT_STUF_CIRCUIT_OPEN,
-			'TIMEOUT' => Notifier::SUBJECT_STUF_TIMEOUT,
-			default => Notifier::SUBJECT_STUF_PERMANENT_ERROR,
+			'CIRCUIT_OPEN' => NotifierInterface::SUBJECT_STUF_CIRCUIT_OPEN,
+			'TIMEOUT' => NotifierInterface::SUBJECT_STUF_TIMEOUT,
+			default => NotifierInterface::SUBJECT_STUF_PERMANENT_ERROR,
 		};
 	}//end subjectFor()
 

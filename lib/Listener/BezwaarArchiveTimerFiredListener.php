@@ -32,9 +32,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTimerInterface;
+use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTriggerInterface;
 use OCA\Dossiq\Listener\Support\TimerFire;
-use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTimer;
-use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTrigger;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
@@ -53,12 +53,12 @@ class BezwaarArchiveTimerFiredListener implements IEventListener {
 	/**
 	 * Build the listener.
 	 *
-	 * @param BezwaarArchiveTrigger    $trigger        Reads and acts on the trigger.
+	 * @param BezwaarArchiveTriggerInterface    $trigger        Reads and acts on the trigger.
 	 * @param BackgroundServiceAccount $serviceAccount The identity a cron-driven fire writes as.
 	 * @param LoggerInterface          $logger         Logs a failed fire.
 	 */
 	public function __construct(
-		private readonly BezwaarArchiveTrigger $trigger,
+		private readonly BezwaarArchiveTriggerInterface $trigger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 		private readonly LoggerInterface $logger,
 	) {
@@ -78,7 +78,7 @@ class BezwaarArchiveTimerFiredListener implements IEventListener {
 			return;
 		}
 
-		$metadata  = TimerFire::metadataFrom(event: $event, source: BezwaarArchiveTimer::METADATA_SOURCE);
+		$metadata  = TimerFire::metadataFrom(event: $event, source: BezwaarArchiveTimerInterface::METADATA_SOURCE);
 		$triggerId = (string) ($metadata['triggerId'] ?? '');
 		if ($metadata === null || $triggerId === '' || TimerFire::isBreach(event: $event) === false) {
 			return;

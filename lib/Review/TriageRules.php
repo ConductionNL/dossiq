@@ -28,8 +28,9 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TriageRulesInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\WooCaseDocuments;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -47,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
  */
-class TriageRules {
+class TriageRules implements TriageRulesInterface {
 
 	use SearchesObjects;
 
@@ -76,7 +77,7 @@ class TriageRules {
 	 *
 	 * @param SettingsServiceInterface        $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance      $reviews         The reviews a rule marks.
-	 * @param WooCaseDocuments       $caseDocuments   The case's documents.
+	 * @param WooCaseDocumentsInterface       $caseDocuments   The case's documents.
 	 * @param TriageFacts            $facts           What a rule reads about each document.
 	 * @param TriageConditions       $conditions      Checks and matches a rule's conditions.
 	 * @param CaseReviewerAccessInterface     $reviewerAccess  Who may read the case's private review records.
@@ -87,7 +88,7 @@ class TriageRules {
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly DocumentRelevance $reviews,
-		private readonly WooCaseDocuments $caseDocuments,
+		private readonly WooCaseDocumentsInterface $caseDocuments,
 		private readonly TriageFacts $facts,
 		private readonly TriageConditions $conditions,
 		private readonly CaseReviewerAccessInterface $reviewerAccess,

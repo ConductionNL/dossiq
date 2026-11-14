@@ -29,11 +29,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\DsoDeadlineActsInterface;
+use OCA\Dossiq\Kernel\Contracts\DsoDeadlineTimerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\CaseTimerSweep;
 use OCA\Dossiq\Repair\Support\CaseTimerSweeper;
-use OCA\Dossiq\Service\Dso\DsoDeadlineActs;
-use OCA\Dossiq\Service\Dso\DsoDeadlineTimer;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -48,14 +48,14 @@ class ArmDsoDeadlineTimers implements IRepairStep {
 	 * Build the step.
 	 *
 	 * @param SettingsServiceInterface  $settingsService Reaches OpenRegister and the case schema.
-	 * @param DsoDeadlineTimer $timer           Arms each case's timer.
-	 * @param DsoDeadlineActs  $acts            Marks the cases already overdue.
+	 * @param DsoDeadlineTimerInterface $timer           Arms each case's timer.
+	 * @param DsoDeadlineActsInterface  $acts            Marks the cases already overdue.
 	 * @param LoggerInterface  $logger          Logs the counts.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly DsoDeadlineTimer $timer,
-		private readonly DsoDeadlineActs $acts,
+		private readonly DsoDeadlineTimerInterface $timer,
+		private readonly DsoDeadlineActsInterface $acts,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -84,7 +84,7 @@ class ArmDsoDeadlineTimers implements IRepairStep {
 		$counts = ['armed' => 0, 'overdue' => 0, 'failed' => 0];
 		$sweep = new CaseTimerSweep();
 		$sweep->migration = 'DSO term timer';
-		$sweep->filters = ['dsoStatus' => DsoDeadlineTimer::OPEN_STATUSES, '_limit' => 1000];
+		$sweep->filters = ['dsoStatus' => DsoDeadlineTimerInterface::OPEN_STATUSES, '_limit' => 1000];
 		$sweep->each = function (array $case) use (&$counts): void {
 			$this->syncOne(case: $case, counts: $counts);
 		};
@@ -109,18 +109,18 @@ class ArmDsoDeadlineTimers implements IRepairStep {
 	 */
 	private function syncOne(array $case, array &$counts): void {
 		$outcome = $this->timer->sync(case: $case);
-		if ($outcome === DsoDeadlineTimer::ARMED) {
+		if ($outcome === DsoDeadlineTimerInterface::ARMED) {
 			$counts['armed']++;
 			return;
 		}
 
-		if ($outcome === DsoDeadlineTimer::DUE) {
+		if ($outcome === DsoDeadlineTimerInterface::DUE) {
 			$this->acts->markOverdue(case: $case);
 			$counts['overdue']++;
 			return;
 		}
 
-		if ($outcome === DsoDeadlineTimer::UNAVAILABLE) {
+		if ($outcome === DsoDeadlineTimerInterface::UNAVAILABLE) {
 			$counts['failed']++;
 		}
 	}//end syncOne()

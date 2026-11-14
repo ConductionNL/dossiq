@@ -49,6 +49,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Email;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseNumberRecognizerInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -62,7 +63,7 @@ use Throwable;
  *
  * @spec openspec/specs/email-case-matching/spec.md
  */
-class CaseNumberRecognizer {
+class CaseNumberRecognizer implements CaseNumberRecognizerInterface {
 
 	use SearchesObjects;
 	use SuppressesWarnings;
@@ -78,13 +79,6 @@ class CaseNumberRecognizer {
 	 * @var string
 	 */
 	public const DEFAULT_PATTERN = '/(?<![\w-])(?:\[)?(?:[A-Z]{2,10}-)?((?:19|20)\d{2}-\d{4,6})(?:\])?(?![\w-])/u';
-
-	/**
-	 * App-config key for a configured recognizer. Empty means the default.
-	 *
-	 * @var string
-	 */
-	public const PATTERN_KEY = 'email_case_matching_pattern';
 
 	/**
 	 * Constructor.

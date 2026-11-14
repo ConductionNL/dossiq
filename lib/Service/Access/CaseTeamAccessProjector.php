@@ -46,6 +46,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Access;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTeamAccessProjectorInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
@@ -61,7 +62,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-access-control/spec.md
  */
-class CaseTeamAccessProjector {
+class CaseTeamAccessProjector implements CaseTeamAccessProjectorInterface {
 
 	/**
 	 * The schema the rules are written onto.

@@ -56,10 +56,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseEmailRepositoryInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
+use OCA\Dossiq\Kernel\Contracts\UnmatchedMailIntakeInterface;
 use OCA\Dossiq\Listener\Support\EventGetters;
-use OCA\Dossiq\Service\Email\CaseEmailRepository;
-use OCA\Dossiq\Service\Email\UnmatchedMailIntake;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\EventDispatcher\Event;
@@ -115,15 +115,15 @@ class MessageReceivedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseEmailRepository      $cases          Resolves a case reference and files the message.
-	 * @param UnmatchedMailIntake      $unmatched      The fallback rule, shared with the poller.
+	 * @param CaseEmailRepositoryInterface      $cases          Resolves a case reference and files the message.
+	 * @param UnmatchedMailIntakeInterface      $unmatched      The fallback rule, shared with the poller.
 	 * @param IntakeLogInterface                $log            The per-message record, and the duplicate guard.
 	 * @param LoggerInterface          $logger         Logger.
 	 * @param BackgroundServiceAccount $serviceAccount Writes for integriq's background work, which has no user.
 	 */
 	public function __construct(
-		private readonly CaseEmailRepository $cases,
-		private readonly UnmatchedMailIntake $unmatched,
+		private readonly CaseEmailRepositoryInterface $cases,
+		private readonly UnmatchedMailIntakeInterface $unmatched,
 		private readonly IntakeLogInterface $log,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,

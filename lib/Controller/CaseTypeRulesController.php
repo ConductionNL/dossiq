@@ -28,8 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Access\ReadableObjects;
-use OCA\Dossiq\Service\CaseType\CaseTypeRuleSentences;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeRuleSentencesInterface;
+use OCA\Dossiq\Kernel\Contracts\ReadableObjectsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -49,16 +49,16 @@ class CaseTypeRulesController extends Controller {
 	 *
 	 * @param string         $appName The app name.
 	 * @param IRequest       $request The request.
-	 * @param CaseTypeRuleSentences $sentences Writes the rules as rows.
-	 * @param ReadableObjects $readable Whether a caller is signed in and may read the requested object.
+	 * @param CaseTypeRuleSentencesInterface $sentences Writes the rules as rows.
+	 * @param ReadableObjectsInterface $readable Whether a caller is signed in and may read the requested object.
 	 *
 	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseTypeRuleSentences $sentences,
-		private readonly ReadableObjects $readable,
+		private readonly CaseTypeRuleSentencesInterface $sentences,
+		private readonly ReadableObjectsInterface $readable,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

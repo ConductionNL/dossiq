@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Mcp;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseToolsInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseAssignmentService;
 use OCA\Dossiq\Service\StatusTransitionService;
@@ -46,7 +47,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-202-curated-aggregation-reads
  */
-class CaseTools {
+class CaseTools implements CaseToolsInterface {
 
 	use ToolEnvelopes;
 

@@ -30,12 +30,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Registrar\SubstitutableAdapterRegistrar;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\IntegrationStatusServiceInterface;
 use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
+use OCA\Dossiq\Service\Registrar\SubstitutableAdapterRegistrar;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -47,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
-class IntegrationStatusService {
+class IntegrationStatusService implements IntegrationStatusServiceInterface {
 
 	/**
 	 * Integriq's report event (ADR-041). Named by string so dossiq stays
@@ -85,6 +86,8 @@ class IntegrationStatusService {
 		'pdok',
 		'berichtenbox',
 		'templates',
+		'smartdocuments',
+		'xential',
 	];
 
 	/**

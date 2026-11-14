@@ -29,10 +29,10 @@ namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
 use OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer;
 use OCA\Dossiq\Service\DecisionDocument\PublicationReadiness;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
-use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -94,7 +94,7 @@ class WOODecisionService {
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseDocumentDrafts|null $drafts Drafts the decision document from the case type's
 	 *        `documentDrafts.decision` template through filinq (case-document-drafts).
-	 * @param PagesSeen|null $pagesSeen The pages seen per document; the decision waits for the required ones.
+	 * @param PagesSeenInterface|null $pagesSeen The pages seen per document; the decision waits for the required ones.
 	 * @param ContractDecisionDelegationService|null $decisionDelegation Raises the decision in decidiq;
 	 *        without it no decision is assembled (fail closed, REQ-DDTD-001).
 	 */
@@ -104,7 +104,7 @@ class WOODecisionService {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly ?CaseDocumentDrafts $drafts = null,
-		private readonly ?PagesSeen $pagesSeen = null,
+		private readonly ?PagesSeenInterface $pagesSeen = null,
 		private readonly ?ContractDecisionDelegationService $decisionDelegation = null,
 	) {
 		$this->composer  = new DecisionRecordComposer(settingsService: $settingsService, logger: $logger);

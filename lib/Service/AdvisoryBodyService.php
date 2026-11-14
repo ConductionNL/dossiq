@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AdvisoryBodyServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -41,7 +42,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
  */
-class AdvisoryBodyService {
+class AdvisoryBodyService implements AdvisoryBodyServiceInterface {
 	use SearchesObjects;
 
 	/**

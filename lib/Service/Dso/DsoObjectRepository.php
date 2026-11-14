@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Dso;
 
+use OCA\Dossiq\Kernel\Contracts\DsoObjectRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -40,7 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
  */
-class DsoObjectRepository {
+class DsoObjectRepository implements DsoObjectRepositoryInterface {
 	use SearchesObjects;
 
 	/**

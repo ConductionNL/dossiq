@@ -38,10 +38,10 @@ namespace OCA\Dossiq\Controller;
 use InvalidArgumentException;
 use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
 use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeSlugResolverInterface;
 use OCA\Dossiq\Kernel\Contracts\DeadlineExtensionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DeadlinePauseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
-use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -70,7 +70,7 @@ class TermijnController extends Controller {
 	 * @param DeadlinePauseServiceInterface $pause Pause service.
 	 * @param DeadlineExtensionServiceInterface $extension Extension service.
 	 * @param CaseDateNormaliserInterface $dates The one date write path.
-	 * @param CaseTypeSlugResolver $caseTypeSlugs Case-type uuid-to-slug resolver.
+	 * @param CaseTypeSlugResolverInterface $caseTypeSlugs Case-type uuid-to-slug resolver.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
 	 */
@@ -81,7 +81,7 @@ class TermijnController extends Controller {
 		private readonly DeadlinePauseServiceInterface $pause,
 		private readonly DeadlineExtensionServiceInterface $extension,
 		private readonly CaseDateNormaliserInterface $dates,
-		private readonly CaseTypeSlugResolver $caseTypeSlugs,
+		private readonly CaseTypeSlugResolverInterface $caseTypeSlugs,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

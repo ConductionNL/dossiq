@@ -30,11 +30,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
+use OCA\Dossiq\Kernel\Contracts\AccruingAmountSettlerInterface;
+use OCA\Dossiq\Kernel\Contracts\AmountObjectionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\OwningCaseResolverInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Money\AccruingAmountSettler;
-use OCA\Dossiq\Service\Money\AmountObjectionService;
-use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -58,22 +58,22 @@ class AccruingAmountController extends Controller {
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param AccruingAmountSettler $settler Stops the stored accrual and locks the amount.
-	 * @param AmountObjectionService $objection Objection service.
+	 * @param AccruingAmountSettlerInterface $settler Stops the stored accrual and locks the amount.
+	 * @param AmountObjectionServiceInterface $objection Objection service.
 	 * @param SettingsServiceInterface $settings Settings.
 	 * @param IUserSession $userSession User session.
 	 * @param CaseAccessGuardInterface $caseAccess Per-case authorization guard.
-	 * @param OwningCaseResolver $owningCase Resolves a berekening's owning case.
+	 * @param OwningCaseResolverInterface $owningCase Resolves a berekening's owning case.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly AccruingAmountSettler $settler,
-		private readonly AmountObjectionService $objection,
+		private readonly AccruingAmountSettlerInterface $settler,
+		private readonly AmountObjectionServiceInterface $objection,
 		private readonly SettingsServiceInterface $settings,
 		private readonly IUserSession $userSession,
 		private readonly CaseAccessGuardInterface $caseAccess,
-		private readonly OwningCaseResolver $owningCase,
+		private readonly OwningCaseResolverInterface $owningCase,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

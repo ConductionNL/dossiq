@@ -42,12 +42,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Money;
 
+use OCA\Dossiq\Kernel\Contracts\UnpaidCaseGateInterface;
+
 /**
  * Reads a case type's payment rule, and says what it means for an act.
  *
  * @spec openspec/specs/financial-integration/spec.md
  */
-class UnpaidCaseGate {
+class UnpaidCaseGate implements UnpaidCaseGateInterface {
 	/**
 	 * The case-type field declaring that payment comes first.
 	 *

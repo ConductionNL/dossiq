@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Service\Email;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailMatchPreferencesInterface;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/specs/email-case-matching/spec.md
  */
-class CaseEmailMatchPreferences {
+class CaseEmailMatchPreferences implements CaseEmailMatchPreferencesInterface {
 
 	/**
 	 * Whether this user's mail is matched.

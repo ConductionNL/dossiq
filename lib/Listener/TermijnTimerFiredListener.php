@@ -37,14 +37,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekResolutionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseObjectReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\DeadlineEscalationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DeadlinePauseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\PauseChaseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
 use OCA\Dossiq\Listener\Support\TimerFire;
-use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
-use OCA\Dossiq\Service\DeadlineEscalationService;
-use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
@@ -76,12 +76,12 @@ class TermijnTimerFiredListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param TermijnServiceInterface $termService Instance lookup, updates and events.
-	 * @param DeadlineEscalationService $escalationService Threshold bookkeeping and dispatch.
+	 * @param DeadlineEscalationServiceInterface $escalationService Threshold bookkeeping and dispatch.
 	 * @param LoggerInterface $logger Logger.
 	 * @param BackgroundServiceAccount $serviceAccount Who writes when the fire comes
 	 *        from cron with nobody signed in. OpenRegister's FlowTimerWorker is a
 	 *        background job, and OpenRegister refuses a write from nobody.
-	 * @param AanvullingsverzoekResolutionService|null $aanvullingen The request
+	 * @param AanvullingsverzoekResolutionServiceInterface|null $aanvullingen The request
 	 *        the hersteltermijn belonged to, so the day it runs out is recorded
 	 *        on the request and not only on the timer. Optional, so an instance
 	 *        without the schema fires exactly as it did before.
@@ -92,19 +92,19 @@ class TermijnTimerFiredListener implements IEventListener {
 	 * @param DeadlinePauseServiceInterface|null $pauses Resumes a term whose pause ran out
 	 *        (REQ-TERM-080). Optional, so a build without it records the expiry
 	 *        and leaves the term paused, as it did before.
-	 * @param CaseObjectReader|null $cases Reads the case behind the term, for the
+	 * @param CaseObjectReaderInterface|null $cases Reads the case behind the term, for the
 	 *        handler the resume is told to and the title it names. Optional: without
 	 *        it the term still resumes, and nobody is told.
 	 */
 	public function __construct(
 		private readonly TermijnServiceInterface $termService,
-		private readonly DeadlineEscalationService $escalationService,
+		private readonly DeadlineEscalationServiceInterface $escalationService,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
-		private readonly ?AanvullingsverzoekResolutionService $aanvullingen = null,
+		private readonly ?AanvullingsverzoekResolutionServiceInterface $aanvullingen = null,
 		private readonly ?PauseChaseServiceInterface $chases = null,
 		private readonly ?DeadlinePauseServiceInterface $pauses = null,
-		private readonly ?CaseObjectReader $cases = null,
+		private readonly ?CaseObjectReaderInterface $cases = null,
 	) {
 	}//end __construct()
 

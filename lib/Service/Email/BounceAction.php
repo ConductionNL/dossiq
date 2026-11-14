@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Email;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BounceActionInterface;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
 use OCP\IAppConfig;
 use OCP\Mail\IMailer;
@@ -59,7 +60,7 @@ use Throwable;
  *  `FilterVerdict::accept()`, `AuthenticationVerdict::unknown()`), which hold no
  *  state and exist so a caller cannot build a half-built value.
  */
-class BounceAction {
+class BounceAction implements BounceActionInterface {
 
 	/**
 	 * The name the intake log records against a bounce.

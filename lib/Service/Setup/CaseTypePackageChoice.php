@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Setup;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypePackageChoiceInterface;
 use OCA\Dossiq\Service\CaseDefinition\InstalledPackageExamples;
 use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
 use OCP\IAppConfig;
@@ -38,7 +39,7 @@ use OCP\IAppConfig;
  *
  * @spec openspec/specs/first-time-setup/spec.md
  */
-class CaseTypePackageChoice {
+class CaseTypePackageChoice implements CaseTypePackageChoiceInterface {
 
 	/**
 	 * App-config key the step's choice is stored under.

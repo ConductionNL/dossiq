@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CommunicationChannelInterface;
 use OCP\IAppConfig;
 
 /**
@@ -44,14 +45,7 @@ use OCP\IAppConfig;
  *
  * @spec openspec/changes/portal-contact-channel-follows-the-resident/specs/portal-contribution/spec.md
  */
-class CommunicationChannel {
-
-	/**
-	 * The channel slugs, in the order the schema declares them.
-	 *
-	 * @var array<int, string>
-	 */
-	public const SLUGS = ['email', 'portal', 'post', 'website', 'zgw-api'];
+class CommunicationChannel implements CommunicationChannelInterface {
 
 	/**
 	 * The slug for a value that came in through the ZGW API and maps to nothing known.

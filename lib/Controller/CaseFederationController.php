@@ -37,9 +37,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseCollaborationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseSharingServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseTransferServiceInterface;
-use OCA\Dossiq\Service\CaseCollaborationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -105,7 +105,7 @@ class CaseFederationController extends Controller {
 	 * @param IRequest $request The request object
 	 * @param CaseSharingServiceInterface $caseSharingService The sharing service
 	 * @param CaseTransferServiceInterface $caseTransferService The transfer service
-	 * @param CaseCollaborationService $collabService The federated activity service
+	 * @param CaseCollaborationServiceInterface $collabService The federated activity service
 	 * @param IUserSession $userSession The user session
 	 * @param IThrottler $throttler The brute-force throttler counting rejected share tokens
 	 * @param LoggerInterface $logger The logger
@@ -116,7 +116,7 @@ class CaseFederationController extends Controller {
 		IRequest $request,
 		private CaseSharingServiceInterface $caseSharingService,
 		private CaseTransferServiceInterface $caseTransferService,
-		private CaseCollaborationService $collabService,
+		private CaseCollaborationServiceInterface $collabService,
 		private IUserSession $userSession,
 		private IThrottler $throttler,
 		private LoggerInterface $logger,

@@ -44,8 +44,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
-use OCA\Dossiq\Service\Zaakdossier\CaseFileCollector;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Kernel\Contracts\CaseFileCollectorInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
+use OCA\Dossiq\Kernel\Contracts\WooGatherAddInterface;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
@@ -58,14 +59,14 @@ use Throwable;
  *
  * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-picked-results-become-documents-on-the-case-req-woo-013
  */
-class WooGatherAdd {
+class WooGatherAdd implements WooGatherAddInterface {
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRootFolder               $rootFolder  The caller's own files.
-	 * @param DocumentRecordStore       $store       Records and joins in OpenRegister.
-	 * @param CaseFileCollector         $collector   Writes copied bytes as a document on the case, with provenance.
+	 * @param DocumentRecordStoreInterface       $store       Records and joins in OpenRegister.
+	 * @param CaseFileCollectorInterface         $collector   Writes copied bytes as a document on the case, with provenance.
 	 * @param WooSources                $sources     Fetches an integriq hit.
 	 * @param CaseAccessGuardInterface           $accessGuard Whether the caller may read the case a linked document is on.
 	 * @param IL10N                     $l10n        The refusal sentences.
@@ -74,8 +75,8 @@ class WooGatherAdd {
 	 */
 	public function __construct(
 		private readonly IRootFolder $rootFolder,
-		private readonly DocumentRecordStore $store,
-		private readonly CaseFileCollector $collector,
+		private readonly DocumentRecordStoreInterface $store,
+		private readonly CaseFileCollectorInterface $collector,
 		private readonly WooSources $sources,
 		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IL10N $l10n,

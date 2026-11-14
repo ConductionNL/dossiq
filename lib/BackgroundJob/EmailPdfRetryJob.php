@@ -38,7 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\EmailArchivalService;
+use OCA\Dossiq\Kernel\Contracts\EmailArchivalServiceInterface;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -55,13 +55,13 @@ class EmailPdfRetryJob extends TimedJob {
 	 *
 	 * @param ITimeFactory $time Time factory.
 	 * @param IAppManager $appManager App manager.
-	 * @param EmailArchivalService $archivalService Archival service.
+	 * @param EmailArchivalServiceInterface $archivalService Archival service.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private readonly IAppManager $appManager,
-		private readonly EmailArchivalService $archivalService,
+		private readonly EmailArchivalServiceInterface $archivalService,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);

@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DispositionServiceInterface;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -34,7 +35,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
  */
-class DispositionService {
+class DispositionService implements DispositionServiceInterface {
 
 	use SearchesObjects;
 

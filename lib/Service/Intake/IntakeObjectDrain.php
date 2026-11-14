@@ -45,6 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Kernel\Contracts\IntakeObjectDrainInterface;
 use Throwable;
 
 /**
@@ -52,7 +53,7 @@ use Throwable;
  *
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-portal-filing-must-not-be-held-in-an-intermediate-object
  */
-class IntakeObjectDrain {
+class IntakeObjectDrain implements IntakeObjectDrainInterface {
 
 	/**
 	 * Constructor.

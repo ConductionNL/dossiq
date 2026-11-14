@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Cases;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\HandlerActsAsSystemInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -50,7 +51,7 @@ use OCP\IUser;
  *
  * @spec openspec/specs/case-access-control/spec.md
  */
-class HandlerActsAsSystem {
+class HandlerActsAsSystem implements HandlerActsAsSystemInterface {
 
 	use SearchesObjects;
 

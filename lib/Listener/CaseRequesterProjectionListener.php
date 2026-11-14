@@ -37,9 +37,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\RequesterProjectionInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
-use OCA\Dossiq\Service\People\RequesterProjection;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -61,12 +61,12 @@ class CaseRequesterProjectionListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface     $settingsService Schema slug bridge.
-	 * @param RequesterProjection $projection      The projection of a requester uuid.
+	 * @param RequesterProjectionInterface $projection      The projection of a requester uuid.
 	 * @param LoggerInterface     $logger          Structured logger.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly RequesterProjection $projection,
+		private readonly RequesterProjectionInterface $projection,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Woo;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooThroughputReportInterface;
 use OCA\Dossiq\Service\Csv\CsvWriter;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserManager;
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  */
-class WooThroughputReport {
+class WooThroughputReport implements WooThroughputReportInterface {
 
 	use SearchesObjects;
 

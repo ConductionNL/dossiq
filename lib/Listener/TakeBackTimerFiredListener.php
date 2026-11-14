@@ -31,8 +31,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\CaseRouterInterface;
+use OCA\Dossiq\Kernel\Contracts\TakeBackWindowInterface;
 use OCA\Dossiq\Listener\Support\TimerFire;
-use OCA\Dossiq\Service\Routing\TakeBackWindow;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
@@ -101,7 +101,7 @@ class TakeBackTimerFiredListener implements IEventListener {
 	 * @return array<string, mixed>|null The metadata, carrying a case and where it was routed, or null.
 	 */
 	private function takeBackFire(FlowTimerFiredEvent $event): ?array {
-		$metadata = TimerFire::metadataFrom(event: $event, source: TakeBackWindow::METADATA_SOURCE);
+		$metadata = TimerFire::metadataFrom(event: $event, source: TakeBackWindowInterface::METADATA_SOURCE);
 		if ($metadata === null
 			|| (string) ($metadata['caseId'] ?? '') === ''
 			|| (string) ($metadata['routedTo'] ?? '') === ''

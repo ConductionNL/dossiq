@@ -40,12 +40,12 @@ namespace OCA\Dossiq\Service\Redaction;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\DocumentRedactionServiceInterface;
-use OCA\Dossiq\Review\DocumentText;
+use OCA\Dossiq\Kernel\Contracts\DocumentTextInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Service\FilinqRedactionClient;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\ZgwDocumentService;
-use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCP\IL10N;
 use RuntimeException;
 use Throwable;
@@ -70,8 +70,8 @@ class DocumentRedactionService implements DocumentRedactionServiceInterface {
 	 * @param WOODocumentAssessmentService  $assessments The assessments the redaction is recorded on.
 	 * @param FilinqRedactionClient         $filinq      Detection, the review mark and the redaction.
 	 * @param WOOAnonymisationAssistService $assist      The rules floor and Hermiq's spans.
-	 * @param DocumentText                  $text        The text OpenRegister extracted from the file.
-	 * @param WooCaseDocuments              $documents   The original's informatieobject.
+	 * @param DocumentTextInterface                  $text        The text OpenRegister extracted from the file.
+	 * @param WooCaseDocumentsInterface              $documents   The original's informatieobject.
 	 * @param ZgwDocumentService            $zgw         Finds a legacy document's file by its name.
 	 * @param RedactedCopyRecorder          $copies      Records the copy as a document of the case.
 	 * @param RedactionEntities             $entities    One list of passages from every source.
@@ -81,8 +81,8 @@ class DocumentRedactionService implements DocumentRedactionServiceInterface {
 		private readonly WOODocumentAssessmentService $assessments,
 		private readonly FilinqRedactionClient $filinq,
 		private readonly WOOAnonymisationAssistService $assist,
-		private readonly DocumentText $text,
-		private readonly WooCaseDocuments $documents,
+		private readonly DocumentTextInterface $text,
+		private readonly WooCaseDocumentsInterface $documents,
 		private readonly ZgwDocumentService $zgw,
 		private readonly RedactedCopyRecorder $copies,
 		private readonly RedactionEntities $entities,

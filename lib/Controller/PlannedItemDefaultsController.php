@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Queue\PlannedItemDefaults;
+use OCA\Dossiq\Kernel\Contracts\PlannedItemDefaultsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -47,7 +47,7 @@ class PlannedItemDefaultsController extends Controller {
 	 *
 	 * @param IRequest            $request     The request.
 	 * @param IUserSession        $userSession The caller.
-	 * @param PlannedItemDefaults $defaults    What a new planned item opens with.
+	 * @param PlannedItemDefaultsInterface $defaults    What a new planned item opens with.
 	 *
 	 * @return void
 	 *
@@ -56,7 +56,7 @@ class PlannedItemDefaultsController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly PlannedItemDefaults $defaults,
+		private readonly PlannedItemDefaultsInterface $defaults,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

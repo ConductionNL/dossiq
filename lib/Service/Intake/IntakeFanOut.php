@@ -49,6 +49,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\IntakeFanOutInterface;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Routing\RoutingNote;
@@ -69,7 +70,7 @@ use Throwable;
  *
  * @spec openspec/specs/kcc-routing/spec.md
  */
-class IntakeFanOut {
+class IntakeFanOut implements IntakeFanOutInterface {
 
 	use SearchesObjects;
 

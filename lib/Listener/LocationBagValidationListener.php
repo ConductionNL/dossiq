@@ -40,10 +40,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\BagObjectReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\IntegrationModeInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\PreSaveCheck;
-use OCA\Dossiq\Service\External\IntegrationMode;
-use OCA\Dossiq\Service\Registry\BagObjectReader;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -105,15 +105,15 @@ class LocationBagValidationListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface $settingsService Schema slug bridge.
-	 * @param IntegrationMode $integrationMode Reads `integration.bag.check`.
-	 * @param BagObjectReader $bagReader Asks integriq whether the BAG holds an object.
+	 * @param IntegrationModeInterface $integrationMode Reads `integration.bag.check`.
+	 * @param BagObjectReaderInterface $bagReader Asks integriq whether the BAG holds an object.
 	 * @param IL10N $l10n Translation service.
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly IntegrationMode $integrationMode,
-		private readonly BagObjectReader $bagReader,
+		private readonly IntegrationModeInterface $integrationMode,
+		private readonly BagObjectReaderInterface $bagReader,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
@@ -284,8 +284,8 @@ class LocationBagValidationListener implements IEventListener {
 	 */
 	private static function uncheckedCode(string $reason): string {
 		return match ($reason) {
-			BagObjectReader::REASON_NO_INTEGRIQ => 'nummeraanduidingId.integriq-missing',
-			BagObjectReader::REASON_NO_READER => 'nummeraanduidingId.integriq-outdated',
+			BagObjectReaderInterface::REASON_NO_INTEGRIQ => 'nummeraanduidingId.integriq-missing',
+			BagObjectReaderInterface::REASON_NO_READER => 'nummeraanduidingId.integriq-outdated',
 			default => 'nummeraanduidingId.unchecked',
 		};
 	}//end uncheckedCode()

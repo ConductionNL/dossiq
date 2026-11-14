@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Email;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SenderBlocklistInterface;
 use OCP\IAppConfig;
 
 /**
@@ -51,12 +52,7 @@ use OCP\IAppConfig;
  *  `FilterVerdict::accept()`, `AuthenticationVerdict::unknown()`), which hold no
  *  state and exist so a caller cannot build a half-built value.
  */
-class SenderBlocklist {
-
-	/**
-	 * The app-config key holding the block half.
-	 */
-	public const BLOCKLIST_KEY = 'email_intake_blocklist';
+class SenderBlocklist implements SenderBlocklistInterface {
 
 	/**
 	 * Constructor.

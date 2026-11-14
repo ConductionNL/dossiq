@@ -33,8 +33,8 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\ContractDecisionDelegationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\JsonEncodedStringPropertiesInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -77,13 +77,13 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	 *
 	 * @param ContractDecisionDelegationServiceInterface $delegationService Decision delegation service.
 	 * @param SettingsServiceInterface $settingsService Settings / ObjectService resolver.
-	 * @param JsonEncodedStringProperties $jsonProperties Restores the declared string shape of JSON-encoded properties.
+	 * @param JsonEncodedStringPropertiesInterface $jsonProperties Restores the declared string shape of JSON-encoded properties.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly ContractDecisionDelegationServiceInterface $delegationService,
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly JsonEncodedStringProperties $jsonProperties,
+		private readonly JsonEncodedStringPropertiesInterface $jsonProperties,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

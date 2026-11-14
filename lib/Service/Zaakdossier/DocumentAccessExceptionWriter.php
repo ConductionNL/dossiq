@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentAccessExceptionWriterInterface;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -39,7 +40,7 @@ use Throwable;
  *
  * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-can-carry-an-access-exception-with-a-reason
  */
-class DocumentAccessExceptionWriter {
+class DocumentAccessExceptionWriter implements DocumentAccessExceptionWriterInterface {
 
 	/**
 	 * Constructor.

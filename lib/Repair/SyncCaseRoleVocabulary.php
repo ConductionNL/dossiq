@@ -13,9 +13,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\CaseRoleVocabularyInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\People\CaseRoleVocabulary;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Throwable;
@@ -36,11 +36,11 @@ class SyncCaseRoleVocabulary implements IRepairStep {
 
 	/**
 	 * @param SettingsServiceInterface $settingsService OpenRegister access.
-	 * @param CaseRoleVocabulary $vocabulary Writes the roles onto the case schema.
+	 * @param CaseRoleVocabularyInterface $vocabulary Writes the roles onto the case schema.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly CaseRoleVocabulary $vocabulary,
+		private readonly CaseRoleVocabularyInterface $vocabulary,
 	) {
 	}//end __construct()
 

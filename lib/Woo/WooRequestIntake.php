@@ -40,9 +40,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
+use OCA\Dossiq\Kernel\Contracts\CollectionLinkQueueInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooRequestIntakeInterface;
 use OCA\Dossiq\Service\Intake\CollectionCaseLinks;
-use OCA\Dossiq\Service\Intake\CollectionLinkQueue;
 use OCA\Dossiq\Service\Intake\SystemCaseStore;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
@@ -53,20 +54,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
  */
-class WooRequestIntake {
-
-	/**
-	 * The seeded Woo request case type (register.d/81-woo-verzoek.json).
-	 */
-	public const CASE_TYPE_ID = '3c0f5a00-0000-4000-a000-00000000a001';
-
-	/**
-	 * The identifier every version of the Woo request case type shares (the
-	 * version chain is read by identifier).
-	 *
-	 * @var string
-	 */
-	public const CASE_TYPE_IDENTIFIER = 'woo-verzoek';
+class WooRequestIntake implements WooRequestIntakeInterface {
 
 	/**
 	 * The case object type of a publication from a dossier.
@@ -139,7 +127,7 @@ class WooRequestIntake {
 	 * @param SystemCaseStore|null $cases Writes the case as the system and announces it; the
 	 *                                    container hands it the announcer. A store that cannot
 	 *                                    announce when null.
-	 * @param CollectionLinkQueue|null $linkQueue Links a dossier to its case after the case is
+	 * @param CollectionLinkQueueInterface|null $linkQueue Links a dossier to its case after the case is
 	 *                                            answered (REQ-PSM-002); linked inline when null.
 	 */
 	public function __construct(
@@ -149,7 +137,7 @@ class WooRequestIntake {
 		private readonly ?WooReceivedTerm $receivedTerm = null,
 		private readonly ?WooReceivedAnswers $receivedAnswers = null,
 		?SystemCaseStore $cases = null,
-		private readonly ?CollectionLinkQueue $linkQueue = null,
+		private readonly ?CollectionLinkQueueInterface $linkQueue = null,
 	) {
 		$this->cases       = ($cases ?? new SystemCaseStore(settingsService: $settingsService, logger: $logger));
 		$this->collections = new CollectionCaseLinks(settingsService: $settingsService, urlGenerator: $urlGenerator, logger: $logger);

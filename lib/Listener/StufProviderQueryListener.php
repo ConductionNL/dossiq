@@ -40,9 +40,9 @@ namespace OCA\Dossiq\Listener;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseObjectReaderInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
-use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
+use OCA\Dossiq\Kernel\Contracts\StufRegisterAccessInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -67,15 +67,15 @@ class StufProviderQueryListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param StufRegisterAccess $register  The stufEndpoint rows.
+	 * @param StufRegisterAccessInterface $register  The stufEndpoint rows.
 	 * @param SettingsServiceInterface    $settings  The register and case schema.
-	 * @param CaseObjectReader   $caseTypes Reads a case type for its catalogue identifier.
+	 * @param CaseObjectReaderInterface   $caseTypes Reads a case type for its catalogue identifier.
 	 * @param LoggerInterface    $logger    The logger.
 	 */
 	public function __construct(
-		private readonly StufRegisterAccess $register,
+		private readonly StufRegisterAccessInterface $register,
 		private readonly SettingsServiceInterface $settings,
-		private readonly CaseObjectReader $caseTypes,
+		private readonly CaseObjectReaderInterface $caseTypes,
 		private readonly LoggerInterface $logger,
 	) {
 
@@ -197,7 +197,7 @@ class StufProviderQueryListener implements IEventListener {
 			return null;
 		}
 
-		return $this->register->findOne(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: ['integriqSource' => $sourceId]);
+		return $this->register->findOne(schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT, filters: ['integriqSource' => $sourceId]);
 	}//end endpointFor()
 
 	/**

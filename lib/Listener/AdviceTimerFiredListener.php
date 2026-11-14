@@ -35,8 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\AdviceServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\AdviceTimerInterface;
 use OCA\Dossiq\Listener\Support\TimerFire;
-use OCA\Dossiq\Service\Advice\AdviceTimer;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
@@ -80,7 +80,7 @@ class AdviceTimerFiredListener implements IEventListener {
 			return;
 		}
 
-		$metadata = TimerFire::metadataFrom(event: $event, source: AdviceTimer::METADATA_SOURCE);
+		$metadata = TimerFire::metadataFrom(event: $event, source: AdviceTimerInterface::METADATA_SOURCE);
 		$adviceId = (string) ($metadata['adviceId'] ?? '');
 		if ($metadata === null || $adviceId === '') {
 			return;
