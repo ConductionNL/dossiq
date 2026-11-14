@@ -105,13 +105,15 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 		?string $label = null,
 	): array {
 		return $this->mint(
-			userId: $userId,
-			subjectType: 'object',
-			subjectId: $caseId,
-			capabilities: $capabilities,
-			expiresAt: $expiresAt,
-			password: $password,
-			label: $label
+			request: new AccessLinkRequest(
+				userId: $userId,
+				subjectType: 'object',
+				subjectId: $caseId,
+				capabilities: $capabilities,
+				expiresAt: $expiresAt,
+				password: $password,
+				label: $label
+			)
 		);
 	}//end mintCaseLink()
 
@@ -148,13 +150,15 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 		}
 
 		return $this->mint(
-			userId: $userId,
-			subjectType: 'file',
-			subjectId: $caseId . '/' . $fileId,
-			capabilities: ['read'],
-			expiresAt: $expiresAt,
-			password: $password,
-			label: $label
+			request: new AccessLinkRequest(
+				userId: $userId,
+				subjectType: 'file',
+				subjectId: $caseId . '/' . $fileId,
+				capabilities: ['read'],
+				expiresAt: $expiresAt,
+				password: $password,
+				label: $label
+			)
 		);
 	}//end mintFileLink()
 
@@ -347,28 +351,15 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 	/**
 	 * Mint one link, whatever its subject.
 	 *
-	 * @param string $userId The principal minting it.
-	 * @param string $subjectType `object` or `file`.
-	 * @param string $subjectId The subject.
-	 * @param array<int, string> $capabilities What the holder may do.
-	 * @param string|null $expiresAt When the link stops answering.
-	 * @param string|null $password An optional password.
-	 * @param string|null $label What the link is called.
+	 * @param AccessLinkRequest $request Who mints it, what it opens, what the holder may do and its terms.
 	 *
 	 * @return array<string, mixed> The link row plus its url, or an error array.
 	 *
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
-	private function mint(
-		string $userId,
-		string $subjectType,
-		string $subjectId,
-		array $capabilities,
-		?string $expiresAt,
-		?string $password,
-		?string $label,
-	): array {
-		$prepared = $this->mintServiceAndCapabilities(capabilities: $capabilities);
+	private function mint(AccessLinkRequest $request): array {
+		$subjectType = $request->subjectType;
+		$prepared = $this->mintServiceAndCapabilities(capabilities: $request->capabilities);
 		if (isset($prepared['error']) === true) {
 			return $prepared;
 		}
@@ -377,13 +368,13 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 
 		try {
 			return (array)$service->mint(
-				$userId,
+				$request->userId,
 				$subjectType,
-				$subjectId,
+				$request->subjectId,
 				$declared,
-				$this->expiry(expiresAt: $expiresAt),
-				$this->trimmedOrNull(value: $password),
-				$this->trimmedOrNull(value: $label)
+				$this->expiry(expiresAt: $request->expiresAt),
+				$this->trimmedOrNull(value: $request->password),
+				$this->trimmedOrNull(value: $request->label)
 			);
 		} catch (\Throwable $failure) {
 			return $this->mintFailed(subjectType: $subjectType, failure: $failure);
