@@ -49,6 +49,8 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  * @spec openspec/specs/case-history-surface/spec.md
+ *
+ * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseEmailService implements CaseEmailServiceInterface {
 
@@ -434,10 +436,7 @@ class CaseEmailService implements CaseEmailServiceInterface {
 		string $templateId,
 		string $to,
 	): array {
-		$template = $this->repository->findTemplate(templateId: $templateId);
-		if ($template === null) {
-			throw new RuntimeException('Email template not found');
-		}
+		$template = $this->requireTemplate(templateId: $templateId);
 
 		// Load case data for variable resolution.
 		$caseData = $this->repository->loadCaseVariables(caseId: $caseId);
@@ -446,6 +445,50 @@ class CaseEmailService implements CaseEmailServiceInterface {
 		$subjectPattern = (string)($template['subjectPattern'] ?? '');
 		$bodyPattern = (string)($template['body'] ?? '');
 
+		$this->refuseUnresolvedVariables(subjectPattern: $subjectPattern, bodyPattern: $bodyPattern, caseData: $caseData);
+
+		$subject = $this->resolveVariables(template: $subjectPattern, data: $caseData);
+		$body = $this->resolveVariables(template: $bodyPattern, data: $caseData);
+
+		$category = $this->templateCategory(template: $template);
+
+		return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body, category: $category);
+	}//end sendFromTemplate()
+
+	/**
+	 * Load an email template, refusing one that does not exist.
+	 *
+	 * @param string $templateId The email template UUID
+	 *
+	 * @return array<string, mixed> The template
+	 *
+	 * @throws \RuntimeException If the template is not found
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function requireTemplate(string $templateId): array {
+		$template = $this->repository->findTemplate(templateId: $templateId);
+		if ($template === null) {
+			throw new RuntimeException('Email template not found');
+		}
+
+		return $template;
+	}//end requireTemplate()
+
+	/**
+	 * Refuse a template whose placeholders this case cannot fill.
+	 *
+	 * @param string $subjectPattern The subject pattern
+	 * @param string $bodyPattern The body pattern
+	 * @param array<string, mixed> $caseData The case variables
+	 *
+	 * @return void
+	 *
+	 * @throws \RuntimeException When a placeholder stays unresolved
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function refuseUnresolvedVariables(string $subjectPattern, string $bodyPattern, array $caseData): void {
 		// 🔴 REFUSED RATHER THAN SENT WITH A HOLE IN IT. `substituteVariables()`
 		// leaves a placeholder nothing answers exactly as it found it, which is
 		// the right call for a preview and the wrong one for a mail: the
@@ -457,14 +500,7 @@ class CaseEmailService implements CaseEmailServiceInterface {
 		// `findUnresolvedVariables()` has been sitting beside this method since
 		// both were written, asked only by the preview endpoint. This is the
 		// send path asking it.
-		$unresolved = array_values(
-			array_unique(
-				array_merge(
-					$this->findUnresolvedVariables(template: $subjectPattern, data: $caseData),
-					$this->findUnresolvedVariables(template: $bodyPattern, data: $caseData)
-				)
-			)
-		);
+		$unresolved = $this->unresolvedVariables(subjectPattern: $subjectPattern, bodyPattern: $bodyPattern, caseData: $caseData);
 
 		if ($unresolved !== []) {
 			// A RuntimeException that is not the transport sentinel becomes a
@@ -476,10 +512,40 @@ class CaseEmailService implements CaseEmailServiceInterface {
 				. ', which this case cannot fill.'
 			);
 		}
+	}//end refuseUnresolvedVariables()
 
-		$subject = $this->resolveVariables(template: $subjectPattern, data: $caseData);
-		$body = $this->resolveVariables(template: $bodyPattern, data: $caseData);
+	/**
+	 * The placeholders in subject and body that this case cannot fill.
+	 *
+	 * @param string $subjectPattern The subject pattern
+	 * @param string $bodyPattern The body pattern
+	 * @param array<string, mixed> $caseData The case variables
+	 *
+	 * @return list<string> The unresolved variable names
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function unresolvedVariables(string $subjectPattern, string $bodyPattern, array $caseData): array {
+		return array_values(
+			array_unique(
+				array_merge(
+					$this->findUnresolvedVariables(template: $subjectPattern, data: $caseData),
+					$this->findUnresolvedVariables(template: $bodyPattern, data: $caseData)
+				)
+			)
+		);
+	}//end unresolvedVariables()
 
+	/**
+	 * The message category the template declares, defaulting to a case update.
+	 *
+	 * @param array<string, mixed> $template The template
+	 *
+	 * @return string The category
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function templateCategory(array $template): string {
 		// The template says what it is; anything it does not say, or says
 		// wrongly, is a case-update and respects the opt-out. Never exempt
 		// by accident.
@@ -488,8 +554,8 @@ class CaseEmailService implements CaseEmailServiceInterface {
 			$category = CaseMailOptOut::CATEGORY_CASE_UPDATE;
 		}
 
-		return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body, category: $category);
-	}//end sendFromTemplate()
+		return $category;
+	}//end templateCategory()
 
 	/**
 	 * Resolve template variables in a string, HTML-escaping every value.
