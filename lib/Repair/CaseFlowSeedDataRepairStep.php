@@ -408,7 +408,30 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	private function seedStatuses(object $objectService, array $schemas, string $caseTypeId, array $statusTypes): int {
 		$present = array_flip($this->statuses->statusesOf(caseTypeId: $caseTypeId));
 
-		$created = 0;
+		$created = $this->createStatuses(
+			objectService: $objectService,
+			schemas: $schemas,
+			caseTypeId: $caseTypeId,
+			statuses: $this->missingStatuses(statusTypes: $statusTypes, present: $present)
+		);
+
+		$this->backfillPhases(objectService: $objectService, schemas: $schemas, caseTypeId: $caseTypeId, statusTypes: $statusTypes);
+
+		return $created;
+	}//end seedStatuses()
+
+	/**
+	 * The declared statuses with a name the case type does not have yet.
+	 *
+	 * @param array<int,mixed>   $statusTypes The statuses declared in the seed.
+	 * @param array<string, int> $present     The names the case type already has, as keys.
+	 *
+	 * @return array<int, array<string, mixed>> The statuses to create.
+	 *
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
+	 */
+	private function missingStatuses(array $statusTypes, array $present): array {
+		$missing = [];
 		foreach ($statusTypes as $status) {
 			if (is_array($status) === false) {
 				continue;
@@ -419,6 +442,27 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 				continue;
 			}
 
+			$missing[] = $status;
+		}
+
+		return $missing;
+	}//end missingStatuses()
+
+	/**
+	 * Create statuses on the case type.
+	 *
+	 * @param object                           $objectService The ObjectService.
+	 * @param array<string,string>             $schemas       Register and schema names.
+	 * @param string                           $caseTypeId    The owning case type.
+	 * @param array<int, array<string, mixed>> $statuses      The statuses to create.
+	 *
+	 * @return integer How many were created.
+	 *
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
+	 */
+	private function createStatuses(object $objectService, array $schemas, string $caseTypeId, array $statuses): int {
+		$created = 0;
+		foreach ($statuses as $status) {
 			$status['caseType'] = $caseTypeId;
 			$saved = $objectService->saveObject(
 				object: $status,
@@ -431,15 +475,8 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 			}
 		}
 
-		$this->backfillPhases(
-			objectService: $objectService,
-			schemas: $schemas,
-			caseTypeId: $caseTypeId,
-			statusTypes: $statusTypes
-		);
-
 		return $created;
-	}//end seedStatuses()
+	}//end createStatuses()
 
 	/**
 	 * Give the statuses an earlier run stored without a phase the seed's phase.
