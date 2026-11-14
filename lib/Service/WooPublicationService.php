@@ -399,7 +399,10 @@ class WooPublicationService implements WooPublicationServiceInterface {
 		$publicationId = $delivered['publicationId'];
 		$publicationUrl = $this->buildPublicationUrl(publicationId: $publicationId);
 
-		$this->saveDecisionPublication(source: $source, publicationId: $publicationId, publicationUrl: $publicationUrl, category: $payload['wooCategory']);
+		$this->saveDecisionPublication(
+			source: $source,
+			record: $this->wooPublicationRecord(publicationId: $publicationId, publicationUrl: $publicationUrl, category: $payload['wooCategory']),
+		);
 
 		$withheld = $this->caseLedger->recordWithheld(publicationId: $publicationId, assessments: $source['delivery']['assessments']);
 		$this->writePublishedCaseState(caseId: $caseId, publicationUrl: $publicationUrl, withheldNote: $withheld['note']);
@@ -418,16 +421,14 @@ class WooPublicationService implements WooPublicationServiceInterface {
 	/**
 	 * Note the publication on the decision and save it.
 	 *
-	 * @param array<string, mixed> $source         The publication source.
-	 * @param mixed                $publicationId  The publication id.
-	 * @param string               $publicationUrl The publication URL.
-	 * @param mixed                $category       The Woo category.
+	 * @param array<string, mixed> $source The publication source.
+	 * @param array<string, mixed> $record The publication record kept on the decision.
 	 *
 	 * @return void
 	 */
-	private function saveDecisionPublication(array $source, mixed $publicationId, string $publicationUrl, mixed $category): void {
+	private function saveDecisionPublication(array $source, array $record): void {
 		$decision = $source['decision'];
-		$decision['wooPublication'] = $this->wooPublicationRecord(publicationId: $publicationId, publicationUrl: $publicationUrl, category: $category);
+		$decision['wooPublication'] = $record;
 
 		$source['objectService']->saveObject(
 			object: $decision,
