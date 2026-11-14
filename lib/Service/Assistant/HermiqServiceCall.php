@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Assistant;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
 use OCP\IAppConfig;
@@ -70,8 +70,8 @@ final class HermiqServiceCall {
 	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
 	 */
 	public function credentialsFrom(IAppConfig $appConfig): array {
-		$uid = $appConfig->getValueString(Application::APP_ID, 'hermiq_service_uid', '');
-		$pwd = $appConfig->getValueString(Application::APP_ID, 'hermiq_service_app_password', '');
+		$uid = $appConfig->getValueString(AppIdentity::APP_ID, 'hermiq_service_uid', '');
+		$pwd = $appConfig->getValueString(AppIdentity::APP_ID, 'hermiq_service_app_password', '');
 
 		return [$uid, $pwd];
 	}//end credentialsFrom()
@@ -134,7 +134,7 @@ final class HermiqServiceCall {
 		if ($credentials[0] === '' || $credentials[1] === '') {
 			$this->logger->warning(
 				$this->caller . ': service-account credentials are not configured',
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			throw new HermiqAssistantException(
 				message: 'The Hermiq service-account credentials are not configured',
@@ -176,7 +176,7 @@ final class HermiqServiceCall {
 	public function unreachable(string $url, Throwable $failure): HermiqAssistantException {
 		$this->logger->warning(
 			$this->caller . ': request failed',
-			['app' => Application::APP_ID, 'url' => $url, 'error' => $failure->getMessage()]
+			['app' => AppIdentity::APP_ID, 'url' => $url, 'error' => $failure->getMessage()]
 		);
 
 		return new HermiqAssistantException(message: 'hermiq_unreachable', statusCode: 503, previous: $failure);

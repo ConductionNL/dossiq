@@ -27,26 +27,27 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Review;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\ReviewWritesInterface;
 
 /**
  * A person's writes on a review, each followed by the grants a new review needs.
  *
  * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-rule-of-the-case-reads-the-whole-case-req-cra-011
  */
-class ReviewWrites {
+class ReviewWrites implements ReviewWritesInterface {
 
 	/**
 	 * Constructor.
 	 *
 	 * @param DocumentRelevance  $reviews        The reviews.
-	 * @param CaseReviewerAccess $reviewerAccess Shares a review that was just created with the people on its case.
+	 * @param CaseReviewerAccessInterface $reviewerAccess Shares a review that was just created with the people on its case.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly DocumentRelevance $reviews,
-		private readonly CaseReviewerAccess $reviewerAccess,
+		private readonly CaseReviewerAccessInterface $reviewerAccess,
 	) {
 	}//end __construct()
 
@@ -95,6 +96,23 @@ class ReviewWrites {
 
 		return ($review + ['unseen' => $pagesSeen->unseenPages(review: $review)]);
 	}//end pagesSeen()
+
+	/**
+	 * Share every private record of a case with the people on it, after a rule of the case was stored.
+	 *
+	 * A stopping rule is private to its case (REQ-WRT-006); reconciling right
+	 * after it is stored lets the assignee the case type grants it to read and
+	 * update it in the same request.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array{status: string, granted: int, revoked: int, refused: int} What the reconcile did.
+	 *
+	 * @spec openspec/changes/woo-review-recall-and-stopping/tasks.md#1-the-stopping-rule
+	 */
+	public function ruleStored(string $caseId): array {
+		return $this->reviewerAccess->reconcile(caseId: $caseId);
+	}//end ruleStored()
 
 	/**
 	 * Whether the document has no review yet, so the write about to happen creates one.

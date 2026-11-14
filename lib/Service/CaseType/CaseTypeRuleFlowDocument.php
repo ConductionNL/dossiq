@@ -24,7 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+
 
 /**
  * Builds a guarded flow: object trigger, filter, the action's step, end.
@@ -127,7 +128,7 @@ class CaseTypeRuleFlowDocument {
 			'name' => $scope->caseTypeTitle . ': ' . $this->nameOf(rule: $rule),
 			'description' => 'Projected from rule "' . $ruleId . '" of case type ' . $scope->caseTypeTitle
 				. ' when the case type was published. Edit the rule on the case type, not this flow.',
-			'app' => Application::APP_ID,
+			'app' => AppIdentity::APP_ID,
 			'enabled' => true,
 			'executionMode' => 'async',
 			'notes' => $this->marker(caseTypeId: $scope->caseTypeId, ruleId: $ruleId),

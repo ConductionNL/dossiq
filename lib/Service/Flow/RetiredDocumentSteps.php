@@ -33,7 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+
 
 /**
  * Builds `filinq.generate-document` steps from retired document steps.
@@ -173,7 +174,7 @@ class RetiredDocumentSteps {
 				'template' => $this->text(text: $write['text']),
 				'storeFile' => false,
 				'targetField' => $write['targetField'],
-				'requestingApp' => Application::APP_ID,
+				'requestingApp' => AppIdentity::APP_ID,
 				'output' => $this->output(config: $config),
 			],
 		];
@@ -206,7 +207,7 @@ class RetiredDocumentSteps {
 				'filename' => $this->syntax->forDocument(template: $title, what: 'document name'),
 				'format' => self::FILED_FORMAT,
 				'storeFile' => true,
-				'requestingApp' => Application::APP_ID,
+				'requestingApp' => AppIdentity::APP_ID,
 				'output' => $output,
 				'metadata' => [
 					self::METADATA_TYPE => $documentType,

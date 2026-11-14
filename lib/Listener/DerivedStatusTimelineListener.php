@@ -46,9 +46,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Service\Status\DerivedStatusJournal;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCA\Dossiq\Service\Timeline\StatusDisplayName;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -67,19 +68,27 @@ use Throwable;
 class DerivedStatusTimelineListener implements IEventListener {
 
 	/**
+	 * The name a status is shown under.
+	 *
+	 * @var StatusDisplayName
+	 */
+	private readonly StatusDisplayName $statusNames;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param DerivedStatusJournal $journal  What the derivation staged this request.
-	 * @param CaseTimeline         $timeline The one seam that writes a timeline entry.
+	 * @param CaseTimelineInterface         $timeline The one seam that writes a timeline entry.
 	 * @param StatusTypeLookup     $statuses Resolves a statusType id to its name.
 	 * @param LoggerInterface      $logger   Structured logger.
 	 */
 	public function __construct(
 		private readonly DerivedStatusJournal $journal,
-		private readonly CaseTimeline $timeline,
+		private readonly CaseTimelineInterface $timeline,
 		private readonly StatusTypeLookup $statuses,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->statusNames = new StatusDisplayName(statuses: $statuses);
 	}//end __construct()
 
 	/**
@@ -180,7 +189,7 @@ class DerivedStatusTimelineListener implements IEventListener {
 
 		$this->timeline->record(
 			caseId: $caseId,
-			kind: TimelineKinds::STATUS_CHANGE,
+			kind: TimelineKindsInterface::STATUS_CHANGE,
 			message: $message,
 			fields: [
 				'from' => $staged['from'],
@@ -217,10 +226,10 @@ class DerivedStatusTimelineListener implements IEventListener {
 
 		$publicLabel = $this->publicLabel(statusTypeId: $staged['to']);
 		if ($publicLabel !== '') {
-			return ['Status: ' . $publicLabel, CaseTimeline::PUBLIC_ENTRY];
+			return ['Status: ' . $publicLabel, CaseTimelineInterface::PUBLIC_ENTRY];
 		}
 
-		return [$message, CaseTimeline::INTERNAL];
+		return [$message, CaseTimelineInterface::INTERNAL];
 	}//end announcement()
 
 	/**
@@ -255,21 +264,7 @@ class DerivedStatusTimelineListener implements IEventListener {
 	 * @return string The name, the id, or '' when nothing was asked for.
 	 */
 	private function statusName(string $statusTypeId): string {
-		if ($statusTypeId === '') {
-			return '';
-		}
-
-		try {
-			$name = trim($this->statuses->nameFor(statusTypeId: $statusTypeId));
-		} catch (Throwable $e) {
-			$name = '';
-		}
-
-		if ($name === '') {
-			return $statusTypeId;
-		}
-
-		return $name;
+		return $this->statusNames->of(statusTypeId: $statusTypeId);
 	}//end statusName()
 
 	/**

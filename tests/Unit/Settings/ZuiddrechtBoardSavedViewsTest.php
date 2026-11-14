@@ -149,4 +149,41 @@ class ZuiddrechtBoardSavedViewsTest extends TestCase {
 		ksort($default);
 		$this->assertSame(expected: $default, actual: $this->conditions(view: $view));
 	}//end testAnoukSharesTheWooTeamView()
+
+	/**
+	 * Marleen shares "Te beoordelen deze week" read-only with Team Vergunningen
+	 * (case-views-shared-with-a-team task 4): the team's open cases due within
+	 * seven days, shared with the group the view filters on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-views-shared-with-a-team/specs/case-search-and-lists/spec.md#requirement-a-saved-case-view-can-be-shared-with-a-team-req-csl-share-01
+	 */
+	public function testMarleenSharesTheVergunningenWeekView(): void {
+		$views = $this->views();
+		$this->assertArrayHasKey(key: 'marleen-te-beoordelen-deze-week', array: $views);
+
+		$view = $views['marleen-te-beoordelen-deze-week'];
+		$this->assertSame(expected: 'Te beoordelen deze week', actual: $view['name']);
+		$this->assertSame(expected: '{{cast:marleen.uid}}', actual: $view['owner']);
+		$this->assertFalse(condition: $view['isPublic']);
+		$this->assertSame(expected: [['group' => '{{cast:vergunningen.gid}}', 'mode' => 'read']], actual: $view['sharedWith']);
+		$this->assertSame(expected: 'dossiq/case', actual: $view['query']['scope']);
+		$this->assertSame(
+			expected: [
+				'assignedGroup' => '{{cast:vergunningen.gid}}',
+				'deadline[gte]' => '@today',
+				'deadline[lt]' => '@today+7d',
+				'isDraft' => false,
+				'isFinalStatus' => false,
+				'statusHiddenInLists' => false,
+			],
+			actual: $this->conditions(view: $view)
+		);
+		$this->assertSame(
+			expected: $view['sharedWith'][0]['group'],
+			actual: $view['query']['filters']['assignedGroup'],
+			message: 'the view is shared with the team whose cases it lists'
+		);
+	}//end testMarleenSharesTheVergunningenWeekView()
 }//end class

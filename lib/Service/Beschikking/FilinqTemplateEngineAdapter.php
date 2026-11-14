@@ -50,7 +50,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\IUserSession;
@@ -164,7 +164,7 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Filinq refused a beschikking render',
-				['app' => Application::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('filinq_render_failed: ' . $e->getMessage(), 0, $e);
 		}
@@ -227,7 +227,7 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Filinq does not know the beschikking template',
-				['app' => Application::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('filinq_template_unknown: ' . $templateId, 0, $e);
 		}
@@ -279,7 +279,7 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Filinq could not list the versions of a beschikking template',
-				['app' => Application::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -366,7 +366,7 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		if ($register === '' || $schema === '') {
 			$this->logger->warning(
 				'Rendering a beschikking without the case object: register or case_schema is unset',
-				['app' => Application::APP_ID, 'caseId' => $caseId]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId]
 			);
 			return [];
 		}

@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Catalogue;
 
+use OCA\Dossiq\Kernel\Contracts\ObjectTypeCatalogueInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IL10N;
@@ -43,7 +44,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
  */
-class ObjectTypeCatalogue {
+class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 
 	use SearchesObjects;
 

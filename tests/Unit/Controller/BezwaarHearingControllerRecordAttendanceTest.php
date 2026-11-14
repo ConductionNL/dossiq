@@ -54,6 +54,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Hearing\NewSession
  * @uses \OCA\Dossiq\Service\Hearing\SessionPatch
  * @uses \OCA\Dossiq\Service\Hearing\SessionStore
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 final class BezwaarHearingControllerRecordAttendanceTest extends TestCase {
 	use MakesBezwaarAuditTrail;

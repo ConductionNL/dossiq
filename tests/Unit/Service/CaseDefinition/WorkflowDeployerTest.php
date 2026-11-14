@@ -36,6 +36,8 @@ use ZipArchive;
  * Characterisation tests for WorkflowDeployer::deploy().
  *
  * @covers \OCA\Dossiq\Service\CaseDefinition\WorkflowDeployer
+ * @uses \OCA\Dossiq\Service\CaseDefinition\RowTarget
+ * @uses \OCA\Dossiq\Service\CaseDefinition\WorkflowEntry
  */
 class WorkflowDeployerTest extends TestCase {
 

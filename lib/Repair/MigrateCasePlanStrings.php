@@ -45,11 +45,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\CasePlanGoalsInterface;
+use OCA\Dossiq\Kernel\Contracts\CasePlanInterventionsInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SociaalDomeinStoreInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
-use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
-use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\StoredArray;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -97,13 +98,13 @@ class MigrateCasePlanStrings implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SociaalDomeinStore $store           The one reader and writer of these schemas.
-	 * @param SettingsService    $settingsService The object service the elevation runs on.
+	 * @param SociaalDomeinStoreInterface $store           The one reader and writer of these schemas.
+	 * @param SettingsServiceInterface    $settingsService The object service the elevation runs on.
 	 * @param LoggerInterface    $logger          The logger.
 	 */
 	public function __construct(
-		private readonly SociaalDomeinStore $store,
-		private readonly SettingsService $settingsService,
+		private readonly SociaalDomeinStoreInterface $store,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -193,7 +194,7 @@ class MigrateCasePlanStrings implements IRepairStep {
 
 		foreach ($this->textsOf(plan: $plan, key: 'goals') as $text) {
 			$this->store->write(
-				schema: CasePlanGoals::SCHEMA,
+				schema: CasePlanGoalsInterface::SCHEMA,
 				object: [
 					'plan' => $planId,
 					'title' => $text,
@@ -208,7 +209,7 @@ class MigrateCasePlanStrings implements IRepairStep {
 
 		foreach ($this->textsOf(plan: $plan, key: 'deploymentTrajectories') as $text) {
 			$this->store->write(
-				schema: CasePlanInterventions::SCHEMA,
+				schema: CasePlanInterventionsInterface::SCHEMA,
 				object: [
 					'plan' => $planId,
 					'title' => $text,
@@ -239,7 +240,7 @@ class MigrateCasePlanStrings implements IRepairStep {
 	 * @return boolean True when it has been migrated.
 	 */
 	private function alreadyMigrated(string $planId): bool {
-		foreach ([CasePlanGoals::SCHEMA, CasePlanInterventions::SCHEMA] as $schema) {
+		foreach ([CasePlanGoalsInterface::SCHEMA, CasePlanInterventionsInterface::SCHEMA] as $schema) {
 			foreach ($this->store->rows(schema: $schema, filters: ['plan' => $planId]) as $row) {
 				if (trim((string)($row['migratedFrom'] ?? '')) !== '') {
 					return true;
@@ -259,18 +260,7 @@ class MigrateCasePlanStrings implements IRepairStep {
 	 * @return array<int, string> The texts, in the order they were written.
 	 */
 	private function textsOf(array $plan, string $key): array {
-		$raw = ($plan[$key] ?? []);
-		if (is_string($raw) === true && trim($raw) !== '') {
-			$decoded = json_decode($raw, true);
-			$raw = [];
-			if (is_array($decoded) === true) {
-				$raw = $decoded;
-			}
-		}
-
-		if (is_array($raw) === false) {
-			return [];
-		}
+		$raw = StoredArray::from(value: ($plan[$key] ?? []));
 
 		$texts = [];
 		foreach ($raw as $value) {

@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Custody;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseCustodyChainInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseCustodyChain {
+class CaseCustodyChain implements CaseCustodyChainInterface {
 
 	use SearchesObjects;
 
@@ -121,7 +122,7 @@ class CaseCustodyChain {
 		$move->handler = $handler;
 		$move->reason = $reason;
 		$move->movedBy = $movedBy;
-		$move->at = $movedAt;
+		$move->movedAt = $movedAt;
 
 		return $this->moveCase(move: $move);
 	}//end move()
@@ -142,7 +143,7 @@ class CaseCustodyChain {
 	 */
 	public function moveCase(CustodyMove $move): array {
 		$caseId = $this->requireCaseId(move: $move);
-		$moment = $this->moment(candidate: $move->at);
+		$moment = $this->moment(candidate: $move->movedAt);
 		$previous = $this->openHoldingFor(caseId: $caseId);
 		$sequence = $this->sequenceAfter(previous: $previous);
 
@@ -243,7 +244,7 @@ class CaseCustodyChain {
 		string $movedBy,
 	): ?array {
 		$move = new CustodyMove();
-		$move->at = $from;
+		$move->movedAt = $from;
 		$move->caseId = $caseId;
 		$move->organisationUnit = $organisationUnit;
 		$move->handler = $handler;
@@ -270,7 +271,7 @@ class CaseCustodyChain {
 			return null;
 		}
 
-		return $this->write(holding: $move->openHolding(from: $this->moment(candidate: $move->at), sequence: 1), uuid: null);
+		return $this->write(holding: $move->openHolding(from: $this->moment(candidate: $move->movedAt), sequence: 1), uuid: null);
 	}//end beginCase()
 
 	/**

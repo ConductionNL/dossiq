@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller\Support;
 
-use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -107,11 +107,11 @@ final class ApplicatieRules {
 	/**
 	 * Constructor.
 	 *
-	 * @param ZgwService $zgwService The shared ZGW service, for the consumer mapper.
+	 * @param ZgwServiceInterface $zgwService The shared ZGW service, for the consumer mapper.
 	 * @param IL10N      $l10n       The localization service.
 	 */
 	public function __construct(
-		private readonly ZgwService $zgwService,
+		private readonly ZgwServiceInterface $zgwService,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()

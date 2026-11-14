@@ -79,6 +79,7 @@ interface DrcEioUpdateObjectServiceStub {
  *
  * @uses \OCA\Dossiq\Controller\ZgwController
  * @uses \OCA\Dossiq\Support\NormalisesObjectRows
+ * @uses \OCA\Dossiq\Controller\EioUpdateRun
  */
 class DrcEioUpdateGoldenTest extends TestCase {
 

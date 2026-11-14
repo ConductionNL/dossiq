@@ -39,7 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Advice;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -96,7 +96,7 @@ class AdviceRepository {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to load advice: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}
@@ -136,7 +136,7 @@ class AdviceRepository {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to fetch advice for case: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return [];
 		}
@@ -172,7 +172,7 @@ class AdviceRepository {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to load open advice: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return [];
 		}
@@ -214,7 +214,7 @@ class AdviceRepository {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to transition advice status: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			throw new RuntimeException('Could not update advice request');
 		}
@@ -232,17 +232,6 @@ class AdviceRepository {
 	 * @spec openspec/specs/advice-management/spec.md
 	 */
 	public function normalize(mixed $result): array {
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		if (is_object($result) === true && method_exists($result, 'jsonSerialize') === true) {
-			$data = $result->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return [];
+		return ($this->objectToArrayOrNull(value: $result) ?? []);
 	}//end normalize()
 }//end class

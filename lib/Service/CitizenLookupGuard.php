@@ -71,6 +71,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CitizenLookupGuardInterface;
 use OCP\IGroupManager;
 use OCP\IUser;
 use Throwable;
@@ -80,7 +81,7 @@ use Throwable;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class CitizenLookupGuard {
+class CitizenLookupGuard implements CitizenLookupGuardInterface {
 
 	/**
 	 * Groups whose members may resolve a citizen identifier.

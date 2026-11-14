@@ -35,7 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Settings;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -159,7 +159,7 @@ class ConfigurationImport {
 
 		try {
 			$importResult = $configurationService->importFromApp(
-				appId: Application::APP_ID,
+				appId: AppIdentity::APP_ID,
 				data: $configData,
 				version: $configVersion,
 				force: $force,

@@ -18,6 +18,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Pins the translation of each rights row key.
+ *
+ * @covers \OCA\Dossiq\Service\Access\CaseTypeRightsMatrixRows
  */
 class CaseTypeRightsMatrixRowsTest extends TestCase {
 

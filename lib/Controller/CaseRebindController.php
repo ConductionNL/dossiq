@@ -40,8 +40,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\CaseCaller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseRebindService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseRebindServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -68,8 +68,8 @@ class CaseRebindController extends Controller {
 	 *
 	 * @param string            $appName     The app name.
 	 * @param IRequest          $request     The request.
-	 * @param CaseRebindService $rebind      The act itself.
-	 * @param CaseAccessGuard   $accessGuard Per-case authorization, failing closed.
+	 * @param CaseRebindServiceInterface $rebind      The act itself.
+	 * @param CaseAccessGuardInterface   $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession      $userSession The session.
 	 * @param LoggerInterface   $logger      The logger.
 	 *
@@ -80,8 +80,8 @@ class CaseRebindController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseRebindService $rebind,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseRebindServiceInterface $rebind,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

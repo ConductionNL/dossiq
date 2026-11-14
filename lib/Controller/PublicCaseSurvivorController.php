@@ -39,8 +39,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseMergeService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseMergeServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -67,15 +68,15 @@ class PublicCaseSurvivorController extends Controller {
 	 *
 	 * @param string           $appName         The app name.
 	 * @param IRequest         $request         The HTTP request.
-	 * @param CaseMergeService $mergeService    Follows `mergedInto` to its end.
-	 * @param SettingsService  $settingsService Register ids and OpenRegister's services.
+	 * @param CaseMergeServiceInterface $mergeService    Follows `mergedInto` to its end.
+	 * @param SettingsServiceInterface  $settingsService Register ids and OpenRegister's services.
 	 * @param LoggerInterface  $logger          Logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseMergeService $mergeService,
-		private readonly SettingsService $settingsService,
+		private readonly CaseMergeServiceInterface $mergeService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -210,18 +211,7 @@ class PublicCaseSurvivorController extends Controller {
 	 * @return array<string, mixed>|null The array, or null.
 	 */
 	private function asArrayOrNull(mixed $value): ?array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
+		return SerialisedResult::rowOf(value: $value);
 	}//end asArrayOrNull()
 
 	/**

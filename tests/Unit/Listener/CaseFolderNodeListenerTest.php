@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\CaseFolderNodeListener;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;

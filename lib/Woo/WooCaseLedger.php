@@ -28,10 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WithheldListRecorderInterface;
 use OCA\Dossiq\Service\Publication\WithheldEntries;
-use OCA\Dossiq\Service\Publication\WithheldListRecorder;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
@@ -54,18 +54,18 @@ class WooCaseLedger {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register, schemas and OpenRegister.
+	 * @param SettingsServiceInterface $settingsService Register, schemas and OpenRegister.
 	 * @param LoggerInterface $logger          Logger.
 	 * @param IURLGenerator|null $urlGenerator Makes the publication link absolute.
 	 * @param WooDeliveredSetWriter|null $deliveredSets Records what each delivery sent out (woo-delivered-set-is-a-record).
-	 * @param WithheldListRecorder|null $withheldRecorder Records what a publication withheld in opencatalogi.
+	 * @param WithheldListRecorderInterface|null $withheldRecorder Records what a publication withheld in opencatalogi.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ?IURLGenerator $urlGenerator = null,
 		private readonly ?WooDeliveredSetWriter $deliveredSets = null,
-		private readonly ?WithheldListRecorder $withheldRecorder = null,
+		private readonly ?WithheldListRecorderInterface $withheldRecorder = null,
 	) {
 	}//end __construct()
 
@@ -88,7 +88,7 @@ class WooCaseLedger {
 	 */
 	public function recordWithheld(string $publicationId, array $assessments): array {
 		if ($this->withheldRecorder === null) {
-			return ['record' => ['status' => 'not-recorded', 'reason' => WithheldListRecorder::REASON_TOO_OLD], 'note' => ''];
+			return ['record' => ['status' => 'not-recorded', 'reason' => WithheldListRecorderInterface::REASON_TOO_OLD], 'note' => ''];
 		}
 
 		$record = $this->withheldRecorder->record(
@@ -141,7 +141,7 @@ class WooCaseLedger {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'WooPublicationService: the delivered set could not record the withdraw',
-				['app' => Application::APP_ID, 'publicationId' => $publicationId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'publicationId' => $publicationId, 'error' => $e->getMessage()]
 			);
 		}
 	}//end markWithdrawn()
@@ -235,7 +235,7 @@ class WooCaseLedger {
 			// The decision holds the truth; the case mirror is corrected by the next write.
 			$this->logger->warning(
 				'WooPublicationService: the case could not show its publication state',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 		}
 	}//end writeCaseState()

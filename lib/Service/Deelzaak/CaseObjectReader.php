@@ -33,7 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Deelzaak;
 
+use OCA\Dossiq\Kernel\Contracts\CaseObjectReaderInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -41,7 +43,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/deelzaak-support/spec.md
  */
-class CaseObjectReader {
+class CaseObjectReader implements CaseObjectReaderInterface {
 	/**
 	 * Constructor.
 	 *
@@ -165,18 +167,6 @@ class CaseObjectReader {
 	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	private function toArray(mixed $obj): ?array {
-		if ($obj === null) {
-			return null;
-		}
-
-		if (is_object($obj) === true && method_exists($obj, 'jsonSerialize') === true) {
-			$obj = $obj->jsonSerialize();
-		}
-
-		if (is_array($obj) === true) {
-			return $obj;
-		}
-
-		return null;
+		return SerialisedResult::rowOf(value: $obj);
 	}//end toArray()
 }//end class

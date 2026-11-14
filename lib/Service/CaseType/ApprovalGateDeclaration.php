@@ -42,6 +42,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Service\Support\RowList;
+
 /**
  * Reads the approval gates a case type declares, and the references a case carries.
  *
@@ -226,25 +228,6 @@ final class ApprovalGateDeclaration {
 	 * @return array<int, array<string, mixed>> The rows, non-arrays dropped.
 	 */
 	private static function rowsOf(mixed $value): array {
-		if (is_string($value) === true) {
-			$decoded = json_decode($value, true);
-			$value = [];
-			if (is_array($decoded) === true) {
-				$value = $decoded;
-			}
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$rows = [];
-		foreach ($value as $row) {
-			if (is_array($row) === true) {
-				$rows[] = $row;
-			}
-		}
-
-		return $rows;
+		return RowList::from(value: $value);
 	}//end rowsOf()
 }//end class

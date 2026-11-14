@@ -31,12 +31,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseDocumentProvenanceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCollectionInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use RuntimeException;
 
 /**
@@ -44,7 +45,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-collection-is-reported-per-custodian-and-system-req-wrc-002
  */
-class WooCollection {
+class WooCollection implements WooCollectionInterface {
 
 	use SearchesObjects;
 
@@ -61,22 +62,22 @@ class WooCollection {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService              $settingsService The register and the exclusion schema.
+	 * @param SettingsServiceInterface              $settingsService The register and the exclusion schema.
 	 * @param WooCaseDocuments             $caseDocuments   Which documents are on the case.
-	 * @param DocumentRecordStore          $store           A document's record and its join to the case.
-	 * @param WOODocumentAssessmentService $assessments     Whether a document is assessed.
+	 * @param DocumentRecordStoreInterface          $store           A document's record and its join to the case.
+	 * @param WOODocumentAssessmentServiceInterface $assessments     Whether a document is assessed.
 	 * @param WooSearchPlans               $plans           The plan's custodians and systems.
-	 * @param CaseDocumentProvenance       $provenance      Where each document was found.
-	 * @param CaseReviewerAccess           $access          The read a count makes, and the grants of a new exclusion.
+	 * @param CaseDocumentProvenanceInterface       $provenance      Where each document was found.
+	 * @param CaseReviewerAccessInterface           $access          The read a count makes, and the grants of a new exclusion.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly WooCaseDocuments $caseDocuments,
-		private readonly DocumentRecordStore $store,
-		private readonly WOODocumentAssessmentService $assessments,
+		private readonly DocumentRecordStoreInterface $store,
+		private readonly WOODocumentAssessmentServiceInterface $assessments,
 		private readonly WooSearchPlans $plans,
-		private readonly CaseDocumentProvenance $provenance,
-		private readonly CaseReviewerAccess $access,
+		private readonly CaseDocumentProvenanceInterface $provenance,
+		private readonly CaseReviewerAccessInterface $access,
 	) {
 	}//end __construct()
 
@@ -85,9 +86,11 @@ class WooCollection {
 	 *
 	 * @param string $caseId The case uuid.
 	 *
-	 * @return array<string, mixed> `{custodians, systems, exclusions, arrived, assessed, excluded, outstanding}`.
+	 * @return array<string, mixed> `{custodians, systems, exclusions, arrived, assessed, excluded, outstanding,
+	 *         documents, conversations, threads}`.
 	 *
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-collection-is-reported-per-custodian-and-system-req-wrc-002
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-every-exclusion-before-review-is-kept-with-its-reason-req-wrc-003
 	 */
 	public function report(string $caseId): array {
@@ -130,6 +133,8 @@ class WooCollection {
 		$excludedOnCase = count(array_intersect_key($excludedDocs, array_flip($documentIds)));
 		$arrived = (count($documentIds) + $neverArrived);
 
+		$conversations = $this->conversations(caseId: $caseId);
+
 		return [
 			'custodians' => $this->listed(groups: $custodians, key: 'custodian'),
 			'systems' => $this->listed(groups: $systems, key: 'system'),
@@ -138,8 +143,46 @@ class WooCollection {
 			'assessed' => $assessed,
 			'excluded' => ($excludedOnCase + $neverArrived),
 			'outstanding' => (count($documentIds) - $excludedOnCase - $assessed),
+			'documents' => count($documentIds),
+			'conversations' => count($conversations),
+			'threads' => $conversations,
 		];
 	}//end report()
+
+	/**
+	 * The collected mails grouped by conversation, each conversation's messages in date order.
+	 *
+	 * A message without a date sorts after the dated ones; ties keep the document id order.
+	 * Conversations are listed by their first message.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return list<array{threadId: string, messages: list<array{documentId: string, sentAt: string}>}>
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
+	 */
+	private function conversations(string $caseId): array {
+		$grouped = [];
+		foreach ($this->provenance->threadsForCase(caseId: $caseId) as $documentId => $thread) {
+			$grouped[$thread['threadId']][] = ['documentId' => (string)$documentId, 'sentAt' => $thread['sentAt']];
+		}
+
+		$byDate = static fn (array $one, array $other): int => [($one['sentAt'] === ''), $one['sentAt'], $one['documentId']]
+			<=> [($other['sentAt'] === ''), $other['sentAt'], $other['documentId']];
+
+		$conversations = [];
+		foreach ($grouped as $threadId => $messages) {
+			usort($messages, $byDate);
+			$conversations[] = ['threadId' => (string)$threadId, 'messages' => $messages];
+		}
+
+		usort(
+			$conversations,
+			static fn (array $one, array $other): int => $byDate($one['messages'][0], $other['messages'][0])
+		);
+
+		return $conversations;
+	}//end conversations()
 
 	/**
 	 * Set a document on the case aside before review.

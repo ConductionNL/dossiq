@@ -28,8 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller\Support;
 
-use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
-use OCA\Dossiq\Service\ComplaintService;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ComplaintServiceInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 
@@ -43,12 +43,12 @@ final class ComplaintMutationGate {
 	/**
 	 * Constructor.
 	 *
-	 * @param ComplaintAccessGuard $accessGuard      Shared complaint authorization guard.
-	 * @param ComplaintService     $complaintService Reads the complaint.
+	 * @param ComplaintAccessGuardInterface $accessGuard      Shared complaint authorization guard.
+	 * @param ComplaintServiceInterface     $complaintService Reads the complaint.
 	 */
 	public function __construct(
-		private readonly ComplaintAccessGuard $accessGuard,
-		private readonly ComplaintService $complaintService,
+		private readonly ComplaintAccessGuardInterface $accessGuard,
+		private readonly ComplaintServiceInterface $complaintService,
 	) {
 	}//end __construct()
 

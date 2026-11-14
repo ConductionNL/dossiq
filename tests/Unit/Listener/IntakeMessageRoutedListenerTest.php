@@ -103,6 +103,7 @@ interface ChannelIntakeObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Intake\MessageFacts
  * @uses \OCA\Dossiq\Service\CommunicationChannel
+ * @uses \OCA\Dossiq\Listener\Support\EventGetters
  */
 class IntakeMessageRoutedListenerTest extends TestCase {
 

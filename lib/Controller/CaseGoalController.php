@@ -29,12 +29,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Pause\PauseReasonReader;
-use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CasePlanGoalsInterface;
+use OCA\Dossiq\Kernel\Contracts\PauseReasonReaderInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -58,20 +58,20 @@ class CaseGoalController extends Controller {
 	 *
 	 * @param IRequest          $request         Inbound request.
 	 * @param IUserSession      $userSession     Current user session.
-	 * @param CaseAccessGuard   $caseAccessGuard Per-case authorization (fails closed).
-	 * @param CasePlanGoals     $goals           The goal store's rules.
-	 * @param PauseReasonReader $caseTypes       The one walk from a case to its case type.
+	 * @param CaseAccessGuardInterface   $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CasePlanGoalsInterface     $goals           The goal store's rules.
+	 * @param PauseReasonReaderInterface $caseTypes       The one walk from a case to its case type.
 	 * @param LoggerInterface   $logger          Logger.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
-		private readonly CasePlanGoals $goals,
-		private readonly PauseReasonReader $caseTypes,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
+		private readonly CasePlanGoalsInterface $goals,
+		private readonly PauseReasonReaderInterface $caseTypes,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -151,6 +151,46 @@ class CaseGoalController extends Controller {
 			return $this->broke(op: 'case-goal-save', e: $e);
 		}
 	}//end create()
+
+	/**
+	 * Close one of the case's goals as met, not met or withdrawn, with what was seen.
+	 *
+	 * The caller must be allowed to update the case, checked before the store
+	 * is touched; a goal of another case is answered as not found.
+	 *
+	 * @param string $caseId Case UUID.
+	 * @param string $goalId Goal UUID.
+	 *
+	 * @return JSONResponse The closed goal, or the refusal.
+	 *
+	 * @spec openspec/changes/case-goals/tasks.md#2.1
+	 */
+	#[NoAdminRequired]
+	public function close(string $caseId, string $goalId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['message' => 'access_denied'], Http::STATUS_FORBIDDEN);
+		}
+
+		try {
+			return new JSONResponse(
+				$this->goals->closeOfCase(
+					caseId: $caseId,
+					goalId: $goalId,
+					state: (string)$this->request->getParam('state', ''),
+					observation: (string)$this->request->getParam('observation', ''),
+				)
+			);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'case-goal-close', e: $e);
+		} catch (Throwable $e) {
+			return $this->broke(op: 'case-goal-close', e: $e);
+		}
+	}//end close()
 
 	/**
 	 * A failure that is not a refusal, logged and answered as one.

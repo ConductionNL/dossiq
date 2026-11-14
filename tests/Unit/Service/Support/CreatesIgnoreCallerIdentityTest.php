@@ -151,6 +151,11 @@ class ObjectNamingStore {
  * @uses \OCA\Dossiq\Service\Bezwaar\DecisionValidator
  * @uses \OCA\Dossiq\Service\Subsidie\StaatssteunClassifier
  * @uses \OCA\Dossiq\Service\Subsidie\CofinancieringValidator
+ * @uses \OCA\Dossiq\Service\AppointmentBackend\RestAppointmentBackend
+ * @uses \OCA\Dossiq\Service\Subsidie\SubsidieSchemaLookup
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
+ * @uses \OCA\Dossiq\Service\Support\RowList
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CreatesIgnoreCallerIdentityTest extends TestCase {
 	use MakesCaseDateNormaliser;

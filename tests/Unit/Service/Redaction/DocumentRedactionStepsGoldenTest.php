@@ -36,6 +36,10 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Redaction\DocumentRedactionService
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Redaction\FilinqRedaction
+ * @uses \OCA\Dossiq\Service\Redaction\RedactedUpload
+ * @uses \OCA\Dossiq\Service\Redaction\RedactionRun
  */
 class DocumentRedactionStepsGoldenTest extends TestCase {
 

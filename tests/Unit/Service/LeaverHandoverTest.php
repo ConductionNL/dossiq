@@ -37,12 +37,14 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * What one act moves, what it only names, and what it records.
  *
  * @covers \OCA\Dossiq\Service\People\LeaverHandoverService
  * @uses \OCA\Dossiq\Service\People\CaseSeats
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  *
@@ -63,7 +65,18 @@ class LeaverHandoverTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->store = new InMemoryRegister();
+		$this->seedStore(store: new InMemoryRegister());
+	}//end setUp()
+
+	/**
+	 * Seed a store with the leaver's work and use it.
+	 *
+	 * @param InMemoryRegister $store The store.
+	 *
+	 * @return void
+	 */
+	private function seedStore(InMemoryRegister $store): void {
+		$this->store = $store;
 		$this->store->seed(schema: 'roleType', uuid: 'rt-casemanager', row: ['name' => 'Casemanager', 'genericRole' => 'coordinator']);
 
 		foreach (['case-a', 'case-b'] as $caseId) {
@@ -90,7 +103,7 @@ class LeaverHandoverTest extends TestCase {
 			uuid: 'ct-other',
 			row: ['title' => 'Andermans concept', 'isDraft' => true, '@self' => ['owner' => 'sofie']],
 		);
-	}//end setUp()
+	}//end seedStore()
 
 	/**
 	 * The preview names what will move, and moves nothing.
@@ -187,11 +200,99 @@ class LeaverHandoverTest extends TestCase {
 	}//end testAPersonIsNotTheirOwnSuccessor()
 
 	/**
+	 * A blank leaver or successor is refused before anything is read.
+	 *
+	 * @return void
+	 */
+	public function testBlankNamesAreRefused(): void {
+		$service = $this->service();
+
+		try {
+			$service->preview(fromUser: '  ');
+			$this->fail('a blank leaver was previewed');
+		} catch (InvalidArgumentException $e) {
+			$this->assertSame(expected: 'fromUser is required', actual: $e->getMessage());
+		}
+
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('Both fromUser and toUser are required');
+		$service->execute(fromUser: 'jan', toUser: ' ', actor: 'beheerder');
+	}//end testBlankNamesAreRefused()
+
+	/**
+	 * Writes that fail are logged per case and do not stop the handover.
+	 *
+	 * @return void
+	 */
+	public function testFailedWritesAreLoggedAndTheHandoverCompletes(): void {
+		$this->seedStore(store: new class extends InMemoryRegister {
+
+			/**
+			 * Every write is refused.
+			 *
+			 * @param mixed ...$args The write.
+			 *
+			 * @return never
+			 */
+			public function saveObject(mixed ...$args): never {
+				throw new RuntimeException('store is read-only');
+			}
+		});
+		$warnings = [];
+		$logger   = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			static function (string $message, array $context) use (&$warnings): void {
+				$warnings[] = [$message, ($context['caseId'] ?? null)];
+			}
+		);
+
+		$result = $this->service(logger: $logger)->execute(fromUser: 'jan', toUser: 'piet', actor: 'beheerder');
+
+		$this->assertSame(expected: 0, actual: $result['coordinatorSeats']);
+		$this->assertSame(expected: 2, actual: $result['succeeded']);
+		$this->assertSame(
+			expected: [
+				['Dossiq leaver handover: a coordinator seat could not be moved', 'case-c'],
+				['Dossiq leaver handover: a coordinator seat could not be moved', 'case-d'],
+				['Dossiq leaver handover: a coordinator seat could not be moved', 'case-e'],
+				['Dossiq leaver handover: the record could not be written onto a case', 'case-a'],
+				['Dossiq leaver handover: the record could not be written onto a case', 'case-b'],
+			],
+			actual: $warnings
+		);
+	}//end testFailedWritesAreLoggedAndTheHandoverCompletes()
+
+	/**
+	 * Drafts of nobody, or drafts that cannot be read, are none.
+	 *
+	 * @return void
+	 */
+	public function testDraftsOfNobodyOrUnreadableAreNone(): void {
+		$this->assertSame(expected: [], actual: $this->service()->draftsOf(uid: ' '));
+
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willThrowException(new RuntimeException('OpenRegister is down'));
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with(
+			'Dossiq leaver handover: the drafts could not be read',
+			['uid' => 'jan', 'exception' => 'OpenRegister is down']
+		);
+		$service = new LeaverHandoverService(
+			reassignment: $this->createMock(originalClassName: CaseReassignmentService::class),
+			seats: new CaseSeats(settingsService: $settings, logger: $logger),
+			settings: $settings,
+			logger: $logger,
+		);
+
+		$this->assertSame(expected: [], actual: $service->draftsOf(uid: 'jan'));
+	}//end testDraftsOfNobodyOrUnreadableAreNone()
+
+	/**
 	 * The service under test, over a reassignment double that reports two cases and a task.
 	 *
 	 * @return LeaverHandoverService The service.
 	 */
-	private function service(): LeaverHandoverService {
+	private function service(?LoggerInterface $logger=null): LeaverHandoverService {
 		$reassignment = $this->createMock(originalClassName: CaseReassignmentService::class);
 		$reassignment->method('preview')->willReturn(
 			[
@@ -216,7 +317,7 @@ class LeaverHandoverTest extends TestCase {
 			reassignment: $reassignment,
 			seats: new CaseSeats(settingsService: $this->settings(), logger: $this->createMock(originalClassName: LoggerInterface::class)),
 			settings: $this->settings(),
-			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			logger: ($logger ?? $this->createMock(originalClassName: LoggerInterface::class)),
 		);
 	}//end service()
 

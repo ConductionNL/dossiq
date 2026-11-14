@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\People;
 
+use OCA\Dossiq\Kernel\Contracts\CaseRoleVocabularyInterface;
+use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -31,7 +33,7 @@ use Throwable;
  *
  * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
  */
-class CaseRoleVocabulary {
+class CaseRoleVocabulary implements CaseRoleVocabularyInterface {
 
 	use SearchesObjects;
 
@@ -48,6 +50,13 @@ class CaseRoleVocabulary {
 	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
 
 	/**
+	 * The register and the configured schemas, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
+
+	/**
 	 * @param SettingsService $settingsService OpenRegister access and the configured register and schemas.
 	 * @param PartyVocabulary $parties The kinds of party a case takes and the roles they may hold.
 	 * @param LoggerInterface $logger Says why a sync did nothing.
@@ -59,6 +68,7 @@ class CaseRoleVocabulary {
 		private readonly LoggerInterface $logger,
 		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -321,17 +331,7 @@ class CaseRoleVocabulary {
 	 * @throws RuntimeException When OpenRegister or the register is not configured.
 	 */
 	private function requireRegister(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
+		return $this->dossierRegister->context();
 	}//end requireRegister()
 
 	/**
@@ -344,11 +344,6 @@ class CaseRoleVocabulary {
 	 * @throws RuntimeException When the key is not configured.
 	 */
 	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
+		return $this->dossierRegister->schema(key: $key);
 	}//end schema()
 }//end class

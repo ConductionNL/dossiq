@@ -27,6 +27,7 @@ class CorrespondentWriterTest extends TestCase {
 	private const CONFIG = [
 		'register' => 'dossiq',
 		'dispatch_schema' => 'dispatch',
+		'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject',
 	];
 
 	private const PARTIES = [
@@ -222,6 +223,57 @@ class CorrespondentWriterTest extends TestCase {
 		);
 		$this->assertSame(expected: [], actual: $this->objects->saves);
 	}//end testNoCorrespondentsWritesNothing()
+
+	/**
+	 * An edit naming neither sender nor recipients changes nothing and records nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnEditNamingNoCorrespondentIsIgnored(): void {
+		$this->assertSame([], $this->writer->applyEdit('doc-1', ['sender' => 'party-jan'], ['title' => 'Nieuw'], 'uitgaand'));
+		$this->assertSame([], $this->objects->saves);
+	}//end testAnEditNamingNoCorrespondentIsIgnored()
+
+	/**
+	 * An edit of only the recipients keeps the stored sender, resolves both
+	 * against the parties of the case the document is filed on, and records
+	 * the dispatches on that case.
+	 *
+	 * @return void
+	 */
+	public function testAnEditResolvesAgainstTheDocumentsCase(): void {
+		$this->objects->answers[] = ['informatieobject' => 'doc-1', 'case' => ''];
+		$this->objects->answers[] = ['informatieobject' => 'doc-1', 'case' => ' case-1 '];
+
+		$patch = $this->writer->applyEdit(
+			'doc-1',
+			['sender' => 'party-jan', 'recipients' => []],
+			['recipients' => ['party-council']],
+			'inkomend'
+		);
+
+		$this->assertSame(['sender' => 'party-jan', 'recipients' => ['party-council']], $patch);
+		$this->assertSame(['case-1', 'case-1'], array_column($this->objects->saves, 'case'));
+		$this->assertSame(['party-jan', 'party-council'], array_column($this->objects->saves, 'involvedParty'));
+	}//end testAnEditResolvesAgainstTheDocumentsCase()
+
+	/**
+	 * A new sender replaces the stored one and the stored recipients stay.
+	 *
+	 * @return void
+	 */
+	public function testAnEditOfTheSenderKeepsTheRecipients(): void {
+		$this->objects->answers[] = ['informatieobject' => 'doc-3', 'case' => 'case-1'];
+
+		$patch = $this->writer->applyEdit(
+			'doc-3',
+			['sender' => 'party-council', 'recipients' => ['party-jan']],
+			['sender' => 'party-jan'],
+			'inkomend'
+		);
+
+		$this->assertSame(['sender' => 'party-jan', 'recipients' => ['party-jan']], $patch);
+	}//end testAnEditOfTheSenderKeepsTheRecipients()
 
 	/**
 	 * The writer resolves against the case's own parties, so a typed name is

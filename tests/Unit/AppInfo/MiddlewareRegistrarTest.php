@@ -27,12 +27,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\MiddlewareRegistrar;
+use OCA\Dossiq\Middleware\MiddlewareRegistrar;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Dossiq\AppInfo\Registrar\MiddlewareRegistrar
+ * @covers \OCA\Dossiq\Middleware\MiddlewareRegistrar
  */
 class MiddlewareRegistrarTest extends TestCase {
 	/**

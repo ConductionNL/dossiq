@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Assessment;
 
+use OCA\Dossiq\Kernel\Contracts\AssessedDocumentsInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
@@ -39,7 +40,7 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
  *
  * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-answers-every-document-with-its-assessment-req-das-004
  */
-class AssessedDocuments {
+class AssessedDocuments implements AssessedDocumentsInterface {
 
 	use SearchesObjects;
 

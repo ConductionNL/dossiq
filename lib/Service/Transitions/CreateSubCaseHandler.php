@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\CreateSubCaseHandlerInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -34,7 +35,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T08
  */
-class CreateSubCaseHandler implements ActionHandlerInterface {
+class CreateSubCaseHandler implements ActionHandlerInterface, CreateSubCaseHandlerInterface {
 	/**
 	 * Constructor.
 	 *

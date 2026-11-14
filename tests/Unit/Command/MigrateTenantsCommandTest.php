@@ -39,6 +39,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
  * @covers \OCA\Dossiq\Command\MigrateTenantsCommand
  * @uses \OCA\Dossiq\Service\TenantMigrationService
  * @uses \OCA\Dossiq\Service\Archival\ReadsConfiguredRows
+ * @uses \OCA\Dossiq\Service\OrganisationLookup
  */
 class MigrateTenantsCommandTest extends TestCase {
 	use MakesTenantMigration;

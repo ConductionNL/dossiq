@@ -42,9 +42,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Term\CaseTermSources;
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseTermsServiceInterface;
+use OCA\Dossiq\Service\Term\CaseTermSources;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Termijn\TermMoveHistory;
@@ -62,7 +63,7 @@ use Psr\Log\LoggerInterface;
  * nothing to inject. Making it an instance would add a constructor dependency
  * to every class that names a kind, to hide a `::` behind a `->`.
  */
-class CaseTermsService {
+class CaseTermsService implements CaseTermsServiceInterface {
 	/**
 	 * Constructor.
 	 *

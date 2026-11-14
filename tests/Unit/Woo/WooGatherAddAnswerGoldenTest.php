@@ -46,6 +46,8 @@ use RuntimeException;
  * Golden tests for WooGatherAdd::addPicks().
  *
  * @covers \OCA\Dossiq\Woo\WooGatherAdd
+ * @uses \OCA\Dossiq\Woo\WooPickRun
+ * @uses \OCA\Dossiq\Woo\WooPickedFile
  */
 class WooGatherAddAnswerGoldenTest extends TestCase {
 

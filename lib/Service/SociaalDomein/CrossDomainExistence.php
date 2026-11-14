@@ -51,6 +51,7 @@ namespace OCA\Dossiq\Service\SociaalDomein;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CrossDomainExistenceInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -60,7 +61,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
-class CrossDomainExistence {
+class CrossDomainExistence implements CrossDomainExistenceInterface {
 
 	/**
 	 * The schema the log is written to.
@@ -79,22 +80,6 @@ class CrossDomainExistence {
 	 * @var string
 	 */
 	public const ACTION = 'existence-lookup';
-
-	/**
-	 * The grounds a lookup may be made on.
-	 *
-	 * A CLOSED list, because an open text field is a field that fills up with
-	 * "onderzoek" and answers nobody's question afterwards. Each of these is a
-	 * ground somebody can be held to.
-	 *
-	 * @var array<string, string>
-	 */
-	public const GROUNDS = [
-		'wettelijke-taak' => 'Carrying out a statutory task in this domain',
-		'toestemming' => 'The person has consented to this lookup',
-		'vitaal-belang' => 'A vital interest of the person or of another',
-		'samenwerkingsafspraak' => 'A recorded cooperation agreement between the domains',
-	];
 
 	/**
 	 * The three fields the answer carries, and there are no others.

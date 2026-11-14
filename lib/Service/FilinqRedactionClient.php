@@ -47,7 +47,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Support\FleetAppId;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -180,14 +180,14 @@ class FilinqRedactionClient {
 			if ($refusal !== null) {
 				$this->logger->warning(
 					'Filinq refused a redaction',
-					['app' => Application::APP_ID, 'fileId' => $fileId, 'status' => $refusal['status']]
+					['app' => AppIdentity::APP_ID, 'fileId' => $fileId, 'status' => $refusal['status']]
 				);
 				return $refusal + ['sourceFileId' => $fileId, 'entityCount' => count($entities)];
 			}
 
 			$this->logger->warning(
 				'Filinq failed a redaction',
-				['app' => Application::APP_ID, 'fileId' => $fileId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'fileId' => $fileId, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('filinq_redaction_failed: ' . $e->getMessage(), 0, $e);
 		}//end try
@@ -370,7 +370,7 @@ class FilinqRedactionClient {
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'The anonymisation backend state could not be read from OpenRegister',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}

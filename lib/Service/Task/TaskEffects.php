@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Task;
 
+use OCA\Dossiq\Kernel\Contracts\TaskEffectsInterface;
 use OCA\Dossiq\Service\Flow\RetiredActionRunner;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface;
 use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
@@ -47,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/specs/task-management/spec.md
  */
-class TaskEffects {
+class TaskEffects implements TaskEffectsInterface {
 
 	/**
 	 * Where a task carries the effects dossiq declared on it.

@@ -31,9 +31,11 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\RoleResolverService;
-use OCA\Dossiq\Service\Routing\CaseRouter;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseRouterInterface;
+use OCA\Dossiq\Kernel\Contracts\RoleResolverServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Service\Support\ObjectArray;
+use OCA\Dossiq\Service\Support\RowList;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -58,9 +60,9 @@ class RoutingController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param RoleResolverService $resolver Resolver service
-	 * @param CaseRouter $router Routes a case to one person and arms its take-back window
-	 * @param SettingsService $settingsService Settings bridge
+	 * @param RoleResolverServiceInterface $resolver Resolver service
+	 * @param CaseRouterInterface $router Routes a case to one person and arms its take-back window
+	 * @param SettingsServiceInterface $settingsService Settings bridge
 	 * @param IUserSession $userSession User session
 	 * @param IGroupManager $groupManager Group manager
 	 * @param LoggerInterface $logger Logger
@@ -68,9 +70,9 @@ class RoutingController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly RoleResolverService $resolver,
-		private readonly CaseRouter $router,
-		private readonly SettingsService $settingsService,
+		private readonly RoleResolverServiceInterface $resolver,
+		private readonly CaseRouterInterface $router,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
@@ -242,26 +244,7 @@ class RoutingController extends Controller {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function decodeSteps(mixed $value): array {
-		if (is_string($value) === true) {
-			$decoded = json_decode($value, true);
-			$value = [];
-			if (is_array($decoded) === true) {
-				$value = $decoded;
-			}
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$rows = [];
-		foreach ($value as $row) {
-			if (is_array($row) === true) {
-				$rows[] = $row;
-			}
-		}
-
-		return $rows;
+		return RowList::from(value: $value);
 	}//end decodeSteps()
 
 	/**
@@ -272,28 +255,6 @@ class RoutingController extends Controller {
 	 * @return array<string, mixed>
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true) {
-			if (method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
-			}
-
-			if (method_exists($value, 'toArray') === true) {
-				$arr = $value->toArray();
-				if (is_array($arr) === true) {
-					return $arr;
-				}
-			}
-
-			return (array)$value;
-		}
-
-		return [];
+		return ObjectArray::of(value: $value);
 	}//end toArray()
 }//end class

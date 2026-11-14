@@ -239,6 +239,7 @@ final class GoldenPackageObjects {
  * @uses \OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageSeedRules
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\CaseDefinition\RowMatchRun
  */
 class PackageWriterGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

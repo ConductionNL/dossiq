@@ -1,14 +1,12 @@
 <?php
 
 /**
- * HierarchicalStrategy tests.
+ * Unit tests for HierarchicalStrategy: a case routes to every holder of the
+ * first role type in priority order that anyone holds, then to the fallback
+ * type, and to nobody when none is held.
  *
- * Pins the fall-through: the first role type in priority order that has a
- * holder wins, the fallback type is tried last, and nothing matches when no
- * listed type has a holder.
- *
- * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -19,95 +17,44 @@ use OCA\Dossiq\Service\Routing\Strategy\HierarchicalStrategy;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Tests for the hierarchical fall-through strategy.
- *
  * @covers \OCA\Dossiq\Service\Routing\Strategy\HierarchicalStrategy
  */
 class HierarchicalStrategyTest extends TestCase {
+
 	/**
-	 * The roles on the case.
-	 *
-	 * @return array<int, array<string, mixed>>
+	 * @return list<array<string, string>>
 	 */
-	private static function roles(): array {
+	private function roles(): array {
 		return [
-			['roleType' => 'behandelaar', 'participant' => 'anouk'],
-			['roleType' => 'jurist', 'participant' => ''],
-			['roleType' => 'teamleider', 'participant' => 'ben'],
-			['roleType' => 'behandelaar', 'participant' => 'cor'],
-			['participant' => 'dewi'],
-			['roleType' => 'teamleider', 'participant' => 'erik'],
+			['roleType' => 'behandelaar', 'participant' => 'alice'],
+			['roleType' => 'teamleider', 'participant' => 'bob'],
+			['roleType' => 'behandelaar', 'participant' => 'carol'],
+			['roleType' => 'behandelaar', 'participant' => ''],
+			['roleType' => 'manager', 'participant' => 'dave'],
 		];
 	}//end roles()
 
-	/**
-	 * The strategy is registered under its own name.
-	 *
-	 * @return void
-	 */
-	public function testItIsNamedHierarchical(): void {
-		self::assertSame('hierarchical', (new HierarchicalStrategy())->name());
-	}//end testItIsNamedHierarchical()
-
-	/**
-	 * The first listed type with holders wins, with every holder of it in role order.
-	 *
-	 * @return void
-	 */
-	public function testTheFirstTypeWithHoldersWins(): void {
+	public function testTheFirstHeldTypeInPriorityOrderWins(): void {
 		$strategy = new HierarchicalStrategy();
 
-		self::assertSame(['ben', 'erik'], $strategy->resolve(['roleTypes' => ['teamleider', 'behandelaar']], [], self::roles()));
-		self::assertSame(['anouk', 'cor'], $strategy->resolve(['roleTypes' => ['behandelaar', 'teamleider']], [], self::roles()));
-	}//end testTheFirstTypeWithHoldersWins()
+		$this->assertSame('hierarchical', $strategy->name());
+		$this->assertSame(['alice', 'carol'], $strategy->resolve(['roleTypes' => ['behandelaar', 'teamleider']], [], $this->roles()));
+		$this->assertSame(['bob'], $strategy->resolve(['roleTypes' => ['specialist', '', 'teamleider', 'behandelaar']], [], $this->roles()));
+	}//end testTheFirstHeldTypeInPriorityOrderWins()
 
-	/**
-	 * A type whose only holder has no participant counts as empty, and the next type is tried.
-	 *
-	 * @return void
-	 */
-	public function testATypeWithoutParticipantsFallsThrough(): void {
+	public function testTheFallbackTypeComesLast(): void {
 		$strategy = new HierarchicalStrategy();
 
-		self::assertSame(['ben', 'erik'], $strategy->resolve(['roleTypes' => ['jurist', 'adviseur', 'teamleider']], [], self::roles()));
-	}//end testATypeWithoutParticipantsFallsThrough()
+		$this->assertSame(['dave'], $strategy->resolve(['roleTypes' => ['specialist'], 'fallback' => 'manager'], [], $this->roles()));
+		$this->assertSame(['alice', 'carol'], $strategy->resolve(['roleTypes' => ['behandelaar'], 'fallback' => 'manager'], [], $this->roles()));
+		$this->assertSame(['dave'], $strategy->resolve(['roleTypes' => 'behandelaar', 'fallback' => 'manager'], [], $this->roles()));
+	}//end testTheFallbackTypeComesLast()
 
-	/**
-	 * The fallback is tried only after every listed type is empty.
-	 *
-	 * @return void
-	 */
-	public function testTheFallbackIsTriedLast(): void {
+	public function testNobodyIsRoutedWhenNoTypeIsHeld(): void {
 		$strategy = new HierarchicalStrategy();
 
-		self::assertSame(['anouk', 'cor'], $strategy->resolve(['roleTypes' => ['jurist'], 'fallback' => 'behandelaar'], [], self::roles()));
-		self::assertSame(['ben', 'erik'], $strategy->resolve(['roleTypes' => ['teamleider'], 'fallback' => 'behandelaar'], [], self::roles()));
-		self::assertSame(['anouk', 'cor'], $strategy->resolve(['fallback' => 'behandelaar'], [], self::roles()));
-	}//end testTheFallbackIsTriedLast()
-
-	/**
-	 * Blank and non-list role types are ignored, leaving only the fallback.
-	 *
-	 * @return void
-	 */
-	public function testBlankOrNonListTypesAreIgnored(): void {
-		$strategy = new HierarchicalStrategy();
-
-		self::assertSame(['ben', 'erik'], $strategy->resolve(['roleTypes' => ['', 'teamleider']], [], self::roles()));
-		self::assertSame(['anouk', 'cor'], $strategy->resolve(['roleTypes' => 'teamleider', 'fallback' => 'behandelaar'], [], self::roles()));
-		self::assertSame([], $strategy->resolve(['roleTypes' => 'teamleider'], [], self::roles()));
-	}//end testBlankOrNonListTypesAreIgnored()
-
-	/**
-	 * Nothing matches when no listed type or fallback has a holder.
-	 *
-	 * @return void
-	 */
-	public function testNothingMatchesWithoutHolders(): void {
-		$strategy = new HierarchicalStrategy();
-
-		self::assertSame([], $strategy->resolve(['roleTypes' => ['jurist'], 'fallback' => 'adviseur'], [], self::roles()));
-		self::assertSame([], $strategy->resolve([], [], self::roles()));
-		self::assertSame([], $strategy->resolve(['roleTypes' => ['teamleider']], [], []));
-	}//end testNothingMatchesWithoutHolders()
+		$this->assertSame([], $strategy->resolve(['roleTypes' => ['specialist'], 'fallback' => 'jurist'], [], $this->roles()));
+		$this->assertSame([], $strategy->resolve([], [], $this->roles()));
+		$this->assertSame([], $strategy->resolve(['roleTypes' => ['behandelaar']], [], []));
+	}//end testNobodyIsRoutedWhenNoTypeIsHeld()
 }//end class

@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\AccrualNoticeServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaWriter;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -49,7 +50,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
  */
-class AccrualNoticeService {
+class AccrualNoticeService implements AccrualNoticeServiceInterface {
 	use SearchesObjects;
 
 	public const TARIFF_AWB_PLAFOND = 144200;

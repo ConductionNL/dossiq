@@ -29,6 +29,7 @@ use RuntimeException;
  * Characterisation tests for the retired automatic action report.
  *
  * @covers \OCA\Dossiq\Repair\RewriteRetiredFlowNodes
+ * @uses \OCA\Dossiq\Repair\RetiredActionReport
  */
 class RetiredActionReportTest extends TestCase {
 

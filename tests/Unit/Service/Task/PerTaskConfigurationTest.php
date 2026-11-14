@@ -48,6 +48,7 @@ use Psr\Container\ContainerInterface;
  * @covers \OCA\Dossiq\Service\Task\TaskDeclarationValidator
  * @covers \OCA\Dossiq\Service\Task\TaskDeclarationReader
  * @uses \OCA\Dossiq\Service\Workflow\WorkflowJsonProperty
+ * @uses \OCA\Dossiq\Service\Task\TaskFormAt
  */
 class PerTaskConfigurationTest extends TestCase {
 

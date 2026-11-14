@@ -1,0 +1,43 @@
+{
+  "_note": "social-domain-consent-and-safeguards task 1.1 (openspec/changes/social-domain-consent-and-safeguards): four safeguards a case type switches on as configuration (decision 182), so the consent, classification, team-only and anonymised-export capabilities stay generic and a procedure only sets flags. The flags are declared here and set by the social packages; their readers land with tasks 2 to 4 of that change (the consent check on the share paths, the classification at intake, the read rule, the anonymised export). caseType moves to 1.48.0 (1.47.0 is overview-sections) so an existing instance re-imports the schema. A fragment per ADR-037.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "caseType": {
+        "version": "1.48.0",
+        "properties": {
+          "requiresConsentForSharing": {
+            "type": "boolean",
+            "title": "Consent required for sharing",
+            "description": "Whether sharing a case of this type, or its data, with an external party needs a recorded consent that names that party and is valid on the day.",
+            "default": false
+          },
+          "requiresSpecialCategory": {
+            "type": "boolean",
+            "title": "Special-category classification required",
+            "description": "Whether a case of this type needs its special categories of personal data (GDPR article 9) classified before it is created.",
+            "default": false
+          },
+          "handlingTeamOnly": {
+            "type": "boolean",
+            "title": "Only the handling team",
+            "description": "Whether reading a case of this type is limited to its handling teams. Not enforced yet: until the read rule of this change lands, restrict access through the case type's rights.",
+            "default": false
+          },
+          "identifyingFields": {
+            "type": "array",
+            "title": "Identifying fields",
+            "description": "The case properties that identify a person (names, BSN, addresses, birth dates). An anonymised export removes them, reduces an address to its postcode area and a date to its year.",
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            }
+          }
+        }
+      }
+    }
+  }
+}

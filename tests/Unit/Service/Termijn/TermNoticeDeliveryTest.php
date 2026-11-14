@@ -306,6 +306,7 @@ class TermNoticeDeliveryTest extends TestCase {
 		self::assertCount(1, $this->sent, 'exactly one mail');
 		$mail = $this->sent[0];
 		self::assertSame(['burger@example.nl'], $mail->to);
+		self::assertSame(['zaken@gemeente.nl' => 'Gemeente'], $mail->from, 'the sender name is the one set in the admin settings');
 		$url = 'https://nc.example/index.php/apps/integriq/unsubscribe/tok-' . md5('burger@example.nl|case-1');
 		self::assertStringContainsString($url, $mail->plainBody);
 		self::assertSame('<' . $url . '>', ($mail->headers['List-Unsubscribe'] ?? null));

@@ -48,7 +48,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Email\InboundMailIntake;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
@@ -98,7 +98,7 @@ class InboundEmailJob extends TimedJob {
 	) {
 		parent::__construct(time: $time);
 		$interval = (int)$this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'email_poll_interval',
 			(string)self::DEFAULT_INTERVAL_SECONDS,
 		);
@@ -143,7 +143,7 @@ class InboundEmailJob extends TimedJob {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'InboundEmailJob failed',
-				['error' => $e->getMessage(), 'app' => Application::APP_ID]
+				['error' => $e->getMessage(), 'app' => AppIdentity::APP_ID]
 			);
 		}//end try
 	}//end work()
@@ -185,7 +185,7 @@ class InboundEmailJob extends TimedJob {
 		if ($this->mail->gateway->isAvailable() === false) {
 			$this->logger->info(
 				'Dossiq: mail intake is unavailable because the Mail app is not installed',
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return false;
 		}
@@ -209,7 +209,7 @@ class InboundEmailJob extends TimedJob {
 
 		$this->logger->info(
 			'Dossiq: the intake sweep processed {count} messages',
-			['count' => count($messages), 'outcomes' => $counts, 'app' => Application::APP_ID]
+			['count' => count($messages), 'outcomes' => $counts, 'app' => AppIdentity::APP_ID]
 		);
 	}//end processMessages()
 
@@ -222,7 +222,7 @@ class InboundEmailJob extends TimedJob {
 	 */
 	private function batchSize(): int {
 		$size = (int)$this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'email_poll_batch_size',
 			(string)self::DEFAULT_BATCH_SIZE,
 		);

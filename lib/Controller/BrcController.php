@@ -29,8 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Service\Zgw\BrcCrossRegisterSync;
 use OCA\Dossiq\Service\Zgw\BrcDocumentLinkHandler;
 use OCP\AppFramework\Http;
@@ -86,14 +86,14 @@ class BrcController extends ZgwController {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The incoming request.
-	 * @param ZgwService $zgwService The shared ZGW service.
-	 * @param SettingsService $settingsService The settings service.
+	 * @param ZgwServiceInterface $zgwService The shared ZGW service.
+	 * @param SettingsServiceInterface $settingsService The settings service.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ZgwService $zgwService,
-		SettingsService $settingsService,
+		private readonly ZgwServiceInterface $zgwService,
+		SettingsServiceInterface $settingsService,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 		$this->sync = new BrcCrossRegisterSync(zgwService: $zgwService, settingsService: $settingsService);
@@ -113,7 +113,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -144,16 +144,11 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function create(string $resource): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate creates on besluiten.aanmaken scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.aanmaken') === false) {
-			return $this->scopeDeniedResponse(scope: 'besluiten.aanmaken');
+		$refusal = $this->writeRefusal(scope: 'besluiten.aanmaken');
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// For besluitinformatieobjecten: use custom create with OIO sync.
@@ -183,7 +178,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -209,16 +204,11 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate updates on besluiten.bijwerken scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.bijwerken') === false) {
-			return $this->scopeDeniedResponse(scope: 'besluiten.bijwerken');
+		$refusal = $this->writeRefusal(scope: 'besluiten.bijwerken');
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// Brc-004a: BesluitInformatieObject is immutable — PUT returns 405.
@@ -254,16 +244,11 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate patches on besluiten.bijwerken scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.bijwerken') === false) {
-			return $this->scopeDeniedResponse(scope: 'besluiten.bijwerken');
+		$refusal = $this->writeRefusal(scope: 'besluiten.bijwerken');
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// Brc-004b: BesluitInformatieObject is immutable — PATCH returns 405.
@@ -301,16 +286,11 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate destroys on besluiten.verwijderen scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.verwijderen') === false) {
-			return $this->scopeDeniedResponse(scope: 'besluiten.verwijderen');
+		$refusal = $this->writeRefusal(scope: 'besluiten.verwijderen');
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// Brc-009: Cascade delete for besluiten.
@@ -345,7 +325,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -390,7 +370,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -405,6 +385,30 @@ class BrcController extends ZgwController {
 			$auditUuid
 		);
 	}//end audittrailShow()
+
+	/**
+	 * The JWT refusal, else the scope refusal for a consumer without the given besluiten scope, else null.
+	 *
+	 * The JWT is checked first and the scope only for a valid token, so a
+	 * write is refused before anything is read or written.
+	 *
+	 * @param string $scope The scope the write needs (canonical format).
+	 *
+	 * @return JSONResponse|null The refusal, or null when the write may go ahead.
+	 */
+	private function writeRefusal(string $scope): ?JSONResponse {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
+
+		// SB2: Gate writes on the endpoint's besluiten scope.
+		if ($this->zgwService->consumerHasScope($this->request, 'brc', $scope) === false) {
+			return $this->scopeDeniedResponse(scope: $scope);
+		}
+
+		return null;
+	}//end writeRefusal()
 
 	/**
 	 * Create a besluit with zaak-besluit sync to ZRC (brc-006).

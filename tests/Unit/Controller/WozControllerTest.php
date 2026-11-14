@@ -37,6 +37,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Controller\WozController
  *
  * @uses \OCA\Dossiq\Service\External\Woz\WozLookupResult
+ * @uses \OCA\Dossiq\Controller\Support\SignedIn
  */
 class WozControllerTest extends TestCase {
 

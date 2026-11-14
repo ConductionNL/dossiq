@@ -25,6 +25,8 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Termijn\TermLookups
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
  */
 class TermCaseTypeResolverTest extends TestCase {
 

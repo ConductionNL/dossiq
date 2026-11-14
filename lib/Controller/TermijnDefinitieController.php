@@ -41,11 +41,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\ConfiguredRegistryServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermEndRollInterface;
 use OCA\Dossiq\Settings\AdminSettings;
-use OCA\Dossiq\Service\CaseDateNormaliser;
-use OCA\Dossiq\Service\Termijn\TermEndRoll;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -76,20 +76,20 @@ class TermijnDefinitieController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param ConfiguredRegistryService $registry Generic configured-schema registry CRUD.
+	 * @param ConfiguredRegistryServiceInterface $registry Generic configured-schema registry CRUD.
 	 * @param LoggerInterface $logger Logger.
-	 * @param CaseDateNormaliser $dates The one date path, which knows the zone.
-	 * @param TermEndRoll $ends The Algemene termijnenwet roll, which knows whether a calendar answers.
+	 * @param CaseDateNormaliserInterface $dates The one date path, which knows the zone.
+	 * @param TermEndRollInterface $ends The Algemene termijnenwet roll, which knows whether a calendar answers.
 	 *
 	 * @spec openspec/specs/termijn-verification-admin/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ConfiguredRegistryService $registry,
+		private readonly ConfiguredRegistryServiceInterface $registry,
 		private readonly LoggerInterface $logger,
-		private readonly CaseDateNormaliser $dates,
-		private readonly TermEndRoll $ends,
+		private readonly CaseDateNormaliserInterface $dates,
+		private readonly TermEndRollInterface $ends,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -203,7 +203,7 @@ class TermijnDefinitieController extends Controller {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Failed to save TermijnDefinitie: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['message' => 'Failed to save term definition: ' . $e->getMessage()],

@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Lifecycle;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Support\RowList;
 use OCP\IUserSession;
 
 /**
@@ -83,23 +84,11 @@ class CaseJournal {
 	 */
 	public function entries(array $case): array {
 		$raw = ($case[self::FIELD] ?? '');
-		$decoded = $raw;
 		if (is_array($raw) === false) {
-			$decoded = json_decode((string)$raw, true);
+			$raw = (string)$raw;
 		}
 
-		if (is_array($decoded) === false) {
-			return [];
-		}
-
-		$entries = [];
-		foreach ($decoded as $entry) {
-			if (is_array($entry) === true) {
-				$entries[] = $entry;
-			}
-		}
-
-		return $entries;
+		return RowList::from(value: $raw);
 	}//end entries()
 
 	/**

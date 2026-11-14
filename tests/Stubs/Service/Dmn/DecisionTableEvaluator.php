@@ -195,7 +195,7 @@ class DecisionTableEvaluator {
 			$value = $coercedInputs[$declared['name']];
 
 			try {
-				if ($this->evaluator->matches(expression: $expression, value: $value, type: $declared['type']) === false) {
+				if ($this->evaluator->matchesValue(expression: $expression, subject: new UnaryTestValue(value: $value, type: $declared['type'])) === false) {
 					return false;
 				}
 			} catch (DecisionEvaluationException $e) {
