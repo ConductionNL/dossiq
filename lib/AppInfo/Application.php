@@ -38,7 +38,7 @@ use OCA\Dossiq\Integration\IntegrationContractRegistrar;
 use OCA\Dossiq\Notification\NotificationContractRegistrar;
 use OCA\Dossiq\Portal\PortalContractRegistrar;
 use OCA\Dossiq\Review\ReviewContractRegistrar;
-use OCA\Dossiq\Service\Registrar\LifecycleRegistrar;
+use OCA\Dossiq\Lifecycle\LifecycleRegistrar;
 use OCA\Dossiq\Listener\Registrar\ListenerRegistrar;
 use OCA\Dossiq\Service\Registrar\ServiceRegistrar;
 use OCA\Dossiq\Kernel\AppIdentity;
