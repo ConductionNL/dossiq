@@ -12631,7 +12631,10 @@ OC.L10N.register(
         "{weeks} weeks": "{weeks} weeks",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "It is not known who asks for the redacted copy. Sign in and try again.": "It is not known who asks for the redacted copy. Sign in and try again.",
+        "You checked these passages yourself. A colleague must make the redacted copy.": "You checked these passages yourself. A colleague must make the redacted copy.",
+        "{subject}": "{subject}"
     },
     "nplurals=2; plural=(n != 1);"
 )

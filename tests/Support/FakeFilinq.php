@@ -21,6 +21,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\Filinq\Exception\RedactionNotReviewedException;
+use OCA\Filinq\Service\AnonymizeOptions;
 use Exception;
 use OCA\Filinq\Exception\DetectionUnavailableException;
 use OCA\Filinq\Service\Redaction\DetectionRunIdentity;
@@ -62,6 +64,20 @@ class FakeFilinq {
 	 * @var array<int, array<string, mixed>>
 	 */
 	public array $anonymised = [];
+
+	/**
+	 * Whether filinq's four-eyes setting applies to Woo runs.
+	 *
+	 * @var bool
+	 */
+	public bool $fourEyes = false;
+
+	/**
+	 * Who checked the findings, for the four-eyes refusal.
+	 *
+	 * @var string
+	 */
+	public string $checkedBy = '';
 
 	/**
 	 * Where the review marks are kept.
@@ -117,12 +133,28 @@ class FakeFilinq {
 	public function anonymizeDocument(
 		int $fileId,
 		array $entities,
-		string $outputFormat = 'pdf-only',
+		mixed $outputFormat = 'pdf-only',
 		array $unredacted = [],
 		array $overrides = [],
 		string $userId = '',
 	): array {
+		$wooCase = false;
+		if ($outputFormat instanceof AnonymizeOptions) {
+			$userId  = $outputFormat->userId();
+			$wooCase = $outputFormat->wooCase();
+		}
+
 		$this->guard->assertMayWrite(fileId: $fileId, entities: $entities);
+
+		// Four eyes (redaction-four-eyes-setting REQ-RWB-09): on a Woo run the
+		// person who checked may not also anonymise.
+		if ($this->fourEyes === true && $wooCase === true && $this->checkedBy !== '' && $this->checkedBy === $userId) {
+			throw new RedactionNotReviewedException(
+				reason: 'same_person',
+				message: 'You checked the findings of this document yourself. Four eyes are required: a colleague must anonymise it.',
+				document: (string)$fileId
+			);
+		}
 
 		if ($this->detectorLive === false) {
 			throw new DetectionUnavailableException(
@@ -132,7 +164,7 @@ class FakeFilinq {
 			);
 		}
 
-		$this->anonymised[] = ['fileId' => $fileId, 'entities' => $entities, 'userId' => $userId];
+		$this->anonymised[] = ['fileId' => $fileId, 'entities' => $entities, 'userId' => $userId, 'wooCase' => $wooCase];
 
 		$outcome = 'redacted';
 		if ($entities === []) {

@@ -12631,7 +12631,10 @@ OC.L10N.register(
         "{weeks} weeks": "{weeks} weken",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "It is not known who asks for the redacted copy. Sign in and try again.": "Het is niet bekend wie om de gelakte kopie vraagt. Log in en probeer het opnieuw.",
+        "You checked these passages yourself. A colleague must make the redacted copy.": "Je hebt deze passages zelf gecontroleerd. Een collega moet de gelakte kopie maken.",
+        "{subject}": "{subject}"
     },
     "nplurals=2; plural=(n != 1);"
 )
