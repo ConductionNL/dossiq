@@ -169,17 +169,13 @@ class CaseAuthorizationMerge {
 		$owned = array_map($this->entries->key(...), $this->entries->listOf(value: ($baseline['owned'] ?? null)));
 		$live = $this->entries->listOf(value: $values['live']);
 		$conflicts = [];
-		$value = $this->derivedEntries(
-			values: $values,
-			known: ['owned' => $owned, 'live' => array_map($this->entries->key(...), $live), 'hasBaseline' => ($baseline !== null)],
-			teams: $teams,
-			conflicts: $conflicts,
-		);
+		$known = ['owned' => $owned, 'live' => array_map($this->entries->key(...), $live), 'hasBaseline' => ($baseline !== null)];
+		$value = $this->derivedEntries(values: $values, known: $known, teams: $teams, conflicts: $conflicts);
 
 		$restored = [];
 		foreach ($live as $entry) {
 			if ($this->entries->isManagedTeamRule(entry: $entry, teams: $teams) === true) {
-				$restored = array_merge($restored, $this->restoredRule(entry: $entry, owned: $owned, values: $values, hasBaseline: ($baseline !== null)));
+				$restored = array_merge($restored, $this->restoredRule(entry: $entry, known: $known, values: $values));
 				continue;
 			}
 
@@ -195,17 +191,19 @@ class CaseAuthorizationMerge {
 	 *
 	 * Only with a baseline: without one, the projector's own last rules cannot be told from an administrator's.
 	 *
-	 * @param mixed                              $entry       The live managed team rule.
-	 * @param array<int, string>                 $owned       Keys of the rules the projector wrote last.
-	 * @param array{desired: mixed, live: mixed} $values      What the projector derives now, and the live value.
-	 * @param bool                               $hasBaseline Whether a baseline was recorded.
+	 * @param mixed                                                                         $entry  The live managed team rule.
+	 * @param array{owned: array<int, string>, live: array<int, string>, hasBaseline: bool} $known  Keys of the rules the projector
+	 *                                                                                              wrote last, and whether a
+	 *                                                                                              baseline was recorded.
+	 * @param array{desired: mixed, live: mixed}                                            $values What the projector derives now,
+	 *                                                                                              and the live value.
 	 *
 	 * @return array<int, string> The rule's report suffix, or nothing.
 	 */
-	private function restoredRule(mixed $entry, array $owned, array $values, bool $hasBaseline): array {
+	private function restoredRule(mixed $entry, array $known, array $values): array {
 		$key = $this->entries->key(entry: $entry);
 		$derived = array_map($this->entries->key(...), $this->entries->listOf(value: $values['desired']));
-		if ($hasBaseline === false || in_array($key, $owned, true) === true || in_array($key, $derived, true) === true) {
+		if ($known['hasBaseline'] === false || in_array($key, $known['owned'], true) === true || in_array($key, $derived, true) === true) {
 			return [];
 		}
 
