@@ -398,35 +398,12 @@ class WooPublicationService implements WooPublicationServiceInterface {
 		$publicationId = $delivered['publicationId'];
 		$publicationUrl = $this->buildPublicationUrl(publicationId: $publicationId);
 
-		$decision = $source['decision'];
-		$decision['wooPublication'] = [
-			'publicationId' => $publicationId,
-			'publicationUrl' => $publicationUrl,
-			'status' => self::STATUS_PUBLISHED,
-			'category' => $payload['wooCategory'],
-			'publishedAt' => date('c'),
-		];
-
-		$source['objectService']->saveObject(
-			object: $decision,
-			register: $source['register'],
-			schema: $source['decisionSchema'],
-			uuid: $source['decisionId']
-		);
+		$this->saveDecisionPublication(source: $source, publicationId: $publicationId, publicationUrl: $publicationUrl, category: $payload['wooCategory']);
 
 		$withheld = $this->caseLedger->recordWithheld(publicationId: $publicationId, assessments: $source['delivery']['assessments']);
-		$this->caseLedger->writeCaseState(
-			caseId: $caseId,
-			changes: [
-				'wooPublicationStatus' => self::STATUS_PUBLISHED,
-				'wooPublicationUrl' => $this->caseLedger->absolute(path: $publicationUrl),
-				'wooWithheldNote' => $withheld['note'],
-			],
-		);
+		$this->writePublishedCaseState(caseId: $caseId, publicationUrl: $publicationUrl, withheldNote: $withheld['note']);
 
-		$this->dossierReturn?->append(case: $source['case'], publicationId: $publicationId, title: (string)$payload['title']);
-
-		$this->dossierReturn?->tellTheResident(case: $source['case'], caseId: $caseId, publicationId: $publicationId);
+		$this->returnToDossier(caseId: $caseId, source: $source, payload: $payload, publicationId: $publicationId);
 
 		return [
 			'available' => true,
@@ -436,6 +413,65 @@ class WooPublicationService implements WooPublicationServiceInterface {
 			'withheldRecord' => $withheld['record'],
 		];
 	}//end recordPublication()
+
+	/**
+	 * Note the publication on the decision and save it.
+	 *
+	 * @param array<string, mixed> $source         The publication source.
+	 * @param mixed                $publicationId  The publication id.
+	 * @param string               $publicationUrl The publication URL.
+	 * @param mixed                $category       The Woo category.
+	 *
+	 * @return void
+	 */
+	private function saveDecisionPublication(array $source, mixed $publicationId, string $publicationUrl, mixed $category): void {
+		$decision = $source['decision'];
+		$decision['wooPublication'] = [
+			'publicationId' => $publicationId,
+			'publicationUrl' => $publicationUrl,
+			'status' => self::STATUS_PUBLISHED,
+			'category' => $category,
+			'publishedAt' => date('c'),
+		];
+
+		$source['objectService']->saveObject(object: $decision, register: $source['register'], schema: $source['decisionSchema'], uuid: $source['decisionId']);
+	}//end saveDecisionPublication()
+
+	/**
+	 * Write the published state onto the case.
+	 *
+	 * @param string $caseId         The case UUID.
+	 * @param string $publicationUrl The publication URL.
+	 * @param mixed  $withheldNote   The note on what was withheld.
+	 *
+	 * @return void
+	 */
+	private function writePublishedCaseState(string $caseId, string $publicationUrl, mixed $withheldNote): void {
+		$this->caseLedger->writeCaseState(
+			caseId: $caseId,
+			changes: [
+				'wooPublicationStatus' => self::STATUS_PUBLISHED,
+				'wooPublicationUrl' => $this->caseLedger->absolute(path: $publicationUrl),
+				'wooWithheldNote' => $withheldNote,
+			],
+		);
+	}//end writePublishedCaseState()
+
+	/**
+	 * Return the publication to the dossier and tell the resident.
+	 *
+	 * @param string               $caseId        The case UUID.
+	 * @param array<string, mixed> $source        The publication source.
+	 * @param array<string, mixed> $payload       The publication payload.
+	 * @param mixed                $publicationId The publication id.
+	 *
+	 * @return void
+	 */
+	private function returnToDossier(string $caseId, array $source, array $payload, mixed $publicationId): void {
+		$this->dossierReturn?->append(case: $source['case'], publicationId: $publicationId, title: (string)$payload['title']);
+
+		$this->dossierReturn?->tellTheResident(case: $source['case'], caseId: $caseId, publicationId: $publicationId);
+	}//end returnToDossier()
 
 	/**
 	 * The disclosable documents whose file could not be read.
