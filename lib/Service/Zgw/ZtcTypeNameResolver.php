@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZtcTypeNameResolverInterface;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 
 /**
@@ -36,7 +37,7 @@ use OCA\Dossiq\Support\NormalisesObjectRows;
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
-class ZtcTypeNameResolver {
+class ZtcTypeNameResolver implements ZtcTypeNameResolverInterface {
 	use NormalisesObjectRows;
 
 	/**

@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
+use OCA\Dossiq\Kernel\Contracts\ZgwRuleResultsInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -39,7 +40,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
-class ZgwRuleResults {
+class ZgwRuleResults implements ZgwRuleResultsInterface {
 	/**
 	 * The status of a refusal because the check could not run.
 	 *

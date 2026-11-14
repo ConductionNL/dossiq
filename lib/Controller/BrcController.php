@@ -29,10 +29,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Kernel\Contracts\BrcCrossRegisterSyncInterface;
+use OCA\Dossiq\Kernel\Contracts\BrcDocumentLinkHandlerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
-use OCA\Dossiq\Service\Zgw\BrcCrossRegisterSync;
-use OCA\Dossiq\Service\Zgw\BrcDocumentLinkHandler;
+use OCA\Dossiq\Service\Zgw\BrcHelperFactory;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -67,16 +68,16 @@ class BrcController extends ZgwController {
 	/**
 	 * What the Besluiten API keeps in step in the Zaken and Documenten registers.
 	 *
-	 * @var BrcCrossRegisterSync
+	 * @var BrcCrossRegisterSyncInterface
 	 */
-	private readonly BrcCrossRegisterSync $sync;
+	private readonly BrcCrossRegisterSyncInterface $sync;
 
 	/**
 	 * The besluitinformatieobject routes.
 	 *
-	 * @var BrcDocumentLinkHandler
+	 * @var BrcDocumentLinkHandlerInterface
 	 */
-	private readonly BrcDocumentLinkHandler $documentLinks;
+	private readonly BrcDocumentLinkHandlerInterface $documentLinks;
 
 	/**
 	 * Constructor.
@@ -96,8 +97,9 @@ class BrcController extends ZgwController {
 		SettingsServiceInterface $settingsService,
 	) {
 		parent::__construct(appName: $appName, request: $request);
-		$this->sync = new BrcCrossRegisterSync(zgwService: $zgwService, settingsService: $settingsService);
-		$this->documentLinks = new BrcDocumentLinkHandler(zgwService: $zgwService, sync: $this->sync);
+		$helpers = new BrcHelperFactory();
+		$this->sync = $helpers->brcCrossRegisterSync(zgwService: $zgwService, settingsService: $settingsService);
+		$this->documentLinks = $helpers->brcDocumentLinkHandler(zgwService: $zgwService, sync: $this->sync);
 	}//end __construct()
 
 	/**
