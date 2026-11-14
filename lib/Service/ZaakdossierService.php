@@ -560,6 +560,30 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 			filters: ['case' => $caseId, '_limit' => 500],
 		);
 
+		$documents = $this->joinedDocuments(objectService: $objectService, register: $register, infoSchema: $infoSchema, joins: $joins);
+
+		// Every row carries who the document was from and to, named. The
+		// parties are read once for the whole listing rather than once per
+		// document, which is the difference between one OpenRegister read and
+		// forty to draw one column.
+		$described = $this->correspondents->describeAll(caseId: $caseId, documents: $documents, correspondent: $correspondent);
+
+		return $this->groupByType(documents: $described);
+	}//end getDossierForCase()
+
+	/**
+	 * The informatieobjecten the join rows point at, skipping rows without one and documents that do not resolve.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register The register id.
+	 * @param string $infoSchema The informatieobject schema id.
+	 * @param array<int, array<string, mixed>> $joins The zaakinformatieobject join rows.
+	 *
+	 * @return array<int, array<string, mixed>> The documents.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	private function joinedDocuments(object $objectService, string $register, string $infoSchema, array $joins): array {
 		$documents = [];
 		foreach ($joins as $join) {
 			$infoId = (string)($join['informatieobject'] ?? '');
@@ -567,30 +591,15 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 				continue;
 			}
 
-			$doc = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $infoSchema,
-				id: $infoId,
-			);
+			$doc = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $infoSchema, id: $infoId);
 
 			if ($doc !== null) {
 				$documents[] = $doc;
 			}
 		}
 
-		// Every row carries who the document was from and to, named. The
-		// parties are read once for the whole listing rather than once per
-		// document, which is the difference between one OpenRegister read and
-		// forty to draw one column.
-		return $this->groupByType(
-			documents: $this->correspondents->describeAll(
-				caseId: $caseId,
-				documents: $documents,
-				correspondent: $correspondent,
-			)
-		);
-	}//end getDossierForCase()
+		return $documents;
+	}//end joinedDocuments()
 
 	/**
 	 * Group a list of informatieobjecten by informatieobjecttype with counts.
@@ -661,26 +670,12 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 		[$objectService, $register] = $this->requireRegister();
 		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
 
-		$current = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $infoSchema,
-			id: $infoObjectId,
-		);
+		$current = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $infoSchema, id: $infoObjectId);
 
 		$current = $this->requireEditableDocument(current: $current, infoObjectId: $infoObjectId);
 
 		$updateData = $this->editableFields(metadata: $metadata);
-
-		$updateData = array_merge(
-			$updateData,
-			$this->correspondents->applyEdit(
-				documentId: $infoObjectId,
-				current: $current,
-				metadata: $metadata,
-				direction: (string)($updateData['direction'] ?? ($current['direction'] ?? '')),
-			)
-		);
+		$updateData = $this->withCorrespondentEdit(infoObjectId: $infoObjectId, current: $current, metadata: $metadata, updateData: $updateData);
 
 		if (empty($updateData) === true) {
 			return ['id' => $infoObjectId, 'updated' => false];
@@ -689,16 +684,34 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 		// Only the edited fields, applied to the stored document: a bare
 		// saveObject() with the uuid replaces the document with $updateData,
 		// which the schema refuses for the required properties it drops.
-		$this->patchObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $infoSchema,
-			id: $infoObjectId,
-			changes: $updateData,
-		);
+		$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $infoSchema, id: $infoObjectId, changes: $updateData);
 
 		return array_merge(['id' => $infoObjectId, 'updated' => true], $updateData);
 	}//end updateMetadata()
+
+	/**
+	 * The update data with the correspondent edit merged in.
+	 *
+	 * @param string $infoObjectId The informatieobject UUID.
+	 * @param array<string, mixed> $current The stored document.
+	 * @param array<string, mixed> $metadata Editable fields as submitted.
+	 * @param array<string, mixed> $updateData The editable fields picked so far.
+	 *
+	 * @return array<string, mixed> The update data.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	private function withCorrespondentEdit(string $infoObjectId, array $current, array $metadata, array $updateData): array {
+		return array_merge(
+			$updateData,
+			$this->correspondents->applyEdit(
+				documentId: $infoObjectId,
+				current: $current,
+				metadata: $metadata,
+				direction: (string)($updateData['direction'] ?? ($current['direction'] ?? '')),
+			)
+		);
+	}//end withCorrespondentEdit()
 
 	/**
 	 * Refuse a document that is missing or definitief.
