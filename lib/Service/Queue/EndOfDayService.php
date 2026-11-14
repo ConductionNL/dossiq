@@ -57,7 +57,7 @@ class EndOfDayService implements EndOfDayServiceInterface {
 	 */
 	private const READ_STATES = 'OCA\\OpenRegister\\Db\\ObjectReadStateMapper';
 
-	private const NOTES = 'OCA\\OpenRegister\\Service\\NoteService';
+	private const NOTES = 'OCA\\OpenRegister\\Files\\Service\\NoteService';
 
 	/**
 	 * How many items "First thing tomorrow" lists.

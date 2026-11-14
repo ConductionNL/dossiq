@@ -39,7 +39,7 @@ class FileRestrictionMirror {
 	/**
 	 * OpenRegister's service, resolved at call time: OpenRegister is an optional dependency.
 	 */
-	public const SERVICE = 'OCA\OpenRegister\Service\File\FileRestrictionService';
+	public const SERVICE = 'OCA\OpenRegister\Files\Service\File\FileRestrictionService';
 
 	/**
 	 * Constructor.

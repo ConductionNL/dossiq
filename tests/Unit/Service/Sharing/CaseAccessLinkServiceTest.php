@@ -262,7 +262,7 @@ class CaseAccessLinkServiceTest extends TestCase {
 			function (string $id) {
 				return match ($id) {
 					'OCA\OpenRegister\Service\Sharing\AccessLinkService' => $this->links,
-					'OCA\OpenRegister\Service\Sharing\AccessLinkReader' => $this->reader,
+					'OCA\OpenRegister\Files\Service\Sharing\AccessLinkReader' => $this->reader,
 					'OCA\OpenRegister\Service\ObjectService' => $this->objects,
 					default => throw new \RuntimeException('no ' . $id),
 				};

@@ -43,7 +43,7 @@ class DocumentText implements DocumentTextInterface {
 	/**
 	 * OpenRegister's text extraction service.
 	 */
-	private const EXTRACTION = 'OCA\OpenRegister\Service\TextExtractionService';
+	private const EXTRACTION = 'OCA\OpenRegister\Files\Service\TextExtractionService';
 
 	/**
 	 * Constructor.
