@@ -86,6 +86,8 @@ class IntegrationStatusService implements IntegrationStatusServiceInterface {
 		'pdok',
 		'berichtenbox',
 		'templates',
+		'smartdocuments',
+		'xential',
 	];
 
 	/**
