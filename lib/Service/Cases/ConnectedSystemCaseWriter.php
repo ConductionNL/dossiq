@@ -181,13 +181,13 @@ class ConnectedSystemCaseWriter implements ConnectedSystemCaseWriterInterface {
 	private function openUnlessKnown(array $operation, array $caseType, string $system): array {
 		$external = self::text(value: ($operation['identifier'] ?? ''));
 
-		[$objects, $register, $schema] = $this->store();
+		$store = $this->store();
 		if ($this->findOwnCase(identifier: $external, system: $system) !== null) {
 			return self::refusal(kind: self::CONFLICT, reason: 'Deze zaak bestaat al.');
 		}
 
 		$newCase = $this->newCase(operation: $operation, caseType: $caseType, system: $system);
-		return $this->storeNewCase(objects: $objects, register: $register, schema: $schema, case: $newCase);
+		return $this->storeNewCase(store: $store, case: $newCase);
 	}//end openUnlessKnown()
 
 	/**
@@ -226,10 +226,8 @@ class ConnectedSystemCaseWriter implements ConnectedSystemCaseWriterInterface {
 	/**
 	 * Save the new case and answer the number it was given.
 	 *
-	 * @param object               $objects  The object service.
-	 * @param string               $register The register id.
-	 * @param string               $schema   The case schema id.
-	 * @param array<string, mixed> $case     The case, with the connection id and the system's own identifier as its origin.
+	 * @param array{0: object, 1: string, 2: string} $store The object service, the register id and the case schema id.
+	 * @param array<string, mixed>                   $case  The case, with the connection id and the system's own identifier as its origin.
 	 *
 	 * @return array The outcome (WriteOutcome).
 	 *
@@ -237,7 +235,8 @@ class ConnectedSystemCaseWriter implements ConnectedSystemCaseWriterInterface {
 	 *
 	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-case-opened-by-a-connected-system-keeps-its-origin
 	 */
-	private function storeNewCase(object $objects, string $register, string $schema, array $case): array {
+	private function storeNewCase(array $store, array $case): array {
+		[$objects, $register, $schema] = $store;
 		$system   = (string)($case['originSystem'] ?? '');
 		$external = (string)($case['originIdentifier'] ?? '');
 		$saved = $this->saveObjectAsArray(objectService: $objects, register: $register, schema: $schema, object: $case);
