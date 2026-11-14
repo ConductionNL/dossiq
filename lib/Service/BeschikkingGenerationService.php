@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BeschikkingGenerationServiceInterface;
 use OCA\Dossiq\Support\FleetAppId;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 use OCP\IAppConfig;
@@ -45,7 +46,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T04
  */
-class BeschikkingGenerationService {
+class BeschikkingGenerationService implements BeschikkingGenerationServiceInterface {
 	use NormalisesObjectRows;
 
 	private const STUB_NOT_SAVED = 'could not create stub bijlage';

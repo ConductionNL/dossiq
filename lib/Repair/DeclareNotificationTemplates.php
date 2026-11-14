@@ -44,7 +44,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Notification\PlatformEventTemplates;
+use OCA\Dossiq\Kernel\Contracts\PlatformEventTemplatesInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -177,7 +177,7 @@ class DeclareNotificationTemplates implements IRepairStep {
 
 		$written = [];
 		foreach ($gaps as $event) {
-			$dutch = (PlatformEventTemplates::DUTCH[$event] ?? null);
+			$dutch = (PlatformEventTemplatesInterface::DUTCH[$event] ?? null);
 			if ($dutch === null) {
 				// Nothing dossiq can say about this event. Leaving it in the
 				// gap list is the point: it stays finishable by somebody else.

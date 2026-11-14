@@ -50,10 +50,11 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Portal\ResidentQuestionTask;
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ResidentQuestionTaskInterface;
+use OCA\Dossiq\Kernel\Contracts\WooRequestIntakeInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
-use OCA\Dossiq\Woo\WooRequestIntake;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -62,24 +63,14 @@ use Throwable;
  *
  * @spec openspec/specs/termijn-pause-extension/spec.md
  */
-class AanvullingsverzoekService {
+class AanvullingsverzoekService implements AanvullingsverzoekServiceInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * The schema the requests are objects of.
-	 */
-	public const SCHEMA = 'aanvullingsverzoek';
 
 	/**
 	 * A request for missing documents, the ordinary kind.
 	 */
 	public const KIND_DOCUMENTS = 'aanvulling';
-
-	/**
-	 * A request to make a Woo request more precise (Woo art. 4.1 lid 5).
-	 */
-	public const KIND_CLARIFICATION = 'verduidelijking';
 
 	/**
 	 * The states a request can be in, and the only one that is still waiting.
@@ -105,7 +96,7 @@ class AanvullingsverzoekService {
 	 *                                                   suspends as one act.
 	 * @param SettingsService           $settingsService The OpenRegister seam.
 	 * @param LoggerInterface           $logger          Structured logger.
-	 * @param ResidentQuestionTask|null $portalTask      Turns the request into a task in the resident's
+	 * @param ResidentQuestionTaskInterface|null $portalTask      Turns the request into a task in the resident's
 	 *                                                   portal (decision 169), or null in a test that is not about it.
 	 * @param DayCount                  $days            Counts the days between two moments.
 	 */
@@ -113,7 +104,7 @@ class AanvullingsverzoekService {
 		private readonly InformationRequestService $act,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
-		private readonly ?ResidentQuestionTask $portalTask = null,
+		private readonly ?ResidentQuestionTaskInterface $portalTask = null,
 		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
@@ -191,7 +182,7 @@ class AanvullingsverzoekService {
 
 		// A Woo request on any version of the case type: the first version by
 		// its fixed id, a later one by the identifier the chain shares.
-		$wooKeys = [WooRequestIntake::CASE_TYPE_ID, WooRequestIntake::CASE_TYPE_IDENTIFIER];
+		$wooKeys = [WooRequestIntakeInterface::CASE_TYPE_ID, WooRequestIntakeInterface::CASE_TYPE_IDENTIFIER];
 		if (in_array($this->caseTypeOf(caseId: $ask['caseId']), $wooKeys, true) === false) {
 			throw new RefusedException(
 				rule: 'aanvullingsverzoek-clarification-woo-only',

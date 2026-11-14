@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service\Board;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseChangesFeedInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IL10N;
@@ -43,7 +44,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/realtime-updates-ui/spec.md
  */
-class CaseChangesFeed {
+class CaseChangesFeed implements CaseChangesFeedInterface {
 	use SearchesObjects;
 
 	/**

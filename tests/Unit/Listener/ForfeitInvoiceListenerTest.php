@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\ForfeitInvoiceListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\ForfeitInvoiceListenerRegistrar;
 use OCA\Dossiq\Exception\ForfeitInvoiceNotRaisedException;
 use OCA\Dossiq\Listener\ForfeitInvoiceListener;
 use OCA\Dossiq\Service\Money\ForfeitInvoiceRaiser;

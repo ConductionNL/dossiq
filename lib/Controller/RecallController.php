@@ -24,9 +24,9 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Review\RecallSamples;
-use OCA\Dossiq\Review\StoppingRules;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\RecallSamplesInterface;
+use OCA\Dossiq\Kernel\Contracts\StoppingRulesInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -49,9 +49,9 @@ class RecallController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param StoppingRules $rules The stopping rule.
-	 * @param RecallSamples $samples The recall samples.
-	 * @param CaseAccessGuard $caseAccessGuard The per-case access check.
+	 * @param StoppingRulesInterface $rules The stopping rule.
+	 * @param RecallSamplesInterface $samples The recall samples.
+	 * @param CaseAccessGuardInterface $caseAccessGuard The per-case access check.
 	 * @param IUserSession $userSession The session.
 	 * @param IL10N $l10n The translations.
 	 *
@@ -59,9 +59,9 @@ class RecallController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly StoppingRules $rules,
-		private readonly RecallSamples $samples,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly StoppingRulesInterface $rules,
+		private readonly RecallSamplesInterface $samples,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {

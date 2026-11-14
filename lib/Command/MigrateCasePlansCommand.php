@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\CasePlanDrain\CasePlanMigrationService;
+use OCA\Dossiq\Kernel\Contracts\CasePlanMigrationServiceInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -42,10 +42,10 @@ class MigrateCasePlansCommand extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param CasePlanMigrationService $migration The drain.
+	 * @param CasePlanMigrationServiceInterface $migration The drain.
 	 */
 	public function __construct(
-		private readonly CasePlanMigrationService $migration,
+		private readonly CasePlanMigrationServiceInterface $migration,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -109,7 +109,7 @@ class MigrateCasePlansCommand extends Command {
 
 		$unmappable = 0;
 		foreach ($reports as $report) {
-			if ($report['outcome'] === CasePlanMigrationService::UNMAPPABLE) {
+			if ($report['outcome'] === CasePlanMigrationServiceInterface::UNMAPPABLE) {
 				$unmappable++;
 			}
 

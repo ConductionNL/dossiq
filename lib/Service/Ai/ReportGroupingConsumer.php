@@ -38,6 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Ai;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ReportGroupingConsumerInterface;
 use OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use OCA\Dossiq\Service\CaseTypeStore;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-identical-reports-collapse-on-the-case-and-dossiq-decides-what-a-group-means-req-aic-04
  */
-class ReportGroupingConsumer {
+class ReportGroupingConsumer implements ReportGroupingConsumerInterface {
 
 	/**
 	 * The feature slug a case type declares to have its reports grouped.

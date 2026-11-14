@@ -36,8 +36,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseMergeService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseMergeServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -74,16 +74,16 @@ class CaseMergeController extends Controller {
 	 *
 	 * @param string           $appName         The app name.
 	 * @param IRequest         $request         The HTTP request.
-	 * @param CaseMergeService $mergeService    The rules, and the ask.
-	 * @param CaseAccessGuard  $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseMergeServiceInterface $mergeService    The rules, and the ask.
+	 * @param CaseAccessGuardInterface  $caseAccessGuard Per-case authorization (fails closed).
 	 * @param IUserSession     $userSession     The current session.
 	 * @param IL10N            $l10n            The translations.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseMergeService $mergeService,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseMergeServiceInterface $mergeService,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {

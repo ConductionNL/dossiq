@@ -37,9 +37,10 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
-use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
+use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use OCA\Dossiq\Service\Timeline\TermEventEntry;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -49,7 +50,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
-class TermijnService {
+class TermijnService implements TermijnServiceInterface {
 
 	/**
 	 * The fields of an event that say who it is told to, and what it tells them.

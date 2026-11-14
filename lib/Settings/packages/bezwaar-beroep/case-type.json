@@ -26,7 +26,24 @@
         "case-objection-grounds",
         "case-objection-advice-card"
       ],
-      "initialStatus": "b3c1a000-0000-4000-a000-0000000b2a01"
+      "initialStatus": "b3c1a000-0000-4000-a000-0000000b2a01",
+      "relations": [
+        {
+          "role": "contests",
+          "label": "Contests decision",
+          "target": "object",
+          "targetSchema": "decision_schema",
+          "targetCaseField": "case",
+          "natureRelationship": "vervolg",
+          "requiredAtIntake": true,
+          "record": {
+            "schema": "objection_schema",
+            "caseField": "case",
+            "targetField": "contestedDecision",
+            "actorField": "registeredBy"
+          }
+        }
+      ]
     },
     {
       "id": "b3c1a000-0000-4000-a000-00000000be30",
@@ -44,7 +61,23 @@
       "publicationRequired": false,
       "isDraft": false,
       "confidentiality": "zaakvertrouwelijk",
-      "initialStatus": "fbe0b51c-3931-5428-9386-5c2a4ce266e2"
+      "initialStatus": "fbe0b51c-3931-5428-9386-5c2a4ce266e2",
+      "relations": [
+        {
+          "role": "appeals",
+          "label": "Appeals decision on objection",
+          "target": "object",
+          "targetSchema": "bezwaar_schema",
+          "targetCaseField": "case",
+          "natureRelationship": "vervolg",
+          "requiredAtIntake": false,
+          "record": {
+            "schema": "beroep_schema",
+            "caseField": "case",
+            "targetField": "sourceObjection"
+          }
+        }
+      ]
     }
   ],
   "propertyDefinitions": [

@@ -30,8 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Woo\WooDeliveredSetWriter;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetWriterInterface;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
@@ -62,14 +62,14 @@ class WooDeliveredSetGuard implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService       $settings The configured schemas.
-	 * @param WooDeliveredSetWriter $sets     Reads the frozen sets of a case.
+	 * @param SettingsServiceInterface       $settings The configured schemas.
+	 * @param WooDeliveredSetWriterInterface $sets     Reads the frozen sets of a case.
 	 * @param IL10N                 $l10n     The refusal sentence.
 	 * @param LoggerInterface       $logger   Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
-		private readonly WooDeliveredSetWriter $sets,
+		private readonly SettingsServiceInterface $settings,
+		private readonly WooDeliveredSetWriterInterface $sets,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
@@ -118,7 +118,12 @@ class WooDeliveredSetGuard implements IEventListener {
 			return null;
 		}
 
-		if ($this->isSchema(object: $current, configKey: WooDeliveredSetWriter::CONFIG_KEY, slug: WooDeliveredSetWriter::SCHEMA_SLUG) === true) {
+		if ($this->isSchema(
+			object: $current,
+			configKey: WooDeliveredSetWriterInterface::CONFIG_KEY,
+			slug: WooDeliveredSetWriterInterface::SCHEMA_SLUG
+		) === true
+		) {
 			return $this->frozenSetRefusal(old: ($old ?? []), new: $new);
 		}
 
@@ -190,7 +195,7 @@ class WooDeliveredSetGuard implements IEventListener {
 	 * @return string|null
 	 */
 	private function frozenSetRefusal(array $old, ?array $new): ?string {
-		if ((string)($old['status'] ?? '') !== WooDeliveredSetWriter::STATUS_FROZEN) {
+		if ((string)($old['status'] ?? '') !== WooDeliveredSetWriterInterface::STATUS_FROZEN) {
 			return null;
 		}
 

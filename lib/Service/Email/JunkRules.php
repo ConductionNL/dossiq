@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Email;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\JunkRulesInterface;
 use OCP\IAppConfig;
 
 /**
@@ -44,7 +45,7 @@ use OCP\IAppConfig;
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  */
-class JunkRules {
+class JunkRules implements JunkRulesInterface {
 
 	/**
 	 * The app-config key holding the administered rules.

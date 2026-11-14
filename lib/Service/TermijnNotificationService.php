@@ -34,13 +34,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Term\TermNoticeSources;
-use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
-
 use InvalidArgumentException;
 use OCA\Dossiq\BackgroundJob\DeadlineNotificationDispatchJob;
 use OCA\Dossiq\Exception\NoticeNotSentException;
+use OCA\Dossiq\Kernel\Contracts\TermijnNotificationServiceInterface;
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
@@ -50,7 +50,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
-class TermijnNotificationService {
+class TermijnNotificationService implements TermijnNotificationServiceInterface {
 	public const TEMPLATES = [
 		'ontvangstbevestiging',
 		'extension',

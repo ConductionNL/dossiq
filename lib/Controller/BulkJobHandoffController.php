@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\Bulk\BulkJobHandoff;
+use OCA\Dossiq\Kernel\Contracts\BulkJobHandoffInterface;
 use OCA\Dossiq\Service\Bulk\MixedCaseTypeVersionsException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -55,7 +55,7 @@ class BulkJobHandoffController extends Controller {
 	 *
 	 * @param string          $appName     The app name.
 	 * @param IRequest        $request     The request.
-	 * @param BulkJobHandoff  $handoff     The hand-off to OpenRegister's job.
+	 * @param BulkJobHandoffInterface  $handoff     The hand-off to OpenRegister's job.
 	 * @param IUserSession    $userSession The user session.
 	 * @param LoggerInterface $logger      The logger.
 	 *
@@ -66,7 +66,7 @@ class BulkJobHandoffController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly BulkJobHandoff $handoff,
+		private readonly BulkJobHandoffInterface $handoff,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

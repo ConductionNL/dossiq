@@ -285,7 +285,6 @@ class PlatformDataSubjectRightsTest extends TestCase {
 				throw new ErasureRefusedException(
 					rule: 'erasure-preview-stale',
 					reason: 'The world moved since this preview was taken.',
-					statusCode: 409,
 				);
 			}
 		};
@@ -347,7 +346,6 @@ class PlatformDataSubjectRightsTest extends TestCase {
 				throw new ErasureRefusedException(
 					rule: 'erasure-preview-spent',
 					reason: 'This preview has already been run.',
-					statusCode: 409,
 				);
 			}
 		};

@@ -23,8 +23,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Zaakdossier\RestrictedDocumentReaders;
+use OCA\Dossiq\Kernel\Contracts\RestrictedDocumentReadersInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -44,15 +44,15 @@ class RestrictedDocumentHandlerListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService           $settingsService Which schema is the case schema.
-	 * @param RestrictedDocumentReaders $readers         Refreshes the readers of the case's restricted documents.
+	 * @param SettingsServiceInterface           $settingsService Which schema is the case schema.
+	 * @param RestrictedDocumentReadersInterface $readers         Refreshes the readers of the case's restricted documents.
 	 * @param LoggerInterface           $logger          Where a failed refresh is reported.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly RestrictedDocumentReaders $readers,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly RestrictedDocumentReadersInterface $readers,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

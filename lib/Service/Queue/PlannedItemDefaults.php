@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\PlannedItemDefaultsInterface;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 
 /**
@@ -36,7 +37,7 @@ use OCA\Dossiq\Service\WorkingDayCalculator;
  *
  * @spec openspec/specs/my-work/spec.md
  */
-class PlannedItemDefaults {
+class PlannedItemDefaults implements PlannedItemDefaultsInterface {
 	/**
 	 * The hour a planned item starts at by default.
 	 */

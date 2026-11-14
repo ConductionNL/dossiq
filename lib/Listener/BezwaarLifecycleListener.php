@@ -37,7 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
@@ -70,11 +70,11 @@ class BezwaarLifecycleListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Schema id-to-slug resolver
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
-		private ObjectSchemaSlugResolver $slugResolver,
+		private ObjectSchemaSlugResolverInterface $slugResolver,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()

@@ -38,6 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Access;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
 use OCA\Dossiq\Repair\SeedStaffGroup;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-declares-the-records-it-keeps-private-to-the-case-req-cra-001
  */
-class CaseReviewerAccess {
+class CaseReviewerAccess implements CaseReviewerAccessInterface {
 
 	/**
 	 * The supervising group when the case type names none.

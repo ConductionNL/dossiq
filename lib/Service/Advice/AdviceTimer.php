@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Advice;
 
+use OCA\Dossiq\Kernel\Contracts\AdviceTimerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -55,7 +56,7 @@ use Throwable;
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class AdviceTimer {
+class AdviceTimer implements AdviceTimerInterface {
 
 	/**
 	 * The engine class, resolved lazily so dossiq runs without OpenRegister.
@@ -65,25 +66,11 @@ class AdviceTimer {
 	public const ENGINE_CLASS = 'OCA\\OpenRegister\\Service\\Flow\\Timer\\FlowTimerService';
 
 	/**
-	 * The metadata source the fired listener recognises the timer by.
-	 *
-	 * @var string
-	 */
-	public const METADATA_SOURCE = 'dossiq-advice';
-
-	/**
 	 * The status of a request still waiting for its advisor.
 	 *
 	 * @var string
 	 */
 	public const OPEN_STATUS = 'requested';
-
-	/**
-	 * Outcome: a timer is armed.
-	 *
-	 * @var string
-	 */
-	public const ARMED = 'armed';
 
 	/**
 	 * Outcome: the request is closed and its timers are cancelled.
@@ -93,25 +80,11 @@ class AdviceTimer {
 	public const CANCELLED = 'cancelled';
 
 	/**
-	 * Outcome: the deadline is already past; the caller expires the request.
-	 *
-	 * @var string
-	 */
-	public const OVERDUE = 'overdue';
-
-	/**
 	 * Outcome: nothing to time (no id, no deadline, or a status this ignores).
 	 *
 	 * @var string
 	 */
 	public const SKIPPED = 'skipped';
-
-	/**
-	 * Outcome: the engine is absent or refused.
-	 *
-	 * @var string
-	 */
-	public const UNAVAILABLE = 'unavailable';
 
 	/**
 	 * The statuses that end the wait.

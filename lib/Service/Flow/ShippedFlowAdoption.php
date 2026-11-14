@@ -66,6 +66,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Flow;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ShippedFlowAdoptionInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -77,7 +78,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class ShippedFlowAdoption {
+class ShippedFlowAdoption implements ShippedFlowAdoptionInterface {
 
 	/**
 	 * OpenRegister's flow service, resolved by name.

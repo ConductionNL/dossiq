@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Registry;
 
+use OCA\Dossiq\Kernel\Contracts\RequesterRegistrySubscriptionInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/changes/contacts-domain/tasks.md#4-the-contact-reference-on-a-contact-moment
  */
-class RequesterRegistrySubscription {
+class RequesterRegistrySubscription implements RequesterRegistrySubscriptionInterface {
 
 	/**
 	 * OpenRegister's registry subscription service (openregister#3656).

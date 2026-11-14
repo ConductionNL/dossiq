@@ -28,9 +28,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZgwMappingServiceInterface;
 use OCA\Dossiq\Repair\LoadDefaultZgwMappings;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
@@ -51,8 +51,8 @@ class ZgwMappingController extends Controller {
 	 * Constructor for the ZgwMappingController.
 	 *
 	 * @param IRequest $request The request object
-	 * @param ZgwMappingService $zgwMappingService The ZGW mapping service
-	 * @param SettingsService $settingsService The settings service
+	 * @param ZgwMappingServiceInterface $zgwMappingService The ZGW mapping service
+	 * @param SettingsServiceInterface $settingsService The settings service
 	 * @param LoggerInterface $logger The logger interface
 	 * @param IL10N $l10n The localization service
 	 *
@@ -60,8 +60,8 @@ class ZgwMappingController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly ZgwMappingService $zgwMappingService,
-		private readonly SettingsService $settingsService,
+		private readonly ZgwMappingServiceInterface $zgwMappingService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly IL10N $l10n,
 	) {

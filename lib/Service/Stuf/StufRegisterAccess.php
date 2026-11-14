@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Stuf;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\StufRegisterAccessInterface;
 use OCP\App\IAppManager;
 use OCP\AppFramework\IAppContainer;
 use OCP\IAppConfig;
@@ -40,10 +41,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
  */
-class StufRegisterAccess {
-	public const SCHEMA_ENDPOINT = 'stufEndpoint';
-
-	public const SCHEMA_MESSAGE = 'stufMessage';
+class StufRegisterAccess implements StufRegisterAccessInterface {
 
 	public const SCHEMA_MAPPING = 'zaaksysteemMapping';
 

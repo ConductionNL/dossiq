@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Complaint;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\EmployeeAlertAudienceInterface;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use Throwable;
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/specs/complaint-management/spec.md#scenario-employee-complaint-threshold-alert
  */
-class EmployeeAlertAudience {
+class EmployeeAlertAudience implements EmployeeAlertAudienceInterface {
 
 	/**
 	 * App config key holding the comma-separated audience groups.

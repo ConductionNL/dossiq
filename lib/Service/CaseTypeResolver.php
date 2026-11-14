@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeResolverInterface;
 use OCA\Dossiq\Service\CaseType\InheritedRowValues;
 use OCA\Dossiq\Service\CaseType\RowOrigins;
 use OCA\Dossiq\Service\Support\LanguageMapText;
@@ -51,7 +52,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseTypeResolver {
+class CaseTypeResolver implements CaseTypeResolverInterface {
 	/**
 	 * How deep a chain of parents may run, the type itself included.
 	 *
@@ -550,10 +551,5 @@ class CaseTypeResolver {
 
 		return $this->text->textOr(value: ($row['title'] ?? null), fallback: $caseTypeId);
 	}//end titleOf()
-
-
-
-
-
 
 }//end class

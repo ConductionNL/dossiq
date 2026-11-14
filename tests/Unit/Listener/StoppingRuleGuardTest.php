@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\ReviewListenerRegistrar;
 use OCA\Dossiq\Listener\StoppingRuleGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
@@ -37,7 +37,7 @@ use Psr\Log\LoggerInterface;
  * Direct OpenRegister writes to the stopping rule, through the OpenRegister event classes.
  *
  * @covers \OCA\Dossiq\Listener\StoppingRuleGuard
- * @covers \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\ReviewListenerRegistrar
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
  * @uses \OCA\Dossiq\Listener\LinkMarkerListener

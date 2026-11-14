@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Bezwaar;
 
+use OCA\Dossiq\Kernel\Contracts\BezwaarCreationHookInterface;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
@@ -54,7 +55,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
  */
-class BezwaarCreationHook {
+class BezwaarCreationHook implements BezwaarCreationHookInterface {
 
 	use SearchesObjects;
 

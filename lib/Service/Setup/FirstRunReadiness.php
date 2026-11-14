@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Setup;
 
+use OCA\Dossiq\Kernel\Contracts\FirstRunReadinessInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/first-time-setup/spec.md
  */
-class FirstRunReadiness {
+class FirstRunReadiness implements FirstRunReadinessInterface {
 
 	use SearchesObjects;
 

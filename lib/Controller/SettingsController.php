@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
@@ -71,7 +71,7 @@ class SettingsController extends Controller {
 	 * @param IRequest $request The request object
 	 * @param ContainerInterface $container The container
 	 * @param IAppManager $appManager The app manager
-	 * @param SettingsService $settingsService The settings service
+	 * @param SettingsServiceInterface $settingsService The settings service
 	 * @param IGroupManager $groupManager The group manager
 	 * @param IUserSession $userSession The user session
 	 * @param IL10N $l10n The translation service (libresign-besluit-signing hint).
@@ -82,7 +82,7 @@ class SettingsController extends Controller {
 		IRequest $request,
 		private readonly ContainerInterface $container,
 		private readonly IAppManager $appManager,
-		private SettingsService $settingsService,
+		private SettingsServiceInterface $settingsService,
 		private readonly IGroupManager $groupManager,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,

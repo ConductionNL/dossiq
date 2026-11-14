@@ -28,8 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\KccWerkplekSeedDataService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\KccWerkplekSeedDataServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -44,13 +44,13 @@ class SeedKccWerkplekData implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param KccWerkplekSeedDataService $seedService Seed service.
-	 * @param SettingsService $settingsService Settings service.
+	 * @param KccWerkplekSeedDataServiceInterface $seedService Seed service.
+	 * @param SettingsServiceInterface $settingsService Settings service.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly KccWerkplekSeedDataService $seedService,
-		private readonly SettingsService $settingsService,
+		private readonly KccWerkplekSeedDataServiceInterface $seedService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

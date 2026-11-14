@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Termijn;
 
+use OCA\Dossiq\Kernel\Contracts\NoticeOfDefaultRowsInterface;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\SettingsService;
@@ -49,7 +50,7 @@ use Throwable;
  * @spec openspec/specs/termijn-reporting/spec.md
  * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
  */
-class NoticeOfDefaultRows {
+class NoticeOfDefaultRows implements NoticeOfDefaultRowsInterface {
 	use SearchesObjects;
 
 	/**

@@ -3437,6 +3437,64 @@
 							"title": "{title}",
 							"meta": "{metWhen}",
 							"emptyText": "",
+							"rowActions": [
+								{
+									"id": "close-goal",
+									"label": "Close",
+									"icon": "CheckCircleOutline",
+									"type": "open-modal",
+									"target": "RowRecordActionDialog",
+									"visibleWhen": {
+										"field": "closedDate",
+										"op": "empty"
+									},
+									"props": {
+										"objectId": "@objectId",
+										"config": {
+											"title": "Close goal",
+											"summary": {
+												"title": "{title}",
+												"meta": "{metWhen}"
+											},
+											"fields": [
+												{
+													"field": "state",
+													"type": "select",
+													"label": "Outcome",
+													"options": [
+														{
+															"value": "met",
+															"label": "Met"
+														},
+														{
+															"value": "not-met",
+															"label": "Not met"
+														},
+														{
+															"value": "withdrawn",
+															"label": "Withdrawn"
+														}
+													]
+												}
+											],
+											"reason": {
+												"label": "What was observed",
+												"field": "observation",
+												"rows": 3
+											},
+											"confirm": {
+												"label": "Close goal",
+												"icon": "CheckCircleOutline",
+												"request": {
+													"method": "POST",
+													"url": "/apps/dossiq/api/cases/@objectId/goals/@object.id/close"
+												}
+											},
+											"doneText": "The goal is closed."
+										}
+									}
+								}
+							],
 							"footerAction": {
 								"label": "Add goal",
 								"icon": "Plus",
@@ -9938,7 +9996,7 @@
 						"type": "record-list",
 						"title": "Rules of this case type",
 						"subtitle": "What happens when a case of this type meets a condition, in order",
-						"_note": "case-type-conditional-rules Task 3, board DqZaaktypeRegels: the case type's own rules (caseType.rules) as 'If ... / then ...' rows with an On or Off pill, written by GET /api/case-types/{id}/rules because a rule is stored as kinds and operands and a status as a uuid. Above the OpenRegister rules of the case schema (case-type-rules). Adding and editing a rule through a form is not built yet.",
+						"_note": "case-type-conditional-rules Task 3, board DqZaaktypeRegels: the case type's own rules (caseType.rules) as 'If ... / then ...' rows with an On or Off pill, written by GET /api/case-types/{id}/rules because a rule is stored as kinds and operands and a status as a uuid. Above the OpenRegister rules of the case schema (case-type-rules). Adding, editing, turning off and deleting a rule happen in the form and row menu of case-type-rules (CaseTypeRuleDialog).",
 						"content": {
 							"endpointSource": {
 								"url": "/apps/dossiq/api/case-types/@objectId/rules",

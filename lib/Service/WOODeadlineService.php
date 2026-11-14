@@ -34,8 +34,9 @@ use DateTime;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Termijn\TermDefinitions;
+use OCA\Dossiq\Kernel\Contracts\WOODeadlineServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 
@@ -46,7 +47,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
  */
-class WOODeadlineService {
+class WOODeadlineService implements WOODeadlineServiceInterface {
 
 	use SearchesObjects;
 
@@ -405,6 +406,5 @@ class WOODeadlineService {
 			);
 		}//end try
 	}//end sendDeadlineNotification()
-
 
 }//end class

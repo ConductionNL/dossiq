@@ -38,8 +38,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Email;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Kernel\Contracts\UnmatchedMailIntakeInterface;
 use OCA\Dossiq\Service\AssigneeResolver;
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\IAppConfig;
@@ -53,7 +54,7 @@ use Throwable;
  *
  * @spec openspec/specs/email-case-matching/spec.md
  */
-class UnmatchedMailIntake {
+class UnmatchedMailIntake implements UnmatchedMailIntakeInterface {
 
 	/**
 	 * The app-config key naming the case type an unmatched mail becomes.

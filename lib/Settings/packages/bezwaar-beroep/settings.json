@@ -1,0 +1,4 @@
+{
+  "link_marker_rules": "[{\"source\": \"beroep_schema\", \"field\": \"sourceObjection\", \"target\": \"bezwaar_schema\", \"marker\": \"dwingendStatus\", \"when\": [{\"on\": \"target\", \"field\": \"status\", \"in\": [\"Handled\", \"Inadmissible\", \"Withdrawn\"]}, {\"field\": \"contestedDecision\", \"present\": true}, {\"field\": \"judgmentOutcome\", \"notIn\": [\"upheld\", \"dismissed\", \"inadmissible\", \"withdrawn\", \"schikking\"]}, {\"field\": \"appellantFilingDate\", \"notAfter\": \"filingDeadline\"}]}]",
+  "link_cascades": "{\"reopen_objection\": {\"target\": \"beroep_schema\", \"steps\": [{\"set\": {\"cascadeAction\": \"reopen_objection\"}}]}, \"new_primary_decision\": {\"target\": \"beroep_schema\", \"steps\": [{\"set\": {\"cascadeAction\": \"new_primary_decision\"}}]}, \"none\": {\"target\": \"beroep_schema\", \"steps\": [{\"set\": {\"cascadeAction\": \"none\"}}]}}"
+}

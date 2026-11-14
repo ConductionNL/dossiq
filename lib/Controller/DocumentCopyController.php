@@ -30,8 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Zaakdossier\DocumentCopier;
-use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
+use OCA\Dossiq\Kernel\Contracts\DocumentCopierInterface;
+use OCA\Dossiq\Kernel\Contracts\DossierUploadHandlerInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -51,15 +51,15 @@ class DocumentCopyController extends Controller {
 	 * @param string               $appName       The app name.
 	 * @param IRequest             $request       The request.
 	 * @param IUserSession         $userSession   The user session.
-	 * @param DossierUploadHandler $uploadHandler The right to add documents to a case.
-	 * @param DocumentCopier       $copier        Copies documents to another case.
+	 * @param DossierUploadHandlerInterface $uploadHandler The right to add documents to a case.
+	 * @param DocumentCopierInterface       $copier        Copies documents to another case.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly DossierUploadHandler $uploadHandler,
-		private readonly DocumentCopier $copier,
+		private readonly DossierUploadHandlerInterface $uploadHandler,
+		private readonly DocumentCopierInterface $copier,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

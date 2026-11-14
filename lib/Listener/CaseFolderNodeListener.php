@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
+use OCA\Dossiq\Kernel\Contracts\DocumentProjectionServiceInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\Files\Events\Node\NodeCreatedEvent;
@@ -53,12 +53,12 @@ use Throwable;
 class CaseFolderNodeListener implements IEventListener {
 
 	/**
-	 * @param DocumentProjectionService $projection The service that owns the record.
+	 * @param DocumentProjectionServiceInterface $projection The service that owns the record.
 	 * @param LoggerInterface $logger Where a failed projection is reported.
 	 * @param IUserSession|null $userSession Who wrote the file; nobody means the system.
 	 */
 	public function __construct(
-		private readonly DocumentProjectionService $projection,
+		private readonly DocumentProjectionServiceInterface $projection,
 		private readonly LoggerInterface $logger,
 		private readonly ?IUserSession $userSession = null,
 	) {

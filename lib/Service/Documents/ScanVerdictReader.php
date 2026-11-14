@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Documents;
 
+use OCA\Dossiq\Kernel\Contracts\ScanVerdictReaderInterface;
 use OCP\App\IAppManager;
 use OCP\IDBConnection;
 use Psr\Log\LoggerInterface;
@@ -49,7 +50,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Reads the verdict `files_antivirus` recorded for a file id.
  */
-class ScanVerdictReader {
+class ScanVerdictReader implements ScanVerdictReaderInterface {
 	/**
 	 * The app that does the scanning. dossiq only reads what it wrote.
 	 *

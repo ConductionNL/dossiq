@@ -23,8 +23,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Review\DocumentVerdicts;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentVerdictsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -46,8 +46,8 @@ class DocumentVerdictsController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest         $request         The request.
-	 * @param DocumentVerdicts $verdicts        The verdicts and the grounds of a case.
-	 * @param CaseAccessGuard  $caseAccessGuard The per-case access check.
+	 * @param DocumentVerdictsInterface $verdicts        The verdicts and the grounds of a case.
+	 * @param CaseAccessGuardInterface  $caseAccessGuard The per-case access check.
 	 * @param IUserSession     $userSession     The session.
 	 * @param IL10N            $l10n            The translations.
 	 *
@@ -55,8 +55,8 @@ class DocumentVerdictsController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly DocumentVerdicts $verdicts,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly DocumentVerdictsInterface $verdicts,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {

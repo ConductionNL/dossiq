@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\ZgwJwtValidatorInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -39,7 +40,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
-class ZgwJwtValidator {
+class ZgwJwtValidator implements ZgwJwtValidatorInterface {
 	/**
 	 * Map of JWT algorithm names to hash_hmac algorithm strings.
 	 *

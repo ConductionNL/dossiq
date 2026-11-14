@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\AccruingAmountSettlerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -42,7 +43,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/penalty-is-a-stored-calculation/specs/accruing-amount/spec.md
  */
-class AccruingAmountSettler {
+class AccruingAmountSettler implements AccruingAmountSettlerInterface {
 	use SearchesObjects;
 
 	/**
