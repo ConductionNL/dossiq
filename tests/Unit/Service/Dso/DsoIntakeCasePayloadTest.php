@@ -105,6 +105,39 @@ class DsoIntakeCasePayloadTest extends TestCase {
 	 *
 	 * @return DsoIntakeCasePayload
 	 */
+	/**
+	 * More than three activities is the extended procedure, whatever each one is qualified as.
+	 *
+	 * @return void
+	 */
+	public function testMoreThanThreeActivitiesIsTheExtendedProcedure(): void {
+		$regulier = ['regelkwalificatie' => 'regulier'];
+
+		self::assertSame('uitgebreide', $this->payload(initialStatus: '')->payloadFor('va-5', ['caseType' => 'ct-ref', 'activiteiten' => [$regulier, $regulier, $regulier, $regulier]])['procedureType']);
+		self::assertSame('reguliere', $this->payload(initialStatus: '')->payloadFor('va-6', ['caseType' => 'ct-ref', 'activiteiten' => [$regulier, $regulier, $regulier]])['procedureType']);
+	}//end testMoreThanThreeActivitiesIsTheExtendedProcedure()
+
+	/**
+	 * Activity fields that are not lists, and entries that are not activities, count as none.
+	 *
+	 * @return void
+	 */
+	public function testActivitiesInNoListFormCountAsNone(): void {
+		self::assertSame('reguliere', $this->payload(initialStatus: '')->payloadFor('va-7', ['caseType' => 'ct-ref', 'activiteiten' => 'uitgebreide', 'rawRequest' => 'uitgebreide'])['procedureType']);
+		self::assertSame('reguliere', $this->payload(initialStatus: '')->payloadFor('va-8', ['caseType' => 'ct-ref', 'activiteiten' => ['uitgebreide']])['procedureType']);
+	}//end testActivitiesInNoListFormCountAsNone()
+
+	/**
+	 * A stamp shaped like a moment that is no real moment claims no receipt time.
+	 *
+	 * @return void
+	 */
+	public function testAnImpossibleSubmissionMomentClaimsNoReceipt(): void {
+		$case = $this->payload(initialStatus: '')->payloadFor('va-9', ['caseType' => 'ct-ref', 'submissionDate' => '2026-13-45T10:00']);
+
+		self::assertArrayNotHasKey('receivedAt', $case);
+	}//end testAnImpossibleSubmissionMomentClaimsNoReceipt()
+
 	private function payload(string $initialStatus): DsoIntakeCasePayload {
 		$caseTypes = $this->createMock(CaseTypeReferenceResolver::class);
 		$caseTypes->method('resolve')->willReturnCallback(static fn (string $reference): array => ($reference === 'ct-ref' ? ['id' => 'ct-uuid'] : []));
