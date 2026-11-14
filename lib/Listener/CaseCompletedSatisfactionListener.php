@@ -107,26 +107,7 @@ class CaseCompletedSatisfactionListener implements IEventListener {
 		}
 
 		try {
-			$case = $this->payload(entity: $event->getNewObject());
-			if ($case === null || $this->slugResolver->resolveFromPayload(payload: $case) !== 'case') {
-				return;
-			}
-
-			$after = $this->closedOnto(case: $case, old: $event->getOldObject());
-			if ($after === '') {
-				return;
-			}
-
-			$outcome = $this->pipelinq->caseCompleted(
-				case: array_merge($case, ['status' => self::COMPLETED_STATUS, 'statusType' => $after]),
-				party: $this->party(case: $case)
-			);
-			if ($outcome['handedOff'] === false) {
-				$this->logger->debug(
-					'Dossiq: a closed case was not handed to pipelinq',
-					['case' => ($case['id'] ?? null), 'reason' => $outcome['reason']]
-				);
-			}
+			$this->handOffIfClosed(event: $event);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the satisfaction hand-off of a closed case failed; the case itself is saved',
@@ -134,6 +115,52 @@ class CaseCompletedSatisfactionListener implements IEventListener {
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * Hand a case off when the save closed it.
+	 *
+	 * @param ObjectUpdatedEvent $event The update.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md
+	 */
+	private function handOffIfClosed(ObjectUpdatedEvent $event): void {
+		$case = $this->payload(entity: $event->getNewObject());
+		if ($case === null || $this->slugResolver->resolveFromPayload(payload: $case) !== 'case') {
+			return;
+		}
+
+		$after = $this->closedOnto(case: $case, old: $event->getOldObject());
+		if ($after === '') {
+			return;
+		}
+
+		$this->handOff(case: $case, after: $after);
+	}//end handOffIfClosed()
+
+	/**
+	 * Hand a closed case to pipelinq, noting when it was not taken.
+	 *
+	 * @param array<string, mixed> $case  The case after the save.
+	 * @param string               $after The final statusType id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md
+	 */
+	private function handOff(array $case, string $after): void {
+		$outcome = $this->pipelinq->caseCompleted(
+			case: array_merge($case, ['status' => self::COMPLETED_STATUS, 'statusType' => $after]),
+			party: $this->party(case: $case)
+		);
+		if ($outcome['handedOff'] === false) {
+			$this->logger->debug(
+				'Dossiq: a closed case was not handed to pipelinq',
+				['case' => ($case['id'] ?? null), 'reason' => $outcome['reason']]
+			);
+		}
+	}//end handOff()
 
 	/**
 	 * The final status this save moved the case onto, or '' when it did not close it.
