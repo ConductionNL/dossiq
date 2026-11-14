@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\LoadDefaultZgwMappingsInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwMappingServiceInterface;
 use OCA\Dossiq\Repair\Support\DefaultMappingTables;
@@ -44,7 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class LoadDefaultZgwMappings implements IRepairStep {
+class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInterface {
 	use RunsUnderSystemIdentity;
 
 	/**
