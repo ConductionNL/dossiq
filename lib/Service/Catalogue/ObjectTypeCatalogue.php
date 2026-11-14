@@ -101,9 +101,10 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 
 		$objectService = $this->requireObjectService();
 
-		[$casesByType, $urlByType] = $this->collectAll(objectService: $objectService, register: $register, schema: $schema);
+		$target = new CatalogueRegister(objectService: $objectService, register: $register);
+		[$casesByType, $urlByType] = $this->collectAll(target: $target, schema: $schema);
 
-		$caseTypeOf = $this->caseTypesOf(objectService: $objectService, register: $register, caseIds: $this->caseIdsIn(casesByType: $casesByType));
+		$caseTypeOf = $this->caseTypesOf(target: $target, caseIds: $this->caseIdsIn(casesByType: $casesByType));
 
 		$rows = $this->rowsFor(casesByType: $casesByType, urlByType: $urlByType, caseTypeOf: $caseTypeOf);
 
@@ -133,21 +134,20 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 	/**
 	 * Page through the case-object links, collecting the cases and an object url per type.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register      The register.
-	 * @param string $schema        The case-object schema.
+	 * @param CatalogueRegister $target OpenRegister's ObjectService and the register.
+	 * @param string            $schema The case-object schema.
 	 *
 	 * @return array{0: array<string, array<string, true>>, 1: array<string, string>} The cases and the urls, by type.
 	 *
 	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
 	 */
-	private function collectAll(object $objectService, string $register, string $schema): array {
+	private function collectAll(CatalogueRegister $target, string $schema): array {
 		$casesByType = [];
 		$urlByType   = [];
 		for ($page = 1; $page <= self::MAX_PAGES; $page++) {
 			$links = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
+				objectService: $target->objectService,
+				register: $target->register,
 				schema: $schema,
 				filters: ['_limit' => self::PAGE_SIZE, '_offset' => (($page - 1) * self::PAGE_SIZE)]
 			);
@@ -343,15 +343,14 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 	 * The case type of each case, read in batches; null when the case schema
 	 * is not configured, so the count stays unknown rather than zero.
 	 *
-	 * @param object             $objectService The OpenRegister ObjectService.
-	 * @param string             $register      The register id.
-	 * @param array<int, string> $caseIds       The cases to read.
+	 * @param CatalogueRegister  $target  The OpenRegister ObjectService and the register id.
+	 * @param array<int, string> $caseIds The cases to read.
 	 *
 	 * @return array<string, string>|null The case type id per case id.
 	 *
 	 * @spec openspec/specs/catalogue/spec.md
 	 */
-	private function caseTypesOf(object $objectService, string $register, array $caseIds): ?array {
+	private function caseTypesOf(CatalogueRegister $target, array $caseIds): ?array {
 		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
 		if ($schema === '') {
 			return null;
@@ -360,8 +359,8 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 		$caseTypeOf = [];
 		foreach (array_chunk($caseIds, self::PAGE_SIZE) as $chunk) {
 			$cases = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
+				objectService: $target->objectService,
+				register: $target->register,
 				schema: $schema,
 				filters: ['_ids' => $chunk, '_limit' => count($chunk)]
 			);
