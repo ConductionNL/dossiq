@@ -158,10 +158,23 @@ class DsoDeadlineTimer implements DsoDeadlineTimerInterface {
 			return self::UNAVAILABLE;
 		}
 
-		$warning  = $this->lead(key: 'dso_deadline_warning_weeks_warning', fallback: 14);
-		$critical = $this->lead(key: 'dso_deadline_warning_weeks_critical', fallback: 5);
+		$config = $this->timerConfig(case: $case, caseId: $caseId, anchor: $anchor, slaDays: $slaDays);
 
-		$config = [
+		return $this->armOn(engine: $engine, config: $config, caseId: $caseId);
+	}//end arm()
+
+	/**
+	 * The timer configuration for the engine.
+	 *
+	 * @param array<string, mixed> $case    The case.
+	 * @param string               $caseId  Its id.
+	 * @param DateTimeImmutable    $anchor  Midnight today.
+	 * @param int                  $slaDays Calendar days to the deadline day.
+	 *
+	 * @return array<string, mixed> The timer configuration.
+	 */
+	private function timerConfig(array $case, string $caseId, DateTimeImmutable $anchor, int $slaDays): array {
+		return [
 			'subjectType'     => 'object',
 			'subjectUuid'     => $caseId.self::SUBJECT_SUFFIX,
 			'appId'           => 'dossiq',
@@ -169,19 +182,39 @@ class DsoDeadlineTimer implements DsoDeadlineTimerInterface {
 			'purpose'         => 'due',
 			'legalEffect'     => 'none',
 			'sla'             => ['value' => $slaDays, 'unit' => 'calendarDays'],
-			'escalationRules' => [
-				$this->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'dso-termijn-overschreden'),
-				$this->rule(trigger: 'preBreach', offset: $warning, unit: 'businessDays', message: self::MESSAGE_WARNING),
-				$this->rule(trigger: 'preBreach', offset: $critical, unit: 'businessDays', message: self::MESSAGE_CRITICAL),
-			],
+			'escalationRules' => $this->escalationRules(),
 			'anchorEvent'     => 'dso_term_running',
 			'anchorEventAt'   => $anchor,
-			'metadata'        => [
-				'source' => self::METADATA_SOURCE,
-				'caseId' => $caseId,
-			],
+			'metadata'        => ['source' => self::METADATA_SOURCE, 'caseId' => $caseId],
 		];
+	}//end timerConfig()
 
+	/**
+	 * The escalation rules: the breach, and the warning and critical leads before it.
+	 *
+	 * @return array<int, array<string, mixed>> The escalation rules.
+	 */
+	private function escalationRules(): array {
+		$warning  = $this->lead(key: 'dso_deadline_warning_weeks_warning', fallback: 14);
+		$critical = $this->lead(key: 'dso_deadline_warning_weeks_critical', fallback: 5);
+
+		return [
+			$this->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'dso-termijn-overschreden'),
+			$this->rule(trigger: 'preBreach', offset: $warning, unit: 'businessDays', message: self::MESSAGE_WARNING),
+			$this->rule(trigger: 'preBreach', offset: $critical, unit: 'businessDays', message: self::MESSAGE_CRITICAL),
+		];
+	}//end escalationRules()
+
+	/**
+	 * Hand the configuration to the engine.
+	 *
+	 * @param object               $engine The timer engine.
+	 * @param array<string, mixed> $config The timer configuration.
+	 * @param string               $caseId The case id, for the log.
+	 *
+	 * @return string ARMED, or UNAVAILABLE.
+	 */
+	private function armOn(object $engine, array $config, string $caseId): string {
 		try {
 			$engine->arm(config: $config, actor: null);
 		} catch (Throwable $e) {
@@ -190,7 +223,7 @@ class DsoDeadlineTimer implements DsoDeadlineTimerInterface {
 		}
 
 		return self::ARMED;
-	}//end arm()
+	}//end armOn()
 
 	/**
 	 * One escalation rule.
