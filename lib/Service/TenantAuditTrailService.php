@@ -138,35 +138,41 @@ class TenantAuditTrailService implements TenantAuditTrailServiceInterface {
 		}
 
 		try {
-			$mapper = $this->getAuditTrailMapper();
-			$object = $this->resolveTenantEntity(tenantId: $tenantId);
-			if ($mapper === null || $object === null) {
-				$this->logger->error(
-					'Dossiq AUDIT: OpenRegister audit sink unavailable — durable audit row NOT written',
-					$entry
-				);
-				return false;
-			}
-
-			$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
-				object: $object,
-				// FROZEN PREFIX — still `procest.`, deliberately. Written into
-				// OpenRegister's append-only audit trail; every existing tenant
-				// audit row already carries it and readers filter on it, so a
-				// rename splits the trail and shows a partial history as though
-				// it were complete.
-				action: 'procest.tenant.' . $entry['action'],
-				context: $entry,
-			));
-			return true;
+			return $this->writeRow(entry: $entry, tenantId: $tenantId);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq AUDIT: durable audit row failed',
-				['exception' => $e->getMessage()] + $entry
-			);
+			$this->logger->error('Dossiq AUDIT: durable audit row failed', ['exception' => $e->getMessage()] + $entry);
 			return false;
 		}//end try
 	}//end persist()
+
+	/**
+	 * Record the entry on the tenant's ObjectEntity through the audit trail mapper.
+	 *
+	 * @param array<string, mixed> $entry    Normalised audit entry.
+	 * @param string               $tenantId The tenant the row is anchored to.
+	 *
+	 * @return bool True when a durable audit row was written.
+	 */
+	private function writeRow(array $entry, string $tenantId): bool {
+		$mapper = $this->getAuditTrailMapper();
+		$object = $this->resolveTenantEntity(tenantId: $tenantId);
+		if ($mapper === null || $object === null) {
+			$this->logger->error('Dossiq AUDIT: OpenRegister audit sink unavailable — durable audit row NOT written', $entry);
+			return false;
+		}
+
+		$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
+			object: $object,
+			// FROZEN PREFIX — still `procest.`, deliberately. Written into
+			// OpenRegister's append-only audit trail; every existing tenant
+			// audit row already carries it and readers filter on it, so a
+			// rename splits the trail and shows a partial history as though
+			// it were complete.
+			action: 'procest.tenant.' . $entry['action'],
+			context: $entry,
+		));
+		return true;
+	}//end writeRow()
 
 	/**
 	 * Report whether the durable audit sink is currently resolvable. Backs the
