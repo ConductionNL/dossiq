@@ -42,9 +42,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices;
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseLifecycleServiceInterface;
+use OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Lifecycle\TermExtensionRule;
 use OCA\Dossiq\Service\Support\RowList;
@@ -58,7 +59,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class CaseLifecycleService {
+class CaseLifecycleService implements CaseLifecycleServiceInterface {
 
 	use TermExtensionRule;
 

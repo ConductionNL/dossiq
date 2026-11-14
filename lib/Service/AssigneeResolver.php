@@ -56,6 +56,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\AssigneeResolverInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\OpenRegister\Service\Flow\FlowValueTemplate;
 use Psr\Log\LoggerInterface;
@@ -67,7 +68,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/email-case-matching/spec.md
  */
-class AssigneeResolver {
+class AssigneeResolver implements AssigneeResolverInterface {
 
 	/**
 	 * The authored value that means "leave this task unclaimed".

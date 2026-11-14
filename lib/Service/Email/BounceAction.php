@@ -40,7 +40,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BounceActionInterface;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
 use OCP\IAppConfig;
 use OCP\Mail\IMailer;
@@ -59,7 +60,7 @@ use Throwable;
  *  `FilterVerdict::accept()`, `AuthenticationVerdict::unknown()`), which hold no
  *  state and exist so a caller cannot build a half-built value.
  */
-class BounceAction {
+class BounceAction implements BounceActionInterface {
 
 	/**
 	 * The name the intake log records against a bounce.
@@ -161,8 +162,8 @@ class BounceAction {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	private function forward(InboundMessage $message, string $recipient): bool {
-		$fromAddress = trim($this->appConfig->getValueString(Application::APP_ID, 'email_from_address', ''));
-		$fromName = trim($this->appConfig->getValueString(Application::APP_ID, 'email_from_name', ''));
+		$fromAddress = trim($this->appConfig->getValueString(AppIdentity::APP_ID, 'email_from_address', ''));
+		$fromName = trim($this->appConfig->getValueString(AppIdentity::APP_ID, 'email_from_name', ''));
 		if ($fromAddress === '') {
 			$this->logger->warning(
 				'Dossiq: no from-address is configured, so a bounce could not be sent',

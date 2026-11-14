@@ -45,7 +45,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -157,7 +157,7 @@ class CaseAttentionConditionService {
 			$this->logger->warning(
 				'Dossiq: the advice requests behind a marker could not be read; '
 				. 'every marker that reads them is left exactly as it stood',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
 			);
 			return [];
 		}

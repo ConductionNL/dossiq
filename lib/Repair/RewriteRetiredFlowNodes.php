@@ -43,10 +43,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Flow\RetiredNodeMap;
-use OCA\Dossiq\Service\Flow\RetiredNodeRewriter;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\RetiredNodeMapInterface;
+use OCA\Dossiq\Kernel\Contracts\RetiredNodeRewriterInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -92,16 +92,16 @@ class RewriteRetiredFlowNodes implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface  $container       Resolves OpenRegister's flow classes, which may be absent.
-	 * @param SettingsService     $settingsService Register, schema and object service.
-	 * @param RetiredNodeMap      $map             The retired-node table.
-	 * @param RetiredNodeRewriter $rewriter        Applies the table to one graph.
+	 * @param SettingsServiceInterface     $settingsService Register, schema and object service.
+	 * @param RetiredNodeMapInterface      $map             The retired-node table.
+	 * @param RetiredNodeRewriterInterface $rewriter        Applies the table to one graph.
 	 * @param LoggerInterface     $logger          Logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly SettingsService $settingsService,
-		private readonly RetiredNodeMap $map,
-		private readonly RetiredNodeRewriter $rewriter,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly RetiredNodeMapInterface $map,
+		private readonly RetiredNodeRewriterInterface $rewriter,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -203,11 +203,11 @@ class RewriteRetiredFlowNodes implements IRepairStep {
 	 */
 	private function flowPage(FlowRewriteRun $run, int $offset): ?array {
 		try {
-			return (array)$run->mapper->findAllFlows(app: Application::APP_ID, limit: self::PAGE, offset: $offset);
+			return (array)$run->mapper->findAllFlows(app: AppIdentity::APP_ID, limit: self::PAGE, offset: $offset);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not read the stored flows to rewrite retired steps',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -294,7 +294,7 @@ class RewriteRetiredFlowNodes implements IRepairStep {
 		} catch (Throwable $e) {
 			$message = 'Dossiq: could not save the rewritten flow ' . $rewrite->label() . '; edit it in the flow editor. ' . $e->getMessage();
 			$run->output->warning($message);
-			$this->logger->warning($message, ['app' => Application::APP_ID, 'flow' => (string)$rewrite->flow->getUuid()]);
+			$this->logger->warning($message, ['app' => AppIdentity::APP_ID, 'flow' => (string)$rewrite->flow->getUuid()]);
 			return false;
 		}
 
@@ -335,7 +335,7 @@ class RewriteRetiredFlowNodes implements IRepairStep {
 	 * @return void
 	 */
 	private function report(array $change, string $label, IOutput $output): void {
-		$context = ['app' => Application::APP_ID, 'flow' => $label, 'step' => $change['step'], 'type' => $change['type']];
+		$context = ['app' => AppIdentity::APP_ID, 'flow' => $label, 'step' => $change['step'], 'type' => $change['type']];
 
 		if ($change['outcome'] === 'unmappable') {
 			$message = 'Dossiq: flow ' . $label . ', step "' . $change['step'] . '" could not be carried over: '

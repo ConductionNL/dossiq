@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Lifecycle;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseActsOverviewInterface;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 
 /**
@@ -38,7 +39,7 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseActsOverview {
+class CaseActsOverview implements CaseActsOverviewInterface {
 
 	/**
 	 * Constructor.

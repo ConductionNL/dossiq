@@ -48,6 +48,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\WorkflowStepAuthorizationResolver
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class ResultArrayDecisionCopiesTest extends TestCase {
 	/**

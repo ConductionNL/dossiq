@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Consultation;
 
+use OCA\Dossiq\Kernel\Contracts\ConsultationAccessGuardInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Cases\CaseRebindGate;
 use OCA\Dossiq\Service\ConsultationService;
@@ -47,7 +48,7 @@ use OCP\IUserSession;
  *
  * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
  */
-class ConsultationAccessGuard {
+class ConsultationAccessGuard implements ConsultationAccessGuardInterface {
 	/**
 	 * Constructor.
 	 *

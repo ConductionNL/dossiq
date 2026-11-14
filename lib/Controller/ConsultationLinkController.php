@@ -37,8 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Consultation\ConsultationAccessGuard;
-use OCA\Dossiq\Service\Consultation\ExternalConsultationLinkService;
+use OCA\Dossiq\Kernel\Contracts\ConsultationAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ExternalConsultationLinkServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -57,14 +57,14 @@ class ConsultationLinkController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param ConsultationAccessGuard $accessGuard The authorization and body-decoding guard
-	 * @param ExternalConsultationLinkService $externalLinks The external advisory body's access link
+	 * @param ConsultationAccessGuardInterface $accessGuard The authorization and body-decoding guard
+	 * @param ExternalConsultationLinkServiceInterface $externalLinks The external advisory body's access link
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ConsultationAccessGuard $accessGuard,
-		private readonly ExternalConsultationLinkService $externalLinks,
+		private readonly ConsultationAccessGuardInterface $accessGuard,
+		private readonly ExternalConsultationLinkServiceInterface $externalLinks,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

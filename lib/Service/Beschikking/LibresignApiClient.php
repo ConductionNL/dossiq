@@ -39,7 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
 use OCP\IURLGenerator;
@@ -157,8 +157,8 @@ class LibresignApiClient {
 			],
 		];
 
-		$serviceUid = $this->appConfig->getValueString(Application::APP_ID, 'libresign_service_uid', '');
-		$serviceAppPass = $this->appConfig->getValueString(Application::APP_ID, 'libresign_service_app_password', '');
+		$serviceUid = $this->appConfig->getValueString(AppIdentity::APP_ID, 'libresign_service_uid', '');
+		$serviceAppPass = $this->appConfig->getValueString(AppIdentity::APP_ID, 'libresign_service_app_password', '');
 		if ($serviceUid !== '' && $serviceAppPass !== '') {
 			$options['auth'] = [$serviceUid, $serviceAppPass];
 		}
@@ -190,7 +190,7 @@ class LibresignApiClient {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'LibresignApiClient: request failed',
-				['app' => Application::APP_ID, 'url' => $url, 'method' => $method, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'url' => $url, 'method' => $method, 'error' => $e->getMessage()],
 			);
 			throw new RuntimeException('libresign_api_error', 0, $e);
 		}//end try

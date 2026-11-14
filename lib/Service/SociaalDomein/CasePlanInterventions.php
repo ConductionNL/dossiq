@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\SociaalDomein;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CasePlanInterventionsInterface;
 
 /**
  * Save and read the interventions of one plan.
@@ -46,14 +47,7 @@ use OCA\Dossiq\Exception\RefusedException;
  *
  * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
-class CasePlanInterventions {
-
-	/**
-	 * The schema slug interventions are stored under.
-	 *
-	 * @var string
-	 */
-	public const SCHEMA = 'intervention';
+class CasePlanInterventions implements CasePlanInterventionsInterface {
 
 	/**
 	 * The states an intervention can be in.
@@ -104,7 +98,6 @@ class CasePlanInterventions {
 		if ($today === '') {
 			$today = (new DateTimeImmutable())->format('Y-m-d');
 		}
-
 
 		$rows = [];
 		foreach ($this->store->rows(schema: self::SCHEMA, filters: ['plan' => $planId]) as $row) {

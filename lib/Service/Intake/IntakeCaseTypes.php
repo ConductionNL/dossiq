@@ -41,6 +41,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Kernel\Contracts\IntakeCaseTypesInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-portal-filing-must-not-be-held-in-an-intermediate-object
  */
-class IntakeCaseTypes {
+class IntakeCaseTypes implements IntakeCaseTypesInterface {
 
 	use SearchesObjects;
 

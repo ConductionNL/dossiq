@@ -6,5 +6,5 @@
 - [x] 1.4 Marker rules from `link_marker_rules`, applied by `LinkMarkerListener` on create and update
 - [x] 1.5 Outcome cascades from `link_cascades`, `POST /api/links/cascades/{name}/{targetId}`
 - [x] 1.6 Unit tests on a neutral fixture case type
-- [ ] 2.1 Bezwaar package declares the roles, markers and cascades (waits on R1's installer)
+- [x] 2.1 Bezwaar package declares the roles, markers and cascades (waits on R1's installer)
 - [ ] 2.2 Move `BezwaarCreationHook`, `BezwaarObjectionController`, `BeroepEscalationListener`, `Bezwaar\BeroepService`, `DwangsomBezwaarService` onto this, deleting each class and its unit tests once the package journey passes

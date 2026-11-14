@@ -28,8 +28,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\ReportingAudienceGuard;
-use OCA\Dossiq\Service\Reporting\ReportingAudience;
-use OCA\Dossiq\Service\Termijn\TermsEndingFirst;
+use OCA\Dossiq\Kernel\Contracts\ReportingAudienceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermsEndingFirstInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -54,16 +54,16 @@ class DeadlineEndingFirstController extends Controller {
 	 * @param IRequest          $request     Request.
 	 * @param IUserSession      $userSession User session.
 	 * @param LoggerInterface   $logger      Logger.
-	 * @param ReportingAudience $audience    Who may read a figure about every case.
-	 * @param TermsEndingFirst  $terms       The running terms that end first.
+	 * @param ReportingAudienceInterface $audience    Who may read a figure about every case.
+	 * @param TermsEndingFirstInterface  $terms       The running terms that end first.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly ReportingAudience $audience,
-		private readonly TermsEndingFirst $terms,
+		private readonly ReportingAudienceInterface $audience,
+		private readonly TermsEndingFirstInterface $terms,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -79,7 +79,7 @@ class DeadlineEndingFirstController extends Controller {
 	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
 	 */
 	#[NoAdminRequired]
-	public function index(int $limit = TermsEndingFirst::DEFAULT_LIMIT): JSONResponse {
+	public function index(int $limit = TermsEndingFirstInterface::DEFAULT_LIMIT): JSONResponse {
 		$denied = $this->refuseOutsideReportingAudience(userSession: $this->userSession, audience: $this->audience);
 		if ($denied !== null) {
 			return $denied;

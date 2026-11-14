@@ -44,6 +44,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Repair\Support\ListsOpenRegisterTables
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Repair\Support\ColumnMove
+ * @uses \OCA\Dossiq\Repair\Support\ColumnMoveTally
  */
 class RenameDutchRepairsGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

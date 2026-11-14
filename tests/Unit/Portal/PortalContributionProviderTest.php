@@ -28,7 +28,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Portal;
 
 use OCA\Dossiq\Portal\PortalContributionProvider;
+use OCA\Dossiq\Portal\PortalConversation;
 use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -524,6 +526,46 @@ class PortalContributionProviderTest extends TestCase {
 	}//end citizenCollection()
 
 	/**
+	 * The text an administrator saves above My cases reaches the portal: the
+	 * provider reads the `portal_intro_text` app setting and the My cases
+	 * collection of the citizen contribution carries it as `intro`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/admin-message-and-portal-texts/specs/admin-settings/spec.md#requirement-an-administrator-shall-set-the-message-and-portal-texts-in-the-admin-settings
+	 */
+	public function testTheSavedPortalTextIsShownAboveMyCases(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => ($key === 'portal_intro_text' ? 'Hier ziet u uw lopende zaken' : $default)
+		);
+		$provider = new PortalContributionProvider(caseTypes: $this->createMock(IntakeCaseTypes::class), settings: $settings);
+
+		$intros = [];
+		foreach ($provider->getContribution(['audience' => 'citizen'])['collections'] as $collection) {
+			$intros[(string)($collection['id'] ?? '')] = ($collection['intro'] ?? null);
+		}
+
+		$this->assertSame('Hier ziet u uw lopende zaken', ($intros['mijnZaken'] ?? null));
+		$this->assertNull(($this->citizenCollectionIntro()), 'without the setting My cases carries no text');
+	}//end testTheSavedPortalTextIsShownAboveMyCases()
+
+	/**
+	 * The intro of My cases from the provider built without settings.
+	 *
+	 * @return string|null The intro, or null when there is none.
+	 */
+	private function citizenCollectionIntro(): ?string {
+		foreach ($this->provider->getContribution(['audience' => 'citizen'])['collections'] as $collection) {
+			if (($collection['id'] ?? '') === 'mijnZaken') {
+				return ($collection['intro'] ?? null);
+			}
+		}
+
+		$this->fail('the citizen contribution must declare My cases');
+	}//end citizenCollectionIntro()
+
+	/**
 	 * One citizen action by its id.
 	 *
 	 * @param string $id The action id.
@@ -594,6 +636,58 @@ class PortalContributionProviderTest extends TestCase {
 
 			$this->assertSame($expected, $collection['scopeField']);
 		}
+	}
+
+	/**
+	 * A supplier answers a message from the inbox: the reply is an inbound
+	 * `supplierMessage` scoped to the signed-in supplier, with no case
+	 * reference the supplier could choose.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/supplier-portal-reads-its-collections/specs/supplier-portal/spec.md
+	 */
+	public function testASupplierRepliesToAMessageAsAnInboundSupplierMessage(): void {
+		$contribution = $this->provider->getContribution(['audience' => 'supplier']);
+
+		$this->assertSame(['replyToSupplierMessage'], array_column($contribution['actions'], 'id'));
+		$action = $contribution['actions'][0];
+		$this->assertSame('create', $action['type']);
+		$this->assertSame('dossiq', $action['register']);
+		$this->assertSame('supplierMessage', $action['schema']);
+		$this->assertSame('supplierRef', $action['scopeField'], 'the reply is the signed-in supplier\'s own');
+		$this->assertSame(['subject', 'body', 'attachmentRefs'], $action['fields']);
+		$this->assertSame(['direction' => 'inbound'], $action['defaults'], 'the server, not the supplier, says which way it goes');
+		$this->assertNotContains('direction', $action['fields']);
+		$this->assertNotContains('supplierRef', $action['fields']);
+		$this->assertNotContains('caseRef', $action['fields'], 'no supplier collection can guard a case reference');
+		$this->assertSame(['body'], $action['requiredFields']);
+		$this->assertSame(
+			PortalConversation::ATTACHMENTS_FIELD,
+			$action['fieldConfigs']['attachmentRefs'],
+			'a supplier attaches what a resident may attach'
+		);
+
+		$inbox = array_column($contribution['collections'], null, 'id')['messages'];
+		$this->assertSame(['action' => 'replyToSupplierMessage', 'subjectFrom' => 'subject'], $inbox['reply']);
+
+		$pages = array_column($contribution['pages'], null, 'id');
+		$this->assertSame(
+			[
+				['type' => 'action', 'action' => 'replyToSupplierMessage'],
+				['type' => 'collection', 'collection' => 'messages'],
+				['type' => 'detail', 'collection' => 'messages'],
+			],
+			$pages['messages']['blocks']
+		);
+		$this->assertSame(
+			[
+				['type' => 'collection', 'collection' => 'contracts'],
+				['type' => 'detail', 'collection' => 'contracts'],
+			],
+			$pages['contracts']['blocks'],
+			'only the inbox page offers the reply'
+		);
 	}
 
 	public function testCitizenContributionShape(): void {

@@ -56,11 +56,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Email\MailMatchSources;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailMatchServiceInterface;
 use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
 use OCA\Dossiq\Service\Email\CaseMailLeaf;
 use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
+use OCA\Dossiq\Service\Email\MailMatchSources;
 use OCP\IUser;
 use OCP\IUserManager;
 use Psr\Container\ContainerInterface;
@@ -72,14 +73,7 @@ use Throwable;
  *
  * @spec openspec/specs/email-case-matching/spec.md
  */
-class CaseEmailMatchService {
-
-	/**
-	 * Instance toggle. Anything but an explicit yes means off.
-	 *
-	 * @var string
-	 */
-	public const INSTANCE_TOGGLE_KEY = 'email_case_matching_enabled';
+class CaseEmailMatchService implements CaseEmailMatchServiceInterface {
 
 	/**
 	 * Most messages one run reads for one user.
@@ -269,7 +263,7 @@ class CaseEmailMatchService {
 		if ($this->matching->messages->ownsAccount(accountId: $run->accountId, userId: $run->owner->getUID()) === false) {
 			$this->logger->warning(
 				'Dossiq: email case matching refused, the configured Mail account is not the user\'s own',
-				['app' => Application::APP_ID, 'userId' => $run->owner->getUID(), 'accountId' => $run->accountId]
+				['app' => AppIdentity::APP_ID, 'userId' => $run->owner->getUID(), 'accountId' => $run->accountId]
 			);
 			return 'account_not_owned';
 		}
@@ -297,7 +291,7 @@ class CaseEmailMatchService {
 		if ($register === '' || $schema === '') {
 			$this->logger->warning(
 				'Dossiq: app-config "register" or "case_schema" is not configured; email case matching is refused, not run unscoped',
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return 'register_unconfigured';
 		}
@@ -326,7 +320,7 @@ class CaseEmailMatchService {
 			// process is: OpenRegister then scopes it to every organisation.
 			$this->logger->warning(
 				'Dossiq: OpenRegister has no runAs(); email case matching is refused rather than resolving cases outside the mailbox owner\'s scope',
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return 'scope_unavailable';
 		}
@@ -424,7 +418,7 @@ class CaseEmailMatchService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: email case matching failed on one message, continuing with the batch: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'messageId' => $run->message['id']]
+				['app' => AppIdentity::APP_ID, 'messageId' => $run->message['id']]
 			);
 			return false;
 		}
@@ -470,7 +464,7 @@ class CaseEmailMatchService {
 			} catch (Throwable $e) {
 				$this->logger->warning(
 					'Dossiq: the email leaf refused a case link: ' . $e->getMessage(),
-					['app' => Application::APP_ID, 'case' => $case['identifier'], 'messageId' => $run->message['id']]
+					['app' => AppIdentity::APP_ID, 'case' => $case['identifier'], 'messageId' => $run->message['id']]
 				);
 			}
 		}

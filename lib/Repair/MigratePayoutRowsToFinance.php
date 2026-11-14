@@ -37,9 +37,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\PayoutServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
-use OCA\Dossiq\Service\Money\PayoutService;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -70,13 +70,13 @@ class MigratePayoutRowsToFinance implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Names the register and the payout schema.
-	 * @param PayoutService $payouts Raises a row in the finance app.
+	 * @param SettingsServiceInterface $settingsService Names the register and the payout schema.
+	 * @param PayoutServiceInterface $payouts Raises a row in the finance app.
 	 * @param LoggerInterface $logger Records a row finance refused.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly PayoutService $payouts,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly PayoutServiceInterface $payouts,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

@@ -1,0 +1,47 @@
+<?php
+
+/**
+ * Contract of OutboundState
+ *
+ * The public surface of OutboundState that other components call, so they depend
+ * on this contract instead of the implementation.
+ *
+ * @category  Kernel
+ * @package   OCA\Dossiq\Kernel\Contracts
+ * @author    Conduction b.v. <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @version   GIT: <git_id>
+ * @link      https://github.com/ConductionNL/dossiq
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Kernel\Contracts;
+
+/**
+ * Contract of OutboundState.
+ *
+ * @category Kernel
+ * @package  OCA\Dossiq\Kernel\Contracts
+ * @author   Conduction b.v. <info@conduction.nl>
+ * @license  EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @link     https://github.com/ConductionNL/dossiq
+ *
+ * @spec exclude Structural contract, no functional requirement.
+ */
+interface OutboundStateInterface {
+
+	/**
+	 * Sent, and the copy is in the account's sent folder.
+	 */
+	public const SENT = 'sent';
+
+	/**
+	 * Taken into the mail app's outbox but not sent yet; the mail app retries it.
+	 */
+	public const QUEUED = 'queued';
+}//end interface

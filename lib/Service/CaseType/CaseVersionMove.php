@@ -50,6 +50,7 @@ namespace OCA\Dossiq\Service\CaseType;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseVersionMoveInterface;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
@@ -67,7 +68,7 @@ use Throwable;
  *
  * @spec openspec/specs/zaaktype-versioning/spec.md
  */
-class CaseVersionMove {
+class CaseVersionMove implements CaseVersionMoveInterface {
 
 	/**
 	 * Why the pinned engine run does not move with the case yet.

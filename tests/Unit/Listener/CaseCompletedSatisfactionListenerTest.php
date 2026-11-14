@@ -40,6 +40,9 @@ use RuntimeException;
  * @uses   \OCA\Dossiq\Service\Pipelinq\PipelinqGateway
  * @uses   \OCA\Dossiq\Service\Pipelinq\ProgrammeConsumer
  * @uses   \OCA\Dossiq\Service\Transitions\CaseTypeReader
+ * @uses \OCA\Dossiq\Listener\BezwaarDecisionListener
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseCompletedSatisfactionListenerTest extends TestCase {
 

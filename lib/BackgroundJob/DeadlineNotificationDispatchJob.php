@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\Service\TermijnNotificationService;
+use OCA\Dossiq\Kernel\Contracts\TermijnNotificationServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
 use Psr\Log\LoggerInterface;
@@ -49,12 +49,12 @@ class DeadlineNotificationDispatchJob extends QueuedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time Time factory.
-	 * @param TermijnNotificationService $notificationService Notification service.
+	 * @param TermijnNotificationServiceInterface $notificationService Notification service.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly TermijnNotificationService $notificationService,
+		private readonly TermijnNotificationServiceInterface $notificationService,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);

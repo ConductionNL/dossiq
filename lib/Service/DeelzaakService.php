@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\DeelzaakServiceInterface;
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
 use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
@@ -40,7 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
  */
-class DeelzaakService {
+class DeelzaakService implements DeelzaakServiceInterface {
 
 	use SearchesObjects;
 

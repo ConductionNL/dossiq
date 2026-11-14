@@ -39,9 +39,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Http\RangeStreamResponse;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Zaakdossier\DossierZipExporter;
-use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DossierZipExporterInterface;
+use OCA\Dossiq\Kernel\Contracts\InformatieobjectReaderInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -64,22 +64,22 @@ class ZaakdossierDownloadController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param InformatieobjectReader $reader The clearance-gated document reader.
-	 * @param DossierZipExporter $zipExporter The ZIP export collaborator.
+	 * @param InformatieobjectReaderInterface $reader The clearance-gated document reader.
+	 * @param DossierZipExporterInterface $zipExporter The ZIP export collaborator.
 	 * @param IUserSession $userSession The user session.
 	 * @param LoggerInterface $logger The logger.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly InformatieobjectReader $reader,
-		private readonly DossierZipExporter $zipExporter,
+		private readonly InformatieobjectReaderInterface $reader,
+		private readonly DossierZipExporterInterface $zipExporter,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

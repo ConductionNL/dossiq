@@ -51,6 +51,10 @@ export function notificationLabels() {
 			'A supplier invoice is almost due',
 		),
 		'supplierTender.tenderPublished': t('dossiq', 'A tender award is published'),
+		'termijnGebeurtenis.termResumedAfterPause': t(
+			'dossiq',
+			'A paused term resumes by itself',
+		),
 		// Listed on instances that still carry a task schema with this rule.
 		taskAssigned: t('dossiq', 'A task is assigned to me'),
 	}

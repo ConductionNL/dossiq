@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\MandaatEscalatieServiceInterface;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaWriter;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -40,7 +41,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
  */
-class MandaatEscalatieService {
+class MandaatEscalatieService implements MandaatEscalatieServiceInterface {
 	use SearchesObjects;
 
 	/**

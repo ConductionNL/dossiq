@@ -39,6 +39,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Money\PayoutReader
  * @uses \OCA\Dossiq\Service\Reporting\PerTypeRows
  * @uses \OCA\Dossiq\Service\Termijn\TermLookups
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
  */
 class DeadlineReportingServiceTest extends TestCase {
 	private FakeTermijnStore $objects;

@@ -58,6 +58,7 @@ namespace OCA\Dossiq\Service\People;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\LeaverHandoverServiceInterface;
 use OCA\Dossiq\Service\CaseReassignmentService;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
@@ -72,7 +73,7 @@ use Throwable;
  *
  * @spec openspec/specs/people-on-the-case/spec.md
  */
-class LeaverHandoverService {
+class LeaverHandoverService implements LeaverHandoverServiceInterface {
 
 	use SearchesObjects;
 

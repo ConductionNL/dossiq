@@ -37,7 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\OpenRegister\AppHost\Controller\GenericHealthController;
 use OCA\OpenRegister\AppHost\Observability\HealthCheckExecutor;
 use OCA\OpenRegister\AppHost\Observability\ManifestLoader;
@@ -70,7 +70,7 @@ class HealthController extends GenericHealthController {
 		HealthCheckExecutor $executor
 	) {
 		parent::__construct(
-			appName: Application::APP_ID,
+			appName: AppIdentity::APP_ID,
 			request: $request,
 			manifestLoader: $manifestLoader,
 			executor: $executor

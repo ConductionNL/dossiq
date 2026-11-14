@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\Calendar\ICalendarEventBuilder;
 use OCP\Calendar\ICalendarIsWritable;
 use OCP\Calendar\ICreateFromString;
@@ -135,7 +135,7 @@ class HearingCalendarService {
 
 		$this->logger->info(
 			'Hearing written to ' . $written . ' calendars for ' . count($participants) . ' participants',
-			['app' => Application::APP_ID, 'calendarEventId' => $uid],
+			['app' => AppIdentity::APP_ID, 'calendarEventId' => $uid],
 		);
 
 		return $uid;
@@ -176,7 +176,7 @@ class HearingCalendarService {
 		if ($written === 0) {
 			$this->logger->warning(
 				'No writable calendar found for the hearing, event not stored',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 		}
 
@@ -202,7 +202,7 @@ class HearingCalendarService {
 		} catch (\Exception $e) {
 			$this->logger->warning(
 				'Hearing has no readable date, no calendar event written: ' . $date,
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			return null;
 		}
@@ -274,7 +274,7 @@ class HearingCalendarService {
 
 		$this->logger->warning(
 			'Calendar event for hearing carried no UID, nothing written',
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return '';
@@ -370,7 +370,7 @@ class HearingCalendarService {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Could not read calendars for ' . $principal . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			return false;
 		}
@@ -386,7 +386,7 @@ class HearingCalendarService {
 			} catch (\Throwable $e) {
 				$this->logger->warning(
 					'Calendar refused the hearing event for ' . $principal . ': ' . $e->getMessage(),
-					['app' => Application::APP_ID],
+					['app' => AppIdentity::APP_ID],
 				);
 			}
 		}

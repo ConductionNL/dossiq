@@ -46,6 +46,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\CaseAccessPurposeService
  *
  * @spec openspec/specs/case-access-purpose/spec.md#requirement-opening-a-sensitive-case-records-its-purpose
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class AccessPurposeReadGoldenTest extends TestCase {
 	/**

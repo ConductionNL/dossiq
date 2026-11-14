@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\People;
 
+use OCA\Dossiq\Kernel\Contracts\PersonNumberLookupInterface;
 use OCA\Dossiq\Service\Kcc\GuardedCitizenLookup;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/changes/bsn-exact-lookup/specs/initiator-selection/spec.md#requirement-a-person-is-found-by-bsn-through-a-guarded-recorded-lookup
  */
-class PersonNumberLookup {
+class PersonNumberLookup implements PersonNumberLookupInterface {
 
 	use SearchesObjects;
 

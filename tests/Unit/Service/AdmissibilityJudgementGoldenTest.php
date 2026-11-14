@@ -44,6 +44,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Intake\AdmissibilityJudgement
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Support\StoredArray
  */
 class AdmissibilityJudgementGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

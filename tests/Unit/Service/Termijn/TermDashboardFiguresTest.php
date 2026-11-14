@@ -29,6 +29,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Termijn\TermDashboardFigures
  * @uses   \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
  * @uses   \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
+ * @uses \OCA\Dossiq\Service\Termijn\TermLookups
  */
 class TermDashboardFiguresTest extends TestCase {
 

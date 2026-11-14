@@ -24,12 +24,12 @@ namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -57,15 +57,15 @@ class StoppingRuleMet {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
-	 * @param CaseTimeline $timeline The case timeline.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
+	 * @param CaseTimelineInterface $timeline The case timeline.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseTimeline $timeline,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseTimelineInterface $timeline,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -128,7 +128,7 @@ class StoppingRuleMet {
 
 		$this->timeline->record(
 			caseId: $caseId,
-			kind: TimelineKinds::STOPPING_RULE_MET,
+			kind: TimelineKindsInterface::STOPPING_RULE_MET,
 			message: sprintf(
 				'The stopping rule was met: recall at least %s at %s confidence (estimate %s, target %s, sample of %d)',
 				number_format($numbers['recallLowerBound'], 4, '.', ''),
@@ -138,7 +138,7 @@ class StoppingRuleMet {
 				$numbers['n']
 			),
 			fields: $numbers,
-			visibility: CaseTimeline::INTERNAL,
+			visibility: CaseTimelineInterface::INTERNAL,
 		);
 
 		return $metAt;
@@ -172,7 +172,7 @@ class StoppingRuleMet {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: a met stopping rule could not be recorded on the audit trail',
-				['app' => Application::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
 			);
 			throw $this->notRecorded(previous: $e);
 		}

@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Custody;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseTakeoverRequestInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use Psr\Log\LoggerInterface;
@@ -48,7 +49,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseTakeoverRequest {
+class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 
 	use SearchesObjects;
 
@@ -565,11 +566,5 @@ class CaseTakeoverRequest {
 			);
 		}
 	}//end requireUnanswered()
-
-
-
-
-
-
 
 }//end class

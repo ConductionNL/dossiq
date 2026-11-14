@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\DecisionDocument;
 use DateTimeImmutable;
 use DateTimeInterface;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\DecisionLetterInterface;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -49,7 +50,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentTypeResolver;
  *
  * @spec openspec/specs/decision-document/spec.md
  */
-class DecisionLetter {
+class DecisionLetter implements DecisionLetterInterface {
 
 	use SearchesObjects;
 

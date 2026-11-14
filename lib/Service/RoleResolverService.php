@@ -33,8 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\RoleResolverServiceInterface;
 use OCA\Dossiq\Service\Routing\AreaRouting;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
 use OCA\Dossiq\Service\Routing\RoleResolutionCache;
@@ -50,7 +51,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T02
  */
-class RoleResolverService {
+class RoleResolverService implements RoleResolverServiceInterface {
 	use RefusesWhenIndeterminate;
 
 	/**
@@ -241,7 +242,7 @@ class RoleResolverService {
 		if ($resolved === []) {
 			$this->logger->info(
 				'Dossiq: routing rule resolved to empty set',
-				['event' => 'RoleRoutingEmpty', 'rule' => $run->rule, 'caseId' => $run->caseId, 'app' => Application::APP_ID],
+				['event' => 'RoleRoutingEmpty', 'rule' => $run->rule, 'caseId' => $run->caseId, 'app' => AppIdentity::APP_ID],
 			);
 		}
 
@@ -291,7 +292,7 @@ class RoleResolverService {
 					'event' => 'RoleRoutingAreaFallback',
 					'caseId' => (string)($case['id'] ?? ($case['uuid'] ?? '')),
 					'reason' => (string)$resolved['reason'],
-					'app' => Application::APP_ID,
+					'app' => AppIdentity::APP_ID,
 				],
 			);
 		}

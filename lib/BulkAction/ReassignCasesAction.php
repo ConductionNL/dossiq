@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\Support\CaseAssigneeWriter;
+use OCA\Dossiq\Kernel\Contracts\CaseAssigneeWriterInterface;
 use OCA\OpenRegister\BulkAction\BulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
 use OCA\OpenRegister\BulkAction\BulkStep;
@@ -68,7 +68,7 @@ class ReassignCasesAction implements BulkActionInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseAssigneeWriter $writer The single-case write and its audit entry.
+	 * @param CaseAssigneeWriterInterface $writer The single-case write and its audit entry.
 	 * @param IL10N              $l10n   Localisation, for the label an operator reads.
 	 *
 	 * @return void
@@ -76,7 +76,7 @@ class ReassignCasesAction implements BulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly CaseAssigneeWriter $writer,
+		private readonly CaseAssigneeWriterInterface $writer,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()

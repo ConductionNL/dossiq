@@ -363,3 +363,78 @@ describe('the translations summary (DqZaaktypeOverzicht)', () => {
 		expect(entry.slice(0, entry.indexOf('},'))).toMatch(/chrome: 'card'/)
 	})
 })
+
+describe('the translations editor edge paths', () => {
+	it('says so and reads nothing when the route carries no case type id', async () => {
+		const wrapper = mount(CaseTypeTranslationsWidget, {
+			global: { mocks: { $route: { params: {} } } },
+		})
+		await flushPromises()
+
+		expect(wrapper.vm.error).toBe(true)
+		expect(wrapper.vm.loading).toBe(false)
+		expect(axios.get).not.toHaveBeenCalled()
+	})
+
+	it('switches the active language when a language tab is clicked', async () => {
+		const wrapper = await mountWidget()
+		const first = wrapper.vm.activeLanguage
+		const other = first === 'nl' ? 'en' : 'nl'
+
+		const tab = wrapper.findAllComponents({ name: 'NcButton' })
+			.find((b) => b.attributes('role') === 'tab' && b.attributes('data-language') === other)
+		await tab.trigger('click')
+
+		expect(wrapper.vm.activeLanguage).toBe(other)
+	})
+
+	it('records a draft when the field reports a new value', async () => {
+		const wrapper = await mountWidget()
+		wrapper.vm.activeLanguage = 'en'
+		await flushPromises()
+
+		const field = wrapper.findAllComponents({ name: 'NcTextField' })[0]
+		field.vm.$emit('update:value', 'Environmental permit')
+		await flushPromises()
+
+		expect(wrapper.vm.draftOf('title')).toBe('Environmental permit')
+	})
+
+	it('skips a sidecar row that names no property or no language', async () => {
+		rows = [
+			{ property: '', language: 'en', status: 'translated' },
+			{ property: 'title', language: '', status: 'translated' },
+			{ property: 'title', language: 'en', status: 'translated' },
+		]
+		const wrapper = await mountWidget()
+
+		expect(wrapper.vm.error).toBe(false)
+		expect(wrapper.vm.statuses.title).toEqual({ en: 'translated' })
+	})
+
+	it('shows the error toast when a label cannot be saved', async () => {
+		const { showError } = await import('@nextcloud/dialogs')
+		showError.mockClear()
+		axios.patch.mockRejectedValue(new Error('boom'))
+		const wrapper = await mountWidget()
+		wrapper.vm.activeLanguage = 'en'
+		await flushPromises()
+		wrapper.vm.setDraft('title', 'Environmental permit')
+		await flushPromises()
+
+		await wrapper.find('[data-testid="case-type-translations-save"]').trigger('click')
+		await flushPromises()
+
+		expect(showError).toHaveBeenCalledWith('The labels could not be saved.')
+	})
+
+	it('stops listening for the page refresh when it is torn down', async () => {
+		const { unsubscribe } = await import('@nextcloud/event-bus')
+		unsubscribe.mockClear()
+		const wrapper = await mountWidget()
+
+		wrapper.unmount()
+
+		expect(unsubscribe).toHaveBeenCalled()
+	})
+})

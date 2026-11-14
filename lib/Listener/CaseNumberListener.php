@@ -24,9 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\CaseNumberService;
+use OCA\Dossiq\Kernel\Contracts\CaseNumberServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -46,13 +46,13 @@ class CaseNumberListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseNumberService        $caseNumbers  The case-number service.
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
+	 * @param CaseNumberServiceInterface        $caseNumbers  The case-number service.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Schema id-to-slug resolver.
 	 * @param ReceiptMoment $receipt Tells a received case from a draft (decision 180).
 	 */
 	public function __construct(
-		private readonly CaseNumberService $caseNumbers,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly CaseNumberServiceInterface $caseNumbers,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {
 	}//end __construct()

@@ -40,8 +40,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue;
 
-use OCA\Dossiq\AppInfo\Application;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PersonalStageServiceInterface;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
 
@@ -50,7 +51,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/my-work/spec.md
  */
-class PersonalStageService {
+class PersonalStageService implements PersonalStageServiceInterface {
 	/**
 	 * The preference holding the map of case id to stage.
 	 *
@@ -120,7 +121,7 @@ class PersonalStageService {
 	 */
 	public function all(string $userId): array {
 		try {
-			$raw = $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_STAGES, '');
+			$raw = $this->userConfig->getValueString($userId, AppIdentity::APP_ID, self::PREF_STAGES, '');
 		} catch (InvalidArgumentException $e) {
 			// Exactly what `getValueString` declares, and no more. A blanket
 			// `Throwable` here swallowed a programming error as readily as a
@@ -171,7 +172,7 @@ class PersonalStageService {
 
 		$this->userConfig->setValueString(
 			$userId,
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::PREF_STAGES,
 			json_encode($stages, JSON_THROW_ON_ERROR)
 		);

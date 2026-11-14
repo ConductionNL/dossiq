@@ -34,11 +34,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseRelationService;
-use OCA\Dossiq\Service\Flow\CaseFlowActions;
-use OCA\Dossiq\Service\Relation\CaseRelationDetails;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseFlowActionsInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseRelationDetailsInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseRelationServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -73,21 +73,21 @@ class CaseRelationController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request Inbound request.
-	 * @param CaseRelationService $caseRelationService Backend service.
+	 * @param CaseRelationServiceInterface $caseRelationService Backend service.
 	 * @param IUserSession $userSession Current user session.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
-	 * @param CaseRelationDetails $caseRelationDetails Number, case type, status and handler per related case.
-	 * @param CaseFlowActions $flowActions The case's planned follow-ups, listed with `?planned=1`.
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseRelationDetailsInterface $caseRelationDetails Number, case type, status and handler per related case.
+	 * @param CaseFlowActionsInterface $flowActions The case's planned follow-ups, listed with `?planned=1`.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseRelationService $caseRelationService,
+		private readonly CaseRelationServiceInterface $caseRelationService,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
-		private readonly CaseRelationDetails $caseRelationDetails,
-		private readonly CaseFlowActions $flowActions,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
+		private readonly CaseRelationDetailsInterface $caseRelationDetails,
+		private readonly CaseFlowActionsInterface $flowActions,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

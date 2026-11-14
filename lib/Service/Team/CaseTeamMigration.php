@@ -41,6 +41,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Team;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTeamMigrationInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IGroupManager;
@@ -52,7 +53,7 @@ use Throwable;
  *
  * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
  */
-class CaseTeamMigration {
+class CaseTeamMigration implements CaseTeamMigrationInterface {
 
 	use SearchesObjects;
 

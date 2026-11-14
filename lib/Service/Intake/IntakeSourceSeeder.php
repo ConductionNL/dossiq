@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Kernel\Contracts\IntakeSourceSeederInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -56,7 +57,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class IntakeSourceSeeder {
+class IntakeSourceSeeder implements IntakeSourceSeederInterface {
 	use SearchesObjects;
 
 	/**

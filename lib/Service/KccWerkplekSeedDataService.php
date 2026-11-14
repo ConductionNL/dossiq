@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\KccWerkplekSeedDataServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -40,7 +41,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/specs.md
  */
-class KccWerkplekSeedDataService {
+class KccWerkplekSeedDataService implements KccWerkplekSeedDataServiceInterface {
 	use SearchesObjects;
 
 	/**
