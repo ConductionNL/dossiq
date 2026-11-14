@@ -119,36 +119,66 @@ final class CaseTypeReachability {
 				continue;
 			}
 
-			$from = (string)($move['fromStatus'] ?? '');
-			$to = (string)($move['toStatus'] ?? '');
-			$name = $this->moveName(move: $move);
-
-			if ($from === '' || $from === self::DEAD_WILDCARD) {
-				$broken[] = [
-					'finding' => ('The move "' . $name . '" starts from no status, so nothing can ever offer it. Name the status it starts from.'),
-					'target' => $to,
-				];
-				continue;
-			}
-
-			if (isset($statuses[$from]) === false) {
-				$broken[] = [
-					'finding' => ('The move "' . $name . '" starts from a status this case type does not have. Nothing can ever offer it.'),
-					'target' => $to,
-				];
-				continue;
-			}
-
-			if ($to === '' || isset($statuses[$to]) === false) {
-				$broken[] = [
-					'finding' => ('The move "' . $name . '" leads to a status this case type does not have.'),
-					'target' => '',
-				];
+			$entry = $this->brokenMove(statuses: $statuses, move: $move);
+			if ($entry !== null) {
+				$broken[] = $entry;
 			}
 		}//end foreach
 
 		return $broken;
 	}//end brokenMoves()
+
+	/**
+	 * What is broken about one move, or null when both its ends exist.
+	 *
+	 * @param array<string, array{title: string, final: bool}> $statuses The declared statuses, by id.
+	 * @param array<string, mixed>                             $move     One transition.
+	 *
+	 * @return array{finding: string, target: string}|null The broken move, or null.
+	 */
+	private function brokenMove(array $statuses, array $move): ?array {
+		$from = (string)($move['fromStatus'] ?? '');
+		$to = (string)($move['toStatus'] ?? '');
+		$name = $this->moveName(move: $move);
+
+		$finding = $this->brokenStart(statuses: $statuses, from: $from, name: $name);
+		if ($finding !== null) {
+			return [
+				'finding' => $finding,
+				'target' => $to,
+			];
+		}
+
+		if ($to === '' || isset($statuses[$to]) === false) {
+			return [
+				'finding' => ('The move "' . $name . '" leads to a status this case type does not have.'),
+				'target' => '',
+			];
+		}
+
+		return null;
+	}//end brokenMove()
+
+	/**
+	 * The finding of a move that starts from no status or an unknown one, or null.
+	 *
+	 * @param array<string, array{title: string, final: bool}> $statuses The declared statuses, by id.
+	 * @param string                                           $from     The status the move starts from.
+	 * @param string                                           $name     The move's name.
+	 *
+	 * @return string|null The finding, or null when the start exists.
+	 */
+	private function brokenStart(array $statuses, string $from, string $name): ?string {
+		if ($from === '' || $from === self::DEAD_WILDCARD) {
+			return ('The move "' . $name . '" starts from no status, so nothing can ever offer it. Name the status it starts from.');
+		}
+
+		if (isset($statuses[$from]) === false) {
+			return ('The move "' . $name . '" starts from a status this case type does not have. Nothing can ever offer it.');
+		}
+
+		return null;
+	}//end brokenStart()
 
 	/**
 	 * The moves both ends of which are statuses this case type declares.
