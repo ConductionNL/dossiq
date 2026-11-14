@@ -103,30 +103,9 @@ class CaseTypeRuleSentences implements CaseTypeRuleSentencesInterface {
 	private function row(array $rule, array $statuses): array {
 		$enabled = (($rule['enabled'] ?? true) !== false);
 
-		$conditions = [];
-		foreach ($this->listOf(value: ($rule['conditions'] ?? [])) as $condition) {
-			$conditions[] = $this->condition(condition: $condition, statuses: $statuses);
-		}
-
-		$actions = [];
-		foreach ($this->listOf(value: ($rule['actions'] ?? [])) as $action) {
-			$actions[] = $this->action(action: $action);
-		}
-
-		$title = $this->l10n->t('Always');
-		if ($conditions !== []) {
-			$title = $this->l10n->t('If %1$s', [implode($this->l10n->t(' and '), $conditions)]);
-		}
-
-		$line = $this->l10n->t('then nothing happens');
-		if ($actions !== []) {
-			$line = $this->l10n->t('then %1$s', [implode(', ', $actions)]);
-		}
-
-		$state = $this->l10n->t('Off');
-		if ($enabled === true) {
-			$state = $this->l10n->t('On');
-		}
+		$title = $this->titleOf(rule: $rule, statuses: $statuses);
+		$line = $this->lineOf(rule: $rule);
+		$state = $this->stateOf(enabled: $enabled);
 
 		return [
 			'id'      => $this->scalar(value: ($rule['id'] ?? '')),
@@ -138,6 +117,65 @@ class CaseTypeRuleSentences implements CaseTypeRuleSentencesInterface {
 			'line'    => $line,
 		];
 	}//end row()
+
+	/**
+	 * The rule's conditions as one sentence, `Always` without any.
+	 *
+	 * @param array<string, mixed>  $rule     The stored rule.
+	 * @param array<string, string> $statuses Status names by statusType id.
+	 *
+	 * @return string The title.
+	 */
+	private function titleOf(array $rule, array $statuses): string {
+		$conditions = [];
+		foreach ($this->listOf(value: ($rule['conditions'] ?? [])) as $condition) {
+			$conditions[] = $this->condition(condition: $condition, statuses: $statuses);
+		}
+
+		$title = $this->l10n->t('Always');
+		if ($conditions !== []) {
+			$title = $this->l10n->t('If %1$s', [implode($this->l10n->t(' and '), $conditions)]);
+		}
+
+		return $title;
+	}//end titleOf()
+
+	/**
+	 * The rule's actions as one sentence.
+	 *
+	 * @param array<string, mixed> $rule The stored rule.
+	 *
+	 * @return string The line.
+	 */
+	private function lineOf(array $rule): string {
+		$actions = [];
+		foreach ($this->listOf(value: ($rule['actions'] ?? [])) as $action) {
+			$actions[] = $this->action(action: $action);
+		}
+
+		$line = $this->l10n->t('then nothing happens');
+		if ($actions !== []) {
+			$line = $this->l10n->t('then %1$s', [implode(', ', $actions)]);
+		}
+
+		return $line;
+	}//end lineOf()
+
+	/**
+	 * On or Off.
+	 *
+	 * @param bool $enabled Whether the rule is enabled.
+	 *
+	 * @return string The state.
+	 */
+	private function stateOf(bool $enabled): string {
+		$state = $this->l10n->t('Off');
+		if ($enabled === true) {
+			$state = $this->l10n->t('On');
+		}
+
+		return $state;
+	}//end stateOf()
 
 	/**
 	 * When the rule is checked.

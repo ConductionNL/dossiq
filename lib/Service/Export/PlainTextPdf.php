@@ -48,6 +48,22 @@ class PlainTextPdf {
 	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	public function render(string $title, array $lines): string {
+		$pages = $this->pagesOf(lines: $lines);
+		$objects = $this->documentObjects(title: $title, pages: $pages);
+
+		return $this->assemble(objects: $objects);
+	}//end render()
+
+	/**
+	 * The lines wrapped and cut into pages, one empty page when there are none.
+	 *
+	 * @param list<string> $lines The body lines.
+	 *
+	 * @return array<int, list<string>> The pages' lines.
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	private function pagesOf(array $lines): array {
 		$wrapped = [];
 		foreach ($lines as $line) {
 			foreach (explode("\n", wordwrap($line, self::WRAP_AT, "\n", true)) as $part) {
@@ -60,6 +76,20 @@ class PlainTextPdf {
 			$pages = [[]];
 		}
 
+		return $pages;
+	}//end pagesOf()
+
+	/**
+	 * The PDF objects: catalog, page tree, fonts, then a content stream and a page per page.
+	 *
+	 * @param string                   $title The heading, on the first page.
+	 * @param array<int, list<string>> $pages The pages' lines.
+	 *
+	 * @return array<int, string> The objects, numbered from 1 in order.
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	private function documentObjects(string $title, array $pages): array {
 		$objects = [
 			'<< /Type /Catalog /Pages 2 0 R >>',
 			'',
@@ -82,8 +112,8 @@ class PlainTextPdf {
 
 		$objects[1] = '<< /Type /Pages /Kids ['.implode(' ', $kids).'] /Count '.count($kids).' >>';
 
-		return $this->assemble(objects: $objects);
-	}//end render()
+		return $objects;
+	}//end documentObjects()
 
 	/**
 	 * The content stream of one page.
