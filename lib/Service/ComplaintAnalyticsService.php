@@ -160,33 +160,62 @@ class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 		$counts = [];
 
 		foreach ($complaints as $complaint) {
-			if (($complaint['status'] ?? '') !== 'handled') {
+			$resolution = $this->resolution(complaint: $complaint);
+			if ($resolution === null) {
 				continue;
 			}
 
-			$category = (string)($complaint['category'] ?? 'unknown');
-			$receipt = $complaint['receiptDate'] ?? null;
-			$afhandelDeadline = $complaint['afhandelDeadline'] ?? null;
-
-			if ($receipt === null || $afhandelDeadline === null) {
-				continue;
-			}
-
-			$start = new DateTimeImmutable($receipt);
-			$end = new DateTimeImmutable($afhandelDeadline);
-			$days = $this->days->between(from: $start, to: $end);
-
+			[$category, $days] = $resolution;
 			$totals[$category] = ($totals[$category] ?? 0) + $days;
 			$counts[$category] = ($counts[$category] ?? 0) + 1;
 		}
 
+		return $this->averages(totals: $totals, counts: $counts);
+	}//end getAverageResolutionTime()
+
+	/**
+	 * The category and days to resolve of one handled complaint.
+	 *
+	 * @param array<string, mixed> $complaint The complaint.
+	 *
+	 * @return array{0: string, 1: int|float}|null Null when it is not handled or lacks a date.
+	 */
+	private function resolution(array $complaint): array|null {
+		if (($complaint['status'] ?? '') !== 'handled') {
+			return null;
+		}
+
+		$category = (string)($complaint['category'] ?? 'unknown');
+		$receipt = $complaint['receiptDate'] ?? null;
+		$afhandelDeadline = $complaint['afhandelDeadline'] ?? null;
+
+		if ($receipt === null || $afhandelDeadline === null) {
+			return null;
+		}
+
+		$start = new DateTimeImmutable($receipt);
+		$end = new DateTimeImmutable($afhandelDeadline);
+		$days = $this->days->between(from: $start, to: $end);
+
+		return [$category, $days];
+	}//end resolution()
+
+	/**
+	 * The average days per category, rounded to one decimal.
+	 *
+	 * @param array<string, int|float> $totals Summed days per category.
+	 * @param array<string, int>       $counts Complaints per category.
+	 *
+	 * @return array<string, float>
+	 */
+	private function averages(array $totals, array $counts): array {
 		$averages = [];
 		foreach ($counts as $category => $count) {
 			$averages[$category] = round($totals[$category] / $count, 1);
 		}
 
 		return $averages;
-	}//end getAverageResolutionTime()
+	}//end averages()
 
 	/**
 	 * Detect categories with >50% quarter-over-quarter complaint increase.
