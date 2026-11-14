@@ -152,14 +152,7 @@ class MigratePayoutRowsToFinance implements IRepairStep {
 			return false;
 		}
 
-		$history = [];
-		if (self::STATES[$status] !== '') {
-			$history = [
-				'historicalState' => self::STATES[$status],
-				'paidOn' => (string)($row['actualPaymentDate'] ?? ''),
-				'bankReference' => (string)($row['betalingsreferentie'] ?? ''),
-			];
-		}
+		$history = $this->historyOf(row: $row, status: $status);
 
 		try {
 			$raised = $this->payouts->raiseRowInFinance(row: $row, history: $history);
@@ -184,4 +177,25 @@ class MigratePayoutRowsToFinance implements IRepairStep {
 
 		return true;
 	}//end moveRow()
+
+	/**
+	 * The historical payment state a row carries to finance, or none for an open row.
+	 *
+	 * @param array<string, mixed> $row    The stored row.
+	 * @param string               $status The row's status.
+	 *
+	 * @return array<string, string> The history.
+	 */
+	private function historyOf(array $row, string $status): array {
+		$history = [];
+		if (self::STATES[$status] !== '') {
+			$history = [
+				'historicalState' => self::STATES[$status],
+				'paidOn' => (string)($row['actualPaymentDate'] ?? ''),
+				'bankReference' => (string)($row['betalingsreferentie'] ?? ''),
+			];
+		}
+
+		return $history;
+	}//end historyOf()
 }//end class
