@@ -109,7 +109,15 @@ class BrcCrossRegisterSync {
 			return;
 		}
 
-		$this->saveCaseDecision(objectService: $objectService, register: $register, zbSchema: $zbSchema, zaakUuid: $zaakUuid, decisionUrl: $decisionUrl);
+		$this->saveCaseDecision(
+			write: new ZaakBesluitWrite(
+				objectService: $objectService,
+				register: $register,
+				zbSchema: $zbSchema,
+				zaakUuid: $zaakUuid,
+				decisionUrl: $decisionUrl
+			)
+		);
 	}//end syncWithSchema()
 
 	/**
@@ -134,26 +142,24 @@ class BrcCrossRegisterSync {
 	/**
 	 * Write the zaakbesluit record; a failure is logged, not thrown (brc-006).
 	 *
-	 * @param object $objectService OpenRegister's object service
-	 * @param string $register The zaken register
-	 * @param string $zbSchema The zaakbesluit schema
-	 * @param string $zaakUuid The zaak UUID
-	 * @param string $decisionUrl The besluit URL
+	 * @param ZaakBesluitWrite $write The object service, register, schema, zaak and besluit
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
-	private function saveCaseDecision(object $objectService, string $register, string $zbSchema, string $zaakUuid, string $decisionUrl): void {
+	private function saveCaseDecision(ZaakBesluitWrite $write): void {
+		$zaakUuid = $write->zaakUuid;
+		$decisionUrl = $write->decisionUrl;
 		try {
 			$zbData = [
 				'case' => $zaakUuid,
 				'decision' => $decisionUrl,
 			];
 
-			$objectService->saveObject(
-				register: $register,
-				schema: $zbSchema,
+			$write->objectService->saveObject(
+				register: $write->register,
+				schema: $write->zbSchema,
 				object: $zbData
 			);
 
