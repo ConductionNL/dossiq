@@ -104,20 +104,7 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	public function invite(string $consultationId, string $userId, ?string $password = null): array {
-		$consultation = $this->consultations->getConsultation(consultationId: $consultationId);
-		if ($consultation === null) {
-			throw new RuntimeException('That consultation is not there');
-		}
-
-		$caseId = trim((string)($consultation['parentCase'] ?? ''));
-		if ($caseId === '') {
-			throw new RuntimeException('A consultation without a case has nothing to publish');
-		}
-
-		$body = trim((string)($consultation['adviceAuthority'] ?? ''));
-		if ($body === '') {
-			throw new RuntimeException('Name the advisory body before you invite it');
-		}
+		[$consultation, $caseId, $body] = $this->invitable(consultationId: $consultationId);
 
 		$share = $this->shares->createTokenShare(
 			caseId: $caseId,
@@ -142,13 +129,57 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 			['consultationId' => $consultationId, 'advisoryBody' => $body]
 		);
 
+		return $this->withAddress(share: $share, consultation: $consultation);
+	}//end invite()
+
+	/**
+	 * The consultation, its case and its advisory body, when it can carry a link.
+	 *
+	 * @param string $consultationId The consultation UUID.
+	 *
+	 * @return array{0: array<string, mixed>, 1: string, 2: string} The consultation, the case id and the advisory body.
+	 *
+	 * @throws RuntimeException When the consultation cannot carry a link.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	private function invitable(string $consultationId): array {
+		$consultation = $this->consultations->getConsultation(consultationId: $consultationId);
+		if ($consultation === null) {
+			throw new RuntimeException('That consultation is not there');
+		}
+
+		$caseId = trim((string)($consultation['parentCase'] ?? ''));
+		if ($caseId === '') {
+			throw new RuntimeException('A consultation without a case has nothing to publish');
+		}
+
+		$body = trim((string)($consultation['adviceAuthority'] ?? ''));
+		if ($body === '') {
+			throw new RuntimeException('Name the advisory body before you invite it');
+		}
+
+		return [$consultation, $caseId, $body];
+	}//end invitable()
+
+	/**
+	 * The share with the address to send and the message that carries it.
+	 *
+	 * @param array<string, mixed> $share        The created share.
+	 * @param array<string, mixed> $consultation The consultation.
+	 *
+	 * @return array<string, mixed> The share with `responseUrl` and `message`.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	private function withAddress(array $share, array $consultation): array {
 		// The address to send: the configured response address, else the link.
 		$terms = $this->consultations->terms();
 		$share['responseUrl'] = $terms->responseAddress(linkUrl: (string)($share['url'] ?? ''));
 		$share['message'] = $terms->invitationMessage(consultation: $consultation, address: $share['responseUrl']);
 
 		return $share;
-	}//end invite()
+	}//end withAddress()
 
 	/**
 	 * Collect the advisory body's comment onto the consultation.
