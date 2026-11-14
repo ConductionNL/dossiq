@@ -475,6 +475,23 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 			return;
 		}
 
+		[$actor, $actorName] = $this->restoringActor();
+
+		try {
+			$context = self::restoreContext(entity: $entity, window: $window, actor: $actor);
+			$event = ObjectAuditEvents::of(object: $entity, action: self::RESTORE_ACTION, context: $context, actorId: $actor, actorName: $actorName);
+			$mapper->recordObjectEvent(event: $event);
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: the case was restored but the record could not be written: ' . $e->getMessage());
+		}
+	}//end recordRestore()
+
+	/**
+	 * Who is restoring: the signed-in user, or the system.
+	 *
+	 * @return array{0: string, 1: string} The actor's id and display name.
+	 */
+	private function restoringActor(): array {
 		$user = $this->userSession->getUser();
 		$actor = 'system';
 		$actorName = 'System';
@@ -483,25 +500,26 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 			$actorName = $user->getDisplayName();
 		}
 
-		try {
-			$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
-				object: $entity,
-				action: self::RESTORE_ACTION,
-				context: [
-					'restoredBy' => $actor,
-					'restoredAt' => (new DateTime())->format(DateTime::ATOM),
-					'objectUuid' => (string)$entity->getUuid(),
-					'restoredWithin' => $window,
-				],
-				actorId: $actor,
-				actorName: $actorName
-			));
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the case was restored but the record could not be written: ' . $e->getMessage()
-			);
-		}
-	}//end recordRestore()
+		return [$actor, $actorName];
+	}//end restoringActor()
+
+	/**
+	 * What the restore record says: who, when, which case and inside which window.
+	 *
+	 * @param object                    $entity The case restored.
+	 * @param array<string, mixed>|null $window The window it came back inside.
+	 * @param string                    $actor  Who restored it.
+	 *
+	 * @return array<string, mixed> The context.
+	 */
+	private static function restoreContext(object $entity, ?array $window, string $actor): array {
+		return [
+			'restoredBy' => $actor,
+			'restoredAt' => (new DateTime())->format(DateTime::ATOM),
+			'objectUuid' => (string)$entity->getUuid(),
+			'restoredWithin' => $window,
+		];
+	}//end restoreContext()
 
 	/**
 	 * OpenRegister's mapper, or an exception.
