@@ -78,6 +78,8 @@ use Throwable;
  * already exist: the term store, the outbound route, the reason vocabulary, the
  * schedule and the case timeline. Splitting it would put the count that keeps
  * two triggers apart in one class and the send that increments it in another.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PauseChaseService implements PauseChaseServiceInterface {
 	use SearchesObjects;
@@ -233,12 +235,36 @@ class PauseChaseService implements PauseChaseServiceInterface {
 			return null;
 		}
 
+		return $this->contextOfPaused(fresh: $fresh);
+	}//end contextFor()
+
+	/**
+	 * The still-paused row with its reason in force, or null when it names no reason or case.
+	 *
+	 * @param array<string, mixed> $fresh The row as it stands now.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>}|null The fresh row and its reason.
+	 */
+	private function contextOfPaused(array $fresh): array|null {
 		$key = trim((string)($fresh['pauseReason'] ?? ''));
 		$caseId = trim((string)($fresh['case'] ?? ''));
 		if ($key === '' || $caseId === '') {
 			return null;
 		}
 
+		return $this->contextOnCase(fresh: $fresh, key: $key, caseId: $caseId);
+	}//end contextOfPaused()
+
+	/**
+	 * The still-paused row with the case type's reason for its key, or null when the case type does not chase it.
+	 *
+	 * @param array<string, mixed> $fresh  The row as it stands now.
+	 * @param string               $key    The pause reason key.
+	 * @param string               $caseId The case the row belongs to.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>}|null The fresh row and its reason.
+	 */
+	private function contextOnCase(array $fresh, string $key, string $caseId): array|null {
 		// ONE READ of the case type answers both questions: which reasons it
 		// declares, and whether it sends this message at all. Reading it twice
 		// would let the two answers come from different rows.
@@ -257,7 +283,7 @@ class PauseChaseService implements PauseChaseServiceInterface {
 		}//end foreach
 
 		return null;
-	}//end contextFor()
+	}//end contextOnCase()
 
 	/**
 	 * Send one reminder and write down that it went.

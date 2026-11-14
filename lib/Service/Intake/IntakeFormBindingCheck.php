@@ -192,10 +192,7 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-publishing-a-case-type-must-re-check-the-forms-bound-to-it
 	 */
 	public function findingsOfMapping(array $caseType, array $mapping, ?string $audience = null): array {
-		$mapping = [
-			'fields' => array_values(array_filter((array)($mapping['fields'] ?? []), 'is_array')),
-			'fixed' => (array)($mapping['fixed'] ?? []),
-		];
+		$mapping = $this->normalisedMapping(mapping: $mapping);
 
 		$requirements = $this->unmetRequirements(caseType: $caseType, mapping: $mapping);
 		$validator = $this->settingsService->getOpenRegisterClass(self::VALIDATOR);
@@ -209,6 +206,34 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 			return $requirements;
 		}
 
+		return array_merge($this->validatorFindings(validator: $validator, schema: $schema, mapping: $mapping, audience: $audience), $requirements);
+	}//end findingsOfMapping()
+
+	/**
+	 * A mapping reduced to its `fields` (each an array) and `fixed` values.
+	 *
+	 * @param array<string, mixed> $mapping The form's mapping.
+	 *
+	 * @return array{fields: list<array<string, mixed>>, fixed: array<string, mixed>} The mapping.
+	 */
+	private function normalisedMapping(array $mapping): array {
+		return [
+			'fields' => array_values(array_filter((array)($mapping['fields'] ?? []), 'is_array')),
+			'fixed' => (array)($mapping['fixed'] ?? []),
+		];
+	}//end normalisedMapping()
+
+	/**
+	 * What OpenRegister's validator finds wrong with a mapping against the case schema.
+	 *
+	 * @param object               $validator OpenRegister's form destination validator.
+	 * @param object               $schema    The case schema.
+	 * @param array<string, mixed> $mapping   The normalised mapping.
+	 * @param string|null          $audience  `public` or `authenticated` for a form that is not internal.
+	 *
+	 * @return array<int, array<string, mixed>> The findings.
+	 */
+	private function validatorFindings(object $validator, object $schema, array $mapping, string|null $audience): array {
 		$options = [];
 		if ($audience !== null) {
 			$options['audience'] = $audience;
@@ -219,8 +244,8 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 			$found = [];
 		}
 
-		return array_merge(array_values(array_filter($found, 'is_array')), $requirements);
-	}//end findingsOfMapping()
+		return array_values(array_filter($found, 'is_array'));
+	}//end validatorFindings()
 
 	/**
 	 * What a published case type asks for before a case exists and the form does not fill.
