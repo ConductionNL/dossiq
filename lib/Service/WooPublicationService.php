@@ -426,16 +426,34 @@ class WooPublicationService implements WooPublicationServiceInterface {
 	 */
 	private function saveDecisionPublication(array $source, mixed $publicationId, string $publicationUrl, mixed $category): void {
 		$decision = $source['decision'];
-		$decision['wooPublication'] = [
+		$decision['wooPublication'] = $this->wooPublicationRecord(publicationId: $publicationId, publicationUrl: $publicationUrl, category: $category);
+
+		$source['objectService']->saveObject(
+			object: $decision,
+			register: $source['register'],
+			schema: $source['decisionSchema'],
+			uuid: $source['decisionId']
+		);
+	}//end saveDecisionPublication()
+
+	/**
+	 * The publication record kept on the decision.
+	 *
+	 * @param mixed  $publicationId  The publication id.
+	 * @param string $publicationUrl The publication URL.
+	 * @param mixed  $category       The Woo category.
+	 *
+	 * @return array<string, mixed> The record.
+	 */
+	private function wooPublicationRecord(mixed $publicationId, string $publicationUrl, mixed $category): array {
+		return [
 			'publicationId' => $publicationId,
 			'publicationUrl' => $publicationUrl,
 			'status' => self::STATUS_PUBLISHED,
 			'category' => $category,
 			'publishedAt' => date('c'),
 		];
-
-		$source['objectService']->saveObject(object: $decision, register: $source['register'], schema: $source['decisionSchema'], uuid: $source['decisionId']);
-	}//end saveDecisionPublication()
+	}//end wooPublicationRecord()
 
 	/**
 	 * Write the published state onto the case.
