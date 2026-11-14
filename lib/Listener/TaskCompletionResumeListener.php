@@ -107,29 +107,24 @@ class TaskCompletionResumeListener implements IEventListener {
 			return;
 		}
 
+		$this->resume(task: $task);
+	}//end handle()
+
+	/**
+	 * Answer the run the completed task names, recording a refusal or failure.
+	 *
+	 * @param array<string, mixed> $task The completed flow task.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/task-management/spec.md
+	 */
+	private function resume(array $task): void {
 		$runUuid = (string)$task['flowRun'];
 		$uid = $this->userSession->getUser()?->getUID();
 
 		try {
-			$this->signals->answerByUuid(
-				runUuid: $runUuid,
-				signal: new RunSignal(
-					payload: [
-						// A resume with no `decision` is a nudge, not an answer, and
-						// the awaiting node suspends again. Saying `completed`
-						// explicitly is what makes this an answer.
-						'decision' => 'completed',
-						'node' => (string)$task['flowNode'],
-						'taskId' => (string)($task['id'] ?? ''),
-						'completedBy' => (string)$uid,
-					],
-					actorUid: $uid,
-					// Addressing the node the task names makes the guard check THAT
-					// node's recorded assignee, so a run awaiting two steps never
-					// refuses this one for the other's audience.
-					nodeId: (string)$task['flowNode'],
-				)
-			);
+			$this->signals->answerByUuid(runUuid: $runUuid, signal: $this->completionSignal(task: $task, uid: $uid));
 		} catch (FlowSignalRefused $e) {
 			$this->recordRefusal(refusal: $e, runUuid: $runUuid, task: $task, uid: $uid);
 		} catch (Throwable $e) {
@@ -138,7 +133,36 @@ class TaskCompletionResumeListener implements IEventListener {
 				['error' => $e->getMessage(), 'task' => ($task['id'] ?? null)]
 			);
 		}//end try
-	}//end handle()
+	}//end resume()
+
+	/**
+	 * The signal that answers the task's node as completed.
+	 *
+	 * @param array<string, mixed> $task The completed flow task.
+	 * @param string|null          $uid  Who completed it.
+	 *
+	 * @return RunSignal The signal.
+	 *
+	 * @spec openspec/specs/task-management/spec.md
+	 */
+	private function completionSignal(array $task, ?string $uid): RunSignal {
+		return new RunSignal(
+			payload: [
+				// A resume with no `decision` is a nudge, not an answer, and
+				// the awaiting node suspends again. Saying `completed`
+				// explicitly is what makes this an answer.
+				'decision' => 'completed',
+				'node' => (string)$task['flowNode'],
+				'taskId' => (string)($task['id'] ?? ''),
+				'completedBy' => (string)$uid,
+			],
+			actorUid: $uid,
+			// Addressing the node the task names makes the guard check THAT
+			// node's recorded assignee, so a run awaiting two steps never
+			// refuses this one for the other's audience.
+			nodeId: (string)$task['flowNode'],
+		);
+	}//end completionSignal()
 
 	/**
 	 * Record a refusal at the loudness its reason deserves.

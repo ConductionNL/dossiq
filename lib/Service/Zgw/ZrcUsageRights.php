@@ -195,44 +195,84 @@ class ZrcUsageRights {
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named constructor on a value object.
 	 */
 	private function settleUsageRights(string $docUuid, array $docConfig): void {
 		try {
-			$docData = $this->objectToArray(row: $this->find(uuid: $docUuid, config: $docConfig));
-			if ($this->usageRightsOf(docData: $docData) !== null) {
-				return;
-			}
-
-			$grScope = ZgwSearchScope::fromMapping(mappingConfig: $this->zgwService->getZgwMappingService()->getMapping('gebruiksrechten'));
-			if ($grScope === null) {
-				$this->zgwService->getLogger()->warning(
-					'zrc-007b: gebruiksrechten mapping has no searchable register/schema, '
-					. 'leaving indicatieGebruiksrecht unset for doc ' . $docUuid
-				);
-				return;
-			}
-
-			$hasGr = $this->hasUsageRights(docUuid: $docUuid, grScope: $grScope);
-			if ($hasGr === null) {
-				return;
-			}
-
-			unset($docData['@self'], $docData['organisation']);
-			$docData['usageRightsIndication'] = $hasGr;
-			$docData['id'] = $docUuid;
-			$this->zgwService->getObjectService()->saveObject(
-				register: $docConfig['sourceRegister'],
-				schema: $docConfig['sourceSchema'],
-				object: $docData,
-				uuid: $docUuid
-			);
+			$this->settleUsageRightsOf(docUuid: $docUuid, docConfig: $docConfig);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->debug(
 				'zrc-007b: Could not update indicatieGebruiksrecht for doc ' . $docUuid . ': ' . $e->getMessage()
 			);
 		}//end try
 	}//end settleUsageRights()
+
+	/**
+	 * Write the indication on a document that has none, when the lookup answered.
+	 *
+	 * @param string $docUuid The document.
+	 * @param array $docConfig The document mapping.
+	 *
+	 * @return void
+	 *
+	 * @throws \Throwable When the document cannot be read or saved.
+	 */
+	private function settleUsageRightsOf(string $docUuid, array $docConfig): void {
+		$docData = $this->objectToArray(row: $this->find(uuid: $docUuid, config: $docConfig));
+		if ($this->usageRightsOf(docData: $docData) !== null) {
+			return;
+		}
+
+		$hasGr = $this->usageRightsFound(docUuid: $docUuid);
+		if ($hasGr === null) {
+			return;
+		}
+
+		$this->writeUsageRights(docUuid: $docUuid, docConfig: $docConfig, docData: $docData, hasGr: $hasGr);
+	}//end settleUsageRightsOf()
+
+	/**
+	 * Whether gebruiksrechten exist for a document; null when they cannot be looked up.
+	 *
+	 * @param string $docUuid The document.
+	 *
+	 * @return bool|null
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named constructor on a value object.
+	 */
+	private function usageRightsFound(string $docUuid): ?bool {
+		$grScope = ZgwSearchScope::fromMapping(mappingConfig: $this->zgwService->getZgwMappingService()->getMapping('gebruiksrechten'));
+		if ($grScope === null) {
+			$this->zgwService->getLogger()->warning(
+				'zrc-007b: gebruiksrechten mapping has no searchable register/schema, '
+				. 'leaving indicatieGebruiksrecht unset for doc ' . $docUuid
+			);
+			return null;
+		}
+
+		return $this->hasUsageRights(docUuid: $docUuid, grScope: $grScope);
+	}//end usageRightsFound()
+
+	/**
+	 * Save the document with its indicatieGebruiksrecht.
+	 *
+	 * @param string $docUuid The document.
+	 * @param array $docConfig The document mapping.
+	 * @param array $docData The stored document.
+	 * @param bool $hasGr Whether gebruiksrechten exist.
+	 *
+	 * @return void
+	 */
+	private function writeUsageRights(string $docUuid, array $docConfig, array $docData, bool $hasGr): void {
+		unset($docData['@self'], $docData['organisation']);
+		$docData['usageRightsIndication'] = $hasGr;
+		$docData['id'] = $docUuid;
+		$this->zgwService->getObjectService()->saveObject(
+			register: $docConfig['sourceRegister'],
+			schema: $docConfig['sourceSchema'],
+			object: $docData,
+			uuid: $docUuid
+		);
+	}//end writeUsageRights()
 
 	/**
 	 * Whether gebruiksrechten exist for a document; null when the lookup failed.

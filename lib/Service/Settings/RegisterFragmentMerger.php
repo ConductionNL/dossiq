@@ -63,34 +63,12 @@ class RegisterFragmentMerger {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function merge(array $base, string $fragmentDir): array {
-		if (is_dir($fragmentDir) === false) {
+		$files = $this->fragmentFiles(fragmentDir: $fragmentDir);
+		if ($files === []) {
 			return [$base, ''];
 		}
 
-		$files = glob($fragmentDir . '/*.json');
-		if ($files === false || empty($files) === true) {
-			return [$base, ''];
-		}
-
-		sort($files);
-
-		$merged = $base;
-		$hashAccumulator = '';
-
-		foreach ($files as $file) {
-			$content = file_get_contents($file);
-			if ($content === false) {
-				continue;
-			}
-
-			$fragment = json_decode($content, true);
-			if (json_last_error() !== JSON_ERROR_NONE || is_array($fragment) === false) {
-				continue;
-			}
-
-			$merged = $this->deepMerge(base: $merged, override: $fragment);
-			$hashAccumulator .= basename($file) . ':' . $content . "\n";
-		}//end foreach
+		[$merged, $hashAccumulator] = $this->mergeFiles(base: $base, files: $files);
 
 		if ($hashAccumulator === '') {
 			return [$merged, ''];
@@ -98,6 +76,75 @@ class RegisterFragmentMerger {
 
 		return [$merged, substr(hash('sha256', $hashAccumulator), 0, 12)];
 	}//end merge()
+
+	/**
+	 * The fragment files in the directory, in sorted filename order; none when it is absent.
+	 *
+	 * @param string $fragmentDir Absolute path to the register.d directory.
+	 *
+	 * @return array<int, string> The file paths.
+	 */
+	private function fragmentFiles(string $fragmentDir): array {
+		if (is_dir($fragmentDir) === false) {
+			return [];
+		}
+
+		$files = glob($fragmentDir . '/*.json');
+		if ($files === false || empty($files) === true) {
+			return [];
+		}
+
+		sort($files);
+
+		return $files;
+	}//end fragmentFiles()
+
+	/**
+	 * Deep-merge every readable fragment onto the base, fingerprinting what was applied.
+	 *
+	 * @param array $base The parsed monolith configuration.
+	 * @param array<int, string> $files The fragment files, in order.
+	 *
+	 * @return array{0: array<string,mixed>, 1: string} The merged config and the accumulated filename and content.
+	 */
+	private function mergeFiles(array $base, array $files): array {
+		$merged = $base;
+		$hashAccumulator = '';
+
+		foreach ($files as $file) {
+			$read = $this->readFragment(file: $file);
+			if ($read === null) {
+				continue;
+			}
+
+			[$content, $fragment] = $read;
+			$merged = $this->deepMerge(base: $merged, override: $fragment);
+			$hashAccumulator .= basename($file) . ':' . $content . "\n";
+		}//end foreach
+
+		return [$merged, $hashAccumulator];
+	}//end mergeFiles()
+
+	/**
+	 * A fragment file's content and its decoded configuration, or null when it cannot be read as one.
+	 *
+	 * @param string $file The fragment file.
+	 *
+	 * @return array{0: string, 1: array<int|string,mixed>}|null The content and the fragment.
+	 */
+	private function readFragment(string $file): ?array {
+		$content = file_get_contents($file);
+		if ($content === false) {
+			return null;
+		}
+
+		$fragment = json_decode($content, true);
+		if (json_last_error() !== JSON_ERROR_NONE || is_array($fragment) === false) {
+			return null;
+		}
+
+		return [$content, $fragment];
+	}//end readFragment()
 
 	/**
 	 * Recursively deep-merge an override array onto a base array (ADR-037).

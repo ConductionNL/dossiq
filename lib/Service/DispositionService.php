@@ -137,6 +137,30 @@ class DispositionService implements DispositionServiceInterface {
 		$data = array_diff_key($data, CallerIdentity::KEYS);
 		$this->validateDisposition(data: $data);
 
+		[$objectService, $register, $schema] = $this->dispositionStore();
+
+		$data = $this->withComplaint(data: $data, complaintId: $complaintId, approval: $approval);
+
+		$disposition = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+
+		$this->logger->info(
+			'Disposition submitted for complaint ' . $complaintId . ' with oordeel: ' . $data['opinion'],
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return $this->createdDisposition(disposition: $disposition, data: $data);
+	}//end createDisposition()
+
+	/**
+	 * The object service, register and disposition schema dispositions are written to.
+	 *
+	 * @return array{0: object, 1: string, 2: string} The disposition store.
+	 *
+	 * @throws \RuntimeException If OpenRegister is unavailable or the schema is not configured
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
+	 */
+	private function dispositionStore(): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -149,6 +173,21 @@ class DispositionService implements DispositionServiceInterface {
 			throw new RuntimeException('Complaint disposition schema not configured');
 		}
 
+		return [$objectService, $register, $schema];
+	}//end dispositionStore()
+
+	/**
+	 * The disposition data with its complaint, closure date and, when required, its approval status.
+	 *
+	 * @param array<string, mixed> $data Disposition data
+	 * @param string $complaintId Complaint UUID
+	 * @param string $approval One of self::APPROVAL_REQUIRED or self::APPROVAL_NOT_REQUIRED
+	 *
+	 * @return array<string, mixed> The data to store.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
+	 */
+	private function withComplaint(array $data, string $complaintId, string $approval): array {
 		$data['complaint'] = $complaintId;
 		$data['closureDate'] = $data['closureDate'] ?? date('Y-m-d');
 
@@ -156,19 +195,26 @@ class DispositionService implements DispositionServiceInterface {
 			$data['approvalStatus'] = 'awaiting_approval';
 		}
 
-		$disposition = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+		return $data;
+	}//end withComplaint()
 
-		$this->logger->info(
-			'Disposition submitted for complaint ' . $complaintId . ' with oordeel: ' . $data['opinion'],
-			['app' => AppIdentity::APP_ID],
-		);
-
+	/**
+	 * The created disposition as an array.
+	 *
+	 * @param mixed $disposition What the store answered.
+	 * @param array<string, mixed> $data The stored data.
+	 *
+	 * @return array<string, mixed> Created disposition
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
+	 */
+	private function createdDisposition($disposition, array $data): array {
 		if (is_array($disposition) === true) {
 			return $disposition;
 		}
 
 		return array_merge($data, ['id' => $disposition->getUuid()]);
-	}//end createDisposition()
+	}//end createdDisposition()
 
 	/**
 	 * Approve a disposition that was awaiting coordinator approval.

@@ -231,11 +231,38 @@ class ZrcController extends ZgwController {
 	 * @throws \Throwable When saving or a side effect fails.
 	 */
 	private function createFromBody(string $resource, array $mappingConfig, array $originalBody, array $body): JSONResponse {
-		$englishData = $this->zgwService->applyInboundMapping(
-			body: $body,
-			mapping: $this->zgwService->createInboundMapping(mappingConfig: $mappingConfig),
-			mappingConfig: $mappingConfig
-		);
+		$saved = $this->saveCreate(resource: $resource, mappingConfig: $mappingConfig, originalBody: $originalBody, body: $body);
+		if ($saved instanceof JSONResponse) {
+			return $saved;
+		}
+
+		[$objectData, $objectUuid] = $saved;
+
+		$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
+		$mapped = $this->mapCreatedOut(objectData: $objectData, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
+		if ($resource === 'zaakinformatieobjecten') {
+			$mapped = $this->completeCreatedJoin(mapped: $mapped, originalBody: $originalBody, body: $body);
+		}
+
+		$this->zgwService->publishNotification(self::ZGW_API, $resource, $baseUrl . '/' . $objectUuid, 'create');
+
+		return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
+	}//end createFromBody()
+
+	/**
+	 * Map and save a validated resource with its before- and after-save side effects.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param array $mappingConfig The resource mapping.
+	 * @param array $originalBody The request body as sent.
+	 * @param array $body The enriched body.
+	 *
+	 * @return JSONResponse|array{0: array, 1: mixed} The refusal of a side effect, or the saved object data and its uuid.
+	 *
+	 * @throws \Throwable When saving or a side effect fails.
+	 */
+	private function saveCreate(string $resource, array $mappingConfig, array $originalBody, array $body): JSONResponse|array {
+		$englishData = $this->inboundCreateData(body: $body, mappingConfig: $mappingConfig);
 
 		$beforeSave = $this->beforeCreateSave(resource: $resource, originalBody: $originalBody, body: $body);
 		if ($beforeSave !== null) {
@@ -249,21 +276,24 @@ class ZrcController extends ZgwController {
 			return $afterSave;
 		}
 
-		$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-		$mapped = $this->mapCreatedOut(objectData: $objectData, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
-		if ($resource === 'zaakinformatieobjecten') {
-			$mapped = $this->completeCreatedJoin(mapped: $mapped, originalBody: $originalBody, body: $body);
-		}
+		return [$objectData, $objectUuid];
+	}//end saveCreate()
 
-		$this->zgwService->publishNotification(
-			self::ZGW_API,
-			$resource,
-			$baseUrl . '/' . $objectUuid,
-			'create'
+	/**
+	 * The enriched body mapped to the English object.
+	 *
+	 * @param array $body The enriched body.
+	 * @param array $mappingConfig The resource mapping.
+	 *
+	 * @return array The mapped object.
+	 */
+	private function inboundCreateData(array $body, array $mappingConfig): array {
+		return $this->zgwService->applyInboundMapping(
+			body: $body,
+			mapping: $this->zgwService->createInboundMapping(mappingConfig: $mappingConfig),
+			mappingConfig: $mappingConfig
 		);
-
-		return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
-	}//end createFromBody()
+	}//end inboundCreateData()
 
 	/**
 	 * Save a new object and read back its data and uuid.
@@ -589,41 +619,71 @@ class ZrcController extends ZgwController {
 		// Resolve UUID from URL path — body "uuid" can override controller args.
 		$uuid = $this->zgwService->resolvePathUuid($this->request, $uuid);
 
+		$refusal = $this->updateRefusal(resource: $resource, isPatch: false);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->applyUpdate(resource: $resource, uuid: $uuid, isPatch: false);
+	}//end update()
+
+	/**
+	 * Why an update or patch may not go ahead: no valid token, no zrc.bijwerken scope, or a bad zaak body.
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param bool $isPatch Whether this is a partial update
+	 *
+	 * @return JSONResponse|null The refusal, or null when the update may go on
+	 */
+	private function updateRefusal(string $resource, bool $isPatch): ?JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
 			return $authError;
 		}
 
-		// C3: Gate updates on zrc.bijwerken scope.
+		// C3: Gate updates and patches on zrc.bijwerken scope.
 		if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.bijwerken') === false) {
 			return $this->permissionDeniedResponse();
 		}
 
+		return $this->caseBodyRefusal(resource: $resource, isPatch: $isPatch);
+	}//end updateRefusal()
+
+	/**
+	 * Pre-validate a zaak body before the existing object is read.
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param bool $isPatch Whether this is a partial update
+	 *
+	 * @return JSONResponse|null The validation error, or null
+	 */
+	private function caseBodyRefusal(string $resource, bool $isPatch): ?JSONResponse {
 		// Zrc-010/zrc-015: Pre-validate body fields that don't require
 		// the existing object, so validation errors are returned even
 		// when the OpenRegister find() call fails transiently.
 		if ($resource === 'zaken') {
-			$preValidation = $this->preValidateCaseBody(isPatch: false);
-			if ($preValidation !== null) {
-				return $preValidation;
-			}
+			return $this->preValidateCaseBody(isPatch: $isPatch);
 		}
 
+		return null;
+	}//end caseBodyRefusal()
+
+	/**
+	 * Run a full or partial update through the shared handler with the zaak-closed state resolved.
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param string $uuid The resource UUID
+	 * @param bool $isPatch Whether this is a partial update
+	 *
+	 * @return JSONResponse
+	 */
+	private function applyUpdate(string $resource, string $uuid, bool $isPatch): JSONResponse {
 		[$caseClosed, $hasGeforceerd] = $this->resolveCaseClosedForExisting(resource: $resource, uuid: $uuid);
 
-		$response = $this->zgwService->handleUpdate(
-			$this->request,
-			self::ZGW_API,
-			$resource,
-			$uuid,
-			false,
-			null,
-			$caseClosed,
-			$hasGeforceerd
-		);
+		$response = $this->zgwService->handleUpdate($this->request, self::ZGW_API, $resource, $uuid, $isPatch, null, $caseClosed, $hasGeforceerd);
 
 		return $this->enrichUpdated(resource: $resource, uuid: $uuid, response: $response);
-	}//end update()
+	}//end applyUpdate()
 
 	/**
 	 * Partial update a resource.
@@ -646,40 +706,12 @@ class ZrcController extends ZgwController {
 		// Resolve UUID from URL path — body "uuid" can override controller args.
 		$uuid = $this->zgwService->resolvePathUuid($this->request, $uuid);
 
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
+		$refusal = $this->updateRefusal(resource: $resource, isPatch: true);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
-		// C3: Gate patches on zrc.bijwerken scope.
-		if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.bijwerken') === false) {
-			return $this->permissionDeniedResponse();
-		}
-
-		// Zrc-010/zrc-015: Pre-validate body fields that don't require
-		// the existing object, so validation errors are returned even
-		// when the OpenRegister find() call fails transiently.
-		if ($resource === 'zaken') {
-			$preValidation = $this->preValidateCaseBody(isPatch: true);
-			if ($preValidation !== null) {
-				return $preValidation;
-			}
-		}
-
-		[$caseClosed, $hasGeforceerd] = $this->resolveCaseClosedForExisting(resource: $resource, uuid: $uuid);
-
-		$response = $this->zgwService->handleUpdate(
-			$this->request,
-			self::ZGW_API,
-			$resource,
-			$uuid,
-			true,
-			null,
-			$caseClosed,
-			$hasGeforceerd
-		);
-
-		return $this->enrichUpdated(resource: $resource, uuid: $uuid, response: $response);
+		return $this->applyUpdate(resource: $resource, uuid: $uuid, isPatch: true);
 	}//end patch()
 
 	/**
@@ -970,12 +1002,21 @@ class ZrcController extends ZgwController {
 
 		$mappingConfig = $this->zgwService->loadMappingConfig('besluiten', 'besluiten');
 		if ($mappingConfig === null) {
-			return new JSONResponse(
-				data: ['detail' => 'Besluit mapping not configured'],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
+			return new JSONResponse(data: ['detail' => 'Besluit mapping not configured'], statusCode: Http::STATUS_NOT_FOUND);
 		}
 
+		return $this->decisionsOfCaseResponse(zaakUuid: $zaakUuid, mappingConfig: $mappingConfig);
+	}//end zaakbesluitenIndex()
+
+	/**
+	 * The besluiten of a zaak as a response, or a 500 when they cannot be read.
+	 *
+	 * @param string $zaakUuid The zaak UUID
+	 * @param array $mappingConfig The besluiten mapping
+	 *
+	 * @return JSONResponse
+	 */
+	private function decisionsOfCaseResponse(string $zaakUuid, array $mappingConfig): JSONResponse {
 		try {
 			$rows = $this->decisionRowsOfCase(zaakUuid: $zaakUuid, mappingConfig: $mappingConfig);
 
@@ -990,7 +1031,7 @@ class ZrcController extends ZgwController {
 				statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
 			);
 		}//end try
-	}//end zaakbesluitenIndex()
+	}//end decisionsOfCaseResponse()
 
 	/**
 	 * The stored besluiten of a zaak.
@@ -1579,6 +1620,23 @@ class ZrcController extends ZgwController {
 
 		$objectService = $this->zgwService->getObjectService();
 
+		$deleteError = $this->removeCase(objectService: $objectService, uuid: $uuid);
+		if ($deleteError !== null) {
+			return $deleteError;
+		}
+
+		return $this->caseDestroyed(uuid: $uuid);
+	}//end destroyCase()
+
+	/**
+	 * Sync-delete the zaak's OIOs, drop its relations and delete the zaak.
+	 *
+	 * @param object $objectService The OpenRegister object service
+	 * @param string $uuid The zaak UUID to delete
+	 *
+	 * @return JSONResponse|null The refusal or error, or null when the zaak is deleted
+	 */
+	private function removeCase(object $objectService, string $uuid): ?JSONResponse {
 		// Zrc-005b: Before deleting the zaak, sync-delete OIOs in DRC
 		// for any linked ZaakInformatieObjecten.
 		$oioRefusal = $this->syncDeleteOiosBeforeCaseDelete(uuid: $uuid);
@@ -1590,11 +1648,17 @@ class ZrcController extends ZgwController {
 
 		// Cascade delete of sub-resources (rol, status, resultaat, etc.)
 		// is handled by OpenRegister via onDelete: CASCADE in schema definitions.
-		$deleteError = $this->deleteCaseObject(objectService: $objectService, uuid: $uuid);
-		if ($deleteError !== null) {
-			return $deleteError;
-		}
+		return $this->deleteCaseObject(objectService: $objectService, uuid: $uuid);
+	}//end removeCase()
 
+	/**
+	 * Announce a deleted zaak and answer 204.
+	 *
+	 * @param string $uuid The deleted zaak UUID
+	 *
+	 * @return JSONResponse
+	 */
+	private function caseDestroyed(string $uuid): JSONResponse {
 		$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, 'zaken');
 		$this->zgwService->publishNotification(
 			self::ZGW_API,
@@ -1608,7 +1672,7 @@ class ZrcController extends ZgwController {
 		);
 
 		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
-	}//end destroyCase()
+	}//end caseDestroyed()
 
 	/**
 	 * Delete the OIOs in DRC of a zaak's ZaakInformatieObjecten before the zaak goes (zrc-005b).
@@ -1899,38 +1963,62 @@ class ZrcController extends ZgwController {
 
 		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
 		if ($mappingConfig !== null && $this->zgwService->getObjectService() !== null) {
-			try {
-				$existingObj = $this->zgwService->getObjectService()->find(
-					$uuid,
-					register: $mappingConfig['sourceRegister'],
-					schema: $mappingConfig['sourceSchema']
-				);
-				$existingData = $this->objectToArray(row: $existingObj);
-
-				$caseClosed = $this->zgwService->resolveZaakClosed($resource, $existingData);
-				$hasGeforceerd = true;
-				if ($caseClosed === true) {
-					$hasGeforceerd = $this->zgwService->consumerHasScope(
-						$this->request,
-						'zrc',
-						'zaken.geforceerd-bijwerken'
-					);
-				}
-			} catch (\Throwable $e) {
-				// WF3c fix: fail-CLOSED on any unexpected error. Returning
-				// [true, false] (zaak=closed, no geforceerd scope) causes the
-				// upstream caller to emit a 403 rather than silently allowing
-				// modification of a legally-finalised zaak (zrc-007, Awb 4:5).
-				$this->zgwService->getLogger()->error(
-					'Could not resolve zaakClosed for ' . $resource . '/' . $uuid . ' — denying (fail-closed)',
-					['exception' => $e->getMessage()]
-				);
-				return [true, false];
-			}//end try
-		}//end if
+			[$caseClosed, $hasGeforceerd] = $this->closedStateOrDeny(resource: $resource, uuid: $uuid, mappingConfig: $mappingConfig);
+		}
 
 		return [$caseClosed, $hasGeforceerd];
 	}//end resolveZaakClosedForExisting()
+
+	/**
+	 * The zaak-closed state and geforceerd scope of a stored resource, denying on any error.
+	 *
+	 * @param string               $resource      The ZGW resource name
+	 * @param string               $uuid          The resource UUID
+	 * @param array<string, mixed> $mappingConfig The resource's mapping configuration
+	 *
+	 * @return array{0: ?bool, 1: bool} [zaakClosed, hasGeforceerd]
+	 */
+	private function closedStateOrDeny(string $resource, string $uuid, array $mappingConfig): array {
+		try {
+			return $this->closedStateOf(resource: $resource, uuid: $uuid, mappingConfig: $mappingConfig);
+		} catch (\Throwable $e) {
+			// WF3c fix: fail-CLOSED on any unexpected error. Returning
+			// [true, false] (zaak=closed, no geforceerd scope) causes the
+			// upstream caller to emit a 403 rather than silently allowing
+			// modification of a legally-finalised zaak (zrc-007, Awb 4:5).
+			$this->zgwService->getLogger()->error(
+				'Could not resolve zaakClosed for ' . $resource . '/' . $uuid . ' — denying (fail-closed)',
+				['exception' => $e->getMessage()]
+			);
+			return [true, false];
+		}//end try
+	}//end closedStateOrDeny()
+
+	/**
+	 * The zaak-closed state and geforceerd scope of a stored resource.
+	 *
+	 * @param string               $resource      The ZGW resource name
+	 * @param string               $uuid          The resource UUID
+	 * @param array<string, mixed> $mappingConfig The resource's mapping configuration
+	 *
+	 * @return array{0: ?bool, 1: bool} [zaakClosed, hasGeforceerd]
+	 */
+	private function closedStateOf(string $resource, string $uuid, array $mappingConfig): array {
+		$existingObj = $this->zgwService->getObjectService()->find(
+			$uuid,
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema']
+		);
+		$existingData = $this->objectToArray(row: $existingObj);
+
+		$caseClosed = $this->zgwService->resolveZaakClosed($resource, $existingData);
+		$hasGeforceerd = true;
+		if ($caseClosed === true) {
+			$hasGeforceerd = $this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.geforceerd-bijwerken');
+		}
+
+		return [$caseClosed, $hasGeforceerd];
+	}//end closedStateOf()
 
 	/**
 	 * Enrich a ZaakInformatieObject outbound-mapped array with aardRelatieWeergave and registratiedatum.

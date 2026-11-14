@@ -138,37 +138,68 @@ class CaseSeatsController extends Controller {
 			return $this->notYours();
 		}
 
+		try {
+			$cleared = $this->setCoordinatorSeat(caseId: $caseId);
+		} catch (Throwable $e) {
+			return $this->seatNotSet(caseId: $caseId, error: $e);
+		}
+
+		return $cleared ?? $this->show(caseId: $caseId);
+	}//end nameCoordinator()
+
+	/**
+	 * Fill the coordinator seat from the request, or empty it.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return JSONResponse|null The seats when the seat was emptied, null when it was filled.
+	 *
+	 * @throws Throwable When the seat cannot be set.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 */
+	private function setCoordinatorSeat(string $caseId): ?JSONResponse {
 		$participant = trim((string)$this->request->getParam('participant', ''));
 		$displayName = trim((string)$this->request->getParam('name', ''));
 
-		try {
-			// An empty participant EMPTIES the seat, which is how a coordinator
-			// is removed without a second endpoint that does one thing.
-			if ($participant === '') {
-				$this->seats->clearCoordinator(caseId: $caseId);
+		// An empty participant EMPTIES the seat, which is how a coordinator
+		// is removed without a second endpoint that does one thing.
+		if ($participant === '') {
+			$this->seats->clearCoordinator(caseId: $caseId);
 
-				return $this->show(caseId: $caseId);
-			}
-
-			$this->seats->nameCoordinator(caseId: $caseId, participant: $participant, displayName: $displayName);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'CaseSeatsController: the coordinator seat could not be set',
-				['caseId' => $caseId, 'exception' => $e->getMessage()],
-			);
-
-			return new JSONResponse(
-				[
-					'message' => 'This instance declares no coordinator role type, so the seat cannot be filled. '
-						. 'Add one on the Roles tab of the case type.',
-					'error' => 'no-coordinator-role-type',
-				],
-				Http::STATUS_UNPROCESSABLE_ENTITY,
-			);
+			return $this->show(caseId: $caseId);
 		}
 
-		return $this->show(caseId: $caseId);
-	}//end nameCoordinator()
+		$this->seats->nameCoordinator(caseId: $caseId, participant: $participant, displayName: $displayName);
+
+		return null;
+	}//end setCoordinatorSeat()
+
+	/**
+	 * Log a coordinator seat that could not be set and answer why.
+	 *
+	 * @param string $caseId The case uuid.
+	 * @param Throwable $error Why the seat could not be set.
+	 *
+	 * @return JSONResponse A 422 naming the missing coordinator role type.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 */
+	private function seatNotSet(string $caseId, Throwable $error): JSONResponse {
+		$this->logger->warning(
+			'CaseSeatsController: the coordinator seat could not be set',
+			['caseId' => $caseId, 'exception' => $error->getMessage()],
+		);
+
+		return new JSONResponse(
+			[
+				'message' => 'This instance declares no coordinator role type, so the seat cannot be filled. '
+					. 'Add one on the Roles tab of the case type.',
+				'error' => 'no-coordinator-role-type',
+			],
+			Http::STATUS_UNPROCESSABLE_ENTITY,
+		);
+	}//end seatNotSet()
 
 	/**
 	 * The caller, when they may write this case.

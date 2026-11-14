@@ -434,10 +434,7 @@ class AdviceService implements AdviceServiceInterface {
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
 	 */
 	public function requestAdvice(string $caseId, array $data, string $requestedBy): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
 
@@ -448,15 +445,47 @@ class AdviceService implements AdviceServiceInterface {
 		$savedRecord = $this->savedAdvice(objectService: $objectService, register: $register, payload: $payload);
 
 		$this->delegateAdviceDecision(
-			advice: [
-				'objectService' => $objectService,
-				'register' => $register,
-				'data' => $data,
-				'payload' => $payload,
-				'saved' => $savedRecord,
-			]
+			advice: ['objectService' => $objectService, 'register' => $register, 'data' => $data, 'payload' => $payload, 'saved' => $savedRecord]
 		);
 
+		$this->notifyAdviseurUnlessExternal(caseId: $caseId, payload: $payload, savedRecord: $savedRecord, external: $external);
+
+		$this->logger->info('Advice request created for case ' . $caseId . ' by ' . $requestedBy, ['app' => AppIdentity::APP_ID]);
+
+		return $savedRecord;
+	}//end requestAdvice()
+
+	/**
+	 * OpenRegister's object service, refusing when it is not available.
+	 *
+	 * @return object The object service
+	 *
+	 * @throws RuntimeException If OpenRegister is unavailable
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-6
+	 */
+	private function requireObjectService(): object {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		return $objectService;
+	}//end requireObjectService()
+
+	/**
+	 * Notify the adviseur of a new request, unless the advisor is external.
+	 *
+	 * @param string $caseId UUID of the case
+	 * @param array<string, mixed> $payload The adviceRequest payload
+	 * @param array<string, mixed> $savedRecord The saved adviceRequest
+	 * @param bool $external Whether the advisor is an external organisation
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-6
+	 */
+	private function notifyAdviseurUnlessExternal(string $caseId, array $payload, array $savedRecord, bool $external): void {
 		// An external advisor is an organisation name, not a user: nobody to notify.
 		if ($external === false) {
 			$this->notifier->notifyAdviseur(
@@ -465,14 +494,7 @@ class AdviceService implements AdviceServiceInterface {
 				saved: $savedRecord,
 			);
 		}
-
-		$this->logger->info(
-			'Advice request created for case ' . $caseId . ' by ' . $requestedBy,
-			['app' => AppIdentity::APP_ID]
-		);
-
-		return $savedRecord;
-	}//end requestAdvice()
+	}//end notifyAdviseurUnlessExternal()
 
 	/**
 	 * The adviceRequest payload, with the deadline parsed.

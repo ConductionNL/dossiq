@@ -265,25 +265,29 @@ class ConsultationRepository {
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
-	public function nextConsultationNumber(
-		object $objectService,
-		string $register,
-		string $schema,
-	): string {
+	public function nextConsultationNumber(object $objectService, string $register, string $schema): string {
 		$year = (int)date('Y');
 		$prefix = 'ADV-' . $year . '-';
 
-		$existing = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: [
-				'consultationNumber' => $prefix . '%',
-				'_order' => ['consultationNumber' => 'DESC'],
-				'_limit' => 1,
-			],
-		);
+		$filters = ['consultationNumber' => $prefix . '%', '_order' => ['consultationNumber' => 'DESC'], '_limit' => 1];
+		$existing = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 
+		$maxSeq = self::maxSequence(existing: $existing, prefix: $prefix);
+
+		return $prefix . str_pad((string)($maxSeq + 1), 4, '0', STR_PAD_LEFT);
+	}//end nextConsultationNumber()
+
+	/**
+	 * The highest sequence number among the latest consultation numbers of the year.
+	 *
+	 * @param array<int, array<string, mixed>> $existing The latest consultation of the year, if any.
+	 * @param string                           $prefix   The year's `ADV-{year}-` prefix.
+	 *
+	 * @return int The sequence, 0 when there is none.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
+	 */
+	private static function maxSequence(array $existing, string $prefix): int {
 		$maxSeq = 0;
 		if (empty($existing) === false) {
 			$latest = $existing[0];
@@ -297,6 +301,6 @@ class ConsultationRepository {
 			}
 		}
 
-		return $prefix . str_pad((string)($maxSeq + 1), 4, '0', STR_PAD_LEFT);
-	}//end nextConsultationNumber()
+		return $maxSeq;
+	}//end maxSequence()
 }//end class

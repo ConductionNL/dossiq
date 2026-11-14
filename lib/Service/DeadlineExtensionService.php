@@ -40,6 +40,8 @@ use RuntimeException;
 /**
  * AWB 4:14 verlenging engine on a TermijnInstance.
  *
+ * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
+ *
  * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
 class DeadlineExtensionService implements DeadlineExtensionServiceInterface {
@@ -668,29 +670,7 @@ class DeadlineExtensionService implements DeadlineExtensionServiceInterface {
 			return 1;
 		}
 
-		// Walk the TermijnService cache by zaaktype if available. As a
-		// safe fallback, return the default 1 — a real lookup would
-		// call SettingsService->getObjectService()->find($defId) here,
-		// but TermijnService already caches lookups by zaaktype which
-		// is the data we actually need.
-		$svcDef = null;
-		try {
-			$reflection = new ReflectionClass($this->termService);
-			if ($reflection->hasProperty('definitieCache') === true) {
-				$prop = $reflection->getProperty('definitieCache');
-				$cache = $prop->getValue($this->termService);
-				if (is_array($cache) === true) {
-					foreach ($cache as $row) {
-						if (is_array($row) === true && (string)($row['id'] ?? '') === $defId) {
-							$svcDef = $row;
-							break;
-						}
-					}
-				}
-			}
-		} catch (\Throwable $e) {
-			$svcDef = null;
-		}
+		$svcDef = $this->cachedDefinition(defId: $defId);
 
 		if (is_array($svcDef) === true) {
 			return (int)($svcDef['countExtensions'] ?? 1);
@@ -698,4 +678,67 @@ class DeadlineExtensionService implements DeadlineExtensionServiceInterface {
 
 		return 1;
 	}//end resolveMaxExtensions()
+
+	/**
+	 * The TermijnDefinitie with this id from the TermijnService cache, or null.
+	 *
+	 * @param string $defId The definition id.
+	 *
+	 * @return array<string, mixed>|null The definition, or null.
+	 */
+	private function cachedDefinition(string $defId): ?array {
+		// Walk the TermijnService cache by zaaktype if available. As a
+		// safe fallback, return the default 1 — a real lookup would
+		// call SettingsService->getObjectService()->find($defId) here,
+		// but TermijnService already caches lookups by zaaktype which
+		// is the data we actually need.
+		$svcDef = null;
+		try {
+			$svcDef = $this->definitionIn(cache: $this->definitieCache(), defId: $defId);
+		} catch (\Throwable $e) {
+			$svcDef = null;
+		}
+
+		return $svcDef;
+	}//end cachedDefinition()
+
+	/**
+	 * The TermijnService's definition cache, or null when it has none.
+	 *
+	 * @return mixed The cache.
+	 *
+	 * @throws \ReflectionException When the cache cannot be read.
+	 */
+	private function definitieCache(): mixed {
+		$reflection = new ReflectionClass($this->termService);
+		if ($reflection->hasProperty('definitieCache') === false) {
+			return null;
+		}
+
+		$prop = $reflection->getProperty('definitieCache');
+
+		return $prop->getValue($this->termService);
+	}//end definitieCache()
+
+	/**
+	 * The definition with this id in the cache, or null.
+	 *
+	 * @param mixed $cache The TermijnService's definition cache.
+	 * @param string $defId The definition id.
+	 *
+	 * @return array<string, mixed>|null The definition, or null.
+	 */
+	private function definitionIn(mixed $cache, string $defId): ?array {
+		if (is_array($cache) === false) {
+			return null;
+		}
+
+		foreach ($cache as $row) {
+			if (is_array($row) === true && (string)($row['id'] ?? '') === $defId) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end definitionIn()
 }//end class

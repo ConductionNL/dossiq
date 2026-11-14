@@ -17,7 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Transitions\SendTemplateMessageHandler;
+use OCA\Dossiq\Kernel\Contracts\SendTemplateMessageHandlerInterface;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
@@ -35,14 +35,14 @@ class DossiqTxSendMessageNode extends DossiqTransitionNode {
     /**
      * Constructor.
      *
-     * @param SendTemplateMessageHandler $handler The handler this node runs.
+     * @param SendTemplateMessageHandlerInterface $handler The handler this node runs.
      * @param IL10N                      $l10n    The localisation service.
      * @param IURLGenerator              $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly SendTemplateMessageHandler $handler,
+        private readonly SendTemplateMessageHandlerInterface $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {

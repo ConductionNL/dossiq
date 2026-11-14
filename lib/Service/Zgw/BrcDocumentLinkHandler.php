@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
+use OCA\Dossiq\Kernel\Contracts\BrcCrossRegisterSyncInterface;
+use OCA\Dossiq\Kernel\Contracts\BrcDocumentLinkHandlerInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 use OCP\AppFramework\Http;
@@ -40,7 +42,7 @@ use OCP\IRequest;
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
-class BrcDocumentLinkHandler {
+class BrcDocumentLinkHandler implements BrcDocumentLinkHandlerInterface {
 	use NormalisesObjectRows;
 
 	/**
@@ -54,11 +56,11 @@ class BrcDocumentLinkHandler {
 	 * Constructor.
 	 *
 	 * @param ZgwServiceInterface $zgwService The shared ZGW service.
-	 * @param BrcCrossRegisterSync $sync Keeps the Documenten register in step.
+	 * @param BrcCrossRegisterSyncInterface $sync Keeps the Documenten register in step.
 	 */
 	public function __construct(
 		private readonly ZgwServiceInterface $zgwService,
-		private readonly BrcCrossRegisterSync $sync,
+		private readonly BrcCrossRegisterSyncInterface $sync,
 	) {
 	}//end __construct()
 
@@ -209,11 +211,42 @@ class BrcDocumentLinkHandler {
 	 * @return JSONResponse
 	 */
 	private function createChecked(IRequest $request, object $objectService, array $mappingConfig): JSONResponse {
-		$resource = 'besluitinformatieobjecten';
 		$body = $this->zgwService->getRequestBody($request);
 
-		// Run business rules (brc-003a, brc-008a).
-		$ruleResult = $this->zgwService->getBusinessRulesService()->validate(
+		$ruleResult = $this->validateCreate(body: $body, objectService: $objectService, mappingConfig: $mappingConfig);
+		if ($ruleResult['valid'] === false) {
+			return new JSONResponse(data: $this->zgwService->buildValidationError($ruleResult), statusCode: $ruleResult['status']);
+		}
+
+		$enrichedBody = $ruleResult['enrichedBody'];
+
+		// Create the BIO via standard mapping flow.
+		$inboundMapping = $this->zgwService->createInboundMapping(mappingConfig: $mappingConfig);
+		$englishData = $this->zgwService->applyInboundMapping(body: $enrichedBody, mapping: $inboundMapping, mappingConfig: $mappingConfig);
+
+		// @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
+		if (is_array($englishData) === false) {
+			return new JSONResponse(data: ['detail' => 'Invalid mapping result'], statusCode: Http::STATUS_BAD_REQUEST);
+		}
+
+		$objectData = $this->saveCreated(objectService: $objectService, mappingConfig: $mappingConfig, englishData: $englishData);
+
+		return $this->createdResponse(request: $request, objectData: $objectData, mappingConfig: $mappingConfig, enrichedBody: $enrichedBody);
+	}//end createChecked()
+
+	/**
+	 * Run the business rules on the create body (brc-003a, brc-008a).
+	 *
+	 * @param array<string, mixed> $body          The request body.
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param array<string, mixed> $mappingConfig The mapping configuration.
+	 *
+	 * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
+	 */
+	private function validateCreate(array $body, object $objectService, array $mappingConfig): array {
+		$resource = 'besluitinformatieobjecten';
+
+		return $this->zgwService->getBusinessRulesService()->validate(
 			zgwApi: self::ZGW_API,
 			resource: $resource,
 			action: 'create',
@@ -221,44 +254,26 @@ class BrcDocumentLinkHandler {
 			objectService: $objectService,
 			mappingConfig: $mappingConfig
 		);
-		if ($ruleResult['valid'] === false) {
-			return new JSONResponse(
-				data: $this->zgwService->buildValidationError($ruleResult),
-				statusCode: $ruleResult['status']
-			);
-		}
+	}//end validateCreate()
 
-		$enrichedBody = $ruleResult['enrichedBody'];
-
-		// Create the BIO via standard mapping flow.
-		$inboundMapping = $this->zgwService->createInboundMapping(mappingConfig: $mappingConfig);
-		$englishData = $this->zgwService->applyInboundMapping(
-			body: $enrichedBody,
-			mapping: $inboundMapping,
-			mappingConfig: $mappingConfig
-		);
-
-		// @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
-		if (is_array($englishData) === false) {
-			return new JSONResponse(
-				data: ['detail' => 'Invalid mapping result'],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
-		}
-
+	/**
+	 * Save the mapped BIO.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param array<string, mixed> $mappingConfig The mapping configuration.
+	 * @param array<string, mixed> $englishData   The mapped object.
+	 *
+	 * @return array<string, mixed> The stored BIO.
+	 */
+	private function saveCreated(object $objectService, array $mappingConfig, array $englishData): array {
 		$object = $objectService->saveObject(
 			register: $mappingConfig['sourceRegister'],
 			schema: $mappingConfig['sourceSchema'],
 			object: $englishData
 		);
 
-		return $this->createdResponse(
-			request: $request,
-			objectData: $this->objectToArray(row: $object),
-			mappingConfig: $mappingConfig,
-			enrichedBody: $enrichedBody
-		);
-	}//end createChecked()
+		return $this->objectToArray(row: $object);
+	}//end saveCreated()
 
 	/**
 	 * Sync the OIO into DRC, notify, and answer with the created BIO.

@@ -113,39 +113,78 @@ class OpenIncidentSource implements QueueSource {
 
 		$items = [];
 		foreach ($this->incidents->ownedBy(userId: $userId) as $incident) {
-			$caseId = trim((string)($incident['case'] ?? ''));
-			$title = trim((string)($incident['description'] ?? ''));
-			if ($title === '') {
-				$title = $this->l10n->t('A report with no description');
-			}
-
-			$route = ['name' => 'PersonalQueue'];
-			if ($caseId !== '') {
-				$route = ['name' => 'CaseDetail', 'params' => ['id' => $caseId]];
-			}
-
-			$items[] = new QueueItem(
-				source: $this->name(),
-				subjectType: 'incident',
-				subjectId: trim((string)($incident['id'] ?? ($incident['uuid'] ?? ''))),
-				title: $title,
-				priority: '',
-				// THE EVENT DATE, NOT THE RECORDING MOMENT. A report from three
-				// weeks ago is older work than one filed this morning, and a
-				// queue ordered on when somebody typed it up says the opposite.
-				dueAt: $this->dayOf(value: (string)($incident['eventDate'] ?? '')),
-				coveredFor: null,
-				// The route goes to the CASE. There is no incident page, and
-				// what a person needs in order to work a report is the case it
-				// sits in: the address, the history and the other reports on it.
-				route: $route,
-				waiting: [],
-				subject: $incident
-			);
+			$items[] = $this->itemOf(incident: $incident);
 		}
 
 		return $items;
 	}//end itemsFor()
+
+	/**
+	 * The queue item of one open incident.
+	 *
+	 * @param array<string, mixed> $incident The incident.
+	 *
+	 * @return QueueItem The item.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 */
+	private function itemOf(array $incident): QueueItem {
+		return new QueueItem(
+			source: $this->name(),
+			subjectType: 'incident',
+			subjectId: trim((string)($incident['id'] ?? ($incident['uuid'] ?? ''))),
+			title: $this->titleOf(incident: $incident),
+			priority: '',
+			// THE EVENT DATE, NOT THE RECORDING MOMENT. A report from three
+			// weeks ago is older work than one filed this morning, and a
+			// queue ordered on when somebody typed it up says the opposite.
+			dueAt: $this->dayOf(value: (string)($incident['eventDate'] ?? '')),
+			coveredFor: null,
+			// The route goes to the CASE. There is no incident page, and
+			// what a person needs in order to work a report is the case it
+			// sits in: the address, the history and the other reports on it.
+			route: $this->routeOf(incident: $incident),
+			waiting: [],
+			subject: $incident
+		);
+	}//end itemOf()
+
+	/**
+	 * The incident's description, or a stand-in when it has none.
+	 *
+	 * @param array<string, mixed> $incident The incident.
+	 *
+	 * @return string The title.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 */
+	private function titleOf(array $incident): string {
+		$title = trim((string)($incident['description'] ?? ''));
+		if ($title === '') {
+			$title = $this->l10n->t('A report with no description');
+		}
+
+		return $title;
+	}//end titleOf()
+
+	/**
+	 * The route to the incident's case, or to the queue when it has none.
+	 *
+	 * @param array<string, mixed> $incident The incident.
+	 *
+	 * @return array<string, mixed> The route.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 */
+	private function routeOf(array $incident): array {
+		$caseId = trim((string)($incident['case'] ?? ''));
+		$route = ['name' => 'PersonalQueue'];
+		if ($caseId !== '') {
+			$route = ['name' => 'CaseDetail', 'params' => ['id' => $caseId]];
+		}
+
+		return $route;
+	}//end routeOf()
 
 	/**
 	 * One stored moment as a plain day, or null.

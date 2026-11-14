@@ -339,22 +339,11 @@ class CaseSharingService implements CaseSharingServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	public function createPartnerShare(
-		string $caseId,
-		string $partnerId,
-		string $permissionLevel,
-		string $createdBy,
-		string $message='',
-		array $fieldExclusions=[],
-	): array {
-		$objectService = $this->gateway->objectService();
-		if ($objectService === null) {
-			return ['error' => 'OpenRegister is not available'];
-		}
-
-		$store = $this->shareStore(objectService: $objectService);
-		if ($store->isConfigured() === false) {
-			return ['error' => 'Service unavailable'];
+	public function createPartnerShare(string $caseId, string $partnerId, string $permissionLevel, string $createdBy,
+		string $message='', array $fieldExclusions=[]): array {
+		$store = $this->configuredStoreOrError();
+		if (is_array($store) === true) {
+			return $store;
 		}
 
 		// A field the allow-list does not name is refused, never dropped: a
@@ -365,17 +354,32 @@ class CaseSharingService implements CaseSharingServiceInterface {
 			return ['error' => 'Unknown case field: '.implode(', ', $unknown)];
 		}
 
-		$request = [
-			'caseId' => $caseId,
-			'partnerId' => $partnerId,
-			'permissionLevel' => $permissionLevel,
-			'createdBy' => $createdBy,
-			'message' => $message,
-			'excluded' => $excluded,
-		];
+		$request = ['caseId' => $caseId, 'partnerId' => $partnerId, 'permissionLevel' => $permissionLevel, 'createdBy' => $createdBy,
+			'message' => $message, 'excluded' => $excluded];
 
 		return $this->sharePartner(store: $store, request: $request);
 	}//end createPartnerShare()
+
+	/**
+	 * The configured share register, or the error that says why there is none.
+	 *
+	 * @return ShareStore|array<string, string> The store, or an error array.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function configuredStoreOrError(): ShareStore|array {
+		$objectService = $this->gateway->objectService();
+		if ($objectService === null) {
+			return ['error' => 'OpenRegister is not available'];
+		}
+
+		$store = $this->shareStore(objectService: $objectService);
+		if ($store->isConfigured() === false) {
+			return ['error' => 'Service unavailable'];
+		}
+
+		return $store;
+	}//end configuredStoreOrError()
 
 	/**
 	 * Ask the consent gate, then write the partner share with the scope it named.

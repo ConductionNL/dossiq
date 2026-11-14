@@ -63,6 +63,8 @@ use RuntimeException;
  * Service orchestrating LLM-assisted, human-reviewed redaction proposals.
  *
  * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class WOOAnonymisationAssistService implements WOOAnonymisationAssistServiceInterface {
 	/**
@@ -513,35 +515,70 @@ class WOOAnonymisationAssistService implements WOOAnonymisationAssistServiceInte
 		$taggedRuleSpans = $this->taggedAsRules(spans: $ruleSpans);
 
 		if ($this->hermiqClient->isAvailable() === false) {
-			return [
-				'spans' => $taggedRuleSpans,
-				'source' => 'rules_only',
-				'llmAvailable' => false,
-			];
+			return $this->rulesOnly(taggedRuleSpans: $taggedRuleSpans);
 		}
 
 		try {
 			$llmResult = $this->hermiqClient->detectPii(text: $text, context: $context);
 		} catch (HermiqAssistantException $e) {
-			$this->logger->warning(
-				'WOOAnonymisationAssistService: LLM-assisted detection failed, falling back to rules-only',
-				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
-			);
-
-			return [
-				'spans' => $taggedRuleSpans,
-				'source' => 'rules_only_fallback',
-				'llmAvailable' => true,
-				'llmError' => $e->getMessage(),
-			];
+			return $this->rulesOnlyFallback(taggedRuleSpans: $taggedRuleSpans, e: $e);
 		}
 
+		return $this->rulesPlusLlm(taggedRuleSpans: $taggedRuleSpans, llmSpans: $llmResult['spans']);
+	}//end buildProposal()
+
+	/**
+	 * The proposal when no LLM is available: the rule spans alone.
+	 *
+	 * @param array<int, array<string, mixed>> $taggedRuleSpans The rule spans, tagged.
+	 *
+	 * @return array<string, mixed> `{spans, source, llmAvailable}`.
+	 */
+	private function rulesOnly(array $taggedRuleSpans): array {
 		return [
-			'spans' => $this->mergeSpansRulesFloor(ruleSpans: $taggedRuleSpans, llmSpans: $llmResult['spans']),
+			'spans' => $taggedRuleSpans,
+			'source' => 'rules_only',
+			'llmAvailable' => false,
+		];
+	}//end rulesOnly()
+
+	/**
+	 * The proposal with the LLM spans merged over the rule floor.
+	 *
+	 * @param array<int, array<string, mixed>> $taggedRuleSpans The rule spans, tagged.
+	 * @param mixed                            $llmSpans        The spans the LLM detected.
+	 *
+	 * @return array<string, mixed> `{spans, source, llmAvailable}`.
+	 */
+	private function rulesPlusLlm(array $taggedRuleSpans, mixed $llmSpans): array {
+		return [
+			'spans' => $this->mergeSpansRulesFloor(ruleSpans: $taggedRuleSpans, llmSpans: $llmSpans),
 			'source' => 'rules_plus_llm',
 			'llmAvailable' => true,
 		];
-	}//end buildProposal()
+	}//end rulesPlusLlm()
+
+	/**
+	 * Log the failed LLM detection and answer with the rule spans alone.
+	 *
+	 * @param array<int, array<string, mixed>> $taggedRuleSpans The rule spans, tagged.
+	 * @param HermiqAssistantException         $e               Why the LLM detection failed.
+	 *
+	 * @return array<string, mixed> `{spans, source, llmAvailable, llmError}`.
+	 */
+	private function rulesOnlyFallback(array $taggedRuleSpans, HermiqAssistantException $e): array {
+		$this->logger->warning(
+			'WOOAnonymisationAssistService: LLM-assisted detection failed, falling back to rules-only',
+			['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
+		);
+
+		return [
+			'spans' => $taggedRuleSpans,
+			'source' => 'rules_only_fallback',
+			'llmAvailable' => true,
+			'llmError' => $e->getMessage(),
+		];
+	}//end rulesOnlyFallback()
 
 	/**
 	 * The spans, each tagged as found by the rules.

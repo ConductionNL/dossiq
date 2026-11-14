@@ -180,11 +180,35 @@ class TransitionCasesAction implements BulkActionInterface {
 			return $this->rehearse(caseId: $caseId, transitionId: $transitionId);
 		}
 
+		return $this->commitMove(caseId: $caseId, transitionId: $transitionId, comment: $this->commentOf(parameters: $parameters));
+	}//end apply()
+
+	/**
+	 * The comment the job carries, or null when it carries none.
+	 *
+	 * @param array<string, mixed> $parameters The job parameters.
+	 *
+	 * @return string|null
+	 */
+	private function commentOf(array $parameters): ?string {
 		$comment = null;
 		if (isset($parameters['comment']) === true) {
 			$comment = (string)$parameters['comment'];
 		}
 
+		return $comment;
+	}//end commentOf()
+
+	/**
+	 * Execute the transition on one case and translate the outcome.
+	 *
+	 * @param string      $caseId       The case to move.
+	 * @param string      $transitionId The transition to take.
+	 * @param string|null $comment      The comment, or null.
+	 *
+	 * @return BulkActionResult What happened.
+	 */
+	private function commitMove(string $caseId, string $transitionId, ?string $comment): BulkActionResult {
 		try {
 			$outcome = $this->engine->execute(caseId: $caseId, transitionId: $transitionId, comment: $comment);
 
@@ -204,7 +228,7 @@ class TransitionCasesAction implements BulkActionInterface {
 		} catch (Throwable $e) {
 			return BulkActionResult::failed(message: $e->getMessage());
 		}//end try
-	}//end apply()
+	}//end commitMove()
 
 	/**
 	 * The automatic actions that did not run, named on the row.

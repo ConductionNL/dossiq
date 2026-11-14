@@ -347,37 +347,76 @@ class PlatformDataSubjectRights {
 		try {
 			return $call();
 		} catch (Throwable $e) {
-			if (is_a($e, self::REFUSAL) === true
-				&& is_callable([$e, 'getRule']) === true
-				&& is_callable([$e, 'getStatusCode']) === true
-			) {
-				// Called through `call_user_func` rather than `$e->getRule()`:
-				// the class is resolved by name, so nothing in this app
-				// type-hints it and the analysers see only a Throwable. A
-				// `@var` claiming otherwise is a claim about a class they
-				// cannot read, which is how a docblock starts disagreeing with
-				// the code under it.
-				throw new RefusedException(
-					rule: (string)call_user_func([$e, 'getRule']),
-					sentence: $e->getMessage(),
-					status: (int)call_user_func([$e, 'getStatusCode']),
-					previous: $e,
-				);
-			}
-
-			$this->logger->error(
-				'OpenRegister refused a data subject rights call for a reason it does not name',
-				['exception' => $e->getMessage()]
-			);
-
-			throw new RefusedException(
-				rule: 'data-subject-rights-failed',
-				sentence: 'OpenRegister could not complete this request. Nothing was erased.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
+			throw $this->translated(error: $e);
 		}//end try
 	}//end guarded()
+
+	/**
+	 * The refusal a failed platform call becomes: the platform's own rule when it named one.
+	 *
+	 * @param Throwable $error What the platform threw.
+	 *
+	 * @return RefusedException The refusal.
+	 *
+	 * @spec openspec/specs/avg-processing-surface/spec.md
+	 */
+	private function translated(Throwable $error): RefusedException {
+		if (is_a($error, self::REFUSAL) === true
+			&& is_callable([$error, 'getRule']) === true
+			&& is_callable([$error, 'getStatusCode']) === true
+		) {
+			return $this->platformRefusal(error: $error);
+		}
+
+		return $this->unnamedFailure(error: $error);
+	}//end translated()
+
+	/**
+	 * The platform's refusal, with its own rule and status.
+	 *
+	 * @param Throwable $error The platform's refusal.
+	 *
+	 * @return RefusedException The refusal.
+	 *
+	 * @spec openspec/specs/avg-processing-surface/spec.md
+	 */
+	private function platformRefusal(Throwable $error): RefusedException {
+		// Called through `call_user_func` rather than `$e->getRule()`:
+		// the class is resolved by name, so nothing in this app
+		// type-hints it and the analysers see only a Throwable. A
+		// `@var` claiming otherwise is a claim about a class they
+		// cannot read, which is how a docblock starts disagreeing with
+		// the code under it.
+		return new RefusedException(
+			rule: (string)call_user_func([$error, 'getRule']),
+			sentence: $error->getMessage(),
+			status: (int)call_user_func([$error, 'getStatusCode']),
+			previous: $error,
+		);
+	}//end platformRefusal()
+
+	/**
+	 * Log a failure the platform did not name, and the refusal it becomes.
+	 *
+	 * @param Throwable $error What the platform threw.
+	 *
+	 * @return RefusedException The refusal.
+	 *
+	 * @spec openspec/specs/avg-processing-surface/spec.md
+	 */
+	private function unnamedFailure(Throwable $error): RefusedException {
+		$this->logger->error(
+			'OpenRegister refused a data subject rights call for a reason it does not name',
+			['exception' => $error->getMessage()]
+		);
+
+		return new RefusedException(
+			rule: 'data-subject-rights-failed',
+			sentence: 'OpenRegister could not complete this request. Nothing was erased.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $error,
+		);
+	}//end unnamedFailure()
 
 	/**
 	 * The erase mode, or the safer of the two when the value is not one.

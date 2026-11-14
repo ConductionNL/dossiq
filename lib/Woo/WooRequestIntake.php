@@ -163,27 +163,12 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 		$wooRequest = (new WooRequestForm())->normalise(request: $request);
 		$subjectRef = trim((string)$request['subjectRef']);
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		if ($objectService === null || $register === '') {
-			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'OpenRegister or the dossiq register is missing.');
-		}
-
-		$collection = null;
-		if ($wooRequest['collectionId'] !== '') {
-			$collection = $this->collections->owned(objectService: $objectService, collectionId: $wooRequest['collectionId'], subjectRef: $subjectRef);
-			if ($collection === null) {
-				throw new WooRequestRefused(WooRequestRefused::NOT_FOUND, 'No such dossier.');
-			}
-		}
+		[$objectService, $register] = $this->availableRegister();
+		$collection = $this->ownedCollection(objectService: $objectService, wooRequest: $wooRequest, subjectRef: $subjectRef);
 
 		$caseType = $this->caseType(objectService: $objectService, register: $register);
-		$saved = $this->writeCase(
-			objectService: $objectService,
-			register: $register,
-			caseType: $caseType,
-			request: $this->startedRequest(request: $request, wooRequest: $wooRequest),
-		);
+		$started = $this->startedRequest(request: $request, wooRequest: $wooRequest);
+		$saved = $this->writeCase(objectService: $objectService, register: $register, caseType: $caseType, request: $started);
 		$caseId = $saved['id'];
 
 		if ($collection !== null) {
@@ -196,11 +181,53 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 		// whose `deadline` is not computed yet leaves the key out rather than
 		// answering an empty value, and the confirmation then drops that
 		// sentence instead of promising a date of ''.
-		return [
-			'caseId' => $caseId,
-			'caseUrl' => $this->urlGenerator->getAbsoluteURL('/index.php/apps/dossiq/cases/' . $caseId),
-		] + $saved['answer'];
+		$caseUrl = $this->urlGenerator->getAbsoluteURL('/index.php/apps/dossiq/cases/' . $caseId);
+		return ['caseId' => $caseId, 'caseUrl' => $caseUrl] + $saved['answer'];
 	}//end start()
+
+	/**
+	 * The object service and the dossiq register, or a refusal when either is missing.
+	 *
+	 * @return array{0: object, 1: string} The object service and the register.
+	 *
+	 * @throws WooRequestRefused When OpenRegister or the dossiq register is missing.
+	 *
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 */
+	private function availableRegister(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		if ($objectService === null || $register === '') {
+			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'OpenRegister or the dossiq register is missing.');
+		}
+
+		return [$objectService, $register];
+	}//end availableRegister()
+
+	/**
+	 * The requester's own dossier the request starts from, or null when it names none.
+	 *
+	 * @param object                $objectService OpenRegister's object service.
+	 * @param array<string, string> $wooRequest    The request as the case keeps it.
+	 * @param string                $subjectRef    The requester.
+	 *
+	 * @return array<string, mixed>|null The dossier.
+	 *
+	 * @throws WooRequestRefused When the dossier does not exist or belongs to someone else.
+	 *
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 */
+	private function ownedCollection(object $objectService, array $wooRequest, string $subjectRef): ?array {
+		$collection = null;
+		if ($wooRequest['collectionId'] !== '') {
+			$collection = $this->collections->owned(objectService: $objectService, collectionId: $wooRequest['collectionId'], subjectRef: $subjectRef);
+			if ($collection === null) {
+				throw new WooRequestRefused(WooRequestRefused::NOT_FOUND, 'No such dossier.');
+			}
+		}
+
+		return $collection;
+	}//end ownedCollection()
 
 	/**
 	 * The request `start()` writes, as {@see self::writeCase()} takes it.
@@ -311,35 +338,11 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	 */
 	public function receive(array $answers, string $receivedAt = '', string $origin = 'portal-form'): array {
 		try {
-			$answersMap = $this->receivedAnswers;
-			if ($answersMap === null) {
-				throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The date reader is not available.');
-			}
-
-			$wooRequest = (new WooRequestForm())->normalise(request: $answersMap->toRequest(answers: $answers, origin: $origin));
-			$intake = $answersMap->intake(answers: $answers, origin: $origin, receivedAt: $receivedAt);
-
-			$objectService = $this->settingsService->getObjectService();
-			$register = $this->settingsService->getConfigValue('register');
-			if ($objectService === null || $register === '') {
-				throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'OpenRegister or the dossiq register is missing.');
-			}
-
-			// NO TERM ENGINE, NO CASE. A Woo request without a running
-			// statutory term is the state this intake exists to prevent, so
-			// it is refused before anything is written (REQ-WTO-002).
-			$receivedTerm = $this->receivedTerm;
-			if ($receivedTerm === null || $receivedTerm->isAvailable() === false) {
-				throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The term engine is not available.');
-			}
+			$request = $this->requestAndIntake(answers: $answers, receivedAt: $receivedAt, origin: $origin);
+			[$objectService, $register, $receivedTerm] = $this->writeTarget();
 
 			$caseType = $this->caseType(objectService: $objectService, register: $register);
-			$saved = $this->writeCase(
-				objectService: $objectService,
-				register: $register,
-				caseType: $caseType,
-				request: ['wooRequest' => $wooRequest, 'intake' => $intake]
-			);
+			$saved = $this->writeCase(objectService: $objectService, register: $register, caseType: $caseType, request: $request);
 		} catch (WooRequestRefused $e) {
 			// An unavailable dependency is `unavailable`; every other refusal is `refused`.
 			$outcome = ([WooRequestRefused::UNAVAILABLE => 'unavailable'][$e->getReason()] ?? 'refused');
@@ -349,6 +352,58 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 
 		return $this->termAnswer(receivedTerm: $receivedTerm, objectService: $objectService, register: $register, caseId: $saved['id']);
 	}//end receive()
+
+	/**
+	 * The normalised Woo request and its intake, read from the answers.
+	 *
+	 * @param array<string, mixed> $answers    The answers in opencatalogi's shape.
+	 * @param string               $receivedAt When the requester sent it (ISO 8601).
+	 * @param string               $origin     `portal-form` or `opencatalogi`.
+	 *
+	 * @return array{wooRequest: array<string, mixed>, intake: array<string, mixed>} The request to write.
+	 *
+	 * @throws WooRequestRefused When the date reader is unavailable or the answers are refused.
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
+	 */
+	private function requestAndIntake(array $answers, string $receivedAt, string $origin): array {
+		$answersMap = $this->receivedAnswers;
+		if ($answersMap === null) {
+			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The date reader is not available.');
+		}
+
+		$wooRequest = (new WooRequestForm())->normalise(request: $answersMap->toRequest(answers: $answers, origin: $origin));
+		$intake = $answersMap->intake(answers: $answers, origin: $origin, receivedAt: $receivedAt);
+
+		return ['wooRequest' => $wooRequest, 'intake' => $intake];
+	}//end requestAndIntake()
+
+	/**
+	 * The object service, register and term engine the case is written with.
+	 *
+	 * @return array{0: object, 1: string, 2: WooReceivedTerm} The object service, register and term engine.
+	 *
+	 * @throws WooRequestRefused When OpenRegister, the register or the term engine is unavailable.
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-armed-means-a-term-runs-counted-from-when-the-requester-sent-it-req-wto-002
+	 */
+	private function writeTarget(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		if ($objectService === null || $register === '') {
+			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'OpenRegister or the dossiq register is missing.');
+		}
+
+		// NO TERM ENGINE, NO CASE. A Woo request without a running
+		// statutory term is the state this intake exists to prevent, so
+		// it is refused before anything is written (REQ-WTO-002).
+		$receivedTerm = $this->receivedTerm;
+		if ($receivedTerm === null || $receivedTerm->isAvailable() === false) {
+			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The term engine is not available.');
+		}
+
+		return [$objectService, $register, $receivedTerm];
+	}//end writeTarget()
 
 	/**
 	 * Armed only when the written case's statutory term runs.

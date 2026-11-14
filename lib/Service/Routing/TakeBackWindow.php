@@ -197,28 +197,54 @@ class TakeBackWindow implements TakeBackWindowInterface {
 			'purpose'         => 'due',
 			'legalEffect'     => 'none',
 			'sla'             => $window,
-			'escalationRules' => [
-				[
-					'trigger'        => 'slaBreached',
-					'offset'         => 0,
-					'offsetUnit'     => 'hours',
-					'notifyRole'     => [],
-					'escalateToRole' => [],
-					'priority'       => 'normal',
-					'message'        => 'zaak-teruggenomen',
-					'openIncident'   => false,
-				],
-			],
+			'escalationRules' => $this->escalationRules(),
 			'anchorEvent'     => 'case_routed',
 			'anchorEventAt'   => $routedAt,
-			'metadata'        => [
-				'source'   => self::METADATA_SOURCE,
-				'caseId'   => $caseId,
-				'routedTo' => $routedTo,
-				'routedAt' => $routedAt->format(DATE_ATOM),
-			],
+			'metadata'        => $this->timerMetadata(caseId: $caseId, routedTo: $routedTo, routedAt: $routedAt),
 		];
 	}//end takeBackConfig()
+
+	/**
+	 * The escalation rules of the window: take the case back when it breaches.
+	 *
+	 * @return array<int, array<string, mixed>> The escalation rules.
+	 *
+	 * @spec openspec/changes/archive/2026-10-10-routing-by-weight-position-and-area/tasks.md
+	 */
+	private function escalationRules(): array {
+		return [
+			[
+				'trigger'        => 'slaBreached',
+				'offset'         => 0,
+				'offsetUnit'     => 'hours',
+				'notifyRole'     => [],
+				'escalateToRole' => [],
+				'priority'       => 'normal',
+				'message'        => 'zaak-teruggenomen',
+				'openIncident'   => false,
+			],
+		];
+	}//end escalationRules()
+
+	/**
+	 * The metadata stored on the timer.
+	 *
+	 * @param string            $caseId   The case id.
+	 * @param string            $routedTo The person it was routed to.
+	 * @param DateTimeImmutable $routedAt When.
+	 *
+	 * @return array<string, string> The metadata.
+	 *
+	 * @spec openspec/changes/archive/2026-10-10-routing-by-weight-position-and-area/tasks.md
+	 */
+	private function timerMetadata(string $caseId, string $routedTo, DateTimeImmutable $routedAt): array {
+		return [
+			'source'   => self::METADATA_SOURCE,
+			'caseId'   => $caseId,
+			'routedTo' => $routedTo,
+			'routedAt' => $routedAt->format(DATE_ATOM),
+		];
+	}//end timerMetadata()
 
 	/**
 	 * Arm the configured timer on the engine.

@@ -124,37 +124,84 @@ class CaseRoleHolder {
 	 */
 	public function bind(array $case, string $uid, string $genericRole, string $displayName): bool {
 		$caseId = $this->idOf(row: $case);
-		if ($this->cannotBind(caseRow: $case, caseId: $caseId, uid: $uid, genericRole: $genericRole) === true) {
-			return false;
-		}
-
-		$roleType = $this->roleTypeToBind(caseRow: $case, caseId: $caseId, genericRole: $genericRole);
+		$roleType = $this->bindableRoleType(caseRow: $case, caseId: $caseId, uid: $uid, genericRole: $genericRole);
 		if ($roleType === null) {
 			return false;
 		}
 
 		try {
-			$saved = $this->saveObjectAsArray(
-				objectService: $this->objectService(),
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $this->settingsService->getConfigValue('role_schema'),
-				object: [
-					'name' => $this->nameOf(uid: trim($uid), displayName: $displayName),
-					'roleType' => $roleType,
-					'case' => $caseId,
-					'participant' => CaseSeats::USER_PREFIX . trim($uid),
-				],
-			);
+			return $this->saveBinding(caseId: $caseId, uid: $uid, roleType: $roleType, displayName: $displayName) !== null;
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the reader could not be bound to the case',
-				['caseId' => $caseId, 'genericRole' => $genericRole, 'exception' => $e->getMessage()],
-			);
+			$this->logNotBound(caseId: $caseId, genericRole: $genericRole, error: $e);
 			return false;
 		}
-
-		return $saved !== null;
 	}//end bind()
+
+	/**
+	 * The role type to bind the person to, or null when no binding is to be added.
+	 *
+	 * @param array<string, mixed> $caseRow The stored case.
+	 * @param string $caseId The case id.
+	 * @param string $uid The person's Nextcloud user id.
+	 * @param string $genericRole The generic role.
+	 *
+	 * @return string|null The role type uuid, or null.
+	 *
+	 * @throws RuntimeException When the role types or bindings cannot be read.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function bindableRoleType(array $caseRow, string $caseId, string $uid, string $genericRole): ?string {
+		if ($this->cannotBind(caseRow: $caseRow, caseId: $caseId, uid: $uid, genericRole: $genericRole) === true) {
+			return null;
+		}
+
+		return $this->roleTypeToBind(caseRow: $caseRow, caseId: $caseId, genericRole: $genericRole);
+	}//end bindableRoleType()
+
+	/**
+	 * Store the binding of a person to a role type on a case.
+	 *
+	 * @param string $caseId The case id.
+	 * @param string $uid The person's Nextcloud user id.
+	 * @param string $roleType The role type uuid.
+	 * @param string $displayName What the People tab calls them; '' reads their Nextcloud name.
+	 *
+	 * @return array<string, mixed>|null The stored binding, or null.
+	 *
+	 * @throws RuntimeException When OpenRegister is absent.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function saveBinding(string $caseId, string $uid, string $roleType, string $displayName): ?array {
+		return $this->saveObjectAsArray(
+			objectService: $this->objectService(),
+			register: $this->settingsService->getConfigValue('register'),
+			schema: $this->settingsService->getConfigValue('role_schema'),
+			object: [
+				'name' => $this->nameOf(uid: trim($uid), displayName: $displayName),
+				'roleType' => $roleType,
+				'case' => $caseId,
+				'participant' => CaseSeats::USER_PREFIX . trim($uid),
+			],
+		);
+	}//end saveBinding()
+
+	/**
+	 * Log that the person could not be bound to the case.
+	 *
+	 * @param string $caseId The case id.
+	 * @param string $genericRole The generic role.
+	 * @param Throwable $error Why the binding failed.
+	 *
+	 * @return void
+	 */
+	private function logNotBound(string $caseId, string $genericRole, Throwable $error): void {
+		$this->logger->warning(
+			'Dossiq: the reader could not be bound to the case',
+			['caseId' => $caseId, 'genericRole' => $genericRole, 'exception' => $error->getMessage()],
+		);
+	}//end logNotBound()
 
 	/**
 	 * Whether the case or the person is missing, or the person holds the role already.

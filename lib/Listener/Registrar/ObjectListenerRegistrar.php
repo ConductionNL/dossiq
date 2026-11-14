@@ -36,7 +36,6 @@ use OCA\Dossiq\Listener\WooRefusalGroundDeleteGuard;
 use OCA\Dossiq\Listener\DependentTermListener;
 use OCA\Dossiq\Listener\KpiCacheInvalidationListener;
 use OCA\Dossiq\Listener\RoleMutationListener;
-use OCA\Dossiq\Notification\Notifier;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
@@ -74,13 +73,24 @@ class ObjectListenerRegistrar {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
-		// Note @mention notifications (nc-vue #207, ncvue-w2-leaves-adoption):
-		// MentionNotificationService raises `note_mention` notifications;
-		// this Notifier renders them for the bell menu.
-		$context->registerNotifierService(Notifier::class);
-
 		$this->registerCacheInvalidationListeners(context: $context);
 		$this->registerCaseDeleteGuard(context: $context);
+		$this->registerWooRefusalGroundDeleteGuard(context: $context);
+		$this->registerCaseTypeDeleteGuard(context: $context);
+		$this->registerEmailTemplateVersionListener(context: $context);
+		$this->registerSubsystemRegistrars(context: $context);
+	}//end register()
+
+	/**
+	 * Register the Woo refusal-ground delete guard.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerWooRefusalGroundDeleteGuard(IRegistrationContext $context): void {
 		$context->registerEventListener(
 			event: ObjectDeletingEvent::class,
 			listener: WooRefusalGroundDeleteGuard::class
@@ -89,6 +99,18 @@ class ObjectListenerRegistrar {
 			event: ObjectLeavingEvent::class,
 			listener: WooRefusalGroundDeleteGuard::class
 		);
+	}//end registerWooRefusalGroundDeleteGuard()
+
+	/**
+	 * Register the case type delete guard.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerCaseTypeDeleteGuard(IRegistrationContext $context): void {
 		$context->registerEventListener(
 			event: ObjectDeletingEvent::class,
 			listener: CaseTypeDeleteGuard::class
@@ -97,12 +119,36 @@ class ObjectListenerRegistrar {
 			event: ObjectLeavingEvent::class,
 			listener: CaseTypeDeleteGuard::class
 		);
+	}//end registerCaseTypeDeleteGuard()
+
+	/**
+	 * Register the email template version listener on create and update.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerEmailTemplateVersionListener(IRegistrationContext $context): void {
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $templateEvent) {
 			$context->registerEventListener(
 				event: $templateEvent,
 				listener: EmailTemplateVersionListener::class
 			);
 		}
+	}//end registerEmailTemplateVersionListener()
+
+	/**
+	 * Hand the context to each subsystem's own registrar.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerSubsystemRegistrars(IRegistrationContext $context): void {
 		(new IntakeListenerRegistrar())->register(context: $context);
 		(new ContactListenerRegistrar())->register(context: $context);
 		(new DocumentListenerRegistrar())->register(context: $context);
@@ -114,7 +160,7 @@ class ObjectListenerRegistrar {
 		(new ForfeitInvoiceListenerRegistrar())->register(context: $context);
 		(new OnboardingListenerRegistrar())->register(context: $context);
 		(new CaseActivityListenerRegistrar())->register(context: $context);
-	}//end register()
+	}//end registerSubsystemRegistrars()
 
 	/**
 	 * Register the case delete guard (REQ-CM-35).
@@ -155,20 +201,7 @@ class ObjectListenerRegistrar {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	private function registerCacheInvalidationListeners(IRegistrationContext $context): void {
-		$context->registerEventListener(
-			event: ObjectCreatedEvent::class,
-			listener: KpiCacheInvalidationListener::class
-		);
-
-		$context->registerEventListener(
-			event: ObjectUpdatedEvent::class,
-			listener: KpiCacheInvalidationListener::class
-		);
-
-		$context->registerEventListener(
-			event: ObjectDeletedEvent::class,
-			listener: KpiCacheInvalidationListener::class
-		);
+		$this->registerKpiCacheInvalidation(context: $context);
 
 		// A term event that moves a date offers the same move to the cases
 		// waiting on that case. Registered on the create only: the event row
@@ -179,7 +212,45 @@ class ObjectListenerRegistrar {
 			listener: DependentTermListener::class
 		);
 
-		// Role-routing cache invalidation on role mutations.
+		$this->registerRoleMutationListeners(context: $context);
+	}//end registerCacheInvalidationListeners()
+
+	/**
+	 * Register the KPI cache invalidation on create, update and delete.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerKpiCacheInvalidation(IRegistrationContext $context): void {
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: KpiCacheInvalidationListener::class
+		);
+
+		$context->registerEventListener(
+			event: ObjectUpdatedEvent::class,
+			listener: KpiCacheInvalidationListener::class
+		);
+
+		$context->registerEventListener(
+			event: ObjectDeletedEvent::class,
+			listener: KpiCacheInvalidationListener::class
+		);
+	}//end registerKpiCacheInvalidation()
+
+	/**
+	 * Register the role-routing cache invalidation on role mutations.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerRoleMutationListeners(IRegistrationContext $context): void {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: RoleMutationListener::class
@@ -192,5 +263,5 @@ class ObjectListenerRegistrar {
 			event: ObjectDeletedEvent::class,
 			listener: RoleMutationListener::class
 		);
-	}//end registerCacheInvalidationListeners()
+	}//end registerRoleMutationListeners()
 }//end class

@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\LoadDefaultZgwMappingsInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwMappingServiceInterface;
 use OCA\Dossiq\Repair\Support\DefaultMappingTables;
@@ -44,7 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class LoadDefaultZgwMappings implements IRepairStep {
+class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInterface {
 	use RunsUnderSystemIdentity;
 
 	/**
@@ -359,7 +360,20 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			return;
 		}
 
-		$defaults = $this->getDefaultApplicaties();
+		[$created, $updated] = $this->upsertApplicaties(consumerMapper: $consumerMapper, defaults: $this->getDefaultApplicaties());
+
+		$output->info("Created {$created}, updated {$updated} default test applicaties.");
+	}//end createDefaultApplicaties()
+
+	/**
+	 * Create each default applicatie, or update the one that already exists by name.
+	 *
+	 * @param object                           $consumerMapper OpenRegister's ConsumerMapper.
+	 * @param array<int, array<string, mixed>> $defaults       The default applicaties.
+	 *
+	 * @return array{0: int, 1: int} The number created and the number updated.
+	 */
+	private function upsertApplicaties(object $consumerMapper, array $defaults): array {
 		$created = 0;
 
 		$updated = 0;
@@ -367,25 +381,47 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		foreach ($defaults as $applicatie) {
 			$existing = $consumerMapper->findAll(filters: ['name' => $applicatie['name']]);
 			if (count(value: $existing) > 0) {
-				// Update existing consumer's authorization configuration
-				// to ensure new scopes are applied.
-				$consumer = $existing[0];
-				$newConfig = $applicatie['authorizationConfiguration'] ?? [];
-				$consumer->setAuthorizationConfiguration($newConfig);
-				$consumer->setUpdated(new DateTime());
-				$consumerMapper->update($consumer);
+				$this->updateApplicatie(consumerMapper: $consumerMapper, consumer: $existing[0], applicatie: $applicatie);
 				$updated++;
 				continue;
 			}
 
-			$applicatie['created'] = new DateTime();
-			$applicatie['updated'] = new DateTime();
-			$consumerMapper->createFromArray(object: $applicatie);
+			$this->createApplicatie(consumerMapper: $consumerMapper, applicatie: $applicatie);
 			$created++;
 		}
 
-		$output->info("Created {$created}, updated {$updated} default test applicaties.");
-	}//end createDefaultApplicaties()
+		return [$created, $updated];
+	}//end upsertApplicaties()
+
+	/**
+	 * Update an existing consumer's authorization configuration so new scopes are applied.
+	 *
+	 * @param object               $consumerMapper OpenRegister's ConsumerMapper.
+	 * @param object               $consumer       The existing consumer.
+	 * @param array<string, mixed> $applicatie     The default applicatie.
+	 *
+	 * @return void
+	 */
+	private function updateApplicatie(object $consumerMapper, object $consumer, array $applicatie): void {
+		$newConfig = $applicatie['authorizationConfiguration'] ?? [];
+		$consumer->setAuthorizationConfiguration($newConfig);
+		$consumer->setUpdated(new DateTime());
+		$consumerMapper->update($consumer);
+	}//end updateApplicatie()
+
+	/**
+	 * Create a default applicatie with fresh timestamps.
+	 *
+	 * @param object               $consumerMapper OpenRegister's ConsumerMapper.
+	 * @param array<string, mixed> $applicatie     The default applicatie.
+	 *
+	 * @return void
+	 */
+	private function createApplicatie(object $consumerMapper, array $applicatie): void {
+		$applicatie['created'] = new DateTime();
+		$applicatie['updated'] = new DateTime();
+		$consumerMapper->createFromArray(object: $applicatie);
+	}//end createApplicatie()
 
 	/**
 	 * Get default test applicatie configurations.
@@ -394,53 +430,76 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 */
 	private function getDefaultApplicaties(): array {
 		return [
-			[
-				// FROZEN client ids + secrets below. These are ZGW consumer
-				// credentials registered in the ZGW consumer table and referenced
-				// by name from tests/zgw/seed-consumers.sh and the Postman
-				// environments. A renamed id here makes the seed script look up a
-				// consumer that does not exist — a KeyError that aborts the whole
-				// e2e job before a single test runs. `procest-admin` is also a
-				// Nextcloud GROUP id (see TransitionAuthorizer::ADMIN_GROUP_ID).
-				'name' => 'procest-admin',
-				'description' => 'Dossiq Admin (development)',
-				'authorizationType' => 'jwt-zgw',
-				'userId' => 'admin',
-				'authorizationConfiguration' => [
-					'publicKey' => 'procest-admin-secret-key-for-testing',
-					'algorithm' => 'HS256',
-					'superuser' => true,
-					'scopes' => [],
-				],
-			],
-			[
-				'name' => 'procest-limited',
-				'description' => 'Dossiq Limited (testing)',
-				'authorizationType' => 'jwt-zgw',
-				'userId' => 'admin',
-				'authorizationConfiguration' => [
-					'publicKey' => 'procest-limited-secret-key-for-test',
-					'algorithm' => 'HS256',
-					'superuser' => false,
-					'scopes' => [
-						[
-							'component' => 'ztc',
-							'scopes' => [
-								'zaaktypen.lezen',
-							],
-						],
-						[
-							'component' => 'zrc',
-							'scopes' => [
-								'zaken.lezen',
-							],
-							'maxVertrouwelijkheidaanduiding' => 'openbaar',
-						],
-					],
-				],
-			],
+			$this->adminApplicatie(),
+			$this->limitedApplicatie(),
 		];
 	}//end getDefaultApplicaties()
+
+	/**
+	 * The superuser test applicatie.
+	 *
+	 * @return array<string, mixed> The applicatie data
+	 */
+	private function adminApplicatie(): array {
+		return [
+			// FROZEN client ids + secrets below. These are ZGW consumer
+			// credentials registered in the ZGW consumer table and referenced
+			// by name from tests/zgw/seed-consumers.sh and the Postman
+			// environments. A renamed id here makes the seed script look up a
+			// consumer that does not exist — a KeyError that aborts the whole
+			// e2e job before a single test runs. `procest-admin` is also a
+			// Nextcloud GROUP id (see TransitionAuthorizer::ADMIN_GROUP_ID).
+			'name' => 'procest-admin',
+			'description' => 'Dossiq Admin (development)',
+			'authorizationType' => 'jwt-zgw',
+			'userId' => 'admin',
+			'authorizationConfiguration' => [
+				'publicKey' => 'procest-admin-secret-key-for-testing',
+				'algorithm' => 'HS256',
+				'superuser' => true,
+				'scopes' => [],
+			],
+		];
+	}//end adminApplicatie()
+
+	/**
+	 * The read-only test applicatie with limited scopes.
+	 *
+	 * @return array<string, mixed> The applicatie data
+	 */
+	private function limitedApplicatie(): array {
+		return [
+			'name' => 'procest-limited',
+			'description' => 'Dossiq Limited (testing)',
+			'authorizationType' => 'jwt-zgw',
+			'userId' => 'admin',
+			'authorizationConfiguration' => [
+				'publicKey' => 'procest-limited-secret-key-for-test',
+				'algorithm' => 'HS256',
+				'superuser' => false,
+				'scopes' => $this->limitedScopes(),
+			],
+		];
+	}//end limitedApplicatie()
+
+	/**
+	 * The scopes the limited test applicatie holds.
+	 *
+	 * @return array<int, array<string, mixed>> The scopes
+	 */
+	private function limitedScopes(): array {
+		return [
+			[
+				'component' => 'ztc',
+				'scopes' => ['zaaktypen.lezen'],
+			],
+			[
+				'component' => 'zrc',
+				'scopes' => ['zaken.lezen'],
+				'maxVertrouwelijkheidaanduiding' => 'openbaar',
+			],
+		];
+	}//end limitedScopes()
 
 	/**
 	 * Create default notification channels (kanalen).
@@ -627,37 +686,11 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 */
 	private function getDefaultKanalen(): array {
 		return [
-			[
-				'name' => 'zaken',
-				'filters' => [
-					'bronorganisatie',
-					'caseType',
-					'vertrouwelijkheidaanduiding',
-				],
-			],
-			[
-				'name' => 'documenten',
-				'filters' => [
-					'bronorganisatie',
-					'informatieobjecttype',
-					'vertrouwelijkheidaanduiding',
-				],
-			],
-			[
-				'name' => 'besluiten',
-				'filters' => [
-					'verantwoordelijkeOrganisatie',
-					'besluittype',
-				],
-			],
-			[
-				'name' => 'catalogi',
-				'filters' => [],
-			],
-			[
-				'name' => 'autorisaties',
-				'filters' => [],
-			],
+			['name' => 'zaken', 'filters' => ['bronorganisatie', 'caseType', 'vertrouwelijkheidaanduiding']],
+			['name' => 'documenten', 'filters' => ['bronorganisatie', 'informatieobjecttype', 'vertrouwelijkheidaanduiding']],
+			['name' => 'besluiten', 'filters' => ['verantwoordelijkeOrganisatie', 'besluittype']],
+			['name' => 'catalogi', 'filters' => []],
+			['name' => 'autorisaties', 'filters' => []],
 		];
 	}//end getDefaultKanalen()
 

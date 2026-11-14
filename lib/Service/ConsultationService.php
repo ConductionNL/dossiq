@@ -43,6 +43,8 @@ use RuntimeException;
  * status transitions, advice responses, deadline extensions, and dependency
  * cycle detection per Awb 3:5-3:9.
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ *
  * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  */
 class ConsultationService implements ConsultationServiceInterface {
@@ -400,16 +402,56 @@ class ConsultationService implements ConsultationServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function submitResponse(string $consultationId, array $response): array {
-		$advies = $response['advice'] ?? '';
-		if (in_array($advies, self::VALID_RESPONSES, true) === false) {
-			throw new RuntimeException('Invalid advice type: ' . $advies);
-		}
+		$advies = $this->validAdvice(response: $response);
 
 		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('consultation_schema');
 
+		$updateData = $this->adviceChanges(advies: $advies, response: $response);
+
+		$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$consultationId, changes: $updateData);
+
+		$this->logger->info(
+			'Consultation ' . $consultationId . ' advice submitted: ' . $advies,
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return ['id' => $consultationId, 'advice' => $advies, 'status' => 'advice_uitgebracht'];
+	}//end submitResponse()
+
+	/**
+	 * The advice type of a response.
+	 *
+	 * @param array<string, mixed> $response Response data (advies, toelichting, voorwaarden)
+	 *
+	 * @return mixed The advice type.
+	 *
+	 * @throws \RuntimeException If invalid response type
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
+	 */
+	private function validAdvice(array $response): mixed {
+		$advies = $response['advice'] ?? '';
+		if (in_array($advies, self::VALID_RESPONSES, true) === false) {
+			throw new RuntimeException('Invalid advice type: ' . $advies);
+		}
+
+		return $advies;
+	}//end validAdvice()
+
+	/**
+	 * The fields an advice response writes onto the consultation.
+	 *
+	 * @param mixed $advies The advice type.
+	 * @param array<string, mixed> $response Response data (advies, toelichting, voorwaarden)
+	 *
+	 * @return array<string, mixed> The changes.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
+	 */
+	private function adviceChanges(mixed $advies, array $response): array {
 		$updateData = [
 			'advice' => $advies,
 			'notes' => $response['notes'] ?? '',
@@ -421,19 +463,8 @@ class ConsultationService implements ConsultationServiceInterface {
 			$updateData['terms'] = $response['terms'];
 		}
 
-		$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$consultationId, changes: $updateData);
-
-		$this->logger->info(
-			'Consultation ' . $consultationId . ' advice submitted: ' . $advies,
-			['app' => AppIdentity::APP_ID],
-		);
-
-		return [
-			'id' => $consultationId,
-			'advice' => $advies,
-			'status' => 'advice_uitgebracht',
-		];
-	}//end submitResponse()
+		return $updateData;
+	}//end adviceChanges()
 
 	/**
 	 * Delete a consultation by ID.
@@ -739,44 +770,60 @@ class ConsultationService implements ConsultationServiceInterface {
 	 *
 	 * @throws \RuntimeException If decidesk is unavailable (REQ-PDRD-002)
 	 */
-	private function raiseAndPersistAdviceDecision(
-		object $objectService,
-		string $register,
-		string $schema,
-		string $consultationId,
-		array $data,
-	): string {
+	private function raiseAndPersistAdviceDecision(object $objectService, string $register, string $schema,
+		string $consultationId, array $data): string {
 		try {
-			$decisionRef = $this->adviceDelegation->raiseAdviceDecision(
-				subjectSchema: 'consultation',
-				subjectId: $consultationId,
-				payload: [
-					'subjectRegister' => $register,
-					'externalReference' => (string)$data['parentCase'],
-					'subjectLabel' => (string)$data['consultationNumber'],
-					'question' => (string)$data['questionFormulation'],
-				],
-			);
+			$decisionRef = $this->raiseConsultationAdvice(register: $register, consultationId: $consultationId, data: $data);
 
 			if ($consultationId !== '') {
-				$this->patchObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					id: $consultationId,
-					changes: ['decisionRef' => $decisionRef],
-				);
+				$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $consultationId,
+					changes: ['decisionRef' => $decisionRef]);
 			}
 		} catch (\RuntimeException $e) {
-			$this->logger->error(
-				'Dossiq: createConsultation: decidesk advice Decision raise failed — failing closed: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID],
-			);
-			// REQ-PDRD-002: fail closed; surface the error.
-			throw new RuntimeException('Decision service unavailable: ' . $e->getMessage(), 0, $e);
-		}//end try
+			throw $this->failedClosed(error: $e);
+		}
 
 		return $decisionRef;
 	}//end raiseAndPersistAdviceDecision()
+
+	/**
+	 * Raise the decidesk advice Decision for a consultation.
+	 *
+	 * @param string               $register       The register slug
+	 * @param string               $consultationId The freshly created consultation UUID
+	 * @param array<string, mixed> $data           Consultation data used to build the decision payload
+	 *
+	 * @return string The decidesk decision reference
+	 *
+	 * @throws \RuntimeException If decidesk is unavailable (REQ-PDRD-002)
+	 */
+	private function raiseConsultationAdvice(string $register, string $consultationId, array $data): string {
+		return $this->adviceDelegation->raiseAdviceDecision(
+			subjectSchema: 'consultation',
+			subjectId: $consultationId,
+			payload: [
+				'subjectRegister' => $register,
+				'externalReference' => (string)$data['parentCase'],
+				'subjectLabel' => (string)$data['consultationNumber'],
+				'question' => (string)$data['questionFormulation'],
+			],
+		);
+	}//end raiseConsultationAdvice()
+
+	/**
+	 * Log a failed advice Decision raise, and the error that fails the consultation closed.
+	 *
+	 * @param \RuntimeException $error Why the raise or the persist failed.
+	 *
+	 * @return RuntimeException The error to throw.
+	 */
+	private function failedClosed(\RuntimeException $error): RuntimeException {
+		$this->logger->error(
+			'Dossiq: createConsultation: decidesk advice Decision raise failed — failing closed: ' . $error->getMessage(),
+			['app' => AppIdentity::APP_ID],
+		);
+		// REQ-PDRD-002: fail closed; surface the error.
+		return new RuntimeException('Decision service unavailable: ' . $error->getMessage(), 0, $error);
+	}//end failedClosed()
 
 }//end class

@@ -156,6 +156,26 @@ class DsoObjectRepository implements DsoObjectRepositoryInterface {
 		string $regelkwalificatie,
 		string $location,
 	): array {
+		$cases = $this->dashboardCases(params: $params);
+		if ($cases['error'] !== null) {
+			return $cases;
+		}
+
+		return $this->filteredDashboard(
+			cases: $cases['results'], activiteitgroep: $activiteitgroep, regelkwalificatie: $regelkwalificatie, location: $location
+		);
+	}//end fetchDashboard()
+
+	/**
+	 * Run the dashboard query, or name why the register cannot answer it.
+	 *
+	 * @param array<string,mixed> $params Filters pushed to ObjectService.
+	 *
+	 * @return array{error: string|null, results: array<int,mixed>} The query outcome.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
+	 */
+	private function dashboardCases(array $params): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return ['error' => 'OpenRegister not available', 'results' => []];
@@ -168,23 +188,34 @@ class DsoObjectRepository implements DsoObjectRepositoryInterface {
 			return ['error' => 'Case register not configured', 'results' => []];
 		}
 
-		$casesList = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseSchema,
-			filters: $params
-		);
+		$casesList = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $caseSchema, filters: $params);
 
+		return ['error' => null, 'results' => $casesList];
+	}//end dashboardCases()
+
+	/**
+	 * The dashboard outcome with the in-memory filters applied.
+	 *
+	 * @param array<int,mixed> $cases The zaken.
+	 * @param string $activiteitgroep Filter by activiteitgroep.
+	 * @param string $regelkwalificatie Filter by regelkwalificatie.
+	 * @param string $location Filter by locatie substring.
+	 *
+	 * @return array{error: null, results: array<int,array<string,mixed>>} The query outcome.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
+	 */
+	private function filteredDashboard(array $cases, string $activiteitgroep, string $regelkwalificatie, string $location): array {
 		return [
 			'error' => null,
 			'results' => $this->applyInMemoryFilters(
-				cases: $casesList,
+				cases: $cases,
 				activiteitgroep: $activiteitgroep,
 				regelkwalificatie: $regelkwalificatie,
 				location: $location
 			),
 		];
-	}//end fetchDashboard()
+	}//end filteredDashboard()
 
 	/**
 	 * Apply in-memory filters that cannot be pushed to ObjectService params.

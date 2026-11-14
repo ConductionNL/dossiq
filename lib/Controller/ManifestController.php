@@ -92,18 +92,42 @@ class ManifestController extends Controller {
 			return new JSONResponse(['menu' => []]);
 		}
 
-		// The case types a user pinned are views of the case list, which the
-		// library's "My views" section lists; no menu entry of dossiq's own.
-		$chosen = $this->menuCaseTypes->chosen(userId: $user->getUID(), visible: $offered);
-		$identifiers = array_column($this->caseTypeViews->declaredViews(), 'caseTypeIdentifier');
-		$views = array_merge(
-			$this->caseTypeViews->instanceViews(byIdentifier: $this->menuCaseTypes->byIdentifier(identifiers: $identifiers)),
-			$this->caseTypeViews->views(caseTypes: $chosen)
-		);
+		$views = $this->viewsFor(uid: $user->getUID(), offered: $offered);
 		if ($views === []) {
 			return new JSONResponse(['menu' => []]);
 		}
 
+		return $this->pagesResponse(views: $views);
+	}//end manifest()
+
+	/**
+	 * The case list views: the instance's declared views and the case types the user pinned.
+	 *
+	 * The case types a user pinned are views of the case list, which the
+	 * library's "My views" section lists; no menu entry of dossiq's own.
+	 *
+	 * @param string            $uid     The user.
+	 * @param array<int, mixed> $offered The case types offered to the user.
+	 *
+	 * @return array<int, mixed>
+	 */
+	private function viewsFor(string $uid, array $offered): array {
+		$chosen = $this->menuCaseTypes->chosen(userId: $uid, visible: $offered);
+		$identifiers = array_column($this->caseTypeViews->declaredViews(), 'caseTypeIdentifier');
+		return array_merge(
+			$this->caseTypeViews->instanceViews(byIdentifier: $this->menuCaseTypes->byIdentifier(identifiers: $identifiers)),
+			$this->caseTypeViews->views(caseTypes: $chosen)
+		);
+	}//end viewsFor()
+
+	/**
+	 * The manifest that carries the views on the case list page.
+	 *
+	 * @param array<int, mixed> $views The case list views.
+	 *
+	 * @return JSONResponse
+	 */
+	private function pagesResponse(array $views): JSONResponse {
 		return new JSONResponse(
 			[
 				'menu' => [],
@@ -112,5 +136,5 @@ class ManifestController extends Controller {
 				],
 			]
 		);
-	}//end manifest()
+	}//end pagesResponse()
 }//end class

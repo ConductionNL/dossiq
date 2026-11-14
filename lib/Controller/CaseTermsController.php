@@ -183,27 +183,12 @@ class CaseTermsController extends Controller {
 			// adds; going through a second endpoint for it would give the app
 			// two paths to a statutory suspension, and the second one is always
 			// the one that forgets something.
-			$record = $this->aanvullingen->ask(
-				caseId: $caseId,
-				items: (array)($body['items'] ?? []),
-				recipient: (string)($body['recipient'] ?? ''),
-				durationDays: (int)($body['durationDays'] ?? 14),
-				userId: $this->currentUserId(),
-				pauseReason: (string)($body['pauseReason'] ?? ''),
-				rationale: (string)($body['rationale'] ?? ''),
-				party: (string)($body['party'] ?? ''),
-				question: $this->clarificationOf(body: $body),
-			);
+			$record = $this->askForInformation(caseId: $caseId, body: $body);
 
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'ask the applicant for information', e: $e);
 		} catch (Throwable $e) {
-			$this->logger->warning('CaseTerms information request failed: ' . $e->getMessage());
-
-			return new JSONResponse(
-				['message' => 'The request could not be made.', 'error' => 'information-request-failed'],
-				Http::STATUS_BAD_REQUEST
-			);
+			return $this->informationRequestFailed(error: $e->getMessage());
 		}//end try
 
 		// NO `sent: false` BRANCH ANY MORE, and its absence is the improvement.
@@ -214,6 +199,44 @@ class CaseTermsController extends Controller {
 		// only ever returns a request that was really sent and really recorded.
 		return new JSONResponse(['sent' => true, 'suspended' => true, 'request' => $record]);
 	}//end requestInformation()
+
+	/**
+	 * Ask the applicant for information: the letter, the suspension and the record.
+	 *
+	 * @param string               $caseId The case UUID.
+	 * @param array<string, mixed> $body   The request body.
+	 *
+	 * @return array<string, mixed> The aanvullingsverzoek record.
+	 */
+	private function askForInformation(string $caseId, array $body): array {
+		return $this->aanvullingen->ask(
+			caseId: $caseId,
+			items: (array)($body['items'] ?? []),
+			recipient: (string)($body['recipient'] ?? ''),
+			durationDays: (int)($body['durationDays'] ?? 14),
+			userId: $this->currentUserId(),
+			pauseReason: (string)($body['pauseReason'] ?? ''),
+			rationale: (string)($body['rationale'] ?? ''),
+			party: (string)($body['party'] ?? ''),
+			question: $this->clarificationOf(body: $body),
+		);
+	}//end askForInformation()
+
+	/**
+	 * Log a failed information request and answer it as a bad request.
+	 *
+	 * @param string $error What went wrong.
+	 *
+	 * @return JSONResponse
+	 */
+	private function informationRequestFailed(string $error): JSONResponse {
+		$this->logger->warning('CaseTerms information request failed: ' . $error);
+
+		return new JSONResponse(
+			['message' => 'The request could not be made.', 'error' => 'information-request-failed'],
+			Http::STATUS_BAD_REQUEST
+		);
+	}//end informationRequestFailed()
 
 	/**
 	 * The question of a clarification, or null when the body asks for documents.

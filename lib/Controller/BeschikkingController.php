@@ -500,7 +500,23 @@ class BeschikkingController extends Controller {
 	 */
 	private function mapRuntime(string $op, RuntimeException $e): JSONResponse {
 		$code = $e->getMessage();
-		$status = match ($code) {
+		$status = $this->runtimeStatus(code: $code);
+
+		$message = $this->runtimeMessage(code: $code);
+
+		$this->logger->info('BeschikkingController: ' . $op . ' rejected', ['code' => $code]);
+		return new JSONResponse(['error' => $message], $status);
+	}//end mapRuntime()
+
+	/**
+	 * The HTTP status a domain refusal code answers with.
+	 *
+	 * @param string $code The refusal code.
+	 *
+	 * @return int The status.
+	 */
+	private function runtimeStatus(string $code): int {
+		return match ($code) {
 			'not_found' => Http::STATUS_NOT_FOUND,
 			'mandaat_insufficient' => Http::STATUS_FORBIDDEN,
 			'immutable' => Http::STATUS_CONFLICT,
@@ -513,8 +529,17 @@ class BeschikkingController extends Controller {
 			'libresign_signing_declined' => Http::STATUS_CONFLICT,
 			default => Http::STATUS_INTERNAL_SERVER_ERROR,
 		};
+	}//end runtimeStatus()
 
-		$message = match ($code) {
+	/**
+	 * The message a domain refusal code answers with.
+	 *
+	 * @param string $code The refusal code.
+	 *
+	 * @return string The message.
+	 */
+	private function runtimeMessage(string $code): string {
+		return match ($code) {
 			'not_found' => 'Beschikking not found',
 			'mandaat_insufficient' => 'Insufficient mandaat for this decision',
 			'immutable' => 'Beschikking is immutable in its current status',
@@ -526,10 +551,7 @@ class BeschikkingController extends Controller {
 			'libresign_signing_declined' => 'The signature request was declined or cancelled in LibreSign',
 			default => 'Could not complete the request',
 		};
-
-		$this->logger->info('BeschikkingController: ' . $op . ' rejected', ['code' => $code]);
-		return new JSONResponse(['error' => $message], $status);
-	}//end mapRuntime()
+	}//end runtimeMessage()
 
 	/**
 	 * Log an unexpected failure and return a generic 500.

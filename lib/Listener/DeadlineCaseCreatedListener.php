@@ -146,12 +146,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			// The term counts from receipt, not from the moment this row was
 			// written (REQ-OTE-02). Null only when no intake reader is wired,
 			// which is the old behaviour: the term starts now.
-			$this->termService->createTermijnInstance(
-				$caseId,
-				$caseType,
-				$this->intake?->termStartFor(case: $payload),
-				$resolution
-			);
+			$this->createTerm(caseId: $caseId, caseType: $caseType, payload: $payload, resolution: $resolution);
 			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload, plannedDefinition: $plannedDefinition);
 		} catch (NoTermijnDefinitieException $e) {
 			// NOT debug. A case that matched no definition at all has no
@@ -159,11 +154,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			// fleet-wide key mismatch behind a quiet log line. It is a valid
 			// configuration for a case type with no beslistermijn, so it is a
 			// warning rather than an error — but it is visible.
-			$this->logger->warning(
-				'Dossiq termijn: no active TermijnDefinitie for case type "' . $caseType . '", '
-				. 'so case ' . $caseId . ' runs without a statutory term',
-				['case' => $caseId, 'caseType' => $caseType, 'caseTypeId' => $caseTypeRef]
-			);
+			$this->warnNoDefinition(caseId: $caseId, caseType: $caseType, caseTypeRef: $caseTypeRef);
 
 			// A subsidy round declares a closing DATE and no lead time, so it
 			// has no TermijnDefinitie and a refusal here is the ordinary path
@@ -171,12 +162,63 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			// fixed date still becomes the statutory term.
 			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload, plannedDefinition: $plannedDefinition);
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq termijn: could not bind a term to case ' . $caseId . ': ' . $e->getMessage(),
-				['case' => $caseId, 'caseType' => $caseType, 'exception' => $e->getMessage()]
-			);
+			$this->logBindFailure(caseId: $caseId, caseType: $caseType, error: $e);
 		}//end try
 	}//end bindTerms()
+
+	/**
+	 * Create the case's term instance, counting from receipt when an intake reader is wired.
+	 *
+	 * @param string               $caseId     The case id.
+	 * @param string               $caseType   The case type slug.
+	 * @param array<string, mixed> $payload    The case payload.
+	 * @param array<string, mixed>|null $resolution The resolved term, if any.
+	 *
+	 * @return void
+	 *
+	 * @throws NoTermijnDefinitieException When no definition matches the case.
+	 */
+	private function createTerm(string $caseId, string $caseType, array $payload, ?array $resolution): void {
+		$this->termService->createTermijnInstance(
+			$caseId,
+			$caseType,
+			$this->intake?->termStartFor(case: $payload),
+			$resolution
+		);
+	}//end createTerm()
+
+	/**
+	 * Log, visibly, that a case runs without a statutory term.
+	 *
+	 * @param string $caseId      The case id.
+	 * @param string $caseType    The case type slug.
+	 * @param string $caseTypeRef The case type reference.
+	 *
+	 * @return void
+	 */
+	private function warnNoDefinition(string $caseId, string $caseType, string $caseTypeRef): void {
+		$this->logger->warning(
+			'Dossiq termijn: no active TermijnDefinitie for case type "' . $caseType . '", '
+			. 'so case ' . $caseId . ' runs without a statutory term',
+			['case' => $caseId, 'caseType' => $caseType, 'caseTypeId' => $caseTypeRef]
+		);
+	}//end warnNoDefinition()
+
+	/**
+	 * Log that a term could not be bound to a case.
+	 *
+	 * @param string     $caseId   The case id.
+	 * @param string     $caseType The case type slug.
+	 * @param \Throwable $error    What went wrong.
+	 *
+	 * @return void
+	 */
+	private function logBindFailure(string $caseId, string $caseType, \Throwable $error): void {
+		$this->logger->error(
+			'Dossiq termijn: could not bind a term to case ' . $caseId . ': ' . $error->getMessage(),
+			['case' => $caseId, 'caseType' => $caseType, 'exception' => $error->getMessage()]
+		);
+	}//end logBindFailure()
 
 	/**
 	 * The payload of a created (or sent) case, or null for anything else.

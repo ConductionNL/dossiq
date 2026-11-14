@@ -419,6 +419,30 @@ class CaseTransferConsentGate {
 		}
 
 		[$objectService, $register] = $this->dossierRegister()->context();
+		$case = $this->readCase(objectService: $objectService, register: $register, caseId: $caseId);
+
+		$caseTypeId = trim((string)($case['caseType'] ?? ''));
+		if ($caseTypeId === '') {
+			throw new RuntimeException('Case has no case type');
+		}
+
+		return $this->caseTypeRule(objectService: $objectService, register: $register, caseTypeId: $caseTypeId, flag: $flag);
+	}//end caseTypeFlag()
+
+	/**
+	 * Read the case.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register      The dossier register.
+	 * @param string $caseId        The trimmed case id.
+	 *
+	 * @return array<string, mixed> The case.
+	 *
+	 * @throws RuntimeException When the case is not found.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function readCase(object $objectService, string $register, string $caseId): array {
 		$case = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $register,
@@ -429,11 +453,24 @@ class CaseTransferConsentGate {
 			throw new RuntimeException('Case not found');
 		}
 
-		$caseTypeId = trim((string)($case['caseType'] ?? ''));
-		if ($caseTypeId === '') {
-			throw new RuntimeException('Case has no case type');
-		}
+		return $case;
+	}//end readCase()
 
+	/**
+	 * Read the case type and answer one of its boolean rules.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register      The dossier register.
+	 * @param string $caseTypeId    The case type id.
+	 * @param string $flag          The case type property.
+	 *
+	 * @return bool Whether the case type sets the flag to true.
+	 *
+	 * @throws RuntimeException When the case type is not found.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function caseTypeRule(object $objectService, string $register, string $caseTypeId, string $flag): bool {
 		$caseType = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $register,
@@ -445,7 +482,7 @@ class CaseTransferConsentGate {
 		}
 
 		return (($caseType[$flag] ?? false) === true);
-	}//end caseTypeFlag()
+	}//end caseTypeRule()
 
 	/**
 	 * The consents recorded for a case that name this receiver.

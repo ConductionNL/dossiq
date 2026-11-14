@@ -48,7 +48,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\DB\Exception;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;

@@ -398,6 +398,29 @@ class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 	public function getKpiSummary(string $dateFrom, string $dateTo): array {
 		$complaints = $this->fetchComplaintsInRange(dateFrom: $dateFrom, dateTo: $dateTo);
 		$total = count($complaints);
+		[$resolved, $withinDeadline] = $this->handledCounts(complaints: $complaints);
+
+		$awbComplianceRate = $this->complianceRate(resolved: $resolved, withinDeadline: $withinDeadline);
+
+		return [
+			'total' => $total,
+			'resolved' => $resolved,
+			'awbComplianceRate' => $awbComplianceRate,
+			'dateFrom' => $dateFrom,
+			'dateTo' => $dateTo,
+		];
+	}//end getKpiSummary()
+
+	/**
+	 * How many complaints were handled, and how many of those carry a handling deadline.
+	 *
+	 * @param array<int, array<string, mixed>> $complaints The complaints.
+	 *
+	 * @return array{0: int, 1: int} Resolved, and resolved within the deadline.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
+	 */
+	private function handledCounts(array $complaints): array {
 		$resolved = 0;
 		$withinDeadline = 0;
 
@@ -416,19 +439,27 @@ class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 			// Disposition stats would require joining dispositionService — simplified here.
 		}
 
+		return [$resolved, $withinDeadline];
+	}//end handledCounts()
+
+	/**
+	 * The share of handled complaints handled within the deadline, as a percentage.
+	 *
+	 * @param int $resolved       Handled complaints.
+	 * @param int $withinDeadline Handled within the deadline.
+	 *
+	 * @return float The rate, 0.0 when nothing was handled.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
+	 */
+	private function complianceRate(int $resolved, int $withinDeadline): float {
 		$awbComplianceRate = 0.0;
 		if ($resolved > 0) {
 			$awbComplianceRate = round(($withinDeadline / $resolved) * 100, 1);
 		}
 
-		return [
-			'total' => $total,
-			'resolved' => $resolved,
-			'awbComplianceRate' => $awbComplianceRate,
-			'dateFrom' => $dateFrom,
-			'dateTo' => $dateTo,
-		];
-	}//end getKpiSummary()
+		return $awbComplianceRate;
+	}//end complianceRate()
 
 	/**
 	 * Fetch all complaints in a given date range.

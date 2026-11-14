@@ -172,21 +172,23 @@ class CaseTypeVersionGuard {
 			return [];
 		}
 
+		return $this->countCaseTypes(objectService: $objectService, register: $register, schema: $schema, caseIds: $caseIds);
+	}//end caseTypeIdsOf()
+
+	/**
+	 * Count the cases per case type.
+	 *
+	 * @param object            $objectService OpenRegister's object service.
+	 * @param string            $register      The register.
+	 * @param string            $schema        The case schema.
+	 * @param array<int, mixed> $caseIds       The case ids.
+	 *
+	 * @return array<string, int> Cases per case type id.
+	 */
+	private function countCaseTypes(object $objectService, string $register, string $schema, array $caseIds): array {
 		$found = [];
 		foreach ($caseIds as $caseId) {
-			$caseId = trim((string)$caseId);
-			if ($caseId === '') {
-				continue;
-			}
-
-			try {
-				$case = $objectService->find($caseId, register: $register, schema: $schema);
-			} catch (Throwable $e) {
-				continue;
-			}
-
-			$row = $this->asArray(value: $case);
-			$caseTypeId = $this->caseTypes->referenceId(value: ($row['caseType'] ?? ''));
+			$caseTypeId = $this->caseTypeIdOf(objectService: $objectService, register: $register, schema: $schema, caseId: $caseId);
 			if ($caseTypeId === '') {
 				continue;
 			}
@@ -195,7 +197,33 @@ class CaseTypeVersionGuard {
 		}
 
 		return $found;
-	}//end caseTypeIdsOf()
+	}//end countCaseTypes()
+
+	/**
+	 * The case type of one case, or '' when the id is blank, the case cannot be read or names none.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register.
+	 * @param string $schema        The case schema.
+	 * @param mixed  $caseId        The case id.
+	 *
+	 * @return string
+	 */
+	private function caseTypeIdOf(object $objectService, string $register, string $schema, mixed $caseId): string {
+		$caseId = trim((string)$caseId);
+		if ($caseId === '') {
+			return '';
+		}
+
+		try {
+			$case = $objectService->find($caseId, register: $register, schema: $schema);
+		} catch (Throwable $e) {
+			return '';
+		}
+
+		$row = $this->asArray(value: $case);
+		return $this->caseTypes->referenceId(value: ($row['caseType'] ?? ''));
+	}//end caseTypeIdOf()
 
 	/**
 	 * The uuid of the oldest version in this case type's chain, which is what

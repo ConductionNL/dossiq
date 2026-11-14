@@ -52,6 +52,8 @@ use Throwable;
  * Start an allowed flow for a case, and plan a follow-up case.
  *
  * @spec openspec/specs/workflow-definition-engine/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseFlowActions implements CaseFlowActionsInterface {
 
@@ -109,6 +111,22 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 			return ['results' => [], 'total' => 0];
 		}
 
+		$results = $this->flowRows(service: $service, uuids: $uuids);
+
+		return ['results' => $results, 'total' => count($results)];
+	}//end startableFlows()
+
+	/**
+	 * The id, title and description of each flow that resolves.
+	 *
+	 * @param object             $service OpenRegister's flow service.
+	 * @param array<int, string> $uuids   The flow uuids.
+	 *
+	 * @return array<int, array{id: string, title: string, description: string}> The flows.
+	 *
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
+	 */
+	private function flowRows(object $service, array $uuids): array {
 		$results = [];
 		foreach ($uuids as $uuid) {
 			try {
@@ -118,22 +136,32 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 				// caller may not see. Skipping it is the honest answer: the
 				// list is what you MAY start, and a flow you cannot reach is
 				// not one of them.
-				$this->logger->debug(
-					'CaseFlowActions: a startable flow did not resolve',
-					['flow' => $uuid, 'exception' => $e->getMessage()]
-				);
+				$this->logger->debug('CaseFlowActions: a startable flow did not resolve', ['flow' => $uuid, 'exception' => $e->getMessage()]);
 				continue;
 			}
 
-			$results[] = [
-				'id' => (string)$flow->getUuid(),
-				'title' => (string)$flow->getName(),
-				'description' => (string)($flow->getDescription() ?? ''),
-			];
+			$results[] = $this->flowRow(flow: $flow);
 		}//end foreach
 
-		return ['results' => $results, 'total' => count($results)];
-	}//end startableFlows()
+		return $results;
+	}//end flowRows()
+
+	/**
+	 * One flow as the startable list shows it.
+	 *
+	 * @param object $flow The flow entity.
+	 *
+	 * @return array{id: string, title: string, description: string} The flow.
+	 *
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
+	 */
+	private function flowRow(object $flow): array {
+		return [
+			'id' => (string)$flow->getUuid(),
+			'title' => (string)$flow->getName(),
+			'description' => (string)($flow->getDescription() ?? ''),
+		];
+	}//end flowRow()
 
 	/**
 	 * Plan a follow-up case for a later date.
@@ -418,29 +446,33 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 			throw new RuntimeException('case_not_found');
 		}
 
-		$case = $this->fetch(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseSchema,
-			id: $caseId
-		);
+		$case = $this->fetch(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
 		if ($case === null) {
 			throw new RuntimeException('case_not_found');
 		}
 
-		$caseTypeId = (string)($case['caseType'] ?? '');
-		$caseType = $this->fetch(
-			objectService: $objectService,
-			register: $register,
-			schema: $typeSchema,
-			id: $caseTypeId
-		);
+		return $this->flowIdsOfType(objectService: $objectService, register: $register, typeSchema: $typeSchema, caseRow: $case);
+	}//end startableFlowIds()
+
+	/**
+	 * The flow uuids a case's type marks as startable; none when the type does not resolve.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param string               $register      The register slug.
+	 * @param string               $typeSchema    The case type schema slug.
+	 * @param array<string, mixed> $caseRow       The case.
+	 *
+	 * @return array<int, string> The flow uuids.
+	 */
+	private function flowIdsOfType(object $objectService, string $register, string $typeSchema, array $caseRow): array {
+		$caseTypeId = (string)($caseRow['caseType'] ?? '');
+		$caseType = $this->fetch(objectService: $objectService, register: $register, schema: $typeSchema, id: $caseTypeId);
 		if ($caseType === null) {
 			return [];
 		}
 
 		return $this->flowIdsOf(declared: ($caseType['startableFlows'] ?? []));
-	}//end startableFlowIds()
+	}//end flowIdsOfType()
 
 	/**
 	 * The flow uuids in a case type's `startableFlows`.
@@ -538,14 +570,22 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 		try {
 			$found = $objectService->find($id, register: $register, schema: $schema);
 		} catch (Throwable $e) {
-			$this->logger->debug(
-				'CaseFlowActions: object lookup failed',
-				['id' => $id, 'exception' => $e->getMessage()]
-			);
+			$this->logger->debug('CaseFlowActions: object lookup failed', ['id' => $id, 'exception' => $e->getMessage()]);
 
 			return null;
 		}
 
+		return $this->asArray(found: $found);
+	}//end fetch()
+
+	/**
+	 * An object as an array, or null when there is none.
+	 *
+	 * @param mixed $found What the ObjectService answered.
+	 *
+	 * @return array<string, mixed>|null The object, or null.
+	 */
+	private function asArray(mixed $found): ?array {
 		if ($found === null) {
 			return null;
 		}
@@ -562,5 +602,5 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 		}
 
 		return (array)$found;
-	}//end fetch()
+	}//end asArray()
 }//end class

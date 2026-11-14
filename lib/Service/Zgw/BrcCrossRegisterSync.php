@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
+use OCA\Dossiq\Kernel\Contracts\BrcCrossRegisterSyncInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Support\NormalisesObjectRows;
@@ -39,7 +40,7 @@ use OCA\Dossiq\Support\NormalisesObjectRows;
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
-class BrcCrossRegisterSync {
+class BrcCrossRegisterSync implements BrcCrossRegisterSyncInterface {
 	use NormalisesObjectRows;
 
 	/**
@@ -82,6 +83,20 @@ class BrcCrossRegisterSync {
 			return;
 		}
 
+		$this->syncWithSchema(objectService: $objectService, zbSchema: $zbSchema, caseUrl: $caseUrl, decisionUrl: $decisionUrl);
+	}//end syncZaakBesluitToZrc()
+
+	/**
+	 * Save the zaakbesluit in the cases register once the case and register are known.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $zbSchema      The case decision schema.
+	 * @param string $caseUrl       The zaak URL.
+	 * @param string $decisionUrl   The besluit URL.
+	 *
+	 * @return void
+	 */
+	private function syncWithSchema(object $objectService, string $zbSchema, string $caseUrl, string $decisionUrl): void {
 		$zaakUuid = $this->caseUuidOf(caseUrl: $caseUrl);
 
 		if ($zaakUuid === '') {
@@ -95,14 +110,8 @@ class BrcCrossRegisterSync {
 			return;
 		}
 
-		$this->saveCaseDecision(
-			objectService: $objectService,
-			register: $register,
-			zbSchema: $zbSchema,
-			zaakUuid: $zaakUuid,
-			decisionUrl: $decisionUrl
-		);
-	}//end syncZaakBesluitToZrc()
+		$this->saveCaseDecision(objectService: $objectService, register: $register, zbSchema: $zbSchema, zaakUuid: $zaakUuid, decisionUrl: $decisionUrl);
+	}//end syncWithSchema()
 
 	/**
 	 * The zaak UUID inside a zaak URL, or '' when it carries none.
@@ -214,34 +223,14 @@ class BrcCrossRegisterSync {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function deleteOiosForDecision(string $decisionUrl): void {
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
+		$target = $this->oioTarget(orphans: 'the OIOs of ' . $decisionUrl . ' are being left behind as orphans');
+		if ($target === null) {
 			return;
 		}
 
-		$oioMappingConfig = $this->zgwService->loadMappingConfig('documenten', 'objectinformatieobjecten');
-		if ($oioMappingConfig === null) {
-			return;
-		}
-
-		// An unsearchable scope answers with an empty page and no error
-		// ({@see ZgwSearchScope}), so the besluit goes and every OIO that
-		// pointed at it survives as an orphan. Name it instead.
-		$oioScope = ZgwSearchScope::fromMapping(mappingConfig: $oioMappingConfig);
-		if ($oioScope === null) {
-			$this->zgwService->getLogger()->error(
-				'brc-005b: objectinformatieobject mapping has no searchable register/schema, '
-				. 'so the OIOs of ' . $decisionUrl . ' are being left behind as orphans'
-			);
-			return;
-		}
-
+		[$objectService, $oioScope] = $target;
 		try {
-			$this->deleteOiosMatching(
-				objectService: $objectService,
-				oioScope: $oioScope,
-				requestParams: ['object' => $decisionUrl]
-			);
+			$this->deleteOiosMatching(objectService: $objectService, oioScope: $oioScope, requestParams: ['object' => $decisionUrl]);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'brc-009: the objectinformatieobjecten of a besluit were not all deleted from the DRC: ' . $e->getMessage(),
@@ -264,34 +253,14 @@ class BrcCrossRegisterSync {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function deleteOioByDecisionAndIo(string $decisionUrl, string $ioUrl): void {
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
+		$target = $this->oioTarget(orphans: 'the OIO for ' . $ioUrl . ' is being left behind as an orphan');
+		if ($target === null) {
 			return;
 		}
 
-		$oioMappingConfig = $this->zgwService->loadMappingConfig('documenten', 'objectinformatieobjecten');
-		if ($oioMappingConfig === null) {
-			return;
-		}
-
-		$oioScope = ZgwSearchScope::fromMapping(mappingConfig: $oioMappingConfig);
-		if ($oioScope === null) {
-			$this->zgwService->getLogger()->error(
-				'brc-005b: objectinformatieobject mapping has no searchable register/schema, '
-				. 'so the OIO for ' . $ioUrl . ' is being left behind as an orphan'
-			);
-			return;
-		}
-
+		[$objectService, $oioScope] = $target;
 		try {
-			$this->deleteOiosMatching(
-				objectService: $objectService,
-				oioScope: $oioScope,
-				requestParams: [
-					'object' => $decisionUrl,
-					'document' => $ioUrl,
-				]
-			);
+			$this->deleteOiosMatching(objectService: $objectService, oioScope: $oioScope, requestParams: ['object' => $decisionUrl, 'document' => $ioUrl]);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'brc-005b: the besluitinformatieobject was deleted, but its objectinformatieobject in the DRC was not: ' . $e->getMessage(),
@@ -299,6 +268,61 @@ class BrcCrossRegisterSync {
 			);
 		}//end try
 	}//end deleteOioByBesluitAndIo()
+
+	/**
+	 * The object service and OIO scope a DRC delete runs against, or null when there is none.
+	 *
+	 * @param string $orphans What is left behind when the OIO scope is unsearchable, for the log.
+	 *
+	 * @return array{0: object, 1: ZgwSearchScope}|null The object service and OIO scope.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function oioTarget(string $orphans): ?array {
+		$objectService = $this->zgwService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$oioScope = $this->oioScope(orphans: $orphans);
+		if ($oioScope === null) {
+			return null;
+		}
+
+		return [$objectService, $oioScope];
+	}//end oioTarget()
+
+	/**
+	 * The searchable OIO scope, or null (logged when the mapping has no searchable scope).
+	 *
+	 * @param string $orphans What is left behind when the OIO scope is unsearchable, for the log.
+	 *
+	 * @return ZgwSearchScope|null The OIO register and schema.
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function oioScope(string $orphans): ?ZgwSearchScope {
+		$oioMappingConfig = $this->zgwService->loadMappingConfig('documenten', 'objectinformatieobjecten');
+		if ($oioMappingConfig === null) {
+			return null;
+		}
+
+		// An unsearchable scope answers with an empty page and no error
+		// ({@see ZgwSearchScope}), so the besluit goes and every OIO that
+		// pointed at it survives as an orphan. Name it instead.
+		$oioScope = ZgwSearchScope::fromMapping(mappingConfig: $oioMappingConfig);
+		if ($oioScope === null) {
+			$this->zgwService->getLogger()->error(
+				'brc-005b: objectinformatieobject mapping has no searchable register/schema, '
+				. 'so ' . $orphans
+			);
+		}
+
+		return $oioScope;
+	}//end oioScope()
 
 	/**
 	 * Delete every OIO in the DRC that matches the search parameters.

@@ -199,34 +199,75 @@ class MigrateRegisterSlug implements IRepairStep {
 		$rekeyed = 0;
 
 		foreach (self::APPCONFIG_KEYS as $key) {
-			try {
-				$current = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'MigrateRegisterSlug: could not read app config; leaving it alone.',
-					['key' => $key, 'exception' => $e->getMessage()]
-				);
-				continue;
-			}
-
-			$new = self::SLUG_MAP[$current] ?? null;
-			if ($new === null) {
-				continue;
-			}
-
-			try {
-				$this->appConfig->setValueString(AppIdentity::APP_ID, $key, $new);
+			if ($this->repointStoredSlug(key: $key) === true) {
 				$rekeyed++;
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'MigrateRegisterSlug: could not re-point app config.',
-					['key' => $key, 'old' => $current, 'new' => $new, 'exception' => $e->getMessage()]
-				);
 			}
 		}
 
 		return $rekeyed;
 	}//end migrateStoredSlugValues()
+
+	/**
+	 * Re-point one app-config value when it names an old register slug.
+	 *
+	 * @param string $key The app-config key.
+	 *
+	 * @return bool Whether the value was rewritten.
+	 */
+	private function repointStoredSlug(string $key): bool {
+		$current = $this->storedSlug(key: $key);
+		if ($current === null) {
+			return false;
+		}
+
+		$new = self::SLUG_MAP[$current] ?? null;
+		if ($new === null) {
+			return false;
+		}
+
+		return $this->writeSlug(key: $key, current: $current, new: $new);
+	}//end repointStoredSlug()
+
+	/**
+	 * The stored app-config value, or null when it cannot be read.
+	 *
+	 * @param string $key The app-config key.
+	 *
+	 * @return string|null The value.
+	 */
+	private function storedSlug(string $key): ?string {
+		try {
+			return $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'MigrateRegisterSlug: could not read app config; leaving it alone.',
+				['key' => $key, 'exception' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end storedSlug()
+
+	/**
+	 * Write the new slug into an app-config key.
+	 *
+	 * @param string $key     The app-config key.
+	 * @param string $current The old slug.
+	 * @param string $new     The new slug.
+	 *
+	 * @return bool Whether the value was written.
+	 */
+	private function writeSlug(string $key, string $current, string $new): bool {
+		try {
+			$this->appConfig->setValueString(AppIdentity::APP_ID, $key, $new);
+			return true;
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'MigrateRegisterSlug: could not re-point app config.',
+				['key' => $key, 'old' => $current, 'new' => $new, 'exception' => $e->getMessage()]
+			);
+			return false;
+		}
+	}//end writeSlug()
 
 	/**
 	 * Read the slugs currently held by the registers on both sides of the map.

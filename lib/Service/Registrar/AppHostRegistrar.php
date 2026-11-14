@@ -33,7 +33,6 @@ namespace OCA\Dossiq\Service\Registrar;
 use OCA\Dossiq\AppInfo\OpenRegisterAutoloader;
 use OCA\Dossiq\Dashboard\DashboardWidgetList;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Mcp\DossiqScannableServices;
 use OCA\OpenRegister\AppHost\Bootstrap;
 use OCA\OpenRegister\AppHost\LeafAdoption;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;

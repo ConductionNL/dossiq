@@ -140,6 +140,22 @@ class WorkflowListenerRegistrar {
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	private function registerTermListeners(IRegistrationContext $context): void {
+		$this->registerDeadlineAndCustodyListeners(context: $context);
+		$this->registerClockListeners(context: $context);
+		$this->registerCaseNumberListeners(context: $context);
+		$this->registerAcknowledgementListeners(context: $context);
+	}//end registerTermListeners()
+
+	/**
+	 * Register the deadline binding and the chain-of-custody start on case creation.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 */
+	private function registerDeadlineAndCustodyListeners(IRegistrationContext $context): void {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: DeadlineCaseCreatedListener::class
@@ -158,7 +174,18 @@ class WorkflowListenerRegistrar {
 			event: ObjectCreatedEvent::class,
 			listener: CustodyCaseCreatedListener::class
 		);
+	}//end registerDeadlineAndCustodyListeners()
 
+	/**
+	 * Register the receipt-date stamp and the phase clock.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 */
+	private function registerClockListeners(IRegistrationContext $context): void {
 		// When the request arrived, and when its clock starts. Written once at
 		// creation and never recomputed: the stamp is a record of what the
 		// citizen was told, not a derivation of what today's calendar says.
@@ -178,7 +205,18 @@ class WorkflowListenerRegistrar {
 			event: ObjectUpdatedEvent::class,
 			listener: CasePhaseTermListener::class
 		);
+	}//end registerClockListeners()
 
+	/**
+	 * Register the case number backfill.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 */
+	private function registerCaseNumberListeners(IRegistrationContext $context): void {
 		// The case number is DECLARED on the schema, as an OpenRegister
 		// calculation using the `sequence` operator. On an install whose
 		// OpenRegister ships that operator this listener writes nothing: it
@@ -195,7 +233,18 @@ class WorkflowListenerRegistrar {
 			event: self::DRAFT_SENT_EVENT,
 			listener: CaseNumberListener::class
 		);
+	}//end registerCaseNumberListeners()
 
+	/**
+	 * Register the Awb 4:3a confirmation of receipt.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 */
+	private function registerAcknowledgementListeners(IRegistrationContext $context): void {
 		// Awb 4:3a: a case created from an electronic submission owes its
 		// sender a confirmation of receipt. The text, the renderer and the
 		// requirement all shipped and nothing ever triggered them, so a
@@ -211,7 +260,7 @@ class WorkflowListenerRegistrar {
 			event: self::DRAFT_SENT_EVENT,
 			listener: AcknowledgementOnCreateListener::class
 		);
-	}//end registerTermijnListeners()
+	}//end registerAcknowledgementListeners()
 
 	/**
 	 * Register the decidesk decision-outcome listener.

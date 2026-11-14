@@ -169,20 +169,41 @@ class BelplanRoutingService {
 			return self::NO_SKILL_ROUTE;
 		}
 
+		$routing = $this->routingFor(vaardigheid: $vaardigheid, pool: $pool, overflowWachttijd: $overflowWachttijd, maxQueueLengte: $maxQueueLengte);
+
+		return $this->routeAmong(routing: $routing);
+	}//end routeCall()
+
+	/**
+	 * Build the routing request with the candidates that hold the skill.
+	 *
+	 * @param string                           $vaardigheid       The required skill.
+	 * @param array<int, array<string, mixed>> $pool              The specialist pool.
+	 * @param int                              $overflowWachttijd The overflow wait time.
+	 * @param int                              $maxQueueLengte    The maximum queue length.
+	 *
+	 * @return CallRouting
+	 */
+	private function routingFor(string $vaardigheid, array $pool, int $overflowWachttijd, int $maxQueueLengte): CallRouting {
 		$routing = new CallRouting();
 		$routing->vaardigheid = $vaardigheid;
 		$routing->overflowWachttijd = $overflowWachttijd;
 		$routing->maxQueueLengte = $maxQueueLengte;
 		$routing->candidates = $this->filterCandidates(pool: $pool, vaardigheid: $vaardigheid);
 
+		return $routing;
+	}//end routingFor()
+
+	/**
+	 * Route among the candidates: escalate, overflow or pick a specialist.
+	 *
+	 * @param CallRouting $routing The routing request.
+	 *
+	 * @return array<string, mixed> The route.
+	 */
+	private function routeAmong(CallRouting $routing): array {
 		if (count($routing->candidates) === 0) {
-			return [
-				'destinationSpecialistId' => null,
-				'escalatieFlag' => true,
-				'estimatedWaitTime' => 0,
-				'vaardigheid' => $vaardigheid,
-				'candidatePool' => 0,
-			];
+			return $this->escalatedRoute(vaardigheid: $routing->vaardigheid);
 		}
 
 		$available = $this->availableOf(candidates: $routing->candidates);
@@ -193,7 +214,24 @@ class BelplanRoutingService {
 		}
 
 		return $this->pickedRoute(routing: $routing, available: $available);
-	}//end routeCall()
+	}//end routeAmong()
+
+	/**
+	 * The route when no specialist in the pool holds the skill.
+	 *
+	 * @param string $vaardigheid The required skill.
+	 *
+	 * @return array<string, mixed> The escalated route.
+	 */
+	private function escalatedRoute(string $vaardigheid): array {
+		return [
+			'destinationSpecialistId' => null,
+			'escalatieFlag' => true,
+			'estimatedWaitTime' => 0,
+			'vaardigheid' => $vaardigheid,
+			'candidatePool' => 0,
+		];
+	}//end escalatedRoute()
 
 	/**
 	 * The candidates whose status says they can take a call now.

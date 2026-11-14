@@ -150,6 +150,21 @@ class CaseRelationStore {
 			return;
 		}
 
+		$payload = $this->relationPayload(case: $case, relations: $relations, typedLinks: $typedLinks);
+
+		$this->saveRelations(objectService: $objectService, payload: $payload, register: $register, schema: $schema);
+	}//end persistRelations()
+
+	/**
+	 * The case with its relations and typed link lists set.
+	 *
+	 * @param array<string, mixed>                   $case       Case object to update.
+	 * @param array<int, array<string, mixed>>       $relations  Relation entries.
+	 * @param array<string, array<int, string>>|null $typedLinks The typed link lists, by property.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function relationPayload(array $case, array $relations, ?array $typedLinks): array {
 		$payload = $case;
 		$payload['relatedCases'] = json_encode(array_values($relations));
 
@@ -160,6 +175,20 @@ class CaseRelationStore {
 			$payload[$property] = array_values($uuids);
 		}
 
+		return $payload;
+	}//end relationPayload()
+
+	/**
+	 * Save the case, logging a failure.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param array<string, mixed> $payload       The case to save.
+	 * @param string               $register      The register.
+	 * @param string               $schema        The case schema.
+	 *
+	 * @return void
+	 */
+	private function saveRelations(object $objectService, array $payload, string $register, string $schema): void {
 		try {
 			$objectService->saveObject(
 				object: $payload,
@@ -172,7 +201,7 @@ class CaseRelationStore {
 				['error' => $e->getMessage()]
 			);
 		}
-	}//end persistRelations()
+	}//end saveRelations()
 
 	/**
 	 * The relation rows OpenRegister answers for a case, in one direction.

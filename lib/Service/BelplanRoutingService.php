@@ -108,14 +108,32 @@ class BelplanRoutingService implements BelplanRoutingServiceInterface {
 		$vaardigheid = $this->resolveVaardigheid(belplan: $belplan, menuSelection: $menuSelection);
 		$specialists = $this->getSpecialistBeschikbaarheid(vaardigheid: $vaardigheid);
 
-		$available = array_values(
-			array_filter(
-				$specialists,
-				static function (array $specialist): bool {
-					return (($specialist['status'] ?? '') === 'beschikbaar');
-				}
-			)
-		);
+		$available = self::availableByQueue(specialists: $specialists);
+
+		$overflow = $this->overflowConfig(belplan: $belplan);
+
+		if (empty($available) === true || (int)($available[0]['currentQueueLength'] ?? 0) > $overflow['wachtrij']) {
+			// All busy or queue too long → overflow to generalist with escalatie.
+			$waitTime = $this->estimateWait(specialists: $specialists);
+			return self::overflowRoute(vaardigheid: $vaardigheid, waitTime: $waitTime, fallbackRol: $overflow['fallbackRol']);
+		}
+
+		return self::chosenRoute(chosen: $available[0], vaardigheid: $vaardigheid);
+	}//end routeCall()
+
+	/**
+	 * The available specialists, shortest queue first.
+	 *
+	 * @param array<int, array<string, mixed>> $specialists The availability records.
+	 *
+	 * @return array<int, array<string, mixed>> The available ones, by queue length.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 */
+	private static function availableByQueue(array $specialists): array {
+		$available = array_values(array_filter($specialists, static function (array $specialist): bool {
+			return (($specialist['status'] ?? '') === 'beschikbaar');
+		}));
 
 		usort(
 			$available,
@@ -124,21 +142,41 @@ class BelplanRoutingService implements BelplanRoutingServiceInterface {
 			}
 		);
 
-		$overflow = $this->overflowConfig(belplan: $belplan);
+		return $available;
+	}//end availableByQueue()
 
-		if (empty($available) === true || (int)($available[0]['currentQueueLength'] ?? 0) > $overflow['wachtrij']) {
-			// All busy or queue too long → overflow to generalist with escalatie.
-			return [
-				'destinationSpecialistId' => null,
-				'vaardigheid' => $vaardigheid,
-				'escalatieFlag' => true,
-				'estimatedWaitTime' => $this->estimateWait(specialists: $specialists),
-				'fallbackRol' => $overflow['fallbackRol'],
-			];
-		}
+	/**
+	 * The route of a call that overflows to a generalist, with escalatie.
+	 *
+	 * @param string      $vaardigheid The resolved vaardigheid.
+	 * @param int         $waitTime    The estimated wait.
+	 * @param string|null $fallbackRol The overflow's fallback role.
+	 *
+	 * @return array{destinationSpecialistId: ?string, vaardigheid: string, escalatieFlag: bool, estimatedWaitTime: int, fallbackRol: ?string}
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 */
+	private static function overflowRoute(string $vaardigheid, int $waitTime, ?string $fallbackRol): array {
+		return [
+			'destinationSpecialistId' => null,
+			'vaardigheid' => $vaardigheid,
+			'escalatieFlag' => true,
+			'estimatedWaitTime' => $waitTime,
+			'fallbackRol' => $fallbackRol,
+		];
+	}//end overflowRoute()
 
-		$chosen = $available[0];
-
+	/**
+	 * The route of a call to the chosen specialist.
+	 *
+	 * @param array<string, mixed> $chosen      The specialist with the shortest queue.
+	 * @param string               $vaardigheid The resolved vaardigheid.
+	 *
+	 * @return array{destinationSpecialistId: ?string, vaardigheid: string, escalatieFlag: bool, estimatedWaitTime: int, fallbackRol: ?string}
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 */
+	private static function chosenRoute(array $chosen, string $vaardigheid): array {
 		return [
 			'destinationSpecialistId' => (string)($chosen['employeeId'] ?? ''),
 			'vaardigheid' => $vaardigheid,
@@ -146,7 +184,7 @@ class BelplanRoutingService implements BelplanRoutingServiceInterface {
 			'estimatedWaitTime' => ((int)($chosen['currentQueueLength'] ?? 0) * (int)($chosen['averageHandlingDuration'] ?? 0)),
 			'fallbackRol' => null,
 		];
-	}//end routeCall()
+	}//end chosenRoute()
 
 	/**
 	 * Fetch specialist availability records for a vaardigheid.

@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Service\Zgw\RelationSearch;
-use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
+use OCA\Dossiq\Service\Zgw\ZtcHelperFactory;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -155,48 +155,85 @@ class DrcController extends ZgwController {
 		}
 
 		try {
-			$params = $this->request->getParams();
-			$filters = $this->zgwService->translateQueryParams(
-				params: $params,
-				mappingConfig: $mappingConfig
-			);
-
-			$searchParams = array_merge($filters, ['_limit' => 100]);
-
-			$query = $objectService->buildSearchQuery(
-				requestParams: $searchParams,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$result = $objectService->searchObjectsPaginated(query: $query);
-
-			$objects = $result['results'] ?? [];
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-			$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-			$mapped = [];
-			foreach ($objects as $object) {
-				$objectData = $this->objectToArray(row: $object);
-
-				$mapped[] = $this->zgwService->applyOutboundMapping(
-					objectData: $objectData,
-					mapping: $outboundMapping,
-					mappingConfig: $mappingConfig,
-					baseUrl: $baseUrl
-				);
-			}
-
-			return new JSONResponse(data: $mapped);
+			return new JSONResponse(data: $this->listFlatArray(objectService: $objectService, resource: $resource, mappingConfig: $mappingConfig));
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'DRC list ' . $resource . ' error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => 'Internal server error'],
-				statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
-			);
-		}//end try
+			return $this->flatArrayErrorResponse(resource: $resource, e: $e);
+		}
 	}//end indexFlatArray()
+
+	/**
+	 * Search the flat-array resource and map every hit outbound.
+	 *
+	 * @param object $objectService The OpenRegister object service
+	 * @param string $resource      The ZGW resource name
+	 * @param array  $mappingConfig The resource mapping configuration
+	 *
+	 * @return array The mapped ZGW objects
+	 */
+	private function listFlatArray(object $objectService, string $resource, array $mappingConfig): array {
+		$params = $this->request->getParams();
+		$filters = $this->zgwService->translateQueryParams(
+			params: $params,
+			mappingConfig: $mappingConfig
+		);
+
+		$searchParams = array_merge($filters, ['_limit' => 100]);
+
+		$query = $objectService->buildSearchQuery(
+			requestParams: $searchParams,
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema']
+		);
+		$result = $objectService->searchObjectsPaginated(query: $query);
+
+		return $this->mapFlatArrayObjects(objects: $result['results'] ?? [], resource: $resource, mappingConfig: $mappingConfig);
+	}//end listFlatArray()
+
+	/**
+	 * Apply the outbound mapping to each object of a flat-array listing.
+	 *
+	 * @param array  $objects       The OpenRegister objects
+	 * @param string $resource      The ZGW resource name
+	 * @param array  $mappingConfig The resource mapping configuration
+	 *
+	 * @return array The mapped ZGW objects
+	 */
+	private function mapFlatArrayObjects(array $objects, string $resource, array $mappingConfig): array {
+		$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
+		$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
+		$mapped = [];
+		foreach ($objects as $object) {
+			$objectData = $this->objectToArray(row: $object);
+
+			$mapped[] = $this->zgwService->applyOutboundMapping(
+				objectData: $objectData,
+				mapping: $outboundMapping,
+				mappingConfig: $mappingConfig,
+				baseUrl: $baseUrl
+			);
+		}
+
+		return $mapped;
+	}//end mapFlatArrayObjects()
+
+	/**
+	 * Log a flat-array listing failure and build the 500 response.
+	 *
+	 * @param string     $resource The ZGW resource name
+	 * @param \Throwable $e        The caught failure
+	 *
+	 * @return JSONResponse
+	 */
+	private function flatArrayErrorResponse(string $resource, \Throwable $e): JSONResponse {
+		$this->zgwService->getLogger()->error(
+			'DRC list ' . $resource . ' error: ' . $e->getMessage(),
+			['exception' => $e]
+		);
+		return new JSONResponse(
+			data: ['detail' => 'Internal server error'],
+			statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
+		);
+	}//end flatArrayErrorResponse()
 
 	/**
 	 * Create a new resource of the given type.
@@ -844,7 +881,7 @@ class DrcController extends ZgwController {
 	 * @return JSONResponse
 	 */
 	private function relationCheckNotCompleted(string $uuid, string $cause): JSONResponse {
-		$refusal = (new ZgwRuleResults(logger: $this->zgwService->getLogger()))
+		$refusal = (new ZtcHelperFactory())->zgwRuleResults(logger: $this->zgwService->getLogger())
 			->notVerified(rule: 'drc-008a', object: 'document ' . $uuid, cause: $cause);
 
 		return new JSONResponse(
@@ -1087,46 +1124,112 @@ class DrcController extends ZgwController {
 	private function lockFallback(object $objectService, string $uuid, \Throwable $original): JSONResponse {
 		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
 		if ($mappingConfig === null) {
-			return new JSONResponse(
-				data: ['detail' => $original->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->fallbackBadRequest(detail: $original->getMessage());
 		}
 
 		try {
-			$existing = $objectService->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$existingData = $this->objectToArray(row: $existing);
-
-			$lockId = bin2hex(random_bytes(16));
-
-			unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
-			$existingData['locked'] = true;
-			$existingData['lockId'] = $lockId;
-
-			$objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $existingData,
-				uuid: $uuid
-			);
-
-			return new JSONResponse(data: ['lock' => $lockId], statusCode: Http::STATUS_OK);
+			return $this->lockViaSave(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'DRC lock fallback error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-
-			return new JSONResponse(
-				data: ['detail' => $e->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->fallbackFailure(logPrefix: 'DRC lock fallback error: ', e: $e);
 		}//end try
 	}//end lockFallback()
+
+	/**
+	 * Lock a document by writing a fresh lockId into its stored data.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param array  $mappingConfig The EIO mapping configuration
+	 * @param string $uuid          The document UUID
+	 *
+	 * @return JSONResponse
+	 *
+	 * @throws \Throwable When the object cannot be read or saved.
+	 */
+	private function lockViaSave(object $objectService, array $mappingConfig, string $uuid): JSONResponse {
+		$existingData = $this->fallbackObjectData(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+
+		$lockId = bin2hex(random_bytes(16));
+
+		unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
+		$existingData['locked'] = true;
+		$existingData['lockId'] = $lockId;
+
+		$this->saveFallbackObject(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, data: $existingData);
+
+		return new JSONResponse(data: ['lock' => $lockId], statusCode: Http::STATUS_OK);
+	}//end lockViaSave()
+
+	/**
+	 * Read a document's stored data for the lock fallbacks.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param array  $mappingConfig The EIO mapping configuration
+	 * @param string $uuid          The document UUID
+	 *
+	 * @return array The object data
+	 *
+	 * @throws \Throwable When the object cannot be found.
+	 */
+	private function fallbackObjectData(object $objectService, array $mappingConfig, string $uuid): array {
+		$existing = $objectService->find(
+			$uuid,
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema']
+		);
+		return $this->objectToArray(row: $existing);
+	}//end fallbackObjectData()
+
+	/**
+	 * Save a document's data for the lock fallbacks.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param array  $mappingConfig The EIO mapping configuration
+	 * @param string $uuid          The document UUID
+	 * @param array  $data          The object data to save
+	 *
+	 * @return void
+	 *
+	 * @throws \Throwable When the object cannot be saved.
+	 */
+	private function saveFallbackObject(object $objectService, array $mappingConfig, string $uuid, array $data): void {
+		$objectService->saveObject(
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema'],
+			object: $data,
+			uuid: $uuid
+		);
+	}//end saveFallbackObject()
+
+	/**
+	 * Log a lock fallback failure and build the 400 response.
+	 *
+	 * @param string     $logPrefix The log message prefix
+	 * @param \Throwable $e         The caught failure
+	 *
+	 * @return JSONResponse
+	 */
+	private function fallbackFailure(string $logPrefix, \Throwable $e): JSONResponse {
+		$this->zgwService->getLogger()->error(
+			$logPrefix . $e->getMessage(),
+			['exception' => $e]
+		);
+
+		return $this->fallbackBadRequest(detail: $e->getMessage());
+	}//end fallbackFailure()
+
+	/**
+	 * Build a 400 response carrying a detail message.
+	 *
+	 * @param string $detail The detail message
+	 *
+	 * @return JSONResponse
+	 */
+	private function fallbackBadRequest(string $detail): JSONResponse {
+		return new JSONResponse(
+			data: ['detail' => $detail],
+			statusCode: Http::STATUS_BAD_REQUEST
+		);
+	}//end fallbackBadRequest()
 
 	/**
 	 * Unlock an EIO document.
@@ -1264,50 +1367,44 @@ class DrcController extends ZgwController {
 	private function unlockFallback(object $objectService, string $uuid, \Throwable $original): JSONResponse {
 		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
 		if ($mappingConfig === null) {
-			return new JSONResponse(
-				data: ['detail' => $original->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->fallbackBadRequest(detail: $original->getMessage());
 		}
 
 		try {
-			$existing = $objectService->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$existingData = $this->objectToArray(row: $existing);
-
-			unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
-			$existingData['locked'] = false;
-			$existingData['lockId'] = '';
-
-			foreach ($existingData as $key => $value) {
-				if ($value === null) {
-					unset($existingData[$key]);
-				}
-			}
-
-			$objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $existingData,
-				uuid: $uuid
-			);
-
-			return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
+			return $this->unlockViaSave(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'DRC unlock fallback error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-
-			return new JSONResponse(
-				data: ['detail' => $e->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->fallbackFailure(logPrefix: 'DRC unlock fallback error: ', e: $e);
 		}//end try
 	}//end unlockFallback()
+
+	/**
+	 * Unlock a document by clearing the lock fields in its stored data.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param array  $mappingConfig The EIO mapping configuration
+	 * @param string $uuid          The document UUID
+	 *
+	 * @return JSONResponse
+	 *
+	 * @throws \Throwable When the object cannot be read or saved.
+	 */
+	private function unlockViaSave(object $objectService, array $mappingConfig, string $uuid): JSONResponse {
+		$existingData = $this->fallbackObjectData(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+
+		unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
+		$existingData['locked'] = false;
+		$existingData['lockId'] = '';
+
+		foreach ($existingData as $key => $value) {
+			if ($value === null) {
+				unset($existingData[$key]);
+			}
+		}
+
+		$this->saveFallbackObject(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, data: $existingData);
+
+		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
+	}//end unlockViaSave()
 
 	/**
 	 * List audit trail entries for a resource.
@@ -2734,27 +2831,13 @@ class DrcController extends ZgwController {
 		string $lockId,
 	): void {
 		try {
-			$existing = $objectService->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$existingData = $this->objectToArray(row: $existing);
-
-			unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
+			$existingData = $this->lockDataOf(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
 			$existingData['locked'] = true;
 			$existingData['lockId'] = $lockId;
 
-			$objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $existingData,
-				uuid: $uuid
-			);
+			$this->saveLockData(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, data: $existingData);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'DRC: Failed to store lockId in data blob: ' . $e->getMessage()
-			);
+			$this->zgwService->getLogger()->warning('DRC: Failed to store lockId in data blob: ' . $e->getMessage());
 		}//end try
 	}//end storeLockIdInData()
 
@@ -2773,27 +2856,58 @@ class DrcController extends ZgwController {
 		string $uuid,
 	): void {
 		try {
-			$existing = $objectService->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$existingData = $this->objectToArray(row: $existing);
-
-			unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
+			$existingData = $this->lockDataOf(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
 			$existingData['locked'] = false;
 			$existingData['lockId'] = '';
 
-			$objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $existingData,
-				uuid: $uuid
-			);
+			$this->saveLockData(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, data: $existingData);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'DRC: Failed to clear lockId in data blob: ' . $e->getMessage()
-			);
+			$this->zgwService->getLogger()->warning('DRC: Failed to clear lockId in data blob: ' . $e->getMessage());
 		}//end try
 	}//end clearLockIdInData()
+
+	/**
+	 * The document's stored data, without the keys a save must not carry.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param array  $mappingConfig The mapping configuration
+	 * @param string $uuid          The document UUID
+	 *
+	 * @return array<string, mixed> The data to write back.
+	 *
+	 * @throws \Throwable When the document cannot be found.
+	 */
+	private function lockDataOf(object $objectService, array $mappingConfig, string $uuid): array {
+		$existing = $objectService->find(
+			$uuid,
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema']
+		);
+		$existingData = $this->objectToArray(row: $existing);
+
+		unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
+
+		return $existingData;
+	}//end lockDataOf()
+
+	/**
+	 * Write the document's data back.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService
+	 * @param array                $mappingConfig The mapping configuration
+	 * @param string               $uuid          The document UUID
+	 * @param array<string, mixed> $data          The data to write.
+	 *
+	 * @return void
+	 *
+	 * @throws \Throwable When the save fails.
+	 */
+	private function saveLockData(object $objectService, array $mappingConfig, string $uuid, array $data): void {
+		$objectService->saveObject(
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema'],
+			object: $data,
+			uuid: $uuid
+		);
+	}//end saveLockData()
 }//end class

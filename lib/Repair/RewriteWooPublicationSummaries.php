@@ -298,32 +298,55 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 			return $this->titles[$caseId];
 		}
 
-		$title = '';
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($objectService !== null && $register !== '' && $caseSchema !== '') {
-			try {
-				$case = $this->findObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: $caseSchema,
-					id: $caseId
-				);
-				$value = ($case['title'] ?? null);
-				if (is_string($value) === true) {
-					$title = trim($value);
-				}
-			} catch (Throwable $e) {
-				$this->logger->info(
-					'Dossiq: the Woo summary rewrite could not read a case title',
-					['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
-				);
-			}
-		}
+		$title = $this->readTitle(caseId: $caseId);
 
 		$this->titles[$caseId] = $title;
 
 		return $title;
 	}//end titleOf()
+
+	/**
+	 * The case's title as stored, or '' when OpenRegister is not configured or the title cannot be read.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return string The title.
+	 */
+	private function readTitle(string $caseId): string {
+		$title = '';
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
+		if ($objectService !== null && $register !== '' && $caseSchema !== '') {
+			$title = $this->caseTitle(objectService: $objectService, register: $register, caseSchema: $caseSchema, caseId: $caseId);
+		}
+
+		return $title;
+	}//end readTitle()
+
+	/**
+	 * The title of one case, or '' (logged) when it cannot be read.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register.
+	 * @param string $caseSchema    The case schema.
+	 * @param string $caseId        The case uuid.
+	 *
+	 * @return string The title.
+	 */
+	private function caseTitle(object $objectService, string $register, string $caseSchema, string $caseId): string {
+		$title = '';
+		try {
+			$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
+			$value = ($case['title'] ?? null);
+			if (is_string($value) === true) {
+				$title = trim($value);
+			}
+		} catch (Throwable $e) {
+			$context = ['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()];
+			$this->logger->info('Dossiq: the Woo summary rewrite could not read a case title', $context);
+		}
+
+		return $title;
+	}//end caseTitle()
 }//end class

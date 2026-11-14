@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwMappingServiceInterface;
-use OCA\Dossiq\Repair\LoadDefaultZgwMappings;
+use OCA\Dossiq\Repair\RepairHelperFactory;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
@@ -210,7 +210,7 @@ class ZgwMappingController extends Controller {
 			);
 		}
 
-		$loader = new LoadDefaultZgwMappings(
+		$loader = (new RepairHelperFactory())->defaultZgwMappings(
 			zgwMappingService: $this->zgwMappingService,
 			settingsService: $this->settingsService,
 			logger: $this->logger,

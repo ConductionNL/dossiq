@@ -282,31 +282,74 @@ class ContactMomentService implements ContactMomentServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
 	 */
 	public function listForBurger(string $burgerId, int $limit = 50): array {
-		if ($burgerId === '') {
+		$target = $this->burgerSearchTarget(burgerId: $burgerId);
+		if ($target === null) {
 			return [];
 		}
 
 		try {
-			[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'contactmoment_schema');
-		} catch (RuntimeException $e) {
-			return [];
-		}
-
-		try {
-			$results = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['geidentificeerdeBurgerId' => $burgerId, '_limit' => max(1, $limit)],
-			);
+			$results = $this->searchForBurger(target: $target, burgerId: $burgerId, limit: $limit);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: failed to list contactmomenten: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID],
-			);
+			$this->logger->error('Dossiq: failed to list contactmomenten: ' . $e->getMessage(), ['app' => AppIdentity::APP_ID]);
 			return [];
 		}
 
+		return $this->newestFirst(results: $results);
+	}//end listForBurger()
+
+	/**
+	 * The ObjectService, register and schema to search a burger's contactmomenten in.
+	 *
+	 * @param string $burgerId The identified burger reference.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The search target, or null for no burger or no schema.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
+	 */
+	private function burgerSearchTarget(string $burgerId): ?array {
+		if ($burgerId === '') {
+			return null;
+		}
+
+		try {
+			return $this->resolve(schemaConfigKey: 'contactmoment_schema');
+		} catch (RuntimeException $e) {
+			return null;
+		}
+	}//end burgerSearchTarget()
+
+	/**
+	 * Search the contactmomenten of an identified burger.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $target   The ObjectService, register and schema.
+	 * @param string                                 $burgerId The identified burger reference.
+	 * @param int                                    $limit    Maximum number of records.
+	 *
+	 * @return array<int, array<string, mixed>> The raw rows.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
+	 */
+	private function searchForBurger(array $target, string $burgerId, int $limit): array {
+		[$objectService, $register, $schema] = $target;
+
+		return $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['geidentificeerdeBurgerId' => $burgerId, '_limit' => max(1, $limit)],
+		);
+	}//end searchForBurger()
+
+	/**
+	 * Normalise the rows and sort them most recent first.
+	 *
+	 * @param mixed $results The raw rows.
+	 *
+	 * @return array<int, array<string, mixed>> The contactmoment records.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
+	 */
+	private function newestFirst(mixed $results): array {
 		$records = [];
 		foreach ((array)$results as $result) {
 			$records[] = $this->normalize(result: $result);
@@ -320,7 +363,7 @@ class ContactMomentService implements ContactMomentServiceInterface {
 		);
 
 		return $records;
-	}//end listForBurger()
+	}//end newestFirst()
 
 	/**
 	 * Append an immutable activity entry to a case's activity array.
@@ -472,30 +515,47 @@ class ContactMomentService implements ContactMomentServiceInterface {
 		string $method,
 		float $score,
 	): array {
-		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'contactmoment_schema');
+		$target = $this->resolve(schemaConfigKey: 'contactmoment_schema');
+		$changes = [
+			'geidentificeerdeBurgerId' => $burgerId,
+			'identificationMethod' => $method,
+			'identificationScore' => round($score, 2),
+		];
+
+		$updated = $this->patchContactmoment(target: $target, interactionId: $interactionId, changes: $changes);
+
+		return $this->normalize(result: $updated);
+	}//end linkUnlinkedContactmoment()
+
+	/**
+	 * Patch a contactmoment, turning any failure into one RuntimeException.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $target        The ObjectService, register and schema.
+	 * @param string                                 $interactionId The contactmoment UUID.
+	 * @param array<string, mixed>                   $changes       The fields to set.
+	 *
+	 * @return array<string, mixed>|null The updated row.
+	 *
+	 * @throws RuntimeException When the update fails.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
+	 */
+	private function patchContactmoment(array $target, string $interactionId, array $changes): ?array {
+		[$objectService, $register, $schema] = $target;
 
 		try {
-			$updated = $this->patchObjectAsArray(
+			return $this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
 				id: $interactionId,
-				changes: [
-					'geidentificeerdeBurgerId' => $burgerId,
-					'identificationMethod' => $method,
-					'identificationScore' => round($score, 2),
-				],
+				changes: $changes,
 			);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: failed to link contactmoment: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID],
-			);
+			$this->logger->error('Dossiq: failed to link contactmoment: ' . $e->getMessage(), ['app' => AppIdentity::APP_ID]);
 			throw new RuntimeException('Could not link contactmoment');
 		}
-
-		return $this->normalize(result: $updated);
-	}//end linkUnlinkedContactmoment()
+	}//end patchContactmoment()
 
 	/**
 	 * Resolve the ObjectService, register id and schema id for a config key.

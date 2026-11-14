@@ -83,30 +83,47 @@ class DigestDispatcher implements DigestDispatcherInterface {
 			throw new RuntimeException('Dossiq cannot write a digest without a configured register.');
 		}
 
-		$saved = $this->saveObjectAsArray(
-			objectService: $objects,
-			register: $register,
-			schema: self::SCHEMA,
-			object: [
-				'person' => (string)$digest['person'],
-				'day' => (string)$digest['day'],
-				'waiting' => (int)$digest['waiting'],
-				'late' => (int)$digest['late'],
-				'summary' => $this->summaryOf(digest: $digest),
-			]
-		);
+		$saved = $this->saveObjectAsArray(objectService: $objects, register: $register, schema: self::SCHEMA, object: $this->recordOf(digest: $digest));
 
 		if ($saved === null) {
 			throw new RuntimeException('The digest was not written.');
 		}
 
+		return $this->idOf(saved: $saved);
+	}//end send()
+
+	/**
+	 * The digest record to store.
+	 *
+	 * @param array<string, mixed> $digest The composed digest.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function recordOf(array $digest): array {
+		return [
+			'person' => (string)$digest['person'],
+			'day' => (string)$digest['day'],
+			'waiting' => (int)$digest['waiting'],
+			'late' => (int)$digest['late'],
+			'summary' => $this->summaryOf(digest: $digest),
+		];
+	}//end recordOf()
+
+	/**
+	 * The id of the stored record, from `@self` when it carries one.
+	 *
+	 * @param array<string, mixed> $saved The stored record.
+	 *
+	 * @return string
+	 */
+	private function idOf(array $saved): string {
 		$self = ($saved['@self'] ?? []);
 		if (is_array($self) === true && trim((string)($self['id'] ?? '')) !== '') {
 			return (string)$self['id'];
 		}
 
 		return (string)($saved['id'] ?? '');
-	}//end send()
+	}//end idOf()
 
 	/**
 	 * The one line the message quotes.

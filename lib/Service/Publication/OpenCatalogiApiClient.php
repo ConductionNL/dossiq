@@ -236,6 +236,27 @@ class OpenCatalogiApiClient {
 		string $base64Content,
 		string $mimeType,
 	): array {
+		$fileService = $this->availableFileService(objectId: $objectId);
+
+		try {
+			return $this->addedFile(fileService: $fileService, objectId: $objectId, fileName: $fileName, base64Content: $base64Content);
+		} catch (Throwable $e) {
+			throw $this->attachFailed(objectId: $objectId, fileName: $fileName, error: $e);
+		}//end try
+	}//end attachFile()
+
+	/**
+	 * OpenRegister's file service, or a domain error when it is not there.
+	 *
+	 * @param string $objectId The object id the file was meant for.
+	 *
+	 * @return object The file service.
+	 *
+	 * @throws RuntimeException 'opencatalogi_api_error' when the file service is unavailable.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	private function availableFileService(string $objectId): object {
 		$fileService = $this->settingsService->getFileService();
 		if ($fileService === null) {
 			$this->logger->warning(
@@ -245,34 +266,61 @@ class OpenCatalogiApiClient {
 			throw new RuntimeException(self::DOMAIN_ERROR);
 		}
 
-		try {
-			$file = $fileService->addFile(
-				objectEntity: $objectId,
-				fileName: $fileName,
-				content: $base64Content,
-				share: false,
-				tags: [],
-			);
+		return $fileService;
+	}//end availableFileService()
 
-			$formatted = $fileService->formatFile($file);
-			if (is_array($formatted) === true) {
-				return $formatted;
-			}
+	/**
+	 * Add the file to the object and return its formatted metadata.
+	 *
+	 * @param object $fileService The OpenRegister file service.
+	 * @param string $objectId The object id to attach the file to.
+	 * @param string $fileName The file name.
+	 * @param string $base64Content The base64-encoded file content.
+	 *
+	 * @return array<string, mixed> The stored file's metadata, or an empty array.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	private function addedFile(object $fileService, string $objectId, string $fileName, string $base64Content): array {
+		$file = $fileService->addFile(
+			objectEntity: $objectId,
+			fileName: $fileName,
+			content: $base64Content,
+			share: false,
+			tags: [],
+		);
 
-			return [];
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'OpenCatalogiApiClient: file attach failed',
-				[
-					'app' => AppIdentity::APP_ID,
-					'objectId' => $objectId,
-					'fileName' => $fileName,
-					'error' => $e->getMessage(),
-				],
-			);
-			throw new RuntimeException(self::DOMAIN_ERROR, 0, $e);
-		}//end try
-	}//end attachFile()
+		$formatted = $fileService->formatFile($file);
+		if (is_array($formatted) === true) {
+			return $formatted;
+		}
+
+		return [];
+	}//end addedFile()
+
+	/**
+	 * Log a failed attach and describe it as the domain error.
+	 *
+	 * @param string $objectId The object id the file was meant for.
+	 * @param string $fileName The file name.
+	 * @param Throwable $error Why the attach failed.
+	 *
+	 * @return RuntimeException The domain error to throw.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	private function attachFailed(string $objectId, string $fileName, Throwable $error): RuntimeException {
+		$this->logger->warning(
+			'OpenCatalogiApiClient: file attach failed',
+			[
+				'app' => AppIdentity::APP_ID,
+				'objectId' => $objectId,
+				'fileName' => $fileName,
+				'error' => $error->getMessage(),
+			],
+		);
+		return new RuntimeException(self::DOMAIN_ERROR, 0, $error);
+	}//end attachFailed()
 
 	/**
 	 * Best-effort discovery of a WOO-flagged OpenCatalogi catalog.
@@ -398,28 +446,7 @@ class OpenCatalogiApiClient {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	private function storeObject(string $register, string $schema, array $object, ?string $uuid): array {
-		$objectService = $this->requireObjectService();
-
-		try {
-			$saved = $objectService->saveObject(
-				object: $object,
-				register: $register,
-				schema: $schema,
-				uuid: $uuid,
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'OpenCatalogiApiClient: object write failed',
-				[
-					'app' => AppIdentity::APP_ID,
-					'register' => $register,
-					'schema' => $schema,
-					'uuid' => ($uuid ?? ''),
-					'error' => $e->getMessage(),
-				],
-			);
-			throw new RuntimeException(self::DOMAIN_ERROR, 0, $e);
-		}//end try
+		$saved = $this->saveOrFail(register: $register, schema: $schema, object: $object, uuid: $uuid);
 
 		$data = $this->objectData(entity: $saved);
 		$identifier = $this->objectIdentifier(entity: $saved);
@@ -429,6 +456,34 @@ class OpenCatalogiApiClient {
 
 		return $data;
 	}//end storeObject()
+
+	/**
+	 * Save one object through OpenRegister, logging and wrapping any failure.
+	 *
+	 * @param string               $register The register slug.
+	 * @param string               $schema   The schema slug.
+	 * @param array<string, mixed> $object   The object data to store.
+	 * @param string|null          $uuid     The uuid to update, or null to create.
+	 *
+	 * @return mixed The saved entity.
+	 *
+	 * @throws RuntimeException 'opencatalogi_api_error' on any write failure.
+	 */
+	private function saveOrFail(string $register, string $schema, array $object, ?string $uuid): mixed {
+		$objectService = $this->requireObjectService();
+
+		try {
+			$saved = $objectService->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'OpenCatalogiApiClient: object write failed',
+				['app' => AppIdentity::APP_ID, 'register' => $register, 'schema' => $schema, 'uuid' => ($uuid ?? ''), 'error' => $e->getMessage()],
+			);
+			throw new RuntimeException(self::DOMAIN_ERROR, 0, $e);
+		}//end try
+
+		return $saved;
+	}//end saveOrFail()
 
 	/**
 	 * The property data of whatever OpenRegister returned.

@@ -186,18 +186,37 @@ class CaseConversationService implements CaseConversationServiceInterface {
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	public function recordConversationEnd(
-		string $caseId,
-		string $roomId,
-		array $participants,
-		int $durationSeconds,
-	): array {
+	public function recordConversationEnd(string $caseId, string $roomId, array $participants, int $durationSeconds): array {
 		$case = $this->cases->read(caseId: $caseId);
 		if ($case === null) {
 			return ['ok' => false, 'reason' => self::REASON_NO_CASE];
 		}
 
-		$conversations = $this->cases->conversationsOf(case: $case);
+		[$conversations, $found] = $this->ended(caseData: $case, roomId: $roomId, participants: $participants, durationSeconds: $durationSeconds);
+
+		if ($found === null) {
+			return ['ok' => false, 'reason' => self::REASON_UNKNOWN_ROOM];
+		}
+
+		$this->cases->write(caseId: $caseId, changes: ['conversations' => $conversations]);
+
+		return ['ok' => true, 'conversation' => $found];
+	}//end recordConversationEnd()
+
+	/**
+	 * The case's conversations with the room's conversation completed, and that conversation.
+	 *
+	 * @param array<string, mixed>                    $caseData        The case.
+	 * @param string                                  $roomId          The Talk conversation id.
+	 * @param array<string>                           $participants    User ids or display names that joined.
+	 * @param int                                     $durationSeconds How long it lasted.
+	 *
+	 * @return array{0: array<int|string, array<string, mixed>>, 1: array<string, mixed>|null} The conversations, and the completed one or null.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function ended(array $caseData, string $roomId, array $participants, int $durationSeconds): array {
+		$conversations = $this->cases->conversationsOf(case: $caseData);
 		$found = null;
 		foreach ($conversations as $index => $conversation) {
 			if (($conversation['roomId'] ?? '') !== $roomId) {
@@ -211,14 +230,8 @@ class CaseConversationService implements CaseConversationServiceInterface {
 			$found = $conversation;
 		}
 
-		if ($found === null) {
-			return ['ok' => false, 'reason' => self::REASON_UNKNOWN_ROOM];
-		}
-
-		$this->cases->write(caseId: $caseId, changes: ['conversations' => $conversations]);
-
-		return ['ok' => true, 'conversation' => $found];
-	}//end recordConversationEnd()
+		return [$conversations, $found];
+	}//end ended()
 
 	/**
 	 * The room name a conversation on this case carries into Talk.
