@@ -38,6 +38,7 @@ use OCA\Dossiq\Kernel\Contracts\ZtcCrossReferenceEnricherInterface;
  * Builds the cross-reference URL lists of ZTC zaaktypen and besluittypen.
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 
@@ -101,23 +102,26 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 			return $data;
 		}
 
+		$target = new ZtcEnrichmentTarget(objectService: $objectService, uuid: $uuid, baseUrl: $baseUrl);
 		if ($resource === 'besluittypen') {
-			return $this->enrichBesluittype(
-				data: $data,
-				target: new ZtcEnrichmentTarget(objectService: $objectService, uuid: $uuid, baseUrl: $baseUrl)
-			);
+			return $this->enrichBesluittype(data: $data, target: $target);
 		}
 
 		if ($resource !== 'zaaktypen') {
 			return $data;
 		}
 
-		$data = $this->enrichCaseType(
-			data: $data,
-			target: new ZtcEnrichmentTarget(objectService: $objectService, uuid: $uuid, baseUrl: $baseUrl)
-		);
+		return $this->withListDefaults(data: $this->enrichCaseType(data: $data, target: $target));
+	}//end enrich()
 
-		// Ensure array fields default to [] instead of null.
+	/**
+	 * Default every zaaktype list field to [] instead of null.
+	 *
+	 * @param array $data The enriched zaaktype
+	 *
+	 * @return array The zaaktype with every list field set
+	 */
+	private function withListDefaults(array $data): array {
 		foreach (self::CASE_TYPE_LIST_FIELDS as $field) {
 			if (isset($data[$field]) === false) {
 				$data[$field] = [];
@@ -125,7 +129,7 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 		}
 
 		return $data;
-	}//end enrich()
+	}//end withListDefaults()
 
 	/**
 	 * Expand a besluittype's stored documentTypes and caseTypes uuids to URLs.
@@ -229,9 +233,6 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 	 * @return array The enriched zaaktype
 	 */
 	private function enrichCaseType(array $data, ZtcEnrichmentTarget $target): array {
-		$objectService = $target->objectService;
-		$uuid = $target->uuid;
-		$baseUrl = $target->baseUrl;
 		$ztMapping  = $this->zgwService->loadMappingConfig(self::ZGW_API, 'zaaktypen');
 		$objectData = null;
 		if ($ztMapping !== null) {
@@ -242,20 +243,68 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 
 		$data = $this->withRelatedCaseTypes(data: $data, objectData: $objectData, target: $target, ztMapping: $ztMapping);
 
-		$iotUrls = $this->lookup->caseTypeDocumentTypeUrls(objectService: $objectService, uuid: $uuid, baseUrl: $baseUrl);
+		$data = $this->withDocumentAndDecisionTypes(data: $data, target: $target);
+
+		return $this->withSubResources(data: $data, target: $target);
+	}//end enrichCaseType()
+
+	/**
+	 * Fill a zaaktype's informatieobjecttypen and, when its stored decisionTypes gave none, its
+	 * besluittypen from the besluittype records that point at it.
+	 *
+	 * @param array               $data   The zaaktype being enriched
+	 * @param ZtcEnrichmentTarget $target The zaaktype's object service, uuid and base URL
+	 *
+	 * @return array The zaaktype with both lists filled where found
+	 */
+	private function withDocumentAndDecisionTypes(array $data, ZtcEnrichmentTarget $target): array {
+		$iotUrls = $this->lookup->caseTypeDocumentTypeUrls(objectService: $target->objectService, uuid: $target->uuid, baseUrl: $target->baseUrl);
 		if (empty($iotUrls) === false) {
 			$data['informatieobjecttypen'] = $iotUrls;
 		}
 
+		return $this->withDecisionTypeFallback(data: $data, target: $target);
+	}//end withDocumentAndDecisionTypes()
+
+	/**
+	 * Fill a zaaktype's besluittypen from the besluittype records that point at it, when its
+	 * stored decisionTypes gave none.
+	 *
+	 * @param array               $data   The zaaktype being enriched
+	 * @param ZtcEnrichmentTarget $target The zaaktype's object service, uuid and base URL
+	 *
+	 * @return array The zaaktype with its besluittypen filled where found
+	 */
+	private function withDecisionTypeFallback(array $data, ZtcEnrichmentTarget $target): array {
 		// Fallback: besluittypen from BT records with caseType = this uuid, only when the
 		// stored decisionTypes gave none.
 		if (empty($data['besluittypen'] ?? null) === true) {
-			$btUrls = $this->lookup->urlsOfObjectsFor(objectService: $objectService, resource: 'besluittypen', uuid: $uuid, baseUrl: $baseUrl);
+			$btUrls = $this->lookup->urlsOfObjectsFor(
+				objectService: $target->objectService,
+				resource: 'besluittypen',
+				uuid: $target->uuid,
+				baseUrl: $target->baseUrl
+			);
 			if (empty($btUrls) === false) {
 				$data['besluittypen'] = $btUrls;
 			}
 		}
 
+		return $data;
+	}//end withDecisionTypeFallback()
+
+	/**
+	 * Fill a zaaktype's four sub-resource lists from the records that point at it.
+	 *
+	 * @param array               $data   The zaaktype being enriched
+	 * @param ZtcEnrichmentTarget $target The zaaktype's object service, uuid and base URL
+	 *
+	 * @return array The zaaktype with its sub-resource lists filled where found
+	 */
+	private function withSubResources(array $data, ZtcEnrichmentTarget $target): array {
+		$objectService = $target->objectService;
+		$uuid = $target->uuid;
+		$baseUrl = $target->baseUrl;
 		foreach (self::CASE_TYPE_SUB_RESOURCES as $resourceName) {
 			$urls = $this->lookup->urlsOfObjectsFor(objectService: $objectService, resource: $resourceName, uuid: $uuid, baseUrl: $baseUrl);
 			if (empty($urls) === false) {
@@ -264,7 +313,7 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 		}
 
 		return $data;
-	}//end enrichCaseType()
+	}//end withSubResources()
 
 	/**
 	 * Fill gerelateerdeZaaktypen.
@@ -315,30 +364,13 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 	 *                                                     not be read) and the lists it gives
 	 */
 	private function storedCaseTypeLists(ZtcEnrichmentTarget $target, array $ztMapping): array {
-		$objectService = $target->objectService;
-		$baseUrl = $target->baseUrl;
 		$objectData = null;
 		$lists = [];
 		try {
-			$objectData = $this->lookup->findIn(objectService: $objectService, mapping: $ztMapping, id: $target->uuid);
+			$objectData = $this->lookup->findIn(objectService: $target->objectService, mapping: $ztMapping, id: $target->uuid);
 
-			$subCases = $objectData['subCaseTypes'] ?? [];
-			if (is_array($subCases) === true && empty($subCases) === false) {
-				$urls = [];
-				foreach ($subCases as $ztUuid) {
-					if (is_string($ztUuid) === true && $ztUuid !== '') {
-						$same = $this->lookup->sameIdentifierUrls(objectService: $objectService, ztMapping: $ztMapping, ztRef: $ztUuid, baseUrl: $baseUrl);
-						array_push($urls, ...$same);
-					}
-				}
-
-				$lists['deelzaaktypen'] = array_values(array_unique($urls));
-			}
-
-			$decTypes = $objectData['decisionTypes'] ?? [];
-			if (is_array($decTypes) === true && empty($decTypes) === false) {
-				$lists['besluittypen'] = $this->uuidListUrls(stored: $decTypes, prefix: $baseUrl.'/besluittypen/');
-			}
+			$lists = $this->deelzaaktypenOf(objectData: $objectData, target: $target, ztMapping: $ztMapping);
+			$lists += $this->besluittypenOf(objectData: $objectData, baseUrl: $target->baseUrl);
 		} catch (\Throwable $e) {
 			// Proceed without deelzaaktypen enrichment.
 			return ['objectData' => $objectData, 'lists' => $lists];
@@ -346,5 +378,63 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 
 		return ['objectData' => $objectData, 'lists' => $lists];
 	}//end storedCaseTypeLists()
+
+	/**
+	 * The deelzaaktypen list a stored zaaktype gives, when it stores any subCaseTypes.
+	 *
+	 * @param array               $objectData The stored zaaktype
+	 * @param ZtcEnrichmentTarget $target     The zaaktype's object service and base URL
+	 * @param array               $ztMapping  The zaaktypen mapping
+	 *
+	 * @return array{deelzaaktypen?: array<string>} The list, or nothing
+	 */
+	private function deelzaaktypenOf(array $objectData, ZtcEnrichmentTarget $target, array $ztMapping): array {
+		$subCases = $objectData['subCaseTypes'] ?? [];
+		if (is_array($subCases) === true && empty($subCases) === false) {
+			return ['deelzaaktypen' => $this->subCaseTypeUrls(subCases: $subCases, target: $target, ztMapping: $ztMapping)];
+		}
+
+		return [];
+	}//end deelzaaktypenOf()
+
+	/**
+	 * The besluittypen list a stored zaaktype gives, when it stores any decisionTypes.
+	 *
+	 * @param array  $objectData The stored zaaktype
+	 * @param string $baseUrl    The Catalogi API base URL
+	 *
+	 * @return array{besluittypen?: array<string>|null} The list, or nothing
+	 */
+	private function besluittypenOf(array $objectData, string $baseUrl): array {
+		$decTypes = $objectData['decisionTypes'] ?? [];
+		if (is_array($decTypes) === true && empty($decTypes) === false) {
+			return ['besluittypen' => $this->uuidListUrls(stored: $decTypes, prefix: $baseUrl.'/besluittypen/')];
+		}
+
+		return [];
+	}//end besluittypenOf()
+
+	/**
+	 * Expand each stored deelzaaktype uuid to every zaaktype with the same identifier.
+	 *
+	 * @param array               $subCases  The stored subCaseTypes uuids
+	 * @param ZtcEnrichmentTarget $target    The zaaktype's object service and base URL
+	 * @param array               $ztMapping The zaaktypen mapping
+	 *
+	 * @return array<string> The unique deelzaaktype URLs
+	 */
+	private function subCaseTypeUrls(array $subCases, ZtcEnrichmentTarget $target, array $ztMapping): array {
+		$objectService = $target->objectService;
+		$baseUrl = $target->baseUrl;
+		$urls = [];
+		foreach ($subCases as $ztUuid) {
+			if (is_string($ztUuid) === true && $ztUuid !== '') {
+				$same = $this->lookup->sameIdentifierUrls(objectService: $objectService, ztMapping: $ztMapping, ztRef: $ztUuid, baseUrl: $baseUrl);
+				array_push($urls, ...$same);
+			}
+		}
+
+		return array_values(array_unique($urls));
+	}//end subCaseTypeUrls()
 
 }//end class
