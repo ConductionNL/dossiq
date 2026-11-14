@@ -69,6 +69,16 @@ class FilinqRedactionClient {
 	private const ANONYMIZATION_SERVICE = 'Service\AnonymizationService';
 
 	/**
+	 * Filinq's anonymise options class, resolved by name so dossiq installs without filinq.
+	 */
+	private const OPTIONS_CLASS = 'OCA\\Filinq\\Service\\AnonymizeOptions';
+
+	/**
+	 * Filinq's four-eyes refusals: the officer checked the document themselves, or nobody is signed in.
+	 */
+	public const FOUR_EYES_REASONS = ['same_person', 'anonymiser_unknown'];
+
+	/**
 	 * OpenRegister's anonymisation backend state service, fully qualified.
 	 *
 	 * OpenRegister is not renamed and is a hard dependency of this app, so this
@@ -156,6 +166,7 @@ class FilinqRedactionClient {
 	 * @param int $fileId The Nextcloud file id.
 	 * @param array<int, array<string, mixed>> $entities The checked entity set.
 	 * @param string $userId The acting user, recorded on filinq's audit.
+	 * @param bool $wooCase Whether the document belongs to a Woo request, so filinq's four-eyes setting applies (redaction-four-eyes-setting).
 	 *
 	 * @return array<string, mixed> `{status, sourceFileId, entityCount, anonymizedFileId, detectionBackend, ...}`.
 	 *
@@ -163,17 +174,49 @@ class FilinqRedactionClient {
 	 *
 	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
 	 */
-	public function anonymize(int $fileId, array $entities, string $userId): array {
+	public function anonymize(int $fileId, array $entities, string $userId, bool $wooCase = false): array {
 		$service = $this->service(relative: self::ANONYMIZATION_SERVICE);
+		$options = $this->anonymizeOptions(userId: $userId, wooCase: $wooCase);
 
 		try {
-			$result = (array)$service->anonymizeDocument($fileId, $entities, 'pdf-only', [], [], $userId);
+			if ($options === null) {
+				// A filinq from before AnonymizeOptions takes the format and the user positionally.
+				$result = (array)$service->anonymizeDocument($fileId, $entities, 'pdf-only', [], [], $userId);
+			} else {
+				$result = (array)$service->anonymizeDocument($fileId, $entities, $options);
+			}
 		} catch (Throwable $e) {
 			return $this->refusedOrThrow(error: $e, fileId: $fileId, entities: $entities);
 		}
 
 		return $this->completed(result: $result, fileId: $fileId, entities: $entities);
 	}//end anonymize()
+
+	/**
+	 * Filinq's options for one anonymise call: the PDF output, the acting user
+	 * and, on a filinq that knows four eyes, whether the run is a Woo case.
+	 * Null on a filinq without AnonymizeOptions.
+	 *
+	 * @param string $userId  The acting user.
+	 * @param bool   $wooCase Whether the document belongs to a Woo request.
+	 *
+	 * @return object|null The options.
+	 *
+	 * @spec openspec/changes/redaction-four-eyes-setting/tasks.md#task-6
+	 */
+	private function anonymizeOptions(string $userId, bool $wooCase): ?object {
+		$class = self::OPTIONS_CLASS;
+		if (class_exists($class) === false) {
+			return null;
+		}
+
+		$options = (new $class())->withOutputFormat(outputFormat: 'pdf-only')->withUserId(userId: $userId);
+		if (method_exists($options, 'withWooCase') === true) {
+			$options = $options->withWooCase(wooCase: $wooCase);
+		}
+
+		return $options;
+	}//end anonymizeOptions()
 
 	/**
 	 * The refusal filinq answered a redaction with, or an exception when it failed for another reason.
@@ -358,9 +401,18 @@ class FilinqRedactionClient {
 			return null;
 		}
 
+		$reason = (string)$error->getReason();
+
+		// Four eyes (redaction-four-eyes-setting REQ-RWB-09): checked, but by
+		// the officer who now asks for the copy. An outcome, not a failure.
+		$status = 'not_checked';
+		if (in_array($reason, self::FOUR_EYES_REASONS, true) === true) {
+			$status = $reason;
+		}
+
 		return [
-			'status' => 'not_checked',
-			'notChecked' => (string)$error->getReason(),
+			'status' => $status,
+			'notChecked' => $reason,
 			'message' => $error->getMessage(),
 			'anonymizedFileId' => null,
 			'warning' => null,
