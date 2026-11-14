@@ -348,6 +348,29 @@ class ProcessingTimeCalculator {
 	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function weeklyThroughput(array $completed, int $weeks = 12): array {
+		$ends = $this->endDatesOf(completed: $completed);
+
+		if ($ends === []) {
+			return [];
+		}
+
+		$anchor  = $this->mondayOf(date: max($ends));
+		$buckets = $this->emptyWeeks(anchor: $anchor, weeks: $weeks);
+		$buckets = $this->countedWeeks(buckets: $buckets, ends: $ends);
+
+		return array_values($buckets);
+	}//end weeklyThroughput()
+
+	/**
+	 * The end dates of the completed records that carry one.
+	 *
+	 * @param array<int, array<string, mixed>> $completed Completed records.
+	 *
+	 * @return array<int, string> The end dates.
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
+	 */
+	private function endDatesOf(array $completed): array {
 		$ends = [];
 		foreach ($completed as $record) {
 			$end = ($record['endDate'] ?? null);
@@ -356,11 +379,20 @@ class ProcessingTimeCalculator {
 			}
 		}
 
-		if ($ends === []) {
-			return [];
-		}
+		return $ends;
+	}//end endDatesOf()
 
-		$anchor  = $this->mondayOf(date: max($ends));
+	/**
+	 * One zero bucket per ISO week, keyed by its Monday, oldest first, ending at the anchor week.
+	 *
+	 * @param DateTimeImmutable $anchor The Monday of the most recent week.
+	 * @param int               $weeks  Weeks to cover.
+	 *
+	 * @return array<string, array{weekLabel: string, week: string, count: int}> The buckets.
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
+	 */
+	private function emptyWeeks(DateTimeImmutable $anchor, int $weeks): array {
 		$buckets = [];
 		for ($offset = ($weeks - 1); $offset >= 0; $offset--) {
 			$monday = $anchor->sub(interval: new DateInterval('P'.($offset * 7).'D'));
@@ -372,6 +404,20 @@ class ProcessingTimeCalculator {
 			];
 		}
 
+		return $buckets;
+	}//end emptyWeeks()
+
+	/**
+	 * The buckets with each end date counted in its week.
+	 *
+	 * @param array<string, array{weekLabel: string, week: string, count: int}> $buckets The buckets.
+	 * @param array<int, string>                                               $ends    The end dates.
+	 *
+	 * @return array<string, array{weekLabel: string, week: string, count: int}> The counted buckets.
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
+	 */
+	private function countedWeeks(array $buckets, array $ends): array {
 		foreach ($ends as $end) {
 			$key = $this->mondayOf(date: $end)->format('Y-m-d');
 			if (isset($buckets[$key]) === true) {
@@ -379,8 +425,8 @@ class ProcessingTimeCalculator {
 			}
 		}
 
-		return array_values($buckets);
-	}//end weeklyThroughput()
+		return $buckets;
+	}//end countedWeeks()
 
 	/**
 	 * The histogram bin a day count falls in.
