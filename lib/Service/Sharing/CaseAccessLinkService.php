@@ -368,15 +368,12 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 		?string $password,
 		?string $label,
 	): array {
-		$service = $this->gateway->accessLinkService();
-		if ($service === null) {
-			return ['error' => 'This instance cannot publish links: OpenRegister does not offer them'];
+		$prepared = $this->mintServiceAndCapabilities(capabilities: $capabilities);
+		if (isset($prepared['error']) === true) {
+			return $prepared;
 		}
 
-		$declared = $this->declaredCapabilities(capabilities: $capabilities);
-		if ($declared === null) {
-			return ['error' => 'A link may grant reading, commenting or uploading, and nothing else'];
-		}
+		[$service, $declared] = $prepared;
 
 		try {
 			return (array)$service->mint(
@@ -389,16 +386,53 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 				$this->trimmedOrNull(value: $label)
 			);
 		} catch (\Throwable $failure) {
-			$this->logger->error(
-				'CaseAccessLinkService: could not mint an access link',
-				[
-					'subjectType' => $subjectType,
-					'exception' => $failure->getMessage(),
-				]
-			);
-			return ['error' => 'Could not create the link'];
+			return $this->mintFailed(subjectType: $subjectType, failure: $failure);
 		}
 	}//end mint()
+
+	/**
+	 * The access-link service and the capabilities to declare, or an error array when either is missing.
+	 *
+	 * @param array<int, string> $capabilities What the holder may do.
+	 *
+	 * @return array{0: object, 1: array<int, string>}|array{error: string} The service and capabilities, or an error.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function mintServiceAndCapabilities(array $capabilities): array {
+		$service = $this->gateway->accessLinkService();
+		if ($service === null) {
+			return ['error' => 'This instance cannot publish links: OpenRegister does not offer them'];
+		}
+
+		$declared = $this->declaredCapabilities(capabilities: $capabilities);
+		if ($declared === null) {
+			return ['error' => 'A link may grant reading, commenting or uploading, and nothing else'];
+		}
+
+		return [$service, $declared];
+	}//end mintServiceAndCapabilities()
+
+	/**
+	 * Log a mint OpenRegister refused and describe it.
+	 *
+	 * @param string $subjectType `object` or `file`.
+	 * @param \Throwable $failure Why the mint failed.
+	 *
+	 * @return array<string, string> The error array.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function mintFailed(string $subjectType, \Throwable $failure): array {
+		$this->logger->error(
+			'CaseAccessLinkService: could not mint an access link',
+			[
+				'subjectType' => $subjectType,
+				'exception' => $failure->getMessage(),
+			]
+		);
+		return ['error' => 'Could not create the link'];
+	}//end mintFailed()
 
 	/**
 	 * The capabilities to declare, or null when one of them is not a

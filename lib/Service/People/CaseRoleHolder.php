@@ -124,16 +124,12 @@ class CaseRoleHolder {
 	 */
 	public function bind(array $case, string $uid, string $genericRole, string $displayName): bool {
 		$caseId = $this->idOf(row: $case);
-		if ($caseId === '' || trim($uid) === '' || $this->holdsAny(case: $case, uid: $uid, genericRoles: [$genericRole]) === true) {
+		if ($this->cannotBind(caseRow: $case, caseId: $caseId, uid: $uid, genericRole: $genericRole) === true) {
 			return false;
 		}
 
-		$roleTypes = $this->roleTypeIds(genericRoles: [$genericRole], caseTypeId: trim((string)($case['caseType'] ?? '')));
-		if ($roleTypes === []) {
-			$this->logger->warning(
-				'Dossiq: no role type carries the generic role, so the reader is not bound to the case',
-				['caseId' => $caseId, 'genericRole' => $genericRole],
-			);
+		$roleType = $this->roleTypeToBind(caseRow: $case, caseId: $caseId, genericRole: $genericRole);
+		if ($roleType === null) {
 			return false;
 		}
 
@@ -144,7 +140,7 @@ class CaseRoleHolder {
 				schema: $this->settingsService->getConfigValue('role_schema'),
 				object: [
 					'name' => $this->nameOf(uid: trim($uid), displayName: $displayName),
-					'roleType' => $roleTypes[0],
+					'roleType' => $roleType,
 					'case' => $caseId,
 					'participant' => CaseSeats::USER_PREFIX . trim($uid),
 				],
@@ -159,6 +155,50 @@ class CaseRoleHolder {
 
 		return $saved !== null;
 	}//end bind()
+
+	/**
+	 * Whether the case or the person is missing, or the person holds the role already.
+	 *
+	 * @param array<string, mixed> $caseRow     The stored case.
+	 * @param string               $caseId      The case id.
+	 * @param string               $uid         The person's Nextcloud user id.
+	 * @param string               $genericRole The generic role.
+	 *
+	 * @return bool True when no binding is to be added.
+	 *
+	 * @throws RuntimeException When the bindings cannot be read.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function cannotBind(array $caseRow, string $caseId, string $uid, string $genericRole): bool {
+		return $caseId === '' || trim($uid) === '' || $this->holdsAny(case: $caseRow, uid: $uid, genericRoles: [$genericRole]) === true;
+	}//end cannotBind()
+
+	/**
+	 * The role type to bind a generic role through, or null (logged) when no role type carries it.
+	 *
+	 * @param array<string, mixed> $caseRow     The stored case.
+	 * @param string               $caseId      The case id.
+	 * @param string               $genericRole The generic role.
+	 *
+	 * @return string|null The first matching role type id, or null.
+	 *
+	 * @throws RuntimeException When the role types cannot be read.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function roleTypeToBind(array $caseRow, string $caseId, string $genericRole): ?string {
+		$roleTypes = $this->roleTypeIds(genericRoles: [$genericRole], caseTypeId: trim((string)($caseRow['caseType'] ?? '')));
+		if ($roleTypes === []) {
+			$this->logger->warning(
+				'Dossiq: no role type carries the generic role, so the reader is not bound to the case',
+				['caseId' => $caseId, 'genericRole' => $genericRole],
+			);
+			return null;
+		}
+
+		return $roleTypes[0];
+	}//end roleTypeToBind()
 
 	/**
 	 * What to call a person: the given name, else their Nextcloud display name, else the uid.

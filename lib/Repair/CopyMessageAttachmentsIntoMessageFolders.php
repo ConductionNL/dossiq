@@ -137,25 +137,7 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 			return;
 		}
 
-		$tally = ['copied' => 0, 'skipped' => 0, 'missing' => 0];
-		$page = 1;
-		$full = true;
-		while ($full === true) {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::PAGE_SIZE, '_page' => $page],
-			);
-			$full = (count($rows) === self::PAGE_SIZE);
-			foreach ($rows as $row) {
-				foreach ($this->copyMessage(row: $row) as $outcome) {
-					$tally[$outcome]++;
-				}
-			}
-
-			$page++;
-		}
+		$tally = $this->tallyAll(objectService: $objectService, register: $register, schema: $schema);
 
 		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::DONE_VERSION);
 		$output->info(
@@ -163,6 +145,49 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 			. $tally['skipped'] . ' already there, ' . $tally['missing'] . ' named in the log.'
 		);
 	}//end copyAll()
+
+	/**
+	 * Page through every message, copy its attachments and count the outcomes.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register The register.
+	 * @param string $schema The portal message schema.
+	 *
+	 * @return array<string, int> The tally per outcome.
+	 */
+	private function tallyAll(object $objectService, string $register, string $schema): array {
+		$tally = ['copied' => 0, 'skipped' => 0, 'missing' => 0];
+		$page = 1;
+		$full = true;
+		while ($full === true) {
+			$filters = ['_limit' => self::PAGE_SIZE, '_page' => $page];
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
+			$full = (count($rows) === self::PAGE_SIZE);
+			$tally = $this->tallyPage(rows: $rows, tally: $tally);
+
+			$page++;
+		}
+
+		return $tally;
+	}//end tallyAll()
+
+	/**
+	 * Copy the attachments of one page of messages and add the outcomes to the tally.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The message rows.
+	 * @param array<string, int> $tally The tally so far.
+	 *
+	 * @return array<string, int> The tally.
+	 */
+	private function tallyPage(array $rows, array $tally): array {
+		foreach ($rows as $row) {
+			foreach ($this->copyMessage(row: $row) as $outcome) {
+				$tally[$outcome]++;
+			}
+		}
+
+		return $tally;
+	}//end tallyPage()
 
 	/**
 	 * Copy one message's attachments into its folder.

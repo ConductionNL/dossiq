@@ -202,25 +202,7 @@ class StarterStore {
 		}
 
 		try {
-			if ($this->pastAccessCheck === true) {
-				return $this->asArray(
-					object: $context['service']->saveObject(
-						object: $payload,
-						register: $context['register'],
-						schema: $context['schema'],
-						uuid: $id,
-						_rbac: false,
-					)
-				);
-			}
-
-			return $this->saveObjectAsArray(
-				objectService: $context['service'],
-				register: $context['register'],
-				schema: $context['schema'],
-				object: $payload,
-				uuid: $id,
-			);
+			return $this->write(context: $context, payload: $payload, id: $id);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq starter: could not write a row',
@@ -229,6 +211,39 @@ class StarterStore {
 			return null;
 		}
 	}//end save()
+
+	/**
+	 * Write a row through the object service, past the access check when this store is.
+	 *
+	 * @param array{service: object, register: string, schema: string} $context The store context.
+	 * @param array<string, mixed>                                       $payload The row to write.
+	 * @param string|null                                                $id      The id to update, or null to create.
+	 *
+	 * @return array<string, mixed>|null The stored row.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function write(array $context, array $payload, ?string $id): ?array {
+		if ($this->pastAccessCheck === true) {
+			return $this->asArray(
+				object: $context['service']->saveObject(
+					object: $payload,
+					register: $context['register'],
+					schema: $context['schema'],
+					uuid: $id,
+					_rbac: false,
+				)
+			);
+		}
+
+		return $this->saveObjectAsArray(
+			objectService: $context['service'],
+			register: $context['register'],
+			schema: $context['schema'],
+			object: $payload,
+			uuid: $id,
+		);
+	}//end write()
 
 	/**
 	 * Remove a row.

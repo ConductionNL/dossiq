@@ -115,17 +115,11 @@ class AssignedCasesSource extends RegisterBackedSource {
 	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function itemsFor(string $userId): array {
-		$schema = trim((string)$this->settings->getConfigValue('case_schema', 'case'));
-		if ($schema === '') {
-			$schema = 'case';
-		}
+		$schema = $this->caseSchema();
 
 		// `0`, not `false`: OpenRegister answers a boolean filter value with
 		// no rows, so `false` emptied every queue and every digest.
-		$rows = $this->rows(
-			schema: $schema,
-			filters: ['assignee' => $userId, 'isFinalStatus' => 0]
-		);
+		$rows = $this->rows(schema: $schema, filters: ['assignee' => $userId, 'isFinalStatus' => 0]);
 
 		$items = [];
 		foreach ($rows as $row) {
@@ -134,22 +128,52 @@ class AssignedCasesSource extends RegisterBackedSource {
 				continue;
 			}
 
-			$items[] = new QueueItem(
-				source: $this->name(),
-				subjectType: 'case',
-				subjectId: $id,
-				title: (string)($row['title'] ?? $id),
-				priority: (string)($row['priority'] ?? ''),
-				dueAt: $this->dateOf(row: $row, key: 'deadline'),
-				coveredFor: null,
-				route: ['name' => 'CaseDetail', 'params' => ['id' => $id]],
-				waiting: $this->waitingFactsOf(row: $row),
-				subject: $row
-			);
+			$items[] = $this->itemOf(row: $row, id: $id);
 		}
 
 		return $items;
 	}//end itemsFor()
+
+	/**
+	 * The configured case schema, `case` when none is set.
+	 *
+	 * @return string The schema.
+	 *
+	 * @spec openspec/specs/my-work/spec.md
+	 */
+	private function caseSchema(): string {
+		$schema = trim((string)$this->settings->getConfigValue('case_schema', 'case'));
+		if ($schema === '') {
+			$schema = 'case';
+		}
+
+		return $schema;
+	}//end caseSchema()
+
+	/**
+	 * The queue item of one assigned case.
+	 *
+	 * @param array<string, mixed> $row The case.
+	 * @param string               $id  The case's id.
+	 *
+	 * @return QueueItem The item.
+	 *
+	 * @spec openspec/specs/my-work/spec.md
+	 */
+	private function itemOf(array $row, string $id): QueueItem {
+		return new QueueItem(
+			source: $this->name(),
+			subjectType: 'case',
+			subjectId: $id,
+			title: (string)($row['title'] ?? $id),
+			priority: (string)($row['priority'] ?? ''),
+			dueAt: $this->dateOf(row: $row, key: 'deadline'),
+			coveredFor: null,
+			route: ['name' => 'CaseDetail', 'params' => ['id' => $id]],
+			waiting: $this->waitingFactsOf(row: $row),
+			subject: $row
+		);
+	}//end itemOf()
 
 	/**
 	 * Who this case is waiting on, since when, and how often it has been chased.

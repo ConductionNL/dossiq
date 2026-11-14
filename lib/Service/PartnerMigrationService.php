@@ -223,6 +223,33 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
 	private function migrateOne(object $mapper, array $row): ?array {
+		$partnerUuid = $this->partnerUuidOf(row: $row);
+		if ($partnerUuid === '') {
+			return null;
+		}
+
+		$slug = trim((string)($row['slug'] ?? ''));
+
+		try {
+			return $this->migratePartner(mapper: $mapper, row: $row, partnerUuid: $partnerUuid, slug: $slug);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: partner migration failed for one row', ['partner' => $partnerUuid, 'slug' => $slug, 'exception' => $e->getMessage()],
+			);
+			return null;
+		}//end try
+	}//end migrateOne()
+
+	/**
+	 * The partner's uuid, warning when the row has none.
+	 *
+	 * @param array<string, mixed> $row The partner object.
+	 *
+	 * @return string The uuid, or '' when the row carries no id.
+	 *
+	 * @spec openspec/specs/partner-organisations/spec.md
+	 */
+	private function partnerUuidOf(array $row): string {
 		$partnerUuid = trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
 		if ($partnerUuid === '') {
 			// 🔴 The uuid is the idempotency key, NOT the slug.
@@ -239,41 +266,59 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 			// second would be skipped as "already migrated", silently merging
 			// two organisations into one.
 			$this->logger->warning('Dossiq: partner migration skipped a row with no id');
-			return null;
 		}
 
-		$slug = trim((string)($row['slug'] ?? ''));
+		return $partnerUuid;
+	}//end partnerUuidOf()
 
-		try {
-			$existing = OrganisationLookup::byUuid(mapper: $mapper, uuid: $partnerUuid);
-			if ($existing !== null) {
-				return [
-					'created' => false,
-					'partnerUuid' => $partnerUuid,
-					'organisationUuid' => (string)$existing->getUuid(),
-				];
-			}
+	/**
+	 * Find the partner's Organisation, or create it.
+	 *
+	 * @param object               $mapper      OR OrganisationMapper.
+	 * @param array<string, mixed> $row         The partner object.
+	 * @param string               $partnerUuid The partner's uuid.
+	 * @param string               $slug        The partner's slug.
+	 *
+	 * @return array{created:bool, partnerUuid:string, organisationUuid:string} Result.
+	 *
+	 * @throws Throwable When the lookup or the insert fails.
+	 *
+	 * @spec openspec/specs/partner-organisations/spec.md
+	 */
+	private function migratePartner(object $mapper, array $row, string $partnerUuid, string $slug): array {
+		$existing = OrganisationLookup::byUuid(mapper: $mapper, uuid: $partnerUuid);
+		if ($existing !== null) {
+			return $this->migrationResult(created: false, partnerUuid: $partnerUuid, organisationUuid: (string)$existing->getUuid());
+		}
 
-			$saved = $mapper->insert($this->buildOrganisation(row: $row, slug: $slug, partnerUuid: $partnerUuid));
+		$saved = $mapper->insert($this->buildOrganisation(row: $row, slug: $slug, partnerUuid: $partnerUuid));
 
-			$this->logger->info(
-				'Dossiq: migrated partner to OR Organisation',
-				['partner' => $partnerUuid, 'organisation' => (string)$saved->getUuid(), 'slug' => $slug],
-			);
+		$this->logger->info(
+			'Dossiq: migrated partner to OR Organisation',
+			['partner' => $partnerUuid, 'organisation' => (string)$saved->getUuid(), 'slug' => $slug],
+		);
 
-			return [
-				'created' => true,
-				'partnerUuid' => $partnerUuid,
-				'organisationUuid' => (string)$saved->getUuid(),
-			];
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: partner migration failed for one row',
-				['partner' => $partnerUuid, 'slug' => $slug, 'exception' => $e->getMessage()],
-			);
-			return null;
-		}//end try
-	}//end migrateOne()
+		return $this->migrationResult(created: true, partnerUuid: $partnerUuid, organisationUuid: (string)$saved->getUuid());
+	}//end migratePartner()
+
+	/**
+	 * The result of migrating one partner.
+	 *
+	 * @param bool   $created          Whether the Organisation was created.
+	 * @param string $partnerUuid      The partner's uuid.
+	 * @param string $organisationUuid The Organisation's uuid.
+	 *
+	 * @return array{created:bool, partnerUuid:string, organisationUuid:string} Result.
+	 *
+	 * @spec openspec/specs/partner-organisations/spec.md
+	 */
+	private function migrationResult(bool $created, string $partnerUuid, string $organisationUuid): array {
+		return [
+			'created' => $created,
+			'partnerUuid' => $partnerUuid,
+			'organisationUuid' => $organisationUuid,
+		];
+	}//end migrationResult()
 
 	/**
 	 * Build an Organisation from a partner row.

@@ -192,10 +192,7 @@ class ApiCredentialResolver {
 			return $this->jwtValidator->consumerFor(authorization: $authorization);
 		}
 
-		$apiKey = trim($request->getHeader(self::API_KEY_HEADER));
-		if ($apiKey === '' && stripos($authorization, 'ApiKey ') === 0) {
-			$apiKey = trim(substr($authorization, strlen('ApiKey ')));
-		}
+		$apiKey = $this->apiKeyOf(request: $request, authorization: $authorization);
 
 		if ($apiKey !== '') {
 			return $this->apiKeyConsumer(apiKey: $apiKey);
@@ -205,6 +202,40 @@ class ApiCredentialResolver {
 			throw new ZgwAuthValidationException(message: 'Unsupported authorization scheme');
 		}
 
+		return $this->certificateConsumerOf(request: $request);
+	}//end consumerOf()
+
+	/**
+	 * The API key the request presents, in its header or as an `ApiKey` authorization.
+	 *
+	 * @param IRequest $request       The request.
+	 * @param string   $authorization The trimmed Authorization header.
+	 *
+	 * @return string The key, or '' when none is presented.
+	 *
+	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-the-caller-may-present-a-jwt-an-api-key-or-a-client-certificate-req-paa-02
+	 */
+	private function apiKeyOf(IRequest $request, string $authorization): string {
+		$apiKey = trim($request->getHeader(self::API_KEY_HEADER));
+		if ($apiKey === '' && stripos($authorization, 'ApiKey ') === 0) {
+			$apiKey = trim(substr($authorization, strlen('ApiKey ')));
+		}
+
+		return $apiKey;
+	}//end apiKeyOf()
+
+	/**
+	 * The consumer of the client certificate a trusted proxy forwarded.
+	 *
+	 * @param IRequest $request The request.
+	 *
+	 * @return object|null The consumer, null without a certificate header.
+	 *
+	 * @throws ZgwAuthValidationException When the header comes from an untrusted proxy or does not resolve.
+	 *
+	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-the-caller-may-present-a-jwt-an-api-key-or-a-client-certificate-req-paa-02
+	 */
+	private function certificateConsumerOf(IRequest $request): ?object {
 		$certHeader = trim($this->settings->getConfigValue(self::CERT_HEADER_KEY));
 		if ($certHeader === '') {
 			return null;
@@ -220,7 +251,7 @@ class ApiCredentialResolver {
 		}
 
 		return $this->certificateConsumer(fingerprint: $fingerprint);
-	}//end consumerOf()
+	}//end certificateConsumerOf()
 
 	/**
 	 * The consumer of type `apiKey` whose stored key equals the presented one.

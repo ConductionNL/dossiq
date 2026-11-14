@@ -47,6 +47,8 @@ use Psr\Log\LoggerInterface;
  * OpenRegister persistence for workflowTemplate objects and their references.
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class WorkflowDefinitionRepository {
 
@@ -246,27 +248,49 @@ class WorkflowDefinitionRepository {
 		}
 
 		try {
-			$results = $this->searchObjectsAsArrays(
-				objectService: $context['objectService'],
-				register: $context['register'],
-				schema: $context['schema'],
-				filters: ['caseType' => $caseTypeId, '_limit' => 500],
-			);
+			$results = $this->searchDefinitions(context: $context, caseTypeId: $caseTypeId);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Dossiq: failed to list workflow definitions for caseType',
-				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
+				'Dossiq: failed to list workflow definitions for caseType', ['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}
 
-		$rows = [];
-		foreach ($results as $row) {
-			$normalized = $this->normalize(row: $row);
-			if ($normalized !== null) {
-				$rows[] = $normalized;
-			}
-		}
+		return $this->newestFirst(results: $results);
+	}//end listVersionsForCaseType()
+
+	/**
+	 * Search the definitions of a caseType.
+	 *
+	 * @param array<string, mixed> $context    The object service, register and schema.
+	 * @param string               $caseTypeId The caseType UUID.
+	 *
+	 * @return array<int, array<string, mixed>> The raw rows.
+	 *
+	 * @throws \Throwable When the search fails.
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 */
+	private function searchDefinitions(array $context, string $caseTypeId): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $context['objectService'],
+			register: $context['register'],
+			schema: $context['schema'],
+			filters: ['caseType' => $caseTypeId, '_limit' => 500],
+		);
+	}//end searchDefinitions()
+
+	/**
+	 * Normalise the rows and sort them by version, newest first.
+	 *
+	 * @param array<int, array<string, mixed>> $results The raw rows.
+	 *
+	 * @return array<int, array<string, mixed>> The versions, newest first.
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 */
+	private function newestFirst(array $results): array {
+		$rows = $this->normalizedRows(results: $results);
 
 		usort(
 			$rows,
@@ -276,7 +300,28 @@ class WorkflowDefinitionRepository {
 		);
 
 		return $rows;
-	}//end listVersionsForCaseType()
+	}//end newestFirst()
+
+	/**
+	 * Normalise the rows, dropping those that are not a definition.
+	 *
+	 * @param array<int, array<string, mixed>> $results The raw rows.
+	 *
+	 * @return array<int, array<string, mixed>> The normalised rows.
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 */
+	private function normalizedRows(array $results): array {
+		$rows = [];
+		foreach ($results as $row) {
+			$normalized = $this->normalize(row: $row);
+			if ($normalized !== null) {
+				$rows[] = $normalized;
+			}
+		}
+
+		return $rows;
+	}//end normalizedRows()
 
 	/**
 	 * Resolve the next monotonically increasing version number for a given
@@ -335,31 +380,10 @@ class WorkflowDefinitionRepository {
 
 		try {
 			if ($uuid === null) {
-				return $this->normalize(
-					row: $context['objectService']->saveObject(
-						object: $payload,
-						register: $context['register'],
-						schema: $context['schema'],
-					)
-				);
+				return $this->createDefinition(context: $context, payload: $payload);
 			}
 
-			$merged = $this->mergeOntoStored(
-				context: $context,
-				uuid: $uuid,
-				payload: $payload,
-				jsonProperties: self::JSON_STRING_PROPERTIES,
-			);
-			if ($merged === null) {
-				return null;
-			}
-
-			$written = $context['objectService']->saveObject(
-				object: $merged,
-				register: $context['register'],
-				schema: $context['schema'],
-				uuid: $uuid,
-			);
+			$written = $this->updateDefinition(context: $context, uuid: $uuid, payload: $payload);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to save workflow definition',
@@ -370,6 +394,56 @@ class WorkflowDefinitionRepository {
 
 		return $this->normalize(row: $written);
 	}//end save()
+
+	/**
+	 * Merge the changed properties onto a stored definition and write it.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $context The store context.
+	 * @param string $uuid The row to update.
+	 * @param array<string, mixed> $payload The properties to write.
+	 *
+	 * @return mixed What the object service wrote, or null when the stored row is unreadable.
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 */
+	private function updateDefinition(array $context, string $uuid, array $payload): mixed {
+		$merged = $this->mergeOntoStored(
+			context: $context,
+			uuid: $uuid,
+			payload: $payload,
+			jsonProperties: self::JSON_STRING_PROPERTIES,
+		);
+		if ($merged === null) {
+			return null;
+		}
+
+		return $context['objectService']->saveObject(
+			object: $merged,
+			register: $context['register'],
+			schema: $context['schema'],
+			uuid: $uuid,
+		);
+	}//end updateDefinition()
+
+	/**
+	 * Create a workflow definition row.
+	 *
+	 * @param array<string, mixed> $context The object service, register and schema.
+	 * @param array<string, mixed> $payload The properties to write.
+	 *
+	 * @return array<string, mixed>|null The written row.
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 */
+	private function createDefinition(array $context, array $payload): ?array {
+		return $this->normalize(
+			row: $context['objectService']->saveObject(
+				object: $payload,
+				register: $context['register'],
+				schema: $context['schema'],
+			)
+		);
+	}//end createDefinition()
 
 	/**
 	 * Lay the changed properties over the row as it is stored.
@@ -424,6 +498,20 @@ class WorkflowDefinitionRepository {
 		unset($current['@self'], $current['id']);
 
 		$merged = array_merge($current, $payload);
+		return $this->encodeJsonProperties(merged: $merged, jsonProperties: $jsonProperties);
+	}//end mergeOntoStored()
+
+	/**
+	 * Encode the array-valued JSON-string properties back to strings.
+	 *
+	 * @param array<string, mixed> $merged The merged object.
+	 * @param array<int, string> $jsonProperties Properties the schema stores as a JSON string.
+	 *
+	 * @return array<string, mixed> The object ready to store.
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 */
+	private function encodeJsonProperties(array $merged, array $jsonProperties): array {
 		foreach ($jsonProperties as $property) {
 			if (is_array(($merged[$property] ?? null)) === true) {
 				$merged[$property] = json_encode($merged[$property]);
@@ -431,7 +519,7 @@ class WorkflowDefinitionRepository {
 		}
 
 		return $merged;
-	}//end mergeOntoStored()
+	}//end encodeJsonProperties()
 
 	/**
 	 * Pin `caseType.workflowDefinition` to a definition id.
@@ -526,6 +614,19 @@ class WorkflowDefinitionRepository {
 			return [];
 		}
 
+		return $this->idsOf(rows: $rows);
+	}//end listStatusTypeIds()
+
+	/**
+	 * The ids of the rows that carry one.
+	 *
+	 * @param array<int, mixed> $rows The rows.
+	 *
+	 * @return array<int, string> The ids.
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 */
+	private function idsOf(array $rows): array {
 		$ids = [];
 		foreach ($rows as $row) {
 			$normalized = $this->normalize(row: $row);
@@ -540,7 +641,7 @@ class WorkflowDefinitionRepository {
 		}
 
 		return $ids;
-	}//end listStatusTypeIds()
+	}//end idsOf()
 
 	/**
 	 * Whether the caseType has any cases pinned to it.

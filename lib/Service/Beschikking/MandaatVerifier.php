@@ -85,32 +85,74 @@ class MandaatVerifier {
 		string $caseType,
 	): bool {
 		foreach ((array)($regeling['mandateGroups'] ?? []) as $groep) {
-			if ((string)($groep['level'] ?? '') !== $level) {
+			if ($this->groupMatches(groep: $groep, level: $level, decisionType: $decisionType, caseType: $caseType) === false) {
 				continue;
 			}
 
-			$caseTypes = (array)($groep['caseTypes'] ?? []);
-			if (empty($caseTypes) === false && in_array($caseType, $caseTypes, true) === false) {
-				continue;
-			}
-
-			$types = (array)($groep['decisionTypes'] ?? []);
-			if (empty($types) === false && in_array($decisionType, $types, true) === false) {
-				continue;
-			}
-
-			$limit = ($groep['to_amount'] ?? null);
-			if ($limit === null) {
+			if ($this->withinLimit(groep: $groep, amount: $amount) === true) {
 				return true;
 			}
-
-			if ($amount <= (float)$limit) {
-				return true;
-			}
-		}//end foreach
+		}
 
 		return false;
 	}//end verifyMandaat()
+
+	/**
+	 * Whether a mandate group is for this level, case type and decision type.
+	 *
+	 * @param mixed  $groep        The mandate group.
+	 * @param string $level        The proposed approver level.
+	 * @param string $decisionType The decision type.
+	 * @param string $caseType     The case type.
+	 *
+	 * @return bool True when the group applies.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function groupMatches(mixed $groep, string $level, string $decisionType, string $caseType): bool {
+		if ((string)($groep['level'] ?? '') !== $level) {
+			return false;
+		}
+
+		if ($this->listAllows(list: (array)($groep['caseTypes'] ?? []), value: $caseType) === false) {
+			return false;
+		}
+
+		return $this->listAllows(list: (array)($groep['decisionTypes'] ?? []), value: $decisionType);
+	}//end groupMatches()
+
+	/**
+	 * Whether a group's list allows a value: an empty list allows every value.
+	 *
+	 * @param array<mixed> $list  The group's list.
+	 * @param string       $value The value asked about.
+	 *
+	 * @return bool True when the list is empty or holds the value.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function listAllows(array $list, string $value): bool {
+		return (empty($list) === true || in_array($value, $list, true) === true);
+	}//end listAllows()
+
+	/**
+	 * Whether an amount stays within a group's limit; a group without a limit has none.
+	 *
+	 * @param mixed $groep  The mandate group.
+	 * @param float $amount The decision bedrag.
+	 *
+	 * @return bool True when the amount is covered.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function withinLimit(mixed $groep, float $amount): bool {
+		$limit = ($groep['to_amount'] ?? null);
+		if ($limit === null) {
+			return true;
+		}
+
+		return ($amount <= (float)$limit);
+	}//end withinLimit()
 
 	/**
 	 * Resolve the mandaatRegeling applicable to a zaaktype.
@@ -136,6 +178,26 @@ class MandaatVerifier {
 			return [];
 		}
 
+		$regelingen = $this->allRegelingen(objectService: $objectService, register: $register, schema: $schema);
+
+		return $this->regelingFor(regelingen: $regelingen, caseType: $caseType);
+	}//end resolveMandaatRegeling()
+
+	/**
+	 * Every mandaatRegeling in the register.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register      The register id.
+	 * @param string $schema        The mandaatRegeling schema id.
+	 *
+	 * @return array<int, array<string, mixed>> The regelingen.
+	 *
+	 * @throws RefusedException When the mandate register could not be read at all.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
+	 */
+	private function allRegelingen(object $objectService, string $register, string $schema): array {
 		try {
 			$regelingen = $this->searchObjectsAsArrays(
 				objectService: $objectService,
@@ -156,6 +218,21 @@ class MandaatVerifier {
 			);
 		}//end try
 
+		return $regelingen;
+	}//end allRegelingen()
+
+	/**
+	 * The first regeling with a mandate group for the case type; any regeling with a group when no case type is given.
+	 *
+	 * @param array<int, array<string, mixed>> $regelingen The regelingen.
+	 * @param string                           $caseType   The case type slug.
+	 *
+	 * @return array<string, mixed> The regeling, or an empty array when none applies.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
+	 */
+	private function regelingFor(array $regelingen, string $caseType): array {
 		foreach ((array)$regelingen as $regeling) {
 			$arr = $this->toArray(value: $regeling);
 			foreach ((array)($arr['mandateGroups'] ?? []) as $groep) {
@@ -167,7 +244,7 @@ class MandaatVerifier {
 		}
 
 		return [];
-	}//end resolveMandaatRegeling()
+	}//end regelingFor()
 
 	/**
 	 * Resolve the highest niveau a user is authorised for, verifying the mandaat.

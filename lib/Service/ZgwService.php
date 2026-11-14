@@ -427,27 +427,56 @@ class ZgwService implements ZgwServiceInterface {
 
 			if (isset($queryMapping[$key]) === true) {
 				$mapped = $queryMapping[$key];
-				$field = $mapped['field'] ?? $key;
-				$operator = $mapped['operator'] ?? null;
-
-				if (($mapped['extractUuid'] ?? false) === true
-					&& is_string($value) === true
-				) {
-					$parts = explode('/', rtrim($value, '/'));
-					$value = end($parts);
-				}
-
-				$filterKey = $field;
-				if ($operator !== null) {
-					$filterKey = $field . '.' . $operator;
-				}
-
-				$filters[$filterKey] = $value;
+				$filterKey = $this->filterKeyOf(mapped: $mapped, key: $key);
+				$filters[$filterKey] = $this->filterValueOf(mapped: $mapped, value: $value);
 			}
 		}//end foreach
 
 		return $filters;
 	}//end translateQueryParams()
+
+	/**
+	 * The OpenRegister filter key a mapped ZGW query parameter translates to.
+	 *
+	 * @param array      $mapped The parameter's query mapping
+	 * @param int|string $key    The ZGW query parameter
+	 *
+	 * @return mixed The field, suffixed with `.operator` when the mapping declares one
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function filterKeyOf(array $mapped, int|string $key): mixed {
+		$field = $mapped['field'] ?? $key;
+		$operator = $mapped['operator'] ?? null;
+
+		$filterKey = $field;
+		if ($operator !== null) {
+			$filterKey = $field . '.' . $operator;
+		}
+
+		return $filterKey;
+	}//end filterKeyOf()
+
+	/**
+	 * The filter value of a mapped ZGW query parameter, reduced to its last path segment when the mapping extracts a UUID.
+	 *
+	 * @param array $mapped The parameter's query mapping
+	 * @param mixed $value  The query parameter value
+	 *
+	 * @return mixed The filter value
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function filterValueOf(array $mapped, mixed $value): mixed {
+		if (($mapped['extractUuid'] ?? false) === true
+			&& is_string($value) === true
+		) {
+			$parts = explode('/', rtrim($value, '/'));
+			$value = end($parts);
+		}
+
+		return $value;
+	}//end filterValueOf()
 
 	/**
 	 * Create a Mapping object for outbound (English to Dutch) transformation.
@@ -1063,13 +1092,9 @@ class ZgwService implements ZgwServiceInterface {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function handleIndex(IRequest $request, string $zgwApi, string $resource): JSONResponse {
-		if ($this->objectService === null) {
-			return $this->unavailableResponse();
-		}
-
-		$mappingConfig = $this->loadMappingConfig(zgwApi: $zgwApi, resource: $resource);
-		if ($mappingConfig === null) {
-			return $this->mappingNotFoundResponse(zgwApi: $zgwApi, resource: $resource);
+		$mappingConfig = $this->mappingOrRefusal(route: new ResourceRoute(request: $request, api: $zgwApi, resource: $resource));
+		if ($mappingConfig instanceof JSONResponse) {
+			return $mappingConfig;
 		}
 
 		if (($mappingConfig['enabled'] ?? true) === false) {
@@ -1080,59 +1105,7 @@ class ZgwService implements ZgwServiceInterface {
 		}
 
 		try {
-			$params = $request->getParams();
-			$filters = $this->translateQueryParams(params: $params, mappingConfig: $mappingConfig);
-
-			$page = max(1, (int)($params['page'] ?? 1));
-			$pageSize = max(1, min(100, (int)($params['pageSize'] ?? 20)));
-
-			$searchParams = array_merge(
-				$filters,
-				[
-					'_limit' => $pageSize,
-					'_offset' => (($page - 1) * $pageSize),
-				]
-			);
-
-			$query = $this->objectService->buildSearchQuery(
-				requestParams: $searchParams,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$result = $this->objectService->searchObjectsPaginated(
-				query: $query
-			);
-
-			$objects = $result['results'] ?? [];
-			$totalCount = $result['total'] ?? count($objects);
-			$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
-
-			$outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
-			$mapped = [];
-			foreach ($objects as $object) {
-				$objectData = $object;
-				if (is_array($object) === false) {
-					$objectData = $object->jsonSerialize();
-				}
-
-				$mapped[] = $this->applyOutboundMapping(
-					objectData: $objectData,
-					mapping: $outboundMapping,
-					mappingConfig: $mappingConfig,
-					baseUrl: $baseUrl
-				);
-			}
-
-			$paginatedResult = $this->paginationHelper->wrapResults(
-				mappedObjects: $mapped,
-				totalCount: $totalCount,
-				page: $page,
-				pageSize: $pageSize,
-				baseUrl: $baseUrl,
-				queryParams: $params
-			);
-
-			return new JSONResponse(data: $paginatedResult);
+			return $this->listMapped(request: $request, zgwApi: $zgwApi, resource: $resource, mappingConfig: $mappingConfig);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'ZGW list error: ' . $e->getMessage(),
@@ -1144,6 +1117,91 @@ class ZgwService implements ZgwServiceInterface {
 			);
 		}//end try
 	}//end handleIndex()
+
+	/**
+	 * Search one page of a resource and map it outbound.
+	 *
+	 * @param IRequest $request The request object
+	 * @param string $zgwApi The ZGW API group
+	 * @param string $resource The ZGW resource name
+	 * @param array $mappingConfig The mapping configuration
+	 *
+	 * @return JSONResponse The paginated list
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function listMapped(IRequest $request, string $zgwApi, string $resource, array $mappingConfig): JSONResponse {
+		$params = $request->getParams();
+		$filters = $this->translateQueryParams(params: $params, mappingConfig: $mappingConfig);
+
+		$page = max(1, (int)($params['page'] ?? 1));
+		$pageSize = max(1, min(100, (int)($params['pageSize'] ?? 20)));
+
+		$searchParams = array_merge(
+			$filters,
+			[
+				'_limit' => $pageSize,
+				'_offset' => (($page - 1) * $pageSize),
+			]
+		);
+
+		$query = $this->objectService->buildSearchQuery(
+			requestParams: $searchParams,
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema']
+		);
+		$result = $this->objectService->searchObjectsPaginated(
+			query: $query
+		);
+
+		$objects = $result['results'] ?? [];
+		$totalCount = $result['total'] ?? count($objects);
+		$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
+
+		$mapped = $this->mapListObjects(objects: $objects, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
+
+		$paginatedResult = $this->paginationHelper->wrapResults(
+			mappedObjects: $mapped,
+			totalCount: $totalCount,
+			page: $page,
+			pageSize: $pageSize,
+			baseUrl: $baseUrl,
+			queryParams: $params
+		);
+
+		return new JSONResponse(data: $paginatedResult);
+	}//end listMapped()
+
+	/**
+	 * Map each listed object outbound.
+	 *
+	 * @param array $objects The stored objects
+	 * @param array $mappingConfig The mapping configuration
+	 * @param string $baseUrl The resource base URL
+	 *
+	 * @return array The mapped objects
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function mapListObjects(array $objects, array $mappingConfig, string $baseUrl): array {
+		$outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
+		$mapped = [];
+		foreach ($objects as $object) {
+			$objectData = $object;
+			if (is_array($object) === false) {
+				$objectData = $object->jsonSerialize();
+			}
+
+			$mapped[] = $this->applyOutboundMapping(
+				objectData: $objectData,
+				mapping: $outboundMapping,
+				mappingConfig: $mappingConfig,
+				baseUrl: $baseUrl
+			);
+		}
+
+		return $mapped;
+	}//end mapListObjects()
 
 	/**
 	 * Generic create operation for a ZGW resource.
@@ -1286,13 +1344,9 @@ class ZgwService implements ZgwServiceInterface {
 		string $resource,
 		string $uuid,
 	): JSONResponse {
-		if ($this->objectService === null) {
-			return $this->unavailableResponse();
-		}
-
-		$mappingConfig = $this->loadMappingConfig(zgwApi: $zgwApi, resource: $resource);
-		if ($mappingConfig === null) {
-			return $this->mappingNotFoundResponse(zgwApi: $zgwApi, resource: $resource);
+		$mappingConfig = $this->mappingOrRefusal(route: new ResourceRoute(request: $request, api: $zgwApi, resource: $resource));
+		if ($mappingConfig instanceof JSONResponse) {
+			return $mappingConfig;
 		}
 
 		try {
@@ -1310,22 +1364,13 @@ class ZgwService implements ZgwServiceInterface {
 		}
 
 		try {
-			$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
-			$outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
-
-			$objectData = $object;
-			if (is_array($object) === false) {
-				$objectData = $object->jsonSerialize();
-			}
-
-			$mapped = $this->applyOutboundMapping(
-				objectData: $objectData,
-				mapping: $outboundMapping,
+			return $this->showMapped(
+				request: $request,
+				zgwApi: $zgwApi,
+				resource: $resource,
 				mappingConfig: $mappingConfig,
-				baseUrl: $baseUrl
+				object: $object
 			);
-
-			return new JSONResponse(data: $mapped);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'ZGW show error: ' . $e->getMessage(),
@@ -1337,6 +1382,44 @@ class ZgwService implements ZgwServiceInterface {
 			);
 		}//end try
 	}//end handleShow()
+
+	/**
+	 * Map one stored object outbound.
+	 *
+	 * @param IRequest $request The request object
+	 * @param string $zgwApi The ZGW API group
+	 * @param string $resource The ZGW resource name
+	 * @param array $mappingConfig The mapping configuration
+	 * @param mixed $object The stored object
+	 *
+	 * @return JSONResponse The mapped object
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function showMapped(
+		IRequest $request,
+		string $zgwApi,
+		string $resource,
+		array $mappingConfig,
+		mixed $object,
+	): JSONResponse {
+		$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
+		$outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
+
+		$objectData = $object;
+		if (is_array($object) === false) {
+			$objectData = $object->jsonSerialize();
+		}
+
+		return new JSONResponse(
+			data: $this->applyOutboundMapping(
+				objectData: $objectData,
+				mapping: $outboundMapping,
+				mappingConfig: $mappingConfig,
+				baseUrl: $baseUrl
+			)
+		);
+	}//end showMapped()
 
 	/**
 	 * Generic update (PUT/PATCH) operation for a ZGW resource.

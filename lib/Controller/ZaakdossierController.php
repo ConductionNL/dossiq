@@ -155,16 +155,42 @@ class ZaakdossierController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
-		$metadata = $this->uploadHandler->decodeMetadata(raw: $this->request->getParam('metadata', '{}'));
-		if (($metadata['auteur'] ?? '') === '') {
-			$metadata['auteur'] = $user->getDisplayName();
-		}
+		$metadata = $this->uploadMetadataFor(fallbackAuthor: static fn (): string => $user->getDisplayName());
 
 		$files = $this->uploadHandler->normaliseUploadedFiles(uploaded: $this->request->getUploadedFile('files'));
 		if (empty($files) === true) {
 			return new JSONResponse(['error' => 'No files uploaded'], Http::STATUS_BAD_REQUEST);
 		}
 
+		return $this->uploadEach(caseId: $caseId, files: $files, metadata: $metadata);
+	}//end uploadDocument()
+
+	/**
+	 * The metadata sent with an upload, with the user as auteur when it names none.
+	 *
+	 * @param callable(): string $fallbackAuthor Reads the current user's display name.
+	 *
+	 * @return array The metadata.
+	 */
+	private function uploadMetadataFor(callable $fallbackAuthor): array {
+		$metadata = $this->uploadHandler->decodeMetadata(raw: $this->request->getParam('metadata', '{}'));
+		if (($metadata['auteur'] ?? '') === '') {
+			$metadata['auteur'] = $fallbackAuthor();
+		}
+
+		return $metadata;
+	}//end uploadMetadataFor()
+
+	/**
+	 * Upload each file into the case and answer the per-file results.
+	 *
+	 * @param string $caseId The case.
+	 * @param array $files The normalised uploaded files.
+	 * @param array $metadata The metadata for every file.
+	 *
+	 * @return JSONResponse 201 when at least one file was created, else 422.
+	 */
+	private function uploadEach(string $caseId, array $files, array $metadata): JSONResponse {
 		$results = [];
 		foreach ($files as $file) {
 			$results[] = $this->uploadHandler->uploadOne(
@@ -189,7 +215,7 @@ class ZaakdossierController extends Controller {
 		}
 
 		return new JSONResponse(['results' => $results], Http::STATUS_CREATED);
-	}//end uploadDocument()
+	}//end uploadEach()
 
 	/**
 	 * Link an existing informatieobject to a case.
@@ -298,6 +324,15 @@ class ZaakdossierController extends Controller {
 			return $authError;
 		}
 
+		return $this->saveMetadata(infoObjectId: $infoObjectId, metadata: $this->metadataFromRequest());
+	}//end updateMetadata()
+
+	/**
+	 * The metadata fields a request sets, leaving out the ones it does not send.
+	 *
+	 * @return array The metadata.
+	 */
+	private function metadataFromRequest(): array {
 		$metadata = [
 			'title' => $this->request->getParam('title'),
 			// Key = schema property (renamed). The request param keeps both
@@ -317,6 +352,18 @@ class ZaakdossierController extends Controller {
 		];
 		$metadata = array_filter($metadata, static fn ($value) => $value !== null);
 
+		return $metadata;
+	}//end metadataFromRequest()
+
+	/**
+	 * Save a document's metadata, answering a conflict as 409 and an unavailable store as 503.
+	 *
+	 * @param string $infoObjectId The document.
+	 * @param array $metadata The metadata.
+	 *
+	 * @return JSONResponse
+	 */
+	private function saveMetadata(string $infoObjectId, array $metadata): JSONResponse {
 		try {
 			$result = $this->fileService->updateMetadata(infoObjectId: $infoObjectId, metadata: $metadata);
 		} catch (\DomainException $e) {
@@ -326,7 +373,7 @@ class ZaakdossierController extends Controller {
 		}
 
 		return new JSONResponse($result);
-	}//end updateMetadata()
+	}//end saveMetadata()
 
 	/**
 	 * Which of these documents are in an approval route, and at which step.

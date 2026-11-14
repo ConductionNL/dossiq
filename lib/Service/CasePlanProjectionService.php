@@ -449,17 +449,8 @@ class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 	 * @return array{projected: boolean, reason: string} What it did, and why.
 	 */
 	private function createPlan(object $plans, string $caseId, array $definition): array {
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
-		$registerId = null;
-		if ($register !== '') {
-			$registerId = (int)$register;
-		}
-
-		$schemaId = null;
-		if ($schema !== '') {
-			$schemaId = (int)$schema;
-		}
+		$registerId = $this->configuredId(key: 'register');
+		$schemaId = $this->configuredId(key: 'case_schema');
 
 		// An OpenRegister from before the system verbs would refuse a plan
 		// with no identity anyway; say which, instead of logging a refusal
@@ -470,23 +461,31 @@ class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 		}
 
 		try {
-			$plans->createPlanAsSystem(
-				objectUuid: $caseId,
-				registerId: $registerId,
-				schemaId: $schemaId,
-				definition: $definition,
-				app: self::SYSTEM_APP,
-			);
+			$plans->createPlanAsSystem(objectUuid: $caseId, registerId: $registerId, schemaId: $schemaId, definition: $definition, app: self::SYSTEM_APP);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'CasePlanProjectionService: OpenRegister refused the projected plan',
-				['caseId' => $caseId, 'exception' => $e->getMessage()]
-			);
+			$this->logger->error('CasePlanProjectionService: OpenRegister refused the projected plan', ['caseId' => $caseId, 'exception' => $e->getMessage()]);
 			return ['projected' => false, 'reason' => $e->getMessage()];
 		}
 
 		return ['projected' => true, 'reason' => 'projected'];
 	}//end createPlan()
+
+	/**
+	 * A configured register or schema id, or null when it is not configured.
+	 *
+	 * @param string $key The config key.
+	 *
+	 * @return int|null The id.
+	 */
+	private function configuredId(string $key): ?int {
+		$value = $this->settingsService->getConfigValue(key: $key);
+		$id = null;
+		if ($value !== '') {
+			$id = (int)$value;
+		}
+
+		return $id;
+	}//end configuredId()
 
 	/**
 	 * Convert one plan item and, for a stage, its children.

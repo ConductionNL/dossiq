@@ -130,39 +130,84 @@ class SeedStaffGroup implements IRepairStep {
 			return;
 		}
 
+		$target = $this->seedTarget(output: $output);
+		if ($target === null) {
+			return;
+		}
+
+		[$objectService, $group] = $target;
+		$userIds = $this->staffUserIds(objectService: $objectService, output: $output);
+		if ($userIds === null) {
+			return;
+		}
+
+		$this->seed(group: $group, userIds: $userIds, output: $output);
+	}//end run()
+
+	/**
+	 * OpenRegister's object service and the staff group, or null (said on the output) when either is missing.
+	 *
+	 * @param IOutput $output The upgrade output.
+	 *
+	 * @return array{0: object, 1: IGroup}|null The object service and the group.
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function seedTarget(IOutput $output): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			$output->info('Staff group: OpenRegister unavailable, seeding left for the next upgrade.');
-			return;
+			return null;
 		}
 
 		$group = $this->staffGroup();
 		if ($group === null) {
 			$output->warning('Staff group: "' . self::STAFF_GROUP . '" could not be created, seeding left for the next upgrade.');
-			return;
+			return null;
 		}
 
+		return [$objectService, $group];
+	}//end seedTarget()
+
+	/**
+	 * The handling team members and assignees, or null (logged and said on the output) when they cannot be read.
+	 *
+	 * @param object  $objectService OpenRegister's object service.
+	 * @param IOutput $output        The upgrade output.
+	 *
+	 * @return array<int, string>|null User ids, possibly repeated.
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function staffUserIds(object $objectService, IOutput $output): ?array {
 		try {
-			$userIds = (array)$this->runAsSystemIfAvailable(
+			return (array)$this->runAsSystemIfAvailable(
 				objectService: $objectService,
-				operation: fn (): array => array_merge(
-					$this->handlingTeamMembers(),
-					$this->assignees(objectService: $objectService)
-				)
+				operation: fn (): array => array_merge($this->handlingTeamMembers(), $this->assignees(objectService: $objectService))
 			);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the staff group could not be seeded',
-				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
-			);
+			$this->logger->warning('Dossiq: the staff group could not be seeded', ['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]);
 			$output->warning('Staff group: the case types or cases could not be read, seeding left for the next upgrade.');
-			return;
+			return null;
 		}
+	}//end staffUserIds()
 
+	/**
+	 * Add the people to the group, and mark the seeding done.
+	 *
+	 * @param IGroup             $group   The staff group.
+	 * @param array<int, string> $userIds User ids, possibly repeated.
+	 * @param IOutput            $output  The upgrade output.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function seed(IGroup $group, array $userIds, IOutput $output): void {
 		$added = $this->addAll(group: $group, userIds: $userIds);
 		$this->appConfig->setValueBool(AppIdentity::APP_ID, self::MARKER, true);
 		$output->info('Staff group: ' . $added . ' people added to "' . self::STAFF_GROUP . '".');
-	}//end run()
+	}//end seed()
 
 	/**
 	 * The staff group, created when it is missing.

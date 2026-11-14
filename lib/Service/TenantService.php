@@ -125,6 +125,20 @@ class TenantService implements TenantServiceInterface {
 			return true;
 		}
 
+		return $this->writeAnchor(objectService: $objectService, uuid: $uuid);
+	}//end ensureAuditAnchor()
+
+	/**
+	 * Write the tenant audit anchor of an Organisation, and report whether it exists afterwards.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $uuid          The Organisation's uuid, which is the tenant uuid.
+	 *
+	 * @return bool True when the anchor exists afterwards.
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
+	 */
+	private function writeAnchor(object $objectService, string $uuid): bool {
 		$organisation = $this->organisations->findOrganisation(uuid: $uuid);
 		if ($organisation === null) {
 			$this->logger->warning('Dossiq: no Organisation to anchor the tenant audit trail on', ['organisation' => $uuid]);
@@ -149,7 +163,7 @@ class TenantService implements TenantServiceInterface {
 		}
 
 		return $this->anchorExists(objectService: $objectService, uuid: $uuid);
-	}//end ensureAuditAnchor()
+	}//end writeAnchor()
 
 	/**
 	 * The anchor's fields, read off the Organisation.

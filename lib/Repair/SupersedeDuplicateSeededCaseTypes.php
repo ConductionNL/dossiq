@@ -126,12 +126,7 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 	 */
 	private function supersede(object $objectService, string $register, string $schema): int {
 		try {
-			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => 1000],
-			);
+			$rows = $this->caseTypeRows(objectService: $objectService, register: $register, schema: $schema);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not read the case types to supersede seeded duplicates',
@@ -140,22 +135,56 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 			return 0;
 		}
 
+		return $this->supersedeGroups(objectService: $objectService, register: $register, schema: $schema, rows: $rows);
+	}//end supersede()
+
+	/**
+	 * Read the stored case types.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $register      The register id.
+	 * @param string $schema        The case type schema id.
+	 *
+	 * @return array<int, array<string, mixed>> The stored case types.
+	 *
+	 * @throws Throwable When the read fails.
+	 *
+	 * @spec openspec/specs/case-type-seed-data/spec.md
+	 */
+	private function caseTypeRows(object $objectService, string $register, string $schema): array {
+		return $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['_limit' => 1000],
+		);
+	}//end caseTypeRows()
+
+	/**
+	 * Supersede every older copy by the newest of its group.
+	 *
+	 * @param object                           $objectService OpenRegister's ObjectService.
+	 * @param string                           $register      The register id.
+	 * @param string                           $schema        The case type schema id.
+	 * @param array<int, array<string, mixed>> $rows          The stored case types.
+	 *
+	 * @return integer How many copies were superseded.
+	 *
+	 * @spec openspec/specs/case-type-seed-data/spec.md
+	 */
+	private function supersedeGroups(object $objectService, string $register, string $schema, array $rows): int {
 		$superseded = 0;
 		foreach ($this->duplicateGroups(rows: $rows) as $group) {
 			$current = array_pop($group);
 			foreach ($group as $older) {
 				$superseded += $this->supersedeOne(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					olderId: $older['id'],
-					currentId: $current['id'],
+					objectService: $objectService, register: $register, schema: $schema, olderId: $older['id'], currentId: $current['id'],
 				);
 			}
 		}
 
 		return $superseded;
-	}//end supersede()
+	}//end supersedeGroups()
 
 	/**
 	 * The current copies grouped by seed slug, version and organisation,

@@ -150,6 +150,27 @@ class CaseMatchSuggestion implements CaseMatchSuggestionInterface {
 	 * @return array{case: string, identifier: string, title: string, matchedOn: string}|null The case, or null.
 	 */
 	private function lookUp(string $reference): ?array {
+		$target = $this->caseTarget();
+		if ($target === null) {
+			return null;
+		}
+
+		foreach (['identifier', 'externalIdentifier'] as $field) {
+			$case = ($this->openCasesBy(target: $target, field: $field, reference: $reference)[0] ?? null);
+			if (is_array($case) === true) {
+				return $this->suggestion(case: $case, reference: $reference, field: $field);
+			}
+		}
+
+		return null;
+	}//end lookUp()
+
+	/**
+	 * The object service, register and case schema, or null when one is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The target.
+	 */
+	private function caseTarget(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$schema = (string)$this->settingsService->getConfigValue('case_schema');
@@ -157,31 +178,51 @@ class CaseMatchSuggestion implements CaseMatchSuggestionInterface {
 			return null;
 		}
 
-		foreach (['identifier', 'externalIdentifier'] as $field) {
-			try {
-				$cases = $this->searchObjectsAsArrays(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					filters: [$field => $reference, 'isFinalStatus' => false, '_limit' => 1]
-				);
-			} catch (\Throwable $e) {
-				// No suggestion is a fair answer: the handler links the message by hand, as before suggestions existed.
-				$this->logger->warning('Dossiq: case match lookup failed', ['field' => $field, 'error' => $e->getMessage()]);
-				$cases = [];
-			}
+		return [$objectService, $register, $schema];
+	}//end caseTarget()
 
-			$case = ($cases[0] ?? null);
-			if (is_array($case) === true) {
-				return [
-					'case' => (string)($case['id'] ?? ($case['@self']['id'] ?? '')),
-					'identifier' => (string)($case['identifier'] ?? $reference),
-					'title' => (string)($case['title'] ?? ''),
-					'matchedOn' => $field,
-				];
-			}
+	/**
+	 * The open cases whose field holds the reference, at most one; none when the read fails.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $target    The object service, register and case schema.
+	 * @param string                                 $field     The field to match on.
+	 * @param string                                 $reference The quoted reference.
+	 *
+	 * @return array<int, mixed> The cases.
+	 */
+	private function openCasesBy(array $target, string $field, string $reference): array {
+		[$objectService, $register, $schema] = $target;
+		try {
+			$cases = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: [$field => $reference, 'isFinalStatus' => false, '_limit' => 1]
+			);
+		} catch (\Throwable $e) {
+			// No suggestion is a fair answer: the handler links the message by hand, as before suggestions existed.
+			$this->logger->warning('Dossiq: case match lookup failed', ['field' => $field, 'error' => $e->getMessage()]);
+			$cases = [];
 		}
 
-		return null;
-	}//end lookUp()
+		return $cases;
+	}//end openCasesBy()
+
+	/**
+	 * The suggestion for a matched case.
+	 *
+	 * @param array<string, mixed> $case      The matched case.
+	 * @param string               $reference The quoted reference.
+	 * @param string               $field     The field it matched on.
+	 *
+	 * @return array{case: string, identifier: string, title: string, matchedOn: string} The suggestion.
+	 */
+	private function suggestion(array $case, string $reference, string $field): array {
+		return [
+			'case' => (string)($case['id'] ?? ($case['@self']['id'] ?? '')),
+			'identifier' => (string)($case['identifier'] ?? $reference),
+			'title' => (string)($case['title'] ?? ''),
+			'matchedOn' => $field,
+		];
+	}//end suggestion()
 }//end class

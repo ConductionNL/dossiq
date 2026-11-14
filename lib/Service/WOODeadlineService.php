@@ -329,6 +329,19 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 			return ['deadline' => null, 'reason' => 'Case not found'];
 		}
 
+		return $this->deadlineOf(case: $case);
+	}//end resolveWarningDeadline()
+
+	/**
+	 * The parsed deadline of a loaded case.
+	 *
+	 * @param array<string, mixed> $case The case
+	 *
+	 * @return array{deadline: \DateTimeImmutable|null, reason: string} The parsed deadline, or null with the blocking reason
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	private function deadlineOf(array $case): array {
 		$caseData = (array)$case;
 
 		// `deadline` only. It follows the statutory term, extension included
@@ -345,7 +358,7 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 		}
 
 		return ['deadline' => $deadline, 'reason' => ''];
-	}//end resolveWarningDeadline()
+	}//end deadlineOf()
 
 	/**
 	 * Count the days between today and a deadline, negative once the deadline has passed.

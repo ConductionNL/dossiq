@@ -39,6 +39,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -192,6 +193,20 @@ class AdviceController extends Controller {
 			return new JSONResponse(data: ['error' => 'Not authorized'], statusCode: Http::STATUS_FORBIDDEN);
 		}
 
+		return $this->requestAdviceFor(id: $id, user: $user);
+	}//end createForCase()
+
+	/**
+	 * Create the advice request from the request body, answering a refusal or failure as a response.
+	 *
+	 * @param string $id   UUID of the case
+	 * @param IUser  $user The requesting user, already allowed to mutate the case
+	 *
+	 * @return JSONResponse Created advice request or error
+	 *
+	 * @spec openspec/specs/advice-management/spec.md
+	 */
+	private function requestAdviceFor(string $id, IUser $user): JSONResponse {
 		$data = $this->readJsonBody();
 		$data['caseRef'] = $id;
 		$data['requestedBy'] = $user->getUID();
@@ -203,21 +218,32 @@ class AdviceController extends Controller {
 		} catch (\InvalidArgumentException $e) {
 			// A date the system cannot read is the caller's to fix, and nothing
 			// is created. It used to be stored verbatim.
-			return new JSONResponse(
-				['error' => $e->getMessage()],
-				Http::STATUS_BAD_REQUEST,
-			);
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Failed to create advice request for case ' . $id . ': ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID]
-			);
-			return new JSONResponse(
-				['error' => 'Could not create advice request: ' . $e->getMessage()],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
+			return $this->adviceRequestFailure(error: $e, id: $id);
 		}
-	}//end createForCase()
+	}//end requestAdviceFor()
+
+	/**
+	 * Log a failed advice request and answer it as a server error.
+	 *
+	 * @param \Throwable $error The failure.
+	 * @param string     $id    UUID of the case
+	 *
+	 * @return JSONResponse The error.
+	 *
+	 * @spec openspec/specs/advice-management/spec.md
+	 */
+	private function adviceRequestFailure(\Throwable $error, string $id): JSONResponse {
+		$this->logger->error(
+			'Failed to create advice request for case ' . $id . ': ' . $error->getMessage(),
+			['app' => AppIdentity::APP_ID]
+		);
+		return new JSONResponse(
+			['error' => 'Could not create advice request: ' . $error->getMessage()],
+			Http::STATUS_INTERNAL_SERVER_ERROR,
+		);
+	}//end adviceRequestFailure()
 
 	/**
 	 * Get all advice requests for a specific case.

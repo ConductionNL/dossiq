@@ -224,6 +224,41 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 		IOutput $output,
 	): string {
 		$caseUuid = (string)($case['uuid'] ?? $case['id'] ?? '');
+		$precheck = $this->precheckOf(case: $case);
+		if ($precheck !== null) {
+			return $precheck;
+		}
+
+		// Open case with no decision yet — link forward to decidesk.
+		try {
+			$newDecisionRef = $this->raiseAndPersistDecision(
+				objectService: $objectService,
+				case: $case,
+				caseTypeSlug: $caseTypeSlug
+			);
+			$output->info('Linked case ' . $caseUuid . ' → decidesk Decision ' . $newDecisionRef);
+		} catch (RuntimeException $e) {
+			// Decidesk leaf unavailable — warn + skip this case; do NOT fail the migration.
+			$output->warning('Could not link case ' . $caseUuid . ': ' . $e->getMessage() . ' — skipping.');
+			$this->logger->warning(
+				'LinkInFlightContractDecisionsRepair: could not link case',
+				['caseUuid' => $caseUuid, 'error' => $e->getMessage()]
+			);
+			return self::RESULT_ERROR;
+		}//end try
+
+		return self::RESULT_LINKED;
+	}//end linkCase()
+
+	/**
+	 * The outcome of a case that needs no link, or null when it must be linked.
+	 *
+	 * @param array<string, mixed> $case The case row.
+	 *
+	 * @return string|null One of the self::RESULT_* constants, or null to link.
+	 */
+	private function precheckOf(array $case): ?string {
+		$caseUuid = (string)($case['uuid'] ?? $case['id'] ?? '');
 		$besluitRef = (string)($case['besluitRef'] ?? '');
 		$decisionRef = (string)($case['decisionRef'] ?? '');
 		$status = (string)($case['status'] ?? '');
@@ -250,49 +285,53 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 			return self::RESULT_SKIPPED;
 		}
 
-		// Open case with no decision yet — link forward to decidesk.
-		try {
-			$newDecisionRef = $this->delegationService->raiseContractDecision(
-				caseRef: $caseUuid,
-				contractRef: (string)($case['contractRef'] ?? ''),
-				decisionType: $this->mapCaseTypeToDecisionType(caseTypeSlug: $caseTypeSlug),
-				subject: [
-					'subjectRegister' => AppIdentity::REGISTER_SLUG,
-					'subjectSchema' => 'case',
-					'subjectId' => $caseUuid,
-					'subjectLabel' => (string)($case['title'] ?? $caseTypeSlug),
-				],
-				mandateContext: [],
-			);
+		return null;
+	}//end precheckOf()
 
-			// Persist the decisionRef on the case (does not alter the case outcome).
-			// A loaded case carries `statusHistory`, `activity`, `geometry`
-			// and `relatedCases` DECODED, and the schema still declares each
-			// of them a string — a bare array_merge writes arrays into them
-			// and OpenRegister refuses the whole save.
-			$objectService->saveObject(
-				object: $this->jsonProperties->mergeForWrite(
-					stored: $case,
-					updates: ['decisionRef' => $newDecisionRef],
-					schemaSlug: 'case',
-				),
-				register: AppIdentity::REGISTER_SLUG,
-				schema: 'case',
-				uuid: $caseUuid,
-			);
-			$output->info('Linked case ' . $caseUuid . ' → decidesk Decision ' . $newDecisionRef);
-		} catch (RuntimeException $e) {
-			// Decidesk leaf unavailable — warn + skip this case; do NOT fail the migration.
-			$output->warning('Could not link case ' . $caseUuid . ': ' . $e->getMessage() . ' — skipping.');
-			$this->logger->warning(
-				'LinkInFlightContractDecisionsRepair: could not link case',
-				['caseUuid' => $caseUuid, 'error' => $e->getMessage()]
-			);
-			return self::RESULT_ERROR;
-		}//end try
+	/**
+	 * Raise a decidesk Decision for a case and persist its reference on the case.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param array<string, mixed> $case          The case row.
+	 * @param string               $caseTypeSlug  The dossiq case type slug.
+	 *
+	 * @return string The new decision reference.
+	 *
+	 * @throws RuntimeException When the decidesk leaf is unavailable.
+	 */
+	private function raiseAndPersistDecision(object $objectService, array $case, string $caseTypeSlug): string {
+		$caseUuid = (string)($case['uuid'] ?? $case['id'] ?? '');
+		$newDecisionRef = $this->delegationService->raiseContractDecision(
+			caseRef: $caseUuid,
+			contractRef: (string)($case['contractRef'] ?? ''),
+			decisionType: $this->mapCaseTypeToDecisionType(caseTypeSlug: $caseTypeSlug),
+			subject: [
+				'subjectRegister' => AppIdentity::REGISTER_SLUG,
+				'subjectSchema' => 'case',
+				'subjectId' => $caseUuid,
+				'subjectLabel' => (string)($case['title'] ?? $caseTypeSlug),
+			],
+			mandateContext: [],
+		);
 
-		return self::RESULT_LINKED;
-	}//end linkCase()
+		// Persist the decisionRef on the case (does not alter the case outcome).
+		// A loaded case carries `statusHistory`, `activity`, `geometry`
+		// and `relatedCases` DECODED, and the schema still declares each
+		// of them a string — a bare array_merge writes arrays into them
+		// and OpenRegister refuses the whole save.
+		$objectService->saveObject(
+			object: $this->jsonProperties->mergeForWrite(
+				stored: $case,
+				updates: ['decisionRef' => $newDecisionRef],
+				schemaSlug: 'case',
+			),
+			register: AppIdentity::REGISTER_SLUG,
+			schema: 'case',
+			uuid: $caseUuid,
+		);
+
+		return $newDecisionRef;
+	}//end raiseAndPersistDecision()
 
 	/**
 	 * Map a dossiq case type slug to a decidesk decisionType.

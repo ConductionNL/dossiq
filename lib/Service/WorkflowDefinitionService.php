@@ -467,20 +467,68 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 			return null;
 		}
 
+		$version = $this->draftVersion(payload: $payload, caseTypeId: $caseTypeId);
+		$draft = $this->draftRow(payload: $payload, caseTypeId: $caseTypeId, version: $version);
+
+		return $this->repository->save(payload: $draft);
+	}//end createDraft()
+
+	/**
+	 * The version the draft is created as: the payload's, or the next for its case type.
+	 *
+	 * @param array<string, mixed> $payload    The draft payload
+	 * @param string               $caseTypeId The case type
+	 *
+	 * @return int The version
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function draftVersion(array $payload, string $caseTypeId): int {
 		$version = (int)($payload['version'] ?? 0);
 		if ($version <= 0) {
 			$version = $this->repository->nextVersionFor(caseTypeId: $caseTypeId);
 		}
 
+		return $version;
+	}//end draftVersion()
+
+	/**
+	 * The draft row to store.
+	 *
+	 * @param array<string, mixed> $payload    The draft payload
+	 * @param string               $caseTypeId The case type
+	 * @param int                  $version    The version
+	 *
+	 * @return array<string, mixed> The row
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function draftRow(array $payload, string $caseTypeId, int $version): array {
 		$stepsValue = $this->json->encode(value: ($payload['steps'] ?? []));
 		$transitionsValue = $this->json->encode(value: ($payload['transitions'] ?? []));
 
-		$draft = [
+		return [
 			'title' => (string)$payload['title'],
 			'description' => (string)($payload['description'] ?? ''),
 			'caseType' => $caseTypeId,
 			'variant' => $this->guard->variantOf(row: $payload),
 			'version' => $version,
+		] + $this->draftState(stepsValue: $stepsValue, transitionsValue: $transitionsValue, payload: $payload);
+	}//end draftRow()
+
+	/**
+	 * The draft's lifecycle flags and its content.
+	 *
+	 * @param string|false         $stepsValue       The encoded steps
+	 * @param string|false         $transitionsValue The encoded transitions
+	 * @param array<string, mixed> $payload          The draft payload
+	 *
+	 * @return array<string, mixed> The fields
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function draftState(string|false $stepsValue, string|false $transitionsValue, array $payload): array {
+		return [
 			'isActive' => false,
 			'isDraft' => true,
 			'lifecycleStatus' => self::STATUS_DRAFT,
@@ -488,9 +536,7 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 			'transitions' => $transitionsValue,
 			'nodePositions' => (string)($payload['nodePositions'] ?? ''),
 		];
-
-		return $this->repository->save(payload: $draft);
-	}//end createDraft()
+	}//end draftState()
 
 	// -----------------------------------------------------------------
 	// Internal helpers.

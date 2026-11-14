@@ -257,6 +257,19 @@ class QueueCaseFacts {
 			return null;
 		}
 
+		return $this->nearestOpenEnd(instances: $instances);
+	}//end nearestActiveTermijnDeadline()
+
+	/**
+	 * The nearest `endDateCurrent` among the open term instances.
+	 *
+	 * @param array<int, array<string, mixed>> $instances The case's term instances.
+	 *
+	 * @return string|null The nearest active deadline, or null.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
+	 */
+	private function nearestOpenEnd(array $instances): ?string {
 		$nearest = null;
 		foreach ($instances as $instance) {
 			// EVERY OPEN TERM, not only a running one (REQ-OTE-06). A paused
@@ -264,7 +277,7 @@ class QueueCaseFacts {
 			// by the extension, so both are the dates a handler is judged on.
 			// Filtered here rather than in the query, because a list of
 			// statuses is not a filter every store reads the same way.
-			if (in_array((string)($instance['status'] ?? ''), self::OPEN_TERM_STATUSES, true) === false) {
+			if ($this->isOpenTerm(instance: $instance) === false) {
 				continue;
 			}
 
@@ -277,5 +290,18 @@ class QueueCaseFacts {
 		}
 
 		return $nearest;
-	}//end nearestActiveTermijnDeadline()
+	}//end nearestOpenEnd()
+
+	/**
+	 * Whether a term instance is open: running, extended, paused or exceeded.
+	 *
+	 * @param array<string, mixed> $instance The term instance.
+	 *
+	 * @return bool True when the term is open.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
+	 */
+	private function isOpenTerm(array $instance): bool {
+		return (in_array((string)($instance['status'] ?? ''), self::OPEN_TERM_STATUSES, true) === true);
+	}//end isOpenTerm()
 }//end class

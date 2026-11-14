@@ -74,46 +74,76 @@ class OfferedTransitions {
 	 */
 	public function from(array $transitions, array $case, string $currentId, string $userId): array {
 		$caseTypeId = (string)($case['caseType'] ?? '');
-		$offered = [];
-		$withheld = [];
+		$lists = ['transitions' => [], 'withheld' => []];
 
 		foreach ($transitions as $transition) {
 			if ($this->leadsFrom(transition: $transition, currentId: $currentId, caseTypeId: $caseTypeId) === false) {
 				continue;
 			}
 
-			$eval = $this->guardRegistry->evaluateAll(
-				guards: $this->guardsFor(transition: $transition),
-				case: $case,
-				userId: $userId,
-			);
-
-			// Drop transitions whose role guard hides them silently.
-			if ($this->specReader->isRoleHidden(evalResults: $eval) === true) {
-				continue;
+			$sorted = $this->sortTransition(transition: $transition, caseRow: $case, userId: $userId);
+			if ($sorted !== null) {
+				$lists[$sorted[0]][] = $sorted[1];
 			}
+		}
 
-			// WITHHOLDING BEATS REFUSING. A transition that is offered and
-			// then refused teaches the handler that the list is unreliable; a
-			// transition that is not offered, with the reason readable in its
-			// place, teaches them what to do next. The information is the same
-			// and only one of the two is usable.
-			$reasons = $this->moves->withheldReasons(transition: $transition, case: $case);
-			if ($reasons !== []) {
-				$withheld[] = [
-					'id' => (string)($transition['id'] ?? ''),
-					'label' => (string)($transition['label'] ?? ''),
-					'toStatus' => (string)($transition['toStatus'] ?? ''),
-					'reasons' => $reasons,
-				];
-				continue;
-			}
-
-			$offered[] = $this->offeredEntry(transition: $transition, eval: $eval, case: $case);
-		}//end foreach
-
-		return ['transitions' => $offered, 'withheld' => $withheld];
+		return $lists;
 	}//end from()
+
+	/**
+	 * Which list one transition out of the current status belongs on, with its entry; null when it is hidden.
+	 *
+	 * @param array<string, mixed> $transition The transition.
+	 * @param array<string, mixed> $caseRow    The case.
+	 * @param string               $userId     The acting user.
+	 *
+	 * @return array{0: string, 1: array<string, mixed>}|null `transitions` or `withheld`, and the entry.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function sortTransition(array $transition, array $caseRow, string $userId): ?array {
+		$eval = $this->guardRegistry->evaluateAll(
+			guards: $this->guardsFor(transition: $transition),
+			case: $caseRow,
+			userId: $userId,
+		);
+
+		// Drop transitions whose role guard hides them silently.
+		if ($this->specReader->isRoleHidden(evalResults: $eval) === true) {
+			return null;
+		}
+
+		// WITHHOLDING BEATS REFUSING. A transition that is offered and
+		// then refused teaches the handler that the list is unreliable; a
+		// transition that is not offered, with the reason readable in its
+		// place, teaches them what to do next. The information is the same
+		// and only one of the two is usable.
+		$reasons = $this->moves->withheldReasons(transition: $transition, case: $caseRow);
+		if ($reasons !== []) {
+			return ['withheld', $this->withheldEntry(transition: $transition, reasons: $reasons)];
+		}
+
+		return ['transitions', $this->offeredEntry(transition: $transition, eval: $eval, case: $caseRow)];
+	}//end sortTransition()
+
+	/**
+	 * A withheld transition with the reasons it is withheld.
+	 *
+	 * @param array<string, mixed> $transition The transition.
+	 * @param array<int, string>   $reasons    Why it is withheld.
+	 *
+	 * @return array<string, mixed> The entry.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function withheldEntry(array $transition, array $reasons): array {
+		return [
+			'id' => (string)($transition['id'] ?? ''),
+			'label' => (string)($transition['label'] ?? ''),
+			'toStatus' => (string)($transition['toStatus'] ?? ''),
+			'reasons' => $reasons,
+		];
+	}//end withheldEntry()
 
 	/**
 	 * Whether this transition is a move a handler could pick from here at all.

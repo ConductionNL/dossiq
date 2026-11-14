@@ -43,6 +43,8 @@ use RuntimeException;
  * status transitions, advice responses, deadline extensions, and dependency
  * cycle detection per Awb 3:5-3:9.
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ *
  * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  */
 class ConsultationService implements ConsultationServiceInterface {
@@ -139,17 +141,9 @@ class ConsultationService implements ConsultationServiceInterface {
 	 */
 	public function createConsultation(array $data): array {
 		$data = array_diff_key($data, CallerIdentity::KEYS);
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$objectService = $this->requireObjectService();
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('consultation_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			throw new RuntimeException('Consultation schema not configured');
-		}
+		[$register, $schema] = $this->requireConsultationSchema();
 
 		// A request without a deadline gets the default term (Adviseringsbeheer).
 		$data['latestResponseDate'] = $this->terms->deadlineFor(given: (string)($data['latestResponseDate'] ?? ''));
@@ -170,10 +164,7 @@ class ConsultationService implements ConsultationServiceInterface {
 
 		$consultation = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
-		$consultationId = ($data['id'] ?? '');
-		if (is_object($consultation) === true) {
-			$consultationId = $consultation->getUuid();
-		}
+		$consultationId = $this->idOf(consultation: $consultation, data: $data);
 
 		// REQ-PDRD-001 / REQ-PDRD-002: a consultatie is an advice request that
 		// is *decided* in decidesk. Raise a decidesk `advice` Decision and
@@ -197,6 +188,78 @@ class ConsultationService implements ConsultationServiceInterface {
 		// blocked.
 		$this->placeAdviceObligation(consultationId: (string)$consultationId, data: $data);
 
+		return $this->createdSummary(consultationId: $consultationId, data: $data, decisionRef: $decisionRef);
+	}//end createConsultation()
+
+	/**
+	 * The OpenRegister object service.
+	 *
+	 * @return object The object service
+	 *
+	 * @throws \RuntimeException If OpenRegister unavailable
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
+	 */
+	private function requireObjectService(): object {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		return $objectService;
+	}//end requireObjectService()
+
+	/**
+	 * The configured register and consultation schema.
+	 *
+	 * @return array{0: string, 1: string} The register and the schema
+	 *
+	 * @throws \RuntimeException If either is not configured
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
+	 */
+	private function requireConsultationSchema(): array {
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('consultation_schema');
+
+		if (empty($register) === true || empty($schema) === true) {
+			throw new RuntimeException('Consultation schema not configured');
+		}
+
+		return [$register, $schema];
+	}//end requireConsultationSchema()
+
+	/**
+	 * The id of a saved consultation: the stored object's uuid, else the id it was given.
+	 *
+	 * @param mixed                $consultation What the save answered
+	 * @param array<string, mixed> $data         The consultation data
+	 *
+	 * @return mixed The consultation id
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
+	 */
+	private function idOf(mixed $consultation, array $data): mixed {
+		$consultationId = ($data['id'] ?? '');
+		if (is_object($consultation) === true) {
+			$consultationId = $consultation->getUuid();
+		}
+
+		return $consultationId;
+	}//end idOf()
+
+	/**
+	 * Log the created consultation and answer its summary.
+	 *
+	 * @param mixed                $consultationId The consultation id
+	 * @param array<string, mixed> $data           The consultation data
+	 * @param mixed                $decisionRef    The decidesk decision reference
+	 *
+	 * @return array<string, mixed> Created consultation with ID and number
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
+	 */
+	private function createdSummary(mixed $consultationId, array $data, mixed $decisionRef): array {
 		$this->logger->info(
 			'Consultation created: ' . $consultationId
 			. ' (' . $data['consultationNumber'] . ') for case ' . $data['parentCase'],
@@ -209,7 +272,7 @@ class ConsultationService implements ConsultationServiceInterface {
 			'status' => 'open',
 			'decisionRef' => $decisionRef,
 		];
-	}//end createConsultation()
+	}//end createdSummary()
 
 	/**
 	 * Get all consultations for a case.
@@ -250,34 +313,14 @@ class ConsultationService implements ConsultationServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function updateStatus(string $consultationId, string $newStatus): array {
-		if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
-			throw new RuntimeException('Invalid status: ' . $newStatus);
-		}
+		$this->assertValidTransition(consultationId: $consultationId, newStatus: $newStatus);
 
-		// Transition validation against the declared status graph. Only a
-		// recognised current status constrains the move; a consultation whose
-		// stored status is absent or unknown may be set to any valid status so
-		// the graph never wedges an object that predates it.
-		$consultation = $this->getConsultation(consultationId: $consultationId);
-		$current = (string)($consultation['status'] ?? '');
-		if (array_key_exists($current, self::STATUS_TRANSITIONS) === true
-			&& in_array($newStatus, self::STATUS_TRANSITIONS[$current], true) === false
-		) {
-			throw new RuntimeException('Invalid status transition: ' . $current . ' -> ' . $newStatus);
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('consultation_schema');
 
-		$updateData = ['status' => $newStatus];
-		if ($newStatus === 'closed') {
-			$updateData['closedAt'] = $this->dates->nowAsMoment();
-		}
+		$updateData = $this->statusChanges(newStatus: $newStatus);
 
 		$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$consultationId, changes: $updateData);
 
@@ -299,6 +342,54 @@ class ConsultationService implements ConsultationServiceInterface {
 	}//end updateStatus()
 
 	/**
+	 * Refuse an unknown status, or a move the declared status graph does not allow.
+	 *
+	 * @param string $consultationId The consultation UUID
+	 * @param string $newStatus      The new status
+	 *
+	 * @return void
+	 *
+	 * @throws \RuntimeException If invalid status or invalid transition
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
+	 */
+	private function assertValidTransition(string $consultationId, string $newStatus): void {
+		if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
+			throw new RuntimeException('Invalid status: ' . $newStatus);
+		}
+
+		// Transition validation against the declared status graph. Only a
+		// recognised current status constrains the move; a consultation whose
+		// stored status is absent or unknown may be set to any valid status so
+		// the graph never wedges an object that predates it.
+		$consultation = $this->getConsultation(consultationId: $consultationId);
+		$current = (string)($consultation['status'] ?? '');
+		if (array_key_exists($current, self::STATUS_TRANSITIONS) === true
+			&& in_array($newStatus, self::STATUS_TRANSITIONS[$current], true) === false
+		) {
+			throw new RuntimeException('Invalid status transition: ' . $current . ' -> ' . $newStatus);
+		}
+	}//end assertValidTransition()
+
+	/**
+	 * The changes a status update writes.
+	 *
+	 * @param string $newStatus The new status
+	 *
+	 * @return array<string, mixed> The status, and closedAt when closing
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
+	 */
+	private function statusChanges(string $newStatus): array {
+		$updateData = ['status' => $newStatus];
+		if ($newStatus === 'closed') {
+			$updateData['closedAt'] = $this->dates->nowAsMoment();
+		}
+
+		return $updateData;
+	}//end statusChanges()
+
+	/**
 	 * Submit advice response to a consultation.
 	 *
 	 * @param string $consultationId The consultation UUID
@@ -316,10 +407,7 @@ class ConsultationService implements ConsultationServiceInterface {
 			throw new RuntimeException('Invalid advice type: ' . $advies);
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('consultation_schema');
@@ -545,10 +633,7 @@ class ConsultationService implements ConsultationServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function requestExtension(string $consultationId, string $justification): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('consultation_schema');
@@ -590,10 +675,7 @@ class ConsultationService implements ConsultationServiceInterface {
 			throw new RuntimeException('Invalid date format; expected Y-m-d');
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('consultation_schema');
@@ -659,44 +741,60 @@ class ConsultationService implements ConsultationServiceInterface {
 	 *
 	 * @throws \RuntimeException If decidesk is unavailable (REQ-PDRD-002)
 	 */
-	private function raiseAndPersistAdviceDecision(
-		object $objectService,
-		string $register,
-		string $schema,
-		string $consultationId,
-		array $data,
-	): string {
+	private function raiseAndPersistAdviceDecision(object $objectService, string $register, string $schema,
+		string $consultationId, array $data): string {
 		try {
-			$decisionRef = $this->adviceDelegation->raiseAdviceDecision(
-				subjectSchema: 'consultation',
-				subjectId: $consultationId,
-				payload: [
-					'subjectRegister' => $register,
-					'externalReference' => (string)$data['parentCase'],
-					'subjectLabel' => (string)$data['consultationNumber'],
-					'question' => (string)$data['questionFormulation'],
-				],
-			);
+			$decisionRef = $this->raiseConsultationAdvice(register: $register, consultationId: $consultationId, data: $data);
 
 			if ($consultationId !== '') {
-				$this->patchObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					id: $consultationId,
-					changes: ['decisionRef' => $decisionRef],
-				);
+				$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $consultationId,
+					changes: ['decisionRef' => $decisionRef]);
 			}
 		} catch (\RuntimeException $e) {
-			$this->logger->error(
-				'Dossiq: createConsultation: decidesk advice Decision raise failed — failing closed: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID],
-			);
-			// REQ-PDRD-002: fail closed; surface the error.
-			throw new RuntimeException('Decision service unavailable: ' . $e->getMessage(), 0, $e);
-		}//end try
+			throw $this->failedClosed(error: $e);
+		}
 
 		return $decisionRef;
 	}//end raiseAndPersistAdviceDecision()
+
+	/**
+	 * Raise the decidesk advice Decision for a consultation.
+	 *
+	 * @param string               $register       The register slug
+	 * @param string               $consultationId The freshly created consultation UUID
+	 * @param array<string, mixed> $data           Consultation data used to build the decision payload
+	 *
+	 * @return string The decidesk decision reference
+	 *
+	 * @throws \RuntimeException If decidesk is unavailable (REQ-PDRD-002)
+	 */
+	private function raiseConsultationAdvice(string $register, string $consultationId, array $data): string {
+		return $this->adviceDelegation->raiseAdviceDecision(
+			subjectSchema: 'consultation',
+			subjectId: $consultationId,
+			payload: [
+				'subjectRegister' => $register,
+				'externalReference' => (string)$data['parentCase'],
+				'subjectLabel' => (string)$data['consultationNumber'],
+				'question' => (string)$data['questionFormulation'],
+			],
+		);
+	}//end raiseConsultationAdvice()
+
+	/**
+	 * Log a failed advice Decision raise, and the error that fails the consultation closed.
+	 *
+	 * @param \RuntimeException $error Why the raise or the persist failed.
+	 *
+	 * @return RuntimeException The error to throw.
+	 */
+	private function failedClosed(\RuntimeException $error): RuntimeException {
+		$this->logger->error(
+			'Dossiq: createConsultation: decidesk advice Decision raise failed — failing closed: ' . $error->getMessage(),
+			['app' => AppIdentity::APP_ID],
+		);
+		// REQ-PDRD-002: fail closed; surface the error.
+		return new RuntimeException('Decision service unavailable: ' . $error->getMessage(), 0, $error);
+	}//end failedClosed()
 
 }//end class

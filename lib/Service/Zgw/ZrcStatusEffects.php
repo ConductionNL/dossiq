@@ -159,21 +159,12 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 				return;
 			}
 
-			$caseUuid = $this->uuidOf(value: (string)($body['case'] ?? ''));
-			$caseConfig = $this->zgwService->getZgwMappingService()->getMapping('case');
-			if ($caseUuid === null || $caseConfig === null) {
+			$loaded = $this->loadStatusCase(body: $body);
+			if ($loaded === null) {
 				return;
 			}
 
-			$case = $this->find(uuid: $caseUuid, config: $caseConfig);
-			if ($case === null) {
-				return;
-			}
-
-			$caseData = $this->objectToArray(row: $case);
-			// Strip metadata that confuses saveObject on re-save.
-			unset($caseData['@self'], $caseData['organisation']);
-			$caseData = $this->withStringFields(caseData: $caseData);
+			[$caseUuid, $caseConfig, $caseData] = $loaded;
 
 			if ($final === true) {
 				$this->closeCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig, body: $body, objectData: $objectData);
@@ -192,6 +183,35 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 			);
 		}//end try
 	}//end applyStatusEffect()
+
+	/**
+	 * The zaak a status body names, ready to re-save: its uuid, its mapping and its data.
+	 *
+	 * @param array $body The status body as received.
+	 *
+	 * @return array{0: string, 1: array, 2: array}|null The zaak, or null when it cannot be resolved.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function loadStatusCase(array $body): ?array {
+		$caseUuid = $this->uuidOf(value: (string)($body['case'] ?? ''));
+		$caseConfig = $this->zgwService->getZgwMappingService()->getMapping('case');
+		if ($caseUuid === null || $caseConfig === null) {
+			return null;
+		}
+
+		$case = $this->find(uuid: $caseUuid, config: $caseConfig);
+		if ($case === null) {
+			return null;
+		}
+
+		$caseData = $this->objectToArray(row: $case);
+		// Strip metadata that confuses saveObject on re-save.
+		unset($caseData['@self'], $caseData['organisation']);
+		$caseData = $this->withStringFields(caseData: $caseData);
+
+		return [$caseUuid, $caseConfig, $caseData];
+	}//end loadStatusCase()
 
 	/**
 	 * Derive the zaak's archiving parameters when a resultaat is created (zrc-021).

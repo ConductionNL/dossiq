@@ -157,31 +157,43 @@ class RewriteRenamedLayoutIds implements IRepairStep {
 
 		$written = 0;
 		foreach ($rows as $row) {
-			if (in_array((string)($row['register'] ?? ''), self::APP_REGISTERS, true) === false) {
-				continue;
-			}
-
-			$delta = ($row['manifestDelta'] ?? null);
-			$uuid = (string)($row['@self']['id'] ?? ($row['id'] ?? ''));
-			if (is_array($delta) === false || $uuid === '') {
-				continue;
-			}
-
-			$rewritten = (new RenamedLayoutIds())->rewrite(value: $delta);
-			if ($rewritten === $delta) {
-				continue;
-			}
-
-			$this->patchObjectAsArray(
-				objectService: $objects,
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				id: $uuid,
-				changes: ['manifestDelta' => $rewritten]
-			);
-			$written++;
-		}//end foreach
+			$written += $this->rewriteRow(objects: $objects, row: $row);
+		}
 
 		return $written;
 	}//end rewriteAll()
+
+	/**
+	 * Rewrite one arrangement when it is dossiq's and names an old id.
+	 *
+	 * @param object               $objects The ObjectService.
+	 * @param array<string, mixed> $row     The stored arrangement.
+	 *
+	 * @return int 1 when it was written, 0 otherwise.
+	 */
+	private function rewriteRow(object $objects, array $row): int {
+		if (in_array((string)($row['register'] ?? ''), self::APP_REGISTERS, true) === false) {
+			return 0;
+		}
+
+		$delta = ($row['manifestDelta'] ?? null);
+		$uuid = (string)($row['@self']['id'] ?? ($row['id'] ?? ''));
+		if (is_array($delta) === false || $uuid === '') {
+			return 0;
+		}
+
+		$rewritten = (new RenamedLayoutIds())->rewrite(value: $delta);
+		if ($rewritten === $delta) {
+			return 0;
+		}
+
+		$this->patchObjectAsArray(
+			objectService: $objects,
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			id: $uuid,
+			changes: ['manifestDelta' => $rewritten]
+		);
+		return 1;
+	}//end rewriteRow()
 }//end class

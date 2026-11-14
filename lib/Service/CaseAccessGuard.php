@@ -423,6 +423,37 @@ class CaseAccessGuard implements CaseAccessGuardInterface {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	private function loadCase(string $caseId): ?array {
+		$source = $this->caseSource();
+		if ($source === null) {
+			return null;
+		}
+
+		[$objectService, $register, $caseSchema] = $source;
+
+		try {
+			return $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $caseSchema,
+				id: $caseId
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq CaseAccessGuard: case lookup failed — denying case mutation: ' . $e->getMessage(),
+				['app' => AppIdentity::APP_ID]
+			);
+			return null;
+		}
+	}//end loadCase()
+
+	/**
+	 * The object service, register and case schema a case is loaded from, logging what is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The source, or null when OpenRegister or the schema is missing.
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	private function caseSource(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			$this->logger->warning(
@@ -442,19 +473,6 @@ class CaseAccessGuard implements CaseAccessGuardInterface {
 			return null;
 		}
 
-		try {
-			return $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				id: $caseId
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq CaseAccessGuard: case lookup failed — denying case mutation: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID]
-			);
-			return null;
-		}
-	}//end loadCase()
+		return [$objectService, $register, $caseSchema];
+	}//end caseSource()
 }//end class

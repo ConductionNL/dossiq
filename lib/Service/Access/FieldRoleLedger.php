@@ -123,6 +123,26 @@ class FieldRoleLedger {
 		array $ledger,
 		array $previous = []
 	): array {
+		$wanted = $this->withOwnBlocks(
+			wanted: $this->baseAndWithdrawn(base: $base, ledger: $ledger, previous: $previous),
+			ledger: $ledger,
+		);
+
+		return $this->applied(properties: $properties, wanted: $wanted);
+	}//end propertiesWith()
+
+	/**
+	 * The base blocks, over an empty block for every field the ledger stopped owning.
+	 *
+	 * @param array<string, mixed> $base     The authorization the register JSON declares.
+	 * @param array<string, mixed> $ledger   What every case type projects now.
+	 * @param array<string, mixed> $previous What every case type projected before.
+	 *
+	 * @return array<string, mixed> The wanted blocks, by field.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function baseAndWithdrawn(array $base, array $ledger, array $previous): array {
 		// 🔴 THE FIELDS THE LEDGER HAS JUST STOPPED OWNING HAVE TO BE VISITED
 		// TOO, OR A RULE CAN BE ADDED AND NEVER TAKEN OFF. A withdrawal removes
 		// the field from the new ledger, so a loop over the new ledger alone
@@ -134,6 +154,20 @@ class FieldRoleLedger {
 			$wanted[$field] = $block;
 		}
 
+		return $wanted;
+	}//end baseAndWithdrawn()
+
+	/**
+	 * The wanted blocks with every case type's own blocks merged in.
+	 *
+	 * @param array<string, mixed> $wanted The wanted blocks, by field.
+	 * @param array<string, mixed> $ledger What every case type projects now.
+	 *
+	 * @return array<string, mixed> The wanted blocks, by field.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function withOwnBlocks(array $wanted, array $ledger): array {
 		foreach ($ledger as $own) {
 			if (is_array($own) === false) {
 				continue;
@@ -151,6 +185,20 @@ class FieldRoleLedger {
 			}
 		}
 
+		return $wanted;
+	}//end withOwnBlocks()
+
+	/**
+	 * The properties with each wanted block written onto the property it names.
+	 *
+	 * @param array<string, mixed> $properties The schema's properties.
+	 * @param array<string, mixed> $wanted     The wanted blocks, by field.
+	 *
+	 * @return array<string, mixed> The properties.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function applied(array $properties, array $wanted): array {
 		foreach ($wanted as $field => $block) {
 			if (is_array(($properties[$field] ?? null)) === false) {
 				// A rule naming a property the case schema does not declare is
@@ -170,7 +218,7 @@ class FieldRoleLedger {
 		}
 
 		return $properties;
-	}//end propertiesWith()
+	}//end applied()
 
 	/**
 	 * The fields the ledger owned a moment ago and does not own now.

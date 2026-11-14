@@ -91,6 +91,25 @@ class MoveAction implements MoveActionInterface {
 		string $actorId = '',
 		array $results = [],
 	): array {
+		$moved = $this->moveOnServer(message: $message, target: $target);
+		$reason = $this->recordedReason(target: $target, note: $note, actorId: $actorId, moved: $moved);
+		$entryId = $this->recordMove(message: $message, note: $note, results: $results, reason: $reason);
+		$this->amendMove(entryId: $entryId, target: $target, actorId: $actorId);
+
+		return ['moved' => $moved, 'entryId' => $entryId];
+	}//end move()
+
+	/**
+	 * Ask the mail server to move the message, warning when it does not confirm.
+	 *
+	 * @param InboundMessage $message The message.
+	 * @param string         $target  The folder it goes to.
+	 *
+	 * @return boolean Whether the mail server confirmed the move.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function moveOnServer(InboundMessage $message, string $target): bool {
 		$moved = $this->gateway->moveMessage(
 			$message->accountId,
 			$message->mailbox,
@@ -104,19 +123,48 @@ class MoveAction implements MoveActionInterface {
 			);
 		}
 
+		return $moved;
+	}//end moveOnServer()
+
+	/**
+	 * Record the move in the intake log.
+	 *
+	 * @param InboundMessage        $message The message.
+	 * @param string                $note    Why, as the handler wrote it.
+	 * @param array<string, string> $results The four authentication results.
+	 * @param string                $reason  The recorded reason.
+	 *
+	 * @return string The log entry id, or '' when nothing was recorded.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function recordMove(InboundMessage $message, string $note, array $results, string $reason): string {
 		$recorded = $results;
 		if ($recorded === []) {
 			$recorded = AuthenticationVerdict::unknown();
 		}
 
-		$entryId = $this->log->record(
+		return $this->log->record(
 			message: $message,
 			verdict: FilterVerdict::accept(filterName: self::NAME, reason: $note),
 			results: $recorded,
 			outcome: IntakeLog::OUTCOME_MOVED,
-			reason: $this->recordedReason(target: $target, note: $note, actorId: $actorId, moved: $moved)
+			reason: $reason
 		);
+	}//end recordMove()
 
+	/**
+	 * Note the target folder and the mover on the log entry.
+	 *
+	 * @param string $entryId The log entry id, or '' when nothing was recorded.
+	 * @param string $target  The folder.
+	 * @param string $actorId Who moved it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function amendMove(string $entryId, string $target, string $actorId): void {
 		if ($entryId !== '') {
 			$this->log->amend(
 				entryId: $entryId,
@@ -127,9 +175,7 @@ class MoveAction implements MoveActionInterface {
 				]
 			);
 		}
-
-		return ['moved' => $moved, 'entryId' => $entryId];
-	}//end move()
+	}//end amendMove()
 
 	/**
 	 * What the log says about this move.

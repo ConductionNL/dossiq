@@ -256,22 +256,7 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_share_schema');
 		if (empty($register) === true || empty($schema) === true) {
-			// 🔴 NAME WHAT IS UNAVAILABLE. This branch is reached when this
-			// instance never finished configuring dossiq, which is a LOCAL
-			// gap and not OpenRegister refusing anything. It used to answer
-			// a bare "Service unavailable", which the controller then mapped
-			// to 502. An e2e lane spent a batch on that 502 before the cause
-			// turned out to be an unwritten app-config key. The `reason` is
-			// what lets the controller answer 503 rather than 502.
-			$this->logger->error(
-				'CaseLinkShares: the case share schema is not configured, so no share can be recorded',
-				['caseId' => $caseId, 'register' => $register, 'schema' => $schema]
-			);
-			return [
-				'error' => 'Sharing is not configured on this instance yet. '
-					. 'An administrator reloads the dossiq configuration to map the case share schema.',
-				'reason' => self::REASON_NOT_CONFIGURED,
-			];
+			return $this->notConfiguredError(caseId: $caseId, register: $register, schema: $schema);
 		}
 
 		$capabilities = (array)($link['capabilities'] ?? []);
@@ -291,14 +276,7 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 				schema: (int)$schema,
 			);
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				'CaseLinkShares: the link was minted and the share record was not written',
-				['caseId' => $caseId, 'exception' => $e->getMessage()]
-			);
-			return [
-				'error' => 'The link could not be recorded on the case, so it was withdrawn again.',
-				'reason' => self::REASON_ROLLED_BACK,
-			];
+			return $this->rolledBackError(caseId: $caseId, exception: $e);
 		}
 
 		$this->logger->info(
@@ -313,6 +291,57 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 
 		return $this->gateway->toArray($result);
 	}//end store()
+
+	/**
+	 * Log and describe a share that cannot be recorded because the case share schema is not configured.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $register The configured register, possibly empty.
+	 * @param string $schema The configured case share schema, possibly empty.
+	 *
+	 * @return array<string, string> The error array.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function notConfiguredError(string $caseId, string $register, string $schema): array {
+		// 🔴 NAME WHAT IS UNAVAILABLE. This branch is reached when this
+		// instance never finished configuring dossiq, which is a LOCAL
+		// gap and not OpenRegister refusing anything. It used to answer
+		// a bare "Service unavailable", which the controller then mapped
+		// to 502. An e2e lane spent a batch on that 502 before the cause
+		// turned out to be an unwritten app-config key. The `reason` is
+		// what lets the controller answer 503 rather than 502.
+		$this->logger->error(
+			'CaseLinkShares: the case share schema is not configured, so no share can be recorded',
+			['caseId' => $caseId, 'register' => $register, 'schema' => $schema]
+		);
+		return [
+			'error' => 'Sharing is not configured on this instance yet. '
+				. 'An administrator reloads the dossiq configuration to map the case share schema.',
+			'reason' => self::REASON_NOT_CONFIGURED,
+		];
+	}//end notConfiguredError()
+
+	/**
+	 * Log and describe a share record that could not be written after the link was minted.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param \Throwable $exception Why the write failed.
+	 *
+	 * @return array<string, string> The error array.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function rolledBackError(string $caseId, \Throwable $exception): array {
+		$this->logger->error(
+			'CaseLinkShares: the link was minted and the share record was not written',
+			['caseId' => $caseId, 'exception' => $exception->getMessage()]
+		);
+		return [
+			'error' => 'The link could not be recorded on the case, so it was withdrawn again.',
+			'reason' => self::REASON_ROLLED_BACK,
+		];
+	}//end rolledBackError()
 
 	/**
 	 * Pull the links a failed mint already published.
@@ -470,6 +499,26 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 		array $documents,
 		array $extra,
 	): array {
+		return array_merge(
+			$extra,
+			$this->ownFields(caseId: $caseId, label: $label, createdBy: $createdBy, capabilities: $capabilities),
+			$this->linkFields(link: $link, capabilities: $capabilities, documents: $documents)
+		);
+	}//end recordFor()
+
+	/**
+	 * The share record's own fields: the case, the grant level, the label and who minted it.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $label What the share is called.
+	 * @param string $createdBy Who minted it.
+	 * @param array<int, string> $capabilities What the link grants.
+	 *
+	 * @return array<string, mixed> The fields.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function ownFields(string $caseId, string $label, string $createdBy, array $capabilities): array {
 		// The permission level is the zaak-domain word for the same grant, kept
 		// because the partner surface and the stored rows already speak it.
 		$permissionLevel = 'bekijken';
@@ -477,24 +526,37 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 			$permissionLevel = 'bekijken_reageren';
 		}
 
-		return array_merge(
-			$extra,
-			[
-				'caseId' => $caseId,
-				'shareType' => 'link',
-				'permissionLevel' => $permissionLevel,
-				'label' => $label,
-				'status' => 'active',
-				'createdBy' => $createdBy,
-				'accessLinkId' => (int)($link['id'] ?? 0),
-				'accessLinkUuid' => (string)($link['uuid'] ?? ''),
-				'accessLinkUrl' => (string)($link['url'] ?? ''),
-				'capabilities' => implode(',', $capabilities),
-				'expiresAt' => (string)($link['expiresAt'] ?? ''),
-				'sharedDocuments' => json_encode($documents),
-			]
-		);
-	}//end recordFor()
+		return [
+			'caseId' => $caseId,
+			'shareType' => 'link',
+			'permissionLevel' => $permissionLevel,
+			'label' => $label,
+			'status' => 'active',
+			'createdBy' => $createdBy,
+		];
+	}//end ownFields()
+
+	/**
+	 * The share record's fields that describe the minted link and the files beside it.
+	 *
+	 * @param array<string, mixed> $link The minted link.
+	 * @param array<int, string> $capabilities What the link grants.
+	 * @param array<int, array<string, mixed>> $documents The file links minted beside it.
+	 *
+	 * @return array<string, mixed> The fields.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function linkFields(array $link, array $capabilities, array $documents): array {
+		return [
+			'accessLinkId' => (int)($link['id'] ?? 0),
+			'accessLinkUuid' => (string)($link['uuid'] ?? ''),
+			'accessLinkUrl' => (string)($link['url'] ?? ''),
+			'capabilities' => implode(',', $capabilities),
+			'expiresAt' => (string)($link['expiresAt'] ?? ''),
+			'sharedDocuments' => json_encode($documents),
+		];
+	}//end linkFields()
 
 	/**
 	 * The anchor at the end of a link address.

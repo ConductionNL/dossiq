@@ -88,10 +88,7 @@ class AiAuditService implements AiAuditServiceInterface {
 		string $userId,
 		array $context = [],
 	): array {
-		$model = (string)($context['model'] ?? '');
-		if ($model === '') {
-			$model = $this->modelIdentity->identifier();
-		}
+		$model = $this->modelOf(context: $context);
 
 		$entry = [
 			'type' => $type,
@@ -106,11 +103,7 @@ class AiAuditService implements AiAuditServiceInterface {
 			'timestamp' => date('c'),
 		];
 
-		foreach (['unusedBecause', 'prompt', 'documentId'] as $key) {
-			if ((string)($context[$key] ?? '') !== '') {
-				$entry[$key] = (string)$context[$key];
-			}
-		}
+		$entry = $this->withContextKeys(entry: $entry, context: $context);
 
 		$this->recordAuditEntry(entry: $entry);
 
@@ -124,6 +117,44 @@ class AiAuditService implements AiAuditServiceInterface {
 
 		return ['success' => true, 'delegated' => $delegated];
 	}//end recordUserAction()
+
+	/**
+	 * The model the caller named, else this instance's own model identifier.
+	 *
+	 * @param array<string, string> $context The caller's context.
+	 *
+	 * @return string The model identifier.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function modelOf(array $context): string {
+		$model = (string)($context['model'] ?? '');
+		if ($model === '') {
+			$model = $this->modelIdentity->identifier();
+		}
+
+		return $model;
+	}//end modelOf()
+
+	/**
+	 * The entry with the non-empty `unusedBecause`, `prompt` and `documentId` of the context.
+	 *
+	 * @param array<string, mixed>  $entry   The audit entry.
+	 * @param array<string, string> $context The caller's context.
+	 *
+	 * @return array<string, mixed> The entry.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function withContextKeys(array $entry, array $context): array {
+		foreach (['unusedBecause', 'prompt', 'documentId'] as $key) {
+			if ((string)($context[$key] ?? '') !== '') {
+				$entry[$key] = (string)$context[$key];
+			}
+		}
+
+		return $entry;
+	}//end withContextKeys()
 
 	/**
 	 * Add the reference the surface gave the suggestion, for hermiq only.

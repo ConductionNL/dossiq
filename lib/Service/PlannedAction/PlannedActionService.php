@@ -195,30 +195,9 @@ class PlannedActionService implements PlannedActionServiceInterface {
 	 *
 	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/task-management/spec.md
 	 */
-	public function complete(
-		array $action,
-		string $completedBy = '',
-		array $roleHolders = [],
-		?DateTimeImmutable $completedOn = null,
-	): ?array {
+	public function complete(array $action, string $completedBy = '', array $roleHolders = [], ?DateTimeImmutable $completedOn = null): ?array {
 		$moment = ($completedOn ?? new DateTimeImmutable('today'));
-		$actionId = (string)($action['id'] ?? ($action['uuid'] ?? ''));
-		$uuid = null;
-		if ($actionId !== '') {
-			$uuid = $actionId;
-		}
-
-		$this->write(
-			object: array_merge(
-				$action,
-				[
-					'state' => 'completed',
-					'completedAt' => $moment->format('Y-m-d\TH:i:sP'),
-					'completedBy' => $completedBy,
-				]
-			),
-			uuid: $uuid
-		);
+		$this->markCompleted(action: $action, completedBy: $completedBy, moment: $moment);
 
 		$next = $this->chain->next(
 			completed: $action,
@@ -233,6 +212,28 @@ class PlannedActionService implements PlannedActionServiceInterface {
 
 		return $this->write(object: $next, uuid: null);
 	}//end complete()
+
+	/**
+	 * Write an action as completed.
+	 *
+	 * @param array<string, mixed> $action      The action being completed.
+	 * @param string               $completedBy Who completed it.
+	 * @param DateTimeImmutable    $moment      The completion date.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/task-management/spec.md
+	 */
+	private function markCompleted(array $action, string $completedBy, DateTimeImmutable $moment): void {
+		$actionId = (string)($action['id'] ?? ($action['uuid'] ?? ''));
+		$uuid = null;
+		if ($actionId !== '') {
+			$uuid = $actionId;
+		}
+
+		$changes = ['state' => 'completed', 'completedAt' => $moment->format('Y-m-d\TH:i:sP'), 'completedBy' => $completedBy];
+		$this->write(object: array_merge($action, $changes), uuid: $uuid);
+	}//end markCompleted()
 
 	/**
 	 * The action types available on a case type, by identifier.

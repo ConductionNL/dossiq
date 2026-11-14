@@ -122,14 +122,7 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 	public function lookUp(string $bsn, string $ownDomain, string $ground, string $requester): array {
 		$this->assertGround(ground: $ground);
 
-		$bsn = trim($bsn);
-		if ($bsn === '') {
-			throw new RefusedException(
-				rule: 'lookup-needs-a-person',
-				sentence: 'Say who you are looking up.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$bsn = $this->requirePerson(bsn: $bsn);
 
 		$found = [];
 		// Procedures that moved onto a case type answer through their cases.
@@ -139,22 +132,7 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 				continue;
 			}
 
-			// The BSN KEY comes from the domain's own declaration, because the
-			// three schemas do not spell it the same way: a Jeugdwet case names
-			// the juvenile in `jeugdigeBsn`. Filtering it on `bsn` answers a
-			// clean "nothing here" rather than an error.
-			$filters = [$declaration['bsnKey'] => $bsn];
-
-			$contact = null;
-			foreach ($this->store->rows(schema: $declaration['schema'], filters: $filters) as $row) {
-				// A record that moved onto a case answers through its case.
-				if ($this->isOpen(row: $row) === false || trim((string)($row['migratedTo'] ?? '')) !== '') {
-					continue;
-				}
-
-				$contact = $this->contactFor(row: $row, domain: $domain);
-				break;
-			}
+			$contact = $this->openRecordContact(domain: $domain, declaration: $declaration, bsn: $bsn);
 
 			$contact = ($contact ?? ($caseContacts[$domain] ?? null));
 			if ($contact === null) {
@@ -184,6 +162,62 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 
 		return $found;
 	}//end lookUp()
+
+	/**
+	 * The trimmed BSN, refusing an empty one.
+	 *
+	 * @param string $bsn The person looked up.
+	 *
+	 * @return string The trimmed BSN.
+	 *
+	 * @throws RefusedException When no person is named.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 */
+	private function requirePerson(string $bsn): string {
+		$bsn = trim($bsn);
+		if ($bsn === '') {
+			throw new RefusedException(
+				rule: 'lookup-needs-a-person',
+				sentence: 'Say who you are looking up.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $bsn;
+	}//end requirePerson()
+
+	/**
+	 * The contact of the first open, unmigrated record a domain holds about the person.
+	 *
+	 * @param string $domain The domain.
+	 * @param array{schema: string, bsnKey: string} $declaration The domain's declaration.
+	 * @param string $bsn The person looked up.
+	 *
+	 * @return string|null The contact, or null when the domain holds no open record.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 */
+	private function openRecordContact(string $domain, array $declaration, string $bsn): ?string {
+		// The BSN KEY comes from the domain's own declaration, because the
+		// three schemas do not spell it the same way: a Jeugdwet case names
+		// the juvenile in `jeugdigeBsn`. Filtering it on `bsn` answers a
+		// clean "nothing here" rather than an error.
+		$filters = [$declaration['bsnKey'] => $bsn];
+
+		$contact = null;
+		foreach ($this->store->rows(schema: $declaration['schema'], filters: $filters) as $row) {
+			// A record that moved onto a case answers through its case.
+			if ($this->isOpen(row: $row) === false || trim((string)($row['migratedTo'] ?? '')) !== '') {
+				continue;
+			}
+
+			$contact = $this->contactFor(row: $row, domain: $domain);
+			break;
+		}
+
+		return $contact;
+	}//end openRecordContact()
 
 	/**
 	 * What was looked up about one person, with the grounds and the dates.

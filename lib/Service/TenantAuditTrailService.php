@@ -313,19 +313,75 @@ class TenantAuditTrailService implements TenantAuditTrailServiceInterface {
 	 */
 	public function hardeningChecklist(): array {
 		// Live probe — never a hardcoded pass.
+		$auditStatus = $this->auditStatus();
+
+		$isolationStatus = $this->isolationStatus();
+
+		$rowFilter = $this->rowFilterEvidence();
+
+		return [
+			...$this->queryAndAuditControls(rowFilter: $rowFilter, isolationStatus: $isolationStatus, auditStatus: $auditStatus),
+			...$this->secretAndLeakControls(rowFilter: $rowFilter, isolationStatus: $isolationStatus),
+			...$this->supplyChainControls(),
+		];
+	}//end hardeningChecklist()
+
+	/**
+	 * The live status of the durable audit sink.
+	 *
+	 * @return string `pass` when OpenRegister's audit trail is reachable, `unverified` otherwise.
+	 *
+	 * @spec openspec/specs/tenant-compliance/spec.md
+	 */
+	private function auditStatus(): string {
 		$auditStatus = 'unverified';
 		if ($this->auditSinkAvailable() === true) {
 			$auditStatus = 'pass';
 		}
 
+		return $auditStatus;
+	}//end auditStatus()
+
+	/**
+	 * The live status of OpenRegister's organisation row filter.
+	 *
+	 * @return string `pass` when multitenancy is on, `unverified` otherwise.
+	 *
+	 * @spec openspec/specs/tenant-compliance/spec.md
+	 */
+	private function isolationStatus(): string {
 		$isolationStatus = 'unverified';
 		if ($this->rowFilterEnabled() === true) {
 			$isolationStatus = 'pass';
 		}
 
-		$rowFilter = 'OpenRegister organisation row filter (MagicSearchHandler adds a WHERE on the organisation column '
-			. 'when multitenancy is on), probed live through SettingsService::isMultiTenancyEnabled()';
+		return $isolationStatus;
+	}//end isolationStatus()
 
+	/**
+	 * The evidence line naming the organisation row filter.
+	 *
+	 * @return string The evidence.
+	 *
+	 * @spec openspec/specs/tenant-compliance/spec.md
+	 */
+	private function rowFilterEvidence(): string {
+		return 'OpenRegister organisation row filter (MagicSearchHandler adds a WHERE on the organisation column '
+			. 'when multitenancy is on), probed live through SettingsService::isMultiTenancyEnabled()';
+	}//end rowFilterEvidence()
+
+	/**
+	 * The tenant-scoped-query and audit-logging controls.
+	 *
+	 * @param string $rowFilter       The row filter evidence line.
+	 * @param string $isolationStatus The live row filter status.
+	 * @param string $auditStatus     The live audit sink status.
+	 *
+	 * @return array<int, array{key:string, description:string, evidence:string, status:string}>
+	 *
+	 * @spec openspec/specs/tenant-compliance/spec.md
+	 */
+	private function queryAndAuditControls(string $rowFilter, string $isolationStatus, string $auditStatus): array {
 		return [
 			[
 				'key' => 'tenant_scoped_queries',
@@ -341,6 +397,21 @@ class TenantAuditTrailService implements TenantAuditTrailServiceInterface {
 					. 'OrganisationStatusChangeListener on OpenRegister\'s OrganisationUpdatedEvent',
 				'status' => $auditStatus,
 			],
+		];
+	}//end queryAndAuditControls()
+
+	/**
+	 * The hardcoded-secret and tenant-leak controls.
+	 *
+	 * @param string $rowFilter       The row filter evidence line.
+	 * @param string $isolationStatus The live row filter status.
+	 *
+	 * @return array<int, array{key:string, description:string, evidence:string, status:string}>
+	 *
+	 * @spec openspec/specs/tenant-compliance/spec.md
+	 */
+	private function secretAndLeakControls(string $rowFilter, string $isolationStatus): array {
+		return [
 			[
 				'key' => 'no_hardcoded_secrets',
 				'description' => 'JWT signing secret + Shillinq credentials resolved from app config',
@@ -354,6 +425,18 @@ class TenantAuditTrailService implements TenantAuditTrailServiceInterface {
 				'evidence' => $rowFilter . '; another organisation\'s object finds no row, so the lookup answers 404',
 				'status' => $isolationStatus,
 			],
+		];
+	}//end secretAndLeakControls()
+
+	/**
+	 * The dependency-audit and isolation pen-test controls.
+	 *
+	 * @return array<int, array{key:string, description:string, evidence:string, status:string}>
+	 *
+	 * @spec openspec/specs/tenant-compliance/spec.md
+	 */
+	private function supplyChainControls(): array {
+		return [
 			[
 				'key' => 'composer_audit',
 				'description' => 'composer audit passes with zero high-severity CVEs',
@@ -367,5 +450,5 @@ class TenantAuditTrailService implements TenantAuditTrailServiceInterface {
 				'status' => 'unverified',
 			],
 		];
-	}//end hardeningChecklist()
+	}//end supplyChainControls()
 }//end class

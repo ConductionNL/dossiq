@@ -48,6 +48,8 @@ use Throwable;
 /**
  * Moves another app's stored records onto cases, by the case type's declaration.
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ *
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
  */
 class CaseRecordImport implements CaseRecordImportInterface {
@@ -421,33 +423,42 @@ class CaseRecordImport implements CaseRecordImportInterface {
 			return $failed($placed['reason']);
 		}
 
-		$caseId = $placed['caseId'];
+		$moved = $this->moveAndStamp(run: $run, source: $source, sourceId: $sourceId, caseId: $placed['caseId']);
+		if (isset($moved['reason']) === true) {
+			return $failed($moved['reason']);
+		}
 
+		return ['requestId' => $sourceId, 'reference' => $reference, 'caseId' => $placed['caseId'],
+			'sourceTimer' => (string)($source[(string)($run['import']['sourceTimerField'] ?? '')] ?? ''), 'repointed' => $moved['repointed']];
+	}//end importOne()
+
+	/**
+	 * Move the records pointing at the source onto the case, then stamp the source as moved.
+	 *
+	 * @param array<string, mixed> $run      The run: objectService, caseType, import, existing.
+	 * @param array<string, mixed> $source   The source record.
+	 * @param string               $sourceId The source record's id.
+	 * @param string               $caseId   The case written for it.
+	 *
+	 * @return array{repointed?: mixed, reason?: string} How many references moved, or why the record is not moved.
+	 */
+	private function moveAndStamp(array $run, array $source, string $sourceId, string $caseId): array {
 		// References are moved before the stamp: a record whose references
 		// could not all be moved stays unstamped, so the next run tries again.
 		try {
-			$repointed = $this->references->repoint(
-				objectService: $run['objectService'],
-				import: $run['import'],
-				oldValues: [$sourceId, (string)($source['@self']['slug'] ?? '')],
-				caseId: $caseId
-			);
+			$oldValues = [$sourceId, (string)($source['@self']['slug'] ?? '')];
+			$repointed = $this->references->repoint(objectService: $run['objectService'], import: $run['import'], oldValues: $oldValues, caseId: $caseId);
 		} catch (Throwable $e) {
-			return $failed('The case ' . $caseId . ' was written, but the records pointing at the source could not all be moved onto it: ' . $e->getMessage());
+			$reason = 'The case ' . $caseId . ' was written, but the records pointing at the source could not all be moved onto it: ' . $e->getMessage();
+			return ['reason' => $reason];
 		}
 
 		if ($this->steps->store->stamp(objectService: $run['objectService'], import: $run['import'], sourceId: $sourceId, caseId: $caseId) === false) {
-			return $failed('The source app did not keep the stamp, so the record is not counted as moved.');
+			return ['reason' => 'The source app did not keep the stamp, so the record is not counted as moved.'];
 		}
 
-		return [
-			'requestId' => $sourceId,
-			'reference' => $reference,
-			'caseId' => $caseId,
-			'sourceTimer' => (string)($source[(string)($run['import']['sourceTimerField'] ?? '')] ?? ''),
-			'repointed' => $repointed,
-		];
-	}//end importOne()
+		return ['repointed' => $repointed];
+	}//end moveAndStamp()
 
 	/**
 	 * Map a record, write its case unless it has one, and carry its term.

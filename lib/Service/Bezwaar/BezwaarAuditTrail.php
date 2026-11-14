@@ -194,23 +194,9 @@ class BezwaarAuditTrail implements BezwaarAuditTrailInterface {
 	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function write(string $register, string $schema, string $objectUuid, string $action, array $context, ?string $actorId = null): void {
-		if (in_array('openregister', (array)$this->appManager->getInstalledApps(), true) === false) {
-			throw new BezwaarEntryNotWrittenException(
-				action: $action,
-				objectUuid: $objectUuid,
-				entry: $context,
-				reason: 'OpenRegister is not available, so the bezwaar entry '.$action.' cannot be written',
-			);
-		}
+		$this->assertOpenRegister(action: $action, objectUuid: $objectUuid, context: $context);
 
-		$object = null;
-		$cause = null;
-		try {
-			$object = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService')
-				->find($objectUuid, register: $register, schema: $schema);
-		} catch (Throwable $e) {
-			$cause = $e;
-		}
+		[$object, $cause] = $this->findRecord(register: $register, schema: $schema, objectUuid: $objectUuid);
 
 		if (is_object($object) === false) {
 			throw new BezwaarEntryNotWrittenException(
@@ -237,6 +223,54 @@ class BezwaarAuditTrail implements BezwaarAuditTrailInterface {
 			);
 		}
 	}//end write()
+
+	/**
+	 * Throw when OpenRegister is not installed.
+	 *
+	 * @param string               $action     The full action.
+	 * @param string               $objectUuid The record's uuid.
+	 * @param array<string, mixed> $context    The row's context.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When OpenRegister is absent.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	private function assertOpenRegister(string $action, string $objectUuid, array $context): void {
+		if (in_array('openregister', (array)$this->appManager->getInstalledApps(), true) === false) {
+			throw new BezwaarEntryNotWrittenException(
+				action: $action,
+				objectUuid: $objectUuid,
+				entry: $context,
+				reason: 'OpenRegister is not available, so the bezwaar entry '.$action.' cannot be written',
+			);
+		}
+	}//end assertOpenRegister()
+
+	/**
+	 * Look the record up, keeping the lookup's failure as the cause.
+	 *
+	 * @param string $register   The register the record lives in.
+	 * @param string $schema     The record's schema.
+	 * @param string $objectUuid The record's uuid.
+	 *
+	 * @return array{0: mixed, 1: Throwable|null} The found record (or null) and the failure, if any.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	private function findRecord(string $register, string $schema, string $objectUuid): array {
+		$object = null;
+		$cause = null;
+		try {
+			$object = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService')
+				->find($objectUuid, register: $register, schema: $schema);
+		} catch (Throwable $e) {
+			$cause = $e;
+		}
+
+		return [$object, $cause];
+	}//end findRecord()
 
 	/**
 	 * Record the entry of a record this act just created, or undo the act.

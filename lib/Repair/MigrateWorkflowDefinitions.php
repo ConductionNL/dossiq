@@ -46,6 +46,8 @@ use Psr\Log\LoggerInterface;
  * Backfill workflowTemplate objects from implicit statusType ordering.
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class MigrateWorkflowDefinitions implements IRepairStep {
 
@@ -385,12 +387,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 */
 	private function orderedStatuses(BackfillTarget $target, string $caseTypeId): array {
 		try {
-			$statusRows = $this->searchObjectsAsArrays(
-				objectService: $target->objectService,
-				register: $target->register,
-				schema: $target->schemas->status,
-				filters: ['caseType' => $caseTypeId, '_limit' => 500],
-			);
+			$statusRows = $this->searchStatuses(target: $target, caseTypeId: $caseTypeId);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: workflow backfill failed to list statusTypes',
@@ -399,6 +396,36 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			return [];
 		}
 
+		return $this->sortedByOrder(statuses: $this->statusesWithId(statusRows: $statusRows));
+	}//end orderedStatuses()
+
+	/**
+	 * Search a case type's statuses.
+	 *
+	 * @param BackfillTarget $target     The register and schemas.
+	 * @param string         $caseTypeId The case type.
+	 *
+	 * @return array<int, mixed> The raw rows.
+	 *
+	 * @throws \Throwable When the search fails.
+	 */
+	private function searchStatuses(BackfillTarget $target, string $caseTypeId): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $target->objectService,
+			register: $target->register,
+			schema: $target->schemas->status,
+			filters: ['caseType' => $caseTypeId, '_limit' => 500],
+		);
+	}//end searchStatuses()
+
+	/**
+	 * The rows that read as an array and carry an id.
+	 *
+	 * @param array<int, mixed> $statusRows The raw rows.
+	 *
+	 * @return array<int, array<string, mixed>> The statuses.
+	 */
+	private function statusesWithId(array $statusRows): array {
 		$statuses = [];
 		foreach ($statusRows as $raw) {
 			$row = $this->objectToArrayOrNull(value: $raw);
@@ -407,6 +434,17 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			}
 		}
 
+		return $statuses;
+	}//end statusesWithId()
+
+	/**
+	 * The statuses sorted by their order.
+	 *
+	 * @param array<int, array<string, mixed>> $statuses The statuses.
+	 *
+	 * @return array<int, array<string, mixed>> The statuses, in order.
+	 */
+	private function sortedByOrder(array $statuses): array {
 		usort(
 			$statuses,
 			static function (array $a, array $b): int {
@@ -415,7 +453,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		);
 
 		return $statuses;
-	}//end orderedStatuses()
+	}//end sortedByOrder()
 
 	/**
 	 * Pin the open cases of a caseType to its new template at version 1.
