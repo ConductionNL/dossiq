@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Notification;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
 use OCA\Dossiq\Service\QuotaLimitLabel;
+use OCP\IAppConfig;
 use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
 use OCP\Notification\INotification;
@@ -127,6 +128,24 @@ class Notifier implements INotifier, NotifierInterface {
 	 *
 	 * @var array<int, string>
 	 */
+	/**
+	 * The appconfig key prefix of an administrator's own notification text
+	 * (REQ-CRS-13; the keys are ConfigKeys::NOTIFICATION_TEXT_KEYS).
+	 *
+	 * @var string
+	 */
+	public const TEXT_KEY_PREFIX = 'notification_text_';
+
+	/**
+	 * Subjects that share another subject's text: the Dutch-named advice
+	 * request is the same notification as the English-named one.
+	 *
+	 * @var array<string, string>
+	 */
+	private const TEXT_KEY_ALIASES = [
+		self::SUBJECT_ADVICE_REQUESTED_NL => self::SUBJECT_ADVICE_REQUESTED,
+	];
+
 	private const KNOWN_SUBJECTS = [
 		self::SUBJECT_NOTE_MENTION,
 		self::SUBJECT_CASE_STATUS_CHANGED,
@@ -159,11 +178,13 @@ class Notifier implements INotifier, NotifierInterface {
 	 * @param IFactory $l10nFactory Resolves the localisation for the recipient's language.
 	 * @param IURLGenerator $urlGenerator Builds the notification icon URL.
 	 * @param QuotaLimitLabel $quotaLabels Words a quota limit.
+	 * @param IAppConfig|null $appConfig The administrator's own notification texts (REQ-CRS-13); null keeps the shipped wording.
 	 */
 	public function __construct(
 		private readonly IFactory $l10nFactory,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly QuotaLimitLabel $quotaLabels = new QuotaLimitLabel(),
+		private readonly ?IAppConfig $appConfig = null,
 	) {
 	}//end __construct()
 
@@ -188,6 +209,44 @@ class Notifier implements INotifier, NotifierInterface {
 	public function getName(): string {
 		return 'Dossiq';
 	}//end getName()
+
+	/**
+	 * The administrator's own text for this kind of notification, or ''.
+	 *
+	 * Read on every prepare, so a saved text reaches the next notification of
+	 * that kind without a restart. It replaces the message under the subject;
+	 * the subject keeps the shipped wording, because it is what the bell lists
+	 * and what a reader scans by. `{name}` in the text is filled with the
+	 * notification's own parameter of that name when that parameter is a
+	 * scalar, and left as written otherwise, so a placeholder the kind does
+	 * not carry stays visible rather than disappearing into a blank.
+	 *
+	 * @param NotificationText $text The notification being worded.
+	 *
+	 * @return string The text, or '' to keep the shipped wording.
+	 *
+	 * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/admin-settings/spec.md#requirement-an-administrator-edits-the-text-of-each-notification-req-crs-13
+	 */
+	private function customText(NotificationText $text): string {
+		if ($this->appConfig === null) {
+			return '';
+		}
+
+		$subjectKey = (self::TEXT_KEY_ALIASES[$text->subjectKey] ?? $text->subjectKey);
+		$custom     = trim($this->appConfig->getValueString(AppIdentity::APP_ID, self::TEXT_KEY_PREFIX.$subjectKey, ''));
+		if ($custom === '') {
+			return '';
+		}
+
+		$fill = [];
+		foreach ($text->parameters as $name => $value) {
+			if (is_string($name) === true && is_scalar($value) === true) {
+				$fill['{'.$name.'}'] = (string)$value;
+			}
+		}
+
+		return strtr($custom, $fill);
+	}//end customText()
 
 	/**
 	 * Prepare a Dossiq notification for display.
@@ -217,6 +276,11 @@ class Notifier implements INotifier, NotifierInterface {
 		$text->parameters = $notification->getSubjectParameters();
 
 		[$subject, $message] = $this->wording(text: $text);
+
+		$custom = $this->customText(text: $text);
+		if ($custom !== '') {
+			$message = $custom;
+		}
 
 		$notification->setParsedSubject($subject);
 		$notification->setParsedMessage($message);

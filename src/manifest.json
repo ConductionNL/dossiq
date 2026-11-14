@@ -7851,6 +7851,27 @@
 					"complete": "/apps/dossiq/api/case-tasks/{id}/complete",
 					"cancel": "/apps/dossiq/api/case-tasks/{id}/cancel"
 				},
+				"headerActions": [
+					{
+						"id": "task-assign",
+						"type": "open-modal",
+						"label": "Assign",
+						"icon": "AccountArrowRight",
+						"target": "TaskAssignDialog",
+						"props": {
+							"taskId": "@objectId"
+						},
+						"visibleWhen": {
+							"field": "state",
+							"op": "in",
+							"value": [
+								"available",
+								"enabled",
+								"active"
+							]
+						}
+					}
+				],
 				"widgets": [
 					{
 						"id": "task-panels",
@@ -15323,6 +15344,15 @@
 									"sortable": false
 								}
 							],
+							"rowActions": [
+								{
+									"id": "open-moment",
+									"label": "Open the contact moment",
+									"icon": "PhoneLogOutline",
+									"type": "open-modal",
+									"target": "ContactMomentDetailDialog"
+								}
+							],
 							"emptyText": "No contact moments yet"
 						}
 					},
@@ -15379,6 +15409,13 @@
 								}
 							],
 							"rowActions": [
+								{
+									"id": "open-document",
+									"label": "Open the document",
+									"icon": "FileDocumentOutline",
+									"type": "handler",
+									"handler": "openDocumentOfDispatch"
+								},
 								{
 									"id": "open-case",
 									"label": "Open the case",
@@ -16105,6 +16142,15 @@
 									"sortable": false
 								}
 							],
+							"rowActions": [
+								{
+									"id": "open-moment",
+									"label": "Open the contact moment",
+									"icon": "PhoneLogOutline",
+									"type": "open-modal",
+									"target": "ContactMomentDetailDialog"
+								}
+							],
 							"emptyText": "No contact moments yet"
 						}
 					},
@@ -16161,6 +16207,13 @@
 								}
 							],
 							"rowActions": [
+								{
+									"id": "open-document",
+									"label": "Open the document",
+									"icon": "FileDocumentOutline",
+									"type": "handler",
+									"handler": "openDocumentOfDispatch"
+								},
 								{
 									"id": "open-case",
 									"label": "Open the case",

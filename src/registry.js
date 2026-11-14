@@ -95,6 +95,7 @@ import CaseTypeImportDialog from './dialogs/CaseTypeImportDialog.vue'
 import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
+import ContactMomentDetailDialog from './dialogs/ContactMomentDetailDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
 import DocumentAccessExceptionDialog from './dialogs/DocumentAccessExceptionDialog.vue'
 import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
@@ -116,6 +117,7 @@ import RemedyLodgeDialog from './dialogs/RemedyLodgeDialog.vue'
 import RemindDialog from './dialogs/RemindDialog.vue'
 import RowRecordActionDialog from './dialogs/RowRecordActionDialog.vue'
 import SearchPlanDialog from './dialogs/SearchPlanDialog.vue'
+import TaskAssignDialog from './dialogs/TaskAssignDialog.vue'
 // @spec openspec/changes/handler-asks-the-applicant-for-missing-information/specs/termijn-pause-extension/spec.md#requirement-the-handler-asks-for-missing-information-from-the-case-page-req-avr-05
 import AanvullingVragenModal from './modals/AanvullingVragenModal.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
@@ -168,7 +170,7 @@ import { declareCaseMajor, startCaseConversation } from './utils/caseConversatio
 import { toggleCaseFollow } from './utils/caseFollow.js'
 import { caseStatusTargets, moveCaseStatus } from './utils/caseStatusBoardMoves.js'
 import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
-import { openCaseOfDocument } from './utils/contactDocuments.js'
+import { openCaseOfDocument, openDocumentOfDispatch } from './utils/contactDocuments.js'
 import { openIntegriqConnections } from './utils/integriqConnections.js'
 import { prepareNoticePayout } from './utils/noticePayout.js'
 import { readFileAsMessage } from './utils/savedMail.js'
@@ -598,6 +600,20 @@ const registry = {
 		component: FileContactMomentDialog,
 		propsSchema: {},
 		_note: 'CaseDetail Communication tab, the contact moments from pipelinq: files one moment on another case too. Opened from the record list row actions with `caseId` and the moment as `row`; pipelinq records who filed it and when, and its refusal is shown in the dialog. Asks the page to refresh on success, so the list reads again.',
+	},
+	// @spec openspec/changes/capability-rows-say-the-whole-capability/specs/party-pages/spec.md#requirement-the-contact-page-lists-the-contacts-documents-and-communication-req-crs-04
+	ContactMomentDetailDialog: {
+		kind: 'modal',
+		component: ContactMomentDetailDialog,
+		propsSchema: {},
+		_note: 'The contact and organisation pages\' Contact moments panels: opens the moment a row names, read-only. Opened by the open-moment row action with the moment as `row`. No contact-moment page exists, and a modal over the list keeps the agent on the contact. A field the reader may not see arrives empty from OpenRegister and is left out rather than shown blank.',
+	},
+	// @spec openspec/changes/capability-rows-say-the-whole-capability/tasks.md
+	TaskAssignDialog: {
+		kind: 'modal',
+		component: TaskAssignDialog,
+		propsSchema: {},
+		_note: 'TaskDetail `task-assign` header action (REQ-TASK-003): assign the task to a colleague (engine `assign`) or to a team (engine `offer`, the group as candidate pool). The engine decides who may and offers a pool only to a task nobody holds; its refusal is shown as-is. Shown while the task is open (available, enabled, active). Reads the task from the route, because open-modal forwards `@objectId` verbatim.',
 	},
 	LinkProgrammeDialog: {
 		kind: 'modal',
@@ -1078,6 +1094,12 @@ const registry = {
 		kind: 'handler',
 		handler: openCaseOfDocument,
 		_note: "The contact and organisation Documents panels' open-case row action. A function because the row is a `dispatch` and the destination is its CASE: `rowRoute` pushes the row's own id, which would navigate to a case page for a uuid no case has, and that looks exactly like a deleted case rather than like a bug.",
+	},
+	// @spec openspec/changes/capability-rows-say-the-whole-capability/specs/party-pages/spec.md#requirement-the-contact-page-lists-the-contacts-documents-and-communication-req-crs-04
+	openDocumentOfDispatch: {
+		kind: 'handler',
+		handler: openDocumentOfDispatch,
+		_note: "The contact and organisation Documents panels' open-document row action, beside open-case. A function because the row is a `dispatch` and the document is a field of it: a Nextcloud file opens at /f/{fileId}, an external document at its http(s) link, and a row naming neither does nothing rather than open the wrong thing.",
 	},
 	// @spec openspec/specs/case-management/spec.md
 	startCaseConversation: {
