@@ -82,9 +82,36 @@ class CaseFileCollector implements CaseFileCollectorInterface {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
 	 */
 	public function collect(string $caseId, string $fileName, string $content, array $provenance, string $mimeType = ''): string {
+		$stored = $this->storedRecord(caseId: $caseId, fileName: $fileName, content: $content);
+		if ($stored === null) {
+			return '';
+		}
+
+		[$record, $file] = $stored;
+		if ($this->mailHeaders->isMail(fileName: $fileName, mimeType: $mimeType) === true) {
+			$provenance['mail'] = $this->mailOf(file: $file);
+			$provenance = array_replace(
+				$provenance,
+				$this->mailThreads->conversationOf(caseId: $caseId, fileName: $fileName, bytes: $content)
+			);
+		}
+
+		return $this->saveProvenance(record: $record, provenance: $provenance, caseId: $caseId);
+	}//end collect()
+
+	/**
+	 * Store the bytes and find, or project, the record the file gets.
+	 *
+	 * @param string $caseId   The case uuid.
+	 * @param string $fileName The file name.
+	 * @param string $content  The bytes.
+	 *
+	 * @return array{0: array<string, mixed>, 1: File|null}|null The record and the stored file, null when either write failed.
+	 */
+	private function storedRecord(string $caseId, string $fileName, string $content): array|null {
 		$fileId = $this->store->storeFileOnObject(objectId: $caseId, fileName: $fileName, content: $content);
 		if ($fileId <= 0) {
-			return '';
+			return null;
 		}
 
 		$file = $this->storedFile(caseId: $caseId, fileId: $fileId);
@@ -94,27 +121,44 @@ class CaseFileCollector implements CaseFileCollectorInterface {
 		}
 
 		if ($record === null) {
-			return '';
+			return null;
 		}
 
-		if ($this->mailHeaders->isMail(fileName: $fileName, mimeType: $mimeType) === true) {
-			$provenance['mail'] = ['unreadable' => true];
-			if ($file !== null) {
-				$provenance['mail'] = $this->mailHeaders->read(file: $file);
-			}
+		return [$record, $file];
+	}//end storedRecord()
 
-			$provenance = array_replace(
-				$provenance,
-				$this->mailThreads->conversationOf(caseId: $caseId, fileName: $fileName, bytes: $content)
-			);
+	/**
+	 * The header fields of a collected mail, or a marker when the file is not in hand.
+	 *
+	 * @param File|null $file The stored file.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function mailOf(File|null $file): array {
+		$mail = ['unreadable' => true];
+		if ($file !== null) {
+			$mail = $this->mailHeaders->read(file: $file);
 		}
 
+		return $mail;
+	}//end mailOf()
+
+	/**
+	 * Write the provenance on the record and join it to the case.
+	 *
+	 * @param array<string, mixed> $record     The document record.
+	 * @param array<string, mixed> $provenance Where it was found.
+	 * @param string               $caseId     The case uuid.
+	 *
+	 * @return string The document record uuid.
+	 */
+	private function saveProvenance(array $record, array $provenance, string $caseId): string {
 		$record['provenance'] = $provenance;
 		$recordId = $this->store->saveRecord(record: $record);
 		$this->store->ensureJoin(caseId: $caseId, recordId: $recordId);
 
 		return $recordId;
-	}//end collect()
+	}//end saveProvenance()
 
 	/**
 	 * The file just stored in the case folder.
