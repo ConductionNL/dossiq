@@ -167,28 +167,61 @@ class AdoptedCaseTypeFill {
 
 		$filled = [];
 		foreach ($adopted as $entry) {
-			if (($entry['fill'] ?? []) === []) {
-				continue;
-			}
-
-			try {
-				// An administrator's install, which passes the access check as PackageWriter's writes do.
-				$objectService->saveObject(
-					$this->withoutMetadata(row: (array)$entry['row']),
-					register: (string)$entry['register'],
-					schema: (string)$entry['schema'],
-					uuid: (string)$entry['id'],
-					_rbac: false
-				);
+			if ($this->fill(objectService: $objectService, entry: $entry) === true) {
 				$filled[] = (string)$entry['id'];
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Package install: adopted case type {id} kept without the fields it lacked: {error}',
-					['id' => $entry['id'], 'error' => $e->getMessage()]
-				);
 			}
 		}//end foreach
 
 		return $filled;
 	}//end write()
+
+	/**
+	 * Fill one adopted case type when it lacks fields, logging when the write fails.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $entry         The adopted row.
+	 *
+	 * @return bool Whether the row was filled.
+	 *
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 */
+	private function fill(object $objectService, array $entry): bool {
+		if (($entry['fill'] ?? []) === []) {
+			return false;
+		}
+
+		try {
+			$this->saveFilled(objectService: $objectService, entry: $entry);
+			return true;
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Package install: adopted case type {id} kept without the fields it lacked: {error}',
+				['id' => $entry['id'], 'error' => $e->getMessage()]
+			);
+			return false;
+		}
+	}//end fill()
+
+	/**
+	 * Write one adopted case type as it reads once filled.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $entry         The adopted row.
+	 *
+	 * @return void
+	 *
+	 * @throws \Throwable When OpenRegister refuses the write.
+	 *
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 */
+	private function saveFilled(object $objectService, array $entry): void {
+		// An administrator's install, which passes the access check as PackageWriter's writes do.
+		$objectService->saveObject(
+			$this->withoutMetadata(row: (array)$entry['row']),
+			register: (string)$entry['register'],
+			schema: (string)$entry['schema'],
+			uuid: (string)$entry['id'],
+			_rbac: false
+		);
+	}//end saveFilled()
 }//end class
