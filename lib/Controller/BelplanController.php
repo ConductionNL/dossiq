@@ -119,10 +119,8 @@ class BelplanController extends Controller {
 			return new JSONResponse(['error' => 'Forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('belplan_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->belplanStore();
+		if ($store === null) {
 			return new JSONResponse(['error' => 'Belplan schema not configured'], Http::STATUS_BAD_REQUEST);
 		}
 
@@ -131,7 +129,34 @@ class BelplanController extends Controller {
 			return new JSONResponse(['error' => 'naam is required'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$record = [
+		return $this->saveBelplan(store: $store, record: $this->belplanRecord(name: $name));
+	}//end create()
+
+	/**
+	 * The object service, register and belplan schema to store a belplan in, or null when one is not configured.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null
+	 */
+	private function belplanStore(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('belplan_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end belplanStore()
+
+	/**
+	 * The belplan record a create request describes.
+	 *
+	 * @param string $name The belplan name.
+	 *
+	 * @return array<string, mixed> The record to save.
+	 */
+	private function belplanRecord(string $name): array {
+		return [
 			'name' => $name,
 			'triggerNumber' => (array)$this->request->getParam('triggerNumber', []),
 			'routingSteps' => (array)$this->request->getParam('routingSteps', []),
@@ -140,6 +165,18 @@ class BelplanController extends Controller {
 			'priority' => (int)$this->request->getParam('priority', 0),
 			'isActive' => (bool)$this->request->getParam('isActive', true),
 		];
+	}//end belplanRecord()
+
+	/**
+	 * Save a belplan record, answering a schema refusal as 400 and any other failure as 500.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $store The object service, register and belplan schema.
+	 * @param array<string, mixed> $record The record to save.
+	 *
+	 * @return JSONResponse
+	 */
+	private function saveBelplan(array $store, array $record): JSONResponse {
+		[$objectService, $register, $schema] = $store;
 
 		try {
 			$created = $objectService->saveObject(object: $record, register: $register, schema: $schema);
@@ -159,7 +196,7 @@ class BelplanController extends Controller {
 		}
 
 		return new JSONResponse($this->toArray(result: $created));
-	}//end create()
+	}//end saveBelplan()
 
 	/**
 	 * Update a belplan (admin only).

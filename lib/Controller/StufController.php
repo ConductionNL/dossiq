@@ -220,27 +220,48 @@ class StufController extends Controller {
 			return new JSONResponse(['error' => $this->l10n->t('endpointId and berichtNaam are required')], Http::STATUS_BAD_REQUEST);
 		}
 
-		$endpoint = $this->register->findById(
-			schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT,
-			id: $endpointId
-		);
+		$endpoint = $this->register->findById(schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT, id: $endpointId);
 		if ($endpoint === null) {
 			return new JSONResponse(['error' => $this->l10n->t('Endpoint not found')], Http::STATUS_NOT_FOUND);
 		}
 
+		return $this->sendOutbound(endpoint: $endpoint, messageName: $messageName, payload: $payload);
+	}//end outbound()
+
+	/**
+	 * Send a vrij bericht through Integriq and answer its result, or the failure.
+	 *
+	 * @param array $endpoint The StUF endpoint.
+	 * @param string $messageName The bericht name.
+	 * @param array $payload The bericht payload.
+	 *
+	 * @return JSONResponse
+	 */
+	private function sendOutbound(array $endpoint, string $messageName, array $payload): JSONResponse {
 		try {
 			return new JSONResponse($this->bridge->vrijBericht(endpoint: $endpoint, name: $messageName, payload: $payload));
 		} catch (StufException $e) {
-			$status = Http::STATUS_BAD_REQUEST;
-			$code   = 'STUF_VALIDATION';
-			if ($e->getCode() === Http::STATUS_SERVICE_UNAVAILABLE) {
-				$status = Http::STATUS_SERVICE_UNAVAILABLE;
-				$code   = 'INTEGRIQ_UNAVAILABLE';
-			}
-
-			return new JSONResponse(['error' => $e->getMessage(), 'errorCode' => $code], $status);
+			return $this->outboundFailure(e: $e);
 		}
-	}//end outbound()
+	}//end sendOutbound()
+
+	/**
+	 * Answer a failed outbound message: 503 when Integriq is unavailable, else 400.
+	 *
+	 * @param StufException $e The failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function outboundFailure(StufException $e): JSONResponse {
+		$status = Http::STATUS_BAD_REQUEST;
+		$code   = 'STUF_VALIDATION';
+		if ($e->getCode() === Http::STATUS_SERVICE_UNAVAILABLE) {
+			$status = Http::STATUS_SERVICE_UNAVAILABLE;
+			$code   = 'INTEGRIQ_UNAVAILABLE';
+		}
+
+		return new JSONResponse(['error' => $e->getMessage(), 'errorCode' => $code], $status);
+	}//end outboundFailure()
 
 	/**
 	 * Receive an async confirmation from the zaaksysteem and hand it to integriq.
