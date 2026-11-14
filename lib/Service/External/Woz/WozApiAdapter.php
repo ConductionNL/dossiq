@@ -174,33 +174,39 @@ class WozApiAdapter implements WozAdapterInterface {
 		try {
 			$response = $this->clientService->newClient()->get(
 				rtrim($baseUrl, '/') . '/wozobjecten',
-				[
-					'timeout' => 10,
-					'query' => $query,
-					'headers' => $this->headers(),
-				]
+				['timeout' => 10, 'query' => $query, 'headers' => $this->headers()]
 			);
 
-			$status = (int)$response->getStatusCode();
-			if ($status < 200 || $status >= 300) {
-				return $this->errorResult(status: $status, context: $context);
-			}
-
-			$wozObjecten = $this->extractWozObjecten(body: (string)$response->getBody());
-			if ($wozObjecten === []) {
-				return new WozLookupResult(lookupStatus: 'NOT_FOUND', wozObject: [], dormant: false);
-			}
-
-			return $this->foundSearchResult(wozObjecten: $wozObjecten);
+			return $this->searchResultOf(response: $response, context: $context);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq WOZ search lookup failed',
-				['query' => $query, 'error' => $e->getMessage(), 'context' => $context]
-			);
+			$this->logger->warning('Dossiq WOZ search lookup failed',
+				['query' => $query, 'error' => $e->getMessage(), 'context' => $context]);
 
 			return new WozLookupResult(lookupStatus: 'LOOKUP_ERROR', wozObject: [], dormant: false, extras: ['reason' => 'transport-error']);
 		}//end try
 	}//end search()
+
+	/**
+	 * The lookup result of a `/wozobjecten` search response.
+	 *
+	 * @param IResponse           $response The response.
+	 * @param array<string,mixed> $context  Lookup context.
+	 *
+	 * @return WozLookupResult
+	 */
+	private function searchResultOf(IResponse $response, array $context): WozLookupResult {
+		$status = (int)$response->getStatusCode();
+		if ($status < 200 || $status >= 300) {
+			return $this->errorResult(status: $status, context: $context);
+		}
+
+		$wozObjecten = $this->extractWozObjecten(body: (string)$response->getBody());
+		if ($wozObjecten === []) {
+			return new WozLookupResult(lookupStatus: 'NOT_FOUND', wozObject: [], dormant: false);
+		}
+
+		return $this->foundSearchResult(wozObjecten: $wozObjecten);
+	}//end searchResultOf()
 
 	/**
 	 * Extract the `_embedded.wozObjecten` list from a decoded response
