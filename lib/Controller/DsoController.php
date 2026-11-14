@@ -203,7 +203,7 @@ class DsoController extends Controller {
 		}
 
 		try {
-			return $this->applyStatusTransition(caseId: $caseId, user: $user, body: $body, newStatus: $newStatus);
+			return $this->applyStatusTransition(caseId: $caseId, user: $user, body: $body);
 		} catch (\Exception $e) {
 			return $this->failure(exception: $e, action: 'transitionStatus', message: 'Could not transition status');
 		}//end try
@@ -233,14 +233,13 @@ class DsoController extends Controller {
 	 *
 	 * @param string $caseId The case.
 	 * @param IUser $user The current user.
-	 * @param array $body The request body.
-	 * @param string $newStatus The requested status.
+	 * @param array $body The request body, with the requested status.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @throws \Exception When reading or transitioning the case fails.
 	 */
-	private function applyStatusTransition(string $caseId, IUser $user, array $body, string $newStatus): JSONResponse {
+	private function applyStatusTransition(string $caseId, IUser $user, array $body): JSONResponse {
 		$case = $this->mutableCase(caseId: $caseId, user: $user);
 		if ($case === null) {
 			return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
@@ -248,7 +247,7 @@ class DsoController extends Controller {
 
 		$updated = $this->dsoCaseService->transitionStatus(
 			caseId: $caseId,
-			newStatus: $newStatus,
+			newStatus: (string)($body['newStatus'] ?? ''),
 			besluitdatum: $this->optionalString(body: $body, key: 'besluitdatum'),
 			notes: $this->optionalString(body: $body, key: 'notes'),
 			userId: $user->getUID()
@@ -412,14 +411,13 @@ class DsoController extends Controller {
 
 		$body = $this->readJsonBody();
 		$targetBevoegdGezag = (string)($body['targetBevoegdGezag'] ?? '');
-		$reason = (string)($body['reason'] ?? '');
 
 		if ($targetBevoegdGezag === '') {
 			return $this->badRequest(message: 'targetBevoegdGezag is required');
 		}
 
 		try {
-			return $this->forwardCase(caseId: $caseId, user: $user, targetBevoegdGezag: $targetBevoegdGezag, reason: $reason);
+			return $this->forwardCase(caseId: $caseId, user: $user, body: $body);
 		} catch (\Exception $e) {
 			return $this->failure(exception: $e, action: 'doorsturen', message: 'Could not doorsturen');
 		}//end try
@@ -430,14 +428,14 @@ class DsoController extends Controller {
 	 *
 	 * @param string $caseId The case.
 	 * @param IUser $user The current user.
-	 * @param string $targetBevoegdGezag The bevoegd gezag to forward to.
-	 * @param string $reason Why the case is forwarded.
+	 * @param array $body The request body: the bevoegd gezag to forward to and why.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @throws \Exception When reading the case or dispatching fails.
 	 */
-	private function forwardCase(string $caseId, IUser $user, string $targetBevoegdGezag, string $reason): JSONResponse {
+	private function forwardCase(string $caseId, IUser $user, array $body): JSONResponse {
+		$targetBevoegdGezag = (string)($body['targetBevoegdGezag'] ?? '');
 		$case = $this->mutableCase(caseId: $caseId, user: $user);
 		if ($case === null) {
 			return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
@@ -447,7 +445,7 @@ class DsoController extends Controller {
 			case: $case,
 			caseId: $caseId,
 			targetBevoegdGezag: $targetBevoegdGezag,
-			reason: $reason,
+			reason: (string)($body['reason'] ?? ''),
 			userId: $user->getUID()
 		);
 
