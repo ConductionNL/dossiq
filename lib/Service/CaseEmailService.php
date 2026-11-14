@@ -47,8 +47,6 @@ use RuntimeException;
 /**
  * Service for case-integrated email functionality.
  *
- * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
- *
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  * @spec openspec/specs/case-history-surface/spec.md
  */
@@ -441,7 +439,26 @@ class CaseEmailService implements CaseEmailServiceInterface {
 		$subjectPattern = (string)($template['subjectPattern'] ?? '');
 		$bodyPattern = (string)($template['body'] ?? '');
 
-		$this->refuseUnresolved(subjectPattern: $subjectPattern, bodyPattern: $bodyPattern, caseData: $caseData);
+		// 🔴 REFUSED RATHER THAN SENT WITH A HOLE IN IT. `substituteVariables()`
+		// leaves a placeholder nothing answers exactly as it found it, which is
+		// the right call for a preview and the wrong one for a mail: the
+		// transport accepts it, the send reports success, and the only person
+		// who learns of the defect is the citizen reading `{{contactNaam}}` in
+		// their letter. dossiq#2950 found six shipped templates in that state
+		// and nobody had reported one in 35 days.
+		//
+		// `findUnresolvedVariables()` has been sitting beside this method since
+		// both were written, asked only by the preview endpoint. This is the
+		// send path asking it.
+		$unresolved = $this->findUnresolvedVariables(template: $subjectPattern, data: $caseData);
+		$unresolved = array_values(array_unique(array_merge($unresolved, $this->findUnresolvedVariables(template: $bodyPattern, data: $caseData))));
+
+		if ($unresolved !== []) {
+			// A RuntimeException that is not the transport sentinel becomes a
+			// 400 carrying its message, which is what this is: caller-fixable,
+			// and the fix is to name a placeholder the case can answer.
+			throw new RuntimeException('Email not sent: the template names ' . $this->placeholderList(names: $unresolved) . ', which this case cannot fill.');
+		}
 
 		$subject = $this->resolveVariables(template: $subjectPattern, data: $caseData);
 		$body = $this->resolveVariables(template: $bodyPattern, data: $caseData);
@@ -470,61 +487,15 @@ class CaseEmailService implements CaseEmailServiceInterface {
 	}//end requireTemplate()
 
 	/**
-	 * Refuse a send whose subject or body names a placeholder the case cannot fill.
+	 * The placeholder names as the template writes them, comma-separated.
 	 *
-	 * @param string $subjectPattern The subject pattern
-	 * @param string $bodyPattern The body pattern
-	 * @param array<string, mixed> $caseData The case variables
+	 * @param array<int, string> $names The placeholder names.
 	 *
-	 * @return void
-	 *
-	 * @throws \RuntimeException If any placeholder stays unresolved
+	 * @return string The list.
 	 */
-	private function refuseUnresolved(string $subjectPattern, string $bodyPattern, array $caseData): void {
-		// 🔴 REFUSED RATHER THAN SENT WITH A HOLE IN IT. `substituteVariables()`
-		// leaves a placeholder nothing answers exactly as it found it, which is
-		// the right call for a preview and the wrong one for a mail: the
-		// transport accepts it, the send reports success, and the only person
-		// who learns of the defect is the citizen reading `{{contactNaam}}` in
-		// their letter. dossiq#2950 found six shipped templates in that state
-		// and nobody had reported one in 35 days.
-		//
-		// `findUnresolvedVariables()` has been sitting beside this method since
-		// both were written, asked only by the preview endpoint. This is the
-		// send path asking it.
-		$unresolved = $this->unresolvedIn(subjectPattern: $subjectPattern, bodyPattern: $bodyPattern, caseData: $caseData);
-
-		if ($unresolved !== []) {
-			// A RuntimeException that is not the transport sentinel becomes a
-			// 400 carrying its message, which is what this is: caller-fixable,
-			// and the fix is to name a placeholder the case can answer.
-			throw new RuntimeException(
-				'Email not sent: the template names '
-				. implode(', ', array_map(static fn (string $n): string => '{{' . $n . '}}', $unresolved))
-				. ', which this case cannot fill.'
-			);
-		}
-	}//end refuseUnresolved()
-
-	/**
-	 * The placeholders in the subject or body the case cannot fill, each once.
-	 *
-	 * @param string $subjectPattern The subject pattern
-	 * @param string $bodyPattern The body pattern
-	 * @param array<string, mixed> $caseData The case variables
-	 *
-	 * @return array<int, string> The unresolved placeholder names
-	 */
-	private function unresolvedIn(string $subjectPattern, string $bodyPattern, array $caseData): array {
-		return array_values(
-			array_unique(
-				array_merge(
-					$this->findUnresolvedVariables(template: $subjectPattern, data: $caseData),
-					$this->findUnresolvedVariables(template: $bodyPattern, data: $caseData)
-				)
-			)
-		);
-	}//end unresolvedIn()
+	private function placeholderList(array $names): string {
+		return implode(', ', array_map(static fn (string $n): string => '{{' . $n . '}}', $names));
+	}//end placeholderList()
 
 	/**
 	 * The message category a template declares, defaulting to a case update.

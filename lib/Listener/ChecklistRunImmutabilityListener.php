@@ -137,11 +137,11 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 	/**
 	 * Whether a move takes away a checklist run that is already frozen.
 	 *
-	 * @param ObjectLeavingEvent $event The move event
+	 * @param Event $event The move event
 	 *
 	 * @return bool True when the move must be rejected.
 	 */
-	private function isFrozenRunLeaving(ObjectLeavingEvent $event): bool {
+	private function isFrozenRunLeaving(Event $event): bool {
 		$stored = $this->extractObject(event: $event, method: 'getObject');
 
 		return $stored !== null
