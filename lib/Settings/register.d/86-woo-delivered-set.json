@@ -1,5 +1,5 @@
 {
-  "_note": "woo-delivered-set-is-a-record REQ-WDS-001 (rows 19.15, 19.16). What dossiq delivered to OpenCatalogi for a Woo decision, as a record of its own: every item with the delivered file's hash, and one hash over the set. Written pending before the publication is created, frozen with the publication id after, deleted when publishing fails. Never published. No authorization block: it is read with the same access as the case, like the assessments it names; there is no public read.",
+  "_note": "woo-delivered-set-is-a-record REQ-WDS-001 (rows 19.15, 19.16). What dossiq delivered to OpenCatalogi for a Woo decision, as a record of its own: every item with the delivered file's hash, and one hash over the set. Written pending before the publication is created, frozen with the publication id after, deleted when publishing fails. Never published. Private to the people on the case since 1.1.1 (woo-review-triage REQ-WRT-006): the woo-verzoek case type lists it under reviewerAccess.records for the assignee to read, never to update, and the writer reconciles the case when it stores a set; there is no public read.",
   "components": {
     "registers": {
       "dossiq": {
@@ -12,7 +12,25 @@
       "wooDeliveredSet": {
         "slug": "wooDeliveredSet",
         "icon": "PackageVariantClosed",
-        "version": "1.1.0",
+        "version": "1.1.1",
+        "authorization": {
+          "scope": "private",
+          "read": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "create": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "update": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "delete": [
+            "dossiq-coordinators"
+          ]
+        },
         "searchable": false,
         "title": "Woo delivered set",
         "description": "What was delivered for publication on a Woo decision: each document as it went out, with the hash of its bytes, and one hash over the whole set. Frozen once the publication exists, so it shows later what went out.",

@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetWriterInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -74,11 +75,15 @@ class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 	 * @param SettingsServiceInterface      $settings    Bridge to OpenRegister.
 	 * @param IUserSession|null    $userSession Who delivers.
 	 * @param LoggerInterface|null $logger      Logger.
+	 * @param CaseReviewerAccessInterface|null $access Grants the people on the case read on a new set.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settings,
 		private readonly ?IUserSession $userSession = null,
 		private readonly ?LoggerInterface $logger = null,
+		private readonly ?CaseReviewerAccessInterface $access = null,
 	) {
 	}//end __construct()
 
@@ -167,6 +172,7 @@ class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 	 * @throws RuntimeException When OpenRegister is unavailable or the set cannot be stored.
 	 *
 	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md
 	 */
 	public function open(string $caseId, string $decisionId, array $delivered): array {
 		[$objectService, $register, $schema] = $this->store();
@@ -203,6 +209,12 @@ class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 		}
 
 		$this->keepTheDeliveredBytes(setId: $this->idOf(row: $stored), delivered: $delivered);
+
+		// The set is private to the people on the case (REQ-WRT-006): the
+		// assignee is granted read in the same request. A reconcile that
+		// cannot run is logged by the access service and leaves the set
+		// without grants, the closed side; it never undoes the write.
+		$this->access?->reconcileAfterCreate(caseId: $caseId, created: 1);
 
 		return $stored;
 	}//end open()

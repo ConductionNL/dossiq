@@ -1544,7 +1544,7 @@
         "digest": "741410186bc4660b177865856a3a90313d8164e1f6c0125e503cad9b519b53ae"
     },
     "lib/Settings/register.d/86-woo-delivered-set.json::wooDeliveredSet": {
-        "version": "1.1.0",
+        "version": "1.1.1",
         "digest": "0c37e60f4dd4e501ad65d1de0313f3cfa5decfbefce590c3dc43001beb863de3"
     },
     "lib/Settings/register.d/87-case-type-sessions.json::caseType": {
