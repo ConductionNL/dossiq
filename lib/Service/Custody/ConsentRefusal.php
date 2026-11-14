@@ -108,6 +108,28 @@ class ConsentRefusal {
 	}//end unchecked()
 
 	/**
+	 * The refusal of a share with a party no valid consent names.
+	 *
+	 * The rule stays the one that refused it (missing, lapsed or withdrawn),
+	 * so the caller can still tell them apart; the sentence is the one the
+	 * handler reads when sharing, which hands nothing on.
+	 *
+	 * @param Outcome $refusal The hand-off refusal.
+	 *
+	 * @return Outcome The outcome, worded for a share.
+	 *
+	 * @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-consent-is-recorded-and-revoked-on-the-case-req-sdc-consent-01
+	 */
+	public function notShared(array $refusal): array {
+		$sentence = $this->l10n->t('There is no valid consent for this party.');
+		if ($refusal['rule'] === CaseTransferConsentGate::CONSENT_UNCHECKED) {
+			$sentence = $this->l10n->t('Consent could not be checked, so the case was not shared.');
+		}
+
+		return $this->outcome(rule: $refusal['rule'], sentence: $sentence);
+	}//end notShared()
+
+	/**
 	 * Shape one refusal.
 	 *
 	 * @param string $rule     The rule that refused it.

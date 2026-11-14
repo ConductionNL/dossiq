@@ -8,7 +8,8 @@
 ## 2. Consent
 
 - [ ] 2.1 `src/dialogs/ConsentRecordDialog.vue` writing a `toestemming` object (party, purpose, valid from and until, given by); widget `consents` on CaseDetail in `src/manifest.json`, `visibleWhen` the case type requires consent, row action revoke.
-- [ ] 2.2 A generic consent check service (`lib/Service/Consent/ConsentCheck.php`) used by the share paths behind `CaseShareOrganisationDialog` and `CrossDomainLookupDialog`; refuses with 409 and the reason. `tests/Unit/Service/Consent/ConsentCheckTest.php`.
+- [x] 2.2 A generic consent check service (`lib/Service/Consent/ConsentCheck.php`) used by the share paths behind `CaseShareOrganisationDialog` and `CrossDomainLookupDialog`; refuses with 409 and the reason. `tests/Unit/Service/Consent/ConsentCheckTest.php`.
+  - Built as an extension of the existing `CaseTransferConsentGate` (`assessSharing`), not a second consent reader: it asks only when the case type sets `requiresConsentForSharing`, reads the same `toestemming` objects a hand-off reads, refuses with "There is no valid consent for this party." (nl: "Er is geen geldige toestemming voor deze partij.") and fails closed when the case type cannot be read. Partner shares and transfers already ran through the gate; federated shares (`CaseSharingService::createFederatedShare`) now do too, answered 409 with the rule. `CrossDomainLookupDialog` looks a person up by BSN under a legal ground inside the organisation and shares no case with an outside party, so it is not a share path. Tests: `tests/Unit/Service/Custody/ConsentForSharingTest.php`, `tests/Unit/Service/FederatedShareNeedsConsentTest.php`.
 
 ## 3. Classification and team-only access
 
@@ -18,6 +19,7 @@
 ## 4. Anonymised export
 
 - [ ] 4.1 The list export gains `anonymised: true`, applying `identifyingFields` (remove, generalise postcode to area, date to year); `tests/Unit/Service/*ExportTest.php` covers it; the export writes a processing-log row.
+  - Server side done: `POST /api/cases/anonymised-export` (`CaseAnonymisedExportController`, `AnonymisedCaseExport`) reads the listed cases as the user, removes each case type's `identifyingFields` (postcode to area, date to year, the rest removed, `@self` dropped), refuses when a case type cannot be read, and writes one processing-log row. Tests: `tests/Unit/Service/Export/AnonymisedCaseExportTest.php`, `tests/Unit/Controller/CaseAnonymisedExportControllerTest.php`. Open: the anonymised option on the list's `export` header action in `src/manifest.json`.
 
 ## 5. Checks
 
