@@ -259,18 +259,32 @@ class HearingCalendarService {
 	private function buildEvent(PlannedHearing $hearing, ?IUser $organiser, array $attendees): string {
 		$data = $hearing->data;
 		$start = $hearing->start;
-		$participants = $hearing->participants;
 		$builder = $this->calendarManager->createEventBuilder();
 		$builder->setSummary(self::EVENT_SUMMARY_PREFIX . (string)($data['complaint'] ?? ''));
 		$builder->setStartDate($start);
 		$builder->setEndDate($start->setTimestamp($start->getTimestamp() + self::EVENT_DURATION_SECONDS));
-		$builder->setDescription($this->describeHearing(data: $data, participants: $participants));
+		$builder->setDescription($this->describeHearing(data: $data, participants: $hearing->participants));
 
 		$location = (string)($data['location'] ?? '');
 		if ($location !== '') {
 			$builder->setLocation($location);
 		}
 
+		$this->withParties(builder: $builder, organiser: $organiser, attendees: $attendees);
+
+		return $builder->toIcs();
+	}//end buildEvent()
+
+	/**
+	 * Put the organiser, when they have an address, and the attendees on the event.
+	 *
+	 * @param ICalendarEventBuilder                                       $builder   The event being built.
+	 * @param IUser|null                                                  $organiser The organiser.
+	 * @param array<int, array{uid: string, email: string, name: string}> $attendees Addressable attendees.
+	 *
+	 * @return void
+	 */
+	private function withParties(ICalendarEventBuilder $builder, ?IUser $organiser, array $attendees): void {
 		if ($organiser !== null && (string)$organiser->getEMailAddress() !== '') {
 			$builder->setOrganizer(
 				(string)$organiser->getEMailAddress(),
@@ -281,9 +295,7 @@ class HearingCalendarService {
 		foreach ($attendees as $attendee) {
 			$builder->addAttendee($attendee['email'], $attendee['name']);
 		}
-
-		return $builder->toIcs();
-	}//end buildEvent()
+	}//end withParties()
 
 	/**
 	 * Read the UID out of a serialised event.
