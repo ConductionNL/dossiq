@@ -127,18 +127,24 @@ class BrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		$authError = $this->jwtRefusal();
-		if ($authError !== null) {
-			return $authError;
-		}
+		return $this->jwtRefusal() ?? $this->listOf(resource: $resource);
+	}//end index()
 
+	/**
+	 * List resources of the given type once the token is valid.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 *
+	 * @return JSONResponse
+	 */
+	private function listOf(string $resource): JSONResponse {
 		// BesluitInformatieObjecten returns a plain array per ZGW spec.
 		if ($resource === 'besluitinformatieobjecten') {
 			return $this->documentLinks->index(request: $this->request);
 		}
 
 		return $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
-	}//end index()
+	}//end listOf()
 
 	/**
 	 * Create a new resource of the given type.

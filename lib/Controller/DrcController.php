@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Zgw\RelationSearch;
 use OCA\Dossiq\Service\Zgw\ZtcHelperFactory;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCA\Dossiq\Support\GuardsZgwRequests;
+use OCA\Dossiq\Support\MapsZgwRows;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -57,6 +58,7 @@ use OCP\IRequest;
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class DrcController extends ZgwController {
+	use MapsZgwRows;
 	use GuardsZgwRequests;
 
 	/**
@@ -123,18 +125,24 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		$authError = $this->jwtRefusal();
-		if ($authError !== null) {
-			return $authError;
-		}
+		return $this->jwtRefusal() ?? $this->listOf(resource: $resource);
+	}//end index()
 
+	/**
+	 * List resources of the given type once the token is valid.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 *
+	 * @return JSONResponse
+	 */
+	private function listOf(string $resource): JSONResponse {
 		// ObjectInformatieObjecten and Gebruiksrechten return a plain array per ZGW spec.
 		if ($resource === 'objectinformatieobjecten' || $resource === 'gebruiksrechten') {
 			return $this->indexFlatArray(resource: $resource);
 		}
 
 		return $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
-	}//end index()
+	}//end listOf()
 
 	/**
 	 * List DRC resources as a plain array (per ZGW spec).
@@ -174,22 +182,9 @@ class DrcController extends ZgwController {
 	 * @return array The mapped ZGW objects
 	 */
 	private function listFlatArray(object $objectService, string $resource, array $mappingConfig): array {
-		$params = $this->request->getParams();
-		$filters = $this->zgwService->translateQueryParams(
-			params: $params,
-			mappingConfig: $mappingConfig
-		);
+		$rows = $this->filteredRows(objectService: $objectService, mappingConfig: $mappingConfig, params: $this->request->getParams());
 
-		$searchParams = array_merge($filters, ['_limit' => 100]);
-
-		$query = $objectService->buildSearchQuery(
-			requestParams: $searchParams,
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema']
-		);
-		$result = $objectService->searchObjectsPaginated(query: $query);
-
-		return $this->mapFlatArrayObjects(objects: $result['results'] ?? [], resource: $resource, mappingConfig: $mappingConfig);
+		return $this->mapFlatArrayObjects(objects: $rows, resource: $resource, mappingConfig: $mappingConfig);
 	}//end listFlatArray()
 
 	/**
@@ -203,20 +198,8 @@ class DrcController extends ZgwController {
 	 */
 	private function mapFlatArrayObjects(array $objects, string $resource, array $mappingConfig): array {
 		$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-		$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-		$mapped = [];
-		foreach ($objects as $object) {
-			$objectData = $this->objectToArray(row: $object);
 
-			$mapped[] = $this->zgwService->applyOutboundMapping(
-				objectData: $objectData,
-				mapping: $outboundMapping,
-				mappingConfig: $mappingConfig,
-				baseUrl: $baseUrl
-			);
-		}
-
-		return $mapped;
+		return $this->outboundRows(rows: $objects, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
 	}//end mapFlatArrayObjects()
 
 	/**
@@ -228,14 +211,7 @@ class DrcController extends ZgwController {
 	 * @return JSONResponse
 	 */
 	private function flatArrayErrorResponse(string $resource, \Throwable $e): JSONResponse {
-		$this->zgwService->getLogger()->error(
-			'DRC list ' . $resource . ' error: ' . $e->getMessage(),
-			['exception' => $e]
-		);
-		return new JSONResponse(
-			data: ['detail' => 'Internal server error'],
-			statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
-		);
+		return $this->loggedServerError(logPrefix: 'DRC list ' . $resource . ' error: ', e: $e);
 	}//end flatArrayErrorResponse()
 
 	/**
@@ -623,11 +599,18 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
-		$authError = $this->jwtRefusal();
-		if ($authError !== null) {
-			return $authError;
-		}
+		return $this->jwtRefusal() ?? $this->shownResource(resource: $resource, uuid: $uuid);
+	}//end show()
 
+	/**
+	 * Retrieve one resource once the token is valid.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid The resource UUID.
+	 *
+	 * @return JSONResponse
+	 */
+	private function shownResource(string $resource, string $uuid): JSONResponse {
 		$response = $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
 
 		// Add bestandsdelen for EIO resources with pending chunked uploads.
@@ -639,7 +622,7 @@ class DrcController extends ZgwController {
 		}
 
 		return $response;
-	}//end show()
+	}//end shownResource()
 
 	/**
 	 * Full update (PUT) a resource by UUID.
@@ -2004,15 +1987,7 @@ class DrcController extends ZgwController {
 	 * @return JSONResponse
 	 */
 	private function loggedBadRequest(\Throwable $e, string $logPrefix): JSONResponse {
-		$this->zgwService->getLogger()->error(
-			$logPrefix . $e->getMessage(),
-			['exception' => $e]
-		);
-
-		return new JSONResponse(
-			data: ['detail' => $e->getMessage()],
-			statusCode: Http::STATUS_BAD_REQUEST
-		);
+		return $this->loggedFailure(logPrefix: $logPrefix, e: $e);
 	}//end loggedBadRequest()
 
 	/**

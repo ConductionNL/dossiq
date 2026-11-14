@@ -128,11 +128,17 @@ class ZtcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		$authError = $this->jwtRefusal();
-		if ($authError !== null) {
-			return $authError;
-		}
+		return $this->jwtRefusal() ?? $this->listOf(resource: $resource);
+	}//end index()
 
+	/**
+	 * List resources of the given type once the token is valid.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 *
+	 * @return JSONResponse
+	 */
+	private function listOf(string $resource): JSONResponse {
 		$response = $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
 
 		if ($response->getStatus() !== Http::STATUS_OK) {
@@ -147,7 +153,7 @@ class ZtcController extends ZgwController {
 		$data = $this->postProcessIndex(resource: $resource, data: $data);
 
 		return new JSONResponse(data: $data, statusCode: Http::STATUS_OK);
-	}//end index()
+	}//end listOf()
 
 	/**
 	 * Filter a page of ZTC results by datumGeldigheid, and enrich and filter each result's
@@ -243,15 +249,22 @@ class ZtcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
-		$authError = $this->jwtRefusal();
-		if ($authError !== null) {
-			return $authError;
-		}
+		return $this->jwtRefusal() ?? $this->shownResource(resource: $resource, uuid: $uuid);
+	}//end show()
 
+	/**
+	 * Retrieve one resource once the token is valid.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid The resource UUID.
+	 *
+	 * @return JSONResponse
+	 */
+	private function shownResource(string $resource, string $uuid): JSONResponse {
 		$response = $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
 
 		return $this->presented(resource: $resource, response: $response);
-	}//end show()
+	}//end shownResource()
 
 	/**
 	 * Resolve the parent zaaktype draft status for a sub-resource.
@@ -300,23 +313,7 @@ class ZtcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
-		$refusal = $this->writeRefusal();
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		$parentZtDraft = $this->resolveParentDraft(resource: $resource, uuid: $uuid);
-
-		$response = $this->zgwService->handleUpdate(
-			$this->request,
-			self::ZGW_API,
-			$resource,
-			$uuid,
-			false,
-			$parentZtDraft
-		);
-
-		return $this->presented(resource: $resource, response: $response);
+		return $this->writeRefusal() ?? $this->updated(resource: $resource, uuid: $uuid, isPatch: false);
 	}//end update()
 
 	/**
@@ -337,11 +334,19 @@ class ZtcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
-		$refusal = $this->writeRefusal();
-		if ($refusal !== null) {
-			return $refusal;
-		}
+		return $this->writeRefusal() ?? $this->updated(resource: $resource, uuid: $uuid, isPatch: true);
+	}//end patch()
 
+	/**
+	 * Update a resource with its parent zaaktype's draft state, presented.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid     The resource UUID.
+	 * @param bool   $isPatch  Whether this is a partial update.
+	 *
+	 * @return JSONResponse
+	 */
+	private function updated(string $resource, string $uuid, bool $isPatch): JSONResponse {
 		$parentZtDraft = $this->resolveParentDraft(resource: $resource, uuid: $uuid);
 
 		$response = $this->zgwService->handleUpdate(
@@ -349,12 +354,12 @@ class ZtcController extends ZgwController {
 			self::ZGW_API,
 			$resource,
 			$uuid,
-			true,
+			$isPatch,
 			$parentZtDraft
 		);
 
 		return $this->presented(resource: $resource, response: $response);
-	}//end patch()
+	}//end updated()
 
 	/**
 	 * Delete a resource by UUID.
