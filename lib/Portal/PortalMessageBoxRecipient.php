@@ -120,11 +120,10 @@ class PortalMessageBoxRecipient {
 	 * @return string|null
 	 */
 	private function readRecipient(array $source, string $messageId): string|null {
-		$objectService = $source['objectService'];
 		try {
 			$recipient = $this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): ?string => $this->recipientOf(objectService: $objectService, schemas: $source['schemas'], messageId: $messageId)
+				objectService: $source['objectService'],
+				operation: fn (): ?string => $this->recipientOf(objectService: $source['objectService'], schemas: $source['schemas'], messageId: $messageId)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: the message box recipient could not be read', ['exception' => get_class($e)]);
