@@ -319,9 +319,10 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 			period: (string)$caseType['extensionPeriod'],
 		);
 
-		$extended = $this->requestExtension(caseId: $caseId, reason: $reason, newEnd: $newEnd);
+		$extension = new TermExtension(caseId: $caseId, reason: $reason, newEnd: $newEnd);
+		$extended = $this->requestExtension(extension: $extension);
 
-		$this->journalExtension(caseId: $caseId, case: $case, reason: $reason, newEnd: $newEnd);
+		$this->journalExtension(extension: $extension, case: $case);
 
 		return $this->state(caseId: $caseId) + ['notice' => $this->extensionNoticeOf(extended: $extended)];
 	}//end extend()
@@ -353,22 +354,20 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	/**
 	 * Request the extension on the case's term instance.
 	 *
-	 * @param string $caseId Case UUID
-	 * @param string $reason Why the term is extended
-	 * @param string $newEnd The new end date (Y-m-d)
+	 * @param TermExtension $extension The case, why its term is extended and the new end date
 	 *
 	 * @return array<string, mixed>|null The engine's answer, null when there is no term instance
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function requestExtension(string $caseId, string $reason, string $newEnd): ?array {
+	private function requestExtension(TermExtension $extension): ?array {
 		return $this->onTermInstance(
-			caseId: $caseId,
+			caseId: $extension->caseId,
 			gesture: 'extend',
 			apply: fn (string $instanceId): array => $this->deadlines->extensionService->requestExtension(
 				termInstanceId: $instanceId,
-				rationale: $reason,
-				newEndDate: $newEnd,
+				rationale: $extension->reason,
+				newEndDate: $extension->newEnd,
 			),
 		);
 	}//end requestExtension()
@@ -376,23 +375,21 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	/**
 	 * Journal the extension on the case.
 	 *
-	 * @param string               $caseId Case UUID
-	 * @param array<string, mixed> $case   The case as loaded before the extension
-	 * @param string               $reason Why the term is extended
-	 * @param string               $newEnd The new end date (Y-m-d)
+	 * @param TermExtension        $extension The case, why its term is extended and the new end date
+	 * @param array<string, mixed> $case      The case as loaded before the extension
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function journalExtension(string $caseId, array $case, string $reason, string $newEnd): void {
+	private function journalExtension(TermExtension $extension, array $case): void {
 		$this->journal(
-			caseId: $caseId,
+			caseId: $extension->caseId,
 			changes: [
-				'plannedEndDate' => $newEnd,
+				'plannedEndDate' => $extension->newEnd,
 				'extensionCount' => ((int)($case['extensionCount'] ?? 0) + 1),
 			],
-			entry: ['type' => 'extend', 'reason' => $reason, 'newEndDate' => $newEnd]
+			entry: ['type' => 'extend', 'reason' => $extension->reason, 'newEndDate' => $extension->newEnd]
 		);
 	}//end journalExtension()
 
@@ -424,6 +421,7 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 		}
 
 		$initial = $this->reopenStatusOf(case: $case);
+		$reopening = new CaseReopening(caseId: $caseId, initial: $initial, fromStatus: $currentId, reason: $reason);
 
 		// REQ-LIFE-11: reopening keeps the ending in the record. The case is
 		// open again, and the fact that it was ended, by whom and when, is not
@@ -433,9 +431,9 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 		// and written into the reopen entry rather than left to be inferred.
 		$ending = $this->endings->endingOf(case: $case);
 
-		$this->journalReopen(caseId: $caseId, initial: $initial, reason: $reason, ending: $ending);
+		$this->journalReopen(reopening: $reopening, ending: $ending);
 
-		$this->writeReopenRecord(caseId: $caseId, initial: $initial, fromStatus: $currentId, reason: $reason);
+		$this->writeReopenRecord(reopening: $reopening);
 
 		return $this->state(caseId: $caseId);
 	}//end reopen()
@@ -443,22 +441,19 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	/**
 	 * Write the status record of the reopening.
 	 *
-	 * @param string $caseId     Case UUID
-	 * @param string $initial    The status the case goes back to
-	 * @param string $fromStatus The final status the case leaves
-	 * @param string $reason     Why the case is reopened
+	 * @param CaseReopening $reopening The case, the status it goes back to, the final status it leaves and why
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function writeReopenRecord(string $caseId, string $initial, string $fromStatus, string $reason): void {
+	private function writeReopenRecord(CaseReopening $reopening): void {
 		$this->store->writeStatusRecord(
-			caseId: $caseId,
-			toStatus: $initial,
-			fromStatus: $fromStatus,
+			caseId: $reopening->caseId,
+			toStatus: $reopening->initial,
+			fromStatus: $reopening->fromStatus,
 			label: 'Reopened',
-			comment: $reason,
+			comment: $reopening->reason,
 			evaluatedGuards: [],
 			noWorkflowTemplate: true,
 		);
@@ -496,32 +491,30 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	/**
 	 * Journal the reopening, clearing the end date and the archival claim.
 	 *
-	 * @param string               $caseId  Case UUID
-	 * @param string               $initial The status the case goes back to
-	 * @param string               $reason  Why the case is reopened
-	 * @param array<string, mixed> $ending  The ending read off the journal
+	 * @param CaseReopening        $reopening The case, the status it goes back to and why
+	 * @param array<string, mixed> $ending    The ending read off the journal
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function journalReopen(string $caseId, string $initial, string $reason, array $ending): void {
+	private function journalReopen(CaseReopening $reopening, array $ending): void {
 		// The ending is kept as a nested record rather than flattened, so a
 		// reader cannot mistake the reopening's own actor for the ending's.
 		$this->journal(
-			caseId: $caseId,
+			caseId: $reopening->caseId,
 			// Zrc-008: reopening withdraws the archival claim as well as the end
 			// date. A case that is open again is not nominated for anything and has
 			// no destruction date; leaving either standing would hand an archivist a
 			// due date for a case still being worked, which is the shape of mistake
 			// that gets a record destroyed early.
 			changes: [
-				'status' => $initial,
+				'status' => $reopening->initial,
 				'endDate' => '',
 				'archiveNomination' => null,
 				'archiveActionDate' => null,
 			],
-			entry: ['type' => 'reopen', 'reason' => $reason, 'reopenedFrom' => $ending]
+			entry: ['type' => 'reopen', 'reason' => $reopening->reason, 'reopenedFrom' => $ending]
 		);
 	}//end journalReopen()
 

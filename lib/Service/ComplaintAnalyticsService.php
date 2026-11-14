@@ -211,8 +211,7 @@ class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 		$systemicIssues = $this->flagIncreases(
 			current: $current,
 			previous: $previous,
-			quarterLabel: 'Q' . $quarter . ' ' . $year,
-			previousLabel: 'Q' . $prevQuarter . ' ' . $prevYear,
+			labels: ['quarter' => 'Q' . $quarter . ' ' . $year, 'previousQuarter' => 'Q' . $prevQuarter . ' ' . $prevYear],
 		);
 
 		$this->warnSystemic(systemicIssues: $systemicIssues);
@@ -267,14 +266,13 @@ class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 	 *
 	 * @param array<string, int> $current       Complaint counts per category this quarter
 	 * @param array<string, int> $previous      Complaint counts per category last quarter
-	 * @param string             $quarterLabel  Label of this quarter, e.g. "Q2 2026"
-	 * @param string             $previousLabel Label of the previous quarter
+	 * @param array{quarter: string, previousQuarter: string} $labels Labels of this quarter, e.g. "Q2 2026", and of the previous one
 	 *
 	 * @return array<int, array<string, mixed>> Systemic-issue records for flagged categories
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
-	private function flagIncreases(array $current, array $previous, string $quarterLabel, string $previousLabel): array {
+	private function flagIncreases(array $current, array $previous, array $labels): array {
 		$systemicIssues = [];
 
 		foreach ($current as $category => $currentCount) {
@@ -292,8 +290,8 @@ class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 					'currentCount' => $currentCount,
 					'previousCount' => $previousCount,
 					'increasePercent' => round($increasePercent, 1),
-					'quarter' => $quarterLabel,
-					'previousQuarter' => $previousLabel,
+					'quarter' => $labels['quarter'],
+					'previousQuarter' => $labels['previousQuarter'],
 				];
 			}
 		}

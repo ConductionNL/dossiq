@@ -102,14 +102,20 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 		}
 
 		if ($resource === 'besluittypen') {
-			return $this->enrichBesluittype(data: $data, baseUrl: $baseUrl, objectService: $objectService, uuid: $uuid);
+			return $this->enrichBesluittype(
+				data: $data,
+				target: new ZtcEnrichmentTarget(objectService: $objectService, uuid: $uuid, baseUrl: $baseUrl)
+			);
 		}
 
 		if ($resource !== 'zaaktypen') {
 			return $data;
 		}
 
-		$data = $this->enrichCaseType(data: $data, baseUrl: $baseUrl, objectService: $objectService, uuid: $uuid);
+		$data = $this->enrichCaseType(
+			data: $data,
+			target: new ZtcEnrichmentTarget(objectService: $objectService, uuid: $uuid, baseUrl: $baseUrl)
+		);
 
 		// Ensure array fields default to [] instead of null.
 		foreach (self::CASE_TYPE_LIST_FIELDS as $field) {
@@ -124,14 +130,15 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 	/**
 	 * Expand a besluittype's stored documentTypes and caseTypes uuids to URLs.
 	 *
-	 * @param array $data The outbound-mapped besluittype
-	 * @param string $baseUrl The Catalogi API base URL
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param string $uuid The besluittype uuid
+	 * @param array               $data   The outbound-mapped besluittype
+	 * @param ZtcEnrichmentTarget $target The besluittype's object service, uuid and base URL
 	 *
 	 * @return array The enriched besluittype
 	 */
-	private function enrichBesluittype(array $data, string $baseUrl, object $objectService, string $uuid): array {
+	private function enrichBesluittype(array $data, ZtcEnrichmentTarget $target): array {
+		$objectService = $target->objectService;
+		$uuid = $target->uuid;
+		$baseUrl = $target->baseUrl;
 		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, 'besluittypen');
 		if ($mappingConfig === null) {
 			return $data;
@@ -216,23 +223,24 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 	 * Fill a zaaktype's lists: deelzaaktypen, besluittypen, gerelateerdeZaaktypen,
 	 * informatieobjecttypen and the four sub-resource lists.
 	 *
-	 * @param array $data The outbound-mapped zaaktype
-	 * @param string $baseUrl The Catalogi API base URL
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param string $uuid The zaaktype uuid
+	 * @param array               $data   The outbound-mapped zaaktype
+	 * @param ZtcEnrichmentTarget $target The zaaktype's object service, uuid and base URL
 	 *
 	 * @return array The enriched zaaktype
 	 */
-	private function enrichCaseType(array $data, string $baseUrl, object $objectService, string $uuid): array {
+	private function enrichCaseType(array $data, ZtcEnrichmentTarget $target): array {
+		$objectService = $target->objectService;
+		$uuid = $target->uuid;
+		$baseUrl = $target->baseUrl;
 		$ztMapping  = $this->zgwService->loadMappingConfig(self::ZGW_API, 'zaaktypen');
 		$objectData = null;
 		if ($ztMapping !== null) {
-			$stored = $this->storedCaseTypeLists(objectService: $objectService, ztMapping: $ztMapping, uuid: $uuid, baseUrl: $baseUrl);
+			$stored = $this->storedCaseTypeLists(target: $target, ztMapping: $ztMapping);
 			$objectData = $stored['objectData'];
 			$data = array_merge($data, $stored['lists']);
 		}
 
-		$data = $this->withRelatedCaseTypes(data: $data, objectData: $objectData, objectService: $objectService, ztMapping: $ztMapping, baseUrl: $baseUrl);
+		$data = $this->withRelatedCaseTypes(data: $data, objectData: $objectData, target: $target, ztMapping: $ztMapping);
 
 		$iotUrls = $this->lookup->caseTypeDocumentTypeUrls(objectService: $objectService, uuid: $uuid, baseUrl: $baseUrl);
 		if (empty($iotUrls) === false) {
@@ -264,15 +272,14 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 	 * Read from the raw object's relatedCaseTypes (a JSON-encoded string), since Twig outbound
 	 * mapping cannot handle an array of objects; fall back to what the mapping produced.
 	 *
-	 * @param array $data The outbound-mapped zaaktype
-	 * @param array|null $objectData The stored zaaktype, null when it could not be read
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param array|null $ztMapping The zaaktypen mapping
-	 * @param string $baseUrl The Catalogi API base URL
+	 * @param array               $data       The outbound-mapped zaaktype
+	 * @param array|null          $objectData The stored zaaktype, null when it could not be read
+	 * @param ZtcEnrichmentTarget $target     The zaaktype's object service and base URL
+	 * @param array|null          $ztMapping  The zaaktypen mapping
 	 *
 	 * @return array The zaaktype with its relations expanded
 	 */
-	private function withRelatedCaseTypes(array $data, ?array $objectData, object $objectService, ?array $ztMapping, string $baseUrl): array {
+	private function withRelatedCaseTypes(array $data, ?array $objectData, ZtcEnrichmentTarget $target, ?array $ztMapping): array {
 		$relatedRaw = null;
 		if ($objectData !== null) {
 			$relatedRaw = $objectData['relatedCaseTypes'] ?? null;
@@ -289,9 +296,9 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 
 		$data['gerelateerdeZaaktypen'] = $this->lookup->expandRelatedCaseTypes(
 			related: $relatedRaw,
-			objectService: $objectService,
+			objectService: $target->objectService,
 			ztMapping: $ztMapping,
-			baseUrl: $baseUrl
+			baseUrl: $target->baseUrl
 		);
 
 		return $data;
@@ -301,19 +308,19 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 	 * Read the zaaktype and build the lists it stores itself: deelzaaktypen (each expanded to
 	 * every zaaktype with the same identifier) and besluittypen.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param array $ztMapping The zaaktypen mapping
-	 * @param string $uuid The zaaktype uuid
-	 * @param string $baseUrl The Catalogi API base URL
+	 * @param ZtcEnrichmentTarget $target    The zaaktype's object service, uuid and base URL
+	 * @param array               $ztMapping The zaaktypen mapping
 	 *
 	 * @return array{objectData: array|null, lists: array} The stored zaaktype (null when it could
 	 *                                                     not be read) and the lists it gives
 	 */
-	private function storedCaseTypeLists(object $objectService, array $ztMapping, string $uuid, string $baseUrl): array {
+	private function storedCaseTypeLists(ZtcEnrichmentTarget $target, array $ztMapping): array {
+		$objectService = $target->objectService;
+		$baseUrl = $target->baseUrl;
 		$objectData = null;
 		$lists = [];
 		try {
-			$objectData = $this->lookup->findIn(objectService: $objectService, mapping: $ztMapping, id: $uuid);
+			$objectData = $this->lookup->findIn(objectService: $objectService, mapping: $ztMapping, id: $target->uuid);
 
 			$subCases = $objectData['subCaseTypes'] ?? [];
 			if (is_array($subCases) === true && empty($subCases) === false) {

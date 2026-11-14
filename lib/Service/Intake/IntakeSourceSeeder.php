@@ -206,8 +206,7 @@ class IntakeSourceSeeder implements IntakeSourceSeederInterface {
 		return $this->runAsSystemIfAvailable(
 			objectService: $objectService,
 			operation: fn (): array => $this->upsertAll(
-				objectService: $objectService,
-				register: (string)$register->getId()
+				target: new IntakeSourceRegister(objectService: $objectService, register: (string)$register->getId())
 			)
 		);
 	}//end upsertAllAsSystem()
@@ -215,20 +214,19 @@ class IntakeSourceSeeder implements IntakeSourceSeederInterface {
 	/**
 	 * Create what is missing and refresh the rest, one channel at a time.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register      The intake-sources register id.
+	 * @param IntakeSourceRegister $target OpenRegister's ObjectService and the intake-sources register id.
 	 *
 	 * @return array{available: bool, created: int, updated: int, refused: array<int, string>}
 	 *                                                                                        What the seed did.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function upsertAll(object $objectService, string $register): array {
+	private function upsertAll(IntakeSourceRegister $target): array {
 		$tally = ['created' => 0, 'updated' => 0];
 		$refused = [];
 
 		foreach ($this->catalogue() as $source) {
-			$outcome = $this->upsertOne(objectService: $objectService, register: $register, source: $source);
+			$outcome = $this->upsertOne(target: $target, source: $source);
 			if ($outcome === 'refused') {
 				$refused[] = (string)$source['slug'];
 				continue;
@@ -243,18 +241,17 @@ class IntakeSourceSeeder implements IntakeSourceSeederInterface {
 	/**
 	 * Create or refresh one channel, logging a refusal.
 	 *
-	 * @param object               $objectService OpenRegister's ObjectService.
-	 * @param string               $register      The intake-sources register id.
-	 * @param array<string, mixed> $source        The catalogue definition.
+	 * @param IntakeSourceRegister $target OpenRegister's ObjectService and the intake-sources register id.
+	 * @param array<string, mixed> $source The catalogue definition.
 	 *
 	 * @return string 'created', 'updated' or 'refused'.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function upsertOne(object $objectService, string $register, array $source): string {
+	private function upsertOne(IntakeSourceRegister $target, array $source): string {
 		$slug = (string)$source['slug'];
 		try {
-			return $this->writeSource(objectService: $objectService, register: $register, source: $source);
+			return $this->writeSource(target: $target, source: $source);
 		} catch (Throwable $e) {
 			// \Throwable rather than \Exception: an OpenRegister refusal can
 			// surface as a PHP Error, and one refused channel must not abort
@@ -270,16 +267,17 @@ class IntakeSourceSeeder implements IntakeSourceSeederInterface {
 	/**
 	 * Write one channel: a new row when it is missing, a refreshed one otherwise.
 	 *
-	 * @param object               $objectService OpenRegister's ObjectService.
-	 * @param string               $register      The intake-sources register id.
-	 * @param array<string, mixed> $source        The catalogue definition.
+	 * @param IntakeSourceRegister $target OpenRegister's ObjectService and the intake-sources register id.
+	 * @param array<string, mixed> $source The catalogue definition.
 	 *
 	 * @return string 'created' or 'updated'.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function writeSource(object $objectService, string $register, array $source): string {
-		$existing = $this->findBySlug(objectService: $objectService, register: $register, slug: (string)$source['slug']);
+	private function writeSource(IntakeSourceRegister $target, array $source): string {
+		$objectService = $target->objectService;
+		$register = $target->register;
+		$existing = $this->findBySlug(target: $target, slug: (string)$source['slug']);
 
 		if ($existing === null) {
 			$objectService->saveObject(register: $register, schema: self::SCHEMA_SLUG, object: $this->newRow(source: $source));
@@ -345,17 +343,16 @@ class IntakeSourceSeeder implements IntakeSourceSeederInterface {
 	/**
 	 * Find one intake source by its slug.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The register id.
-	 * @param string $slug          The source's slug.
+	 * @param IntakeSourceRegister $target The OpenRegister ObjectService and the register id.
+	 * @param string               $slug   The source's slug.
 	 *
 	 * @return object|array|null The row, or null when there is none.
 	 */
-	private function findBySlug(object $objectService, string $register, string $slug): object|array|null {
-		$results = $objectService->findAll(
+	private function findBySlug(IntakeSourceRegister $target, string $slug): object|array|null {
+		$results = $target->objectService->findAll(
 			[
 				'filters' => [
-					'register' => $register,
+					'register' => $target->register,
 					'schema' => self::SCHEMA_SLUG,
 					'slug' => $slug,
 				],

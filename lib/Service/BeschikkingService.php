@@ -390,11 +390,15 @@ class BeschikkingService implements BeschikkingServiceInterface {
 		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
 		$signature = $this->signingAdapter->sign($fileId, $signatory, $tspProvider);
 
-		$decision = $this->withSignature(decision: $decision, signature: $signature, tspProvider: $tspProvider, signatory: $signatory);
+		$decision = $this->withSignature(
+			decision: $decision,
+			signature: $signature,
+			signer: ['tspProvider' => $tspProvider, 'signatory' => $signatory],
+		);
 		$decision['currentStatus'] = 'signed';
 
 		$saved = $this->repository->save(decision: $decision);
-		$this->logSigned(decisionId: $decisionId, current: $current, signatory: $signatory, signature: $signature);
+		$this->logSigned(decisionId: $decisionId, current: $current, signed: $decision['signature']);
 
 		return $saved;
 	}//end onderteken()
@@ -403,21 +407,20 @@ class BeschikkingService implements BeschikkingServiceInterface {
 	 * The beschikking with the TSP's signature written onto it.
 	 *
 	 * @param array<string, mixed> $decision    The beschikking.
-	 * @param array<string, mixed> $signature   What the TSP answered.
-	 * @param string               $tspProvider The TSP provider slug.
-	 * @param string               $signatory   The signer's Nextcloud UID.
+	 * @param array<string, mixed>                          $signature What the TSP answered.
+	 * @param array{tspProvider: string, signatory: string} $signer    The TSP provider slug and the signer's Nextcloud UID.
 	 *
 	 * @return array<string, mixed> The signed beschikking, not yet saved.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T08
 	 */
-	private function withSignature(array $decision, array $signature, string $tspProvider, string $signatory): array {
+	private function withSignature(array $decision, array $signature, array $signer): array {
 		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
 
 		$decision['signature'] = [
-			'tspProvider' => $tspProvider,
+			'tspProvider' => $signer['tspProvider'],
 			'tspProviderEidasId' => (string)($signature['tspProviderEidasId'] ?? ''),
-			'signatory' => $signatory,
+			'signatory' => $signer['signatory'],
 			'signingMoment' => (string)($signature['signingMoment'] ?? ''),
 			'kind' => 'gekwalificeerde-elektronische-handtekening',
 			'certificateSerialNumber' => (string)($signature['certificateSerialNumber'] ?? ''),
@@ -431,25 +434,24 @@ class BeschikkingService implements BeschikkingServiceInterface {
 	/**
 	 * Log the transition to signed, with the TSP's report as evidence.
 	 *
-	 * @param string               $decisionId The beschikking UUID.
-	 * @param string               $current    The status before signing.
-	 * @param string               $signatory  The signer's Nextcloud UID.
-	 * @param array<string, mixed> $signature  What the TSP answered.
+	 * @param string                                                  $decisionId The beschikking UUID.
+	 * @param string                                                  $current    The status before signing.
+	 * @param array{signatory: string, validationRapportId: string}   $signed     The signature written onto the beschikking.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T08
 	 */
-	private function logSigned(string $decisionId, string $current, string $signatory, array $signature): void {
+	private function logSigned(string $decisionId, string $current, array $signed): void {
 		$this->stateMachine->logTransition(
 			$decisionId,
 			$current,
 			'signed',
 			[
-				'actor' => $signatory,
+				'actor' => $signed['signatory'],
 				'actorType' => 'employee',
 				'trigger' => 'manual',
-				'evidenceMaterial' => ['kind' => 'tsp-handtekening-rapport', 'rapportId' => (string)($signature['validationRapportId'] ?? '')],
+				'evidenceMaterial' => ['kind' => 'tsp-handtekening-rapport', 'rapportId' => $signed['validationRapportId']],
 			],
 		);
 	}//end logSigned()

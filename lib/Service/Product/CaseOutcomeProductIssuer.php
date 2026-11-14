@@ -261,9 +261,8 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 	 */
 	private function change(ProductOutcome $outcome): ?array {
 		$changes = (array)$outcome->declared['changesProduct'];
-		$schema = $this->schemaOf(declared: $outcome->declared);
 		$productId = $outcome->answer(name: (string)($changes['answer'] ?? ''));
-		if ($this->changeableProduct(outcome: $outcome, schema: $schema, productId: $productId) === false) {
+		if ($this->changeableProduct(outcome: $outcome, productId: $productId) === false) {
 			return null;
 		}
 
@@ -272,20 +271,24 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 			return null;
 		}
 
-		return $this->patchProduct(outcome: $outcome, schema: $schema, productId: $productId, set: $set);
+		return $this->patchProduct(outcome: $outcome, productId: $productId, set: $set);
 	}//end change()
 
 	/**
 	 * Whether the product a change case names exists and is its requester's own and in force; logged when not.
 	 *
-	 * @param ProductOutcome $outcome   The change case and its declaration.
-	 * @param string         $schema    The product schema.
+	 * @param ProductOutcome $outcome   The change case and its declaration, which names the product schema.
 	 * @param string         $productId The product the change case names.
 	 *
 	 * @return bool True when the product may be changed.
 	 */
-	private function changeableProduct(ProductOutcome $outcome, string $schema, string $productId): bool {
-		$product = $this->read(objectService: $outcome->objectService, register: $outcome->register, schema: $schema, id: $productId);
+	private function changeableProduct(ProductOutcome $outcome, string $productId): bool {
+		$product = $this->read(
+			objectService: $outcome->objectService,
+			register: $outcome->register,
+			schema: $this->schemaOf(declared: $outcome->declared),
+			id: $productId
+		);
 		if ($product === null) {
 			return false;
 		}
@@ -304,14 +307,14 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 	/**
 	 * Write the change set onto the product, as the system when the object service offers it.
 	 *
-	 * @param ProductOutcome       $outcome   The change case and its declaration.
-	 * @param string               $schema    The product schema.
+	 * @param ProductOutcome       $outcome   The change case and its declaration, which names the product schema.
 	 * @param string               $productId The product.
 	 * @param array<string, mixed> $set       The fields to set.
 	 *
 	 * @return array<string, mixed>|null The product, changed.
 	 */
-	private function patchProduct(ProductOutcome $outcome, string $schema, string $productId, array $set): ?array {
+	private function patchProduct(ProductOutcome $outcome, string $productId, array $set): ?array {
+		$schema = $this->schemaOf(declared: $outcome->declared);
 		return $this->runAsSystemIfAvailable(
 			objectService: $outcome->objectService,
 			operation: fn (): ?array => $this->patchObjectAsArray(

@@ -156,7 +156,10 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 				continue;
 			}
 
-			$contact = $this->domainContact(domain: $domain, declaration: $declaration, bsn: $bsn, caseContacts: $caseContacts);
+			$contact = $this->domainContact(
+				lookup: new DomainLookup(domain: $domain, declaration: $declaration, bsn: $bsn),
+				caseContacts: $caseContacts
+			);
 			if ($contact === null) {
 				continue;
 			}
@@ -173,9 +176,7 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 	/**
 	 * Who to contact in a domain: its open record's contact, else its open case's.
 	 *
-	 * @param string $domain The domain.
-	 * @param array<string, mixed> $declaration The domain's declaration.
-	 * @param string $bsn The person looked up.
+	 * @param DomainLookup          $lookup       The domain, its declaration and the person looked up.
 	 * @param array<string, string> $caseContacts The open cases' contacts by domain.
 	 *
 	 * @return string|null The contact, or null when the domain holds nothing open.
@@ -184,10 +185,10 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 	 *
 	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
 	 */
-	private function domainContact(string $domain, array $declaration, string $bsn, array $caseContacts): ?string {
-		$contact = $this->openRecordContact(domain: $domain, declaration: $declaration, bsn: $bsn);
+	private function domainContact(DomainLookup $lookup, array $caseContacts): ?string {
+		$contact = $this->openRecordContact(lookup: $lookup);
 
-		return ($contact ?? ($caseContacts[$domain] ?? null));
+		return ($contact ?? ($caseContacts[$lookup->domain] ?? null));
 	}//end domainContact()
 
 	/**
@@ -217,20 +218,19 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 	/**
 	 * The contact of the first open, unmigrated record a domain holds about the person.
 	 *
-	 * @param string $domain The domain.
-	 * @param array{schema: string, bsnKey: string} $declaration The domain's declaration.
-	 * @param string $bsn The person looked up.
+	 * @param DomainLookup $lookup The domain, its declaration and the person looked up.
 	 *
 	 * @return string|null The contact, or null when the domain holds no open record.
 	 *
 	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
 	 */
-	private function openRecordContact(string $domain, array $declaration, string $bsn): ?string {
+	private function openRecordContact(DomainLookup $lookup): ?string {
+		$declaration = $lookup->declaration;
 		// The BSN KEY comes from the domain's own declaration, because the
 		// three schemas do not spell it the same way: a Jeugdwet case names
 		// the juvenile in `jeugdigeBsn`. Filtering it on `bsn` answers a
 		// clean "nothing here" rather than an error.
-		$filters = [$declaration['bsnKey'] => $bsn];
+		$filters = [$declaration['bsnKey'] => $lookup->bsn];
 
 		$contact = null;
 		foreach ($this->store->rows(schema: $declaration['schema'], filters: $filters) as $row) {
@@ -239,7 +239,7 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 				continue;
 			}
 
-			$contact = $this->contactFor(row: $row, domain: $domain);
+			$contact = $this->contactFor(row: $row, domain: $lookup->domain);
 			break;
 		}
 

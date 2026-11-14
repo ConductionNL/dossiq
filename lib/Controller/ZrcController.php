@@ -215,36 +215,35 @@ class ZrcController extends ZgwController {
 			);
 		}
 
-		return $this->createFromBody(resource: $resource, mappingConfig: $mappingConfig, originalBody: $originalBody, body: $ruleResult['enrichedBody']);
+		return $this->createFromBody(
+			create: new ZrcCreateRun(resource: $resource, mappingConfig: $mappingConfig, originalBody: $originalBody, body: $ruleResult['enrichedBody'])
+		);
 	}//end createValidated()
 
 	/**
 	 * Save a validated resource with its before- and after-save side effects, and answer it.
 	 *
-	 * @param string $resource The ZGW resource name.
-	 * @param array $mappingConfig The resource mapping.
-	 * @param array $originalBody The request body as sent.
-	 * @param array $body The enriched body.
+	 * @param ZrcCreateRun $create The resource, its mapping, the body as sent and the enriched body.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @throws \Throwable When saving or a side effect fails.
 	 */
-	private function createFromBody(string $resource, array $mappingConfig, array $originalBody, array $body): JSONResponse {
-		$saved = $this->saveCreate(resource: $resource, mappingConfig: $mappingConfig, originalBody: $originalBody, body: $body);
+	private function createFromBody(ZrcCreateRun $create): JSONResponse {
+		$saved = $this->saveCreate(create: $create);
 		if ($saved instanceof JSONResponse) {
 			return $saved;
 		}
 
 		[$objectData, $objectUuid] = $saved;
 
-		$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-		$mapped = $this->mapCreatedOut(objectData: $objectData, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
-		if ($resource === 'zaakinformatieobjecten') {
-			$mapped = $this->completeCreatedJoin(mapped: $mapped, originalBody: $originalBody, body: $body);
+		$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $create->resource);
+		$mapped = $this->mapCreatedOut(objectData: $objectData, mappingConfig: $create->mappingConfig, baseUrl: $baseUrl);
+		if ($create->resource === 'zaakinformatieobjecten') {
+			$mapped = $this->completeCreatedJoin(mapped: $mapped, create: $create);
 		}
 
-		$this->zgwService->publishNotification(self::ZGW_API, $resource, $baseUrl . '/' . $objectUuid, 'create');
+		$this->zgwService->publishNotification(self::ZGW_API, $create->resource, $baseUrl . '/' . $objectUuid, 'create');
 
 		return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
 	}//end createFromBody()
@@ -252,26 +251,23 @@ class ZrcController extends ZgwController {
 	/**
 	 * Map and save a validated resource with its before- and after-save side effects.
 	 *
-	 * @param string $resource The ZGW resource name.
-	 * @param array $mappingConfig The resource mapping.
-	 * @param array $originalBody The request body as sent.
-	 * @param array $body The enriched body.
+	 * @param ZrcCreateRun $create The resource, its mapping, the body as sent and the enriched body.
 	 *
 	 * @return JSONResponse|array{0: array, 1: mixed} The refusal of a side effect, or the saved object data and its uuid.
 	 *
 	 * @throws \Throwable When saving or a side effect fails.
 	 */
-	private function saveCreate(string $resource, array $mappingConfig, array $originalBody, array $body): JSONResponse|array {
-		$englishData = $this->inboundCreateData(body: $body, mappingConfig: $mappingConfig);
+	private function saveCreate(ZrcCreateRun $create): JSONResponse|array {
+		$englishData = $this->inboundCreateData(body: $create->body, mappingConfig: $create->mappingConfig);
 
-		$beforeSave = $this->beforeCreateSave(resource: $resource, originalBody: $originalBody, body: $body);
+		$beforeSave = $this->beforeCreateSave(resource: $create->resource, originalBody: $create->originalBody, body: $create->body);
 		if ($beforeSave !== null) {
 			return $beforeSave;
 		}
 
-		[$objectData, $objectUuid] = $this->saveCreatedObject(englishData: $englishData, mappingConfig: $mappingConfig);
+		[$objectData, $objectUuid] = $this->saveCreatedObject(englishData: $englishData, mappingConfig: $create->mappingConfig);
 
-		$afterSave = $this->afterCreateSave(resource: $resource, objectUuid: (string)$objectUuid, originalBody: $originalBody, objectData: $objectData);
+		$afterSave = $this->afterCreateSave(create: $create, objectUuid: (string)$objectUuid, objectData: $objectData);
 		if ($afterSave !== null) {
 			return $afterSave;
 		}
@@ -481,27 +477,26 @@ class ZrcController extends ZgwController {
 	/**
 	 * The side effects of a saved create: related zaken, status and result effects.
 	 *
-	 * @param string $resource The ZGW resource name.
-	 * @param string $objectUuid The saved object.
-	 * @param array $originalBody The body as received.
-	 * @param array $objectData The saved object.
+	 * @param ZrcCreateRun $create     The resource and the body as received.
+	 * @param string       $objectUuid The saved object.
+	 * @param array        $objectData The saved object.
 	 *
 	 * @return JSONResponse|null A refusal of the related zaken, or null.
 	 */
-	private function afterCreateSave(string $resource, string $objectUuid, array $originalBody, array $objectData): ?JSONResponse {
+	private function afterCreateSave(ZrcCreateRun $create, string $objectUuid, array $objectData): ?JSONResponse {
 		// Related-case-linking: a relation URL that does not resolve to a local
 		// case is rejected with the standard ZGW validation error shape.
-		if ($resource === 'zaken') {
-			return $this->applyInboundRelevanteAndereCases(caseUuid: $objectUuid, body: $originalBody);
+		if ($create->resource === 'zaken') {
+			return $this->applyInboundRelevanteAndereCases(caseUuid: $objectUuid, body: $create->originalBody);
 		}
 
-		if ($resource === 'statussen') {
-			$this->statusEffects->applyStatusEffect(body: $originalBody, objectData: $objectData);
+		if ($create->resource === 'statussen') {
+			$this->statusEffects->applyStatusEffect(body: $create->originalBody, objectData: $objectData);
 		}
 
 		// Zrc-021: a resultaat derives archiefactiedatum and archiefnominatie on its zaak.
-		if ($resource === 'resultaten') {
-			$this->statusEffects->applyResultEffect(body: $originalBody);
+		if ($create->resource === 'resultaten') {
+			$this->statusEffects->applyResultEffect(body: $create->originalBody);
 		}
 
 		return null;
@@ -510,17 +505,16 @@ class ZrcController extends ZgwController {
 	/**
 	 * Finish a created join: enrich the answer, create the DRC OIO, home the file (zrc-004a, zrc-005a).
 	 *
-	 * @param array $mapped The outbound-mapped join.
-	 * @param array $originalBody The body as received.
-	 * @param array $body The body after the rules ran.
+	 * @param array        $mapped The outbound-mapped join.
+	 * @param ZrcCreateRun $create The body as received and the body after the rules ran.
 	 *
 	 * @return array The enriched answer.
 	 */
-	private function completeCreatedJoin(array $mapped, array $originalBody, array $body): array {
-		$mapped = $this->enrichZioResponse(mapped: $mapped, body: $body);
+	private function completeCreatedJoin(array $mapped, ZrcCreateRun $create): array {
+		$mapped = $this->enrichZioResponse(mapped: $mapped, body: $create->body);
 
-		$caseUrl = $this->joinCaseUrl(originalBody: $originalBody, body: $body);
-		$ioUrl = $originalBody['informatieobject'] ?? ($body['informatieobject'] ?? '');
+		$caseUrl = $this->joinCaseUrl(originalBody: $create->originalBody, body: $create->body);
+		$ioUrl = $create->originalBody['informatieobject'] ?? ($create->body['informatieobject'] ?? '');
 		$this->syncCreateObjectInformatieObject(caseUrl: $caseUrl, ioUrl: $ioUrl);
 
 		// Documents live on the case: the first join moves the file into the case.

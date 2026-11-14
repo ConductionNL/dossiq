@@ -92,9 +92,10 @@ class MoveAction implements MoveActionInterface {
 		array $results = [],
 	): array {
 		$moved = $this->moveOnServer(message: $message, target: $target);
-		$reason = $this->recordedReason(target: $target, note: $note, actorId: $actorId, moved: $moved);
+		$move = new MailMove(target: $target, note: $note, actorId: $actorId);
+		$reason = $this->recordedReason(move: $move, moved: $moved);
 		$entryId = $this->recordMove(message: $message, note: $note, results: $results, reason: $reason);
-		$this->amendMove(entryId: $entryId, target: $target, actorId: $actorId);
+		$this->amendMove(entryId: $entryId, move: $move);
 
 		return ['moved' => $moved, 'entryId' => $entryId];
 	}//end move()
@@ -156,22 +157,21 @@ class MoveAction implements MoveActionInterface {
 	/**
 	 * Note the target folder and the mover on the log entry.
 	 *
-	 * @param string $entryId The log entry id, or '' when nothing was recorded.
-	 * @param string $target  The folder.
-	 * @param string $actorId Who moved it.
+	 * @param string   $entryId The log entry id, or '' when nothing was recorded.
+	 * @param MailMove $move    The folder and who moved it.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function amendMove(string $entryId, string $target, string $actorId): void {
+	private function amendMove(string $entryId, MailMove $move): void {
 		if ($entryId !== '') {
 			$this->log->amend(
 				entryId: $entryId,
 				changes: [
-					'movedTo' => $target,
-					'movedBy' => $actorId,
-					'mailbox' => $target,
+					'movedTo' => $move->target,
+					'movedBy' => $move->actorId,
+					'mailbox' => $move->target,
 				]
 			);
 		}
@@ -180,16 +180,17 @@ class MoveAction implements MoveActionInterface {
 	/**
 	 * What the log says about this move.
 	 *
-	 * @param string  $target  The folder.
-	 * @param string  $note    The handler's note.
-	 * @param string  $actorId Who moved it.
-	 * @param boolean $moved   Whether the mail server confirmed it.
+	 * @param MailMove $move  The folder, the handler's note and who moved it.
+	 * @param boolean  $moved Whether the mail server confirmed it.
 	 *
 	 * @return string The recorded reason.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function recordedReason(string $target, string $note, string $actorId, bool $moved): string {
+	private function recordedReason(MailMove $move, bool $moved): string {
+		$target = $move->target;
+		$note = $move->note;
+		$actorId = $move->actorId;
 		$who = 'the intake pipeline';
 		if ($actorId !== '') {
 			$who = $actorId;

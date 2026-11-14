@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Status\DerivedStatusEvaluator;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
+use OCA\Dossiq\Service\Transitions\TransitionDestination;
 use OCA\Dossiq\Service\Transitions\TransitionPreconditions;
 use OCA\Dossiq\Service\Zgw\BrcDocumentLinkRules;
 use OCA\Dossiq\Service\Zgw\ZtcRelatedTypeLookup;
@@ -115,7 +116,7 @@ class TranslatableNamesInLookupsTest extends TestCase {
 			evaluator: $this->createMock(DerivedStatusEvaluator::class),
 		);
 
-		$reason = (new ReflectionMethod($preconditions, 'obligationReason'))->invoke($preconditions, [], 'case-1', 'st-2', false);
+		$reason = (new ReflectionMethod($preconditions, 'obligationReason'))->invoke($preconditions, [], new TransitionDestination(case: [], caseId: 'case-1', toStatus: 'st-2', toIsClosing: false));
 
 		self::assertSame('Zienswijze van de belanghebbende', $reason);
 	}//end testAnObligationIsNamedByItsTitleAsText()

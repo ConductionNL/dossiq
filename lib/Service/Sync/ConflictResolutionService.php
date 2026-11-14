@@ -112,31 +112,40 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			return ConflictResolutionOutcome::refused(status: Http::STATUS_SERVICE_UNAVAILABLE, message: 'OpenRegister is niet beschikbaar.');
 		}
 
-		$data = $this->openConflict(objectService: $objectService, register: $register, id: $id);
+		$request = new ConflictResolutionRequest(
+			objectService: $objectService,
+			register: $register,
+			id: $id,
+			resolution: $resolution,
+			userId: $userId
+		);
+		$data = $this->openConflict(request: $request);
 		if ($data instanceof ConflictResolutionOutcome) {
 			return $data;
 		}
 
-		$refusal = $this->applyResolution(objectService: $objectService, register: $register, id: $id, resolution: $resolution, data: $data);
+		$refusal = $this->applyResolution(request: $request, data: $data);
 
-		return ($refusal ?? $this->markResolved(objectService: $objectService, register: $register, id: $id, resolution: $resolution,
-			userId: $userId, data: $data));
+		return ($refusal ?? $this->markResolved(request: $request, data: $data));
 	}//end resolve()
 
 	/**
 	 * Read the conflict record, refusing when it is missing or already resolved.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The register of the conflict record.
-	 * @param string $id            The conflict record's id.
+	 * @param ConflictResolutionRequest $request The conflict record and the user's choice.
 	 *
 	 * @return array<string, mixed>|ConflictResolutionOutcome The conflict record, or the refusal.
 	 *
 	 * @spec openspec/changes/inspection-conflict-card/tasks.md
 	 */
-	private function openConflict(object $objectService, string $register, string $id): array|ConflictResolutionOutcome {
+	private function openConflict(ConflictResolutionRequest $request): array|ConflictResolutionOutcome {
 		try {
-			$record = $this->read(objectService: $objectService, register: $register, schema: self::CONFLICT_SCHEMA, id: $id);
+			$record = $this->read(
+				objectService: $request->objectService,
+				register: $request->register,
+				schema: self::CONFLICT_SCHEMA,
+				id: $request->id
+			);
 		} catch (Throwable $e) {
 			return ConflictResolutionOutcome::refused(status: Http::STATUS_NOT_FOUND, message: 'Dit conflict bestaat niet.');
 		}
@@ -152,25 +161,16 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	/**
 	 * Apply the chosen side: for `client_wins`, write the device's values.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register of the conflict record.
-	 * @param string               $id            The conflict record's id.
-	 * @param string               $resolution    `client_wins` or `server_wins`.
-	 * @param array<string, mixed> $data          The conflict record.
+	 * @param ConflictResolutionRequest $request The conflict record and the user's choice.
+	 * @param array<string, mixed>      $data    The conflict record.
 	 *
 	 * @return ConflictResolutionOutcome|null The refusal, or null once applied.
 	 *
 	 * @spec openspec/changes/inspection-conflict-card/tasks.md
 	 */
-	private function applyResolution(
-		object $objectService,
-		string $register,
-		string $id,
-		string $resolution,
-		array $data,
-	): ?ConflictResolutionOutcome {
-		if ($resolution === self::CLIENT_WINS) {
-			$refusal = $this->writeDeviceValues(objectService: $objectService, register: $register, id: $id, data: $data);
+	private function applyResolution(ConflictResolutionRequest $request, array $data): ?ConflictResolutionOutcome {
+		if ($request->resolution === self::CLIENT_WINS) {
+			$refusal = $this->writeDeviceValues(request: $request, data: $data);
 			if ($refusal !== null) {
 				return $refusal;
 			}
@@ -182,30 +182,22 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	/**
 	 * Mark the conflict record resolved and its queue row synced.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register of the conflict record.
-	 * @param string               $id            The conflict record's id.
-	 * @param string               $resolution    `client_wins` or `server_wins`.
-	 * @param string               $userId        The session user's uid.
-	 * @param array<string, mixed> $data          The conflict record.
+	 * @param ConflictResolutionRequest $request The conflict record and the user's choice.
+	 * @param array<string, mixed>      $data    The conflict record.
 	 *
 	 * @return ConflictResolutionOutcome The status and body to answer with.
 	 *
 	 * @spec openspec/changes/inspection-conflict-card/tasks.md
 	 */
-	private function markResolved(
-		object $objectService,
-		string $register,
-		string $id,
-		string $resolution,
-		string $userId,
-		array $data,
-	): ConflictResolutionOutcome {
+	private function markResolved(ConflictResolutionRequest $request, array $data): ConflictResolutionOutcome {
+		$id = $request->id;
+		$resolution = $request->resolution;
+		$userId = $request->userId;
 		$resolvedAt = $this->time->now()->format(DATE_ATOM);
 		try {
 			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
+				objectService: $request->objectService,
+				register: $request->register,
 				schema: self::CONFLICT_SCHEMA,
 				id: $id,
 				changes: ['resolution' => $resolution, 'resolvedBy' => $userId, 'resolvedAt' => $resolvedAt]
@@ -221,7 +213,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			);
 		}
 
-		$this->markQueueRowSynced(objectService: $objectService, register: $register, data: $data);
+		$this->markQueueRowSynced(request: $request, data: $data);
 
 		return new ConflictResolutionOutcome(
 			status: Http::STATUS_OK,
@@ -232,20 +224,13 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	/**
 	 * Write the device's values onto the target, after every check.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register of the conflict record.
-	 * @param string               $id            The conflict record's id.
-	 * @param array<string, mixed> $data          The conflict record.
+	 * @param ConflictResolutionRequest $request The conflict record and the user's choice.
+	 * @param array<string, mixed>      $data    The conflict record.
 	 *
 	 * @return ConflictResolutionOutcome|null The refusal, or null once written.
 	 */
-	private function writeDeviceValues(
-		object $objectService,
-		string $register,
-		string $id,
-		array $data,
-	): ?ConflictResolutionOutcome {
-		$target = $this->writableTarget(objectService: $objectService, data: $data);
+	private function writeDeviceValues(ConflictResolutionRequest $request, array $data): ?ConflictResolutionOutcome {
+		$target = $this->writableTarget(objectService: $request->objectService, data: $data);
 		if ($target instanceof ConflictResolutionOutcome) {
 			return $target;
 		}
@@ -254,7 +239,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 		$current = $this->dataOf(object: $target);
 		$refreshed = $this->refreshedServerVersion(data: $data, fields: $fields, current: $current);
 		if ($refreshed !== null) {
-			$this->storeServerVersion(objectService: $objectService, register: $register, id: $id, refreshed: $refreshed);
+			$this->storeServerVersion(request: $request, refreshed: $refreshed);
 			return ConflictResolutionOutcome::refused(
 				status: Http::STATUS_CONFLICT,
 				message: 'Op kantoor is de tekst intussen opnieuw gewijzigd. Kies opnieuw.'
@@ -266,7 +251,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			return null;
 		}
 
-		return $this->writeOntoTarget(objectService: $objectService, data: $data, changes: $changes, id: $id);
+		return $this->writeOntoTarget(request: $request, data: $data, changes: $changes);
 	}//end writeDeviceValues()
 
 	/**
@@ -353,26 +338,24 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	/**
 	 * Store the newest office values on the conflict record; a failure is logged.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register of the conflict record.
-	 * @param string               $id            The conflict record's id.
-	 * @param array<string, mixed> $refreshed     The refreshed server version.
+	 * @param ConflictResolutionRequest $request   The conflict record and the user's choice.
+	 * @param array<string, mixed>      $refreshed The refreshed server version.
 	 *
 	 * @return void
 	 */
-	private function storeServerVersion(object $objectService, string $register, string $id, array $refreshed): void {
+	private function storeServerVersion(ConflictResolutionRequest $request, array $refreshed): void {
 		try {
 			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
+				objectService: $request->objectService,
+				register: $request->register,
 				schema: self::CONFLICT_SCHEMA,
-				id: $id,
+				id: $request->id,
 				changes: ['serverVersion' => $refreshed]
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the newest office value could not be stored on the conflict record',
-				['exception' => $e->getMessage(), 'id' => $id]
+				['exception' => $e->getMessage(), 'id' => $request->id]
 			);
 		}
 	}//end storeServerVersion()
@@ -405,18 +388,17 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	/**
 	 * Write the changes onto the conflict's target.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param array<string, mixed> $data          The conflict record.
-	 * @param array<string, mixed> $changes       The changes to write.
-	 * @param string               $id            The conflict record's id, for the log.
+	 * @param ConflictResolutionRequest $request The conflict record, for the object service and the log.
+	 * @param array<string, mixed>      $data    The conflict record.
+	 * @param array<string, mixed>      $changes The changes to write.
 	 *
 	 * @return ConflictResolutionOutcome|null The refusal, or null once written.
 	 */
-	private function writeOntoTarget(object $objectService, array $data, array $changes, string $id): ?ConflictResolutionOutcome {
+	private function writeOntoTarget(ConflictResolutionRequest $request, array $data, array $changes): ?ConflictResolutionOutcome {
 		[$targetRegister, $targetSchema, $targetId] = $this->targetOf(data: $data);
 		try {
 			$this->patchObjectAsArray(
-				objectService: $objectService,
+				objectService: $request->objectService,
 				register: $targetRegister,
 				schema: $targetSchema,
 				id: $targetId,
@@ -425,7 +407,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the device values could not be written onto the target',
-				['exception' => $e->getMessage(), 'id' => $id]
+				['exception' => $e->getMessage(), 'id' => $request->id]
 			);
 			return ConflictResolutionOutcome::refused(
 				status: Http::STATUS_INTERNAL_SERVER_ERROR,
@@ -439,13 +421,14 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	/**
 	 * Mark the outbox row the record names as synced, when it exists.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register.
-	 * @param array<string, mixed> $data          The conflict record.
+	 * @param ConflictResolutionRequest $request The conflict record, for the object service and the register.
+	 * @param array<string, mixed>      $data    The conflict record.
 	 *
 	 * @return void
 	 */
-	private function markQueueRowSynced(object $objectService, string $register, array $data): void {
+	private function markQueueRowSynced(ConflictResolutionRequest $request, array $data): void {
+		$objectService = $request->objectService;
+		$register = $request->register;
 		$ref = $this->stringOf(value: ($data['syncQueueRef'] ?? null));
 		if ($ref === '') {
 			return;

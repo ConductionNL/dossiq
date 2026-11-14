@@ -120,12 +120,9 @@ class PortalPages {
 	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
 	 */
 	public function forResident(array $collections, array $actions, string $group, array $labels = []): array {
-		$listPages = $this->residentListPages(collections: $collections, actions: $actions, group: $group, labels: $labels);
-		$startPages = $this->startPages(
-			actions: $actions,
-			offered: $this->offeredActions(pages: $listPages),
-			group: $group
-		);
+		$portal = new ResidentPortal(collections: $collections, actions: $actions, group: $group, labels: $labels);
+		$listPages = $this->residentListPages(portal: $portal);
+		$startPages = $this->startPages(portal: $portal, offered: $this->offeredActions(pages: $listPages));
 
 		$pages = [];
 		$pages[] = [
@@ -161,16 +158,14 @@ class PortalPages {
 	/**
 	 * The two list pages that stay as they were: the messages and the requests.
 	 *
-	 * @param array<int, array<string, mixed>> $collections The citizen collections.
-	 * @param array<int, array<string, mixed>> $actions     The citizen actions.
-	 * @param string                           $group       The group every page sits in.
-	 * @param array<string, string>            $labels      The label per page id.
+	 * @param ResidentPortal $portal The citizen collections and actions, the page group and the label per page id.
 	 *
 	 * @return array<int, array<string, mixed>> The pages, those whose collection is declared.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
 	 */
-	private function residentListPages(array $collections, array $actions, string $group, array $labels): array {
+	private function residentListPages(ResidentPortal $portal): array {
+		$collections = $portal->collections;
 		$pages = [];
 		foreach (['berichten', 'verzoeken'] as $id) {
 			if ($this->declares(rows: $collections, id: $id) === false) {
@@ -179,12 +174,12 @@ class PortalPages {
 
 			$page = [
 				'id' => $id,
-				'label' => ($labels[$id] ?? $id),
-				'group' => $group,
+				'label' => ($portal->labels[$id] ?? $id),
+				'group' => $portal->group,
 				'menu' => false,
 				'blocks' => [],
 			];
-			foreach ($actions as $action) {
+			foreach ($portal->actions as $action) {
 				if ($this->startsOn(action: $action, page: $id, collections: $collections) === true) {
 					$page['blocks'][] = ['type' => 'action', 'action' => (string)$action['id']];
 					break;
@@ -209,17 +204,16 @@ class PortalPages {
 	 * form, as the boards draw a request form on a page of its own. Without
 	 * it an action that starts from nothing had no tile and no way in.
 	 *
-	 * @param array<int, array<string, mixed>> $actions The citizen actions.
-	 * @param array<string, true>              $offered The action ids a page already offers.
-	 * @param string                           $group   The group every page sits in.
+	 * @param ResidentPortal      $portal  The citizen actions and the group every page sits in.
+	 * @param array<string, true> $offered The action ids a page already offers.
 	 *
 	 * @return array<int, array<string, mixed>> The pages; the page id is the action id.
 	 *
 	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
 	 */
-	private function startPages(array $actions, array $offered, string $group): array {
+	private function startPages(ResidentPortal $portal, array $offered): array {
 		$pages = [];
-		foreach ($actions as $action) {
+		foreach ($portal->actions as $action) {
 			$id = (string)($action['id'] ?? '');
 			if ($id === '' || isset($offered[$id]) === true || $this->isStartPoint(action: $action) === false) {
 				continue;
@@ -228,7 +222,7 @@ class PortalPages {
 			$pages[] = [
 				'id' => $id,
 				'label' => (string)$action['label'],
-				'group' => $group,
+				'group' => $portal->group,
 				'menu' => false,
 				'blocks' => [['type' => 'action', 'action' => $id]],
 			];

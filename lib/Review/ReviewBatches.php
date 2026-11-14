@@ -156,7 +156,10 @@ class ReviewBatches implements ReviewBatchesInterface {
 
 		$this->stampReviews(caseId: $caseId, batchId: $batchId, documents: $documents);
 
-		$taskId = $this->handTask(caseId: $caseId, batchId: $batchId, name: $name, assignee: $assignee, count: count($documents), userId: $userId);
+		$taskId = $this->handTask(
+			assignment: ['caseId' => $caseId, 'batchId' => $batchId, 'name' => $name, 'assignee' => $assignee, 'count' => count($documents)],
+			userId: $userId,
+		);
 		$batch = $this->withTask(batch: $batch, taskId: $taskId);
 
 		$access = $this->reconcile(caseId: $caseId, batchId: $batchId);
@@ -266,7 +269,10 @@ class ReviewBatches implements ReviewBatchesInterface {
 			]
 		);
 		$batchId = (string)($batch['id'] ?? ($batch['uuid'] ?? ''));
-		$taskId = $this->handTask(caseId: $caseId, batchId: $batchId, name: $name, assignee: $assignee, count: count($documents), userId: $userId);
+		$taskId = $this->handTask(
+			assignment: ['caseId' => $caseId, 'batchId' => $batchId, 'name' => $name, 'assignee' => $assignee, 'count' => count($documents)],
+			userId: $userId,
+		);
 		if ($taskId !== '') {
 			$batch['task'] = $taskId;
 			$batch = $this->save(batch: $batch);
@@ -327,33 +333,29 @@ class ReviewBatches implements ReviewBatchesInterface {
 	/**
 	 * Hand the reviewer a task for the batch through the engine; '' when the engine did not take it.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param string $batchId The batch.
-	 * @param string $name The batch's name.
-	 * @param string $assignee The reviewer.
-	 * @param int $count How many documents the batch holds.
-	 * @param string $userId Who made the batch.
+	 * @param array{caseId: string, batchId: string, name: string, assignee: string, count: int} $assignment The batch and its reviewer.
+	 * @param string                                                                          $userId     Who made the batch.
 	 *
 	 * @return string The engine task uuid, or ''.
 	 */
-	private function handTask(string $caseId, string $batchId, string $name, string $assignee, int $count, string $userId): string {
+	private function handTask(array $assignment, string $userId): string {
 		$taskId = $this->tasks->mirrorImport(
 			task: [
-				'id' => self::TASK_KIND.':'.$batchId,
-				'title' => $this->l10n->t('Review the batch "%s"', [$name]),
-				'description' => $this->l10n->t('%1$d documents to review in the batch "%2$s".', [$count, $name]),
+				'id' => self::TASK_KIND.':'.$assignment['batchId'],
+				'title' => $this->l10n->t('Review the batch "%s"', [$assignment['name']]),
+				'description' => $this->l10n->t('%1$d documents to review in the batch "%2$s".', [$assignment['count'], $assignment['name']]),
 				'status' => 'available',
-				'assignee' => $assignee,
+				'assignee' => $assignment['assignee'],
 				'priority' => 'normal',
-				'metadata' => ['dossiq' => ['kind' => self::TASK_KIND, 'batch' => $batchId]],
+				'metadata' => ['dossiq' => ['kind' => self::TASK_KIND, 'batch' => $assignment['batchId']]],
 			],
-			caseId: $caseId,
+			caseId: $assignment['caseId'],
 			actor: $userId,
 		);
 		if ($taskId === '') {
 			$this->logger->warning(
 				'Dossiq: a Review batch was created but the engine did not take its task',
-				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'batch' => $batchId]
+				['app' => AppIdentity::APP_ID, 'case' => $assignment['caseId'], 'batch' => $assignment['batchId']]
 			);
 		}
 

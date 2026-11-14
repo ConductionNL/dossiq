@@ -90,7 +90,7 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 
 		$archivalId = uniqid(prefix: 'archival-', more_entropy: true);
 
-		$documentRecord = $this->documentRecord(caseId: $caseId, archivalId: $archivalId, metadata: $metadata, size: $size);
+		$documentRecord = $this->documentRecord(caseId: $caseId, archivalId: $archivalId, metadata: $metadata);
 
 		$this->persistDocument(payload: $documentRecord);
 		$this->appendCaseAudit(
@@ -133,14 +133,13 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 	 *
 	 * @param string               $caseId     Owning case UUID.
 	 * @param string               $archivalId The archival identifier.
-	 * @param array<string, mixed> $metadata   Email metadata.
-	 * @param int                  $size       The message size in bytes.
+	 * @param array<string, mixed> $metadata   Email metadata, with the message size in bytes.
 	 *
 	 * @return array<string, mixed> The document record.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T05
 	 */
-	private function documentRecord(string $caseId, string $archivalId, array $metadata, int $size): array {
+	private function documentRecord(string $caseId, string $archivalId, array $metadata): array {
 		// Who this message is FROM, as a party of the case rather than as
 		// the address in the header. The address stays on `from`; this is
 		// the party a handler can open. An address nobody on the case
@@ -162,7 +161,7 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 			'from' => (string)($metadata['from'] ?? ''),
 			'to' => (string)($metadata['to'] ?? ''),
 			'sentAt' => (string)($metadata['sentAt'] ?? ''),
-			'sizeBytes' => $size,
+			'sizeBytes' => (int)($metadata['sizeBytes'] ?? 0),
 			'pdfStatus' => 'pending',
 			'pdfAttempts' => 0,
 		];
@@ -270,7 +269,7 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 			return;
 		}
 
-		$this->saveDocument(objectService: $objectService, register: $register, schema: $schema, payload: $payload);
+		$this->saveDocument(target: [$objectService, $register, $schema], payload: $payload);
 	}//end persistDocument()
 
 	/**
@@ -290,14 +289,13 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 	/**
 	 * Save the archival object, logging a failure.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register.
-	 * @param string $schema The document schema.
-	 * @param array<string, mixed> $payload Document payload.
+	 * @param array{0: object, 1: string, 2: string} $target  The object service, the register and the document schema.
+	 * @param array<string, mixed>                   $payload Document payload.
 	 *
 	 * @return void
 	 */
-	private function saveDocument(object $objectService, string $register, string $schema, array $payload): void {
+	private function saveDocument(array $target, array $payload): void {
+		[$objectService, $register, $schema] = $target;
 		try {
 			$objectService->saveObject(
 				object: $payload,

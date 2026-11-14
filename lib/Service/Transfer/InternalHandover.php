@@ -334,10 +334,12 @@ class InternalHandover {
 	 */
 	public function accept(string $transferId, string $acceptedBy): array {
 		return $this->settle(
-			transferId: $transferId,
-			status: 'accepted',
-			actor: $acceptedBy,
-			reason: '',
+			settlement: new HandoverSettlement(
+				transferId: $transferId,
+				status: 'accepted',
+				actor: $acceptedBy,
+				reason: '',
+			)
 		);
 	}//end accept()
 
@@ -356,10 +358,12 @@ class InternalHandover {
 	 */
 	public function refuse(string $transferId, string $reason, string $refusedBy): array {
 		return $this->settle(
-			transferId: $transferId,
-			status: 'rejected',
-			actor: $refusedBy,
-			reason: $reason,
+			settlement: new HandoverSettlement(
+				transferId: $transferId,
+				status: 'rejected',
+				actor: $refusedBy,
+				reason: $reason,
+			)
 		);
 	}//end refuse()
 
@@ -437,16 +441,15 @@ class InternalHandover {
 	/**
 	 * Settle a pending handover, accepted or refused, on the one custody trail.
 	 *
-	 * @param string $transferId The handover's uuid.
-	 * @param string $status     'accepted' or 'rejected'.
-	 * @param string $actor      Who settled it.
-	 * @param string $reason     The refusal's reason, empty on an acceptance.
+	 * @param HandoverSettlement $settlement The handover, its new status, who settled it and why.
 	 *
 	 * @return array<string, mixed> The settled record.
 	 *
 	 * @throws RefusedException When the handover is unknown or already settled.
 	 */
-	private function settle(string $transferId, string $status, string $actor, string $reason): array {
+	private function settle(HandoverSettlement $settlement): array {
+		$transferId = $settlement->transferId;
+		$status = $settlement->status;
 		$transfer = $this->requireTransfer(transferId: $transferId);
 		$current = trim((string)($transfer['status'] ?? ''));
 
@@ -458,12 +461,12 @@ class InternalHandover {
 
 		$this->assertPending(current: $current);
 
-		$transfer = $this->settledRecord(transfer: $transfer, status: $status, actor: $actor, reason: $reason);
+		$transfer = $this->settledRecord(transfer: $transfer, settlement: $settlement);
 
 		$saved = $this->saveTransfer(record: $transfer, uuid: $transferId);
 		$this->settleCase(transfer: $saved, status: $status);
 
-		$this->logSettled(transferId: $transferId, transfer: $transfer, status: $status, actor: $actor);
+		$this->logSettled(transfer: $transfer, settlement: $settlement);
 
 		return $saved;
 	}//end settle()
@@ -490,14 +493,14 @@ class InternalHandover {
 	/**
 	 * The transfer record with the settlement written onto it.
 	 *
-	 * @param array<string, mixed> $transfer The pending record.
-	 * @param string               $status   'accepted' or 'rejected'.
-	 * @param string               $actor    Who settled it.
-	 * @param string               $reason   The refusal's reason, empty on an acceptance.
+	 * @param array<string, mixed> $transfer   The pending record.
+	 * @param HandoverSettlement   $settlement The new status, who settled it and the refusal's reason.
 	 *
 	 * @return array<string, mixed> The settled record, not yet saved.
 	 */
-	private function settledRecord(array $transfer, string $status, string $actor, string $reason): array {
+	private function settledRecord(array $transfer, HandoverSettlement $settlement): array {
+		$status = $settlement->status;
+		$actor = $settlement->actor;
 		$now = (new DateTimeImmutable())->format('c');
 		$trail = (array)($transfer['custodyAuditTrail'] ?? []);
 		$trail[] = $this->trailEntry(event: $status, actor: $actor, timestamp: $now);
@@ -507,7 +510,7 @@ class InternalHandover {
 		$transfer['completedAt'] = $now;
 		$transfer['custodyAuditTrail'] = $trail;
 		if ($status === 'rejected') {
-			$transfer['rejectionReason'] = $reason;
+			$transfer['rejectionReason'] = $settlement->reason;
 		}
 
 		return $transfer;
@@ -535,17 +538,19 @@ class InternalHandover {
 	/**
 	 * Log a settled handover.
 	 *
-	 * @param string               $transferId The handover's uuid.
 	 * @param array<string, mixed> $transfer   The settled record.
-	 * @param string               $status     'accepted' or 'rejected'.
-	 * @param string               $actor      Who settled it.
+	 * @param HandoverSettlement   $settlement The handover, its new status and who settled it.
 	 *
 	 * @return void
 	 */
-	private function logSettled(string $transferId, array $transfer, string $status, string $actor): void {
+	private function logSettled(array $transfer, HandoverSettlement $settlement): void {
 		$this->logger->info(
-			'Dossiq handover: a handover was ' . $status,
-			['transferId' => $transferId, 'caseId' => trim((string)($transfer['caseId'] ?? '')), 'actor' => $actor],
+			'Dossiq handover: a handover was ' . $settlement->status,
+			[
+				'transferId' => $settlement->transferId,
+				'caseId' => trim((string)($transfer['caseId'] ?? '')),
+				'actor' => $settlement->actor,
+			],
 		);
 	}//end logSettled()
 

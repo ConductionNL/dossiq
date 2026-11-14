@@ -167,18 +167,16 @@ class TransitionPreconditions {
 			return [];
 		}
 
-		$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
-		$toStatus = (string)($transition['toStatus'] ?? '');
+		$destination = new TransitionDestination(
+			case: $case,
+			caseId: (string)($case['id'] ?? ($case['@self']['id'] ?? '')),
+			toStatus: (string)($transition['toStatus'] ?? ''),
+			toIsClosing: $toIsClosing,
+		);
 
 		$reasons = [];
 		foreach ($dependencies as $dependency) {
-			$reason = $this->reasonFor(
-				dependency: $dependency,
-				case: $case,
-				caseId: $caseId,
-				toStatus: $toStatus,
-				toIsClosing: $toIsClosing,
-			);
+			$reason = $this->reasonFor(dependency: $dependency, destination: $destination);
 			if ($reason !== '') {
 				$reasons[] = $reason;
 			}
@@ -190,34 +188,21 @@ class TransitionPreconditions {
 	/**
 	 * Why one dependency is in the way, or the empty string when it is settled.
 	 *
-	 * @param array<string, mixed> $dependency  The normalised dependency.
-	 * @param array<string, mixed> $case        The case.
-	 * @param string               $caseId      The case id.
-	 * @param string               $toStatus    The destination status.
-	 * @param bool                 $toIsClosing Whether the destination closes the case.
+	 * @param array<string, mixed>  $dependency  The normalised dependency.
+	 * @param TransitionDestination $destination The case, its id and the destination status.
 	 *
 	 * @return string
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function reasonFor(
-		array $dependency,
-		array $case,
-		string $caseId,
-		string $toStatus,
-		bool $toIsClosing,
-	): string {
+	private function reasonFor(array $dependency, TransitionDestination $destination): string {
+		$case = $destination->case;
 		if ((string)($dependency['kind'] ?? '') === 'erasureComplete') {
 			return $this->erasureReason(dependency: $dependency, case: $case);
 		}
 
 		if ((string)($dependency['kind'] ?? '') === 'obligationOpen') {
-			return $this->obligationReason(
-				dependency: $dependency,
-				caseId: $caseId,
-				toStatus: $toStatus,
-				toIsClosing: $toIsClosing,
-			);
+			return $this->obligationReason(dependency: $dependency, destination: $destination);
 		}
 
 		// The field and document kinds are the SAME evaluation a derived status
@@ -238,30 +223,23 @@ class TransitionPreconditions {
 	/**
 	 * Why an open obligation is in the way.
 	 *
-	 * @param array<string, mixed> $dependency  The normalised dependency.
-	 * @param string               $caseId      The case id.
-	 * @param string               $toStatus    The destination status.
-	 * @param bool                 $toIsClosing Whether the destination closes the case.
+	 * @param array<string, mixed>  $dependency  The normalised dependency.
+	 * @param TransitionDestination $destination The case id, the destination status and whether it closes the case.
 	 *
 	 * @return string
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function obligationReason(
-		array $dependency,
-		string $caseId,
-		string $toStatus,
-		bool $toIsClosing,
-	): string {
-		if ($caseId === '') {
+	private function obligationReason(array $dependency, TransitionDestination $destination): string {
+		if ($destination->caseId === '') {
 			return '';
 		}
 
 		$wanted = trim((string)($dependency['obligationKind'] ?? ''));
 		foreach ($this->obligations->blocking(
-			caseId: $caseId,
-			statusId: $toStatus,
-			isClosing: $toIsClosing,
+			caseId: $destination->caseId,
+			statusId: $destination->toStatus,
+			isClosing: $destination->toIsClosing,
 		) as $obligation) {
 			if ($this->isOtherKind(obligation: $obligation, wanted: $wanted) === true) {
 				continue;

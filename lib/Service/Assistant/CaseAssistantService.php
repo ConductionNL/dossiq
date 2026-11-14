@@ -116,16 +116,14 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 		$caseData = $this->loadReadableCase(caseId: $caseId);
 		$summary = $this->buildCaseSummary(caseData: $caseData);
 
-		return $this->runTurn(userId: $userId, caseId: $caseId, message: $message, summary: $summary);
+		return $this->runTurn(turn: new AssistantTurn(userId: $userId, caseId: $caseId, message: $message), summary: $summary);
 	}//end converse()
 
 	/**
 	 * Run the Hermiq turn, remember its session and audit it.
 	 *
-	 * @param string $userId The authenticated caller's user id.
-	 * @param string $caseId The case id.
-	 * @param string $message The user's message text.
-	 * @param array $summary The case summary Hermiq receives as context.
+	 * @param AssistantTurn $turn    Who asks, about which case, and the message.
+	 * @param array         $summary The case summary Hermiq receives as context.
 	 *
 	 * @return array{reply: string, usage: array<string, int|float>}
 	 *
@@ -133,13 +131,14 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 	 *
 	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
 	 */
-	private function runTurn(string $userId, string $caseId, string $message, array $summary): array {
-		$sessionKey = self::SESSION_CONFIG_PREFIX . $caseId;
+	private function runTurn(AssistantTurn $turn, array $summary): array {
+		$userId = $turn->userId;
+		$sessionKey = self::SESSION_CONFIG_PREFIX . $turn->caseId;
 		$sessionId = $this->storedSessionId(userId: $userId, sessionKey: $sessionKey);
 
 		$startTime = microtime(true);
 
-		$result = $this->askHermiq(sessionId: $sessionId, message: $message, caseId: $caseId, summary: $summary);
+		$result = $this->askHermiq(sessionId: $sessionId, turn: $turn, summary: $summary);
 
 		$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
 
@@ -147,7 +146,7 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 			$this->config->setUserValue($userId, AppIdentity::APP_ID, $sessionKey, $result['sessionId']);
 		}
 
-		$entry = $this->auditEntry(userId: $userId, caseId: $caseId, message: $message, reply: $result['reply']);
+		$entry = $this->auditEntry(turn: $turn, reply: $result['reply']);
 		$entry['responseTimeMs'] = $responseTimeMs;
 		$this->auditService->recordAssistantAuditEntry(entry: $entry);
 
@@ -176,10 +175,9 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 	/**
 	 * Send the message to Hermiq with the case as context.
 	 *
-	 * @param string|null $sessionId The Hermiq session, or null for a new one.
-	 * @param string $message The user's message text.
-	 * @param string $caseId The case id.
-	 * @param array $summary The case summary.
+	 * @param string|null   $sessionId The Hermiq session, or null for a new one.
+	 * @param AssistantTurn $turn      The case and the message.
+	 * @param array         $summary   The case summary.
 	 *
 	 * @return array Hermiq's answer.
 	 *
@@ -187,10 +185,10 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 	 *
 	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
 	 */
-	private function askHermiq(?string $sessionId, string $message, string $caseId, array $summary): array {
+	private function askHermiq(?string $sessionId, AssistantTurn $turn, array $summary): array {
 		return $this->hermiqClient->converse(
 			sessionId: $sessionId,
-			message: $message,
+			message: $turn->message,
 			context: [
 				// FROZEN at `procest`: this is this app's id AS HERMIQ KNOWS IT,
 				// not our own app id. hermiq is not being renamed and matches this
@@ -199,7 +197,7 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 				// coordinated pass that moves sender and receiver together.
 				'app' => 'procest',
 				'objectType' => 'case',
-				'objectRef' => $caseId,
+				'objectRef' => $turn->caseId,
 				'contextData' => $summary,
 			]
 		);
@@ -208,26 +206,24 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 	/**
 	 * The audit entry for a turn, without its response time.
 	 *
-	 * @param string $userId The authenticated caller's user id.
-	 * @param string $caseId The case id.
-	 * @param string $message The user's message text.
-	 * @param string $reply Hermiq's reply.
+	 * @param AssistantTurn $turn  Who asked, about which case, and the message.
+	 * @param string        $reply Hermiq's reply.
 	 *
 	 * @return array<string, mixed> The audit entry.
 	 *
 	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
 	 */
-	private function auditEntry(string $userId, string $caseId, string $message, string $reply): array {
+	private function auditEntry(AssistantTurn $turn, string $reply): array {
 		return [
 			'type' => 'assistant',
 			'action' => 'conversation',
-			'caseId' => $caseId,
+			'caseId' => $turn->caseId,
 			'documentId' => '',
 			'model' => 'hermiq',
-			'prompt' => $message,
+			'prompt' => $turn->message,
 			'suggestion' => ['reply' => $reply],
 			'confidence' => 0.0,
-			'userId' => $userId,
+			'userId' => $turn->userId,
 			'timestamp' => date('c'),
 		];
 	}//end auditEntry()

@@ -129,7 +129,10 @@ class GemachtigdeRoleTypeSeeder implements GemachtigdeRoleTypeSeederInterface {
 
 		$adoptable = $this->seededRow(rows: $rows);
 
-		return $this->writeElevated(objectService: $objectService, register: $register, schema: $schema, adoptable: $adoptable);
+		return $this->writeElevated(
+			store: new RoleTypeStore(objectService: $objectService, register: $register, schema: $schema),
+			adoptable: $adoptable,
+		);
 	}//end seed()
 
 	/**
@@ -150,24 +153,17 @@ class GemachtigdeRoleTypeSeeder implements GemachtigdeRoleTypeSeederInterface {
 	/**
 	 * Run the write as the system user, answering a refusal instead of throwing.
 	 *
-	 * @param object                    $objectService OpenRegister's object service.
-	 * @param string                    $register      The dossiq register.
-	 * @param string                    $schema        The role type schema.
-	 * @param array<string, mixed>|null $adoptable     The shipped row, when there is one.
+	 * @param RoleTypeStore             $store     The object service, register and role type schema.
+	 * @param array<string, mixed>|null $adoptable The shipped row, when there is one.
 	 *
 	 * @return array{available: bool, created: int, adopted: int, kept: int, refused: string|null}
 	 *                                                                                            What the write did.
 	 */
-	private function writeElevated(object $objectService, string $register, string $schema, ?array $adoptable): array {
+	private function writeElevated(RoleTypeStore $store, ?array $adoptable): array {
 		try {
 			return $this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): array => $this->write(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					adoptable: $adoptable,
-				),
+				objectService: $store->objectService,
+				operation: fn (): array => $this->write(store: $store, adoptable: $adoptable),
 			);
 		} catch (Throwable $e) {
 			return array_merge($this->nothingDone(), ['available' => true, 'refused' => $e->getMessage()]);
@@ -177,29 +173,22 @@ class GemachtigdeRoleTypeSeeder implements GemachtigdeRoleTypeSeederInterface {
 	/**
 	 * Stamp the key onto the row that already is this role, or write the row.
 	 *
-	 * @param object                    $objectService OpenRegister's object service.
-	 * @param string                    $register      The dossiq register.
-	 * @param string                    $schema        The role type schema.
-	 * @param array<string, mixed>|null $adoptable     The shipped row, when there is one.
+	 * @param RoleTypeStore             $store     The object service, register and role type schema.
+	 * @param array<string, mixed>|null $adoptable The shipped row, when there is one.
 	 *
 	 * @return array{available: bool, created: int, adopted: int, kept: int, refused: string|null}
 	 *                                                                                            What the write did.
 	 */
-	private function write(
-		object $objectService,
-		string $register,
-		string $schema,
-		?array $adoptable,
-	): array {
+	private function write(RoleTypeStore $store, ?array $adoptable): array {
 		$done = array_merge($this->nothingDone(), ['available' => true]);
 
 		if ($adoptable !== null) {
-			$this->adopt(objectService: $objectService, register: $register, schema: $schema, adoptable: $adoptable);
+			$this->adopt(store: $store, adoptable: $adoptable);
 
 			return array_merge($done, ['adopted' => 1]);
 		}
 
-		$this->create(objectService: $objectService, register: $register, schema: $schema);
+		$this->create(store: $store);
 
 		return array_merge($done, ['created' => 1]);
 	}//end write()
@@ -207,21 +196,19 @@ class GemachtigdeRoleTypeSeeder implements GemachtigdeRoleTypeSeederInterface {
 	/**
 	 * Stamp the generic role onto the shipped row.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The dossiq register.
-	 * @param string               $schema        The role type schema.
-	 * @param array<string, mixed> $adoptable     The shipped row.
+	 * @param RoleTypeStore        $store     The object service, register and role type schema.
+	 * @param array<string, mixed> $adoptable The shipped row.
 	 *
 	 * @return void
 	 */
-	private function adopt(object $objectService, string $register, string $schema, array $adoptable): void {
+	private function adopt(RoleTypeStore $store, array $adoptable): void {
 		$row = $adoptable;
 		unset($row['@self']);
 		$row['genericRole'] = self::GENERIC_ROLE;
 		$this->saveObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+			objectService: $store->objectService,
+			register: $store->register,
+			schema: $store->schema,
 			object: $row,
 			uuid: $this->uuidOf(row: $adoptable),
 		);
@@ -230,17 +217,15 @@ class GemachtigdeRoleTypeSeeder implements GemachtigdeRoleTypeSeederInterface {
 	/**
 	 * Write the generic role type row.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The dossiq register.
-	 * @param string $schema        The role type schema.
+	 * @param RoleTypeStore $store The object service, register and role type schema.
 	 *
 	 * @return void
 	 */
-	private function create(object $objectService, string $register, string $schema): void {
+	private function create(RoleTypeStore $store): void {
 		$this->saveObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+			objectService: $store->objectService,
+			register: $store->register,
+			schema: $store->schema,
 			object: [
 				'name' => self::NAME,
 				'description' => self::DESCRIPTION,

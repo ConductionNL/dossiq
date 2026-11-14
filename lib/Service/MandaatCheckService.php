@@ -309,13 +309,7 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 			return false;
 		}
 
-		[$objectService, $register, $schema] = $store;
-		$rows = $this->activeMandateRows(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			organisation: $organisation,
-		);
+		$rows = $this->activeMandateRows(store: $store, organisation: $organisation);
 		if ($rows === false) {
 			return false;
 		}
@@ -328,16 +322,15 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 	/**
 	 * The active mandate rows across organisations.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The register id.
-	 * @param string $schema        The mandate schema id.
-	 * @param string $organisation  The organisation UUID, for the log.
+	 * @param array{0: object, 1: string, 2: string} $store        The ObjectService, the register id and the mandate schema id.
+	 * @param string                                 $organisation The organisation UUID, for the log.
 	 *
 	 * @return array<int, array<string, mixed>>|false The rows, or false when the register could not be read.
 	 *
 	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md#requirement-the-overview-reads-decisions-from-the-mandate-register
 	 */
-	private function activeMandateRows(object $objectService, string $register, string $schema, string $organisation): array|false {
+	private function activeMandateRows(array $store, string $organisation): array|false {
+		[$objectService, $register, $schema] = $store;
 		try {
 			$rows = $this->searchObjectsAsArraysUnscoped(
 				objectService: $objectService,

@@ -136,9 +136,10 @@ class ApplicantPortalActs implements ApplicantPortalActsInterface {
 			return false;
 		}
 
-		$this->recordOnTimeline(caseId: $caseId, act: $act, fields: $fields, occurredAt: $occurredAt);
+		$write = new ApplicantWrite(caseId: $caseId, act: $act, fields: $fields, occurredAt: $occurredAt, mandate: $mandate);
+		$this->recordOnTimeline(write: $write);
 
-		$this->tellTheRepresented(caseId: $caseId, act: $act, mandate: $mandate, occurredAt: $occurredAt);
+		$this->tellTheRepresented(write: $write);
 
 		$this->notifyAssignee(
 			case: $case,
@@ -173,14 +174,13 @@ class ApplicantPortalActs implements ApplicantPortalActsInterface {
 	/**
 	 * Record the applicant's write on the case's internal timeline.
 	 *
-	 * @param string             $caseId     The case the write landed on.
-	 * @param string             $act        The act.
-	 * @param array<int, string> $fields     The field names the act touched.
-	 * @param string             $occurredAt The moment of the write, ISO 8601.
+	 * @param ApplicantWrite $write The case, the act, the fields it touched and its moment.
 	 *
 	 * @return void
 	 */
-	private function recordOnTimeline(string $caseId, string $act, array $fields, string $occurredAt): void {
+	private function recordOnTimeline(ApplicantWrite $write): void {
+		$act = $write->act;
+		$fields = $write->fields;
 		$touched = implode(', ', array_filter(array_map('strval', $fields), static fn (string $field): bool => $field !== ''));
 
 		$message = self::WRITE_ACTS[$act];
@@ -189,13 +189,13 @@ class ApplicantPortalActs implements ApplicantPortalActsInterface {
 		}
 
 		$this->timeline->record(
-			caseId: $caseId,
+			caseId: $write->caseId,
 			kind: TimelineKindsInterface::APPLICANT_RESPONSE,
 			message: $message,
 			fields: [
 				'act' => $act,
 				'fields' => $touched,
-				'occurredAt' => $occurredAt,
+				'occurredAt' => $write->occurredAt,
 			],
 			visibility: CaseTimelineInterface::INTERNAL,
 		);
@@ -207,14 +207,13 @@ class ApplicantPortalActs implements ApplicantPortalActsInterface {
 	 * names the party; without one the party reference does. Portaliq does not
 	 * hand over the acting person's name, so the entry names the party only.
 	 *
-	 * @param string               $caseId     The case.
-	 * @param string               $act        The act.
-	 * @param array<string, mixed> $mandate    The mandate the write ran under.
-	 * @param string               $occurredAt The moment of the write.
+	 * @param ApplicantWrite $write The case, the act, the mandate it ran under and its moment.
 	 *
 	 * @return void
 	 */
-	private function tellTheRepresented(string $caseId, string $act, array $mandate, string $occurredAt): void {
+	private function tellTheRepresented(ApplicantWrite $write): void {
+		$act = $write->act;
+		$mandate = $write->mandate;
 		$party = trim((string)($mandate['actingFor'] ?? ''));
 		if ($party === '') {
 			return;
@@ -226,10 +225,10 @@ class ApplicantPortalActs implements ApplicantPortalActsInterface {
 		}
 
 		$this->timeline->record(
-			caseId: $caseId,
+			caseId: $write->caseId,
 			kind: TimelineKindsInterface::APPLICANT_RESPONSE,
 			message: 'Namens ' . $label . ': ' . self::ACTING_FOR_ACTS[$act],
-			fields: ['act' => $act, 'actingFor' => $party, 'occurredAt' => $occurredAt],
+			fields: ['act' => $act, 'actingFor' => $party, 'occurredAt' => $write->occurredAt],
 			visibility: CaseTimelineInterface::PUBLIC_ENTRY,
 		);
 	}//end tellTheRepresented()
