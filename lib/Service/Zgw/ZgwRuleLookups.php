@@ -229,15 +229,22 @@ class ZgwRuleLookups {
 			throw new RuntimeException('No object service in the request context');
 		}
 
-		$query = $this->objectService->buildSearchQuery(
-			requestParams: [$field => $value, '_limit' => 100],
-			register: $register,
-			schema: $schema
-		);
+		$query = $this->objectService->buildSearchQuery(requestParams: [$field => $value, '_limit' => 100], register: $register, schema: $schema);
 		$result = $this->objectService->searchObjectsPaginated(query: $query);
 
+		return $this->idsOf(rows: ($result['results'] ?? []));
+	}//end idsByField()
+
+	/**
+	 * The ids of the rows, as arrays or serialisable objects.
+	 *
+	 * @param iterable<mixed> $rows The search results.
+	 *
+	 * @return array<int, mixed>
+	 */
+	private function idsOf(iterable $rows): array {
 		$ids = [];
-		foreach (($result['results'] ?? []) as $obj) {
+		foreach ($rows as $obj) {
 			$data = $obj;
 			if (is_array($obj) === false) {
 				$data = $obj->jsonSerialize();
@@ -250,7 +257,7 @@ class ZgwRuleLookups {
 		}
 
 		return $ids;
-	}//end idsByField()
+	}//end idsOf()
 
 	/**
 	 * Look up an object in OpenRegister by UUID and schema key.
