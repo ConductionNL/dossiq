@@ -85,7 +85,7 @@ class InspectionTemplateMapper {
 		$items = [];
 		foreach ($this->listOf(value: ($checklist['items'] ?? [])) as $index => $item) {
 			$label = (string)($item['label'] ?? '');
-			$items[] = $this->item(item: $item, id: $label, label: $label, type: (string)($item['type'] ?? ''), order: $index);
+			$items[] = $this->item(item: $item, id: $label, label: $label, order: $index);
 		}
 
 		$status = (string)($checklist['status'] ?? 'draft');
@@ -95,11 +95,13 @@ class InspectionTemplateMapper {
 
 		return $this->template(
 			source: $checklist,
-			name: (string)($checklist['name'] ?? ''),
-			caseType: (string)($checklist['caseType'] ?? ''),
-			status: $status,
-			items: $items,
-			legacyRef: 'inspectieChecklist/' . $this->idOf(object: $checklist)
+			identity: new TemplateIdentity(
+				name: (string)($checklist['name'] ?? ''),
+				caseType: (string)($checklist['caseType'] ?? ''),
+				status: $status,
+				legacyRef: 'inspectieChecklist/' . $this->idOf(object: $checklist)
+			),
+			items: $items
 		);
 	}//end fromStackA()
 
@@ -168,7 +170,6 @@ class InspectionTemplateMapper {
 			item: $item,
 			id: $id,
 			label: (string)($item['question'] ?? $item['label'] ?? ''),
-			type: (string)($item['type'] ?? ''),
 			order: $index
 		);
 	}//end stackCItem()
@@ -189,11 +190,13 @@ class InspectionTemplateMapper {
 
 		return $this->template(
 			source: $checklist,
-			name: (string)($checklist['name'] ?? ''),
-			caseType: (string)($checklist['caseTypeRef'] ?? $checklist['caseType'] ?? ''),
-			status: $status,
-			items: $items,
-			legacyRef: 'inspectionChecklist/' . $this->idOf(object: $checklist)
+			identity: new TemplateIdentity(
+				name: (string)($checklist['name'] ?? ''),
+				caseType: (string)($checklist['caseTypeRef'] ?? $checklist['caseType'] ?? ''),
+				status: $status,
+				legacyRef: 'inspectionChecklist/' . $this->idOf(object: $checklist)
+			),
+			items: $items
 		);
 	}//end stackCTemplate()
 
@@ -265,15 +268,17 @@ class InspectionTemplateMapper {
 	/**
 	 * One template item.
 	 *
+	 * The response type is read from the source item's older `type`.
+	 *
 	 * @param array<string, mixed> $item  The source item.
 	 * @param string               $id    Its answer key.
 	 * @param string               $label Its question.
-	 * @param string               $type  Its older type.
 	 * @param integer              $order Its position.
 	 *
 	 * @return array<string, mixed> The item.
 	 */
-	private function item(array $item, string $id, string $label, string $type, int $order): array {
+	private function item(array $item, string $id, string $label, int $order): array {
+		$type = (string)($item['type'] ?? '');
 		$out = [
 			'id' => $id,
 			'order' => (int)($item['order'] ?? ($order + 1)),
@@ -328,16 +333,17 @@ class InspectionTemplateMapper {
 	/**
 	 * A template around one section of items.
 	 *
-	 * @param array<string, mixed>             $source    The source object.
-	 * @param string                           $name      Its name.
-	 * @param string                           $caseType  Its case type uuid, or empty.
-	 * @param string                           $status    draft, active or retired.
-	 * @param array<int, array<string, mixed>> $items     The items.
-	 * @param string                           $legacyRef The source reference.
+	 * @param array<string, mixed>             $source   The source object.
+	 * @param TemplateIdentity                 $identity Its name, case type, status and source reference.
+	 * @param array<int, array<string, mixed>> $items    The items.
 	 *
 	 * @return array<string, mixed> The template.
 	 */
-	private function template(array $source, string $name, string $caseType, string $status, array $items, string $legacyRef): array {
+	private function template(array $source, TemplateIdentity $identity, array $items): array {
+		$name = $identity->name;
+		$status = $identity->status;
+		$caseType = $identity->caseType;
+		$legacyRef = $identity->legacyRef;
 		$template = [
 			'name' => $name,
 			'version' => max(1, (int)($source['version'] ?? 1)),
