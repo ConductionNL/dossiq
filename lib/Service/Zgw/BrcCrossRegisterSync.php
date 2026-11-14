@@ -82,6 +82,20 @@ class BrcCrossRegisterSync {
 			return;
 		}
 
+		$this->syncWithSchema(objectService: $objectService, zbSchema: $zbSchema, caseUrl: $caseUrl, decisionUrl: $decisionUrl);
+	}//end syncZaakBesluitToZrc()
+
+	/**
+	 * Save the zaakbesluit in the cases register once the case and register are known.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $zbSchema      The case decision schema.
+	 * @param string $caseUrl       The zaak URL.
+	 * @param string $decisionUrl   The besluit URL.
+	 *
+	 * @return void
+	 */
+	private function syncWithSchema(object $objectService, string $zbSchema, string $caseUrl, string $decisionUrl): void {
 		$zaakUuid = $this->caseUuidOf(caseUrl: $caseUrl);
 
 		if ($zaakUuid === '') {
@@ -95,14 +109,8 @@ class BrcCrossRegisterSync {
 			return;
 		}
 
-		$this->saveCaseDecision(
-			objectService: $objectService,
-			register: $register,
-			zbSchema: $zbSchema,
-			zaakUuid: $zaakUuid,
-			decisionUrl: $decisionUrl
-		);
-	}//end syncZaakBesluitToZrc()
+		$this->saveCaseDecision(objectService: $objectService, register: $register, zbSchema: $zbSchema, zaakUuid: $zaakUuid, decisionUrl: $decisionUrl);
+	}//end syncWithSchema()
 
 	/**
 	 * The zaak UUID inside a zaak URL, or '' when it carries none.
