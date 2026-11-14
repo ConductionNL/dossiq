@@ -44,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Task;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTaskActionsInterface;
 use OCA\Dossiq\Service\Notice\CaseActNotices;
 use RuntimeException;
 
@@ -58,7 +59,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/task-management/spec.md
  */
-class CaseTaskActions {
+class CaseTaskActions implements CaseTaskActionsInterface {
 
 	/**
 	 * Constructor.

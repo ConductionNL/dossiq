@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypePublishServiceInterface;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\CaseType\CaseTypeRuleProjector;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
@@ -54,7 +55,7 @@ use Throwable;
  *
  * @spec openspec/specs/zaaktype-versioning/spec.md
  */
-class CaseTypePublishService {
+class CaseTypePublishService implements CaseTypePublishServiceInterface {
 	/**
 	 * Constructor.
 	 *

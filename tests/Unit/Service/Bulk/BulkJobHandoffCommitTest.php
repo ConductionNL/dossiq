@@ -39,6 +39,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Bulk\BulkJobHandoff
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\People\CoordinatorRequirement
  * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class BulkJobHandoffCommitTest extends TestCase {

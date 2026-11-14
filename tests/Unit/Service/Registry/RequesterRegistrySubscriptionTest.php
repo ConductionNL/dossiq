@@ -38,6 +38,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\ObjectSchemaSlugResolver
  *
  * @spec openspec/changes/contacts-domain/tasks.md#4-the-contact-reference-on-a-contact-moment
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
  */
 class RequesterRegistrySubscriptionTest extends TestCase {
 

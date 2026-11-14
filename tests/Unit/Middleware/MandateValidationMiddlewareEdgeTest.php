@@ -46,6 +46,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\TenantContext
  * @uses \OCA\Dossiq\Service\TenantSessionService
  * @uses \OCA\Dossiq\Service\TenantOrganisationResolver
+ * @uses \OCA\Dossiq\Service\OrganisationLookup
  */
 class MandateValidationMiddlewareEdgeTest extends TestCase {
 	use MakesActiveOrganisationContext;

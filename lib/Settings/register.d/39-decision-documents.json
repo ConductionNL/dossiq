@@ -1,5 +1,5 @@
 {
-  "_note": "Decision document (capability C03, decision 182). A case type configures, per kind of decision it issues, what the decision needs: template, required fields, validity rules (OpenRegister named conditions), remedy clause, whether it is signed, the delegated-authority act that decides it, the decidiq decision kind, the number series and the statuses from which it is frozen. Read by DecisionDocumentDefinition. Kept apart from decisionTypes, which holds the ZGW besluittype references as strings. Declared on caseType because OpenRegister's magic mapper stores no undeclared key.",
+  "_note": "Decision document (capability C03, decision 182). A case type configures, per kind of decision it issues, what the decision needs: template and the engine that renders it, required fields, validity rules (OpenRegister named conditions), remedy clause, whether it is signed, the delegated-authority act that decides it, the decidiq decision kind, the number series and the statuses from which it is frozen. Read by DecisionDocumentDefinition. Kept apart from decisionTypes, which holds the ZGW besluittype references as strings. Declared on caseType because OpenRegister's magic mapper stores no undeclared key.",
   "components": {
     "schemas": {
       "caseType": {
@@ -12,6 +12,7 @@
               "type": "object",
               "properties": {
                 "template": {"type": "string", "title": "Template", "description": "The template the decision is written from."},
+                "engine": {"type": "string", "title": "Rendered with", "description": "The engine that renders the template: filinq (the default) or vendor:<source> for a document vendor reached through integriq, such as vendor:smartdocuments or vendor:xential.", "default": "filinq", "pattern": "^(filinq|vendor:[a-z0-9][a-z0-9_-]*)$"},
                 "requiredFields": {"type": "array", "title": "Required fields", "description": "Fields that must be filled before the decision can be approved.", "items": {"type": "string"}},
                 "rules": {
                   "type": "array",

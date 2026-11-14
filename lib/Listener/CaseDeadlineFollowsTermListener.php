@@ -40,9 +40,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseDeadlineMirrorInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -60,13 +60,13 @@ class CaseDeadlineFollowsTermListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService Schema id bridge.
-	 * @param CaseDeadlineMirror $mirror          Which term decides the deadline.
+	 * @param SettingsServiceInterface    $settingsService Schema id bridge.
+	 * @param CaseDeadlineMirrorInterface $mirror          Which term decides the deadline.
 	 * @param LoggerInterface    $logger          Structured logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseDeadlineMirror $mirror,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseDeadlineMirrorInterface $mirror,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -156,7 +156,7 @@ class CaseDeadlineFollowsTermListener implements IEventListener {
 		$event->setModifiedData(
 			array_merge(
 				$event->getModifiedData(),
-				['deadline' => $deadline, CaseDeadlineMirror::FIELD => $deadline]
+				['deadline' => $deadline, CaseDeadlineMirrorInterface::FIELD => $deadline]
 			)
 		);
 	}//end keepDeadline()

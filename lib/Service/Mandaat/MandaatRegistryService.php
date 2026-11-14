@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Mandaat;
 
+use OCA\Dossiq\Kernel\Contracts\MandaatRegistryServiceInterface;
 use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use RuntimeException;
 
@@ -52,35 +53,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/mandaat-matrix/spec.md
  */
-class MandaatRegistryService {
-
-	/**
-	 * Config key naming the MandateringsBesluit schema.
-	 *
-	 * @var string
-	 */
-	public const SCHEMA_BESLUIT = 'mandaterings_besluit_schema';
-
-	/**
-	 * Config key naming the Mandaat schema.
-	 *
-	 * @var string
-	 */
-	public const SCHEMA_MANDAAT = 'mandaat_schema';
-
-	/**
-	 * Config key naming the OrganisatieRol schema.
-	 *
-	 * @var string
-	 */
-	public const SCHEMA_ROL = 'organisatie_rol_schema';
-
-	/**
-	 * Config key naming the MedewerkerRolToewijzing schema.
-	 *
-	 * @var string
-	 */
-	public const SCHEMA_TOEWIJZING = 'medewerker_rol_toewijzing_schema';
+class MandaatRegistryService implements MandaatRegistryServiceInterface {
 
 	/**
 	 * Field names under which a row may reference an OrganisatieRol.

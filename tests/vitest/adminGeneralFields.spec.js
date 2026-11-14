@@ -6,6 +6,7 @@
  * and thematiq for the look, dossiq's own settings for its words.
  *
  * @spec openspec/specs/admin-settings/spec.md
+ * @spec openspec/changes/admin-message-and-portal-texts/specs/admin-settings/spec.md#requirement-an-administrator-shall-set-the-message-and-portal-texts-in-the-admin-settings
  */
 
 import fs from 'fs'

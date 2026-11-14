@@ -140,4 +140,98 @@ class WithheldEntriesTest extends TestCase {
 			$entries
 		);
 	}//end testGroundsAreReducedToNonEmptyCodes()
+
+	/**
+	 * A row without a document reference is not in the inventory at all, so it
+	 * shifts no position: the numbers must match the inventory the recipient
+	 * reads, not the order the assessments happened to arrive in.
+	 *
+	 * @return void
+	 */
+	public function testRowsWithoutADocumentReferenceDoNotShiftThePositions(): void {
+		$entries = (new WithheldEntries())->fromAssessments(
+			assessments: [
+				['documentRef' => '', 'classification' => 'niet_openbaar', 'weigeringsgronden' => ['5.1.2.e']],
+				['classification' => 'niet_openbaar', 'weigeringsgronden' => ['5.1.2.e']],
+				'not an array',
+				['documentRef' => 'doc-a', 'classification' => 'openbaar'],
+				['documentRef' => 'doc-b', 'classification' => 'niet_openbaar', 'weigeringsgronden' => ['5.1.1.c']],
+			],
+			withheldValue: 'niet_openbaar',
+			groundsField: 'weigeringsgronden'
+		);
+
+		self::assertSame([['position' => 2, 'grounds' => ['5.1.1.c']]], $entries);
+	}//end testRowsWithoutADocumentReferenceDoNotShiftThePositions()
+
+	/**
+	 * Nothing withheld is an empty list, never a list with an empty entry.
+	 *
+	 * @return void
+	 */
+	public function testNothingWithheldIsAnEmptyList(): void {
+		$withheld = new WithheldEntries();
+
+		self::assertSame([], $withheld->fromAssessments(assessments: [], withheldValue: 'niet_openbaar', groundsField: 'weigeringsgronden'));
+		self::assertSame(
+			[],
+			$withheld->fromAssessments(
+				assessments: [['documentRef' => 'doc-a', 'classification' => 'openbaar']],
+				withheldValue: 'niet_openbaar',
+				groundsField: 'weigeringsgronden'
+			)
+		);
+	}//end testNothingWithheldIsAnEmptyList()
+
+	/**
+	 * The withheld classification and the grounds field are both given by the
+	 * caller: another spelling of either answers from that spelling only.
+	 *
+	 * @return void
+	 */
+	public function testTheClassificationAndTheGroundsFieldAreTheCallersOwn(): void {
+		$assessments = [
+			['documentRef' => 'doc-a', 'classification' => 'geheim', 'grounds' => ['5.1.1.a'], 'weigeringsgronden' => ['5.1.2.e']],
+		];
+		$withheld = new WithheldEntries();
+
+		self::assertSame(
+			[['position' => 1, 'grounds' => ['5.1.1.a']]],
+			$withheld->fromAssessments(assessments: $assessments, withheldValue: 'geheim', groundsField: 'grounds')
+		);
+		self::assertSame(
+			[['position' => 1, 'grounds' => []]],
+			$withheld->fromAssessments(assessments: $assessments, withheldValue: 'geheim', groundsField: 'afwijzingsgronden'),
+			'an absent grounds field is no grounds, not the other field\'s'
+		);
+		self::assertSame(
+			[],
+			$withheld->fromAssessments(assessments: $assessments, withheldValue: 'niet_openbaar', groundsField: 'grounds')
+		);
+	}//end testTheClassificationAndTheGroundsFieldAreTheCallersOwn()
+
+	/**
+	 * A grounds field that is not a list of strings yields no grounds rather
+	 * than a cast: a code the recipient cannot act on is worse than none.
+	 *
+	 * @return void
+	 */
+	public function testGroundsThatAreNotCodesAreLeftOut(): void {
+		$entries = (new WithheldEntries())->fromAssessments(
+			assessments: [
+				['documentRef' => 'doc-a', 'classification' => 'niet_openbaar', 'weigeringsgronden' => '5.1.2.e'],
+				['documentRef' => 'doc-b', 'classification' => 'niet_openbaar', 'weigeringsgronden' => ['  5.1.1.c  ', '', '   ', 12, null, ['5.1.2.e']]],
+			],
+			withheldValue: 'niet_openbaar',
+			groundsField: 'weigeringsgronden'
+		);
+
+		self::assertSame(
+			[
+				['position' => 1, 'grounds' => []],
+				['position' => 2, 'grounds' => ['5.1.1.c']],
+			],
+			$entries
+		);
+	}//end testGroundsThatAreNotCodesAreLeftOut()
 }//end class

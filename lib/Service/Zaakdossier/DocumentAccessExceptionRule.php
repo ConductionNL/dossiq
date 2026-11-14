@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentAccessExceptionRuleInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -33,7 +34,7 @@ use Throwable;
  *
  * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-with-an-exception-is-readable-only-by-its-listed-people-the-cases-handler-and-administrators
  */
-class DocumentAccessExceptionRule {
+class DocumentAccessExceptionRule implements DocumentAccessExceptionRuleInterface {
 
 	/**
 	 * The property on the informatieobject.

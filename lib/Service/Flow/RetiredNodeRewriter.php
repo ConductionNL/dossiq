@@ -41,12 +41,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
+use OCA\Dossiq\Kernel\Contracts\RetiredNodeRewriterInterface;
+
 /**
  * Applies {@see RetiredNodeMap} to a flow's nodes and edges.
  *
  * @spec openspec/specs/automatic-actions/spec.md
  */
-class RetiredNodeRewriter {
+class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 
 	/**
 	 * Constructor.

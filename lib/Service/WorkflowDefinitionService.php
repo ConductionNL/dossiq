@@ -66,7 +66,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WorkflowDefinitionServiceInterface;
 use OCA\Dossiq\Service\Workflow\TransitionAuthorizationStamper;
 use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
 use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
@@ -78,7 +79,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
  */
-class WorkflowDefinitionService {
+class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 
 	/**
 	 * Lifecycle states. Mirrors the enum on the workflowTemplate schema.
@@ -88,7 +89,6 @@ class WorkflowDefinitionService {
 	 * keep reading the single source of truth.
 	 */
 	public const STATUS_DRAFT = WorkflowLifecycleGuard::STATUS_DRAFT;
-	public const STATUS_PUBLISHED = WorkflowLifecycleGuard::STATUS_PUBLISHED;
 	public const STATUS_DEPRECATED = WorkflowLifecycleGuard::STATUS_DEPRECATED;
 
 	/**
@@ -206,7 +206,7 @@ class WorkflowDefinitionService {
 		if ($this->guard->statusOf(row: $row) !== self::STATUS_PUBLISHED || $caseTypeId === '') {
 			$this->logger->warning(
 				'Dossiq: setDefaultDefinition() refused, the definition is not a published definition of a case type',
-				['app' => Application::APP_ID, 'id' => $id, 'caseType' => $caseTypeId]
+				['app' => AppIdentity::APP_ID, 'id' => $id, 'caseType' => $caseTypeId]
 			);
 			return false;
 		}
@@ -337,7 +337,7 @@ class WorkflowDefinitionService {
 		if ($current === null) {
 			$this->logger->warning(
 				'Dossiq: publish() — definition not found',
-				['app' => Application::APP_ID, 'id' => $id]
+				['app' => AppIdentity::APP_ID, 'id' => $id]
 			);
 			return null;
 		}
@@ -462,7 +462,7 @@ class WorkflowDefinitionService {
 		if ($caseTypeId === '' || (string)($payload['title'] ?? '') === '') {
 			$this->logger->warning(
 				'Dossiq: createDraft() — missing caseType or title',
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}
@@ -528,7 +528,7 @@ class WorkflowDefinitionService {
 				$this->logger->info(
 					'Dossiq: publish() left the default route alone, this definition is on another route',
 					[
-						'app' => Application::APP_ID,
+						'app' => AppIdentity::APP_ID,
 						'id' => $id,
 						'caseType' => $caseTypeId,
 						'route' => $variant,

@@ -35,7 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TranscriptionServiceInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#Task-9
  */
-class TranscriptionService {
+class TranscriptionService implements TranscriptionServiceInterface {
 	/**
 	 * Recognised transcriptionStatus values.
 	 */
@@ -53,7 +54,6 @@ class TranscriptionService {
 	public const STATUS_RUNNING = 'running';
 	public const STATUS_DONE = 'done';
 	public const STATUS_FAILED = 'failed';
-	public const STATUS_FALLBACK = 'manual';
 
 	/**
 	 * Maximum allowed voice-memo duration in seconds (spec: 5 min).
@@ -157,7 +157,7 @@ class TranscriptionService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'TranscriptionService::process transcription failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'evidenceId' => (string)($evidence['id'] ?? '')]
+				['app' => AppIdentity::APP_ID, 'evidenceId' => (string)($evidence['id'] ?? '')]
 			);
 			if ($evidence['transcriptionAttempts'] >= self::MAX_RETRIES) {
 				$evidence['transcriptionStatus'] = self::STATUS_FALLBACK;
@@ -242,7 +242,7 @@ class TranscriptionService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'TranscriptionService::persist failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 		}
 

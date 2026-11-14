@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\SociaalDomein;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\SociaalDomeinStoreInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -55,7 +56,7 @@ use Throwable;
  *
  * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
-class SociaalDomeinStore {
+class SociaalDomeinStore implements SociaalDomeinStoreInterface {
 
 	use RefusesWhenIndeterminate;
 	use SearchesObjects;

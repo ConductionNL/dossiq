@@ -43,12 +43,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Money;
 
+use OCA\Dossiq\Kernel\Contracts\CasePaymentStateInterface;
+
 /**
  * The case-level payment state, derived from shillinq's own report.
  *
  * @spec openspec/specs/financial-integration/spec.md
  */
-class CasePaymentState {
+class CasePaymentState implements CasePaymentStateInterface {
 	/**
 	 * No money is owed on this case: the type publishes no fee, or nothing was
 	 * ever raised.
@@ -78,14 +80,6 @@ class CasePaymentState {
 	 * @var string
 	 */
 	public const WAIVED = 'waived';
-
-	/**
-	 * shillinq could not be asked, so the last word this case carries may be
-	 * out of date and is treated as unknown.
-	 *
-	 * @var string
-	 */
-	public const STALE = 'stale';
 
 	/**
 	 * Every state a case may carry.

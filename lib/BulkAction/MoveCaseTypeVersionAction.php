@@ -25,7 +25,7 @@ namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseType\CaseVersionMove;
+use OCA\Dossiq\Kernel\Contracts\CaseVersionMoveInterface;
 use OCA\OpenRegister\BulkAction\BulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
 use OCA\OpenRegister\BulkAction\BulkStep;
@@ -79,7 +79,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseVersionMove $move The one answer to what a move changes.
+	 * @param CaseVersionMoveInterface $move The one answer to what a move changes.
 	 * @param IL10N           $l10n Localisation, for the label an operator reads.
 	 *
 	 * @return void
@@ -87,7 +87,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
-		private readonly CaseVersionMove $move,
+		private readonly CaseVersionMoveInterface $move,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()

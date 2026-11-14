@@ -28,11 +28,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
 use OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer;
 use OCA\Dossiq\Service\DecisionDocument\PublicationReadiness;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
-use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -94,7 +94,9 @@ class WOODecisionService {
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseDocumentDrafts|null $drafts Drafts the decision document from the case type's
 	 *        `documentDrafts.decision` template through filinq (case-document-drafts).
-	 * @param PagesSeen|null $pagesSeen The pages seen per document; the decision waits for the required ones.
+	 * @param PagesSeenInterface|null $pagesSeen The pages seen per document; the decision waits for the required ones.
+	 * @param ContractDecisionDelegationService|null $decisionDelegation Raises the decision in decidiq;
+	 *        without it no decision is assembled (fail closed, REQ-DDTD-001).
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -102,7 +104,8 @@ class WOODecisionService {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly ?CaseDocumentDrafts $drafts = null,
-		private readonly ?PagesSeen $pagesSeen = null,
+		private readonly ?PagesSeenInterface $pagesSeen = null,
+		private readonly ?ContractDecisionDelegationService $decisionDelegation = null,
 	) {
 		$this->composer  = new DecisionRecordComposer(settingsService: $settingsService, logger: $logger);
 		$this->readiness = new PublicationReadiness(settingsService: $settingsService, logger: $logger);
@@ -156,6 +159,14 @@ class WOODecisionService {
 
 		$userId = $this->resolveDecidedBy();
 
+		// The decision itself is raised in decidiq; nothing is recorded locally when that fails.
+		$decisionRef = $this->raiseDecision(
+			caseId: $caseId,
+			register: $register,
+			record: $record,
+			actorId: $userId,
+		);
+
 		$besluitData = array_merge(
 			[
 				'case' => $caseId,
@@ -182,7 +193,7 @@ class WOODecisionService {
 
 		$this->logger->info(
 			'WOO besluit assembled for case ' . $caseId . ': decision ' . $decision->getUuid(),
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID, 'decisionRef' => $decisionRef],
 		);
 
 		$draft = null;
@@ -192,6 +203,7 @@ class WOODecisionService {
 
 		return [
 			'decisionId' => $decision->getUuid(),
+			'decisionRef' => $decisionRef,
 			'caseId' => $caseId,
 			'summary' => $summary,
 			'weigeringsgronden' => $weigeringsgronden,
@@ -256,6 +268,55 @@ class WOODecisionService {
 			);
 		}
 	}//end assertAllDocumentsAssessed()
+
+	/**
+	 * Raise the decision on the request in decidiq and answer its reference.
+	 *
+	 * Fails closed: without the delegation seam, or when decidiq refuses or is
+	 * unavailable, no decision is assembled and nothing is written locally.
+	 *
+	 * @param string               $caseId   The case UUID.
+	 * @param string               $register The register the case lives in.
+	 * @param array<string, mixed> $record   The composed case title and assessment tally.
+	 * @param string               $actorId  The user the decision is raised for.
+	 *
+	 * @return string The decidiq decision reference.
+	 *
+	 * @throws RuntimeException When the decision cannot be raised.
+	 *
+	 * @spec openspec/changes/dossiq-decisions-to-decidiq/specs/dossiq-decisions-to-decidiq/spec.md#requirement-req-ddtd-001-no-local-decision-authoring
+	 */
+	private function raiseDecision(string $caseId, string $register, array $record, string $actorId): string {
+		if ($this->decisionDelegation === null) {
+			throw new RuntimeException('Decision service unavailable: the decision seam is not wired');
+		}
+
+		try {
+			return $this->decisionDelegation->raiseDecision(
+				decisionType: ContractDecisionDelegationService::DECISION_TYPE_WOO_DECISION,
+				externalReference: $caseId,
+				subject: [
+					'subjectRegister' => $register,
+					'subjectSchema' => (string)$this->settingsService->getConfigValue('case_schema'),
+					'subjectId' => $caseId,
+					'subjectLabel' => self::publicationSummary(caseTitle: (string)$record['caseTitle']),
+				],
+				context: [
+					'actorId' => $actorId,
+					'summary' => $record['summary'],
+					'weigeringsgronden' => $record['weigeringsgronden'],
+					'groundsListVersion' => WooRefusalGrounds::LIST_VERSION,
+					'assessmentCount' => $record['assessmentCount'],
+				],
+			);
+		} catch (RuntimeException $exception) {
+			$this->logger->error(
+				'WOO besluit for case ' . $caseId . ' not raised in decidiq; failing closed: ' . $exception->getMessage(),
+				['app' => AppIdentity::APP_ID],
+			);
+			throw new RuntimeException('Decision service unavailable: ' . $exception->getMessage(), 0, $exception);
+		}
+	}//end raiseDecision()
 
 	/**
 	 * Resolve the user id credited with the besluit.

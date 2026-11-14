@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\DeadlineExtensionServiceInterface;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
 use OCA\Dossiq\Service\Termijn\ExtensionNotice;
 use ReflectionClass;
@@ -41,7 +42,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
-class DeadlineExtensionService {
+class DeadlineExtensionService implements DeadlineExtensionServiceInterface {
 	/**
 	 * Extension mode: the ordinary AWB 4:14 lid 1 verlenging, bound by the
 	 * TermijnDefinitie ceiling.

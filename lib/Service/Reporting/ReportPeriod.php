@@ -18,6 +18,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Reporting;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\ReportPeriodInterface;
 
 /**
  * Resolves the period presets a report page offers (`1m`, `3m`, `6m`, `12m`,
@@ -25,21 +26,7 @@ use DateTimeImmutable;
  *
  * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
  */
-class ReportPeriod {
-
-	/**
-	 * The presets a report accepts. Anything else reads as the default.
-	 *
-	 * @var string[]
-	 */
-	public const PRESETS = ['1m', '3m', '6m', '12m', 'year', 'all'];
-
-	/**
-	 * The preset a report reads when none (or an unknown one) is given.
-	 *
-	 * @var string
-	 */
-	public const DEFAULT_PRESET = '12m';
+class ReportPeriod implements ReportPeriodInterface {
 
 	/**
 	 * Whether a value names a known preset.

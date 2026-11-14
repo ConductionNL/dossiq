@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Inspection;
 
+use OCA\Dossiq\Kernel\Contracts\InspectionRunServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineInboxQuery;
@@ -45,22 +46,8 @@ use Throwable;
  *
  * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-rapport-creation
  */
-class InspectionRunService {
+class InspectionRunService implements InspectionRunServiceInterface {
 	use SearchesObjects;
-
-	/**
-	 * The task kind every run carries.
-	 *
-	 * @var string
-	 */
-	public const KIND = 'inspection';
-
-	/**
-	 * OpenRegister's task lifecycle, resolved by name.
-	 *
-	 * @var string
-	 */
-	public const TASK_SERVICE = 'OCA\\OpenRegister\\Service\\Task\\TaskService';
 
 	/**
 	 * How many runs one case answers.

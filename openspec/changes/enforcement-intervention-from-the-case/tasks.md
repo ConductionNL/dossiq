@@ -2,8 +2,8 @@
 
 ## 1. Configuration
 
-- [ ] 1.1 Case type property `adviceDecisionTable` (stored decision-table id or slug) on the case type schema in `lib/Settings/register.d/` (the file that declares `caseType`), with a migration-free default of empty.
-- [ ] 1.2 `lib/Settings/packages/vth/case-type.json`: set `adviceDecisionTable` on the handhaving case types to the `lhs-intervention` table; bump the package version.
+- [x] 1.1 Case type property `adviceDecisionTable` (stored decision-table id or slug) on the case type schema in `lib/Settings/register.d/` (the file that declares `caseType`), with a migration-free default of empty.
+- [x] 1.2 `lib/Settings/packages/vth/case-type.json`: set `adviceDecisionTable` on the handhaving case types to the `lhs-intervention` table; bump the package version.
 
 ## 2. Backend
 

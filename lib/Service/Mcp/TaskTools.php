@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Mcp;
 
+use OCA\Dossiq\Kernel\Contracts\TaskToolsInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\CreateTaskHandler;
@@ -40,7 +41,7 @@ use OCP\IUserSession;
  *
  * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-204-guard-enforcing-write-tools-one-per-action-on-the-owning-service
  */
-class TaskTools {
+class TaskTools implements TaskToolsInterface {
 
 	/**
 	 * The longest lead time a task may get, in working days: ten years.

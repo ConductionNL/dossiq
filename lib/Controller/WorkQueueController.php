@@ -28,10 +28,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Substitution\CoveredWork;
-use OCA\Dossiq\Service\Team\PrimaryTeamService;
-use OCA\Dossiq\Service\WorkQueueService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CoveredWorkInterface;
+use OCA\Dossiq\Kernel\Contracts\PrimaryTeamServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WorkQueueServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -59,11 +59,11 @@ class WorkQueueController extends Controller {
 	 * @param IRequest $request The HTTP request.
 	 * @param IUserSession $userSession The user session.
 	 * @param IGroupManager $groupManager The group manager (coordinator = NC admin guard).
-	 * @param WorkQueueService $workQueueService The work queue scoring/aggregation service.
+	 * @param WorkQueueServiceInterface $workQueueService The work queue scoring/aggregation service.
 	 * @param LoggerInterface $logger Logger.
 	 * @param IUserManager $userManager Resolves a handler's display name.
-	 * @param CoveredWork $coveredWork The cases the caller covers for an absent colleague.
-	 * @param PrimaryTeamService $teams The reader's teams, which scope the workload.
+	 * @param CoveredWorkInterface $coveredWork The cases the caller covers for an absent colleague.
+	 * @param PrimaryTeamServiceInterface $teams The reader's teams, which scope the workload.
 	 *
 	 * @return void
 	 */
@@ -71,13 +71,13 @@ class WorkQueueController extends Controller {
 		IRequest $request,
 		private IUserSession $userSession,
 		private IGroupManager $groupManager,
-		private WorkQueueService $workQueueService,
+		private WorkQueueServiceInterface $workQueueService,
 		private LoggerInterface $logger,
 		private IUserManager $userManager,
-		private CoveredWork $coveredWork,
-		private PrimaryTeamService $teams,
+		private CoveredWorkInterface $coveredWork,
+		private PrimaryTeamServiceInterface $teams,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

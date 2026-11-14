@@ -38,7 +38,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\IntakePolicyInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
@@ -58,7 +59,7 @@ use Throwable;
  *  `FilterVerdict::accept()`, `AuthenticationVerdict::unknown()`), which hold no
  *  state and exist so a caller cannot build a half-built value.
  */
-class IntakePolicy {
+class IntakePolicy implements IntakePolicyInterface {
 
 	use SearchesObjects;
 
@@ -195,7 +196,7 @@ class IntakePolicy {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function intakeRole(): string {
-		return trim($this->appConfig->getValueString(Application::APP_ID, self::INTAKE_ROLE_KEY, ''));
+		return trim($this->appConfig->getValueString(AppIdentity::APP_ID, self::INTAKE_ROLE_KEY, ''));
 	}//end intakeRole()
 
 	/**

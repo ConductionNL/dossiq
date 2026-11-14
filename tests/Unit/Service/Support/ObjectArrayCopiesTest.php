@@ -44,6 +44,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\Vth\LhsRecommendationStore
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\ObjectArray
  */
 class ObjectArrayCopiesTest extends TestCase {
 	/**

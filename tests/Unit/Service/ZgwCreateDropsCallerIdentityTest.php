@@ -35,6 +35,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Zgw\ResourceRoute
  * @uses \OCA\Dossiq\Service\Zgw\ResourceWrite
  * @uses \OCA\Dossiq\Service\Zgw\RuleFlags
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwInboundMapping
  */
 class ZgwCreateDropsCallerIdentityTest extends TestCase {
 

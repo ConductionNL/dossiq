@@ -31,7 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use Psr\Log\LoggerInterface;
@@ -55,14 +55,14 @@ class PortalCaseSteps {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService           $settingsService Resolves the register, the schemas and the object service.
+	 * @param SettingsServiceInterface           $settingsService Resolves the register, the schemas and the object service.
 	 * @param LoggerInterface           $logger          The logger.
 	 * @param UnscopedObjectReader|null $reader          Reads unscoped; a fresh one when null.
 	 *
 	 * @spec openspec/changes/mandated-case-steps-read-unscoped/specs/portal-contribution/spec.md#requirement-a-case-read-under-a-mandate-shows-its-steps-and-documents-req-portal-023
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		?UnscopedObjectReader $reader = null,
 	) {

@@ -29,6 +29,7 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Service\Email\CaseMailOptOut
+ * @uses \OCA\Dossiq\Service\OptOutGate
  */
 class CaseMailOptOutBodiesTest extends TestCase {
 

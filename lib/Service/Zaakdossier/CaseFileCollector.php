@@ -6,7 +6,8 @@
  * Stores bytes found elsewhere in a case's folder as a document on that
  * case, with where they were found (`provenance`, document-provenance
  * REQ-DPV-001). A collected e-mail also keeps its header fields in
- * `provenance.mail` (REQ-WRR-003), read by the MailHeaderReader.
+ * `provenance.mail` (REQ-WRR-003), read by the MailHeaderReader, and the
+ * conversation it belongs to (`threadId`, REQ-WRC-006), placed by CaseMailThreads.
  *
  * Generic: any case type that collects files from elsewhere uses it, and
  * nothing in it knows which procedure the case follows. Deciding WHETHER a
@@ -32,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\CaseFileCollectorInterface;
 use OCP\Files\File;
 
 /**
@@ -39,7 +41,7 @@ use OCP\Files\File;
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/document-provenance/spec.md#requirement-a-collected-document-carries-its-provenance-for-any-case-type-req-dpv-001
  */
-class CaseFileCollector {
+class CaseFileCollector implements CaseFileCollectorInterface {
 
 	/**
 	 * Constructor.
@@ -47,6 +49,7 @@ class CaseFileCollector {
 	 * @param DocumentRecordStore       $store       Records and joins in OpenRegister.
 	 * @param DocumentProjectionService $projection  The case folder, and a record for a file in it.
 	 * @param MailHeaderReader          $mailHeaders Reads a collected mail's header fields.
+	 * @param CaseMailThreads           $mailThreads Places a collected mail in its conversation (REQ-WRC-006).
 	 *
 	 * @return void
 	 */
@@ -54,6 +57,7 @@ class CaseFileCollector {
 		private readonly DocumentRecordStore $store,
 		private readonly DocumentProjectionService $projection,
 		private readonly MailHeaderReader $mailHeaders,
+		private readonly CaseMailThreads $mailThreads,
 	) {
 	}//end __construct()
 
@@ -75,6 +79,7 @@ class CaseFileCollector {
 	 *
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/document-provenance/spec.md#requirement-a-collected-document-carries-its-provenance-for-any-case-type-req-dpv-001
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
 	 */
 	public function collect(string $caseId, string $fileName, string $content, array $provenance, string $mimeType = ''): string {
 		$fileId = $this->store->storeFileOnObject(objectId: $caseId, fileName: $fileName, content: $content);
@@ -97,6 +102,11 @@ class CaseFileCollector {
 			if ($file !== null) {
 				$provenance['mail'] = $this->mailHeaders->read(file: $file);
 			}
+
+			$provenance = array_replace(
+				$provenance,
+				$this->mailThreads->conversationOf(caseId: $caseId, fileName: $fileName, bytes: $content)
+			);
 		}
 
 		$record['provenance'] = $provenance;

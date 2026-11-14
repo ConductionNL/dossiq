@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\MandaatImportServiceInterface;
 use OCA\Dossiq\Service\Mandaat\MandaatCsvParser;
 use OCA\Dossiq\Service\Mandaat\MandaatRepository;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -49,7 +50,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
-class MandaatImportService {
+class MandaatImportService implements MandaatImportServiceInterface {
 	use SearchesObjects;
 
 	/**

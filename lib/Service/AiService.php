@@ -31,7 +31,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AiServiceInterface;
 use OCA\Dossiq\Service\Ai\AiAuditLog;
 use OCA\Dossiq\Service\Ai\AiEndpointGuard;
 use OCA\Dossiq\Service\Ai\AiModelIdentity;
@@ -65,7 +66,7 @@ use RuntimeException;
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
  * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-1-1
  */
-class AiService {
+class AiService implements AiServiceInterface {
 	/**
 	 * Per operation: the label of its unavailable message, the log line and the
 	 * answer prefix of a failure, the result key recorded as confidence (null:
@@ -172,7 +173,7 @@ class AiService {
 	 */
 	private function flagEnabled(string $key, string $default = ''): bool {
 		return $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			$key,
 			$default
 		) === '1';
@@ -436,10 +437,10 @@ class AiService {
 	public function getAiSettings(): array {
 		return [
 			'ai_enabled' => $this->isEnabled(),
-			'ai_model_type' => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_type', 'local'),
-			'ai_model_url' => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_url', ''),
-			'ai_model_name' => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_name', ''),
-			'ai_api_key_set' => $this->appConfig->getValueString(Application::APP_ID, 'ai_api_key', '') !== '',
+			'ai_model_type' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_model_type', 'local'),
+			'ai_model_url' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_model_url', ''),
+			'ai_model_name' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_model_name', ''),
+			'ai_api_key_set' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_api_key', '') !== '',
 			'ai_feature_classification' => $this->flagEnabled(key: 'ai_feature_classification'),
 			'ai_feature_extraction' => $this->flagEnabled(key: 'ai_feature_extraction'),
 			'ai_feature_qa' => $this->flagEnabled(key: 'ai_feature_qa'),

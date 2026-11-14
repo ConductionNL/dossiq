@@ -113,6 +113,7 @@ final class GoldenRebindObjects {
  * @covers \OCA\Dossiq\Service\CaseRebindService
  * @covers \OCA\Dossiq\Service\Cases\RebindMove
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\CaseType\WorkflowTemplateBinding
  */
 class CaseRebindServiceGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseClassificationInterface;
 
 /**
  * The four facets a case type declares, and the one that gates creation.
@@ -48,7 +49,7 @@ use OCA\Dossiq\Exception\RefusedException;
  *
  * @spec openspec/specs/semantic-case-intake/spec.md
  */
-class CaseClassification {
+class CaseClassification implements CaseClassificationInterface {
 
 	/**
 	 * The case-type property holding the declaration.

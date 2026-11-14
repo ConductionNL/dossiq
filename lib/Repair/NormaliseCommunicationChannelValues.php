@@ -13,12 +13,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CommunicationChannelInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RepairSchema;
 use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\CommunicationChannel;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -64,15 +64,15 @@ class NormaliseCommunicationChannelValues implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService      $settingsService OpenRegister access and the configured register.
+	 * @param SettingsServiceInterface      $settingsService OpenRegister access and the configured register.
 	 * @param IAppConfig           $appConfig       The version gate.
-	 * @param CommunicationChannel $channels        The mapping onto slugs.
+	 * @param CommunicationChannelInterface $channels        The mapping onto slugs.
 	 * @param LoggerInterface      $logger          Where each case is named.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
-		private readonly CommunicationChannel $channels,
+		private readonly CommunicationChannelInterface $channels,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -96,7 +96,7 @@ class NormaliseCommunicationChannelValues implements IRepairStep {
 	 * @spec openspec/changes/portal-contact-channel-follows-the-resident/specs/portal-contribution/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
 			return;
 		}
 
@@ -129,7 +129,7 @@ class NormaliseCommunicationChannelValues implements IRepairStep {
 		}
 
 		if ($tally['failed'] === 0) {
-			$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
+			$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::DONE_VERSION);
 		}
 
 		$output->info('Dossiq communication channels: ' . $tally['converted'] . ' case(s) converted to a channel slug, '
@@ -146,7 +146,7 @@ class NormaliseCommunicationChannelValues implements IRepairStep {
 	 */
 	private function convertOne(RepairSchema $target, array $row): string {
 		$value = ($row['communicationChannel'] ?? null);
-		$isSlug = in_array($value, CommunicationChannel::SLUGS, true);
+		$isSlug = in_array($value, CommunicationChannelInterface::SLUGS, true);
 		if (is_string($value) === false || trim($value) === '' || $isSlug === true) {
 			return 'skipped';
 		}
@@ -162,14 +162,14 @@ class NormaliseCommunicationChannelValues implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq communication channels: case ' . $caseId . ' could not be converted and keeps its value until the next run',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()],
 			);
 			return 'failed';
 		}
 
 		$this->logger->info(
 			sprintf('Dossiq channels: case %s now reads "%s"; it held "%s"', $caseId, (string)($changes['communicationChannel'] ?? ''), $value),
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return 'converted';

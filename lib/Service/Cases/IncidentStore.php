@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service\Cases;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\IncidentStoreInterface;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\Custody\StoredInstant;
 use OCA\Dossiq\Service\SettingsService;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class IncidentStore {
+class IncidentStore implements IncidentStoreInterface {
 
 	use SearchesObjects;
 

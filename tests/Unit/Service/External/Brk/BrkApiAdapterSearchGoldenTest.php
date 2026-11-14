@@ -42,6 +42,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\External\Brk\BrkResponseMapper
  * @uses \OCA\Dossiq\Service\External\IntegrationMode
  * @uses \OCA\Dossiq\Service\External\RegisterValues
+ * @uses \OCA\Dossiq\Service\External\HalResponseBody
  */
 class BrkApiAdapterSearchGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

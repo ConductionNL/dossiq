@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service\Cases;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\ApprovalRequestInterface;
 use OCA\Dossiq\Service\CaseType\ApprovalGateDeclaration;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
@@ -55,7 +56,7 @@ use RuntimeException;
  * @SuppressWarnings(PHPMD.StaticAccess) {@see ApprovalGateDeclaration} is a
  * reader over two arrays with no state and nothing to inject.
  */
-class ApprovalRequest {
+class ApprovalRequest implements ApprovalRequestInterface {
 
 	/**
 	 * Constructor.

@@ -380,4 +380,26 @@ class CaseStateFieldRuleProjectorPublishTest extends TestCase {
 
 		self::assertFalse(condition: $this->projector(schema: $this->schema(configuration: []))->publish(caseTypeId: 'ct'));
 	}//end testARefusingMapperAnswersFalseAndLogs()
+
+	/**
+	 * A configuration that is a string, and a lifecycle that is a scalar, are
+	 * both read as empty and replaced by the projected states.
+	 *
+	 * @return void
+	 */
+	public function testAScalarConfigurationOrLifecycleIsReadAsEmpty(): void {
+		$expected = [
+			CaseStateFieldRuleProjector::LIFECYCLE_KEY => [
+				'states' => ['intake-uuid' => ['fields' => ['required' => [['fields' => ['motivering']]]]]],
+			],
+		];
+
+		$stringy = $this->schema(configuration: 'not-a-configuration');
+		self::assertTrue(condition: $this->projector(schema: $stringy)->publish(caseTypeId: 'ct'));
+		self::assertSame(expected: $expected, actual: $stringy->configuration);
+
+		$scalar = $this->schema(configuration: [CaseStateFieldRuleProjector::LIFECYCLE_KEY => 'broken']);
+		self::assertTrue(condition: $this->projector(schema: $scalar)->publish(caseTypeId: 'ct'));
+		self::assertSame(expected: $expected, actual: $scalar->configuration);
+	}//end testAScalarConfigurationOrLifecycleIsReadAsEmpty()
 }//end class

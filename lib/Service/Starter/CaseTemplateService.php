@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTemplateServiceInterface;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use Psr\Log\LoggerInterface;
 
@@ -46,7 +47,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
  */
-class CaseTemplateService {
+class CaseTemplateService implements CaseTemplateServiceInterface {
 
 	/**
 	 * The app config key naming the case schema.

@@ -79,6 +79,7 @@ class FakeBelplanObjectService {
  * Unit tests for BelplanRoutingService.
  *
  * @covers \OCA\Dossiq\Service\BelplanRoutingService
+ * @uses \OCA\Dossiq\Service\Support\CastArray
  */
 class BelplanRoutingServiceTest extends TestCase {
 

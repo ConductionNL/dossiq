@@ -43,6 +43,8 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Bulk\MixedCaseTypeVersionsException
  *
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\People\CoordinatorRequirement
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class BulkHandoffTest extends TestCase {
 

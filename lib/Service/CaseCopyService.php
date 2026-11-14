@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseCopyServiceInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -45,7 +46,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseCopyService {
+class CaseCopyService implements CaseCopyServiceInterface {
 
 	/**
 	 * The properties a copy carries over from its source.

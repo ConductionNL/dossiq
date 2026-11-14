@@ -54,6 +54,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Review\DocumentRelevance
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class ReviewBatchesTest extends TestCase {
 
@@ -127,12 +128,13 @@ class ReviewBatchesTest extends TestCase {
 	/**
 	 * The batches service on the store.
 	 *
-	 * @param list<string> $users The users that exist.
+	 * @param list<string>          $users     The users that exist.
+	 * @param array<string, string>  $overrides Config values that replace the defaults.
 	 *
 	 * @return ReviewBatches The service.
 	 */
-	private function batches(array $users = ['reviewer-a', 'reviewer-b']): ReviewBatches {
-		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'document_review_schema' => 'documentReview', 'review_batch_schema' => 'reviewBatch', 'case_schema' => 'case', 'case_type_schema' => 'caseType', 'dossier_informatieobject_schema' => 'informatieobject', 'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject'];
+	private function batches(array $users = ['reviewer-a', 'reviewer-b'], array $overrides = []): ReviewBatches {
+		$config = $overrides + ['register' => 'dossiq', 'document_schema' => 'document', 'document_review_schema' => 'documentReview', 'review_batch_schema' => 'reviewBatch', 'case_schema' => 'case', 'case_type_schema' => 'caseType', 'dossier_informatieobject_schema' => 'informatieobject', 'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject'];
 		$settings = $this->createMock(SettingsService::class);
 		$this->settings = $settings;
 		$settings->method('getObjectService')->willReturn($this->store);
@@ -455,4 +457,50 @@ class ReviewBatchesTest extends TestCase {
 
 		$this->assertSame([1], $this->store->row('documentReview', 'review-2')['pagesRequired']);
 	}//end testTheBatchRecordsTheDepthPerReview()
+
+	/**
+	 * Without a batch schema nothing is listed or taken, and a batch is refused as unavailable before anything is written.
+	 *
+	 * @return void
+	 */
+	public function testWithoutABatchSchemaBatchesAreUnavailable(): void {
+		$this->store->seed(schema: 'reviewBatch', uuid: 'batch-1', row: ['case' => 'case-x', 'name' => 'Mail', 'status' => 'open', 'documents' => ['doc-1']]);
+		$batches = $this->batches(overrides: ['review_batch_schema' => '']);
+
+		$this->assertSame([], $batches->forCase(caseId: 'case-x', assessed: []));
+		$this->assertSame([], $batches->taken(caseId: 'case-x', documents: ['doc-1']));
+
+		try {
+			$batches->create(caseId: 'case-x', name: 'Mail', assignee: 'reviewer-a', documents: ['doc-2'], userId: 'handler-h');
+			$this->fail('A batch without a schema must be refused.');
+		} catch (RefusedException $e) {
+			$this->assertSame('review-batch-unavailable', $e->getRule());
+			$this->assertSame(503, $e->getStatus());
+			$this->assertNull($e->getPrevious());
+		}
+
+		$this->assertSame([], $this->handed, 'no task is handed out');
+	}//end testWithoutABatchSchemaBatchesAreUnavailable()
+
+	/**
+	 * A batch the register refuses to write is refused as unavailable, with the cause, and hands out no task.
+	 *
+	 * @return void
+	 */
+	public function testABatchTheRegisterCannotWriteIsRefused(): void {
+		$this->store->refusedSchemas = ['reviewBatch'];
+		$batches = $this->batches();
+
+		try {
+			$batches->create(caseId: 'case-x', name: 'Mail', assignee: 'reviewer-a', documents: ['doc-1'], userId: 'handler-h');
+			$this->fail('A batch the register refuses must be refused.');
+		} catch (RefusedException $e) {
+			$this->assertSame('review-batch-unavailable', $e->getRule());
+			$this->assertSame(503, $e->getStatus());
+			$this->assertInstanceOf(\RuntimeException::class, $e->getPrevious());
+		}
+
+		$this->assertSame([], $this->handed, 'no task is handed out');
+		$this->assertSame([], $this->store->all('reviewBatch'));
+	}//end testABatchTheRegisterCannotWriteIsRefused()
 }//end class
