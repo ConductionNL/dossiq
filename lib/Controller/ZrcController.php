@@ -39,6 +39,7 @@ use OCA\Dossiq\Kernel\Contracts\DocumentJoinHomingInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZrcStatusEffectsInterface;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
+use OCA\Dossiq\Support\GuardsZgwRequests;
 use OCA\OpenRegister\Exception\HookStoppedException;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -63,6 +64,8 @@ use OCP\IRequest;
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ZrcController extends ZgwController {
+	use GuardsZgwRequests;
+
 	/**
 	 * The ZGW API group for this controller.
 	 *
@@ -124,7 +127,7 @@ class ZrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->jwtRefusal();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -341,7 +344,7 @@ class ZrcController extends ZgwController {
 	 * @return JSONResponse|null
 	 */
 	private function createRefusal(string $resource): ?JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->jwtRefusal();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -580,7 +583,7 @@ class ZrcController extends ZgwController {
 	 * @return JSONResponse|null
 	 */
 	private function showRefusal(string $resource, string $uuid): ?JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->jwtRefusal();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -630,7 +633,7 @@ class ZrcController extends ZgwController {
 	 * @return JSONResponse|null The refusal, or null when the update may go on
 	 */
 	private function updateRefusal(string $resource, bool $isPatch): ?JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->jwtRefusal();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -764,7 +767,7 @@ class ZrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->jwtRefusal();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -985,7 +988,7 @@ class ZrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function zaakbesluitenIndex(string $zaakUuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->jwtRefusal();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -1113,12 +1116,7 @@ class ZrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
+		return $this->audittrailList(resource: $resource, uuid: $uuid);
 	}//end audittrailIndex()
 
 	/**
@@ -1138,12 +1136,7 @@ class ZrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		return $this->zgwService->handleAudittrailShow($this->request, self::ZGW_API, $resource, $uuid, $auditUuid);
+		return $this->audittrailEntry(resource: $resource, uuid: $uuid, auditUuid: $auditUuid);
 	}//end audittrailShow()
 
 	/**

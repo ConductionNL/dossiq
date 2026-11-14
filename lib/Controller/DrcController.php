@@ -33,6 +33,7 @@ use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Service\Zgw\RelationSearch;
 use OCA\Dossiq\Service\Zgw\ZtcHelperFactory;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
+use OCA\Dossiq\Support\GuardsZgwRequests;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -56,6 +57,8 @@ use OCP\IRequest;
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class DrcController extends ZgwController {
+	use GuardsZgwRequests;
+
 	/**
 	 * The ZGW API identifier for the Documenten register.
 	 *
@@ -120,7 +123,7 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->jwtRefusal();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -253,14 +256,10 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function create(string $resource): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
 		// C3: Gate creates on documenten.aanmaken scope.
-		if ($this->zgwService->consumerHasScope($this->request, 'drc', 'documenten.aanmaken') === false) {
-			return $this->scopeDeniedResponse(scope: 'documenten.aanmaken');
+		$refusal = $this->scopedWriteRefusal(component: 'drc', scope: 'documenten.aanmaken');
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// Drc-006 (VNG): Gebruiksrechten create — set indicatieGebruiksrecht to true on EIO.
@@ -624,7 +623,7 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->jwtRefusal();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -660,14 +659,10 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
 		// C3: Gate updates on documenten.bijwerken scope.
-		if ($this->zgwService->consumerHasScope($this->request, 'drc', 'documenten.bijwerken') === false) {
-			return $this->scopeDeniedResponse(scope: 'documenten.bijwerken');
+		$refusal = $this->scopedWriteRefusal(component: 'drc', scope: 'documenten.bijwerken');
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		if ($resource === self::EIO_RESOURCE) {
@@ -695,14 +690,10 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
 		// C3: Gate patches on documenten.bijwerken scope.
-		if ($this->zgwService->consumerHasScope($this->request, 'drc', 'documenten.bijwerken') === false) {
-			return $this->scopeDeniedResponse(scope: 'documenten.bijwerken');
+		$refusal = $this->scopedWriteRefusal(component: 'drc', scope: 'documenten.bijwerken');
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		if ($resource === self::EIO_RESOURCE) {
@@ -730,14 +721,10 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
 		// C3: Gate destroys on documenten.verwijderen scope.
-		if ($this->zgwService->consumerHasScope($this->request, 'drc', 'documenten.verwijderen') === false) {
-			return $this->scopeDeniedResponse(scope: 'documenten.verwijderen');
+		$refusal = $this->scopedWriteRefusal(component: 'drc', scope: 'documenten.verwijderen');
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// Drc-006 (VNG): Gebruiksrechten delete — update indicatieGebruiksrecht on EIO.
@@ -1404,28 +1391,15 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->jwtRefusal();
 		if ($authError !== null) {
 			return $authError;
 		}
 
 		// Drc-008c (VNG): Return 404 if the parent resource no longer exists.
-		if ($this->zgwService->getObjectService() !== null) {
-			$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
-			if ($mappingConfig !== null) {
-				try {
-					$this->zgwService->getObjectService()->find(
-						$uuid,
-						register: $mappingConfig['sourceRegister'],
-						schema: $mappingConfig['sourceSchema']
-					);
-				} catch (\Throwable $e) {
-					return new JSONResponse(
-						data: ['detail' => $this->l10n->t('Not found.')],
-						statusCode: Http::STATUS_NOT_FOUND
-					);
-				}
-			}
+		$missing = $this->missingResourceRefusal(resource: $resource, uuid: $uuid, detail: $this->l10n->t('Not found.'));
+		if ($missing !== null) {
+			return $missing;
 		}
 
 		return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
@@ -1448,18 +1422,7 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		return $this->zgwService->handleAudittrailShow(
-			$this->request,
-			self::ZGW_API,
-			$resource,
-			$uuid,
-			$auditUuid
-		);
+		return $this->audittrailEntry(resource: $resource, uuid: $uuid, auditUuid: $auditUuid);
 	}//end audittrailShow()
 
 	/**
@@ -2019,7 +1982,7 @@ class DrcController extends ZgwController {
 	 * @return object The object service, or the JSONResponse that refuses the request.
 	 */
 	private function authorisedObjectService(): object {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->jwtRefusal();
 		if ($authError !== null) {
 			return $authError;
 		}

@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Service\Zgw\ValidityDateFilter;
 use OCA\Dossiq\Service\Zgw\ZtcHelperFactory;
+use OCA\Dossiq\Support\GuardsZgwRequests;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -49,6 +50,8 @@ use OCP\IRequest;
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ZtcController extends ZgwController {
+	use GuardsZgwRequests;
+
 	/**
 	 * The ZGW API identifier for the Catalogi register.
 	 *
@@ -125,7 +128,7 @@ class ZtcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->jwtRefusal();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -240,7 +243,7 @@ class ZtcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->jwtRefusal();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -419,17 +422,7 @@ class ZtcController extends ZgwController {
 	 * @return JSONResponse|null The refusal, or null when the write may go ahead.
 	 */
 	private function writeRefusal(): ?JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate writes on catalogi.schrijven scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'catalogi.schrijven') === false) {
-			return $this->scopeDeniedResponse(scope: 'catalogi.schrijven');
-		}
-
-		return null;
+		return $this->scopedWriteRefusal(component: 'ztc', scope: 'catalogi.schrijven');
 	}//end writeRefusal()
 
 	/**
@@ -488,12 +481,7 @@ class ZtcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
+		return $this->audittrailList(resource: $resource, uuid: $uuid);
 	}//end audittrailIndex()
 
 	/**
@@ -513,18 +501,7 @@ class ZtcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		return $this->zgwService->handleAudittrailShow(
-			$this->request,
-			self::ZGW_API,
-			$resource,
-			$uuid,
-			$auditUuid
-		);
+		return $this->audittrailEntry(resource: $resource, uuid: $uuid, auditUuid: $auditUuid);
 	}//end audittrailShow()
 
 }//end class
