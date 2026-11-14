@@ -108,28 +108,72 @@ class CasePlanMigrationService implements CasePlanMigrationServiceInterface {
 		// fail-closes an anonymous write, so the whole drain runs as system.
 		return $this->runAsSystemIfAvailable(
 			objectService: $objects,
-			operation: function () use ($objects, $register, $caseSchema, $typeSchema, $dryRun): array {
-				$reports = [];
-				$types = $this->searchObjectsAsArraysUnscoped(
-					objectService: $objects,
-					register: $register,
-					schema: $typeSchema,
-					filters: ['handlingModel' => 'cmmn', '_limit' => self::PAGE]
-				);
-				foreach ($types as $type) {
-					$typeId = (string)($type['id'] ?? $type['uuid'] ?? '');
-					foreach ($this->casesOf(objects: $objects, register: $register, schema: $caseSchema, typeId: $typeId) as $case) {
-						$report = $this->migrateCase(case: $case, dryRun: $dryRun);
-						if ($report['outcome'] !== self::EMPTY) {
-							$reports[] = $report;
-						}
-					}
-				}
-
-				return $reports;
-			}
+			operation: fn (): array => $this->drainAll(
+				objects: $objects,
+				register: $register,
+				caseSchema: $caseSchema,
+				typeSchema: $typeSchema,
+				dryRun: $dryRun,
+			)
 		);
 	}//end migrateAll()
+
+	/**
+	 * Migrate every case of every CMMN case type, in the caller's security context.
+	 *
+	 * @param object  $objects    The OpenRegister ObjectService.
+	 * @param string  $register   The register id.
+	 * @param string  $caseSchema The case schema id.
+	 * @param string  $typeSchema The case type schema id.
+	 * @param boolean $dryRun     Report, write nothing.
+	 *
+	 * @return array<int, array<string, mixed>> One report per case that carried a blob.
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-002-in-flight-cases-are-drained-losslessly
+	 */
+	private function drainAll(object $objects, string $register, string $caseSchema, string $typeSchema, bool $dryRun): array {
+		$reports = [];
+		$types = $this->searchObjectsAsArraysUnscoped(
+			objectService: $objects,
+			register: $register,
+			schema: $typeSchema,
+			filters: ['handlingModel' => 'cmmn', '_limit' => self::PAGE]
+		);
+		foreach ($types as $type) {
+			$typeId = (string)($type['id'] ?? $type['uuid'] ?? '');
+			$reports = array_merge(
+				$reports,
+				$this->drainType(objects: $objects, register: $register, caseSchema: $caseSchema, typeId: $typeId, dryRun: $dryRun)
+			);
+		}
+
+		return $reports;
+	}//end drainAll()
+
+	/**
+	 * Migrate every case of one case type.
+	 *
+	 * @param object  $objects    The OpenRegister ObjectService.
+	 * @param string  $register   The register id.
+	 * @param string  $caseSchema The case schema id.
+	 * @param string  $typeId     The case type id.
+	 * @param boolean $dryRun     Report, write nothing.
+	 *
+	 * @return array<int, array<string, mixed>> One report per case that carried a blob.
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-002-in-flight-cases-are-drained-losslessly
+	 */
+	private function drainType(object $objects, string $register, string $caseSchema, string $typeId, bool $dryRun): array {
+		$reports = [];
+		foreach ($this->casesOf(objects: $objects, register: $register, schema: $caseSchema, typeId: $typeId) as $case) {
+			$report = $this->migrateCase(case: $case, dryRun: $dryRun);
+			if ($report['outcome'] !== self::EMPTY) {
+				$reports[] = $report;
+			}
+		}
+
+		return $reports;
+	}//end drainType()
 
 	/**
 	 * Migrate one case by uuid.
