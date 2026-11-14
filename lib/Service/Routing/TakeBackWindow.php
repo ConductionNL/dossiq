@@ -171,7 +171,8 @@ class TakeBackWindow implements TakeBackWindowInterface {
 			return self::UNAVAILABLE;
 		}
 
-		$config = $this->takeBackConfig(caseId: $caseId, window: $window, routedTo: $routedTo, routedAt: $routedAt);
+		$routed = new RoutedCase(caseId: $caseId, routedTo: $routedTo, routedAt: $routedAt);
+		$config = $this->takeBackConfig(routed: $routed, window: $window);
 
 		return $this->armOnEngine(config: $config, caseId: $caseId);
 	}//end arm()
@@ -179,19 +180,17 @@ class TakeBackWindow implements TakeBackWindowInterface {
 	/**
 	 * The timer configuration of a take-back window.
 	 *
-	 * @param string               $caseId   The case id.
+	 * @param RoutedCase                      $routed The case, who it was routed to and when.
 	 * @param array{value: int, unit: string} $window The window.
-	 * @param string               $routedTo The person it was routed to.
-	 * @param DateTimeImmutable    $routedAt When.
 	 *
 	 * @return array<string, mixed> The engine configuration.
 	 *
 	 * @spec openspec/changes/archive/2026-10-10-routing-by-weight-position-and-area/tasks.md
 	 */
-	private function takeBackConfig(string $caseId, array $window, string $routedTo, DateTimeImmutable $routedAt): array {
+	private function takeBackConfig(RoutedCase $routed, array $window): array {
 		return [
 			'subjectType'     => 'object',
-			'subjectUuid'     => $caseId.self::SUBJECT_SUFFIX,
+			'subjectUuid'     => $routed->caseId.self::SUBJECT_SUFFIX,
 			'appId'           => 'dossiq',
 			'title'           => 'Terugnemen als niet opgepakt',
 			'purpose'         => 'due',
@@ -199,8 +198,8 @@ class TakeBackWindow implements TakeBackWindowInterface {
 			'sla'             => $window,
 			'escalationRules' => $this->escalationRules(),
 			'anchorEvent'     => 'case_routed',
-			'anchorEventAt'   => $routedAt,
-			'metadata'        => $this->timerMetadata(caseId: $caseId, routedTo: $routedTo, routedAt: $routedAt),
+			'anchorEventAt'   => $routed->routedAt,
+			'metadata'        => $this->timerMetadata(routed: $routed),
 		];
 	}//end takeBackConfig()
 
@@ -229,20 +228,18 @@ class TakeBackWindow implements TakeBackWindowInterface {
 	/**
 	 * The metadata stored on the timer.
 	 *
-	 * @param string            $caseId   The case id.
-	 * @param string            $routedTo The person it was routed to.
-	 * @param DateTimeImmutable $routedAt When.
+	 * @param RoutedCase $routed The case, who it was routed to and when.
 	 *
 	 * @return array<string, string> The metadata.
 	 *
 	 * @spec openspec/changes/archive/2026-10-10-routing-by-weight-position-and-area/tasks.md
 	 */
-	private function timerMetadata(string $caseId, string $routedTo, DateTimeImmutable $routedAt): array {
+	private function timerMetadata(RoutedCase $routed): array {
 		return [
 			'source'   => self::METADATA_SOURCE,
-			'caseId'   => $caseId,
-			'routedTo' => $routedTo,
-			'routedAt' => $routedAt->format(DATE_ATOM),
+			'caseId'   => $routed->caseId,
+			'routedTo' => $routed->routedTo,
+			'routedAt' => $routed->routedAt->format(DATE_ATOM),
 		];
 	}//end timerMetadata()
 
