@@ -189,4 +189,49 @@ class DecisionAdviceControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->override()->getStatus());
 	}
+
+	public function testFormAnswersTheServiceFormForACaseTheCallerMayRead(): void {
+		$user = $this->signedIn();
+		$this->guard->expects($this->once())->method('hasCaseReadAccess')->with('case-1', $user)->willReturn(true);
+		$this->guard->expects($this->never())->method('hasCaseMutationAccess');
+		$form = ['available' => true, 'decisionTable' => 't', 'inputs' => [['name' => 'behaviour', 'type' => 'string', 'options' => ['A']]], 'outcomes' => ['Waarschuwen']];
+		$this->advice->expects($this->once())->method('form')->with('case-1')->willReturn($form);
+
+		$response = $this->controller->form(caseId: ' case-1 ');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame($form, $response->getData());
+	}
+
+	public function testFormOnACaseTheCallerMayNotReadAnswers403AndAsksNothing(): void {
+		$this->signedIn();
+		$this->guard->method('hasCaseReadAccess')->willReturn(false);
+		$this->advice->expects($this->never())->method('form');
+
+		$response = $this->controller->form(caseId: 'case-1');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(['error' => 'Not authorized'], $response->getData());
+	}
+
+	public function testFormWithoutSessionOrCaseIsRefusedBeforeTheGuard(): void {
+		$this->guard->expects($this->never())->method('hasCaseReadAccess');
+		$this->advice->expects($this->never())->method('form');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $this->controller->form(caseId: 'case-1')->getStatus());
+
+		$this->signedIn();
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->controller->form(caseId: '  ')->getStatus());
+	}
+
+	public function testFormOfAnUnknownCaseAnswersTheRefusalStatus(): void {
+		$this->signedIn();
+		$this->guard->method('hasCaseReadAccess')->willReturn(true);
+		$this->advice->method('form')->willThrowException(new DecisionAdviceRefusal('Deze zaak bestaat niet', Http::STATUS_NOT_FOUND));
+
+		$response = $this->controller->form(caseId: 'case-1');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'Deze zaak bestaat niet'], $response->getData());
+	}
 }

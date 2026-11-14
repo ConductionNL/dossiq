@@ -284,4 +284,67 @@ class DecisionAdviceServiceTest extends TestCase {
 
 		$this->assertSame(503, $this->refusal(fn () => $service->find(adviceId: 'a'))[0]);
 	}
+
+	public function testTheFormListsTheDeclaredInputsWithTheValuesTheRulesUseAndTheOutcomes(): void {
+		$this->caseOfTypeNaming(table: 'dossiq.lhs-intervention');
+		$this->tables->expects($this->never())->method('evaluate');
+		$this->tables->expects($this->once())->method('find')->with('dossiq.lhs-intervention')->willReturn(
+			self::TABLE + [
+				'rules' => [
+					['inputEntries' => ['A', '1'], 'outputEntries' => ['Aanspreken', 'x']],
+					['inputEntries' => ['"B"', '1'], 'outputEntries' => ['Waarschuwen', 'y']],
+					['inputEntries' => ['A', '-'], 'outputEntries' => ['Aanspreken', 'z']],
+					['inputEntries' => ['C', ''], 'outputEntries' => [['not', 'scalar'], 'w']],
+					'not a rule',
+				],
+			]
+		);
+
+		$this->assertSame(
+			[
+				'available' => true,
+				'decisionTable' => 'dossiq.lhs-intervention',
+				'inputs' => [
+					['name' => 'behaviour', 'type' => 'string', 'options' => ['A', 'B', 'C']],
+					['name' => 'consequence', 'type' => 'string', 'options' => ['1']],
+				],
+				'outcomes' => ['Aanspreken', 'Waarschuwen'],
+			],
+			$this->service->form(caseId: 'case-1')
+		);
+		$this->assertSame([], $this->store->saved);
+	}
+
+	public function testTheFormOfACaseTypeWithoutATableIsUnavailableAndReadsNoTable(): void {
+		$this->caseOfTypeNaming(table: '');
+		$this->tables->expects($this->never())->method('find');
+
+		$this->assertSame(
+			['available' => false, 'decisionTable' => '', 'inputs' => [], 'outcomes' => []],
+			$this->service->form(caseId: 'case-1')
+		);
+	}
+
+	public function testTheFormOfATableWithoutInputsIsUnavailable(): void {
+		$this->caseOfTypeNaming(table: 'dossiq.lhs-intervention');
+		$this->tables->method('find')->willReturn(['inputs' => [['type' => 'string'], 'x'], 'outputs' => [], 'rules' => []]);
+
+		$this->assertFalse($this->service->form(caseId: 'case-1')['available']);
+	}
+
+	public function testTheFormOfAnUnknownCaseIsRefusedWith404(): void {
+		$this->cases->method('fetchCaseById')->willReturn(null);
+
+		$this->assertSame(404, $this->refusal(fn () => $this->service->form(caseId: 'nope'))[0]);
+	}
+
+	public function testTheFormOfAMissingTableIsRefusedWith409(): void {
+		$this->caseOfTypeNaming(table: 'gone');
+		$this->tables->method('find')->willThrowException(new RuntimeException('no'));
+
+		$this->assertSame(
+			[409, 'De beslistabel "gone" is niet gevonden'],
+			$this->refusal(fn () => $this->service->form(caseId: 'case-1'))
+		);
+	}
 }

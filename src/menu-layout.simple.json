@@ -2133,6 +2133,9 @@
 					"notice-of-default-register": {
 						"group": "Case"
 					},
+					"advice-from-decision-table": {
+						"group": "Case"
+					},
 					"start-flow": {
 						"group": "Case",
 						"label": "Start a flow"
@@ -6792,6 +6795,7 @@
 					"request-information",
 					"remedy-lodge",
 					"start-enforcement",
+					"advice-from-decision-table",
 					"advice-request",
 					"woo-publish",
 					"woo-withdraw",

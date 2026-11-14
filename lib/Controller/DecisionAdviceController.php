@@ -60,6 +60,41 @@ class DecisionAdviceController extends Controller {
 	}//end __construct()
 
 	/**
+	 * What the advice dialog asks on a case: the case type's decision table, the
+	 * inputs it declares with the values its rules use, and the outcomes a
+	 * handler can choose. `available: false` when the case type names no table,
+	 * which hides the case page's action.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md
+	 */
+	#[NoAdminRequired]
+	public function form(string $caseId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->error(message: 'Authenticatie vereist', status: Http::STATUS_UNAUTHORIZED);
+		}
+
+		$caseId = trim($caseId);
+		if ($caseId === '') {
+			return $this->error(message: 'caseId is verplicht', status: Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return $this->error(message: 'Not authorized', status: Http::STATUS_FORBIDDEN);
+		}
+
+		try {
+			return new JSONResponse($this->advice->form(caseId: $caseId));
+		} catch (DecisionAdviceRefusal $e) {
+			return $this->error(message: $e->getMessage(), status: $e->getStatus());
+		}
+	}//end form()
+
+	/**
 	 * Ask the case type's decision table for advice on a case.
 	 *
 	 * Body: `caseId` (string) and `inputs` (object, one value per input the table declares).

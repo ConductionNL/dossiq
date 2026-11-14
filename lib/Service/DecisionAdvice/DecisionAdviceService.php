@@ -106,6 +106,108 @@ class DecisionAdviceService {
 	}//end find()
 
 	/**
+	 * What the advice dialog asks on a case: the table the case type names, the
+	 * inputs it declares with the values its rules use, and the outcomes a
+	 * handler can choose. A case type that names no table answers unavailable,
+	 * so the case page hides the action instead of offering one that refuses.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array{available: bool, decisionTable: string, inputs: list<array{name: string, type: string, options: list<string>}>,
+	 *     outcomes: list<string>}
+	 *
+	 * @throws DecisionAdviceRefusal When the case is unknown or the table cannot be read.
+	 *
+	 * @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md
+	 */
+	public function form(string $caseId): array {
+		$reference = $this->namedTableOf(caseId: $caseId);
+		if ($reference === '') {
+			return ['available' => false, 'decisionTable' => '', 'inputs' => [], 'outcomes' => []];
+		}
+
+		$table = $this->table(reference: $reference);
+		$rules = $this->listOf(value: ($table['rules'] ?? null));
+		$inputs = [];
+		$index = 0;
+		foreach ($this->listOf(value: ($table['inputs'] ?? null)) as $definition) {
+			if (is_array($definition) === false) {
+				continue;
+			}
+
+			$name = trim((string)($definition['name'] ?? ''));
+			if ($name !== '') {
+				$inputs[] = [
+					'name' => $name,
+					'type' => (string)($definition['type'] ?? 'string'),
+					'options' => $this->entries(rules: $rules, key: 'inputEntries', index: $index),
+				];
+			}
+
+			$index++;
+		}
+
+		return [
+			'available' => ($inputs !== []),
+			'decisionTable' => $reference,
+			'inputs' => $inputs,
+			'outcomes' => $this->entries(rules: $rules, key: 'outputEntries', index: 0),
+		];
+	}//end form()
+
+	/**
+	 * The distinct literal values one column of the rules uses, in rule order.
+	 * A dash or an empty entry matches anything and is no option.
+	 *
+	 * @param array  $rules The table's rules.
+	 * @param string $key   `inputEntries` or `outputEntries`.
+	 * @param int    $index The column.
+	 *
+	 * @return list<string>
+	 */
+	private function entries(array $rules, string $key, int $index): array {
+		$values = [];
+		foreach ($rules as $rule) {
+			$entry = null;
+			if (is_array($rule) === true) {
+				$entry = ($this->listOf(value: ($rule[$key] ?? null))[$index] ?? null);
+			}
+
+			if (is_scalar($entry) === false) {
+				continue;
+			}
+
+			$value = trim((string)$entry);
+			if (strlen($value) >= 2 && $value[0] === '"' && substr($value, -1) === '"') {
+				$value = substr($value, 1, -1);
+			}
+
+			if ($value === '' || $value === '-' || in_array($value, $values, true) === true) {
+				continue;
+			}
+
+			$values[] = $value;
+		}
+
+		return $values;
+	}//end entries()
+
+	/**
+	 * A value as an array, or empty when it is none.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return array
+	 */
+	private function listOf(mixed $value): array {
+		if (is_array($value) === false) {
+			return [];
+		}
+
+		return $value;
+	}//end listOf()
+
+	/**
 	 * Record the handler's choice: the recommendation accepted, or another
 	 * outcome with a reason.
 	 *
@@ -160,19 +262,33 @@ class DecisionAdviceService {
 	 * @throws DecisionAdviceRefusal When the case is unknown, or its type names no table.
 	 */
 	private function tableOf(string $caseId): string {
-		$case = $this->cases->fetchCaseById(caseUuid: $caseId);
-		if ($case === null) {
-			throw new DecisionAdviceRefusal('Deze zaak bestaat niet', Http::STATUS_NOT_FOUND);
-		}
-
-		$caseType = $this->cases->loadCaseType(caseTypeId: $this->reference(value: ($case['caseType'] ?? '')));
-		$reference = trim((string)($caseType['adviceDecisionTable'] ?? ''));
+		$reference = $this->namedTableOf(caseId: $caseId);
 		if ($reference === '') {
 			throw new DecisionAdviceRefusal('Het zaaktype van deze zaak noemt geen beslistabel voor advies', Http::STATUS_CONFLICT);
 		}
 
 		return $reference;
 	}//end tableOf()
+
+	/**
+	 * The decision table the case's type names, empty when it names none.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return string
+	 *
+	 * @throws DecisionAdviceRefusal When the case is unknown.
+	 */
+	private function namedTableOf(string $caseId): string {
+		$case = $this->cases->fetchCaseById(caseUuid: $caseId);
+		if ($case === null) {
+			throw new DecisionAdviceRefusal('Deze zaak bestaat niet', Http::STATUS_NOT_FOUND);
+		}
+
+		$caseType = $this->cases->loadCaseType(caseTypeId: $this->reference(value: ($case['caseType'] ?? '')));
+
+		return trim((string)($caseType['adviceDecisionTable'] ?? ''));
+	}//end namedTableOf()
 
 	/**
 	 * An id out of a relation that is a string or an expanded object.

@@ -13,9 +13,9 @@
 
 ## 3. Case page
 
-- [ ] 3.1 `src/dialogs/DecisionTableAdviceDialog.vue`: inputs generated from the table's input definitions, the recommendation, accept or override with reason (NcDialog, own file, labelled selects).
-- [ ] 3.2 `src/manifest.json` CaseDetail `headerActions`: `advice-from-decision-table` (`open-modal`, target the dialog), `visibleWhen: "@context.caseType.adviceDecisionTable"`.
-- [ ] 3.3 The decisions widget on CaseDetail lists the stored advice objects (relation from the case).
+- [x] 3.1 `src/dialogs/DecisionTableAdviceDialog.vue`: inputs generated from the table's input definitions, the recommendation, accept or override with reason (NcDialog, own file, labelled selects).
+- [x] 3.2 `src/manifest.json` CaseDetail `headerActions`: `advice-from-decision-table` (`open-modal`, target the dialog), `visibleWhen: "@context.caseType.adviceDecisionTable"`.
+- [x] 3.3 The decisions widget on CaseDetail lists the stored advice objects (relation from the case).
 - [ ] 3.4 Move the `LhsRecommendations` pages out of settings into the case page's related list, or remove them if 3.3 covers them; no menu entry for a procedure.
 
 ## 4. Tests and checks
