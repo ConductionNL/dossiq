@@ -14502,10 +14502,11 @@
 			"feature": "tasks-and-work-queues",
 			"featureConfidence": "high",
 			"built": {
-				"state": "specified",
+				"state": "built",
+				"evidence": "src/manifest.json:7811 #TaskDetail form dialog draftField isDraft + draftAppId dossiq (CnFormDialog keeps a draft across close and reload, saves with required fields empty); same on #CaseDetail editTitle dialog at src/manifest.json:3435",
+				"reachedOn": "#TaskDetail task form dialog, via a case's task list",
 				"owner": "ConductionNL/nextcloud-vue",
 				"change": "nextcloud-vue/form-dialog-autosave",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/nextcloud-vue openspec/changes/form-dialog-autosave (nextcloud-vue lane).",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqTaak"
