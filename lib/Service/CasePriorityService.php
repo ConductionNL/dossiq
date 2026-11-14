@@ -44,6 +44,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CasePriorityServiceInterface;
+use OCA\Dossiq\Service\Support\ReferenceId;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -52,7 +54,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-priority/spec.md
  */
-class CasePriorityService {
+class CasePriorityService implements CasePriorityServiceInterface {
 	/**
 	 * How much it matters if this case goes wrong, lowest first.
 	 *
@@ -559,14 +561,6 @@ class CasePriorityService {
 	 * @return string The id, or the empty string.
 	 */
 	private function referenceId(mixed $value): string {
-		if (is_array($value) === true) {
-			$value = ($value['id'] ?? ($value['uuid'] ?? ''));
-		}
-
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
+		return ReferenceId::of(value: $value);
 	}//end referenceId()
 }//end class

@@ -40,7 +40,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Kernel\Contracts\CaseEmailRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -50,9 +52,16 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseEmailRepository {
+class CaseEmailRepository implements CaseEmailRepositoryInterface {
 
 	use SearchesObjects;
+
+	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
 
 	/**
 	 * Constructor.
@@ -62,6 +71,7 @@ class CaseEmailRepository {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -104,23 +114,9 @@ class CaseEmailRepository {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function findTemplatesForCaseType(string $caseTypeId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('email_template_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['caseType' => $caseTypeId, '_limit' => 100],
+		return $this->rows->search(
+			schemaKey: 'email_template_schema',
+			filters: ['caseType' => $caseTypeId, '_limit' => 100]
 		);
 	}//end findTemplatesForCaseType()
 

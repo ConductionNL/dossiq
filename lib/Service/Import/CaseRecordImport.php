@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Import;
 use DateInterval;
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\CaseRecordImportInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -49,7 +50,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
  */
-class CaseRecordImport {
+class CaseRecordImport implements CaseRecordImportInterface {
 
 	use SearchesObjects;
 
@@ -490,7 +491,6 @@ class CaseRecordImport {
 
 		return ['caseId' => $caseId];
 	}//end placeCase()
-
 
 	/**
 	 * An ISO 8601 period as days, 0 when absent or unreadable.

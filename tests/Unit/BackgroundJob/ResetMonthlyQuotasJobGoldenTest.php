@@ -68,6 +68,8 @@ interface ResetMonthlyQuotasLooseObjectServiceStub {
  * Golden test for ResetMonthlyQuotasJob::work.
  *
  * @covers \OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob
+ * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
+ * @uses \OCA\Dossiq\Service\TenantQuotaService
  */
 class ResetMonthlyQuotasJobGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

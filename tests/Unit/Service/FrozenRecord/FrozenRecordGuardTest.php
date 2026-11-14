@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\FrozenRecord\FrozenRecordGuard
  * @covers \OCA\Dossiq\Service\FrozenRecord\FreezeDefinition
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\FrozenRecord\CanonicalValue
  */
 class FrozenRecordGuardTest extends TestCase {
 
@@ -199,6 +200,42 @@ class FrozenRecordGuardTest extends TestCase {
 			)
 		);
 	}//end testSoftDeleteIsRefused()
+
+	/**
+	 * Without `@self`, the top-level deletion marker counts: setting it on a frozen record is refused.
+	 *
+	 * @return void
+	 */
+	public function testATopLevelDeletionMarkerIsRefused(): void {
+		$stored = FrozenRecordFixture::record(status: 'issued');
+		unset($stored['@self']);
+		$incoming = $stored;
+		$incoming['deleted'] = ['deletedBy' => 'someone'];
+
+		$this->assertRefused(
+			fn () => $this->guard->assertUpdatable(definition: FrozenRecordFixture::definition(), stored: $stored, incoming: $incoming)
+		);
+	}//end testATopLevelDeletionMarkerIsRefused()
+
+	/**
+	 * A record already marked deleted at the top level is not refused for staying deleted.
+	 *
+	 * @return void
+	 */
+	public function testAnAlreadyDeletedRecordStaysWritable(): void {
+		$stored = FrozenRecordFixture::record(status: 'issued');
+		unset($stored['@self']);
+		$stored['deleted'] = ['deletedBy' => 'someone'];
+
+		$refusal = null;
+		try {
+			$this->guard->assertUpdatable(definition: FrozenRecordFixture::definition(), stored: $stored, incoming: $stored);
+		} catch (RefusedException $e) {
+			$refusal = $e->getRule();
+		}
+
+		self::assertNull($refusal);
+	}//end testAnAlreadyDeletedRecordStaysWritable()
 
 	/**
 	 * A write-once field is written once, at any status, and never rewritten.

@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\ImmutabilityListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\ImmutabilityListenerRegistrar;
 use OCA\Dossiq\Listener\FrozenRecordListener;
 use OCA\Dossiq\Service\FrozenRecord\FreezeRegistry;
 use OCA\Dossiq\Service\FrozenRecord\FrozenRecordGuard;
@@ -47,7 +47,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\FrozenRecord\FrozenRecordGuard
  * @uses   \OCA\Dossiq\Service\FrozenRecord\RecordSeal
  * @uses   \OCA\Dossiq\Exception\RefusedException
- * @uses \OCA\Dossiq\AppInfo\Registrar\ImmutabilityListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\ImmutabilityListenerRegistrar
+ * @uses \OCA\Dossiq\Service\FrozenRecord\CanonicalValue
  */
 class FrozenRecordListenerTest extends TestCase {
 

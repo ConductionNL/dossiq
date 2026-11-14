@@ -32,10 +32,12 @@ namespace OCA\Dossiq\Service\Subsidie;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\SubsidieServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
-use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\Dossiq\Service\Support\RowList;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\TermijnTimerService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -47,7 +49,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
-class SubsidieService {
+class SubsidieService implements SubsidieServiceInterface {
 
 	use SearchesObjects;
 
@@ -80,11 +82,6 @@ class SubsidieService {
 		'rejected' => [],
 		'withdrawn' => [],
 	];
-
-	/**
-	 * Default AWB 4:13 decision term in weeks when the regeling is silent.
-	 */
-	public const DEFAULT_AANVRAAG_TERMIJN_WEKEN = 13;
 
 	/**
 	 * Constructor.
@@ -346,22 +343,7 @@ class SubsidieService {
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
 	private function rowsOf(mixed $value): array {
-		if (is_string($value) === true) {
-			$value = json_decode($value, true);
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$rows = [];
-		foreach ($value as $row) {
-			if (is_array($row) === true) {
-				$rows[] = $row;
-			}
-		}
-
-		return $rows;
+		return RowList::from(value: $value);
 	}//end rowsOf()
 
 	/**

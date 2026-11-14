@@ -44,7 +44,7 @@ namespace OCA\Dossiq\Listener;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\CaseHeldException;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
@@ -105,12 +105,12 @@ class CaseDeleteGuardListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister plus app config.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister plus app config.
 	 * @param IL10N $l10n Translation service, for the refusal sentence.
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {

@@ -28,9 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Subsidie\SubsidieRegisterExporter;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SubsidieRegisterExporterInterface;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -49,15 +50,15 @@ class SubsidieRegisterController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param SettingsService $settingsService Schema/register bridge.
-	 * @param SubsidieRegisterExporter $exporter Feed builder.
+	 * @param SettingsServiceInterface $settingsService Schema/register bridge.
+	 * @param SubsidieRegisterExporterInterface $exporter Feed builder.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly SettingsService $settingsService,
-		private readonly SubsidieRegisterExporter $exporter,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly SubsidieRegisterExporterInterface $exporter,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -187,17 +188,6 @@ class SubsidieRegisterController extends Controller {
 	 * @return array<string, mixed> The array form.
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

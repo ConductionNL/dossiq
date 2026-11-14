@@ -76,6 +76,7 @@ class DerivedStatusUpdatingEvent extends ObjectUpdatingEvent {
  * Golden test for DerivedStatusListener::handle.
  *
  * @covers \OCA\Dossiq\Listener\DerivedStatusListener
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
  */
 class DerivedStatusListenerGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

@@ -37,6 +37,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\ChecklistRunImmutabilityListener
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
+ * @uses \OCA\Dossiq\Listener\Support\SerialisedObject
  */
 class ChecklistRunImmutabilityListenerTest extends TestCase {
 	/**

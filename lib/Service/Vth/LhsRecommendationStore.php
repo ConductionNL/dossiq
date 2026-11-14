@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Vth;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ObjectArray;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -238,29 +239,7 @@ class LhsRecommendationStore {
 	 * @spec openspec/specs/enforcement-lhs/spec.md
 	 */
 	public function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true) {
-			if (method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
-			}
-
-			if (method_exists($value, 'toArray') === true) {
-				$arr = $value->toArray();
-				if (is_array($arr) === true) {
-					return $arr;
-				}
-			}
-
-			return (array)$value;
-		}
-
-		return [];
+		return ObjectArray::of(value: $value);
 	}//end toArray()
 
 }//end class

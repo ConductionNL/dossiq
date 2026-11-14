@@ -45,6 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\DigitalPostLetter
  */
 class IntegriqAdapterTest extends TestCase {
 	/**

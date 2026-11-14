@@ -31,10 +31,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseResultWriterInterface;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use RuntimeException;
 
 /**
@@ -42,7 +44,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class CaseResultWriter {
+class CaseResultWriter implements CaseResultWriterInterface {
 
 	/**
 	 * Constructor.
@@ -342,17 +344,6 @@ class CaseResultWriter {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

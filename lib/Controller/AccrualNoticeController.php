@@ -25,10 +25,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Money\AccrualNoticeService;
+use OCA\Dossiq\Kernel\Contracts\AccrualNoticeServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -55,20 +55,20 @@ class AccrualNoticeController extends Controller {
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param AccrualNoticeService $service Service.
-	 * @param SettingsService $settings Settings.
+	 * @param AccrualNoticeServiceInterface $service Service.
+	 * @param SettingsServiceInterface $settings Settings.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
-	 * @param CaseAccessGuard $caseAccess Who may change the case the notice is given on.
+	 * @param CaseAccessGuardInterface $caseAccess Who may change the case the notice is given on.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly AccrualNoticeService $service,
-		private readonly SettingsService $settings,
+		private readonly AccrualNoticeServiceInterface $service,
+		private readonly SettingsServiceInterface $settings,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseAccessGuard $caseAccess,
+		private readonly CaseAccessGuardInterface $caseAccess,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

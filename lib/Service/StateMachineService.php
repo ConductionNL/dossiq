@@ -35,6 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\StateMachineServiceInterface;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -43,7 +45,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
  */
-class StateMachineService {
+class StateMachineService implements StateMachineServiceInterface {
 	/**
 	 * Allowed forward transitions and the single permitted back-edge.
 	 *
@@ -71,44 +73,6 @@ class StateMachineService {
 	];
 
 	/**
-	 * Fields that may NOT be edited once a beschikking is frozen.
-	 *
-	 * Lives beside IMMUTABLE_STATUSES because the two halves of the same rule
-	 * drift when they live apart, and the drift is silent.
-	 *
-	 * @var array<int, string>
-	 */
-	public const CONTENT_FIELDS = [
-		'rationale',
-		'decision',
-		'addressee',
-		'decisionType',
-		'legalRemediesClause',
-		'feeAmount',
-		'templateId',
-		// The number and the backward pointer are what a bezwaar cites: a
-		// signed beschikking that could be renumbered, or re-pointed at a
-		// different predecessor, is not the one that was served (REQ-BES-012).
-		'reference',
-		'supersedes',
-	];
-
-	/**
-	 * Fields written once, after signing, and never again.
-	 *
-	 * `supersededBy` is the forward pointer a correction writes on the
-	 * beschikking it replaces: the ONLY field the freeze lets a successor
-	 * write (REQ-BES-012). Empty to a value is allowed at every status; a
-	 * value to anything else is refused, so a replaced beschikking can never
-	 * be replaced a second time and the chain stays linear.
-	 *
-	 * @var array<int, string>
-	 */
-	public const WRITE_ONCE_FIELDS = [
-		'supersededBy',
-	];
-
-	/**
 	 * The exception message a refused mutation carries.
 	 *
 	 * `BeschikkingController` maps it to HTTP 409.
@@ -116,17 +80,6 @@ class StateMachineService {
 	 * @var string
 	 */
 	public const IMMUTABLE_ERROR = 'immutable';
-
-	/**
-	 * What a handler is told when a frozen beschikking refuses a write.
-	 *
-	 * REQ-BES-008 requires the refusal to name the way forward, so a handler
-	 * who is told no is also told what to do instead.
-	 *
-	 * @var string
-	 */
-	public const IMMUTABLE_MESSAGE = 'This beschikking has been signed and cannot be edited. '
-		. 'Issue a wijzigingsbeschikking or an intrekkingsbeschikking instead.';
 
 	/**
 	 * Constructor.
@@ -292,17 +245,6 @@ class StateMachineService {
 	 * @return array<string, mixed>
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

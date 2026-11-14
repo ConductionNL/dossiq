@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Cases;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
+use OCA\Dossiq\Service\Support\ReferencedUuid;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -197,15 +198,7 @@ class CaseMergeStore {
 	 * @return string The uuid, empty when there is none.
 	 */
 	public function referencedId(mixed $value): string {
-		if (is_string($value) === true) {
-			return trim($value);
-		}
-
-		if (is_array($value) === true) {
-			return trim((string)($value['id'] ?? ''));
-		}
-
-		return '';
+		return ReferencedUuid::inReference(value: $value);
 	}//end referencedId()
 
 	/**

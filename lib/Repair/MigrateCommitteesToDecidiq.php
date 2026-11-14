@@ -28,8 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\Bezwaar\CommitteeDelegationService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CommitteeDelegationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -56,13 +56,13 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param CommitteeDelegationService $delegation Raises the body in the decision app.
-	 * @param SettingsService            $settings   Resolves OpenRegister and the schema slugs.
+	 * @param CommitteeDelegationServiceInterface $delegation Raises the body in the decision app.
+	 * @param SettingsServiceInterface            $settings   Resolves OpenRegister and the schema slugs.
 	 * @param LoggerInterface            $logger     Logger.
 	 */
 	public function __construct(
-		private readonly CommitteeDelegationService $delegation,
-		private readonly SettingsService $settings,
+		private readonly CommitteeDelegationServiceInterface $delegation,
+		private readonly SettingsServiceInterface $settings,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

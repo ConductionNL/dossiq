@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Pipelinq;
 
+use OCA\Dossiq\Kernel\Contracts\CorrespondenceLanguageConsumerInterface;
+
 /**
  * Which language to write to a party in, and why that one.
  *
@@ -29,7 +31,7 @@ namespace OCA\Dossiq\Service\Pipelinq;
  *
  * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-the-language-to-write-to-a-party-in-comes-from-the-resolver-with-its-reason-req-plq-06
  */
-class CorrespondenceLanguageConsumer {
+class CorrespondenceLanguageConsumer implements CorrespondenceLanguageConsumerInterface {
 
 	/**
 	 * What dossiq writes in when nobody can say otherwise.

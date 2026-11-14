@@ -42,11 +42,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices;
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseLifecycleServiceInterface;
+use OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Lifecycle\TermExtensionRule;
+use OCA\Dossiq\Service\Support\RowList;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use Psr\Log\LoggerInterface;
@@ -57,7 +59,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class CaseLifecycleService {
+class CaseLifecycleService implements CaseLifecycleServiceInterface {
 
 	use TermExtensionRule;
 
@@ -419,23 +421,11 @@ class CaseLifecycleService {
 	 */
 	private function readJournal(array $case): array {
 		$raw = ($case[self::JOURNAL_FIELD] ?? '');
-		$decoded = $raw;
 		if (is_array($raw) === false) {
-			$decoded = json_decode((string)$raw, true);
+			$raw = (string)$raw;
 		}
 
-		if (is_array($decoded) === false) {
-			return [];
-		}
-
-		$entries = [];
-		foreach ($decoded as $entry) {
-			if (is_array($entry) === true) {
-				$entries[] = $entry;
-			}
-		}
-
-		return $entries;
+		return RowList::from(value: $raw);
 	}//end readJournal()
 
 	/**

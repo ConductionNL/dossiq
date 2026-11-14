@@ -31,13 +31,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
-use OCA\Dossiq\Service\CaseTermsService;
-use OCA\Dossiq\Service\CaseTypeSlugResolver;
-use OCA\Dossiq\Service\Intake\IntakeTermStart;
+use OCA\Dossiq\Kernel\Contracts\CaseTermsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeTermStartInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermResolutionInterface;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\Term\TermResolution;
-use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\Support\ReferencedUuid;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -53,18 +54,18 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param TermijnService $termService TermijnService.
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
-	 * @param CaseTypeSlugResolver $caseTypeSlugs Case-type uuid-to-slug resolver.
+	 * @param TermijnServiceInterface $termService TermijnService.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Schema id-to-slug resolver.
+	 * @param CaseTypeSlugResolverInterface $caseTypeSlugs Case-type uuid-to-slug resolver.
 	 * @param LoggerInterface $logger Logger.
-	 * @param CaseTermsService|null $caseTerms The clocks beside the statutory one: the
+	 * @param CaseTermsServiceInterface|null $caseTerms The clocks beside the statutory one: the
 	 *        planned end, the internal target, and the fixed closing date when the case
 	 *        type declares one instead of a lead time. Optional so a container that
 	 *        cannot build it leaves the statutory bind exactly as it was.
-	 * @param TermResolution|null $resolution The case type's own first-response term,
+	 * @param TermResolutionInterface|null $resolution The case type's own first-response term,
 	 *        which wins over the Awb default when one is declared. Optional for the
 	 *        same reason as the parameter above it.
-	 * @param IntakeTermStart|null $intake When the request arrived and when its clock
+	 * @param IntakeTermStartInterface|null $intake When the request arrived and when its clock
 	 *        starts, on the calendar the term counts on. The term starts there, not at
 	 *        the moment the case row was written (REQ-OTE-02). Optional so a build
 	 *        without it starts the term at creation exactly as before.
@@ -74,13 +75,13 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
 	 */
 	public function __construct(
-		private readonly TermijnService $termService,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
-		private readonly CaseTypeSlugResolver $caseTypeSlugs,
+		private readonly TermijnServiceInterface $termService,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
+		private readonly CaseTypeSlugResolverInterface $caseTypeSlugs,
 		private readonly LoggerInterface $logger,
-		private readonly ?CaseTermsService $caseTerms = null,
-		private readonly ?TermResolution $resolution = null,
-		private readonly ?IntakeTermStart $intake = null,
+		private readonly ?CaseTermsServiceInterface $caseTerms = null,
+		private readonly ?TermResolutionInterface $resolution = null,
+		private readonly ?IntakeTermStartInterface $intake = null,
 		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {
 	}//end __construct()
@@ -93,15 +94,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @return string The uuid, empty when there is none.
 	 */
 	private function referenced(mixed $value): string {
-		if (is_string($value) === true) {
-			return trim($value);
-		}
-
-		if (is_array($value) === true) {
-			return trim((string)($value['id'] ?? ''));
-		}
-
-		return '';
+		return ReferencedUuid::inReference(value: $value);
 	}//end referenced()
 
 	/**

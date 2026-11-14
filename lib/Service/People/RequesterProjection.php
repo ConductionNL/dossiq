@@ -33,9 +33,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\People;
 
-use OCA\Dossiq\Service\Support\TrustedRevealRead;
+use OCA\Dossiq\Kernel\Contracts\RequesterProjectionInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\TrustedRevealRead;
 use Throwable;
 
 /**
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/specs/initiator-display/spec.md
  */
-class RequesterProjection {
+class RequesterProjection implements RequesterProjectionInterface {
 
 	use SearchesObjects;
 

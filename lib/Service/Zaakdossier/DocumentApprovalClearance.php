@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentApprovalClearanceInterface;
 use OCA\Dossiq\Support\FleetAppId;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -52,7 +53,7 @@ use Throwable;
  *
  * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
-class DocumentApprovalClearance {
+class DocumentApprovalClearance implements DocumentApprovalClearanceInterface {
 
 	/**
 	 * The clearance answer for a document nobody routed, and for an instance

@@ -27,7 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetVerifierInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -35,19 +36,19 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
  *
  * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
  */
-class WooDeliveredSetVerifier {
+class WooDeliveredSetVerifier implements WooDeliveredSetVerifierInterface {
 
 	use SearchesObjects;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService       $settings  Bridge to OpenRegister.
+	 * @param SettingsServiceInterface       $settings  Bridge to OpenRegister.
 	 * @param WooDeliveredSetWriter $sets      The hash rule and the set schema.
 	 * @param WooCaseDocuments      $documents Reads a document with its file bytes.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 		private readonly WooDeliveredSetWriter $sets,
 		private readonly WooCaseDocuments $documents,
 	) {

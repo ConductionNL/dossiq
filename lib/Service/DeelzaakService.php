@@ -29,8 +29,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\DeelzaakServiceInterface;
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
 use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -39,9 +41,16 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
  */
-class DeelzaakService {
+class DeelzaakService implements DeelzaakServiceInterface {
 
 	use SearchesObjects;
+
+	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
 
 	/**
 	 * Constructor.
@@ -57,6 +66,7 @@ class DeelzaakService {
 		private readonly CaseObjectReader $caseReader,
 		private readonly SubCaseDeriver $deriver,
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -109,25 +119,12 @@ class DeelzaakService {
 			return [];
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+		return $this->rows->search(
+			schemaKey: 'case_schema',
 			filters: [
 				'parentCase' => $parentCaseUuid,
 				'_limit' => 200,
-			],
+			]
 		);
 	}//end listSubCases()
 

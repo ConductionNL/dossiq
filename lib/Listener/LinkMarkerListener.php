@@ -32,13 +32,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\ReadsEventObjects;
 use OCA\Dossiq\Service\Relation\LinkMarkerRule;
 use OCA\Dossiq\Service\Relation\LinkMarkerRuleReader;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Dossiq\Listener\Support\ReadsEventObjects;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -65,13 +65,13 @@ class LinkMarkerListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register, schema keys, rules and the object service.
+	 * @param SettingsServiceInterface $settingsService Register, schema keys, rules and the object service.
 	 * @param LoggerInterface $logger          Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -256,15 +256,9 @@ class LinkMarkerListener implements IEventListener {
 	 */
 	private function objectOf(Event $event): ?array {
 		foreach ($this->eventObjectValues(event: $event) as $value) {
-			if (is_array($value) === true) {
-				return $value;
-			}
-
-			if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
+			$row = $this->objectToArrayOrNull(value: $value);
+			if ($row !== null) {
+				return $row;
 			}
 		}
 

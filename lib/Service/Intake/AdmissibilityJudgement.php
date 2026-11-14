@@ -47,9 +47,11 @@ namespace OCA\Dossiq\Service\Intake;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\AdmissibilityJudgementInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Notification\ApplicantMessage;
+use OCA\Dossiq\Service\Support\StoredArray;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
@@ -60,7 +62,7 @@ use Throwable;
  *
  * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
-class AdmissibilityJudgement {
+class AdmissibilityJudgement implements AdmissibilityJudgementInterface {
 
 	/**
 	 * The case type property holding the declaration.
@@ -150,18 +152,7 @@ class AdmissibilityJudgement {
 	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
 	 */
 	public function declarationFor(array $caseType): array {
-		$declared = ($caseType[self::DECLARATION] ?? null);
-		if (is_string($declared) === true) {
-			$decoded = json_decode($declared, true);
-			$declared = [];
-			if (is_array($decoded) === true) {
-				$declared = $decoded;
-			}
-		}
-
-		if (is_array($declared) === false) {
-			$declared = [];
-		}
+		$declared = StoredArray::from(value: ($caseType[self::DECLARATION] ?? null));
 
 		$moment = trim((string)($declared['moment'] ?? ''));
 		if ($moment === '') {

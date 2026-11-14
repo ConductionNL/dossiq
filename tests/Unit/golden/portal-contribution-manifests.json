@@ -46,6 +46,10 @@
                     "receivedAt": "sentAt",
                     "readAt": "readByRecipientAt",
                     "attachments": "attachmentRefs"
+                },
+                "reply": {
+                    "action": "replyToSupplierMessage",
+                    "subjectFrom": "subject"
                 }
             },
             {
@@ -209,7 +213,51 @@
                 }
             }
         ],
-        "actions": [],
+        "actions": [
+            {
+                "id": "replyToSupplierMessage",
+                "type": "create",
+                "label": "Antwoorden",
+                "register": "dossiq",
+                "schema": "supplierMessage",
+                "scopeField": "supplierRef",
+                "fields": [
+                    "subject",
+                    "body",
+                    "attachmentRefs"
+                ],
+                "defaults": {
+                    "direction": "inbound"
+                },
+                "requiredFields": [
+                    "body"
+                ],
+                "fieldConfigs": {
+                    "subject": {
+                        "label": "Onderwerp"
+                    },
+                    "body": {
+                        "label": "Uw bericht",
+                        "size": "large"
+                    },
+                    "attachmentRefs": {
+                        "label": "Bijlagen",
+                        "type": "file",
+                        "multiple": true,
+                        "accept": [
+                            ".pdf",
+                            ".jpg",
+                            ".jpeg",
+                            ".png",
+                            ".doc",
+                            ".docx",
+                            ".odt"
+                        ],
+                        "maxSizeMb": 20
+                    }
+                }
+            }
+        ],
         "notifications": [
             "tenderPublished",
             "contractExpiring",
@@ -281,6 +329,10 @@
                 "label": "Berichten",
                 "group": "Opdrachten en facturen",
                 "blocks": [
+                    {
+                        "type": "action",
+                        "action": "replyToSupplierMessage"
+                    },
                     {
                         "type": "collection",
                         "collection": "messages"

@@ -30,8 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\Import\CaseRecordImport;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseRecordImportInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Throwable;
@@ -45,12 +45,12 @@ class RunUpgradeRecordImports implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseRecordImport $import   The generic record import.
-	 * @param SettingsService  $settings Whether OpenRegister is available.
+	 * @param CaseRecordImportInterface $import   The generic record import.
+	 * @param SettingsServiceInterface  $settings Whether OpenRegister is available.
 	 */
 	public function __construct(
-		private readonly CaseRecordImport $import,
-		private readonly SettingsService $settings,
+		private readonly CaseRecordImportInterface $import,
+		private readonly SettingsServiceInterface $settings,
 	) {
 	}//end __construct()
 

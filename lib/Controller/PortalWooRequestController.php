@@ -34,9 +34,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Portal\PortalAssertionVerifier;
-use OCA\Dossiq\Portal\PortalSubmissionLedger;
-use OCA\Dossiq\Woo\WooRequestIntake;
+use OCA\Dossiq\Kernel\Contracts\PortalAssertionVerifierInterface;
+use OCA\Dossiq\Kernel\Contracts\PortalSubmissionLedgerInterface;
+use OCA\Dossiq\Kernel\Contracts\WooRequestIntakeInterface;
 use OCA\Dossiq\Woo\WooRequestRefused;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -107,22 +107,22 @@ class PortalWooRequestController extends Controller {
 	 *
 	 * @param string                  $appName   The app name.
 	 * @param IRequest                $request   The request.
-	 * @param PortalAssertionVerifier $verifier  Verifies portaliq's assertion.
-	 * @param WooRequestIntake        $intake    The one Woo request creation path.
+	 * @param PortalAssertionVerifierInterface $verifier  Verifies portaliq's assertion.
+	 * @param WooRequestIntakeInterface        $intake    The one Woo request creation path.
 	 * @param IThrottler              $throttler Counts rejected assertions.
 	 * @param LoggerInterface         $logger    Logger.
 	 * @param IFactory|null           $l10n      Gives the translator a refusal is worded in.
-	 * @param PortalSubmissionLedger|null $ledger Makes a submission once (REQ-PSM-001); none when null.
+	 * @param PortalSubmissionLedgerInterface|null $ledger Makes a submission once (REQ-PSM-001); none when null.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalAssertionVerifier $verifier,
-		private readonly WooRequestIntake $intake,
+		private readonly PortalAssertionVerifierInterface $verifier,
+		private readonly WooRequestIntakeInterface $intake,
 		private readonly IThrottler $throttler,
 		private readonly LoggerInterface $logger,
 		private readonly ?IFactory $l10n = null,
-		private readonly ?PortalSubmissionLedger $ledger = null,
+		private readonly ?PortalSubmissionLedgerInterface $ledger = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -142,7 +142,7 @@ class PortalWooRequestController extends Controller {
 	#[AnonRateLimit(limit: 20, period: 60)]
 	#[BruteForceProtection(action: self::THROTTLE_ACTION)]
 	public function start(): JSONResponse {
-		$claims = $this->verifier->verify((string)$this->request->getHeader(PortalAssertionVerifier::HEADER));
+		$claims = $this->verifier->verify((string)$this->request->getHeader(PortalAssertionVerifierInterface::HEADER));
 		if ($claims === null) {
 			$this->registerRejectedAssertion();
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
@@ -270,7 +270,7 @@ class PortalWooRequestController extends Controller {
 			return '';
 		}
 
-		return $this->ledger->keyOf((string)$this->request->getHeader(PortalSubmissionLedger::HEADER));
+		return $this->ledger->keyOf((string)$this->request->getHeader(PortalSubmissionLedgerInterface::HEADER));
 	}//end submissionKey()
 
 	/**

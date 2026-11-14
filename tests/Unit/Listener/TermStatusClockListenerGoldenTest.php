@@ -94,6 +94,11 @@ class TermClockCreatedEvent extends Event {
  * Golden test for TermStatusClockListener::handle.
  *
  * @covers \OCA\Dossiq\Listener\TermStatusClockListener
+ * @uses \OCA\Dossiq\Listener\Support\EventObjectPayload
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
+ * @uses \OCA\Dossiq\Listener\DependentTermListener
+ * @uses \OCA\Dossiq\Service\Support\ReferencedUuid
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class TermStatusClockListenerGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

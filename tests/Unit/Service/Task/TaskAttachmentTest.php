@@ -35,6 +35,7 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Service\Task\TaskAttachmentService
+ * @uses \OCA\Dossiq\Service\Task\CaseTask
  */
 class TaskAttachmentTest extends TestCase {
 

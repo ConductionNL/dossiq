@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
@@ -43,6 +44,13 @@ class DocumentCaseIds {
 	use SearchesObjects;
 
 	/**
+	 * The register and the configured schemas, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService OpenRegister access and the configured register and schemas.
@@ -52,6 +60,7 @@ class DocumentCaseIds {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -133,17 +142,7 @@ class DocumentCaseIds {
 	 * @throws RuntimeException When OpenRegister or the register is not configured.
 	 */
 	private function requireRegister(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
+		return $this->dossierRegister->context();
 	}//end requireRegister()
 
 	/**

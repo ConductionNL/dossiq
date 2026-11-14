@@ -194,6 +194,21 @@ class TermHandlerNoticeTest extends TestCase {
 	}
 
 	/**
+	 * A definition whose `tellHandlerAt` is not a list of rungs (a mistyped
+	 * string, say) names no rung at all, rather than being read as one: the
+	 * handler is told on nothing and nothing goes out.
+	 *
+	 * @return void
+	 */
+	public function testADefinitionWhoseRungsAreNotAListTellsNobody(): void {
+		$instance = $this->term(tellHandlerAt: '7,0');
+
+		self::assertFalse($this->notice()->tell(instance: $instance, threshold: 7));
+		self::assertFalse($this->notice()->tell(instance: $instance, threshold: 0));
+		self::assertSame([], $this->sent);
+	}
+
+	/**
 	 * A case nobody holds has nobody to tell.
 	 *
 	 * @return void

@@ -33,6 +33,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\FrozenRecord\RecordSeal
  * @uses   \OCA\Dossiq\Service\FrozenRecord\FreezeDefinition
+ * @uses \OCA\Dossiq\Service\FrozenRecord\CanonicalValue
  */
 class RecordSealTest extends TestCase {
 

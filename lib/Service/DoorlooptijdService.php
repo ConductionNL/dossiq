@@ -35,20 +35,26 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\DoorlooptijdServiceInterface;
 use OCA\Dossiq\Service\Doorlooptijd\CaseEnricher;
 use OCA\Dossiq\Service\Doorlooptijd\CaseTypeThroughputCalculator;
 use OCA\Dossiq\Service\Doorlooptijd\DeadlineComplianceCalculator;
 use OCA\Dossiq\Service\Doorlooptijd\NormAverage;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 
 /**
  * Computes throughput-time metrics for the case dashboard.
  *
  * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
  */
-class DoorlooptijdService {
+class DoorlooptijdService implements DoorlooptijdServiceInterface {
 
-	use SearchesObjects;
+	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
 
 	/**
 	 * Constructor.
@@ -62,12 +68,13 @@ class DoorlooptijdService {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		SettingsService $settingsService,
 		private readonly CaseEnricher $caseEnricher,
 		private readonly DeadlineComplianceCalculator $complianceCalculator,
 		private readonly CaseTypeThroughputCalculator $throughputCalculator,
 		private readonly NormAverage $norms = new NormAverage(),
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -240,28 +247,12 @@ class DoorlooptijdService {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function loadCases(?string $caseTypeFilter): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
 		$filters = ['_limit' => 1000];
 		if ($caseTypeFilter !== null && $caseTypeFilter !== '') {
 			$filters['caseType'] = $caseTypeFilter;
 		}
 
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: $filters,
-		);
+		return $this->rows->search(schemaKey: 'case_schema', filters: $filters);
 	}//end loadCases()
 
 	/**
@@ -271,22 +262,6 @@ class DoorlooptijdService {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function loadCaseTypes(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_type_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['_limit' => 500],
-		);
+		return $this->rows->search(schemaKey: 'case_type_schema', filters: ['_limit' => 500]);
 	}//end loadCaseTypes()
 }//end class

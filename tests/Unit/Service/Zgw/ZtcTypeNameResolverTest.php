@@ -55,10 +55,11 @@ final class ZtcTypeNameResolverTest extends TestCase {
 	 *
 	 * @param \Closure|null $answer Answers the request parameters; null for no store.
 	 * @param array|null $mapping The informatieobjecttypen mapping.
+	 * @param LoggerInterface|null $logger The logger; a silent mock when null.
 	 *
 	 * @return ZtcTypeNameResolver
 	 */
-	private function resolver(?\Closure $answer, ?array $mapping = ['sourceRegister' => '5', 'sourceSchema' => '9']): ZtcTypeNameResolver {
+	private function resolver(?\Closure $answer, ?array $mapping = ['sourceRegister' => '5', 'sourceSchema' => '9'], ?LoggerInterface $logger = null): ZtcTypeNameResolver {
 		$store = null;
 		if ($answer !== null) {
 			$store = new class($answer, $this) {
@@ -81,7 +82,7 @@ final class ZtcTypeNameResolverTest extends TestCase {
 		$zgw->method('loadMappingConfig')->willReturnCallback(
 			static fn (string $api, string $resource): ?array => ($api === 'catalogi' && $resource === 'informatieobjecttypen') ? $mapping : null
 		);
-		$zgw->method('getLogger')->willReturn($this->createMock(LoggerInterface::class));
+		$zgw->method('getLogger')->willReturn($logger ?? $this->createMock(LoggerInterface::class));
 		$zgw->method('updateCachedBodyField')->willReturnCallback(
 			function (string $key, mixed $value): void {
 				$this->written[] = [$key, $value];
@@ -143,4 +144,47 @@ final class ZtcTypeNameResolverTest extends TestCase {
 
 		$this->assertSame([], $this->written);
 	}//end testEverythingElseLeavesTheBodyAlone()
+	/**
+	 * A hit on the name stops the lookup: no full-text search follows, and the row's own id wins over @self.
+	 *
+	 * @return void
+	 */
+	public function testANameHitIsNotSearchedAgainAndItsOwnIdWins(): void {
+		$answer = static fn (array $query): array => ['total' => 1, 'results' => [['id' => 'own-id', '@self' => ['id' => 'self-id']]]];
+
+		$this->resolver(answer: $answer)->resolveInformatieobjecttype(body: ['informatieobjecttype' => 'Brief']);
+
+		$this->assertSame([['name' => 'Brief', '_limit' => 1, '_rbac' => false]], $this->searches);
+		$this->assertSame([['informatieobjecttype', 'own-id']], $this->written);
+	}//end testANameHitIsNotSearchedAgainAndItsOwnIdWins()
+
+	/**
+	 * A hit without any id writes nothing back.
+	 *
+	 * @return void
+	 */
+	public function testAHitWithoutAnIdWritesNothing(): void {
+		$answer = static fn (array $query): array => ['total' => 1, 'results' => [['name' => 'Brief']]];
+
+		$this->resolver(answer: $answer)->resolveInformatieobjecttype(body: ['informatieobjecttype' => 'Brief']);
+
+		$this->assertSame([], $this->written);
+	}//end testAHitWithoutAnIdWritesNothing()
+
+	/**
+	 * A failed search is logged at debug level with its cause, and the body is left alone.
+	 *
+	 * @return void
+	 */
+	public function testAFailedSearchIsLoggedWithItsCause(): void {
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('debug')->with('ztc-010m: Failed to resolve IOT by omschrijving: index down');
+
+		$this->resolver(
+			answer: static fn (): never => throw new \RuntimeException('index down'),
+			logger: $logger
+		)->resolveInformatieobjecttype(body: ['informatieobjecttype' => 'Brief']);
+
+		$this->assertSame([], $this->written);
+	}//end testAFailedSearchIsLoggedWithItsCause()
 }//end class

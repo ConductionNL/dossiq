@@ -12874,7 +12874,8 @@
 				"requirement": [
 					"openspec/specs/case-types :: Status and result names are strong text, a status with its colour dot",
 					"openspec/specs/case-types :: The Statuses tab reads as the board",
-					"openspec/specs/case-types :: You give each status a colour and a list visibility (REQ-CT-19)"
+					"openspec/specs/case-types :: You give each status a colour and a list visibility (REQ-CT-19)",
+					"openspec/specs/admin-settings :: Status Type Management [MVP]"
 				],
 				"plan": [
 					"openspec/changes/case-type-status-field-lists-as-config",
@@ -13257,7 +13258,8 @@
 					"board": "DqZaakHistorie"
 				},
 				"requirement": [
-					"openspec/specs/case-history-surface :: Change history is a case-detail sidebar tab, not a standalone page"
+					"openspec/specs/case-history-surface :: Change history is a case-detail sidebar tab, not a standalone page",
+					"openregister:openspec/specs/content-versioning :: Every save operation MUST produce a new version"
 				]
 			},
 			"evidence": {
@@ -13299,7 +13301,10 @@
 				"owner": "ConductionNL/dossiq",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
-					"board": "DqZaakMeer"
+					"board": [
+						"DqZaakMeer",
+						"DqZaakDialogen"
+					]
 				},
 				"spec": "openspec/specs/case-management",
 				"requirement": "openspec/specs/case-management :: A held case cannot be deleted, and you are told why (REQ-CM-35)",
@@ -13482,7 +13487,7 @@
 						"number": 604
 					}
 				],
-				"evidence": "register.d/50-zaakportaal.json#portaalVerzoek",
+				"evidence": "src/manifest.json:3564 #CaseDetail integration portaliq-change-proposal-queue; lib/Settings/register.d/77-portaliq-change-proposals.json; register.d/50-zaakportaal.json#portaalVerzoek",
 				"readOn": "2026-09-26",
 				"owner": "ConductionNL/portaliq",
 				"screen": {
@@ -13501,7 +13506,7 @@
 				"zac": "zac@1.0.316 no proposal queue on case data; the productaanvragen inbox holds new submissions only | round 3 drive: procest/zac/round3/rows/rows-1-3.md:42 \"no | No proposal or approval queue on case data. Nearest is the inbox product request list\"",
 				"openzaak": "openzaak@1.30.0 the Zaken API writes directly; no pending-change model"
 			},
-			"note": "Re-rated partial to no on 2026-09-26: portaliq lib/Controller/ProposalController.php and appinfo/routes.php:242-251 implement the change-proposal queue, but nothing calls it: no portal-SPA propose button, no admin page, no accept or reject UI, and no sibling app calls /api/proposals (portaliq matrix row sib-dossiq-2-21). register.d/50-zaakportaal.json#portaalVerzoek is dossiq's register entry, not a caller of the queue."
+			"note": "Re-rated partial to no on 2026-09-26: portaliq lib/Controller/ProposalController.php and appinfo/routes.php:242-251 implement the change-proposal queue, but nothing calls it: no portal-SPA propose button, no admin page, no accept or reject UI, and no sibling app calls /api/proposals (portaliq matrix row sib-dossiq-2-21). register.d/50-zaakportaal.json#portaalVerzoek is dossiq's register entry, not a caller of the queue. Re-read 2026-11-12: dossiq now places portaliq-change-proposal-queue on the case page (src/manifest.json:3564, lib/Settings/register.d/77-portaliq-change-proposals.json), so the queue has a page; built stands."
 		},
 		{
 			"id": "2.22",
@@ -13628,7 +13633,10 @@
 				"owner": "ConductionNL/dossiq",
 				"screen": {
 					"canvas": "design-system",
-					"board": "DqNieuweZaak"
+					"board": [
+						"DqNieuweZaak",
+						"DqNieuweZaakDubbel"
+					]
 				},
 				"requirement": [
 					"openspec/specs/friendly-case-create-form :: The create form warns about likely duplicates (REQ-FCF-10)"
@@ -14013,7 +14021,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/Transitions/ChecklistGuard.php; procest/_round4/discovery/casetype-configurability.md; StatusTypeForm.vue:118",
+				"evidence": "lib/Service/Transitions/ChecklistGuard.php; procest/_round4/discovery/casetype-configurability.md; src/manifest.json#CaseTypeDetail/case-type-statuses-editor (the checklist per status); lib/Service/Transitions/StatusChecklist.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
@@ -14494,10 +14502,11 @@
 			"feature": "tasks-and-work-queues",
 			"featureConfidence": "high",
 			"built": {
-				"state": "specified",
+				"state": "built",
+				"evidence": "src/manifest.json:7811 #TaskDetail form dialog draftField isDraft + draftAppId dossiq (CnFormDialog keeps a draft across close and reload, saves with required fields empty); same on #CaseDetail editTitle dialog at src/manifest.json:3435",
+				"reachedOn": "#TaskDetail task form dialog, via a case's task list",
 				"owner": "ConductionNL/nextcloud-vue",
 				"change": "nextcloud-vue/form-dialog-autosave",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/nextcloud-vue openspec/changes/form-dialog-autosave (nextcloud-vue lane).",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqTaak"
@@ -14695,7 +14704,7 @@
 			"feature": "tasks-and-work-queues",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "portaliq/partner-tasks-in-the-portal",
 				"prs": [
 					{
@@ -14704,7 +14713,7 @@
 						"mergedAt": "2026-09-18T22:45:00Z"
 					}
 				],
-				"evidence": "lib/Service/Sharing/CaseAccessLinkService.php and src/dialogs/CreateAccessLinkDialog.vue (a read-and-comment link over the case, from the case Sharing tab src/views/cases/components/CaseSharingTab.vue); lib/Service/Consultation/ExternalConsultationLinkService.php (the partner's answer arrives as a comment, appinfo/routes.php:778-779); dossiq#2888 b37d3b72b",
+				"evidence": "Not built: portaliq's ask-partner (REQ-PTP-002) has no caller in dossiq; grep for ask-partner and portaliq-partner over src/manifest.json and lib/Settings/register.d finds nothing, so a handler cannot raise a partner task from the case. Was: lib/Service/Sharing/CaseAccessLinkService.php and src/dialogs/CreateAccessLinkDialog.vue (a read-and-comment link over the case, from the case Sharing tab src/views/cases/components/CaseSharingTab.vue); lib/Service/Consultation/ExternalConsultationLinkService.php (the partner's answer arrives as a comment, appinfo/routes.php:778-779); dossiq#2888 b37d3b72b",
 				"readOn": "2026-09-26",
 				"owner": "ConductionNL/portaliq",
 				"screen": {
@@ -14844,7 +14853,7 @@
 			"providerHow": "note-cites-dossiq-code",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/WorkQueueService.php:53-62,137-165,270 orders the queue by urgency and deadline (appinfo/routes.php:379-380); MyWorkCards.vue sorts by urgency and WorkloadSummaryBar shows the team load",
+				"evidence": "lib/Service/WorkQueueService.php:53-62,137-165,270 orders the queue by urgency and deadline (appinfo/routes.php:379-380); src/manifest.json#Cases view my-work sorts by urgency through GET /api/work-queue (sortOption urgency) and its toolbar shows the team's workload chips",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/werkvoorraad-intelligent-queue",
 				"screen": {
@@ -14993,7 +15002,10 @@
 				"owner": "ConductionNL/dossiq",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
-					"board": "DqZaakDocumenten"
+					"board": [
+						"DqZaakDocumenten",
+						"DqDocumentVersies"
+					]
 				},
 				"requirement": [
 					"openspec/specs/document-zaakdossier :: REQ-ZAK-006 Version history MUST be surfaced via Nextcloud Files versions API",
@@ -15037,7 +15049,8 @@
 					"board": "DqDocumentGenereren"
 				},
 				"requirement": [
-					"openspec/specs/vth-beschikking-generation :: Template-based beschikking generation"
+					"openspec/specs/vth-beschikking-generation :: Template-based beschikking generation",
+					"openspec/specs/generate-fills-per-template :: The generate dialog shows what the chosen template fills in"
 				],
 				"plan": "openspec/changes/documents-on-the-case"
 			},
@@ -15522,7 +15535,10 @@
 				"owner": "ConductionNL/openregister",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
-					"board": "DqKop"
+					"board": [
+						"DqKop",
+						"DqZoekresultaten"
+					]
 				},
 				"requirement": "openregister:openspec/specs/unified-search-provider :: The unified-search provider MUST search extracted file text"
 			},
@@ -15673,7 +15689,7 @@
 			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/WooPublicationService.php; lib/Service/PublicationService.php Corrections round 8 (2026-09-28), dossiq#3162: publish writes wooPublication onto the decision at lib/Service/WooPublicationService.php:255-261, but the decision schema at lib/Settings/dossiq_register.json:4010 declares none of the Woo fields and every dossiq schema is magic-mapped (lib/Service/Settings/RegisterStorageDeclaration.php:114), so the reference is dropped on save and withdraw at lib/Service/WooPublicationService.php:406-408 finds no publication, at c8ac742.",
+				"evidence": "lib/Service/WooPublicationService.php; lib/Service/PublicationService.php; the decision schema declares wooPublication (lib/Settings/dossiq_register.json:4960), so publish keeps the reference and withdraw finds the publication (lib/Service/WooPublicationService.php:497-508). Corrections round 8 (2026-09-28, dossiq#3162) found the reference dropped on save; re-read 2026-11-12: fixed.",
 				"owner": "ConductionNL/opencatalogi",
 				"note": "OpenSpec pass 2026-09-27: matrix corrected (opencatalogi lane: existing): rated yes with built.state none. lib/Service/WooPublicationService.php and lib/Service/PublicationService.php read at dossiq 96b8ef8f (corrected 2026-09-28). Corrections round 8 (2026-09-28): the publication reference is not stored because the decision schema does not declare it, so a published Woo decision cannot be withdrawn and publishing again creates a second publication (live check in woo-publish-decision-from-the-case task 1.1), dossiq#3162; rating kept because the publish itself still reaches OpenCatalogi.",
 				"spec": "openspec/specs/woo-publication-via-opencatalogi",
@@ -16236,7 +16252,10 @@
 				],
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
-					"board": "DqZaak"
+					"board": [
+						"DqZaak",
+						"DqZaakLocatie"
+					]
 				},
 				"requirement": [
 					"openspec/specs/case-management :: The case page lists its objects (REQ-CM-28)",
@@ -16500,7 +16519,8 @@
 				},
 				"requirement": [
 					"openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption :: A contact moment logged on a case is appended to pipelinq's record (REQ-PLQ-02)",
-					"openspec/changes/contacts-domain/specs/kcc-klantcontact-integratie :: A contact moment names its contact and you log one from the contact page (REQ-KCC-011)"
+					"openspec/changes/contacts-domain/specs/kcc-klantcontact-integratie :: A contact moment names its contact and you log one from the contact page (REQ-KCC-011)",
+					"openspec/specs/kcc-werkplek-zaaksysteem-bridge :: You log a contact from the case (REQ-KWZ-13)"
 				],
 				"plan": [
 					"openspec/changes/contact-log-skips-automatic",
@@ -18295,7 +18315,7 @@
 						"mergedAt": "2026-09-18T18:15:00Z"
 					}
 				],
-				"evidence": "CaseTypeFieldFilters.vue; dossiq#3085 87ec6952",
+				"evidence": "src/utils/selectionScope.js readListFilters over propertyDefinition.filterable (tests/vitest/caseTypeFieldFilters.spec.js); dossiq#3085 87ec6952",
 				"owner": "ConductionNL/openregister",
 				"spec": "openspec/specs/case-search-via-or-unified-search",
 				"screen": {
@@ -18472,7 +18492,10 @@
 				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/content-search-index (openregister lane).",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
-					"board": "DqKop"
+					"board": [
+						"DqKop",
+						"DqZoekresultaten"
+					]
 				},
 				"requirement": "openregister:openspec/changes/content-search-index/specs/unified-search-provider :: The provider searches file content beside object data"
 			},
@@ -19503,7 +19526,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "dossiq_register.json#propertyDefinition; PropertiesTab.vue",
+				"evidence": "dossiq_register.json#propertyDefinition; src/manifest.json#CaseTypeDetail/case-type-fields-editor",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/property-definition-management",
@@ -20038,7 +20061,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "src/views/settings/StufEndpoints.vue; ZgwMappingSettings.vue; KccIntegrationSettings.vue; tabs/StoreSettingsTab.vue; tabs/FinancialIntegrationTab.vue",
+				"evidence": "src/views/settings/StufEndpoints.vue; ZgwMappingSettings.vue; src/views/settings/adminFields.js (kcc-scope, the store registry with its write-only token, the payment callback secret)",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/admin-settings",
@@ -22113,7 +22136,10 @@
 				],
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
-					"board": "DqZaakBetrokkenen"
+					"board": [
+						"DqZaakBetrokkenen",
+						"DqZaakDocumenten"
+					]
 				},
 				"requirement": [
 					"openspec/specs/zaakportaal-mijngemeente :: Document access control — only citizen-addressable documents"

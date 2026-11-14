@@ -74,7 +74,7 @@ final class CustodyMove {
 	 *
 	 * @var string
 	 */
-	public string $at = '';
+	public string $movedAt = '';
 
 	/**
 	 * The open holding this move writes, every text value trimmed.

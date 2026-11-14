@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\BezwaarListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\BezwaarListenerRegistrar;
 use OCA\Dossiq\Listener\DeliberationStartGuard;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
@@ -46,7 +46,7 @@ use Psr\Log\LoggerInterface;
  * Writes and creates of an advice request, through the listeners the app registers on OpenRegister's pre-save events.
  *
  * @covers \OCA\Dossiq\Listener\DeliberationStartGuard
- * @covers \OCA\Dossiq\AppInfo\Registrar\BezwaarListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\BezwaarListenerRegistrar
  *
  * @uses \OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
@@ -54,6 +54,9 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker
  * @uses \OCA\Dossiq\Service\InternalWriteMarker
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
+ * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarEntryCommand
  */
 class DeliberationStartGuardTest extends TestCase {
 	use MakesBezwaarAuditTrail;

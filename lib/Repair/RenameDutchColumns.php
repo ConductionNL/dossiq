@@ -53,6 +53,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Repair\Support\ColumnMove;
+use OCA\Dossiq\Repair\Support\MovesShardColumns;
 use OCA\Dossiq\Repair\Support\ReadsRegisterShards;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;
@@ -68,6 +70,7 @@ use Psr\Log\LoggerInterface;
  */
 class RenameDutchColumns implements IRepairStep {
 	use ReadsRegisterShards;
+	use MovesShardColumns;
 
 	/**
 	 * The name every warning starts with.
@@ -608,54 +611,34 @@ class RenameDutchColumns implements IRepairStep {
 			return;
 		}
 
-		$renamed = 0;
-		$copied = 0;
-		$refused = 0;
-
-		foreach ($tables as $table) {
-			$columns = $this->columnsOf(table: $table);
-			$qTable = $this->quote(identifier: $table);
-
-			foreach (self::COLUMN_MAP as $old => $new) {
-				if (in_array($old, $columns, true) === false) {
-					continue;
-				}
-
-				if ($this->hasCollision(columns: $columns, target: $new) === true) {
-					$this->logger->warning(
-						'RenameDutchColumns: two sources target one destination; migrating neither.',
-						['table' => $table, 'source' => $old, 'destination' => $new]
-					);
-					$refused++;
-					continue;
-				}
-
-				if (in_array($new, $columns, true) === false) {
-					$sql = 'ALTER TABLE ' . $qTable . ' RENAME COLUMN '
-						. $this->quote(identifier: $old) . ' TO ' . $this->quote(identifier: $new);
-					if ($this->exec(sql: $sql) === true) {
-						$renamed++;
-					}
-
-					continue;
-				}
-
-				$qNew = $this->quote(identifier: $new);
-				$qOld = $this->quote(identifier: $old);
-				$sql = 'UPDATE ' . $qTable . ' SET ' . $qNew . ' = ' . $qOld
-					. ' WHERE ' . $qNew . ' IS NULL AND ' . $qOld . ' IS NOT NULL';
-				if ($this->exec(sql: $sql) === true) {
-					$copied++;
-				}
-			}//end foreach
-		}//end foreach
-
+		$tally = $this->moveColumnsOfAll(tables: $tables);
 		$output->info(
-			'RenameDutchColumns: ' . $renamed . ' renamed, ' . $copied . ' back-filled, '
-			. $refused . ' refused, across ' . count($tables) . ' shard table(s).'
+			'RenameDutchColumns: ' . $tally->renamed . ' renamed, ' . $tally->copied . ' back-filled, '
+			. $tally->refused . ' refused, across ' . count($tables) . ' shard table(s).'
 		);
 
 	}//end run()
+
+	/**
+	 * Whether a move is refused because two sources target one destination,
+	 * reporting it when it is.
+	 *
+	 * @param string     $table The shard table.
+	 * @param ColumnMove $move  The move.
+	 *
+	 * @return bool True when the move is left alone.
+	 */
+	protected function refusesMove(string $table, ColumnMove $move): bool {
+		if ($this->hasCollision(columns: $move->columns, target: $move->new) === false) {
+			return false;
+		}
+
+		$this->logger->warning(
+			'RenameDutchColumns: two sources target one destination; migrating neither.',
+			['table' => $table, 'source' => $move->old, 'destination' => $move->new]
+		);
+		return true;
+	}//end refusesMove()
 
 	/**
 	 * Whether another mapped source already targets the same destination here.

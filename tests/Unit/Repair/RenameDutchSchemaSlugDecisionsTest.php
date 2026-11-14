@@ -36,6 +36,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Repair\RenameDutchSchemaSlugDecisions
  * @covers \OCA\Dossiq\Repair\RenameDutchSchemaSlugs
+ * @uses \OCA\Dossiq\Repair\SlugRenamePlan
  *
  * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
  *  migration. Pointing this at an existing spec would report conformance to a

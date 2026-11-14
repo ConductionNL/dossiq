@@ -39,11 +39,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\PhaseTermServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\PhaseTermService;
 use OCA\Dossiq\Service\TermKind;
-use OCA\Dossiq\Service\TermijnService;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -66,15 +66,15 @@ class CasePhaseTermListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param PhaseTermService $phases Starting and stopping phase clocks.
-	 * @param TermijnService $termService The term instances on a case.
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
+	 * @param PhaseTermServiceInterface $phases Starting and stopping phase clocks.
+	 * @param TermijnServiceInterface $termService The term instances on a case.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Schema id-to-slug resolver.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly PhaseTermService $phases,
-		private readonly TermijnService $termService,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly PhaseTermServiceInterface $phases,
+		private readonly TermijnServiceInterface $termService,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

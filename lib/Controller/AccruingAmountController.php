@@ -29,11 +29,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Money\AccruingAmountSettler;
-use OCA\Dossiq\Service\Money\AmountObjectionService;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
+use OCA\Dossiq\Kernel\Contracts\AccruingAmountSettlerInterface;
+use OCA\Dossiq\Kernel\Contracts\AmountObjectionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\OwningCaseResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -50,27 +51,29 @@ use Throwable;
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class AccruingAmountController extends Controller {
+	use ReadsJsonRequests;
+
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param AccruingAmountSettler $settler Stops the stored accrual and locks the amount.
-	 * @param AmountObjectionService $objection Objection service.
-	 * @param SettingsService $settings Settings.
+	 * @param AccruingAmountSettlerInterface $settler Stops the stored accrual and locks the amount.
+	 * @param AmountObjectionServiceInterface $objection Objection service.
+	 * @param SettingsServiceInterface $settings Settings.
 	 * @param IUserSession $userSession User session.
-	 * @param CaseAccessGuard $caseAccess Per-case authorization guard.
-	 * @param OwningCaseResolver $owningCase Resolves a berekening's owning case.
+	 * @param CaseAccessGuardInterface $caseAccess Per-case authorization guard.
+	 * @param OwningCaseResolverInterface $owningCase Resolves a berekening's owning case.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly AccruingAmountSettler $settler,
-		private readonly AmountObjectionService $objection,
-		private readonly SettingsService $settings,
+		private readonly AccruingAmountSettlerInterface $settler,
+		private readonly AmountObjectionServiceInterface $objection,
+		private readonly SettingsServiceInterface $settings,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccess,
-		private readonly OwningCaseResolver $owningCase,
+		private readonly CaseAccessGuardInterface $caseAccess,
+		private readonly OwningCaseResolverInterface $owningCase,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -375,21 +378,4 @@ class AccruingAmountController extends Controller {
 	public function reconsiderLegacyPath(string $id): JSONResponse {
 		return $this->reconsider(id: $id);
 	}//end reconsiderLegacyPath()
-
-	/**
-	 * Decode the JSON request body into an associative array.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function jsonBody(): array {
-		// OCP\IRequest::getContent() is protected on the concrete OC
-		// request; read raw payload from php://input instead.
-		$raw = (string)file_get_contents('php://input');
-		$body = json_decode($raw, true);
-		if (is_array($body) === true) {
-			return $body;
-		}
-
-		return [];
-	}//end jsonBody()
 }//end class

@@ -13,12 +13,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentProjectionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -64,16 +64,16 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	private const PAGE_SIZE = 200;
 
 	/**
-	 * @param SettingsService $settingsService OpenRegister access and the configured register.
-	 * @param DocumentRecordStore $store Records and joins.
-	 * @param DocumentProjectionService $projection The move itself.
+	 * @param SettingsServiceInterface $settingsService OpenRegister access and the configured register.
+	 * @param DocumentRecordStoreInterface $store Records and joins.
+	 * @param DocumentProjectionServiceInterface $projection The move itself.
 	 * @param IAppConfig $appConfig The version gate.
 	 * @param LoggerInterface $logger Where each skipped record is named.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly DocumentRecordStore $store,
-		private readonly DocumentProjectionService $projection,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly DocumentRecordStoreInterface $store,
+		private readonly DocumentProjectionServiceInterface $projection,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {
@@ -100,7 +100,7 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	 * @spec openspec/specs/document-projection/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
 			return;
 		}
 
@@ -165,7 +165,7 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 			$page++;
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::DONE_VERSION);
 		$output->info(
 			'Dossiq documents: moved ' . $moved . ' file(s) into their case, left ' . $skipped
 			. ' already home or without a case, ' . $missing . ' named in the log.'
@@ -196,7 +196,7 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 		if ($caseId === '') {
 			$this->logger->warning(
 				'Dossiq documents: ' . $recordId . ' (' . $fileName . ') is joined to no case; its file stays in its own folder',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 
 			return 'missing';
@@ -211,7 +211,7 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq documents: ' . $recordId . ' (' . $fileName . ') could not move into case ' . $caseId . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'exception' => $e],
+				['app' => AppIdentity::APP_ID, 'exception' => $e],
 			);
 
 			return 'missing';

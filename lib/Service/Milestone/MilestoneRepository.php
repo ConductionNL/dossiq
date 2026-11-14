@@ -35,7 +35,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Milestone;
 
+use OCA\Dossiq\Kernel\Contracts\MilestoneRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
@@ -46,9 +48,16 @@ use RuntimeException;
  *
  * @spec openspec/specs/milestone-tracking/spec.md
  */
-class MilestoneRepository {
+class MilestoneRepository implements MilestoneRepositoryInterface {
 
 	use SearchesObjects;
+
+	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
 
 	/**
 	 * Constructor.
@@ -58,6 +67,7 @@ class MilestoneRepository {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -162,23 +172,9 @@ class MilestoneRepository {
 	 * @spec openspec/specs/milestone-tracking/spec.md
 	 */
 	public function findRecords(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('milestone_record_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['case' => $caseId, '_limit' => 100],
+		return $this->rows->search(
+			schemaKey: 'milestone_record_schema',
+			filters: ['case' => $caseId, '_limit' => 100]
 		);
 	}//end findRecords()
 }//end class

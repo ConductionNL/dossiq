@@ -38,6 +38,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\BulkAction\SetCaseAttributeAction
  * @covers \OCA\Dossiq\Service\Support\CaseAssigneeWriter
+ * @uses \OCA\Dossiq\Service\Support\ReassignmentBatch
  */
 final class UpdateObjectCallShapeTest extends TestCase {
 

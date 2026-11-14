@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\RecordTemplate;
 
+use OCA\Dossiq\Kernel\Contracts\RecordTemplateReaderInterface;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/record-template-start/spec.md#requirement-a-named-record-template-is-read-as-the-caller-req-rts-001
  */
-class RecordTemplateReader {
+class RecordTemplateReader implements RecordTemplateReaderInterface {
 
 	/**
 	 * OpenRegister's template service, resolved by name: an optional runtime dependency.

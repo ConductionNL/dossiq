@@ -26,18 +26,21 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Service\Support\CallerIdentity;
+use OCA\Dossiq\Service\Zgw\ResourceRoute;
+use OCA\Dossiq\Service\Zgw\ResourceWrite;
+use OCA\Dossiq\Service\Zgw\RuleFlags;
+use OCA\Dossiq\Service\Zgw\StoreFailureAnswer;
+use OCA\Dossiq\Service\Zgw\ZgwAuditedResource;
+use OCA\Dossiq\Service\Zgw\ZgwInboundMapping;
+use OCA\Dossiq\Service\Zgw\ZgwOutboundMapping;
+use OCA\Dossiq\Service\Zgw\ZgwParentStateResolver;
+use OCA\Dossiq\Service\Zgw\ZgwPatchMerger;
 use OCA\OpenRegister\Db\Mapping;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use OCA\Dossiq\Service\Zgw\ZgwParentStateResolver;
-use OCA\Dossiq\Service\Zgw\StoreFailureAnswer;
-use OCA\Dossiq\Service\Zgw\ZgwPatchMerger;
-use OCA\Dossiq\Service\Zgw\ResourceRoute;
-use OCA\Dossiq\Service\Zgw\ResourceWrite;
-use OCA\Dossiq\Service\Zgw\RuleFlags;
-use OCA\Dossiq\Service\Zgw\ZgwAuditedResource;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -56,7 +59,25 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
-class ZgwService {
+class ZgwService implements ZgwServiceInterface {
+
+	/**
+	 * The fields an inbound mapping drops when they come back empty, unless the mapping names its own.
+	 *
+	 * @var array<int, string>
+	 */
+	private const INBOUND_NULLABLE = [
+		'endDate',
+		'plannedEndDate',
+		'deadline',
+		'archiveNomination',
+		'archiveActionDate',
+		'paymentIndication',
+		'lastPaymentDate',
+		'communicationChannel',
+		'archiveStatus',
+		'parentCase',
+	];
 
 	/**
 	 * OpenRegister audit trail actions by the ZGW actie they map to.
@@ -89,53 +110,6 @@ class ZgwService {
 		'list' => 'Objecten opgevraagd',
 		'retrieve' => 'Object opgevraagd',
 	];
-	/**
-	 * Map of ZGW API + resource to the config key suffix used in Dossiq.
-	 *
-	 * EVERY VALUE HERE IS A MAPPING KEY, NOT A SCHEMA NAME. It is the suffix of
-	 * the `zgw_mapping_<key>` appconfig entry that `LoadDefaultZgwMappings`
-	 * writes, so a value this repair step never writes resolves to no mapping
-	 * at all and the endpoint answers 404 "No ZGW mapping configured".
-	 *
-	 * Two values used to be schema names instead: `zaken/zaken` said `case` and
-	 * `documenten/verzendingen` said `dispatch`, while the repair step writes
-	 * `zgw_mapping_zaak` and `zgw_mapping_verzending`. Nothing compared the two
-	 * lists, so the whole ZRC zaken surface — the largest folder in both VNG
-	 * contract collections — 404ed on every request and took its setUp cascade
-	 * with it. ZgwResourceMapConsistencyTest now holds the two sides together.
-	 *
-	 * Requests per minute a ZGW consumer may spend on a plain read.
-	 *
-	 * The ZGW APIs are machine to machine. Nextcloud sees a JWT-authenticated
-	 * consumer as anonymous, so `#[AnonRateLimit]` is the only throttle on
-	 * them, and it buckets by remote address: behind a municipal reverse proxy
-	 * every consumer shares one bucket.
-	 *
-	 * The old ceilings were 120 reads and 30 writes a minute. Measured on this
-	 * tree, the two VNG contract collections peak at 180 writes and 35 reads
-	 * inside one 60 second window, so the write tier was exceeded four times
-	 * over by an ordinary conformance run. 133 of 646 business-rules requests
-	 * came back as a bare 429, and a probe of 45 posts to one endpoint answered
-	 * 30 times and then 429 fifteen times, exactly at the declared limit.
-	 *
-	 * These numbers keep a real ceiling, 20 reads and 10 writes a second, while
-	 * admitting the traffic a single integration actually makes.
-	 *
-	 * PER-CONSUMER KEYING IS THE REAL ANSWER and this is not it. `AnonRateLimit`
-	 * cannot key on the JWT client_id, so one noisy consumer still spends the
-	 * budget of every consumer sharing its address. Tracked in #2460.
-	 */
-	public const RATE_LIMIT_READ = 1200;
-
-	/**
-	 * Requests per minute a ZGW consumer may spend on a write.
-	 *
-	 * Also covers the two reads that cost like a write: `zaken/_zoek` runs a
-	 * full search, and the document download streams a file.
-	 *
-	 * See {@see self::RATE_LIMIT_READ} for the measurement behind both numbers.
-	 */
-	public const RATE_LIMIT_WRITE = 600;
 
 	/**
 	 * @var array<string, array<string, string>>
@@ -538,39 +512,88 @@ class ZgwService {
 		array $mappingConfig,
 		string $baseUrl,
 	): array {
-		$objectData['_baseUrl'] = $baseUrl;
-		$objectData['_valueMappings'] = $mappingConfig['valueMapping'] ?? [];
+		$outbound = new ZgwOutboundMapping(mapping: $mapping, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
+
+		return $this->mappedToZgw(objectData: $objectData, outbound: $outbound);
+	}//end applyOutboundMapping()
+
+	/**
+	 * Map a stored object to its ZGW shape, as applyOutboundMapping() does.
+	 *
+	 * @param array              $objectData The English-language object data
+	 * @param ZgwOutboundMapping $outbound   The mapping entity, configuration and collection URL
+	 *
+	 * @return array The mapped Dutch-language data
+	 */
+	private function mappedToZgw(array $objectData, ZgwOutboundMapping $outbound): array {
+		$input = $this->outboundInput(objectData: $objectData, outbound: $outbound);
+		$mapped = $this->mappingService->executeMapping(
+			mapping: $outbound->mapping,
+			input: $input
+		);
+		$mapped = $this->nullEmptyFields(mapped: $mapped, fields: ($outbound->mappingConfig['nullableFields'] ?? []));
+
+		// Decision 171: the case holds a slug, a zaak answers with a URL.
+		if (($outbound->mappingConfig['zgwResource'] ?? '') === 'zaak') {
+			$mapped = $this->channels()->outbound(case: $input, mapped: $mapped);
+		}
+
+		return $mapped;
+	}//end mappedToZgw()
+
+	/**
+	 * The object as the outbound mapping reads it: the markers it maps from.
+	 *
+	 * @param array              $objectData The English-language object data
+	 * @param ZgwOutboundMapping $outbound   The mapping configuration and collection URL
+	 *
+	 * @return array The object with `_baseUrl`, `_valueMappings`, `_uuid`, `_created`, `_updated` and, for a document, `_downloadUrl`
+	 */
+	private function outboundInput(array $objectData, ZgwOutboundMapping $outbound): array {
+		$objectData['_baseUrl'] = $outbound->baseUrl;
+		$objectData['_valueMappings'] = $outbound->mappingConfig['valueMapping'] ?? [];
+		$objectData = $this->withSelfMarkers(objectData: $objectData);
+
+		if (($outbound->mappingConfig['zgwResource'] ?? '') === 'enkelvoudiginformatieobject' && $objectData['_uuid'] !== '') {
+			$objectData['_downloadUrl'] = $outbound->baseUrl . '/' . $objectData['_uuid'] . '/download';
+		}
+
+		return $objectData;
+	}//end outboundInput()
+
+	/**
+	 * The object with its uuid and its created and updated moments, from the object or its @self.
+	 *
+	 * @param array $objectData The object data
+	 *
+	 * @return array The object with `_uuid`, `_created` and `_updated`
+	 */
+	private function withSelfMarkers(array $objectData): array {
 		$selfMeta = $objectData['@self'] ?? [];
 		$objectData['_uuid'] = $objectData['id'] ?? ($selfMeta['id'] ?? '');
 		$objectData['_created'] = $selfMeta['created'] ?? '';
 		$objectData['_updated'] = $selfMeta['updated'] ?? '';
 
-		$zgwResource = $mappingConfig['zgwResource'] ?? '';
-		if ($zgwResource === 'enkelvoudiginformatieobject'
-			&& $objectData['_uuid'] !== ''
-		) {
-			$objectData['_downloadUrl'] = $baseUrl . '/' . $objectData['_uuid'] . '/download';
-		}
+		return $objectData;
+	}//end withSelfMarkers()
 
-		$mapped = $this->mappingService->executeMapping(
-			mapping: $mapping,
-			input: $objectData
-		);
-
-		$nullableFields = $mappingConfig['nullableFields'] ?? [];
-		foreach ($nullableFields as $field) {
+	/**
+	 * The mapped object with these fields null where the mapping left them empty.
+	 *
+	 * @param array             $mapped The mapped data
+	 * @param array<int, mixed> $fields The nullable fields
+	 *
+	 * @return array The mapped data
+	 */
+	private function nullEmptyFields(array $mapped, array $fields): array {
+		foreach ($fields as $field) {
 			if (array_key_exists($field, $mapped) === true && $mapped[$field] === '') {
 				$mapped[$field] = null;
 			}
 		}
 
-		// Decision 171: the case holds a slug, a zaak answers with a URL.
-		if ($zgwResource === 'zaak') {
-			$mapped = $this->channels()->outbound(case: $objectData, mapped: $mapped);
-		}
-
 		return $mapped;
-	}//end applyOutboundMapping()
+	}//end nullEmptyFields()
 
 	/**
 	 * Apply inbound mapping (Dutch to English) to request data.
@@ -588,42 +611,56 @@ class ZgwService {
 		object $mapping,
 		array $mappingConfig,
 	): array {
-		$body['_valueMappings'] = $mappingConfig['valueMapping'] ?? [];
+		return $this->mappedToEnglish(body: $body, inbound: new ZgwInboundMapping(mapping: $mapping, mappingConfig: $mappingConfig));
+	}//end applyInboundMapping()
+
+	/**
+	 * Map a Dutch request body to English, as applyInboundMapping() does.
+	 *
+	 * @param array             $body    The Dutch-language request body
+	 * @param ZgwInboundMapping $inbound The mapping entity and configuration
+	 *
+	 * @return array The mapped English-language data
+	 */
+	private function mappedToEnglish(array $body, ZgwInboundMapping $inbound): array {
+		$body['_valueMappings'] = $inbound->mappingConfig['valueMapping'] ?? [];
 		unset($body['_route'], $body['zgwApi'], $body['resource'], $body['uuid']);
 
 		$mapped = $this->mappingService->executeMapping(
-			mapping: $mapping,
+			mapping: $inbound->mapping,
 			input: $body
 		);
+		$mapped = $this->withoutEmptyNullables(mapped: $mapped, mappingConfig: $inbound->mappingConfig);
 
-		// Remove empty-string values for nullable/date fields to prevent OpenRegister
-		// from storing "" in date fields (which converts to today's date).
-		$nullableKeys = $mappingConfig['inboundNullable'] ?? [
-			'endDate',
-			'plannedEndDate',
-			'deadline',
-			'archiveNomination',
-			'archiveActionDate',
-			'paymentIndication',
-			'lastPaymentDate',
-			'communicationChannel',
-			'archiveStatus',
-			'parentCase',
-		];
-		foreach ($nullableKeys as $key) {
+		// Decision 171: a ZGW communicatiekanaal URL becomes a channel slug
+		// here, at the boundary, so the slug enum never refuses a zaak.
+		if (($inbound->mappingConfig['zgwResource'] ?? '') === 'zaak') {
+			$mapped = $this->channels()->inbound(body: $body, mapped: $mapped);
+		}
+
+		return $mapped;
+	}//end mappedToEnglish()
+
+	/**
+	 * The mapped data without the nullable or date fields that came back empty.
+	 *
+	 * Removing them prevents OpenRegister from storing "" in date fields
+	 * (which converts to today's date).
+	 *
+	 * @param array $mapped        The mapped data
+	 * @param array $mappingConfig The ZGW mapping configuration
+	 *
+	 * @return array The mapped data
+	 */
+	private function withoutEmptyNullables(array $mapped, array $mappingConfig): array {
+		foreach (($mappingConfig['inboundNullable'] ?? self::INBOUND_NULLABLE) as $key) {
 			if (isset($mapped[$key]) === true && $mapped[$key] === '') {
 				unset($mapped[$key]);
 			}
 		}
 
-		// Decision 171: a ZGW communicatiekanaal URL becomes a channel slug
-		// here, at the boundary, so the slug enum never refuses a zaak.
-		if (($mappingConfig['zgwResource'] ?? '') === 'zaak') {
-			$mapped = $this->channels()->inbound(body: $body, mapped: $mapped);
-		}
-
 		return $mapped;
-	}//end applyInboundMapping()
+	}//end withoutEmptyNullables()
 
 	/**
 	 * The channel mapping, injected or built without an administrator's map.

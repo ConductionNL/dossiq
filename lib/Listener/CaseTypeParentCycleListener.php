@@ -37,10 +37,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\PreSaveCheck;
-use OCA\Dossiq\Service\CaseTypeResolver;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\ReferenceId;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -67,15 +68,15 @@ class CaseTypeParentCycleListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService Schema slug bridge.
-	 * @param CaseTypeResolver $resolver        Owns the cycle rule and reads the chain.
+	 * @param SettingsServiceInterface  $settingsService Schema slug bridge.
+	 * @param CaseTypeResolverInterface $resolver        Owns the cycle rule and reads the chain.
 	 * @param IL10N            $l10n            Translation service.
 	 * @param LoggerInterface  $logger          Structured logger.
 	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseTypeResolver $resolver,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseTypeResolverInterface $resolver,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly LanguageMapText $text = new LanguageMapText(),
@@ -205,14 +206,6 @@ class CaseTypeParentCycleListener implements IEventListener {
 	 * @return string The id, or the empty string.
 	 */
 	private function referenceId(mixed $value): string {
-		if (is_array($value) === true) {
-			$value = ($value['id'] ?? ($value['uuid'] ?? ''));
-		}
-
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
+		return ReferenceId::of(value: $value);
 	}//end referenceId()
 }//end class

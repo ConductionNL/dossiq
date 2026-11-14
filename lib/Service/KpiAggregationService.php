@@ -45,7 +45,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\KpiAggregationServiceInterface;
 use OCA\Dossiq\Service\Queue\QueueOldestNote;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -58,7 +59,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
  */
-class KpiAggregationService {
+class KpiAggregationService implements KpiAggregationServiceInterface {
 	/**
 	 * Upper bound on rows pulled for the metrics that must fold rows rather than
 	 * count them (the two breakdowns, and the processing-time average).
@@ -276,7 +277,7 @@ class KpiAggregationService {
 	 * @return array<string, string> The titles; empty when the case type schema is not configured.
 	 */
 	private function caseTypeTitles(array $ids): array {
-		$schema = $this->appConfig->getValueString(Application::APP_ID, 'case_type_schema', '');
+		$schema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_type_schema', '');
 		if ($schema === '') {
 			return [];
 		}
@@ -339,7 +340,6 @@ class KpiAggregationService {
 	private function countCases(array $ids, array $filters): int {
 		return $this->countObjects(ids: $ids, schema: $ids['case'], filters: $filters);
 	}//end countCases()
-
 
 	/**
 	 * Count objects of one schema, server-side.
@@ -654,8 +654,8 @@ class KpiAggregationService {
 	 */
 	private function ids(): ?array {
 		$ids = [
-			'register' => $this->appConfig->getValueString(Application::APP_ID, 'register', ''),
-			'case' => $this->appConfig->getValueString(Application::APP_ID, 'case_schema', ''),
+			'register' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', ''),
+			'case' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_schema', ''),
 		];
 
 		if (in_array('', $ids, true) === true) {

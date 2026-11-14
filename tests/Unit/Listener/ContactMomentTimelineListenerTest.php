@@ -54,6 +54,9 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Timeline\TimelineKinds
  * @uses \OCA\Dossiq\Service\ObjectSchemaSlugResolver
  * @uses \OCA\Dossiq\Service\Timeline\CaseTimeline
+ * @uses \OCA\Dossiq\Listener\Support\CreatedCaseRecord
+ * @uses \OCA\Dossiq\Listener\Support\EventObjectPayload
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class ContactMomentTimelineListenerTest extends TestCase {
 

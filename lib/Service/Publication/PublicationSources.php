@@ -29,9 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Publication;
 
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\WooCaseDocuments;
 use RuntimeException;
 
 /**
@@ -47,11 +47,11 @@ class PublicationSources {
 	 * Constructor.
 	 *
 	 * @param SettingsService       $settingsService The case, decision, assessment and document schemas.
-	 * @param WooCaseDocuments|null $caseDocuments   Loads a case document with its file content.
+	 * @param WooCaseDocumentsInterface|null $caseDocuments   Loads a case document with its file content.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly ?WooCaseDocuments $caseDocuments = null,
+		private readonly ?WooCaseDocumentsInterface $caseDocuments = null,
 	) {
 	}//end __construct()
 

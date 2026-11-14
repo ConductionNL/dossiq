@@ -36,13 +36,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
-use OCA\Dossiq\Service\AanvullingsverzoekService;
-use OCA\Dossiq\Service\CaseTermsService;
-use OCA\Dossiq\Service\OpenWorkloadAgeService;
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekResolutionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTermsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\OpenWorkloadAgeServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -63,30 +64,31 @@ use Throwable;
  */
 class CaseTermsController extends Controller {
 	use TranslatesRefusals;
+	use ReadsJsonRequests;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param CaseTermsService $terms The four clocks on a case.
-	 * @param OpenWorkloadAgeService $workload The age of what is still standing.
-	 * @param CaseAccessGuard $guard The per-case check, asked of every endpoint below.
+	 * @param CaseTermsServiceInterface $terms The four clocks on a case.
+	 * @param OpenWorkloadAgeServiceInterface $workload The age of what is still standing.
+	 * @param CaseAccessGuardInterface $guard The per-case check, asked of every endpoint below.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
-	 * @param AanvullingsverzoekService $aanvullingen The request as a record.
-	 * @param AanvullingsverzoekResolutionService $resolution The answer, item by item.
+	 * @param AanvullingsverzoekServiceInterface $aanvullingen The request as a record.
+	 * @param AanvullingsverzoekResolutionServiceInterface $resolution The answer, item by item.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseTermsService $terms,
-		private readonly OpenWorkloadAgeService $workload,
-		private readonly CaseAccessGuard $guard,
+		private readonly CaseTermsServiceInterface $terms,
+		private readonly OpenWorkloadAgeServiceInterface $workload,
+		private readonly CaseAccessGuardInterface $guard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly AanvullingsverzoekService $aanvullingen,
-		private readonly AanvullingsverzoekResolutionService $resolution,
+		private readonly AanvullingsverzoekServiceInterface $aanvullingen,
+		private readonly AanvullingsverzoekResolutionServiceInterface $resolution,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -223,7 +225,7 @@ class CaseTermsController extends Controller {
 	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
 	 */
 	private function clarificationOf(array $body): ?string {
-		if ((string)($body['kind'] ?? '') !== AanvullingsverzoekService::KIND_CLARIFICATION) {
+		if ((string)($body['kind'] ?? '') !== AanvullingsverzoekServiceInterface::KIND_CLARIFICATION) {
 			return null;
 		}
 
@@ -496,21 +498,6 @@ class CaseTermsController extends Controller {
 
 		return $user->getUID();
 	}//end currentUserId()
-
-	/**
-	 * Decode the JSON request body into an array.
-	 *
-	 * @return array<string, mixed> The body, empty when there is none.
-	 */
-	private function jsonBody(): array {
-		$raw = (string)file_get_contents('php://input');
-		$body = json_decode($raw, true);
-		if (is_array($body) === false) {
-			return [];
-		}
-
-		return $body;
-	}//end jsonBody()
 
 	/**
 	 * workloadAge() on its old address.

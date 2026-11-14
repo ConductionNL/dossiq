@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\Team\CaseTeamMigration;
+use OCA\Dossiq\Kernel\Contracts\CaseTeamMigrationInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -52,13 +52,13 @@ class MigrateCaseTeamsToGroups implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTeamMigration $migration The one service that moves a case's team.
+	 * @param CaseTeamMigrationInterface $migration The one service that moves a case's team.
 	 * @param LoggerInterface   $logger    Logger.
 	 *
 	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	public function __construct(
-		private readonly CaseTeamMigration $migration,
+		private readonly CaseTeamMigrationInterface $migration,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

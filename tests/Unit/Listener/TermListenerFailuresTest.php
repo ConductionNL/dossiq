@@ -37,6 +37,8 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener
  * @covers \OCA\Dossiq\Listener\ApplicantTermNoteListener
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
  *
  * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
  */

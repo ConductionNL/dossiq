@@ -70,6 +70,8 @@ interface DrcRelationSearchObjectServiceStub {
  *
  * @uses \OCA\Dossiq\Controller\ZgwController
  * @uses \OCA\Dossiq\Support\NormalisesObjectRows
+ * @uses \OCA\Dossiq\Controller\EioRelationLookup
+ * @uses \OCA\Dossiq\Service\Zgw\RelationSearch
  */
 class DrcRelationSearchGoldenTest extends TestCase {
 

@@ -40,6 +40,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\CaseDefinition\AdoptedCaseTypeFill
  * @uses \OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher
  * @uses \OCA\Dossiq\Service\CaseDefinition\RowTarget
+ * @uses \OCA\Dossiq\Service\CaseDefinition\RowMatchRun
  */
 class PackageWriterAsSystemTest extends TestCase {
 

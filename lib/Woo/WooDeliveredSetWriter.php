@@ -30,7 +30,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetWriterInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Service\Object\ObjectStateRequest;
 use OCP\IUserSession;
@@ -43,29 +44,14 @@ use Throwable;
  *
  * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
  */
-class WooDeliveredSetWriter {
+class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * The app-config key naming the set schema.
-	 */
-	public const CONFIG_KEY = 'woo_delivered_set_schema';
-
-	/**
-	 * The set schema's slug, used when the config key is not set yet.
-	 */
-	public const SCHEMA_SLUG = 'wooDeliveredSet';
 
 	/**
 	 * A set that is being delivered.
 	 */
 	public const STATUS_PENDING = 'pending';
-
-	/**
-	 * A set whose publication exists.
-	 */
-	public const STATUS_FROZEN = 'frozen';
 
 	/**
 	 * The failure a delivery answers when its set cannot be written first.
@@ -85,12 +71,12 @@ class WooDeliveredSetWriter {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService      $settings    Bridge to OpenRegister.
+	 * @param SettingsServiceInterface      $settings    Bridge to OpenRegister.
 	 * @param IUserSession|null    $userSession Who delivers.
 	 * @param LoggerInterface|null $logger      Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 		private readonly ?IUserSession $userSession = null,
 		private readonly ?LoggerInterface $logger = null,
 	) {

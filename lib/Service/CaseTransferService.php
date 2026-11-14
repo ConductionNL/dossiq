@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseTransferServiceInterface;
 use OCA\Dossiq\Service\CaseTransfer\TransferStore;
 use OCA\Dossiq\Service\Custody\CaseCustodyChain;
 use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
@@ -44,7 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
-class CaseTransferService {
+class CaseTransferService implements CaseTransferServiceInterface {
 	/**
 	 * Constructor for the CaseTransferService.
 	 *
@@ -598,7 +599,6 @@ class CaseTransferService {
 	public function resolveFederatedTransferShare(string $shareToken, string $transferId): ?array {
 		return $this->shareBroker->resolveTransferShare(shareToken: $shareToken, transferId: $transferId);
 	}//end resolveFederatedTransferShare()
-
 
 	/**
 	 * Hand a case to another team inside this organisation.

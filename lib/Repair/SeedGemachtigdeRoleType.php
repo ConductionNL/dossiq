@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\People\GemachtigdeRoleTypeSeeder;
+use OCA\Dossiq\Kernel\Contracts\GemachtigdeRoleTypeSeederInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -40,13 +40,13 @@ class SeedGemachtigdeRoleType implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param GemachtigdeRoleTypeSeeder $seeder The seed itself.
+	 * @param GemachtigdeRoleTypeSeederInterface $seeder The seed itself.
 	 * @param LoggerInterface           $logger Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly GemachtigdeRoleTypeSeeder $seeder,
+		private readonly GemachtigdeRoleTypeSeederInterface $seeder,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

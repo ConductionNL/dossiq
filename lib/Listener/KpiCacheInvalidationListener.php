@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -90,7 +90,7 @@ class KpiCacheInvalidationListener implements IEventListener {
 		private IUserSession $userSession,
 		private LoggerInterface $logger,
 	) {
-		$this->cache = $cacheFactory->createLocal(Application::APP_ID);
+		$this->cache = $cacheFactory->createLocal(AppIdentity::APP_ID);
 	}//end __construct()
 
 	/**

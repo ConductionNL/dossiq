@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Routing;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\TakeBackWindowInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Kernel\Contracts\TimerChange;
 use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/specs/role-based-step-routing/spec.md#requirement-work-not-taken-up-returns-to-the-pool-req-rtp-03
  */
-class TakeBackWindow {
+class TakeBackWindow implements TakeBackWindowInterface {
 
 	/**
 	 * The engine class, resolved lazily so dossiq runs without OpenRegister.
@@ -58,13 +59,6 @@ class TakeBackWindow {
 	 * @var string
 	 */
 	public const ENGINE_CLASS = 'OCA\\OpenRegister\\Service\\Flow\\Timer\\FlowTimerService';
-
-	/**
-	 * The metadata source the fired listener recognises the timer by.
-	 *
-	 * @var string
-	 */
-	public const METADATA_SOURCE = 'dossiq-take-back';
 
 	/**
 	 * The suffix that keeps the timer's subject apart from the case's own timers.

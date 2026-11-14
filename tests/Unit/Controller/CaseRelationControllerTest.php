@@ -43,6 +43,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Controller\CaseRelationController
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationDetails
+ * @uses \OCA\Dossiq\Service\Relation\RelationDetailsRun
  */
 class CaseRelationControllerTest extends TestCase {
 

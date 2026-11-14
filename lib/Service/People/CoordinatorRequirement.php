@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\People;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CoordinatorRequirementInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -54,7 +55,7 @@ use Throwable;
  *
  * @spec openspec/specs/people-on-the-case/spec.md
  */
-class CoordinatorRequirement {
+class CoordinatorRequirement implements CoordinatorRequirementInterface {
 
 	use SearchesObjects;
 

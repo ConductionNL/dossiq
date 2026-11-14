@@ -93,12 +93,16 @@ class AssignedCasesSource extends RegisterBackedSource {
 	/**
 	 * The mechanisms this source covers.
 	 *
+	 * `termResumedAfterPause` tells the case's assignee that its term runs
+	 * again, so the case it names is one this source already lists for them.
+	 *
 	 * @return array<int, string> The mechanism ids.
 	 *
 	 * @spec openspec/specs/add-work-queue/spec.md
+	 * @spec openspec/changes/expired-pause-resumes-the-term/tasks.md
 	 */
 	public function mechanisms(): array {
-		return ['notification:caseAssigned', 'notification:caseHandoffIntake'];
+		return ['notification:caseAssigned', 'notification:caseHandoffIntake', 'notification:termResumedAfterPause'];
 	}//end mechanisms()
 
 	/**

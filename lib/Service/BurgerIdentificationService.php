@@ -31,7 +31,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BurgerIdentificationServiceInterface;
 use OCP\Contacts\IManager as IContactsManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -41,7 +42,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
  */
-class BurgerIdentificationService {
+class BurgerIdentificationService implements BurgerIdentificationServiceInterface {
 	/**
 	 * Weighting per identificatievraag dimension (must sum to 1.0).
 	 *
@@ -143,7 +144,7 @@ class BurgerIdentificationService {
 		$this->logger->info(
 			'Dossiq: DigiD identification processed (BSN masked)',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'bsn' => $this->maskBsn(bsn: $bsn),
 			],
 		);
@@ -184,7 +185,7 @@ class BurgerIdentificationService {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: contacts lookup failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			return '';
 		}

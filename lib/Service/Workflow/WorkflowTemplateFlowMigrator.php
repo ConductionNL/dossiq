@@ -16,7 +16,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Workflow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WorkflowTemplateFlowMigratorInterface;
+use OCA\Dossiq\Service\Flow\FlowMigrationSummary;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\ProjectsOntoFlows;
@@ -48,7 +50,7 @@ use Throwable;
  *
  * @spec openspec/specs/workflow-definitions-to-flow/spec.md
  */
-class WorkflowTemplateFlowMigrator {
+class WorkflowTemplateFlowMigrator implements WorkflowTemplateFlowMigratorInterface {
 
 	use SearchesObjects;
 	use ProjectsOntoFlows;
@@ -63,7 +65,6 @@ class WorkflowTemplateFlowMigrator {
 	 * @var string
 	 */
 	private const MARKER_PREFIX = 'dossiq:workflowTemplate:';
-
 
 	/**
 	 * Templates read per pass.
@@ -101,16 +102,16 @@ class WorkflowTemplateFlowMigrator {
 	public function migrate(IUser $user, bool $dryRun): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return $this->emptySummary(note: 'OpenRegister is not available.');
+			return FlowMigrationSummary::empty(note: 'OpenRegister is not available.');
 		}
 
 		$flowService = $this->flowService();
 		if ($flowService === null) {
-			return $this->emptySummary(note: 'OpenRegister exposes no FlowService on this instance.');
+			return FlowMigrationSummary::empty(note: 'OpenRegister exposes no FlowService on this instance.');
 		}
 
 		if (method_exists($objectService, 'runAs') === false) {
-			return $this->emptySummary(note: 'OpenRegister exposes no runAs(); the migration needs an owner for the flows it creates.');
+			return FlowMigrationSummary::empty(note: 'OpenRegister exposes no runAs(); the migration needs an owner for the flows it creates.');
 		}
 
 		return $objectService->runAs(
@@ -119,27 +120,6 @@ class WorkflowTemplateFlowMigrator {
 		);
 
 	}//end migrate()
-
-
-	/**
-	 * A summary describing a run that could not start.
-	 *
-	 * @param string $note Why nothing happened.
-	 *
-	 * @return array<string, mixed> The summary.
-	 */
-	private function emptySummary(string $note): array {
-		return [
-			'total' => 0,
-			'created' => 0,
-			'updated' => 0,
-			'skipped' => 0,
-			'failed' => 0,
-			'rows' => [],
-			'note' => $note,
-		];
-
-	}//end emptySummary()
 
 	/**
 	 * Walk every template and project it, inside the acting user's context.
@@ -156,7 +136,7 @@ class WorkflowTemplateFlowMigrator {
 		// template: every template in a pass resolves against the same index.
 		$statusNames = $this->statusNames();
 
-		$summary = $this->emptySummary(note: '');
+		$summary = FlowMigrationSummary::empty(note: '');
 		$summary['total'] = count($templates);
 		unset($summary['note']);
 
@@ -350,7 +330,6 @@ class WorkflowTemplateFlowMigrator {
 
 	}//end nodeId()
 
-
 	/**
 	 * The flow document to store.
 	 *
@@ -364,7 +343,7 @@ class WorkflowTemplateFlowMigrator {
 		return [
 			'name' => (string)($template['title'] ?? 'Workflow'),
 			'description' => $this->description(template: $template),
-			'app' => Application::APP_ID,
+			'app' => AppIdentity::APP_ID,
 			// DISABLED. The template still drives cases through
 			// StatusTransitionService; an enabled projection would move the
 			// same case a second time on every status change.
@@ -457,7 +436,7 @@ class WorkflowTemplateFlowMigrator {
 		try {
 			$rows = $this->batchOf(store: $store);
 		} catch (Throwable $e) {
-			$context = ['app' => Application::APP_ID, 'exception' => $e->getMessage()];
+			$context = ['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()];
 			$this->logger->warning('Dossiq: could not list status types for the flow projection', $context);
 
 			return [];
@@ -500,7 +479,7 @@ class WorkflowTemplateFlowMigrator {
 		try {
 			return $this->batchOf(store: $store);
 		} catch (Throwable $e) {
-			$context = ['app' => Application::APP_ID, 'exception' => $e->getMessage()];
+			$context = ['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()];
 			$this->logger->warning('Dossiq: could not list workflow templates', $context);
 
 			return [];
@@ -544,8 +523,5 @@ class WorkflowTemplateFlowMigrator {
 			filters: ['_limit' => self::BATCH_LIMIT],
 		);
 	}//end batchOf()
-
-
-
 
 }//end class

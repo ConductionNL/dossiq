@@ -33,6 +33,10 @@ use RuntimeException;
  * a fixed set of groups. A second run reads what the first one patched.
  *
  * @covers \OCA\Dossiq\Service\Team\CaseTeamMigration
+ * @uses \OCA\Dossiq\Service\Team\CaseTeamReference
+ * @uses \OCA\Dossiq\Service\Team\CaseTeamSort
+ * @uses \OCA\Dossiq\Service\Team\CaseTeamStore
+ * @uses \OCA\Dossiq\Service\Team\TeamMigrationReport
  */
 class CaseTeamMigrationTest extends TestCase {
 
