@@ -646,7 +646,11 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 		$totals = $this->collectKpiTotals(rows: $rows, filters: $filters);
 		$kpi = $this->kpiFigures(totals: $totals);
 
-		return $kpi + self::genericKeys(row: $kpi) + $this->dashboardFigures(rows: $rows, today: $today, from: $from, until: $until);
+		return $kpi + self::genericKeys(row: $kpi) + $this->dashboardFigures(
+			rows: $rows,
+			today: $today,
+			window: $this->figures->window(today: $today, from: $from, until: $until)
+		);
 	}//end getTermijnKpi()
 
 	/**
@@ -675,22 +679,21 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 	/**
 	 * The dashboard's running figures and the moment they were read.
 	 *
-	 * @param array<int, array<string, mixed>> $rows  Instance rows.
-	 * @param DateTimeImmutable|null           $today The day the running figures are read on; now when absent.
-	 * @param string|null                      $from  First day of the window the share per case type covers.
-	 * @param string|null                      $until Last day of that window.
+	 * @param array<int, array<string, mixed>>   $rows   Instance rows.
+	 * @param DateTimeImmutable|null             $today  The day the running figures are read on; now when absent.
+	 * @param array{from: string, until: string} $window The window the share per case type covers (YYYY-MM-DD).
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
-	private function dashboardFigures(array $rows, ?DateTimeImmutable $today, ?string $from, ?string $until): array {
+	private function dashboardFigures(array $rows, ?DateTimeImmutable $today, array $window): array {
 		return [
 			'lastUpdated' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 			...$this->figures->forDashboard(
 				rows: $rows,
 				today: $today,
-				perType: $this->perTypeBetween(window: $this->figures->window(today: $today, from: $from, until: $until))
+				perType: $this->perTypeBetween(window: $window)
 			),
 		];
 	}//end dashboardFigures()
