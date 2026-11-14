@@ -209,26 +209,74 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	private function moveOne(array $row): string {
 		$recordId = trim((string)($row['id'] ?? (($row['@self'] ?? [])['id'] ?? '')));
 		$fileName = (string)($row['fileName'] ?? '');
-		if ($recordId === '' || $fileName === '' || $this->holdsFile(row: $row) === false) {
-			return 'skipped';
-		}
-
-		$ownFolder = $this->projection->folderOf(objectId: $recordId);
-		if ($ownFolder === null || $ownFolder->nodeExists($fileName) === false) {
-			// Already under a case folder, which is what a second run sees.
+		if ($this->hasMovableFile(row: $row, recordId: $recordId, fileName: $fileName) === false
+			|| $this->stillInOwnFolder(recordId: $recordId, fileName: $fileName) === false
+		) {
 			return 'skipped';
 		}
 
 		$caseId = $this->owningCase(recordId: $recordId);
 		if ($caseId === '') {
-			$this->logger->warning(
-				'Dossiq documents: ' . $recordId . ' (' . $fileName . ') is joined to no case; its file stays in its own folder',
-				['app' => AppIdentity::APP_ID],
-			);
-
-			return 'missing';
+			return $this->unjoined(recordId: $recordId, fileName: $fileName);
 		}
 
+		return $this->homeInCase(recordId: $recordId, fileName: $fileName, caseId: $caseId);
+	}//end moveOne()
+
+	/**
+	 * Whether the record has an id, a file name and a file.
+	 *
+	 * @param array<string, mixed> $row The record row.
+	 * @param string $recordId The record id.
+	 * @param string $fileName The record's file name.
+	 *
+	 * @return bool True when there is a file to move.
+	 */
+	private function hasMovableFile(array $row, string $recordId, string $fileName): bool {
+		return !($recordId === '' || $fileName === '' || $this->holdsFile(row: $row) === false);
+	}//end hasMovableFile()
+
+	/**
+	 * Whether the file still sits in the record's own folder.
+	 *
+	 * @param string $recordId The record id.
+	 * @param string $fileName The record's file name.
+	 *
+	 * @return bool True when the file is still in the record's own folder.
+	 */
+	private function stillInOwnFolder(string $recordId, string $fileName): bool {
+		$ownFolder = $this->projection->folderOf(objectId: $recordId);
+		// Already under a case folder, which is what a second run sees.
+		return !($ownFolder === null || $ownFolder->nodeExists($fileName) === false);
+	}//end stillInOwnFolder()
+
+	/**
+	 * Log a record joined to no case; its file stays where it is.
+	 *
+	 * @param string $recordId The record id.
+	 * @param string $fileName The record's file name.
+	 *
+	 * @return string Always missing.
+	 */
+	private function unjoined(string $recordId, string $fileName): string {
+		$this->logger->warning(
+			'Dossiq documents: ' . $recordId . ' (' . $fileName . ') is joined to no case; its file stays in its own folder',
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return 'missing';
+	}//end unjoined()
+
+	/**
+	 * Move the record's file into its case folder.
+	 *
+	 * @param string $recordId The record id.
+	 * @param string $fileName The record's file name.
+	 * @param string $caseId The owning case.
+	 *
+	 * @return string moved, skipped or missing.
+	 */
+	private function homeInCase(string $recordId, string $fileName, string $caseId): string {
 		try {
 			if ($this->projection->homeDocument(recordId: $recordId, caseId: $caseId) === true) {
 				return 'moved';
@@ -243,7 +291,7 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 
 			return 'missing';
 		}
-	}//end moveOne()
+	}//end homeInCase()
 
 	/**
 	 * Whether a record holds a file: a `fileId`, or one attached in `@self.files`.
