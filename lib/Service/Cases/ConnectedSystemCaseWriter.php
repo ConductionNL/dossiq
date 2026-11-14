@@ -162,28 +162,34 @@ class ConnectedSystemCaseWriter implements ConnectedSystemCaseWriterInterface {
 			return self::refusal(kind: self::REFUSED, reason: 'Het zaaktype is niet gekoppeld aan een zaaktype in dossiq.');
 		}
 
+		return $this->openUnlessKnown(operation: $operation, caseType: $caseType, system: $system);
+	}//end create()
+
+	/**
+	 * Open the case unless this system already opened it.
+	 *
+	 * @param array<string, mixed> $operation The operation, with an identifier and a title.
+	 * @param array<string, mixed> $caseType  The dossiq case type it maps to.
+	 * @param string               $system    The connection id.
+	 *
+	 * @return array The outcome (WriteOutcome).
+	 *
+	 * @throws RuntimeException When the register is not configured, or the case could not be read back.
+	 *
+	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-case-opened-by-a-connected-system-keeps-its-origin
+	 */
+	private function openUnlessKnown(array $operation, array $caseType, string $system): array {
+		$external = self::text(value: ($operation['identifier'] ?? ''));
+		$title    = self::text(value: ($operation['title'] ?? ''));
+
 		[$objects, $register, $schema] = $this->store();
 		if ($this->findOwnCase(identifier: $external, system: $system) !== null) {
 			return self::refusal(kind: self::CONFLICT, reason: 'Deze zaak bestaat al.');
 		}
 
-		$case = $this->newCase(
-			operation: $operation,
-			caseType: $caseType,
-			title: $title,
-			external: $external,
-			system: $system,
-		);
-
-		return $this->storeNewCase(
-			objects: $objects,
-			register: $register,
-			schema: $schema,
-			case: $case,
-			system: $system,
-			external: $external,
-		);
-	}//end create()
+		$newCase = $this->newCase(operation: $operation, caseType: $caseType, title: $title, external: $external, system: $system);
+		return $this->storeNewCase(objects: $objects, register: $register, schema: $schema, case: $newCase, system: $system, external: $external);
+	}//end openUnlessKnown()
 
 	/**
 	 * The case a connected system opens, without its empty fields.
