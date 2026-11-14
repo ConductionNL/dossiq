@@ -32,13 +32,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZtcCrossReferenceEnricherInterface;
 
 /**
  * Builds the cross-reference URL lists of ZTC zaaktypen and besluittypen.
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
-class ZtcCrossReferenceEnricher {
+class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 
 	/**
 	 * The Catalogi API.

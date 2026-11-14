@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Service\Zgw\RelationSearch;
-use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
+use OCA\Dossiq\Service\Zgw\ZtcHelperFactory;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -881,7 +881,7 @@ class DrcController extends ZgwController {
 	 * @return JSONResponse
 	 */
 	private function relationCheckNotCompleted(string $uuid, string $cause): JSONResponse {
-		$refusal = (new ZgwRuleResults(logger: $this->zgwService->getLogger()))
+		$refusal = (new ZtcHelperFactory())->zgwRuleResults(logger: $this->zgwService->getLogger())
 			->notVerified(rule: 'drc-008a', object: 'document ' . $uuid, cause: $cause);
 
 		return new JSONResponse(

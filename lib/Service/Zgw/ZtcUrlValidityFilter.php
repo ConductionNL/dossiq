@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZtcUrlValidityFilterInterface;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 
 /**
@@ -36,7 +37,7 @@ use OCA\Dossiq\Support\NormalisesObjectRows;
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
-class ZtcUrlValidityFilter {
+class ZtcUrlValidityFilter implements ZtcUrlValidityFilterInterface {
 	use NormalisesObjectRows;
 
 	/**
@@ -52,7 +53,6 @@ class ZtcUrlValidityFilter {
 		'decision_type_schema' => 'besluittypen',
 		'case_type_schema'     => 'zaaktypen',
 	];
-
 
 	/**
 	 * Constructor.

@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
+use OCA\Dossiq\Kernel\Contracts\BrcCrossRegisterSyncInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Support\NormalisesObjectRows;
@@ -39,7 +40,7 @@ use OCA\Dossiq\Support\NormalisesObjectRows;
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
-class BrcCrossRegisterSync {
+class BrcCrossRegisterSync implements BrcCrossRegisterSyncInterface {
 	use NormalisesObjectRows;
 
 	/**

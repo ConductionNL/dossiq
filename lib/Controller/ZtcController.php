@@ -32,9 +32,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Service\Zgw\ValidityDateFilter;
-use OCA\Dossiq\Service\Zgw\ZtcCrossReferenceEnricher;
-use OCA\Dossiq\Service\Zgw\ZtcTypeNameResolver;
-use OCA\Dossiq\Service\Zgw\ZtcUrlValidityFilter;
+use OCA\Dossiq\Service\Zgw\ZtcHelperFactory;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -202,7 +200,7 @@ class ZtcController extends ZgwController {
 
 		// Ztc-010m: For ZIOT, resolve informatieobjecttype by omschrijving if not a UUID/URL.
 		if ($resource === 'zaaktype-informatieobjecttypen') {
-			(new ZtcTypeNameResolver(zgwService: $this->zgwService))->resolveInformatieobjecttype(body: $body);
+			(new ZtcHelperFactory())->ztcTypeNameResolver(zgwService: $this->zgwService)->resolveInformatieobjecttype(body: $body);
 		}
 
 		$response = $this->zgwService->handleCreate(
@@ -407,7 +405,9 @@ class ZtcController extends ZgwController {
 	private function enrichCrossReferences(string $resource, array $data): array {
 		$baseUrl = $this->request->getServerProtocol() . '://' . $this->request->getServerHost() . '/index.php/apps/dossiq/api/zgw/catalogi/v1';
 
-		return (new ZtcCrossReferenceEnricher(zgwService: $this->zgwService))->enrich(resource: $resource, data: $data, baseUrl: $baseUrl);
+		$enricher = (new ZtcHelperFactory())->ztcCrossReferenceEnricher(zgwService: $this->zgwService);
+
+		return $enricher->enrich(resource: $resource, data: $data, baseUrl: $baseUrl);
 	}//end enrichCrossReferences()
 
 	/**
@@ -465,7 +465,7 @@ class ZtcController extends ZgwController {
 	 * @return array The filtered response data.
 	 */
 	private function filterValidUrls(string $resource, array $data): array {
-		return (new ZtcUrlValidityFilter(zgwService: $this->zgwService))->filter(
+		return (new ZtcHelperFactory())->ztcUrlValidityFilter(zgwService: $this->zgwService)->filter(
 			fieldConfigs: self::URL_FILTER_FIELDS[$resource] ?? [],
 			data: $data,
 			today: date('Y-m-d')
