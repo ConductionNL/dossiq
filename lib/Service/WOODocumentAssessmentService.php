@@ -138,39 +138,48 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 		$target = $this->assessmentTarget();
 		$target['userId'] = ($this->userSession->getUser()?->getUID() ?? 'system');
 
-		$saved = [];
-		$errors = [];
-		$created = 0;
-		$judged = [];
+		$tally = $this->upsertAll(caseId: $caseId, assessments: $assessments, target: $target);
 
-		foreach ($assessments as $assessment) {
-			$result = $this->upsertAssessment(caseId: $caseId, assessment: (array)$assessment, target: $target);
-			if (isset($result['error']) === true) {
-				$errors[] = $result['error'];
-				continue;
-			}
-
-			$saved[] = $result['saved'];
-			$created += $result['created'];
-			$judged[] = $result['documentRef'];
-		}
-
-		$this->reviewerAccess?->reconcileAfterCreate(caseId: $caseId, created: $created);
-		$this->markJudgedInScope(caseId: $caseId, documentRefs: $judged, userId: $target['userId']);
+		$this->reviewerAccess?->reconcileAfterCreate(caseId: $caseId, created: $tally['created']);
+		$this->markJudgedInScope(caseId: $caseId, documentRefs: $tally['judged'], userId: $target['userId']);
 
 		$outstanding = $this->getOutstanding(caseId: $caseId);
 
 		$this->logger->info(
-			'WOO bulk-upsert: ' . count($saved) . ' saved, ' . $outstanding['count'] . ' outstanding for case ' . $caseId,
+			'WOO bulk-upsert: ' . count($tally['saved']) . ' saved, ' . $outstanding['count'] . ' outstanding for case ' . $caseId,
 			['app' => AppIdentity::APP_ID],
 		);
 
-		return [
-			'saved' => $saved,
-			'errors' => $errors,
-			'outstanding' => $outstanding,
-		];
+		return ['saved' => $tally['saved'], 'errors' => $tally['errors'], 'outstanding' => $outstanding];
 	}//end bulkUpsert()
+
+	/**
+	 * Upsert each assessment in turn, tallying what was saved, created and judged, and what failed.
+	 *
+	 * @param string                           $caseId      The case UUID
+	 * @param array<int, array<string, mixed>> $assessments Array of assessment payloads
+	 * @param array<string, mixed>             $target      Where assessments are stored, and by whom
+	 *
+	 * @return array{saved: array<int, mixed>, errors: array<int, mixed>, created: int, judged: array<int, mixed>} The tally.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
+	 */
+	private function upsertAll(string $caseId, array $assessments, array $target): array {
+		$tally = ['saved' => [], 'errors' => [], 'created' => 0, 'judged' => []];
+		foreach ($assessments as $assessment) {
+			$result = $this->upsertAssessment(caseId: $caseId, assessment: (array)$assessment, target: $target);
+			if (isset($result['error']) === true) {
+				$tally['errors'][] = $result['error'];
+				continue;
+			}
+
+			$tally['saved'][] = $result['saved'];
+			$tally['created'] += $result['created'];
+			$tally['judged'][] = $result['documentRef'];
+		}
+
+		return $tally;
+	}//end upsertAll()
 
 	/**
 	 * Where assessments are stored: the object service, register and schema.
