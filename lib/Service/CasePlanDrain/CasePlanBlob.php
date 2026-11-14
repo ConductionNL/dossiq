@@ -78,6 +78,23 @@ class CasePlanBlob {
 			return null;
 		}
 
+		$decoded = $this->decodedBlob(raw: $raw);
+		$parts = $this->blobParts(decoded: $decoded);
+		$clean = $this->cleanStates(states: $parts['planItemStates']);
+
+		return ['planItemStates' => $clean, 'caseFile' => $parts['caseFile'], 'eventLog' => array_values($parts['eventLog'])];
+	}//end decode()
+
+	/**
+	 * The blob as an array, decoding it when it is stored as a JSON string.
+	 *
+	 * @param mixed $raw The case's `casePlanState` value.
+	 *
+	 * @return array<mixed>
+	 *
+	 * @throws UnexpectedValueException `blob_undecodable` when it is not an array once decoded.
+	 */
+	private function decodedBlob(mixed $raw): array {
 		$decoded = $raw;
 		if (is_string($raw) === true) {
 			$decoded = json_decode($raw, true);
@@ -87,6 +104,19 @@ class CasePlanBlob {
 			throw new UnexpectedValueException('blob_undecodable');
 		}
 
+		return $decoded;
+	}//end decodedBlob()
+
+	/**
+	 * The three parts of the blob, each an array.
+	 *
+	 * @param array<mixed> $decoded The decoded blob.
+	 *
+	 * @return array{planItemStates: array<mixed>, caseFile: array<mixed>, eventLog: array<mixed>}
+	 *
+	 * @throws UnexpectedValueException `blob_undecodable` when a part is not an array.
+	 */
+	private function blobParts(array $decoded): array {
 		$parts = [];
 		foreach (['planItemStates', 'caseFile', 'eventLog'] as $part) {
 			$parts[$part] = ($decoded[$part] ?? []);
@@ -95,13 +125,24 @@ class CasePlanBlob {
 			}
 		}
 
+		return $parts;
+	}//end blobParts()
+
+	/**
+	 * The item states with string keys and string values.
+	 *
+	 * @param array<mixed> $states The blob's item states.
+	 *
+	 * @return array<string, string>
+	 */
+	private function cleanStates(array $states): array {
 		$clean = [];
-		foreach ($parts['planItemStates'] as $key => $state) {
+		foreach ($states as $key => $state) {
 			$clean[(string)$key] = (string)$state;
 		}
 
-		return ['planItemStates' => $clean, 'caseFile' => $parts['caseFile'], 'eventLog' => array_values($parts['eventLog'])];
-	}//end decode()
+		return $clean;
+	}//end cleanStates()
 
 	/**
 	 * Put every recorded state onto its node, refusing what cannot be carried.
@@ -150,31 +191,57 @@ class CasePlanBlob {
 		$keys = $this->keysOf(nodes: ($definition['items'] ?? []));
 		$history = [];
 		foreach ($eventLog as $index => $entry) {
-			if (is_array($entry) === false) {
-				throw new UnexpectedValueException('unreadable_event:' . $index);
-			}
-
-			$item = trim((string)($entry['itemId'] ?? ''));
-			if (in_array($item, $keys, true) === false) {
-				throw new UnexpectedValueException('orphan_item:' . $item);
-			}
-
-			$moment = trim((string)($entry['at'] ?? ''));
-			if (preg_match(self::MOMENT, $moment) !== 1) {
-				throw new UnexpectedValueException('unreadable_moment:' . $index);
-			}
-
-			$row = ['item' => $item, 'to' => (string)($entry['to'] ?? ''), 'at' => $moment];
-			$from = trim((string)($entry['from'] ?? ''));
-			if ($from !== '') {
-				$row['from'] = $from;
-			}
-
-			$history[] = $row;
-		}//end foreach
+			$history[] = $this->historyRow(entry: $entry, index: $index, keys: $keys);
+		}
 
 		return $history;
 	}//end history()
+
+	/**
+	 * One event log entry as a history entry, refusing what cannot be carried.
+	 *
+	 * @param mixed              $entry The event log entry.
+	 * @param int|string         $index Its position in the log.
+	 * @param array<int, string> $keys  The definition's item keys.
+	 *
+	 * @return array<string, string> Entry `{item, from?, to, at}`.
+	 *
+	 * @throws UnexpectedValueException `unreadable_event:<index>`, `orphan_item:<key>` or `unreadable_moment:<index>`.
+	 */
+	private function historyRow(mixed $entry, int|string $index, array $keys): array {
+		if (is_array($entry) === false) {
+			throw new UnexpectedValueException('unreadable_event:' . $index);
+		}
+
+		$item = trim((string)($entry['itemId'] ?? ''));
+		if (in_array($item, $keys, true) === false) {
+			throw new UnexpectedValueException('orphan_item:' . $item);
+		}
+
+		$moment = trim((string)($entry['at'] ?? ''));
+		if (preg_match(self::MOMENT, $moment) !== 1) {
+			throw new UnexpectedValueException('unreadable_moment:' . $index);
+		}
+
+		return $this->withFrom(row: ['item' => $item, 'to' => (string)($entry['to'] ?? ''), 'at' => $moment], entry: $entry);
+	}//end historyRow()
+
+	/**
+	 * The history entry with the state it moved from, when the event names one.
+	 *
+	 * @param array<string, string> $row   The history entry.
+	 * @param array<mixed>          $entry The event log entry.
+	 *
+	 * @return array<string, string>
+	 */
+	private function withFrom(array $row, array $entry): array {
+		$from = trim((string)($entry['from'] ?? ''));
+		if ($from !== '') {
+			$row['from'] = $from;
+		}
+
+		return $row;
+	}//end withFrom()
 
 	/**
 	 * Which recorded states the rows do not hold.
