@@ -166,13 +166,14 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 		[$objectService, $register] = $this->availableRegister();
 		$collection = $this->ownedCollection(objectService: $objectService, wooRequest: $wooRequest, subjectRef: $subjectRef);
 
-		$caseType = $this->caseType(objectService: $objectService, register: $register);
+		$target = new IntakeRegister(objectService: $objectService, register: $register);
+		$caseType = $this->caseType(target: $target);
 		$started = $this->startedRequest(request: $request, wooRequest: $wooRequest);
-		$saved = $this->writeCase(objectService: $objectService, register: $register, caseType: $caseType, request: $started);
+		$saved = $this->writeCase(target: $target, caseType: $caseType, request: $started);
 		$caseId = $saved['id'];
 
 		if ($collection !== null) {
-			$this->linkLater(objectService: $objectService, register: $register, caseId: $caseId, collection: $collection, subjectRef: $subjectRef);
+			$this->linkLater(target: $target, caseId: $caseId, collection: $collection, subjectRef: $subjectRef);
 		}
 
 		// THE CASE NUMBER AND THE DATE, READ BACK FROM WHAT WAS WRITTEN, so
@@ -299,19 +300,19 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	 * past its timeout while the case already existed. A background job does
 	 * it right after; without a job list it is done here, as before.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param string               $register      The dossiq register.
-	 * @param string               $caseId        The case.
-	 * @param array<string, mixed> $collection    The dossier, already proven the resident's.
-	 * @param string               $subjectRef    The resident.
+	 * @param IntakeRegister       $target     The OpenRegister ObjectService and the dossiq register.
+	 * @param string               $caseId     The case.
+	 * @param array<string, mixed> $collection The dossier, already proven the resident's.
+	 * @param string               $subjectRef The resident.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/portal-submission-is-made-once/specs/woo-request-intake/spec.md#requirement-the-dossier-is-linked-to-the-case-after-the-case-is-answered-req-psm-002
 	 */
-	private function linkLater(object $objectService, string $register, string $caseId, array $collection, string $subjectRef): void {
+	private function linkLater(IntakeRegister $target, string $caseId, array $collection, string $subjectRef): void {
+		$register = $target->register;
 		if ($this->linkQueue === null) {
-			$this->collections->link(objectService: $objectService, register: $register, caseId: $caseId, collection: $collection);
+			$this->collections->link(objectService: $target->objectService, register: $register, caseId: $caseId, collection: $collection);
 			return;
 		}
 
@@ -341,8 +342,9 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 			$request = $this->requestAndIntake(answers: $answers, receivedAt: $receivedAt, origin: $origin);
 			[$objectService, $register, $receivedTerm] = $this->writeTarget();
 
-			$caseType = $this->caseType(objectService: $objectService, register: $register);
-			$saved = $this->writeCase(objectService: $objectService, register: $register, caseType: $caseType, request: $request);
+			$target = new IntakeRegister(objectService: $objectService, register: $register);
+			$caseType = $this->caseType(target: $target);
+			$saved = $this->writeCase(target: $target, caseType: $caseType, request: $request);
 		} catch (WooRequestRefused $e) {
 			// An unavailable dependency is `unavailable`; every other refusal is `refused`.
 			$outcome = ([WooRequestRefused::UNAVAILABLE => 'unavailable'][$e->getReason()] ?? 'refused');
@@ -350,7 +352,7 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 			return array_merge(WooReceivedAnswers::EMPTY_ANSWER, ['outcome' => $outcome, 'message' => $e->getDetail()]);
 		}//end try
 
-		return $this->termAnswer(receivedTerm: $receivedTerm, objectService: $objectService, register: $register, caseId: $saved['id']);
+		return $this->termAnswer(receivedTerm: $receivedTerm, target: $target, caseId: $saved['id']);
 	}//end receive()
 
 	/**
@@ -413,19 +415,18 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	 * instance's rolled `endDateCurrent`. Anything less answers `not-armed`
 	 * and leaves an internal timeline entry on the case saying why.
 	 *
-	 * @param WooReceivedTerm $receivedTerm  Reads the term back.
-	 * @param object          $objectService The OpenRegister ObjectService.
-	 * @param string          $register      The dossiq register.
-	 * @param string          $caseId        The written case.
+	 * @param WooReceivedTerm $receivedTerm Reads the term back.
+	 * @param IntakeRegister  $target       The OpenRegister ObjectService and the dossiq register.
+	 * @param string          $caseId       The written case.
 	 *
 	 * @return array{outcome: string, requestId: string, reference: string, dueAt: string, message: string, caseUrl: string}
 	 *
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-armed-means-a-term-runs-counted-from-when-the-requester-sent-it-req-wto-002
 	 */
-	private function termAnswer(WooReceivedTerm $receivedTerm, object $objectService, string $register, string $caseId): array {
+	private function termAnswer(WooReceivedTerm $receivedTerm, IntakeRegister $target, string $caseId): array {
 		return $receivedTerm->answer(
 			caseId: $caseId,
-			case: $this->cases->readCase(objectService: $objectService, register: $register, caseId: $caseId),
+			case: $this->cases->readCase(objectService: $target->objectService, register: $target->register, caseId: $caseId),
 			caseUrl: $this->urlGenerator->getAbsoluteURL('/index.php/apps/dossiq/cases/' . $caseId)
 		);
 	}//end termAnswer()
@@ -433,15 +434,14 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	/**
 	 * The version of the seeded Woo request case type that new cases get.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The dossiq register.
+	 * @param IntakeRegister $target The OpenRegister ObjectService and the dossiq register.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @throws WooRequestRefused UNAVAILABLE when it is not there.
 	 */
-	private function caseType(object $objectService, string $register): array {
-		$caseType = $this->cases->currentCaseType(objectService: $objectService, register: $register, caseTypeId: self::CASE_TYPE_ID);
+	private function caseType(IntakeRegister $target): array {
+		$caseType = $this->cases->currentCaseType(objectService: $target->objectService, register: $target->register, caseTypeId: self::CASE_TYPE_ID);
 		if ($caseType === null) {
 			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The Woo request case type is not installed.');
 		}
@@ -474,8 +474,7 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	/**
 	 * Write the case and answer its uuid.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param string               $register      The dossiq register.
+	 * @param IntakeRegister       $target        The OpenRegister ObjectService and the dossiq register.
 	 * @param array<string, mixed> $caseType      The Woo request case type.
 	 * @param array<string, mixed> $request       `wooRequest` (the request as the case keeps it), `intake`
 	 *                                            (how it came in: `startDate`, `intakeChannel`, and when known
@@ -489,7 +488,9 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	 *
 	 * @spec openspec/changes/a-portal-request-names-its-requester/specs/woo-request-intake/spec.md#requirement-a-case-filed-for-a-resident-names-who-asked-req-wri-006
 	 */
-	private function writeCase(object $objectService, string $register, array $caseType, array $request): array {
+	private function writeCase(IntakeRegister $target, array $caseType, array $request): array {
+		$objectService = $target->objectService;
+		$register = $target->register;
 		$case = $this->caseFields(caseType: $caseType, request: $request);
 
 		// THE REQUESTER DETAILS ALSO ANSWER THE CASE TYPE'S OWN QUESTIONS.
