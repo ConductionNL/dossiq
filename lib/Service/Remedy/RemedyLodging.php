@@ -108,13 +108,13 @@ class RemedyLodging implements RemedyLodgingInterface {
 		$received = ($this->dates->tryParse(value: ($objection['receivedDate'] ?? null)) ?? $this->dates->today());
 		$isTimely = $this->isTimely(decision: $decision, termDays: $remedy['termDays'], received: $received);
 		$opened = $this->openRemedyCase(objectService: $objectService, register: $register, caseSchema: $caseSchema, caseId: $caseId,
-			kind: $remedy['kind'], remedyType: $remedy['caseType'], received: $received);
+			remedy: $remedy, received: $received);
 		$openedId = self::openedIdOf(opened: $opened);
 
 		$record = $this->recordObjection(objectService: $objectService, register: $register, caseSchema: $caseSchema, openedId: $openedId,
 			decision: $decision, objection: ['receivedDate' => $received->format('Y-m-d'), 'isTimely' => $isTimely] + $objection);
 
-		return self::lodged(openedId: $openedId, record: $record, opened: $opened, isTimely: $isTimely);
+		return self::lodged(record: $record, opened: $opened, isTimely: $isTimely);
 	}//end lodge()
 
 	/**
@@ -172,18 +172,17 @@ class RemedyLodging implements RemedyLodgingInterface {
 	/**
 	 * What lodging a remedy answers.
 	 *
-	 * @param string               $openedId The opened remedy case.
 	 * @param array<string, mixed> $record   The recorded objection.
-	 * @param array<string, mixed> $opened   The opened remedy case, for its deadline.
+	 * @param array<string, mixed> $opened   The opened remedy case, for its id and deadline.
 	 * @param bool                 $isTimely Whether the remedy was lodged in time.
 	 *
 	 * @return array{caseId: string, objectionId: string, deadline: string, isTimely: bool}
 	 *
 	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-against-a-decided-case-req-rml-001
 	 */
-	private static function lodged(string $openedId, array $record, array $opened, bool $isTimely): array {
+	private static function lodged(array $record, array $opened, bool $isTimely): array {
 		return [
-			'caseId' => $openedId,
+			'caseId' => self::openedIdOf(opened: $opened),
 			'objectionId' => (string)($record['id'] ?? ($record['uuid'] ?? '')),
 			'deadline' => (string)($opened['plannedEndDate'] ?? ($opened['deadline'] ?? '')),
 			'isTimely' => $isTimely,
@@ -248,8 +247,7 @@ class RemedyLodging implements RemedyLodgingInterface {
 	 * @param string               $register      The register.
 	 * @param string               $caseSchema    The case schema.
 	 * @param string               $caseId        The decided case.
-	 * @param string               $kind          The remedy kind, for the title.
-	 * @param string               $remedyType    The remedy case type.
+	 * @param array<string, mixed> $remedy        The remedy declaration: its kind, for the title, and its case type.
 	 * @param DateTimeImmutable    $received      When the remedy came in.
 	 *
 	 * @return array<string, mixed> The opened case, or an empty array.
@@ -261,8 +259,7 @@ class RemedyLodging implements RemedyLodgingInterface {
 		string $register,
 		string $caseSchema,
 		string $caseId,
-		string $kind,
-		string $remedyType,
+		array $remedy,
 		DateTimeImmutable $received,
 	): array {
 		$decided = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId) ?? [];
@@ -272,8 +269,8 @@ class RemedyLodging implements RemedyLodgingInterface {
 			register: $register,
 			schema: $caseSchema,
 			object: [
-				'title' => trim(ucfirst($kind) . ': ' . (string)($decided['title'] ?? $caseId)),
-				'caseType' => $remedyType,
+				'title' => trim(ucfirst((string)$remedy['kind']) . ': ' . (string)($decided['title'] ?? $caseId)),
+				'caseType' => (string)$remedy['caseType'],
 				'startDate' => $received->format('Y-m-d'),
 			],
 		) ?? [];
