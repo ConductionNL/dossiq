@@ -375,6 +375,26 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 			return;
 		}
 
+		if ($this->patchRow(mapping: $mapping, uuid: $uuid, changes: $changes) === false) {
+			return;
+		}
+
+		$mapping->tally['mapped']++;
+		if (isset($changes['groundsUnmapped']) === true) {
+			$mapping->tally['unmapped'][$uuid] = $changes['groundsUnmapped'];
+		}
+	}//end mapRow()
+
+	/**
+	 * Write the changes onto the row, counting a failed write.
+	 *
+	 * @param RefusalGroundMapping $mapping The schema, with its tally.
+	 * @param string               $uuid    The row's uuid.
+	 * @param array<string, mixed> $changes The mapped codes.
+	 *
+	 * @return bool True when the row was written.
+	 */
+	private function patchRow(RefusalGroundMapping $mapping, string $uuid, array $changes): bool {
 		try {
 			$this->patchObjectAsArray(
 				objectService: $mapping->objectService,
@@ -384,17 +404,27 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 				changes: $changes
 			);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: the Woo refusal ground mapping failed for one row',
-				['app' => AppIdentity::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
-			);
-			$mapping->tally['failed']++;
-			return;
+			$this->rowFailed(mapping: $mapping, uuid: $uuid, error: $e);
+			return false;
 		}
 
-		$mapping->tally['mapped']++;
-		if (isset($changes['groundsUnmapped']) === true) {
-			$mapping->tally['unmapped'][$uuid] = $changes['groundsUnmapped'];
-		}
-	}//end mapRow()
+		return true;
+	}//end patchRow()
+
+	/**
+	 * Log a row that could not be written and count it as failed.
+	 *
+	 * @param RefusalGroundMapping $mapping The schema, with its tally.
+	 * @param string               $uuid    The row's uuid.
+	 * @param Throwable            $error   The failure.
+	 *
+	 * @return void
+	 */
+	private function rowFailed(RefusalGroundMapping $mapping, string $uuid, Throwable $error): void {
+		$this->logger->error(
+			'Dossiq: the Woo refusal ground mapping failed for one row',
+			['app' => AppIdentity::APP_ID, 'uuid' => $uuid, 'exception' => $error->getMessage()]
+		);
+		$mapping->tally['failed']++;
+	}//end rowFailed()
 }//end class
