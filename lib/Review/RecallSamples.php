@@ -293,20 +293,46 @@ class RecallSamples implements RecallSamplesInterface {
 	 */
 	private function complete(string $caseId, array $sample, string $userId): array {
 		$rule = $this->rules->forCase(caseId: $caseId);
+		$confidence = $this->confidenceOf(rule: $rule);
+
+		$sample = $this->withEstimate(sample: $sample, confidence: $confidence);
+
+		$metAt = $this->met->record(caseId: $caseId, rule: $rule, sample: $sample, userId: $userId);
+		if ($metAt !== null) {
+			$sample['stoppingRuleMetAt'] = $metAt;
+		}
+
+		return $sample;
+	}//end complete()
+
+	/**
+	 * The confidence the stopping rule asks for, or the default without one.
+	 *
+	 * @param array<string, mixed>|null $rule The case's stopping rule.
+	 *
+	 * @return float The confidence.
+	 */
+	private function confidenceOf(?array $rule): float {
 		$confidence = self::DEFAULT_CONFIDENCE;
 		if ($rule !== null) {
 			$confidence = (float)$rule['confidence'];
 		}
 
+		return $confidence;
+	}//end confidenceOf()
+
+	/**
+	 * The sample with its recall estimate.
+	 *
+	 * @param array<string, mixed> $sample     The fully judged sample.
+	 * @param float                $confidence The confidence.
+	 *
+	 * @return array<string, mixed> The sample with its estimate.
+	 */
+	private function withEstimate(array $sample, float $confidence): array {
 		$inScope = array_filter((array)$sample['judgements'], static fn (mixed $judgement): bool => $judgement === DocumentRelevance::IN_SCOPE);
 		$k = count($inScope);
-		$estimate = $this->estimator->estimate(
-			found: (int)($sample['found'] ?? 0),
-			nullSetSize: (int)($sample['nullSetSize'] ?? 0),
-			k: $k,
-			n: count((array)$sample['documents']),
-			confidence: $confidence,
-		);
+		$estimate = $this->estimateOf(sample: $sample, k: $k, confidence: $confidence);
 
 		$sample['k'] = $k;
 		$sample['confidence'] = $confidence;
@@ -316,13 +342,27 @@ class RecallSamples implements RecallSamplesInterface {
 		$sample['recallLowerBound'] = round((float)$estimate['lowerBound'], 4);
 		$sample['estimatedAt'] = date(DATE_ATOM);
 
-		$metAt = $this->met->record(caseId: $caseId, rule: $rule, sample: $sample, userId: $userId);
-		if ($metAt !== null) {
-			$sample['stoppingRuleMetAt'] = $metAt;
-		}
-
 		return $sample;
-	}//end complete()
+	}//end withEstimate()
+
+	/**
+	 * The estimator's answer for a judged sample.
+	 *
+	 * @param array<string, mixed> $sample     The fully judged sample.
+	 * @param int                  $k          How many sampled documents were in scope.
+	 * @param float                $confidence The confidence.
+	 *
+	 * @return array<string, mixed> The estimate.
+	 */
+	private function estimateOf(array $sample, int $k, float $confidence): array {
+		return $this->estimator->estimate(
+			found: (int)($sample['found'] ?? 0),
+			nullSetSize: (int)($sample['nullSetSize'] ?? 0),
+			k: $k,
+			n: count((array)$sample['documents']),
+			confidence: $confidence,
+		);
+	}//end estimateOf()
 
 	/**
 	 * The sample of this case, or a refusal.
@@ -405,6 +445,24 @@ class RecallSamples implements RecallSamplesInterface {
 			throw $this->unstored(previous: null);
 		}
 
+		$saved = $this->storeSample(objectService: $objectService, sample: $sample, schema: $schema, uuid: $uuid);
+
+		return $this->savedRow(saved: $saved);
+	}//end save()
+
+	/**
+	 * Write the sample, refusing when the write fails.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $sample        The sample, without its metadata.
+	 * @param string               $schema        The sample schema.
+	 * @param string|null          $uuid          The sample's uuid, null for a new one.
+	 *
+	 * @return mixed What the ObjectService answered.
+	 *
+	 * @throws RefusedException When it cannot be stored.
+	 */
+	private function storeSample($objectService, array $sample, string $schema, ?string $uuid): mixed {
 		try {
 			$saved = $objectService->saveObject(
 				object: $sample,
@@ -417,12 +475,23 @@ class RecallSamples implements RecallSamplesInterface {
 			throw $this->unstored(previous: $e);
 		}
 
+		return $saved;
+	}//end storeSample()
+
+	/**
+	 * The stored sample as an array.
+	 *
+	 * @param mixed $saved What the ObjectService answered.
+	 *
+	 * @return array<string, mixed> The stored sample.
+	 */
+	private function savedRow(mixed $saved): array {
 		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
 			return (array)$saved->jsonSerialize();
 		}
 
 		return (array)$saved;
-	}//end save()
+	}//end savedRow()
 
 	/**
 	 * The refusal when the sample cannot be stored.
