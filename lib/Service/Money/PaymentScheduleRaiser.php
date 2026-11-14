@@ -140,17 +140,32 @@ class PaymentScheduleRaiser implements PaymentScheduleRaiserInterface {
 		}
 
 		if ($raised > 0) {
-			$decision['paymentSchedule'] = $schedule;
-			$objectService->saveObject(
-				object: $decision,
-				register: AppIdentity::REGISTER_SLUG,
-				schema: self::DECISION_SCHEMA,
-				uuid: (string)($decision['id'] ?? $decision['uuid'] ?? '')
-			);
+			$this->saveSchedule(objectService: $objectService, decision: $decision, schedule: $schedule);
 		}
 
 		return $raised;
 	}//end raiseForDecision()
+
+	/**
+	 * Save the decision with its updated payment schedule.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $decision      The decision.
+	 * @param array<string, mixed> $schedule      The schedule with the raised instalments marked.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten/spec.md#requirement-advances-are-a-payment-schedule-raised-with-finance-when-due-req-sub-case-02
+	 */
+	private function saveSchedule(object $objectService, array $decision, array $schedule): void {
+		$decision['paymentSchedule'] = $schedule;
+		$objectService->saveObject(
+			object: $decision,
+			register: AppIdentity::REGISTER_SLUG,
+			schema: self::DECISION_SCHEMA,
+			uuid: (string)($decision['id'] ?? $decision['uuid'] ?? '')
+		);
+	}//end saveSchedule()
 
 	/**
 	 * Whether an instalment is due, unraised and free of an unmet condition.
