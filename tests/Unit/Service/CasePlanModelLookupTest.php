@@ -30,6 +30,10 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Service\CasePlanProjectionService
  * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\CaseModelConverter
+ * @uses \OCA\Dossiq\Service\SentryConverter
+ * @uses \OCA\Dossiq\Service\CaseModelSearchHits
+ * @uses \OCA\Dossiq\Service\PlanItemIndex
  */
 final class CasePlanModelLookupTest extends TestCase {
 

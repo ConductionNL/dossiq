@@ -88,6 +88,9 @@ class AnonymousRefusingObjectService {
  *
  * @covers \OCA\Dossiq\Service\CaseTypeSlugResolver
  * @covers \OCA\Dossiq\Service\CasePlanProjectionService
+ * @uses \OCA\Dossiq\Service\CaseModelConverter
+ * @uses \OCA\Dossiq\Service\SentryConverter
+ * @uses \OCA\Dossiq\Service\CaseModelSearchHits
  */
 class BackgroundReadsRunAsSystemTest extends TestCase {
 
