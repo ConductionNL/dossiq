@@ -255,33 +255,63 @@ class TermLetters {
 		$declared = trim((string)($letter->context['chaseText'] ?? ''));
 
 		if ($english === true) {
-			$body = "Dear applicant,\n\n"
-				. 'We are still waiting for what we asked you for on case ' . $letter->reference . ".\n";
-			if ($declared !== '') {
-				$body .= $declared . "\n";
-			}
-
-			return [
-				'subject' => 'A reminder about case ' . $letter->reference,
-				'body' => $body
-					. "\nWe need this by " . $due . ".\n"
-					. 'The term for your case stays paused until your answer arrives (Awb 4:5).',
-			];
+			return $this->englishInformationReminder(reference: $letter->reference, due: $due, declared: $declared);
 		}
 
-		$body = "Beste aanvrager,\n\n"
-			. 'Wij wachten nog op wat wij u gevraagd hebben voor zaak ' . $letter->reference . ".\n";
+		return $this->dutchInformationReminder(reference: $letter->reference, due: $due, declared: $declared);
+	}//end informationReminder()
+
+	/**
+	 * The information reminder in English.
+	 *
+	 * @param string $reference The case reference.
+	 * @param string $due       The date the information is needed by, as shown.
+	 * @param string $declared  The case type's words for this reason, or ''.
+	 *
+	 * @return array{subject:string, body:string} The rendered message.
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function englishInformationReminder(string $reference, string $due, string $declared): array {
+		$body = "Dear applicant,\n\n"
+			. 'We are still waiting for what we asked you for on case ' . $reference . ".\n";
 		if ($declared !== '') {
 			$body .= $declared . "\n";
 		}
 
 		return [
-			'subject' => 'Herinnering over zaak ' . $letter->reference,
+			'subject' => 'A reminder about case ' . $reference,
+			'body' => $body
+				. "\nWe need this by " . $due . ".\n"
+				. 'The term for your case stays paused until your answer arrives (Awb 4:5).',
+		];
+	}//end englishInformationReminder()
+
+	/**
+	 * The information reminder in Dutch.
+	 *
+	 * @param string $reference The case reference.
+	 * @param string $due       The date the information is needed by, as shown.
+	 * @param string $declared  The case type's words for this reason, or ''.
+	 *
+	 * @return array{subject:string, body:string} The rendered message.
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function dutchInformationReminder(string $reference, string $due, string $declared): array {
+		$body = "Beste aanvrager,\n\n"
+			. 'Wij wachten nog op wat wij u gevraagd hebben voor zaak ' . $reference . ".\n";
+		if ($declared !== '') {
+			$body .= $declared . "\n";
+		}
+
+		return [
+			'subject' => 'Herinnering over zaak ' . $reference,
 			'body' => $body
 				. "\nWij ontvangen dit graag voor " . $due . ".\n"
 				. 'De termijn van uw zaak staat stil tot uw antwoord binnen is (Awb 4:5).',
 		];
-	}//end informationReminder()
+	}//end dutchInformationReminder()
 
 	/**
 	 * The acknowledgement of receipt, Awb 4:3a.
