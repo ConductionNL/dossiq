@@ -228,6 +228,27 @@ class FormsIntakeService implements FormsIntakeServiceInterface {
 			return null;
 		}
 
+		$rows = $this->rowsBoundTo(objectService: $objectService, register: $register, schema: $schema, formHash: $formHash);
+		if ($rows === null) {
+			return null;
+		}
+
+		return $this->firstBoundTo(rows: $rows, formHash: $formHash);
+	}//end caseTypeBoundTo()
+
+	/**
+	 * The case type rows the store answers for the form.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register      The register id.
+	 * @param string $schema        The case type schema id.
+	 * @param string $formHash      The form's hash.
+	 *
+	 * @return array<int, mixed>|null The rows, or null when the lookup failed.
+	 *
+	 * @spec openspec/specs/leaf-integrations/spec.md
+	 */
+	private function rowsBoundTo(object $objectService, string $register, string $schema, string $formHash): ?array {
 		try {
 			// 🔴 A BARE KEY, NOT `filter[intakeFormRef]`. The objects endpoint
 			// reads a bare property name and answers the EMPTY SET for a
@@ -250,7 +271,20 @@ class FormsIntakeService implements FormsIntakeServiceInterface {
 			return null;
 		}
 
-		$rows = $this->rowsOf(result: $rows);
+		return $this->rowsOf(result: $rows);
+	}//end rowsBoundTo()
+
+	/**
+	 * The first row that is bound to the form.
+	 *
+	 * @param array<int, mixed> $rows     The rows the store answered.
+	 * @param string            $formHash The form's hash.
+	 *
+	 * @return array<string, mixed>|null The case type, or null when none is bound.
+	 *
+	 * @spec openspec/specs/leaf-integrations/spec.md
+	 */
+	private function firstBoundTo(array $rows, string $formHash): ?array {
 		foreach ($rows as $row) {
 			$row = $this->arrayOf(row: $row);
 			// The filter is asked of the store and then CHECKED here. A store
@@ -263,7 +297,7 @@ class FormsIntakeService implements FormsIntakeServiceInterface {
 		}
 
 		return null;
-	}//end caseTypeBoundTo()
+	}//end firstBoundTo()
 
 	/**
 	 * Write the case: through OpenRegister's form submit, or as a plain save without it.
