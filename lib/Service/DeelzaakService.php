@@ -276,31 +276,60 @@ class DeelzaakService implements DeelzaakServiceInterface {
 			return ['ok' => false, 'reason' => 'parent_not_found'];
 		}
 
-		if (empty($parent['parentCase']) === false) {
-			return ['ok' => false, 'reason' => 'grandparenting_forbidden'];
-		}
-
-		if (empty($parent['endDate']) === false) {
-			return ['ok' => false, 'reason' => 'parent_closed'];
-		}
-
-		$parentCaseTypeId = (string)($parent['caseType'] ?? '');
-		if ($parentCaseTypeId === '') {
-			return ['ok' => false, 'reason' => 'parent_missing_case_type'];
-		}
-
-		$parentCaseType = $this->caseReader->loadCaseType(caseTypeId: $parentCaseTypeId);
-		if ($parentCaseType === null) {
-			return ['ok' => false, 'reason' => 'parent_case_type_not_found'];
-		}
-
-		$allowed = (array)($parentCaseType['subCaseTypes'] ?? []);
-		if ($allowed === [] || in_array($childCaseTypeId, $allowed, true) === false) {
-			return ['ok' => false, 'reason' => 'case_type_not_allowed'];
+		$reason = $this->parentRefusal(parent: $parent, childCaseTypeId: $childCaseTypeId);
+		if ($reason !== '') {
+			return ['ok' => false, 'reason' => $reason];
 		}
 
 		return ['ok' => true];
 	}//end validateCreate()
+
+	/**
+	 * Why the parent cannot take this sub-case, '' when it can.
+	 *
+	 * @param array<string, mixed> $parent          The parent case.
+	 * @param string               $childCaseTypeId Child caseType id/slug.
+	 *
+	 * @return string The reason, or ''.
+	 */
+	private function parentRefusal(array $parent, string $childCaseTypeId): string {
+		if (empty($parent['parentCase']) === false) {
+			return 'grandparenting_forbidden';
+		}
+
+		if (empty($parent['endDate']) === false) {
+			return 'parent_closed';
+		}
+
+		$parentCaseTypeId = (string)($parent['caseType'] ?? '');
+		if ($parentCaseTypeId === '') {
+			return 'parent_missing_case_type';
+		}
+
+		return $this->subCaseTypeRefusal(parentCaseTypeId: $parentCaseTypeId, childCaseTypeId: $childCaseTypeId);
+	}//end parentRefusal()
+
+	/**
+	 * Why the parent's case type does not allow the child case type, '' when it does.
+	 *
+	 * @param string $parentCaseTypeId The parent's caseType id.
+	 * @param string $childCaseTypeId  Child caseType id/slug.
+	 *
+	 * @return string The reason, or ''.
+	 */
+	private function subCaseTypeRefusal(string $parentCaseTypeId, string $childCaseTypeId): string {
+		$parentCaseType = $this->caseReader->loadCaseType(caseTypeId: $parentCaseTypeId);
+		if ($parentCaseType === null) {
+			return 'parent_case_type_not_found';
+		}
+
+		$allowed = (array)($parentCaseType['subCaseTypes'] ?? []);
+		if ($allowed === [] || in_array($childCaseTypeId, $allowed, true) === false) {
+			return 'case_type_not_allowed';
+		}
+
+		return '';
+	}//end subCaseTypeRefusal()
 
 	/**
 	 * Unlink every sub-case of the given parent — used by the delete-with-children
