@@ -150,6 +150,28 @@ class TermijnService implements TermijnServiceInterface {
 		?DateTimeImmutable $startDate = null,
 		?array $resolution = null,
 	): array {
+		$start = $this->termStart(caseId: $caseId, caseType: $caseType, startDate: $startDate, resolution: $resolution);
+
+		$saved = $this->storeStartedInstance(start: $start);
+
+		$this->recordStart(saved: $saved, start: $start);
+
+		return $this->armOrFollow(saved: $saved, start: $start);
+	}//end createTermijnInstance()
+
+	/**
+	 * The start of a term, with the definition it starts under.
+	 *
+	 * @param string                    $caseId     The case uuid.
+	 * @param string                    $caseType   The zaaktype identifier.
+	 * @param DateTimeImmutable|null    $startDate  Optional start (defaults to now).
+	 * @param array<string, mixed>|null $resolution The resolution a caller already made.
+	 *
+	 * @return TermStart
+	 *
+	 * @throws NoTermijnDefinitieException When no TermijnDefinitie matches the zaaktype.
+	 */
+	private function termStart(string $caseId, string $caseType, ?DateTimeImmutable $startDate, ?array $resolution): TermStart {
 		$start = new TermStart();
 		$start->caseId = $caseId;
 		$start->caseType = $caseType;
@@ -158,8 +180,18 @@ class TermijnService implements TermijnServiceInterface {
 		$start->definitie = $this->definitionToStart(start: $start);
 		$start->durationDays = (int)($start->definitie['standardDurationDays'] ?? 0);
 
-		$saved = $this->storeStartedInstance(start: $start);
+		return $start;
+	}//end termStart()
 
+	/**
+	 * Record the start event of a stored instance.
+	 *
+	 * @param array<string, mixed> $saved The stored instance.
+	 * @param TermStart            $start The start it was stored from.
+	 *
+	 * @return void
+	 */
+	private function recordStart(array $saved, TermStart $start): void {
 		$this->recordEvent(
 			termInstanceId: (string)($saved['id'] ?? ''),
 			type: 'start',
@@ -168,7 +200,17 @@ class TermijnService implements TermijnServiceInterface {
 			daysImpact: $start->durationDays,
 			moment: $start->startDate,
 		);
+	}//end recordStart()
 
+	/**
+	 * Arm the engine timer, or bring the case in line when no timer was armed.
+	 *
+	 * @param array<string, mixed> $saved The stored instance.
+	 * @param TermStart            $start The start it was stored from.
+	 *
+	 * @return array<string, mixed> The instance as last written.
+	 */
+	private function armOrFollow(array $saved, TermStart $start): array {
 		$armed = $this->armEngineTimer(instance: $saved, definitie: $start->definitie);
 		if ($armed !== null) {
 			// Arming wrote the instance again through updateTermijnInstance(),
@@ -179,7 +221,7 @@ class TermijnService implements TermijnServiceInterface {
 		$this->followCase(instance: $saved);
 
 		return $saved;
-	}//end createTermijnInstance()
+	}//end armOrFollow()
 
 	/**
 	 * The definition the term starts from: the resolution's, or the case type's active one.
@@ -479,40 +521,49 @@ class TermijnService implements TermijnServiceInterface {
 	): ?array {
 		$voltooiDatum = ($voltooiDatum ?? new DateTimeImmutable());
 
-		$updated = $this->updateTermijnInstance(
-			termInstanceId: $termInstanceId,
-			patch: ['status' => 'completed', 'voltooiDatum' => $voltooiDatum->format('Y-m-d')]
-		);
+		$patch = ['status' => 'completed', 'voltooiDatum' => $voltooiDatum->format('Y-m-d')];
+		$updated = $this->updateTermijnInstance(termInstanceId: $termInstanceId, patch: $patch);
 
 		if ($updated !== null) {
-			$why = $this->completionReason(rationale: $rationale);
-
-			$this->recordEvent(
-				termInstanceId: $termInstanceId,
-				type: 'voltooi',
-				basis: 'AWB 4:13',
-				// WHY A TERM ENDED IS NOT ALWAYS "door beschikking". A rebind
-				// closes a running term to re-arm it against the new case
-				// type's definition, and recording that as a decision would put
-				// a beschikking in the audit trail of a case that never got
-				// one. The default is the old sentence, so every existing
-				// caller reads exactly as it did.
-				rationale: $why,
-				daysImpact: 0,
-				moment: $voltooiDatum,
-				documentLink: $documentLink,
-			);
-
-			// Completion cancels every open timer of the instance, in the
-			// same operation that made the term terminal (REQ-TOT-001).
-			$this->timerService?->cancelForInstance(
-				instanceId: $termInstanceId,
-				reason: $why
-			);
+			$this->recordCompletion(termInstanceId: $termInstanceId, voltooiDatum: $voltooiDatum, documentLink: $documentLink, rationale: $rationale);
 		}
 
 		return $updated;
 	}//end markTermijnCompleted()
+
+	/**
+	 * Record the completion event and cancel every open timer of the instance.
+	 *
+	 * @param string            $termInstanceId Instance id.
+	 * @param DateTimeImmutable $voltooiDatum   When completed.
+	 * @param string            $documentLink   Optional document ref.
+	 * @param string            $rationale      Why the term ended.
+	 *
+	 * @return void
+	 */
+	private function recordCompletion(string $termInstanceId, DateTimeImmutable $voltooiDatum, string $documentLink, string $rationale): void {
+		$why = $this->completionReason(rationale: $rationale);
+
+		$this->recordEvent(
+			termInstanceId: $termInstanceId,
+			type: 'voltooi',
+			basis: 'AWB 4:13',
+			// WHY A TERM ENDED IS NOT ALWAYS "door beschikking". A rebind
+			// closes a running term to re-arm it against the new case
+			// type's definition, and recording that as a decision would put
+			// a beschikking in the audit trail of a case that never got
+			// one. The default is the old sentence, so every existing
+			// caller reads exactly as it did.
+			rationale: $why,
+			daysImpact: 0,
+			moment: $voltooiDatum,
+			documentLink: $documentLink,
+		);
+
+		// Completion cancels every open timer of the instance, in the
+		// same operation that made the term terminal (REQ-TOT-001).
+		$this->timerService?->cancelForInstance(instanceId: $termInstanceId, reason: $why);
+	}//end recordCompletion()
 
 	/**
 	 * Why the term ended: the caller's reason, or the decision sentence by default.
