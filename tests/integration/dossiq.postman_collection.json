@@ -64,6 +64,14 @@
 		{
 			"key": "noAuthBase",
 			"value": "http://127.0.0.1:8080"
+		},
+		{
+			"key": "apiKeyValue",
+			"value": ""
+		},
+		{
+			"key": "apiKeyConsumerId",
+			"value": ""
 		}
 	],
 	"auth": {
@@ -1486,6 +1494,311 @@
 								"dossiq",
 								"api",
 								"complaints"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Public API access with an API key",
+			"item": [
+				{
+					"name": "create API-key consumer (setup: 201, captures id)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// A fresh key per run, so a leftover consumer from an aborted run never matches.",
+									"pm.collectionVariables.set('apiKeyValue', 'newman-' + pm.variables.replaceIn('{{$guid}}'));"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('201 Created', () => pm.response.to.have.status(201));",
+									"const b = pm.response.json();",
+									"pm.test('consumer has an id', () => pm.expect(b.id).to.not.be.undefined);",
+									"pm.collectionVariables.set('apiKeyConsumerId', b.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{adminUser}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{adminPass}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"newman-api-key-consumer\",\n  \"description\": \"Newman: API-key caller scoped to zaken.lezen only.\",\n  \"authorizationType\": \"apiKey\",\n  \"authorizationConfiguration\": {\n    \"apiKey\": \"{{apiKeyValue}}\",\n    \"scopes\": [\n      {\n        \"component\": \"zrc\",\n        \"scopes\": [\n          \"zaken.lezen\"\n        ]\n      }\n    ]\n  },\n  \"userId\": \"{{adminUser}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/index.php/apps/openregister/api/consumers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"index.php",
+								"apps",
+								"openregister",
+								"api",
+								"consumers"
+							]
+						}
+					}
+				},
+				{
+					"name": "zaken list with API key (happy: 200, key in scope zaken.lezen)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Cookie isolation: run against {{noAuthBase}} with a cleared jar, so the only",
+									"// credential the request carries is the API key.",
+									"const jar = pm.cookies.jar();",
+									"jar.clear(pm.request.url.toString(), function () {});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('200 OK with an API key whose applicatie grants zaken.lezen', () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Api-Key",
+								"value": "{{apiKeyValue}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{noAuthBase}}/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+							"host": [
+								"{{noAuthBase}}"
+							],
+							"path": [
+								"index.php",
+								"apps",
+								"dossiq",
+								"api",
+								"zgw",
+								"zaken",
+								"v1",
+								"zaken"
+							]
+						}
+					}
+				},
+				{
+					"name": "zaaktypen list with API key (authz: 403, out of scope)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Cookie isolation: run against {{noAuthBase}} with a cleared jar, so the only",
+									"// credential the request carries is the API key.",
+									"const jar = pm.cookies.jar();",
+									"jar.clear(pm.request.url.toString(), function () {});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('403 Forbidden: the key is known but its applicatie does not grant catalogi.lezen', () => pm.response.to.have.status(403));",
+									"pm.test('the key is not echoed', () => pm.expect(pm.response.text()).to.not.include(pm.collectionVariables.get('apiKeyValue')));"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Api-Key",
+								"value": "{{apiKeyValue}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{noAuthBase}}/index.php/apps/dossiq/api/zgw/catalogi/v1/zaaktypen",
+							"host": [
+								"{{noAuthBase}}"
+							],
+							"path": [
+								"index.php",
+								"apps",
+								"dossiq",
+								"api",
+								"zgw",
+								"catalogi",
+								"v1",
+								"zaaktypen"
+							]
+						}
+					}
+				},
+				{
+					"name": "zaken list with unknown API key (authz: 401)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Cookie isolation: run against {{noAuthBase}} with a cleared jar, so the only",
+									"// credential the request carries is the API key.",
+									"const jar = pm.cookies.jar();",
+									"jar.clear(pm.request.url.toString(), function () {});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('401 Unauthorized for a key no consumer holds', () => pm.response.to.have.status(401));",
+									"pm.test('the key is not echoed', () => pm.expect(pm.response.text()).to.not.include('newman-unknown-key'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Api-Key",
+								"value": "newman-unknown-key"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{noAuthBase}}/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+							"host": [
+								"{{noAuthBase}}"
+							],
+							"path": [
+								"index.php",
+								"apps",
+								"dossiq",
+								"api",
+								"zgw",
+								"zaken",
+								"v1",
+								"zaken"
+							]
+						}
+					}
+				},
+				{
+					"name": "delete API-key consumer (cleanup: 200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('consumer removed', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{adminUser}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{adminPass}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/index.php/apps/openregister/api/consumers/{{apiKeyConsumerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"index.php",
+								"apps",
+								"openregister",
+								"api",
+								"consumers",
+								"{{apiKeyConsumerId}}"
 							]
 						}
 					}

@@ -19,12 +19,14 @@
 ## 3. Admin link
 
 - [ ] 3.1 Dossiq's integrations tab (`src/manifest.json` page `Integrations`, board DqInstellingen) gets a link "API-sleutels beheren" to OpenRegister's key screen.
+  - Open: OpenRegister ships no consumer key screen yet (board `openregister/OrKoppelingen` is designed, not built; its frontend has no consumers page, only the `/api/consumers` resource). A link now would land on nothing; add it when that screen exists.
 
 ## 4. Tests
 
 - [x] 4.1 `tests/Unit/Service/Zgw/ApiCredentialResolverTest.php`: JWT ok, API key ok, certificate ok from a trusted proxy, certificate ignored from an untrusted address, bad JWT does not fall through, revoked consumer refused.
 - [x] 4.2 Update `tests/Unit/Middleware/ZgwAuthMiddlewareTest.php` and `tests/Unit/Service/ZgwJwtValidatorTest.php` for the moved lookup.
-- [ ] 4.3 Newman: add an API-key request and an out-of-scope API-key request (403) to `tests/integration/dossiq.postman_collection.json`.
+- [x] 4.3 Newman: add an API-key request and an out-of-scope API-key request (403) to `tests/integration/dossiq.postman_collection.json`.
+  - Folder `5. Public API access with an API key`: creates an `apiKey` consumer scoped to `zaken.lezen` through OpenRegister's consumer API, then a ZRC list (200), a ZTC list (403, out of scope), an unknown key (401), and deletes the consumer. Not run against a live instance in this build.
 
 ## 5. Matrix
 
