@@ -111,11 +111,13 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 		$objectService->runAsSystem(
 			function () use ($objectService, $register, $caseSchema, $valueSchema, $defSchema, $output): void {
 				$this->backfill(
-					objectService: $objectService,
-					register: $register,
-					caseSchema: $caseSchema,
-					valueSchema: $valueSchema,
-					defSchema: $defSchema,
+					store: new CasePropertyStore(
+						objectService: $objectService,
+						register: $register,
+						caseSchema: $caseSchema,
+						valueSchema: $valueSchema,
+						defSchema: $defSchema,
+					),
 					output: $output,
 				);
 			}
@@ -125,40 +127,24 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 	/**
 	 * Read the answers and their definitions, then write one array per case.
 	 *
-	 * @param object  $objectService OpenRegister's ObjectService.
-	 * @param string  $register      The register id.
-	 * @param string  $caseSchema    The case schema id.
-	 * @param string  $valueSchema   The caseProperty schema id.
-	 * @param string  $defSchema     The propertyDefinition schema id.
-	 * @param IOutput $output        Progress reporting.
+	 * @param CasePropertyStore $store  The object service, register and schemas.
+	 * @param IOutput           $output Progress reporting.
 	 *
 	 * @return void
 	 */
-	private function backfill(
-		object $objectService,
-		string $register,
-		string $caseSchema,
-		string $valueSchema,
-		string $defSchema,
-		IOutput $output,
-	): void {
-		$values = $this->readAll(objectService: $objectService, register: $register, schema: $valueSchema);
+	private function backfill(CasePropertyStore $store, IOutput $output): void {
+		$values = $this->readAll(store: $store, schema: $store->valueSchema);
 		if ($values === []) {
 			$output->info('No caseProperty rows to fold.');
 			return;
 		}
 
-		$names = $this->definitionNames(objectService: $objectService, register: $register, schema: $defSchema);
+		$names = $this->definitionNames(store: $store);
 		$byCase = $this->groupByCase(values: $values, names: $names);
 
 		$tally = ['written' => 0, 'skipped' => 0, 'failed' => 0];
 		foreach ($byCase as $caseId => $entries) {
-			$result = $this->foldOne(
-				objectService: $objectService,
-				caseSchema: $caseSchema,
-				caseId: (string) $caseId,
-				entries: $entries,
-			);
+			$result = $this->foldOne(store: $store, caseId: (string) $caseId, entries: $entries);
 			$tally[$result]++;
 		}
 
@@ -177,15 +163,13 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 	 *
 	 * Reading them per answer would be one request for a value that repeats.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register      The register id.
-	 * @param string $schema        The propertyDefinition schema id.
+	 * @param CasePropertyStore $store The object service, register and propertyDefinition schema.
 	 *
 	 * @return array<string, string> Definition id to name.
 	 */
-	private function definitionNames(object $objectService, string $register, string $schema): array {
+	private function definitionNames(CasePropertyStore $store): array {
 		$names = [];
-		foreach ($this->readAll(objectService: $objectService, register: $register, schema: $schema) as $def) {
+		foreach ($this->readAll(store: $store, schema: $store->defSchema) as $def) {
 			$id = (string) ($def['id'] ?? $def['uuid'] ?? '');
 			if ($id !== '') {
 				$names[$id] = (string) ($def['name'] ?? '');
@@ -225,14 +209,14 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 	/**
 	 * Write one case's properties array.
 	 *
-	 * @param object                            $objectService OpenRegister's ObjectService.
-	 * @param string                            $caseSchema    The case schema id.
-	 * @param string                            $caseId        The case to write.
-	 * @param array<int, array<string, string>> $entries       The entries to store.
+	 * @param CasePropertyStore                 $store   The object service and case schema.
+	 * @param string                            $caseId  The case to write.
+	 * @param array<int, array<string, string>> $entries The entries to store.
 	 *
 	 * @return string One of `written`, `skipped` or `failed`.
 	 */
-	private function foldOne(object $objectService, string $caseSchema, string $caseId, array $entries): string {
+	private function foldOne(CasePropertyStore $store, string $caseId, array $entries): string {
+		$objectService = $store->objectService;
 		try {
 			$case = $objectService->find($caseId, ['_rbac' => false, '_multitenancy' => false]);
 			if (is_object($case) === true && method_exists($case, 'jsonSerialize') === true) {
@@ -251,7 +235,7 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 			}
 
 			$case['properties'] = $entries;
-			$objectService->saveObject($caseSchema, $case, ['_rbac' => false, '_multitenancy' => false]);
+			$objectService->saveObject($store->caseSchema, $case, ['_rbac' => false, '_multitenancy' => false]);
 			return 'written';
 		} catch (Throwable $e) {
 			$this->logger->warning(
@@ -268,16 +252,15 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 	 * `occ` has no session, so every ObjectService call runs as Anonymous and
 	 * needs the access flags explicitly.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register      The register id.
-	 * @param string $schema        The schema id.
+	 * @param CasePropertyStore $store  The object service and register.
+	 * @param string            $schema The schema id.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	private function readAll(object $objectService, string $register, string $schema): array {
-		$rows = $objectService->findAll(
+	private function readAll(CasePropertyStore $store, string $schema): array {
+		$rows = $store->objectService->findAll(
 			[
-				'filters' => ['register' => $register, 'schema' => $schema],
+				'filters' => ['register' => $store->register, 'schema' => $schema],
 				'_rbac' => false,
 				'_multitenancy' => false,
 			]
