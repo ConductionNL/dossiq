@@ -57,6 +57,8 @@ use Throwable;
  * Controller for beschikking lifecycle endpoints.
  *
  * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class BeschikkingController extends Controller {
 	use TranslatesRefusals;
@@ -99,28 +101,13 @@ class BeschikkingController extends Controller {
 
 		$body = (new JsonRequestBody())->read(request: $this->request);
 		$caseId = (string)($body['caseId'] ?? '');
-		$templateId = null;
-		if (isset($body['templateId']) === true) {
-			$templateId = (string)$body['templateId'];
-		}
-
-		$overrides = (array)($body['addressee'] ?? []);
-		$payload = (array)$body;
+		$templateId = $this->templateIdOf(body: $body);
 
 		if ($caseId === '') {
 			return new JSONResponse(['error' => 'zaakId is required'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$merged = [];
-		if ($overrides !== []) {
-			$merged['addressee'] = $overrides;
-		}
-
-		foreach (['decisionType', 'rationale', 'decision'] as $field) {
-			if (isset($payload[$field]) === true) {
-				$merged[$field] = $payload[$field];
-			}
-		}
+		$merged = $this->composeFieldsOf(body: $body);
 
 		try {
 			$result = $this->decisionService->compose($caseId, $templateId, $merged);
@@ -133,6 +120,47 @@ class BeschikkingController extends Controller {
 			return $this->fail(op: 'compose', e: $e);
 		}
 	}//end create()
+
+	/**
+	 * The template a compose request names, or null.
+	 *
+	 * @param array $body The request body.
+	 *
+	 * @return string|null The template id.
+	 */
+	private function templateIdOf(array $body): ?string {
+		$templateId = null;
+		if (isset($body['templateId']) === true) {
+			$templateId = (string)$body['templateId'];
+		}
+
+		return $templateId;
+	}//end templateIdOf()
+
+	/**
+	 * The fields a compose request sets on the beschikking: the addressee overrides and the decision fields.
+	 *
+	 * @param array $body The request body.
+	 *
+	 * @return array The fields to merge.
+	 */
+	private function composeFieldsOf(array $body): array {
+		$overrides = (array)($body['addressee'] ?? []);
+		$payload = (array)$body;
+
+		$merged = [];
+		if ($overrides !== []) {
+			$merged['addressee'] = $overrides;
+		}
+
+		foreach (['decisionType', 'rationale', 'decision'] as $field) {
+			if (isset($payload[$field]) === true) {
+				$merged[$field] = $payload[$field];
+			}
+		}
+
+		return $merged;
+	}//end composeFieldsOf()
 
 	/**
 	 * Read a beschikking. [T06]
@@ -349,6 +377,36 @@ class BeschikkingController extends Controller {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function successor(string $id): JSONResponse {
+		$refusal = $this->successorRefusal(id: $id);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$body   = $this->request->getParams();
+		$reader = new JsonRequestBody();
+
+		try {
+			return $this->issueSuccessorOf(id: $id, body: $body, reader: $reader);
+		} catch (RefusedException $refusal) {
+			return $this->refused(op: 'successor', e: $refusal);
+		} catch (Throwable $failure) {
+			$this->logger->error(
+				'BeschikkingController: successor failed',
+				['exception' => $failure->getMessage(), 'beschikkingId' => $id],
+			);
+
+			return new JSONResponse(['error' => 'Could not complete the request'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}//end successor()
+
+	/**
+	 * Refuse a successor to an anonymous caller, for a beschikking that does not exist, or whose case the user may not change.
+	 *
+	 * @param string $id The original beschikking id.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the successor may be issued.
+	 */
+	private function successorRefusal(string $id): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -364,32 +422,34 @@ class BeschikkingController extends Controller {
 			return new JSONResponse(['error' => 'You may not change this case'], Http::STATUS_FORBIDDEN);
 		}
 
-		$body   = $this->request->getParams();
-		$reader = new JsonRequestBody();
+		return null;
+	}//end successorRefusal()
 
-		try {
-			$successor = $this->decisionService->issueSuccessor(
-				originalId: $id,
-				kind: (string)($body['decisionType'] ?? ''),
-				// The successor's content as the handler sent it, and nothing
-				// else: the number, the pointers and the status are never read
-				// from the body. A blank template keeps the original's.
-				overrides: $reader->only(body: $body, fields: ['rationale', 'decision', 'addressee']),
-				templateId: $reader->textOrNull(body: $body, field: 'templateId'),
-			);
+	/**
+	 * Issue the successor of a beschikking from the request body.
+	 *
+	 * @param string $id The original beschikking id.
+	 * @param array $body The request parameters.
+	 * @param JsonRequestBody $reader The body reader.
+	 *
+	 * @return JSONResponse The created successor.
+	 *
+	 * @throws RefusedException When the successor is refused.
+	 * @throws Throwable When issuing fails.
+	 */
+	private function issueSuccessorOf(string $id, array $body, JsonRequestBody $reader): JSONResponse {
+		$successor = $this->decisionService->issueSuccessor(
+			originalId: $id,
+			kind: (string)($body['decisionType'] ?? ''),
+			// The successor's content as the handler sent it, and nothing
+			// else: the number, the pointers and the status are never read
+			// from the body. A blank template keeps the original's.
+			overrides: $reader->only(body: $body, fields: ['rationale', 'decision', 'addressee']),
+			templateId: $reader->textOrNull(body: $body, field: 'templateId'),
+		);
 
-			return new JSONResponse($successor, Http::STATUS_CREATED);
-		} catch (RefusedException $refusal) {
-			return $this->refused(op: 'successor', e: $refusal);
-		} catch (Throwable $failure) {
-			$this->logger->error(
-				'BeschikkingController: successor failed',
-				['exception' => $failure->getMessage(), 'beschikkingId' => $id],
-			);
-
-			return new JSONResponse(['error' => 'Could not complete the request'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-	}//end successor()
+		return new JSONResponse($successor, Http::STATUS_CREATED);
+	}//end issueSuccessorOf()
 
 	/**
 	 * Resolve the current user UID or null.
