@@ -129,24 +129,7 @@ class IntakeMessageRoutedListener implements IEventListener {
 
 		try {
 			$targetSchema = (string)$event->getTargetSchema();
-			if ($this->intake->isForACase(targetSchema: $targetSchema) === false) {
-				// Another app's rule. Answering it would take the message away
-				// from whoever it was addressed to.
-				return;
-			}
-
-			$getters = new EventGetters();
-			$caseId = $this->intake->caseFor(
-				message: $getters->arrayFrom(event: $event, method: 'getMessage'),
-				targetPayload: $getters->arrayFrom(event: $event, method: 'getTargetPayload'),
-				ruleName: $getters->stringFrom(event: $event, method: 'getRuleName'),
-			);
-
-			if ($caseId === '' || method_exists($event, 'setCreatedRef') === false) {
-				return;
-			}
-
-			$event->setCreatedRef($caseId);
+			$this->answerCase(event: $event, targetSchema: $targetSchema);
 		} catch (Throwable $e) {
 			// The slot stays empty, so integriq holds the message. That is the
 			// same outcome as before this listener existed, and it is the right
@@ -158,4 +141,37 @@ class IntakeMessageRoutedListener implements IEventListener {
 			);
 		}
 	}//end answer()
+
+	/**
+	 * Create or find the case a routed message is for, and write it into the event.
+	 *
+	 * @param Event  $event        The integriq event.
+	 * @param string $targetSchema The schema the routing rule targets.
+	 *
+	 * @return void
+	 *
+	 * @throws Throwable When the intake cannot handle the message.
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function answerCase(Event $event, string $targetSchema): void {
+		if ($this->intake->isForACase(targetSchema: $targetSchema) === false) {
+			// Another app's rule. Answering it would take the message away
+			// from whoever it was addressed to.
+			return;
+		}
+
+		$getters = new EventGetters();
+		$caseId = $this->intake->caseFor(
+			message: $getters->arrayFrom(event: $event, method: 'getMessage'),
+			targetPayload: $getters->arrayFrom(event: $event, method: 'getTargetPayload'),
+			ruleName: $getters->stringFrom(event: $event, method: 'getRuleName'),
+		);
+
+		if ($caseId === '' || method_exists($event, 'setCreatedRef') === false) {
+			return;
+		}
+
+		$event->setCreatedRef($caseId);
+	}//end answerCase()
 }//end class
