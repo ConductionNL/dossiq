@@ -113,8 +113,10 @@ class ZgwParentStateResolver {
 
 		return $this->closedState(
 			objectService: $objectService,
-			uuid: $this->uuidIn(reference: (string)$zaakRef) ?? $zaakRef,
-			failMessage: 'Could not resolve zaak closed status — returning true (fail-closed)'
+			lookup: [
+				'uuid' => $this->uuidIn(reference: (string)$zaakRef) ?? $zaakRef,
+				'failMessage' => 'Could not resolve zaak closed status — returning true (fail-closed)',
+			]
 		);
 	}//end resolveZaakClosed()
 
@@ -146,8 +148,10 @@ class ZgwParentStateResolver {
 
 		return $this->closedState(
 			objectService: $objectService,
-			uuid: $zaakUuid,
-			failMessage: 'Could not resolve zaak closed status from body — returning true (fail-closed)'
+			lookup: [
+				'uuid' => $zaakUuid,
+				'failMessage' => 'Could not resolve zaak closed status from body — returning true (fail-closed)',
+			]
 		);
 	}//end resolveZaakClosedFromBody()
 
@@ -174,8 +178,10 @@ class ZgwParentStateResolver {
 
 		return $this->draftState(
 			objectService: $objectService,
-			uuid: $this->uuidIn(reference: (string)$caseTypeRef) ?? $caseTypeRef,
-			failMessage: 'Could not resolve parent zaaktype draft status: '
+			lookup: [
+				'uuid' => $this->uuidIn(reference: (string)$caseTypeRef) ?? $caseTypeRef,
+				'failMessage' => 'Could not resolve parent zaaktype draft status: ',
+			]
 		);
 	}//end resolveParentZaaktypeDraft()
 
@@ -207,8 +213,10 @@ class ZgwParentStateResolver {
 
 		return $this->draftState(
 			objectService: $objectService,
-			uuid: $zaaktypeUuid,
-			failMessage: 'Could not resolve parent zaaktype draft from body: '
+			lookup: [
+				'uuid' => $zaaktypeUuid,
+				'failMessage' => 'Could not resolve parent zaaktype draft from body: ',
+			]
 		);
 	}//end resolveParentZaaktypeDraftFromBody()
 
@@ -216,14 +224,14 @@ class ZgwParentStateResolver {
 	 * Look the zaak up and answer whether it is closed; any error reads as closed.
 	 *
 	 * @param object|null $objectService The OpenRegister ObjectService
-	 * @param mixed $uuid The zaak uuid (the raw reference when it held no uuid)
-	 * @param string $failMessage What to log when the lookup fails
+	 * @param array{uuid: mixed, failMessage: string} $lookup The zaak uuid (the raw reference when it held no uuid)
+	 *                                                        and what to log when the lookup fails
 	 *
 	 * @return bool|null True if closed or unknowable, false if open, null when not found
 	 */
-	private function closedState(?object $objectService, mixed $uuid, string $failMessage): ?bool {
+	private function closedState(?object $objectService, array $lookup): ?bool {
 		try {
-			$caseData = $this->findMapped(objectService: $objectService, mappingKey: 'case', uuid: $uuid);
+			$caseData = $this->findMapped(objectService: $objectService, mapped: ['mappingKey' => 'case', 'uuid' => $lookup['uuid']]);
 			if ($caseData === null) {
 				return null;
 			}
@@ -232,7 +240,7 @@ class ZgwParentStateResolver {
 		} catch (\Throwable $e) {
 			// Fail-CLOSED: callers check `$caseClosed === true && $hasGeforceerd === false`,
 			// so true without the zaken.geforceerd-bijwerken scope answers 403.
-			$this->logger->error($failMessage, ['exception' => $e->getMessage()]);
+			$this->logger->error($lookup['failMessage'], ['exception' => $e->getMessage()]);
 			return true;
 		}
 	}//end closedState()
@@ -241,14 +249,14 @@ class ZgwParentStateResolver {
 	 * Look the zaaktype up and answer whether it is a concept; any error reads as not applicable.
 	 *
 	 * @param object|null $objectService The OpenRegister ObjectService
-	 * @param mixed $uuid The zaaktype uuid (the raw reference when it held no uuid)
-	 * @param string $failMessage What to log, before the error, when the lookup fails
+	 * @param array{uuid: mixed, failMessage: string} $lookup The zaaktype uuid (the raw reference when it held no uuid)
+	 *                                                        and what to log, before the error, when the lookup fails
 	 *
 	 * @return bool|null True if concept, false if published, null when not found or unknowable
 	 */
-	private function draftState(?object $objectService, mixed $uuid, string $failMessage): ?bool {
+	private function draftState(?object $objectService, array $lookup): ?bool {
 		try {
-			$ztData = $this->findMapped(objectService: $objectService, mappingKey: 'caseType', uuid: $uuid);
+			$ztData = $this->findMapped(objectService: $objectService, mapped: ['mappingKey' => 'caseType', 'uuid' => $lookup['uuid']]);
 			if ($ztData === null) {
 				return null;
 			}
@@ -257,7 +265,7 @@ class ZgwParentStateResolver {
 
 			return in_array($isDraft, [false, 'false', '0', 0], true) === false;
 		} catch (\Throwable $e) {
-			$this->logger->warning($failMessage . $e->getMessage());
+			$this->logger->warning($lookup['failMessage'] . $e->getMessage());
 			return null;
 		}
 	}//end draftState()
@@ -266,15 +274,14 @@ class ZgwParentStateResolver {
 	 * Find an object in the register and schema of a ZGW mapping.
 	 *
 	 * @param object|null $objectService The OpenRegister ObjectService
-	 * @param string $mappingKey The mapping (`case`, `caseType`)
-	 * @param mixed $uuid The object uuid
+	 * @param array{mappingKey: string, uuid: mixed} $mapped The mapping (`case`, `caseType`) and the object uuid
 	 *
 	 * @return array|null The object, or null when the mapping or the object is missing
 	 *
 	 * @throws RuntimeException When the ObjectService is unavailable
 	 */
-	private function findMapped(?object $objectService, string $mappingKey, mixed $uuid): ?array {
-		$config = $this->zgwMappingService->getMapping($mappingKey);
+	private function findMapped(?object $objectService, array $mapped): ?array {
+		$config = $this->zgwMappingService->getMapping($mapped['mappingKey']);
 		if ($config === null) {
 			return null;
 		}
@@ -284,7 +291,7 @@ class ZgwParentStateResolver {
 		}
 
 		$object = $objectService->find(
-			$uuid,
+			$mapped['uuid'],
 			register: $config['sourceRegister'],
 			schema: $config['sourceSchema']
 		);
