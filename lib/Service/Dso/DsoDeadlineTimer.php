@@ -46,7 +46,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Dso;
 
-use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\DsoDeadlineTimerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
@@ -139,52 +138,49 @@ class DsoDeadlineTimer implements DsoDeadlineTimerInterface {
 			return self::DUE;
 		}
 
-		return $this->arm(case: $case, caseId: $caseId, anchor: $today, slaDays: $this->days->between(from: $today, to: $deadline));
+		return $this->arm(
+			span: new DsoTermSpan(case: $case, caseId: $caseId, anchor: $today, slaDays: $this->days->between(from: $today, to: $deadline))
+		);
 	}//end sync()
 
 	/**
 	 * Arm the timer.
 	 *
-	 * @param array<string, mixed> $case    The case.
-	 * @param string               $caseId  Its id.
-	 * @param DateTimeImmutable    $anchor  Midnight today.
-	 * @param int                  $slaDays Calendar days to the deadline day.
+	 * @param DsoTermSpan $span The case, its id, midnight today and the days to the deadline day.
 	 *
 	 * @return string ARMED, or UNAVAILABLE.
 	 */
-	private function arm(array $case, string $caseId, DateTimeImmutable $anchor, int $slaDays): string {
+	private function arm(DsoTermSpan $span): string {
 		$engine = $this->engine();
 		if ($engine === null) {
 			return self::UNAVAILABLE;
 		}
 
-		$config = $this->timerConfig(case: $case, caseId: $caseId, anchor: $anchor, slaDays: $slaDays);
+		$config = $this->timerConfig(span: $span);
 
-		return $this->armOn(engine: $engine, config: $config, caseId: $caseId);
+		return $this->armOn(engine: $engine, config: $config, caseId: $span->caseId);
 	}//end arm()
 
 	/**
 	 * The timer configuration for the engine.
 	 *
-	 * @param array<string, mixed> $case    The case.
-	 * @param string               $caseId  Its id.
-	 * @param DateTimeImmutable    $anchor  Midnight today.
-	 * @param int                  $slaDays Calendar days to the deadline day.
+	 * @param DsoTermSpan $span The case, its id, midnight today and the days to the deadline day.
 	 *
 	 * @return array<string, mixed> The timer configuration.
 	 */
-	private function timerConfig(array $case, string $caseId, DateTimeImmutable $anchor, int $slaDays): array {
+	private function timerConfig(DsoTermSpan $span): array {
+		$caseId = $span->caseId;
 		return [
 			'subjectType'     => 'object',
 			'subjectUuid'     => $caseId.self::SUBJECT_SUFFIX,
 			'appId'           => 'dossiq',
-			'title'           => 'DSO-beslistermijn '.(string) ($case['identifier'] ?? $caseId),
+			'title'           => 'DSO-beslistermijn '.(string) ($span->case['identifier'] ?? $caseId),
 			'purpose'         => 'due',
 			'legalEffect'     => 'none',
-			'sla'             => ['value' => $slaDays, 'unit' => 'calendarDays'],
+			'sla'             => ['value' => $span->slaDays, 'unit' => 'calendarDays'],
 			'escalationRules' => $this->escalationRules(),
 			'anchorEvent'     => 'dso_term_running',
-			'anchorEventAt'   => $anchor,
+			'anchorEventAt'   => $span->anchor,
 			'metadata'        => ['source' => self::METADATA_SOURCE, 'caseId' => $caseId],
 		];
 	}//end timerConfig()
