@@ -314,11 +314,23 @@ class CaseSeats implements CaseSeatsInterface {
 			return [];
 		}
 
-		$cases = [];
 		$rows = $this->rows(
 			schemaKey: 'role_schema',
 			filters: ['participant' => $this->referenceOf(participant: $uid), '_limit' => self::PAGE_SIZE],
 		);
+		return $this->caseIdsIn(rows: $rows, roleTypes: $roleTypes);
+	}//end casesCoordinatedBy()
+
+	/**
+	 * The distinct case ids of the role rows that carry a coordinator role type.
+	 *
+	 * @param array<int, array<string, mixed>> $rows      The participant's role rows.
+	 * @param array<int, string>               $roleTypes The coordinator role types.
+	 *
+	 * @return array<int, string>
+	 */
+	private function caseIdsIn(array $rows, array $roleTypes): array {
+		$cases = [];
 		foreach ($rows as $row) {
 			if (in_array(trim((string)($row['roleType'] ?? '')), $roleTypes, true) === false) {
 				continue;
@@ -331,7 +343,7 @@ class CaseSeats implements CaseSeatsInterface {
 		}
 
 		return $cases;
-	}//end casesCoordinatedBy()
+	}//end caseIdsIn()
 
 	/**
 	 * The role types this instance declares as the coordinator seat.
