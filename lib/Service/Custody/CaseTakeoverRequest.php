@@ -145,26 +145,14 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 		$requestedBy = trim($requestedBy);
 		$reason = trim($reason);
 
-		if ($reason === '') {
-			throw new RefusedException(
-				rule: self::REASON_MISSING,
-				sentence: 'Say why you should have the case, so the holder can answer.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$this->assertReasonGiven(reason: $reason);
 
 		$case = $this->store->requireCase(caseId: $caseId);
 		$holding = $this->holdingOf(caseId: $caseId, case: $case);
 		$holder = $holding['holder'];
 		$unit = $holding['unit'];
 
-		if ($holder !== '' && $holder === $requestedBy) {
-			throw new RefusedException(
-				rule: self::ALREADY_YOURS,
-				sentence: 'You already hold this case, so there is nobody to ask.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$this->assertNotHeldBy(holder: $holder, requestedBy: $requestedBy);
 
 		$record = $this->storeRequest(
 			case: $case,
@@ -182,6 +170,49 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 
 		return $record;
 	}//end request()
+
+	/**
+	 * Refuse a request without a reason.
+	 *
+	 * @param string $reason Why they should have it, trimmed.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When no reason is given.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function assertReasonGiven(string $reason): void {
+		if ($reason === '') {
+			throw new RefusedException(
+				rule: self::REASON_MISSING,
+				sentence: 'Say why you should have the case, so the holder can answer.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertReasonGiven()
+
+	/**
+	 * Refuse a request by the person who already holds the case.
+	 *
+	 * @param string $holder      The current holder, or ''.
+	 * @param string $requestedBy Who wants it.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the asker already holds the case.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function assertNotHeldBy(string $holder, string $requestedBy): void {
+		if ($holder !== '' && $holder === $requestedBy) {
+			throw new RefusedException(
+				rule: self::ALREADY_YOURS,
+				sentence: 'You already hold this case, so there is nobody to ask.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertNotHeldBy()
 
 	/**
 	 * Who holds the case and in which unit, the open holding winning over the case fields.

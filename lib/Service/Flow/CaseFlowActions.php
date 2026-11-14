@@ -179,10 +179,7 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 		$mode = $this->document->recurrenceOf(recurrence: $recurrence);
 		$end = $this->document->endOf(recurrence: $mode, until: $until, count: $count);
 
-		$service = $this->optional(name: self::FLOW_SERVICE);
-		if ($service === null) {
-			throw new RuntimeException('flows_unavailable');
-		}
+		$service = $this->flowService();
 
 		$document = $this->document->build(
 			caseId: $caseId,
@@ -195,6 +192,51 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 			count: $end['count']
 		);
 
+		$flow = $this->saveAndPublish(service: $service, document: $document, caseId: $caseId);
+
+		return [
+			'id' => (string)$flow->getUuid(),
+			'title' => $title,
+			'date' => $due->format('Y-m-d'),
+			'caseType' => $caseTypeId,
+			'recurrence' => $mode,
+			'until' => $end['until'],
+			'count' => $end['count'],
+		];
+	}//end plan()
+
+	/**
+	 * OpenRegister's flow service.
+	 *
+	 * @return object The flow service.
+	 *
+	 * @throws RuntimeException `flows_unavailable` when OpenRegister has no flows.
+	 *
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
+	 */
+	private function flowService(): object {
+		$service = $this->optional(name: self::FLOW_SERVICE);
+		if ($service === null) {
+			throw new RuntimeException('flows_unavailable');
+		}
+
+		return $service;
+	}//end flowService()
+
+	/**
+	 * Save the flow document, stamp the series source, publish and enable it.
+	 *
+	 * @param object               $service  OpenRegister's flow service.
+	 * @param array<string, mixed> $document The flow document.
+	 * @param string               $caseId   The case, for the log line.
+	 *
+	 * @return object The published flow.
+	 *
+	 * @throws RuntimeException `plan_failed` when any step fails.
+	 *
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
+	 */
+	private function saveAndPublish(object $service, array $document, string $caseId): object {
 		try {
 			$flow = $service->save(data: $document);
 
@@ -218,16 +260,8 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 			throw new RuntimeException('plan_failed');
 		}//end try
 
-		return [
-			'id' => (string)$flow->getUuid(),
-			'title' => $title,
-			'date' => $due->format('Y-m-d'),
-			'caseType' => $caseTypeId,
-			'recurrence' => $mode,
-			'until' => $end['until'],
-			'count' => $end['count'],
-		];
-	}//end plan()
+		return $flow;
+	}//end saveAndPublish()
 
 	/**
 	 * The follow-ups planned for this case that are still to come.
@@ -261,37 +295,75 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 
 		$results = [];
 		foreach ($this->ledger->plannedFlows() as $flow) {
-			if ($flow->getEnabled() === false) {
-				continue;
+			$row = $this->plannedRow(flow: $flow, caseId: $caseId, today: $today);
+			if ($row !== null) {
+				$results[] = $row;
 			}
-
-			$marker = $this->document->markerOf(nodes: (array)($flow->getNodes() ?? []), from: $today);
-			if ($marker === null || $marker['case'] !== $caseId) {
-				continue;
-			}
-
-			$single = $marker['recurrence'] === PlannedFollowUpDocument::RECURRENCE_NONE;
-			if ($single === true && $flow->getLastRunAt() !== null) {
-				continue;
-			}
-
-			$flowId = (string)$flow->getUuid();
-			$results[] = [
-				'id' => $flowId,
-				'title' => $marker['title'],
-				'date' => $marker['date'],
-				'caseType' => $marker['caseType'],
-				'recurrence' => $marker['recurrence'],
-				'until' => $marker['until'],
-				'count' => $marker['count'],
-				'occurrences' => $this->ledger->occurrencesOf(flowId: $flowId, single: $single),
-			];
-		}//end foreach
+		}
 
 		usort($results, static fn (array $a, array $b): int => strcmp($a['date'], $b['date']));
 
 		return ['results' => $results, 'total' => count($results)];
 	}//end planned()
+
+	/**
+	 * The row of a planned flow of this case still to come, or null.
+	 *
+	 * @param object            $flow   The flow row.
+	 * @param string            $caseId The case UUID.
+	 * @param DateTimeImmutable $today  Midnight today.
+	 *
+	 * @return array<string, mixed>|null The planned row, or null when it does not belong on the list.
+	 *
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
+	 */
+	private function plannedRow(object $flow, string $caseId, DateTimeImmutable $today): ?array {
+		$marker = $this->markerOfCase(flow: $flow, caseId: $caseId, today: $today);
+		if ($marker === null) {
+			return null;
+		}
+
+		$single = $marker['recurrence'] === PlannedFollowUpDocument::RECURRENCE_NONE;
+		if ($single === true && $flow->getLastRunAt() !== null) {
+			return null;
+		}
+
+		$flowId = (string)$flow->getUuid();
+		return [
+			'id' => $flowId,
+			'title' => $marker['title'],
+			'date' => $marker['date'],
+			'caseType' => $marker['caseType'],
+			'recurrence' => $marker['recurrence'],
+			'until' => $marker['until'],
+			'count' => $marker['count'],
+			'occurrences' => $this->ledger->occurrencesOf(flowId: $flowId, single: $single),
+		];
+	}//end plannedRow()
+
+	/**
+	 * The planned-follow-up marker of an enabled flow of this case, or null.
+	 *
+	 * @param object            $flow   The flow row.
+	 * @param string            $caseId The case UUID.
+	 * @param DateTimeImmutable $today  Midnight today.
+	 *
+	 * @return array<string, mixed>|null The marker, or null for a disabled flow or another case's.
+	 *
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
+	 */
+	private function markerOfCase(object $flow, string $caseId, DateTimeImmutable $today): ?array {
+		if ($flow->getEnabled() === false) {
+			return null;
+		}
+
+		$marker = $this->document->markerOf(nodes: (array)($flow->getNodes() ?? []), from: $today);
+		if ($marker === null || $marker['case'] !== $caseId) {
+			return null;
+		}
+
+		return $marker;
+	}//end markerOfCase()
 
 	/**
 	 * Stop a series, leaving the cases it has already opened alone.
