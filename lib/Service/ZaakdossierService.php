@@ -152,29 +152,8 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	public function uploadDocument(string $caseId, string $fileName, string $content, array $metadata): array {
 		[$objectService, $register] = $this->requireRegister();
 
-		if (trim($caseId) === '') {
-			throw new RuntimeException('caseId is required');
-		}
-
-		if (trim($fileName) === '') {
-			throw new RuntimeException('bestandsnaam is required');
-		}
-
-		$type = (string)($metadata['informatieobjecttype'] ?? '');
-		if ($type === '') {
-			throw new RuntimeException('informatieobjecttype is required');
-		}
-
-		$defaultClass = $this->resolveDefaultClassification(type: $type);
-		$classification = (string)($metadata['vertrouwelijkheidaanduiding'] ?? '');
-		if ($classification === '') {
-			$classification = $defaultClass;
-		} elseif ($this->accessGuard->isClassificationAllowed($defaultClass, $classification) === false) {
-			// REQ-ZAK-003d: a user may only override to a MORE restrictive level.
-			throw new InvalidArgumentException(
-				'Classification may not be less restrictive than the document type default'
-			);
-		}
+		$type = $this->requireUploadType(caseId: $caseId, fileName: $fileName, metadata: $metadata);
+		$classification = $this->resolveUploadClassification(type: $type, metadata: $metadata);
 
 		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
 
@@ -198,28 +177,15 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 			correspondents: $correspondents,
 		);
 
-		// Documents live on the case: the file is stored on the CASE first, so
-		// the node listener may already have projected a record for it by the
-		// time this runs; that record gets the metadata, and only when there is
-		// none is one created here.
-		$fileId = $this->recordStore->storeFileOnObject(objectId: $caseId, fileName: $fileName, content: $content);
-		$existing = [];
-		if ($fileId > 0) {
-			$existing = ($this->recordStore->findRecord(fileId: $fileId) ?? []);
-			$informatieobject['fileId'] = $fileId;
-		}
-
-		$infoId = (string)($existing['id'] ?? '');
-		unset($existing['id'], $existing['@self']);
-		$record = array_merge($existing, $informatieobject);
-		if ($infoId !== '') {
-			$objectService->saveObject(object: $record, register: $register, schema: $infoSchema, uuid: $infoId);
-		}
-
-		if ($infoId === '') {
-			$saved = $objectService->saveObject(object: $record, register: $register, schema: $infoSchema);
-			$infoId = $this->resolveSavedUuid(saved: $saved);
-		}
+		$infoId = $this->storeUploadedRecord(
+			objectService: $objectService,
+			register: $register,
+			infoSchema: $infoSchema,
+			caseId: $caseId,
+			fileName: $fileName,
+			content: $content,
+			informatieobject: $informatieobject,
+		);
 
 		// Create the case <-> document join, unless the listener already did.
 		$this->linkExistingInformatieobject(caseId: $caseId, infoObjectId: $infoId);
@@ -246,6 +212,114 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 			'integrity' => $informatieobject['integrity'],
 		];
 	}//end uploadDocument()
+
+	/**
+	 * Check the required upload input and return the document type.
+	 *
+	 * @param string $caseId The case (zaak) UUID.
+	 * @param string $fileName The original filename.
+	 * @param array<string, mixed> $metadata The submitted metadata.
+	 *
+	 * @return string The document type uuid.
+	 *
+	 * @throws \RuntimeException When the case, file name or type is missing.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	private function requireUploadType(string $caseId, string $fileName, array $metadata): string {
+		if (trim($caseId) === '') {
+			throw new RuntimeException('caseId is required');
+		}
+
+		if (trim($fileName) === '') {
+			throw new RuntimeException('bestandsnaam is required');
+		}
+
+		$type = (string)($metadata['informatieobjecttype'] ?? '');
+		if ($type === '') {
+			throw new RuntimeException('informatieobjecttype is required');
+		}
+
+		return $type;
+	}//end requireUploadType()
+
+	/**
+	 * The confidentiality an upload gets: the submitted one, or the type default.
+	 *
+	 * @param string $type The document type uuid.
+	 * @param array<string, mixed> $metadata The submitted metadata.
+	 *
+	 * @return string The classification.
+	 *
+	 * @throws \InvalidArgumentException When the submitted level is less restrictive than the default.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	private function resolveUploadClassification(string $type, array $metadata): string {
+		$defaultClass = $this->resolveDefaultClassification(type: $type);
+		$classification = (string)($metadata['vertrouwelijkheidaanduiding'] ?? '');
+		if ($classification === '') {
+			$classification = $defaultClass;
+		} elseif ($this->accessGuard->isClassificationAllowed($defaultClass, $classification) === false) {
+			// REQ-ZAK-003d: a user may only override to a MORE restrictive level.
+			throw new InvalidArgumentException(
+				'Classification may not be less restrictive than the document type default'
+			);
+		}
+
+		return $classification;
+	}//end resolveUploadClassification()
+
+	/**
+	 * Store the file on the case and save its informatieobject record.
+	 *
+	 * Documents live on the case: the file is stored on the CASE first, so
+	 * the node listener may already have projected a record for it by the
+	 * time this runs; that record gets the metadata, and only when there is
+	 * none is one created here.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register The register slug.
+	 * @param string $infoSchema The informatieobject schema.
+	 * @param string $caseId The case (zaak) UUID.
+	 * @param string $fileName The original filename.
+	 * @param string $content The raw binary file content.
+	 * @param array<string, mixed> $informatieobject The record to store.
+	 *
+	 * @return string The informatieobject UUID.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	private function storeUploadedRecord(
+		object $objectService,
+		string $register,
+		string $infoSchema,
+		string $caseId,
+		string $fileName,
+		string $content,
+		array $informatieobject,
+	): string {
+		$fileId = $this->recordStore->storeFileOnObject(objectId: $caseId, fileName: $fileName, content: $content);
+		$existing = [];
+		if ($fileId > 0) {
+			$existing = ($this->recordStore->findRecord(fileId: $fileId) ?? []);
+			$informatieobject['fileId'] = $fileId;
+		}
+
+		$infoId = (string)($existing['id'] ?? '');
+		unset($existing['id'], $existing['@self']);
+		$record = array_merge($existing, $informatieobject);
+		if ($infoId !== '') {
+			$objectService->saveObject(object: $record, register: $register, schema: $infoSchema, uuid: $infoId);
+		}
+
+		if ($infoId === '') {
+			$saved = $objectService->saveObject(object: $record, register: $register, schema: $infoSchema);
+			$infoId = $this->resolveSavedUuid(saved: $saved);
+		}
+
+		return $infoId;
+	}//end storeUploadedRecord()
 
 	/**
 	 * The record an uploaded document gets.
@@ -547,34 +621,9 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 			id: $infoObjectId,
 		);
 
-		if ($current === null) {
-			throw new RuntimeException('Informatieobject not found: ' . $infoObjectId);
-		}
+		$current = $this->requireEditableDocument(current: $current, infoObjectId: $infoObjectId);
 
-		if ((string)($current['status'] ?? '') === 'final') {
-			throw new DomainException('Definitieve documenten kunnen niet worden gewijzigd');
-		}
-
-		$allowed = [
-			'title',
-			'description',
-			'informatieobjecttype',
-			'vertrouwelijkheidaanduiding',
-			'direction',
-			'keywords',
-		];
-		$updateData = [];
-		foreach ($allowed as $field) {
-			if (array_key_exists($field, $metadata) === false) {
-				continue;
-			}
-
-			$updateData[$field] = match ($field) {
-				'direction' => $this->normaliser->direction(value: $metadata[$field]),
-				'keywords' => $this->normaliser->keywords(value: $metadata[$field]),
-				default => $metadata[$field],
-			};
-		}
+		$updateData = $this->editableFields(metadata: $metadata);
 
 		$updateData = array_merge(
 			$updateData,
@@ -603,6 +652,65 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 
 		return array_merge(['id' => $infoObjectId, 'updated' => true], $updateData);
 	}//end updateMetadata()
+
+	/**
+	 * Refuse a document that is missing or definitief.
+	 *
+	 * @param array<string, mixed>|null $current The stored document, or null.
+	 * @param string $infoObjectId The informatieobject UUID.
+	 *
+	 * @return array<string, mixed> The stored document.
+	 *
+	 * @throws \RuntimeException When the document does not exist.
+	 * @throws \DomainException When the document is definitief and therefore immutable.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	private function requireEditableDocument(?array $current, string $infoObjectId): array {
+		if ($current === null) {
+			throw new RuntimeException('Informatieobject not found: ' . $infoObjectId);
+		}
+
+		if ((string)($current['status'] ?? '') === 'final') {
+			throw new DomainException('Definitieve documenten kunnen niet worden gewijzigd');
+		}
+
+		return $current;
+	}//end requireEditableDocument()
+
+	/**
+	 * The editable metadata fields present in the request, normalised.
+	 *
+	 * @param array<string, mixed> $metadata The submitted metadata.
+	 *
+	 * @return array<string, mixed> The fields to update.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	private function editableFields(array $metadata): array {
+		$allowed = [
+			'title',
+			'description',
+			'informatieobjecttype',
+			'vertrouwelijkheidaanduiding',
+			'direction',
+			'keywords',
+		];
+		$updateData = [];
+		foreach ($allowed as $field) {
+			if (array_key_exists($field, $metadata) === false) {
+				continue;
+			}
+
+			$updateData[$field] = match ($field) {
+				'direction' => $this->normaliser->direction(value: $metadata[$field]),
+				'keywords' => $this->normaliser->keywords(value: $metadata[$field]),
+				default => $metadata[$field],
+			};
+		}
+
+		return $updateData;
+	}//end editableFields()
 
 	/**
 	 * Fetch a single informatieobject as an array.
