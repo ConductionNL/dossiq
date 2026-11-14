@@ -173,16 +173,27 @@ class ZrcController extends ZgwController {
 		try {
 			return $this->createValidated(resource: $resource, mappingConfig: $mappingConfig);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'ZRC create error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => $e->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->createFailure(e: $e);
 		}//end try
 	}//end create()
+
+	/**
+	 * Log a failed create and answer it as 400 with the failure's message.
+	 *
+	 * @param \Throwable $e The failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function createFailure(\Throwable $e): JSONResponse {
+		$this->zgwService->getLogger()->error(
+			'ZRC create error: ' . $e->getMessage(),
+			['exception' => $e]
+		);
+		return new JSONResponse(
+			data: ['detail' => $e->getMessage()],
+			statusCode: Http::STATUS_BAD_REQUEST
+		);
+	}//end createFailure()
 
 	/**
 	 * Validate the request body, then create the resource from the enriched body.
@@ -1120,6 +1131,18 @@ class ZrcController extends ZgwController {
 		}
 
 		// Check vertrouwelijkheidaanduiding of the zaak.
+		return $this->checkCaseConfidentialityFailClosed(uuid: $uuid, lezenAuths: $lezenAuths);
+	}//end checkCaseReadAccess()
+
+	/**
+	 * Check the zaak's vertrouwelijkheidaanduiding, denying when the check itself fails.
+	 *
+	 * @param string $uuid The zaak UUID.
+	 * @param array $lezenAuths The consumer's read autorisaties.
+	 *
+	 * @return JSONResponse|null Permission denied response, or null if access is allowed.
+	 */
+	private function checkCaseConfidentialityFailClosed(string $uuid, array $lezenAuths): ?JSONResponse {
 		try {
 			return $this->checkCaseConfidentiality(uuid: $uuid, lezenAuths: $lezenAuths);
 		} catch (\InvalidArgumentException $e) {
@@ -1136,7 +1159,7 @@ class ZrcController extends ZgwController {
 			);
 			return $this->permissionDeniedResponse();
 		}//end try
-	}//end checkCaseReadAccess()
+	}//end checkCaseConfidentialityFailClosed()
 
 	/**
 	 * Check the zaak's vertrouwelijkheidaanduiding against the consumer's read autorisaties.
@@ -1659,6 +1682,19 @@ class ZrcController extends ZgwController {
 			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, 'zaken');
 		}
 
+		return $this->storedCaseDeleteRefusal(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+	}//end caseDeleteRefusal()
+
+	/**
+	 * Refuse deleting a zaak that cannot be found, or an archived one without the forced-delete scope.
+	 *
+	 * @param object $objectService The object service.
+	 * @param array $mappingConfig The zaken mapping.
+	 * @param string $uuid The zaak.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function storedCaseDeleteRefusal(object $objectService, array $mappingConfig, string $uuid): ?JSONResponse {
 		// C4: a find() that throws or answers null is not-found.
 		$caseObj = $this->findCaseOrNull(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
 
@@ -1670,7 +1706,7 @@ class ZrcController extends ZgwController {
 		}
 
 		return $this->archivedCaseDeleteRefusal(caseObj: $caseObj);
-	}//end caseDeleteRefusal()
+	}//end storedCaseDeleteRefusal()
 
 	/**
 	 * Find a zaak, answering null when the find throws.

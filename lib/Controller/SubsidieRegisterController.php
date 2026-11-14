@@ -102,6 +102,18 @@ class SubsidieRegisterController extends Controller {
 			return [];
 		}
 
+		return $this->feedEntries(objectService: $objectService, config: $config);
+	}//end collectEntries()
+
+	/**
+	 * The feed entries of every granted beschikking that names an aanvraag.
+	 *
+	 * @param object $objectService The ObjectService.
+	 * @param array{register: string, beschikkingSchema: string, aanvraagSchema: string, regelingSchema: string} $config The feed configuration.
+	 *
+	 * @return array The feed entries.
+	 */
+	private function feedEntries(object $objectService, array $config): array {
 		$entries = [];
 		foreach ($this->grantedDecisions(objectService: $objectService, config: $config) as $decision) {
 			$entry = $this->feedEntryOf(objectService: $objectService, config: $config, decision: $decision);
@@ -111,7 +123,7 @@ class SubsidieRegisterController extends Controller {
 		}
 
 		return $entries;
-	}//end collectEntries()
+	}//end feedEntries()
 
 	/**
 	 * The granted beschikkingen, [] when they cannot be read.

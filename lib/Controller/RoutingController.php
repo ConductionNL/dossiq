@@ -112,15 +112,27 @@ class RoutingController extends Controller {
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'reroute on case ' . $id, e: $e);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: reroute failed for case ' . $id . ': ' . $e->getMessage(),
-			);
-			return new JSONResponse(
-				['error' => 'Herberekening mislukt'],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
+			return $this->rerouteFailure(e: $e, id: $id);
 		}//end try
 	}//end reroute()
+
+	/**
+	 * Log a failed reroute and answer 500.
+	 *
+	 * @param Throwable $e The failure.
+	 * @param string $id The case id.
+	 *
+	 * @return JSONResponse
+	 */
+	private function rerouteFailure(Throwable $e, string $id): JSONResponse {
+		$this->logger->error(
+			'Dossiq: reroute failed for case ' . $id . ': ' . $e->getMessage(),
+		);
+		return new JSONResponse(
+			['error' => 'Herberekening mislukt'],
+			Http::STATUS_INTERNAL_SERVER_ERROR,
+		);
+	}//end rerouteFailure()
 
 	/**
 	 * Refuse a caller that is not logged in or not a server admin.

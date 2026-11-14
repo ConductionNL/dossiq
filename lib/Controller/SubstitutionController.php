@@ -119,6 +119,18 @@ class SubstitutionController extends Controller {
 			return $refusal;
 		}
 
+		return $this->createSubstitutionOrFail(absentee: $absentee, actorId: $actorId);
+	}//end create()
+
+	/**
+	 * Create the substitution, answering an invalid request as 400 and a failure as 500.
+	 *
+	 * @param string $absentee The absent user.
+	 * @param string $actorId The current user.
+	 *
+	 * @return JSONResponse
+	 */
+	private function createSubstitutionOrFail(string $absentee, string $actorId): JSONResponse {
 		try {
 			return $this->createSubstitution(absentee: $absentee, actorId: $actorId);
 		} catch (\InvalidArgumentException $e) {
@@ -127,7 +139,7 @@ class SubstitutionController extends Controller {
 			$this->logger->error('Substitution create failed', ['error' => $e->getMessage()]);
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}//end try
-	}//end create()
+	}//end createSubstitutionOrFail()
 
 	/**
 	 * Refuse registering another user's absence, unless the actor is a coordinator.

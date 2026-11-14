@@ -119,6 +119,18 @@ class BezwaarHearingController extends Controller {
 			$entries = [];
 		}
 
+		return $this->storeAttendance(sessionId: $sessionId, entries: $entries);
+	}//end recordAttendance()
+
+	/**
+	 * Record the attendance entries of a hearing session, answering a refusal as 400.
+	 *
+	 * @param string $sessionId The hearing session.
+	 * @param array $entries The attendance entries.
+	 *
+	 * @return JSONResponse
+	 */
+	private function storeAttendance(string $sessionId, array $entries): JSONResponse {
 		try {
 			return new JSONResponse(
 				$this->hearingService->recordAttendance(
@@ -129,7 +141,7 @@ class BezwaarHearingController extends Controller {
 		} catch (RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
-	}//end recordAttendance()
+	}//end storeAttendance()
 
 	/**
 	 * Refuse recording attendance to an anonymous caller, or for a session whose bezwaar case the user may not change.

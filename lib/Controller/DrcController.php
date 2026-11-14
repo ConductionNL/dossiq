@@ -907,10 +907,7 @@ class DrcController extends ZgwController {
 
 		$mappingConfig = $this->zgwService->getZgwMappingService()->getMapping('enkelvoudiginformatieobject');
 		if ($mappingConfig === null) {
-			return new JSONResponse(
-				data: ['detail' => 'Document mapping not configured'],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
+			return new JSONResponse(data: ['detail' => 'Document mapping not configured'], statusCode: Http::STATUS_NOT_FOUND);
 		}
 
 		try {

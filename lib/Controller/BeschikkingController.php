@@ -109,6 +109,19 @@ class BeschikkingController extends Controller {
 
 		$merged = $this->composeFieldsOf(body: $body);
 
+		return $this->composeDecision(caseId: $caseId, templateId: $templateId, merged: $merged);
+	}//end create()
+
+	/**
+	 * Compose a beschikking for a case and answer it, or the refusal or failure.
+	 *
+	 * @param string $caseId The case.
+	 * @param string|null $templateId The template, or null.
+	 * @param array $merged The fields to set on the beschikking.
+	 *
+	 * @return JSONResponse
+	 */
+	private function composeDecision(string $caseId, ?string $templateId, array $merged): JSONResponse {
 		try {
 			$result = $this->decisionService->compose($caseId, $templateId, $merged);
 			return new JSONResponse($result, Http::STATUS_CREATED);
@@ -119,7 +132,7 @@ class BeschikkingController extends Controller {
 		} catch (\Throwable $e) {
 			return $this->fail(op: 'compose', e: $e);
 		}
-	}//end create()
+	}//end composeDecision()
 
 	/**
 	 * The template a compose request names, or null.
@@ -390,14 +403,26 @@ class BeschikkingController extends Controller {
 		} catch (RefusedException $refusal) {
 			return $this->refused(op: 'successor', e: $refusal);
 		} catch (Throwable $failure) {
-			$this->logger->error(
-				'BeschikkingController: successor failed',
-				['exception' => $failure->getMessage(), 'beschikkingId' => $id],
-			);
-
-			return new JSONResponse(['error' => 'Could not complete the request'], Http::STATUS_INTERNAL_SERVER_ERROR);
+			return $this->successorFailure(failure: $failure, id: $id);
 		}
 	}//end successor()
+
+	/**
+	 * Log a failed successor and answer 500.
+	 *
+	 * @param Throwable $failure The failure.
+	 * @param string $id The original beschikking id.
+	 *
+	 * @return JSONResponse
+	 */
+	private function successorFailure(Throwable $failure, string $id): JSONResponse {
+		$this->logger->error(
+			'BeschikkingController: successor failed',
+			['exception' => $failure->getMessage(), 'beschikkingId' => $id],
+		);
+
+		return new JSONResponse(['error' => 'Could not complete the request'], Http::STATUS_INTERNAL_SERVER_ERROR);
+	}//end successorFailure()
 
 	/**
 	 * Refuse a successor to an anonymous caller, for a beschikking that does not exist, or whose case the user may not change.

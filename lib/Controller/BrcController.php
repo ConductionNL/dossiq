@@ -464,10 +464,22 @@ class BrcController extends ZgwController {
 			return $refusal;
 		}
 
+		return $this->notifiedDeletion(resource: $resource, uuid: $uuid);
+	}//end destroyBesluit()
+
+	/**
+	 * Publish the delete notification and answer 204.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid The deleted resource's UUID.
+	 *
+	 * @return JSONResponse
+	 */
+	private function notifiedDeletion(string $resource, string $uuid): JSONResponse {
 		$this->zgwService->notifyDeleted(request: $this->request, zgwApi: self::ZGW_API, resource: $resource, uuid: $uuid);
 
 		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
-	}//end destroyBesluit()
+	}//end notifiedDeletion()
 
 	/**
 	 * Find a besluit and delete it, answering why not when it cannot be.
