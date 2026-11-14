@@ -128,13 +128,7 @@ class SatelliteOrphanScanner implements SatelliteOrphanScannerInterface {
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
 	 */
 	public function reportOrphans(): array {
-		$report = [
-			'scanned' => 0,
-			'orphans' => 0,
-			'templates' => 0,
-			'bySchema' => [],
-			'rows' => [],
-		];
+		$report = $this->emptyReport();
 
 		$objectService = $this->settingsService->getObjectService();
 		$mapper = $this->getOrganisationMapper();
@@ -143,6 +137,46 @@ class SatelliteOrphanScanner implements SatelliteOrphanScannerInterface {
 			return $report;
 		}
 
+		$report = $this->scanAll(objectService: $objectService, mapper: $mapper, report: $report);
+
+		$this->logScan(report: $report);
+
+		return $report;
+	}//end reportOrphans()
+
+	/**
+	 * The report of a scan that read nothing.
+	 *
+	 * @return array{scanned:int, orphans:int, templates:int,
+	 *               bySchema:array<string, array{scanned:int, orphans:int, templates:int}>,
+	 *               rows:array<int, array{schema:string, row:string, tenantRef:string}>}
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
+	 */
+	private function emptyReport(): array {
+		return [
+			'scanned' => 0,
+			'orphans' => 0,
+			'templates' => 0,
+			'bySchema' => [],
+			'rows' => [],
+		];
+	}//end emptyReport()
+
+	/**
+	 * Scan every satellite schema into the report.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param object               $mapper        The organisation mapper.
+	 * @param array<string, mixed> $report        The report so far.
+	 *
+	 * @return array{scanned:int, orphans:int, templates:int,
+	 *               bySchema:array<string, array{scanned:int, orphans:int, templates:int}>,
+	 *               rows:array<int, array{schema:string, row:string, tenantRef:string}>}
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
+	 */
+	private function scanAll(object $objectService, object $mapper, array $report): array {
 		// Resolution is cached per tenantRef: a register with thousands of
 		// satellite rows holds only a handful of distinct tenants, and the
 		// uncached form is one mapper read per row.
@@ -159,6 +193,19 @@ class SatelliteOrphanScanner implements SatelliteOrphanScannerInterface {
 			$report['templates'] += $perSchema['templates'];
 		}
 
+		return $report;
+	}//end scanAll()
+
+	/**
+	 * Log the totals of a completed scan.
+	 *
+	 * @param array<string, mixed> $report The report.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
+	 */
+	private function logScan(array $report): void {
 		$this->logger->info(
 			'Dossiq: satellite orphan scan complete',
 			[
@@ -167,9 +214,7 @@ class SatelliteOrphanScanner implements SatelliteOrphanScannerInterface {
 				'templates' => $report['templates'],
 			],
 		);
-
-		return $report;
-	}//end reportOrphans()
+	}//end logScan()
 
 	/**
 	 * Count one satellite schema's rows and collect the ones that resolve to nothing.
