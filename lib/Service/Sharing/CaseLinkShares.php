@@ -499,6 +499,26 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 		array $documents,
 		array $extra,
 	): array {
+		return array_merge(
+			$extra,
+			$this->ownFields(caseId: $caseId, label: $label, createdBy: $createdBy, capabilities: $capabilities),
+			$this->linkFields(link: $link, capabilities: $capabilities, documents: $documents)
+		);
+	}//end recordFor()
+
+	/**
+	 * The share record's own fields: the case, the grant level, the label and who minted it.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $label What the share is called.
+	 * @param string $createdBy Who minted it.
+	 * @param array<int, string> $capabilities What the link grants.
+	 *
+	 * @return array<string, mixed> The fields.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function ownFields(string $caseId, string $label, string $createdBy, array $capabilities): array {
 		// The permission level is the zaak-domain word for the same grant, kept
 		// because the partner surface and the stored rows already speak it.
 		$permissionLevel = 'bekijken';
@@ -506,24 +526,37 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 			$permissionLevel = 'bekijken_reageren';
 		}
 
-		return array_merge(
-			$extra,
-			[
-				'caseId' => $caseId,
-				'shareType' => 'link',
-				'permissionLevel' => $permissionLevel,
-				'label' => $label,
-				'status' => 'active',
-				'createdBy' => $createdBy,
-				'accessLinkId' => (int)($link['id'] ?? 0),
-				'accessLinkUuid' => (string)($link['uuid'] ?? ''),
-				'accessLinkUrl' => (string)($link['url'] ?? ''),
-				'capabilities' => implode(',', $capabilities),
-				'expiresAt' => (string)($link['expiresAt'] ?? ''),
-				'sharedDocuments' => json_encode($documents),
-			]
-		);
-	}//end recordFor()
+		return [
+			'caseId' => $caseId,
+			'shareType' => 'link',
+			'permissionLevel' => $permissionLevel,
+			'label' => $label,
+			'status' => 'active',
+			'createdBy' => $createdBy,
+		];
+	}//end ownFields()
+
+	/**
+	 * The share record's fields that describe the minted link and the files beside it.
+	 *
+	 * @param array<string, mixed> $link The minted link.
+	 * @param array<int, string> $capabilities What the link grants.
+	 * @param array<int, array<string, mixed>> $documents The file links minted beside it.
+	 *
+	 * @return array<string, mixed> The fields.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function linkFields(array $link, array $capabilities, array $documents): array {
+		return [
+			'accessLinkId' => (int)($link['id'] ?? 0),
+			'accessLinkUuid' => (string)($link['uuid'] ?? ''),
+			'accessLinkUrl' => (string)($link['url'] ?? ''),
+			'capabilities' => implode(',', $capabilities),
+			'expiresAt' => (string)($link['expiresAt'] ?? ''),
+			'sharedDocuments' => json_encode($documents),
+		];
+	}//end linkFields()
 
 	/**
 	 * The anchor at the end of a link address.
