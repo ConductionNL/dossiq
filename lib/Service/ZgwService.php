@@ -817,16 +817,7 @@ class ZgwService implements ZgwServiceInterface {
 		$authHeader = $request->getHeader('Authorization');
 
 		if ($authHeader === '') {
-			return new JSONResponse(
-				data: [
-					'type' => 'NotAuthenticated',
-					'code' => 'not_authenticated',
-					'title' => 'Authenticatiegegevens zijn niet opgegeven.',
-					'status' => 401,
-					'detail' => 'Authenticatiegegevens zijn niet opgegeven.',
-				],
-				statusCode: Http::STATUS_UNAUTHORIZED
-			);
+			return $this->notAuthenticated(title: 'Authenticatiegegevens zijn niet opgegeven.', status: 401, statusCode: Http::STATUS_UNAUTHORIZED);
 		}
 
 		try {
@@ -834,25 +825,37 @@ class ZgwService implements ZgwServiceInterface {
 		} catch (\Throwable $e) {
 			// M3: Log detail server-side but never surface internal JWT validation
 			// messages in the HTTP response — they aid algorithm/issuer enumeration.
-			$this->logger->warning(
-				'ZGW JWT validation failed: ' . $e->getMessage(),
-				['app' => 'dossiq']
-			);
+			$this->logger->warning('ZGW JWT validation failed: ' . $e->getMessage(), ['app' => 'dossiq']);
 
-			return new JSONResponse(
-				data: [
-					'type' => 'NotAuthenticated',
-					'code' => 'not_authenticated',
-					'title' => 'Authenticatiegegevens zijn niet geldig.',
-					'status' => 403,
-					'detail' => 'Authenticatiegegevens zijn niet geldig.',
-				],
-				statusCode: Http::STATUS_FORBIDDEN
-			);
+			return $this->notAuthenticated(title: 'Authenticatiegegevens zijn niet geldig.', status: 403, statusCode: Http::STATUS_FORBIDDEN);
 		}//end try
 
 		return null;
 	}//end validateJwtAuth()
+
+	/**
+	 * The NotAuthenticated problem response, with the title repeated as detail.
+	 *
+	 * @param string $title The problem title
+	 * @param int $status The status the body names
+	 * @param int $statusCode The HTTP status
+	 *
+	 * @return JSONResponse The problem response
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function notAuthenticated(string $title, int $status, int $statusCode): JSONResponse {
+		return new JSONResponse(
+			data: [
+				'type' => 'NotAuthenticated',
+				'code' => 'not_authenticated',
+				'title' => $title,
+				'status' => $status,
+				'detail' => $title,
+			],
+			statusCode: $statusCode
+		);
+	}//end notAuthenticated()
 
 	/**
 	 * Check if the current JWT consumer has a specific scope.

@@ -51,6 +51,8 @@ use Throwable;
  * Migrates subsidieRegeling objects onto caseType + propertyDefinition.
  *
  * @spec openspec/changes/archive/2026-09-09-subsidieregeling-is-a-casetype/proposal.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -505,14 +507,44 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 		string $register,
 		IOutput $output,
 	): void {
+		$propertySchema = $this->propertySchema(name: $name, output: $output);
+		if ($propertySchema === '') {
+			return;
+		}
+
+		$this->saveDefinitions(scheme: $scheme, caseTypeId: $caseTypeId, register: $register, propertySchema: $propertySchema);
+	}
+
+	/**
+	 * The configured propertyDefinition schema id, warning when there is none.
+	 *
+	 * @param string  $name   The scheme name, for messages.
+	 * @param IOutput $output Upgrade output.
+	 *
+	 * @return string The schema id, or '' when not configured.
+	 */
+	private function propertySchema(string $name, IOutput $output): string {
 		$propertySchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'property_definition_schema', '');
 		if ($propertySchema === '') {
 			$output->warning(
 				sprintf('propertyDefinition schema id is not configured — "%s" keeps its case type but loses its properties.', $name)
 			);
-			return;
 		}
 
+		return $propertySchema;
+	}
+
+	/**
+	 * Save a propertyDefinition for each grant-specific property the scheme fills.
+	 *
+	 * @param array<string, mixed> $scheme         The source subsidieRegeling.
+	 * @param string               $caseTypeId     The case type they belong to.
+	 * @param string               $register       Register id.
+	 * @param string               $propertySchema The propertyDefinition schema id.
+	 *
+	 * @return void
+	 */
+	private function saveDefinitions(array $scheme, string $caseTypeId, string $register, string $propertySchema): void {
 		$objectService = $this->settingsService->getObjectService();
 		foreach (self::PROPERTY_MAP as $property => $type) {
 			// `isset()` already excludes null, so a `=== null` test here would
@@ -521,18 +553,34 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 				continue;
 			}
 
-			$definition = [
-				'name' => $property,
-				'caseType' => $caseTypeId,
-				'propertyType' => $type,
-				'defaultValue' => (string) $scheme[$property],
-			];
-
-			if ($type === 'enum') {
-				$definition['enumValues'] = self::INTERIM_FREQUENCIES;
-			}
+			$definition = $this->propertyDefinition(property: $property, type: $type, caseTypeId: $caseTypeId, value: $scheme[$property]);
 
 			$objectService->saveObject($definition, [], $register, $propertySchema);
 		}
+	}
+
+	/**
+	 * One propertyDefinition record.
+	 *
+	 * @param string $property   The property name.
+	 * @param string $type       The property type.
+	 * @param string $caseTypeId The case type it belongs to.
+	 * @param mixed  $value      The scheme's value, the default.
+	 *
+	 * @return array<string, mixed> The record.
+	 */
+	private function propertyDefinition(string $property, string $type, string $caseTypeId, mixed $value): array {
+		$definition = [
+			'name' => $property,
+			'caseType' => $caseTypeId,
+			'propertyType' => $type,
+			'defaultValue' => (string) $value,
+		];
+
+		if ($type === 'enum') {
+			$definition['enumValues'] = self::INTERIM_FREQUENCIES;
+		}
+
+		return $definition;
 	}
 }

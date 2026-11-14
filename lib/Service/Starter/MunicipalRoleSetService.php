@@ -357,6 +357,36 @@ class MunicipalRoleSetService implements MunicipalRoleSetServiceInterface {
 			return ['ok' => false, 'reason' => 'role_in_use', 'roleInUse' => $inUse[0]];
 		}
 
+		return $this->reverse(roles: $roles, adoption: $adoption);
+	}//end undoAdoption()
+
+	/**
+	 * Put the set's roles back to dormant and record the reversal on the adoption.
+	 *
+	 * @param array<int, array<string, mixed>> $roles    The set's roles.
+	 * @param array<string, mixed>             $adoption The open adoption.
+	 *
+	 * @return array{ok: bool, reason: string, roleInUse: string} What happened.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function reverse(array $roles, array $adoption): array {
+		$this->putDormant(roles: $roles);
+		$this->recordReversal(adoption: $adoption);
+
+		return ['ok' => true, 'reason' => '', 'roleInUse' => ''];
+	}//end reverse()
+
+	/**
+	 * Mark every role of the set dormant again.
+	 *
+	 * @param array<int, array<string, mixed>> $roles The set's roles.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function putDormant(array $roles): void {
 		foreach ($roles as $role) {
 			$role['dormant'] = true;
 			$this->shippedRoles->store->save(
@@ -365,7 +395,18 @@ class MunicipalRoleSetService implements MunicipalRoleSetServiceInterface {
 				id: $this->shippedRoles->store->idOf(row: $role),
 			);
 		}
+	}//end putDormant()
 
+	/**
+	 * Record on the adoption who reversed it, and when.
+	 *
+	 * @param array<string, mixed> $adoption The open adoption.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function recordReversal(array $adoption): void {
 		$adoption['reversedBy'] = $this->actor(user: $this->session->getUser());
 		$adoption['reversedAt'] = gmdate('c');
 		$this->shippedRoles->store->save(
@@ -373,9 +414,7 @@ class MunicipalRoleSetService implements MunicipalRoleSetServiceInterface {
 			payload: $adoption,
 			id: $this->shippedRoles->store->idOf(row: $adoption),
 		);
-
-		return ['ok' => true, 'reason' => '', 'roleInUse' => ''];
-	}//end undoAdoption()
+	}//end recordReversal()
 
 	/**
 	 * Who is acting, or '' when nobody is signed in.

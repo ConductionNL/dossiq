@@ -188,6 +188,29 @@ class CaseSeats implements CaseSeatsInterface {
 
 		$existing = $this->coordinatorBinding(caseId: $caseId);
 
+		$record = $this->coordinatorRecord(
+			caseId: $caseId,
+			participant: $participant,
+			displayName: $displayName,
+			roleType: ($existing['roleType'] ?? $roleTypes[0])
+		);
+
+		return $this->writeCoordinator(record: $record, uuid: trim((string)($existing['id'] ?? '')));
+	}//end nameCoordinator()
+
+	/**
+	 * The coordinator role record to write.
+	 *
+	 * @param string $caseId      The case uuid.
+	 * @param string $participant The person, as a uid or a `user:<uid>` reference.
+	 * @param string $displayName What to call them on the People tab.
+	 * @param mixed  $roleType    The role type: the existing row's, or the first declared.
+	 *
+	 * @return array<string, mixed> The record.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 */
+	private function coordinatorRecord(string $caseId, string $participant, string $displayName, mixed $roleType): array {
 		// The uid is the FALLBACK label, never the stored identity: the seat is
 		// addressed by `participant`, and a caller that passed no display name
 		// gets a row a person can still read rather than an empty one.
@@ -196,23 +219,30 @@ class CaseSeats implements CaseSeatsInterface {
 			$label = $this->uidOf(participant: $participant);
 		}
 
-		$record = [
+		return [
 			'name' => $label,
-			'roleType' => ($existing['roleType'] ?? $roleTypes[0]),
+			'roleType' => $roleType,
 			'case' => $caseId,
 			'participant' => $this->referenceOf(participant: $participant),
 		];
+	}//end coordinatorRecord()
 
-		$uuid = trim((string)($existing['id'] ?? ''));
+	/**
+	 * Write the coordinator record: a new row, or a patch of the existing one.
+	 *
+	 * @param array<string, mixed> $record The record.
+	 * @param string               $uuid   The existing row's uuid, '' when there is none.
+	 *
+	 * @return string The role record's uuid.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 */
+	private function writeCoordinator(array $record, string $uuid): string {
 		[$objectService, $register] = $this->context();
 		$schema = $this->schema(key: 'role_schema');
 
 		if ($uuid === '') {
-			return $this->idOf(
-				row: $this->asArray(
-					saved: $objectService->saveObject(object: $record, register: $register, schema: $schema)
-				)
-			);
+			return $this->idOf(row: $this->asArray(saved: $objectService->saveObject(object: $record, register: $register, schema: $schema)));
 		}
 
 		// 🔴 A PATCH, NOT A SAVE. Handing OpenRegister a partial object WITH a
@@ -221,15 +251,9 @@ class CaseSeats implements CaseSeatsInterface {
 		// and `delegateUntil`. A save would have silently ended a running
 		// delegation every time somebody renamed the coordinator.
 		return $this->idOf(
-			row: (array)$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $uuid,
-				changes: $record,
-			)
+			row: (array)$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $uuid, changes: $record)
 		);
-	}//end nameCoordinator()
+	}//end writeCoordinator()
 
 	/**
 	 * Empty the coordinator seat, and say who held it.

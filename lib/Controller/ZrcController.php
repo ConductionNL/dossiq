@@ -1899,38 +1899,62 @@ class ZrcController extends ZgwController {
 
 		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
 		if ($mappingConfig !== null && $this->zgwService->getObjectService() !== null) {
-			try {
-				$existingObj = $this->zgwService->getObjectService()->find(
-					$uuid,
-					register: $mappingConfig['sourceRegister'],
-					schema: $mappingConfig['sourceSchema']
-				);
-				$existingData = $this->objectToArray(row: $existingObj);
-
-				$caseClosed = $this->zgwService->resolveZaakClosed($resource, $existingData);
-				$hasGeforceerd = true;
-				if ($caseClosed === true) {
-					$hasGeforceerd = $this->zgwService->consumerHasScope(
-						$this->request,
-						'zrc',
-						'zaken.geforceerd-bijwerken'
-					);
-				}
-			} catch (\Throwable $e) {
-				// WF3c fix: fail-CLOSED on any unexpected error. Returning
-				// [true, false] (zaak=closed, no geforceerd scope) causes the
-				// upstream caller to emit a 403 rather than silently allowing
-				// modification of a legally-finalised zaak (zrc-007, Awb 4:5).
-				$this->zgwService->getLogger()->error(
-					'Could not resolve zaakClosed for ' . $resource . '/' . $uuid . ' — denying (fail-closed)',
-					['exception' => $e->getMessage()]
-				);
-				return [true, false];
-			}//end try
-		}//end if
+			[$caseClosed, $hasGeforceerd] = $this->closedStateOrDeny(resource: $resource, uuid: $uuid, mappingConfig: $mappingConfig);
+		}
 
 		return [$caseClosed, $hasGeforceerd];
 	}//end resolveZaakClosedForExisting()
+
+	/**
+	 * The zaak-closed state and geforceerd scope of a stored resource, denying on any error.
+	 *
+	 * @param string               $resource      The ZGW resource name
+	 * @param string               $uuid          The resource UUID
+	 * @param array<string, mixed> $mappingConfig The resource's mapping configuration
+	 *
+	 * @return array{0: ?bool, 1: bool} [zaakClosed, hasGeforceerd]
+	 */
+	private function closedStateOrDeny(string $resource, string $uuid, array $mappingConfig): array {
+		try {
+			return $this->closedStateOf(resource: $resource, uuid: $uuid, mappingConfig: $mappingConfig);
+		} catch (\Throwable $e) {
+			// WF3c fix: fail-CLOSED on any unexpected error. Returning
+			// [true, false] (zaak=closed, no geforceerd scope) causes the
+			// upstream caller to emit a 403 rather than silently allowing
+			// modification of a legally-finalised zaak (zrc-007, Awb 4:5).
+			$this->zgwService->getLogger()->error(
+				'Could not resolve zaakClosed for ' . $resource . '/' . $uuid . ' — denying (fail-closed)',
+				['exception' => $e->getMessage()]
+			);
+			return [true, false];
+		}//end try
+	}//end closedStateOrDeny()
+
+	/**
+	 * The zaak-closed state and geforceerd scope of a stored resource.
+	 *
+	 * @param string               $resource      The ZGW resource name
+	 * @param string               $uuid          The resource UUID
+	 * @param array<string, mixed> $mappingConfig The resource's mapping configuration
+	 *
+	 * @return array{0: ?bool, 1: bool} [zaakClosed, hasGeforceerd]
+	 */
+	private function closedStateOf(string $resource, string $uuid, array $mappingConfig): array {
+		$existingObj = $this->zgwService->getObjectService()->find(
+			$uuid,
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema']
+		);
+		$existingData = $this->objectToArray(row: $existingObj);
+
+		$caseClosed = $this->zgwService->resolveZaakClosed($resource, $existingData);
+		$hasGeforceerd = true;
+		if ($caseClosed === true) {
+			$hasGeforceerd = $this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.geforceerd-bijwerken');
+		}
+
+		return [$caseClosed, $hasGeforceerd];
+	}//end closedStateOf()
 
 	/**
 	 * Enrich a ZaakInformatieObject outbound-mapped array with aardRelatieWeergave and registratiedatum.

@@ -113,6 +113,23 @@ class MoveDecisionTablesToOpenRegister implements IRepairStep {
 			return;
 		}
 
+		if ($this->registerReadable(output: $output) === false) {
+			return;
+		}
+
+		$counts = $this->moveAll(rows: $rows);
+
+		$this->reportCounts(output: $output, counts: $counts);
+	}//end move()
+
+	/**
+	 * Probe OpenRegister's decision-tables register before writing to it.
+	 *
+	 * @param IOutput $output The upgrade output.
+	 *
+	 * @return bool Whether the register answers.
+	 */
+	private function registerReadable(IOutput $output): bool {
 		try {
 			// Probe before writing: an OpenRegister that has not imported the
 			// register yet answers a throw here, and the next upgrade retries.
@@ -123,14 +140,37 @@ class MoveDecisionTablesToOpenRegister implements IRepairStep {
 				['exception' => $e->getMessage()]
 			);
 			$output->warning('MoveDecisionTablesToOpenRegister: OpenRegister\'s decision-tables register is not there yet; nothing moved.');
-			return;
+			return false;
 		}
 
+		return true;
+	}//end registerReadable()
+
+	/**
+	 * Move every table, counting the outcomes.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The stored dossiq tables.
+	 *
+	 * @return array<string, int> The count per outcome.
+	 */
+	private function moveAll(array $rows): array {
 		$counts = ['moved' => 0, 'kept' => 0, 'disabled' => 0, 'failed' => 0];
 		foreach ($rows as $row) {
 			++$counts[$this->moveOne(row: $row)];
 		}
 
+		return $counts;
+	}//end moveAll()
+
+	/**
+	 * Report the outcome counts.
+	 *
+	 * @param IOutput            $output The upgrade output.
+	 * @param array<string, int> $counts The count per outcome.
+	 *
+	 * @return void
+	 */
+	private function reportCounts(IOutput $output, array $counts): void {
 		$output->info(
 			sprintf(
 				'MoveDecisionTablesToOpenRegister: %d moved, %d already in OpenRegister, %d disabled and left in dossiq, %d refused.',
@@ -143,7 +183,7 @@ class MoveDecisionTablesToOpenRegister implements IRepairStep {
 		if ($counts['failed'] > 0) {
 			$output->warning('MoveDecisionTablesToOpenRegister: ' . $counts['failed'] . ' table(s) were refused (see the log); they stay in dossiq.');
 		}
-	}//end move()
+	}//end reportCounts()
 
 	/**
 	 * Move one table.

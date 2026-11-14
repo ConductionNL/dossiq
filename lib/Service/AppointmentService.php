@@ -112,7 +112,28 @@ class AppointmentService implements AppointmentServiceInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('appointment_schema');
 
-		$appointmentData = array_merge(
+		$appointmentData = $this->appointmentRecord(caseId: $caseId, data: $data, backendResult: $backendResult);
+
+		$result = $objectService->saveObject(object: $appointmentData, register: (int)$register, schema: (int)$schema);
+
+		$this->logBooked(caseId: $caseId, result: $result);
+
+		return $result->jsonSerialize();
+	}//end bookAppointment()
+
+	/**
+	 * The appointment record to store: the submitted data, linked to the case and the backend booking.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param array<string, mixed> $data Appointment data.
+	 * @param array<string, mixed> $backendResult What the booking backend answered.
+	 *
+	 * @return array<string, mixed> The record.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function appointmentRecord(string $caseId, array $data, array $backendResult): array {
+		return array_merge(
 			$data,
 			[
 				'caseId' => $caseId,
@@ -121,13 +142,19 @@ class AppointmentService implements AppointmentServiceInterface {
 				'cancelToken' => bin2hex(random_bytes(16)),
 			]
 		);
+	}//end appointmentRecord()
 
-		$result = $objectService->saveObject(
-			object: $appointmentData,
-			register: (int)$register,
-			schema: (int)$schema,
-		);
-
+	/**
+	 * Log the booked appointment.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param object $result The stored appointment.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function logBooked(string $caseId, $result): void {
 		$this->logger->info(
 			'Dossiq: Appointment booked',
 			[
@@ -135,9 +162,7 @@ class AppointmentService implements AppointmentServiceInterface {
 				'appointmentId' => $result->getUuid(),
 			]
 		);
-
-		return $result->jsonSerialize();
-	}//end bookAppointment()
+	}//end logBooked()
 
 	/**
 	 * Resolve the case an appointment belongs to.

@@ -275,14 +275,69 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	 * @return void
 	 */
 	private function backfillFile(object $objectService, string $register, string $schema, string $folderUuid, File $file): void {
+		$informatieobject = $this->informatieobjectFor(file: $file);
+
+		$saved = $objectService->saveObject(object: $informatieobject, register: $register, schema: $schema);
+		$infoId = $this->savedUuid(saved: $saved);
+
+		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
+		if ($joinSchema !== '' && $infoId !== '') {
+			$objectService->saveObject(
+				object: $this->joinRecord(folderUuid: $folderUuid, infoId: $infoId),
+				register: $register,
+				schema: $joinSchema,
+			);
+		}
+	}//end backfillFile()
+
+	/**
+	 * The informatieobject to register for one existing file, integrity hash included.
+	 *
+	 * @param File $file The Nextcloud file node.
+	 *
+	 * @return array<string, mixed> The informatieobject.
+	 */
+	private function informatieobjectFor(File $file): array {
 		$content = (string)$file->getContent();
+		$author = $this->authorOf(file: $file);
+
+		$informatieobject = $this->describedFile(file: $file, author: $author);
+		$informatieobject['integrity'] = [
+			'algorithm' => 'sha256',
+			'value' => hash('sha256', $content),
+			'date' => date('Y-m-d\TH:i:s'),
+		];
+
+		return $informatieobject;
+	}//end informatieobjectFor()
+
+	/**
+	 * The display name of the file's owner, or an empty string without one.
+	 *
+	 * @param File $file The Nextcloud file node.
+	 *
+	 * @return string The author.
+	 */
+	private function authorOf(File $file): string {
 		$owner = $file->getOwner();
 		$author = '';
 		if ($owner !== null) {
 			$author = $owner->getDisplayName();
 		}
 
-		$informatieobject = [
+		return $author;
+	}//end authorOf()
+
+	/**
+	 * The descriptive informatieobject fields read off the file.
+	 *
+	 * @param File $file The Nextcloud file node.
+	 * @param string $author The owner's display name.
+	 *
+	 * @return array<string, mixed> The fields.
+	 */
+	private function describedFile(File $file, string $author): array {
+		return [
 			'title' => $file->getName(),
 			'fileName' => $file->getName(),
 			'bestandsomvang' => $file->getSize(),
@@ -294,33 +349,41 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			'creatiedatum' => date('Y-m-d', $file->getMTime()),
 			'taal' => 'nld',
 			'fileId' => $file->getId(),
-			'integrity' => [
-				'algorithm' => 'sha256',
-				'value' => hash('sha256', $content),
-				'date' => date('Y-m-d\TH:i:s'),
-			],
 		];
+	}//end describedFile()
 
-		$saved = $objectService->saveObject(object: $informatieobject, register: $register, schema: $schema);
+	/**
+	 * The UUID of a saved object, or an empty string when the save returned none.
+	 *
+	 * @param mixed $saved What the object service returned.
+	 *
+	 * @return string The UUID.
+	 */
+	private function savedUuid(mixed $saved): string {
 		$infoId = '';
 		if (is_object($saved) === true) {
 			$infoId = $saved->getUuid();
 		}
 
-		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
-		if ($joinSchema !== '' && $infoId !== '') {
-			$objectService->saveObject(
-				object: [
-					'case' => $folderUuid,
-					'informatieobject' => $infoId,
-					'natureRelationshipDisplay' => 'Hoort at omgekeerd',
-					'registrationDate' => date('Y-m-d\TH:i:s\Z'),
-				],
-				register: $register,
-				schema: $joinSchema,
-			);
-		}
-	}//end backfillFile()
+		return $infoId;
+	}//end savedUuid()
+
+	/**
+	 * The join record that links a registered informatieobject to its case.
+	 *
+	 * @param string $folderUuid The storing folder UUID (used as the link key).
+	 * @param string $infoId The informatieobject UUID.
+	 *
+	 * @return array<string, string> The join record.
+	 */
+	private function joinRecord(string $folderUuid, string $infoId): array {
+		return [
+			'case' => $folderUuid,
+			'informatieobject' => $infoId,
+			'natureRelationshipDisplay' => 'Hoort at omgekeerd',
+			'registrationDate' => date('Y-m-d\TH:i:s\Z'),
+		];
+	}//end joinRecord()
 
 	/**
 	 * Collect the bestandsnaam of every existing informatieobject for idempotency.

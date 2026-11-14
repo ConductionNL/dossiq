@@ -91,31 +91,48 @@ class CaseTypeListenerRegistrar {
 	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
+		$this->registerSavingListeners(context: $context);
+		$this->registerSavedListeners(context: $context);
+		$this->registerTermListeners(context: $context);
+	}//end register()
+
+	/**
+	 * Register the listeners that guard and complete a case type or case save before it is written.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function registerSavingListeners(IRegistrationContext $context): void {
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
-			$context->registerEventListener(
-				event: $event,
-				listener: CaseTypeParentCycleListener::class
-			);
+			$context->registerEventListener(event: $event, listener: CaseTypeParentCycleListener::class);
 			// A withdrawal the portal offers must be one the workflow can
 			// write, so the save that declares it is the one refused.
-			$context->registerEventListener(
-				event: $event,
-				listener: CaseTypePortalWithdrawalListener::class
-			);
+			$context->registerEventListener(event: $event, listener: CaseTypePortalWithdrawalListener::class);
 			// The same shape one level down: a milestone whose `dependsOn`
 			// closes a loop is refused by the edit that creates it, not by
 			// whatever touches the case type next.
-			$context->registerEventListener(
-				event: $event,
-				listener: MilestoneDependencyCycleListener::class
-			);
+			$context->registerEventListener(event: $event, listener: MilestoneDependencyCycleListener::class);
 			$context->registerEventListener(
 				event: $event,
 				listener: CaseInheritedDeadlineListener::class,
 				priority: self::INHERITED_DEADLINE_PRIORITY
 			);
-		}//end foreach
+		}
+	}//end registerSavingListeners()
 
+	/**
+	 * Register the listener that projects a saved case type's handling teams onto the case access rules.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function registerSavedListeners(IRegistrationContext $context): void {
 		// A saved case type writes its handling teams onto the case schema's
 		// access rules (case-access-by-handling-team). After the save, so the
 		// projector reads the row as it now is.
@@ -125,7 +142,18 @@ class CaseTypeListenerRegistrar {
 				listener: CaseTeamAccessListener::class
 			);
 		}
+	}//end registerSavedListeners()
 
+	/**
+	 * Register the listeners that write the statutory term's deadline and the applicant's term note.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 */
+	private function registerTermListeners(IRegistrationContext $context): void {
 		// UPDATE ONLY. No term exists before the case does; the bind that
 		// follows the create writes the date back through the mirror.
 		$context->registerEventListener(
@@ -141,5 +169,5 @@ class CaseTypeListenerRegistrar {
 			listener: ApplicantTermNoteListener::class,
 			priority: self::TERM_NOTE_PRIORITY
 		);
-	}//end register()
+	}//end registerTermListeners()
 }//end class

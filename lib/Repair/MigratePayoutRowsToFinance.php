@@ -102,28 +102,77 @@ class MigratePayoutRowsToFinance implements IRepairStep {
 	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
 	 */
 	public function run(IOutput $output): void {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = $this->payoutTarget();
+		if ($target === null) {
 			return;
 		}
 
+		[$objectService, $register, $schema] = $target;
 		try {
-			$rows = (array)$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): array => $this->searchObjectsAsArrays(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					filters: ['_limit' => 10000]
-				)
-			);
+			$rows = $this->readRows(objectService: $objectService, register: $register, schema: $schema);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: the payout rows could not be read for the move to finance', ['error' => $e->getMessage()]);
 			return;
 		}
 
+		$moved = $this->moveAll(objectService: $objectService, register: $register, schema: $schema, rows: $rows);
+		$this->reportMoved(output: $output, moved: $moved);
+	}//end run()
+
+	/**
+	 * The object service, register and payout schema, or null when one is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The target.
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
+	 */
+	private function payoutTarget(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end payoutTarget()
+
+	/**
+	 * Read every payout row, elevated.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register      The register.
+	 * @param string $schema        The payout schema.
+	 *
+	 * @return array<int|string, mixed> The rows.
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
+	 */
+	private function readRows(object $objectService, string $register, string $schema): array {
+		return (array)$this->runAsSystemIfAvailable(
+			objectService: $objectService,
+			operation: fn (): array => $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['_limit' => 10000]
+			)
+		);
+	}//end readRows()
+
+	/**
+	 * Hand every row to finance.
+	 *
+	 * @param object                   $objectService The OpenRegister object service.
+	 * @param string                   $register      The register.
+	 * @param string                   $schema        The payout schema.
+	 * @param array<int|string, mixed> $rows          The stored rows.
+	 *
+	 * @return int How many rows were handed over.
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
+	 */
+	private function moveAll(object $objectService, string $register, string $schema, array $rows): int {
 		$moved = 0;
 		foreach ($rows as $row) {
 			if ($this->moveRow(objectService: $objectService, register: $register, schema: $schema, row: $row) === true) {
@@ -131,10 +180,24 @@ class MigratePayoutRowsToFinance implements IRepairStep {
 			}
 		}
 
+		return $moved;
+	}//end moveAll()
+
+	/**
+	 * Say how many rows were handed over, when any were.
+	 *
+	 * @param IOutput $output Upgrade output.
+	 * @param int     $moved  How many rows were handed over.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
+	 */
+	private function reportMoved(IOutput $output, int $moved): void {
 		if ($moved > 0) {
 			$output->info('Handed ' . $moved . ' penalty payout(s) to the finance app.');
 		}
-	}//end run()
+	}//end reportMoved()
 
 	/**
 	 * Hand one row to finance and keep the payable id on it.

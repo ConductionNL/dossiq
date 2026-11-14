@@ -41,6 +41,8 @@ use Psr\Log\LoggerInterface;
 /**
  * Writes the calendar event for a hearing.
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ *
  * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
  */
 class HearingCalendarService {
@@ -109,6 +111,51 @@ class HearingCalendarService {
 			return '';
 		}
 
+		return $this->writeHearing(data: $data, start: $start, participants: $participants);
+	}//end createEvent()
+
+	/**
+	 * Build the hearing's event and write it into every calendar it reaches.
+	 *
+	 * @param array<string, mixed> $data Hearing data with participants.
+	 * @param DateTimeImmutable $start When the hearing starts.
+	 * @param array<int, string> $participants The planned participants.
+	 *
+	 * @return string The event UID, or an empty string when nothing was written.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function writeHearing(array $data, DateTimeImmutable $start, array $participants): string {
+		[$ics, $organiser, $attendees] = $this->hearingEvent(data: $data, start: $start, participants: $participants);
+
+		$uid = $this->readUid(ics: $ics);
+		if ($uid === '') {
+			return '';
+		}
+
+		$event = new HearingCalendarEvent(uid: $uid, ics: $ics);
+		$written = $this->writeForAll(event: $event, principals: $this->principalsFor(organiser: $organiser, attendees: $attendees));
+		if ($written === 0) {
+			return '';
+		}
+
+		$this->logWritten(written: $written, participants: $participants, uid: $uid);
+
+		return $uid;
+	}//end writeHearing()
+
+	/**
+	 * The hearing's ICS, with the organiser and the attendees it names.
+	 *
+	 * @param array<string, mixed> $data Hearing data with participants.
+	 * @param DateTimeImmutable $start When the hearing starts.
+	 * @param array<int, string> $participants The planned participants.
+	 *
+	 * @return array{0: string, 1: IUser|null, 2: array<int, mixed>} The ICS, the organiser and the attendees.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function hearingEvent(array $data, DateTimeImmutable $start, array $participants): array {
 		$organiser = $this->userSession->getUser();
 		$attendees = $this->resolveParticipants(participants: $participants);
 
@@ -120,26 +167,26 @@ class HearingCalendarService {
 			attendees: $attendees
 		);
 
-		$uid = $this->readUid(ics: $ics);
-		if ($uid === '') {
-			return '';
-		}
+		return [$ics, $organiser, $attendees];
+	}//end hearingEvent()
 
-		$written = $this->writeForAll(
-			event: new HearingCalendarEvent(uid: $uid, ics: $ics),
-			principals: $this->principalsFor(organiser: $organiser, attendees: $attendees)
-		);
-		if ($written === 0) {
-			return '';
-		}
-
+	/**
+	 * Log how many calendars the hearing reached.
+	 *
+	 * @param int $written How many calendars were written.
+	 * @param array<int, string> $participants The planned participants.
+	 * @param string $uid The event UID.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function logWritten(int $written, array $participants, string $uid): void {
 		$this->logger->info(
 			'Hearing written to ' . $written . ' calendars for ' . count($participants) . ' participants',
 			['app' => AppIdentity::APP_ID, 'calendarEventId' => $uid],
 		);
-
-		return $uid;
-	}//end createEvent()
+	}//end logWritten()
 
 	/**
 	 * The participants a hearing plans, empty when it plans none or stores them in another shape.

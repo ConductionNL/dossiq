@@ -357,20 +357,10 @@ class SociaalDomeinStore implements SociaalDomeinStoreInterface {
 	 */
 	public function write(string $schema, array $object): array {
 		$objectService = $this->objectService();
-		$declaredId = trim((string)($object['id'] ?? ''));
-		$uuid = null;
-		if ($declaredId !== '') {
-			$uuid = $declaredId;
-		}
+		$uuid = $this->declaredUuid(object: $object);
 
 		try {
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: self::REGISTER,
-				schema: $schema,
-				object: $object,
-				uuid: $uuid
-			);
+			$saved = $this->saveObjectAsArray(objectService: $objectService, register: self::REGISTER, schema: $schema, object: $object, uuid: $uuid);
 		} catch (Throwable $e) {
 			$this->refuseIndeterminate(
 				rule: 'sociaal-domein-not-written',
@@ -379,6 +369,40 @@ class SociaalDomeinStore implements SociaalDomeinStoreInterface {
 			);
 		}
 
+		return $this->savedOrRefused(saved: $saved);
+	}//end write()
+
+	/**
+	 * The id the object declares, or null for a new one.
+	 *
+	 * @param array<string, mixed> $object The object.
+	 *
+	 * @return string|null The uuid.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 */
+	private function declaredUuid(array $object): ?string {
+		$declaredId = trim((string)($object['id'] ?? ''));
+		$uuid = null;
+		if ($declaredId !== '') {
+			$uuid = $declaredId;
+		}
+
+		return $uuid;
+	}//end declaredUuid()
+
+	/**
+	 * The stored object, refusing when the store handed back nothing readable.
+	 *
+	 * @param array<string, mixed>|null $saved The stored object, or null.
+	 *
+	 * @return array<string, mixed> The stored object.
+	 *
+	 * @throws RefusedException When nothing readable was stored.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 */
+	private function savedOrRefused(?array $saved): array {
 		if ($saved === null) {
 			// 🔴 NOT A SILENT NULL. `saveObjectAsArray` answers null when the
 			// store hands back a shape it cannot read, and a caller that took
@@ -391,7 +415,7 @@ class SociaalDomeinStore implements SociaalDomeinStoreInterface {
 		}
 
 		return $saved;
-	}//end write()
+	}//end savedOrRefused()
 
 	/**
 	 * The object service, or a refusal naming what is missing.

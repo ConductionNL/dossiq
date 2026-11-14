@@ -167,31 +167,56 @@ class FilinqRedactionClient {
 		$service = $this->service(relative: self::ANONYMIZATION_SERVICE);
 
 		try {
-			$result = (array)$service->anonymizeDocument(
-				$fileId,
-				$entities,
-				'pdf-only',
-				[],
-				[],
-				$userId
-			);
+			$result = (array)$service->anonymizeDocument($fileId, $entities, 'pdf-only', [], [], $userId);
 		} catch (Throwable $e) {
-			$refusal = ($this->detectorRefusal(error: $e) ?? $this->reviewRefusal(error: $e));
-			if ($refusal !== null) {
-				$this->logger->warning(
-					'Filinq refused a redaction',
-					['app' => AppIdentity::APP_ID, 'fileId' => $fileId, 'status' => $refusal['status']]
-				);
-				return $refusal + ['sourceFileId' => $fileId, 'entityCount' => count($entities)];
-			}
+			return $this->refusedOrThrow(error: $e, fileId: $fileId, entities: $entities);
+		}
 
+		return $this->completed(result: $result, fileId: $fileId, entities: $entities);
+	}//end anonymize()
+
+	/**
+	 * The refusal filinq answered a redaction with, or an exception when it failed for another reason.
+	 *
+	 * @param Throwable                        $error    What filinq threw.
+	 * @param int                              $fileId   The Nextcloud file id.
+	 * @param array<int, array<string, mixed>> $entities The checked entity set.
+	 *
+	 * @return array<string, mixed> The refusal, with the source file and the entity count.
+	 *
+	 * @throws RuntimeException When filinq failed for a reason that is not an outcome.
+	 *
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
+	 */
+	private function refusedOrThrow(Throwable $error, int $fileId, array $entities): array {
+		$refusal = ($this->detectorRefusal(error: $error) ?? $this->reviewRefusal(error: $error));
+		if ($refusal !== null) {
 			$this->logger->warning(
-				'Filinq failed a redaction',
-				['app' => AppIdentity::APP_ID, 'fileId' => $fileId, 'exception' => $e->getMessage()]
+				'Filinq refused a redaction',
+				['app' => AppIdentity::APP_ID, 'fileId' => $fileId, 'status' => $refusal['status']]
 			);
-			throw new RuntimeException('filinq_redaction_failed: ' . $e->getMessage(), 0, $e);
-		}//end try
+			return $refusal + ['sourceFileId' => $fileId, 'entityCount' => count($entities)];
+		}
 
+		$this->logger->warning(
+			'Filinq failed a redaction',
+			['app' => AppIdentity::APP_ID, 'fileId' => $fileId, 'exception' => $error->getMessage()]
+		);
+		throw new RuntimeException('filinq_redaction_failed: ' . $error->getMessage(), 0, $error);
+	}//end refusedOrThrow()
+
+	/**
+	 * What a redaction filinq completed answers.
+	 *
+	 * @param array<string, mixed>             $result   Filinq's result.
+	 * @param int                              $fileId   The Nextcloud file id.
+	 * @param array<int, array<string, mixed>> $entities The checked entity set.
+	 *
+	 * @return array<string, mixed> `{status, sourceFileId, entityCount, anonymizedFileId, detectionBackend, ...}`.
+	 *
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
+	 */
+	private function completed(array $result, int $fileId, array $entities): array {
 		$anonymisedFileId = ($result['anonymizedFileId'] ?? ($result['fileId'] ?? null));
 		$detection = $this->detectionReport(result: $result);
 		$backend = ($detection['backend'] ?? $this->detectionBackend());
@@ -205,7 +230,7 @@ class FilinqRedactionClient {
 			'detectionOutcome' => ($detection['outcome'] ?? null),
 			'warning' => ($result['warning'] ?? null),
 		];
-	}//end anonymize()
+	}//end completed()
 
 	/**
 	 * One of filinq's services, or a refusal naming that filinq is absent.

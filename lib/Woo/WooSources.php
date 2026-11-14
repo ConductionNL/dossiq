@@ -116,38 +116,70 @@ class WooSources implements WooSourcesInterface {
 		$reason = $this->microsoft365Refusal();
 
 		return [
-			[
-				'id' => self::SOURCE_FILES,
-				'label' => $this->l10n->t('Files'),
-				'kind' => 'platform',
-				'available' => true,
-				'reason' => '',
-				'search' => ['provider' => 'files', 'filters' => []],
-			],
-			[
-				'id' => self::SOURCE_CASES,
-				'label' => $this->l10n->t('Cases'),
-				'kind' => 'platform',
-				'available' => true,
-				'reason' => '',
-				'search' => [
-					'provider' => 'openregister_objects',
-					'filters' => [
-						'register' => $this->settingsService->getConfigValue('register'),
-						'schema' => $this->settingsService->getConfigValue('dossier_informatieobject_schema'),
-					],
-				],
-			],
-			[
-				'id' => self::SOURCE_MICROSOFT365,
-				'label' => $this->l10n->t('SharePoint, Teams and mail'),
-				'kind' => 'integriq',
-				'available' => ($reason === ''),
-				'reason' => $reason,
-				'search' => null,
-			],
+			$this->filesSource(),
+			$this->casesSource(),
+			$this->microsoft365Source(reason: $reason),
 		];
 	}//end list()
+
+	/**
+	 * The Files source, always available.
+	 *
+	 * @return array<string, mixed> The source, as `{id, label, kind, available, reason, search}`.
+	 *
+	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+	 */
+	private function filesSource(): array {
+		return [
+			'id' => self::SOURCE_FILES,
+			'label' => $this->l10n->t('Files'),
+			'kind' => 'platform',
+			'available' => true,
+			'reason' => '',
+			'search' => ['provider' => 'files', 'filters' => []],
+		];
+	}//end filesSource()
+
+	/**
+	 * The Cases source, always available, searched in the dossier's document schema.
+	 *
+	 * @return array<string, mixed> The source, as `{id, label, kind, available, reason, search}`.
+	 *
+	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+	 */
+	private function casesSource(): array {
+		return [
+			'id' => self::SOURCE_CASES,
+			'label' => $this->l10n->t('Cases'),
+			'kind' => 'platform',
+			'available' => true,
+			'reason' => '',
+			'search' => ['provider' => 'openregister_objects', 'filters' => [
+				'register' => $this->settingsService->getConfigValue('register'),
+				'schema' => $this->settingsService->getConfigValue('dossier_informatieobject_schema'),
+			]],
+		];
+	}//end casesSource()
+
+	/**
+	 * The SharePoint, Teams and mail source, available when integriq can answer.
+	 *
+	 * @param string $reason Why it cannot be searched, or '' when it can.
+	 *
+	 * @return array<string, mixed> The source, as `{id, label, kind, available, reason, search}`.
+	 *
+	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+	 */
+	private function microsoft365Source(string $reason): array {
+		return [
+			'id' => self::SOURCE_MICROSOFT365,
+			'label' => $this->l10n->t('SharePoint, Teams and mail'),
+			'kind' => 'integriq',
+			'available' => ($reason === ''),
+			'reason' => $reason,
+			'search' => null,
+		];
+	}//end microsoft365Source()
 
 	/**
 	 * Whether a source id is one this class knows.

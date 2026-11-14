@@ -149,37 +149,36 @@ class WOODecisionService {
 		$userId = $this->resolveDecidedBy();
 
 		// The decision itself is raised in decidiq; nothing is recorded locally when that fails.
-		$decisionRef = $this->raiseDecision(
-			caseId: $caseId,
-			register: $register,
-			record: $record,
-			actorId: $userId,
-		);
+		$decisionRef = $this->raiseDecision(caseId: $caseId, register: $register, record: $record, actorId: $userId);
 
 		$besluitData = $this->besluitData(caseId: $caseId, record: $record, userId: $userId, decisionData: $decisionData);
 
 		$decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);
 
-		$this->readiness->markCaseReady(
-			objectService: $objectService,
-			register: $register,
-			caseId: $caseId,
-			decisionId: (string)$decision->getUuid(),
-		);
+		$this->readiness->markCaseReady(objectService: $objectService, register: $register, caseId: $caseId, decisionId: (string)$decision->getUuid());
 
+		$this->logAssembled(caseId: $caseId, decision: $decision, decisionRef: $decisionRef);
+
+		return $this->assembledResult(caseId: $caseId, decisionRef: $decisionRef, decision: $decision, record: $record, letter: $letter);
+	}//end assembleDecision()
+
+	/**
+	 * Log that a WOO besluit was assembled.
+	 *
+	 * @param string $caseId      The case UUID
+	 * @param object $decision    The saved decision object
+	 * @param string $decisionRef The decision raised in decidiq
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
+	 */
+	private function logAssembled(string $caseId, object $decision, string $decisionRef): void {
 		$this->logger->info(
 			'WOO besluit assembled for case ' . $caseId . ': decision ' . $decision->getUuid(),
 			['app' => AppIdentity::APP_ID, 'decisionRef' => $decisionRef],
 		);
-
-		return $this->assembledResult(
-			caseId: $caseId,
-			decisionRef: $decisionRef,
-			decision: $decision,
-			record: $record,
-			letter: $letter,
-		);
-	}//end assembleDecision()
+	}//end logAssembled()
 
 	/**
 	 * The OpenRegister object service, required to assemble a decision.
@@ -362,28 +361,71 @@ class WOODecisionService {
 			return $this->decisionDelegation->raiseDecision(
 				decisionType: ContractDecisionDelegationService::DECISION_TYPE_WOO_DECISION,
 				externalReference: $caseId,
-				subject: [
-					'subjectRegister' => $register,
-					'subjectSchema' => (string)$this->settingsService->getConfigValue('case_schema'),
-					'subjectId' => $caseId,
-					'subjectLabel' => self::publicationSummary(caseTitle: (string)$record['caseTitle']),
-				],
-				context: [
-					'actorId' => $actorId,
-					'summary' => $record['summary'],
-					'weigeringsgronden' => $record['weigeringsgronden'],
-					'groundsListVersion' => WooRefusalGrounds::LIST_VERSION,
-					'assessmentCount' => $record['assessmentCount'],
-				],
+				subject: $this->decisionSubject(caseId: $caseId, register: $register, record: $record),
+				context: self::decisionContext(actorId: $actorId, record: $record),
 			);
 		} catch (RuntimeException $exception) {
-			$this->logger->error(
-				'WOO besluit for case ' . $caseId . ' not raised in decidiq; failing closed: ' . $exception->getMessage(),
-				['app' => AppIdentity::APP_ID],
-			);
-			throw new RuntimeException('Decision service unavailable: ' . $exception->getMessage(), 0, $exception);
+			throw $this->notRaised(caseId: $caseId, exception: $exception);
 		}
 	}//end raiseDecision()
+
+	/**
+	 * The subject a WOO decision is raised on: the case.
+	 *
+	 * @param string               $caseId   The case UUID.
+	 * @param string               $register The register the case lives in.
+	 * @param array<string, mixed> $record   The composed case title and assessment tally.
+	 *
+	 * @return array<string, mixed> The subject.
+	 *
+	 * @spec openspec/changes/dossiq-decisions-to-decidiq/specs/dossiq-decisions-to-decidiq/spec.md#requirement-req-ddtd-001-no-local-decision-authoring
+	 */
+	private function decisionSubject(string $caseId, string $register, array $record): array {
+		return [
+			'subjectRegister' => $register,
+			'subjectSchema' => (string)$this->settingsService->getConfigValue('case_schema'),
+			'subjectId' => $caseId,
+			'subjectLabel' => self::publicationSummary(caseTitle: (string)$record['caseTitle']),
+		];
+	}//end decisionSubject()
+
+	/**
+	 * The context a WOO decision is raised with: who, and the assessment tally.
+	 *
+	 * @param string               $actorId The user the decision is raised for.
+	 * @param array<string, mixed> $record  The composed case title and assessment tally.
+	 *
+	 * @return array<string, mixed> The context.
+	 *
+	 * @spec openspec/changes/dossiq-decisions-to-decidiq/specs/dossiq-decisions-to-decidiq/spec.md#requirement-req-ddtd-001-no-local-decision-authoring
+	 */
+	private static function decisionContext(string $actorId, array $record): array {
+		return [
+			'actorId' => $actorId,
+			'summary' => $record['summary'],
+			'weigeringsgronden' => $record['weigeringsgronden'],
+			'groundsListVersion' => WooRefusalGrounds::LIST_VERSION,
+			'assessmentCount' => $record['assessmentCount'],
+		];
+	}//end decisionContext()
+
+	/**
+	 * Log a decision decidiq did not raise, and the error that fails the besluit closed.
+	 *
+	 * @param string           $caseId    The case UUID.
+	 * @param RuntimeException $exception Why decidiq did not raise it.
+	 *
+	 * @return RuntimeException The error to throw.
+	 *
+	 * @spec openspec/changes/dossiq-decisions-to-decidiq/specs/dossiq-decisions-to-decidiq/spec.md#requirement-req-ddtd-001-no-local-decision-authoring
+	 */
+	private function notRaised(string $caseId, RuntimeException $exception): RuntimeException {
+		$this->logger->error(
+			'WOO besluit for case ' . $caseId . ' not raised in decidiq; failing closed: ' . $exception->getMessage(),
+			['app' => AppIdentity::APP_ID],
+		);
+		return new RuntimeException('Decision service unavailable: ' . $exception->getMessage(), 0, $exception);
+	}//end notRaised()
 
 	/**
 	 * Resolve the user id credited with the besluit.
