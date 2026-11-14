@@ -191,6 +191,29 @@ class AdviceRepository {
 	 * @spec openspec/specs/advice-management/spec.md
 	 */
 	public function save(array $update, string $adviceId): array {
+		[$objectService, $register, $schema] = $this->adviceStore();
+
+		try {
+			$advice = $this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema,
+				id: (string)$adviceId, changes: $update);
+		} catch (Throwable $e) {
+			$this->logTransitionFailed(error: $e);
+			throw new RuntimeException('Could not update advice request');
+		}
+
+		return $this->normalize(result: $advice);
+	}//end save()
+
+	/**
+	 * The object service, register and advice schema advice requests are written to.
+	 *
+	 * @return array{0: object, 1: string, 2: string} The advice store.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable or the schema is not configured.
+	 *
+	 * @spec openspec/specs/advice-management/spec.md
+	 */
+	private function adviceStore(): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -203,24 +226,22 @@ class AdviceRepository {
 			throw new RuntimeException('Advice schema is not configured');
 		}
 
-		try {
-			$advice = $this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: (string)$adviceId,
-				changes: $update
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: failed to transition advice status: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID]
-			);
-			throw new RuntimeException('Could not update advice request');
-		}
+		return [$objectService, $register, $schema];
+	}//end adviceStore()
 
-		return $this->normalize(result: $advice);
-	}//end save()
+	/**
+	 * Log an advice write that failed.
+	 *
+	 * @param Throwable $error Why it failed.
+	 *
+	 * @return void
+	 */
+	private function logTransitionFailed(Throwable $error): void {
+		$this->logger->error(
+			'Dossiq: failed to transition advice status: ' . $error->getMessage(),
+			['app' => AppIdentity::APP_ID]
+		);
+	}//end logTransitionFailed()
 
 	/**
 	 * Convert an object/array result to an associative array.
