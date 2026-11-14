@@ -84,10 +84,11 @@ class RecallSamplesTest extends TestCase {
 	 * @param int $found In scope.
 	 * @param int $outOfScope Out of scope.
 	 * @param int $unmarked Unmarked.
+	 * @param array<string, string> $overrides Config values that replace the defaults.
 	 *
 	 * @return RecallSamples The service.
 	 */
-	private function samples(int $found = 4, int $outOfScope = 3, int $unmarked = 3): RecallSamples {
+	private function samples(int $found = 4, int $outOfScope = 3, int $unmarked = 3, array $overrides = []): RecallSamples {
 		$this->store = new InMemoryRegister();
 		$this->documents = [];
 		$n = 0;
@@ -100,7 +101,7 @@ class RecallSamplesTest extends TestCase {
 			}
 		}
 
-		$config = ['register' => 'dossiq', 'document_review_schema' => 'documentReview', 'stopping_rule_schema' => 'stoppingRule', 'recall_sample_schema' => 'recallSample'];
+		$config = $overrides + ['register' => 'dossiq', 'document_review_schema' => 'documentReview', 'stopping_rule_schema' => 'stoppingRule', 'recall_sample_schema' => 'recallSample'];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
@@ -294,4 +295,49 @@ class RecallSamplesTest extends TestCase {
 			$refused
 		);
 	}//end testRefusals()
+
+	/**
+	 * Without a sample schema no sample is listed, and a draw is refused before a batch is made.
+	 *
+	 * @return void
+	 */
+	public function testWithoutASampleSchemaNothingIsListedOrDrawn(): void {
+		$samples = $this->samples(overrides: ['recall_sample_schema' => '']);
+		$this->store->seed(schema: 'recallSample', uuid: 'sample-1', row: ['case' => 'case-x', 'documents' => []]);
+		$this->batches->expects($this->never())->method('createSampleBatch');
+
+		$this->assertSame([], $samples->forCase(caseId: 'case-x'));
+
+		try {
+			$samples->draw(caseId: 'case-x', size: 1, assignee: 'reviewer-a', userId: 'handler-h', seed: 3);
+			$this->fail('A draw without a sample schema must be refused.');
+		} catch (RefusedException $e) {
+			$this->assertSame('review-recall-sample-unavailable', $e->getRule());
+			$this->assertSame(503, $e->getStatus());
+			$this->assertSame('The Recall sample cannot be stored, so nothing was drawn or judged.', $e->getSentence());
+			$this->assertNull($e->getPrevious());
+		}
+	}//end testWithoutASampleSchemaNothingIsListedOrDrawn()
+
+	/**
+	 * A sample the register refuses to store is refused with the cause, and no batch is made.
+	 *
+	 * @return void
+	 */
+	public function testASampleTheRegisterCannotStoreIsRefused(): void {
+		$samples = $this->samples();
+		$this->store->refusedSchemas = ['recallSample'];
+		$this->batches->expects($this->never())->method('createSampleBatch');
+
+		try {
+			$samples->draw(caseId: 'case-x', size: 2, assignee: 'reviewer-a', userId: 'handler-h', seed: 3);
+			$this->fail('A sample the register refuses must be refused.');
+		} catch (RefusedException $e) {
+			$this->assertSame('review-recall-sample-unavailable', $e->getRule());
+			$this->assertSame(503, $e->getStatus());
+			$this->assertInstanceOf(\RuntimeException::class, $e->getPrevious());
+		}
+
+		$this->assertSame([], $this->store->all(schema: 'recallSample'));
+	}//end testASampleTheRegisterCannotStoreIsRefused()
 }//end class

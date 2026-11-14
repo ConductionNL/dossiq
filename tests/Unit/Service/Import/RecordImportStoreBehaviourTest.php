@@ -162,6 +162,60 @@ class RecordImportStoreBehaviourTest extends TestCase {
 	}//end testARefusedCaseAnswersNoId()
 
 	/**
+	 * A saved entity answers its own uuid, and the result is written against that uuid.
+	 *
+	 * @return void
+	 */
+	public function testASavedEntityAnswersItsUuidAndCarriesTheResult(): void {
+		$service = new class {
+			/**
+			 * Every write, in order.
+			 *
+			 * @var array<int, array<string, mixed>>
+			 */
+			public array $writes = [];
+
+			/**
+			 * Record the write and answer an entity for the case.
+			 *
+			 * @param array<string, mixed> $object        The object.
+			 * @param string               $register      The register.
+			 * @param string               $schema        The schema.
+			 * @param bool                 $_rbac         Ignored.
+			 * @param bool                 $_multitenancy Ignored.
+			 *
+			 * @return object|array<string, mixed>
+			 */
+			public function saveObject(array $object, string $register, string $schema, bool $_rbac, bool $_multitenancy): object|array {
+				$this->writes[] = ['object' => $object, 'register' => $register, 'schema' => $schema];
+				if ($schema !== 'case') {
+					return $object;
+				}
+
+				return new class {
+					/**
+					 * The uuid.
+					 *
+					 * @return string
+					 */
+					public function getUuid(): string {
+						return 'case-uuid-7';
+					}
+				};
+			}
+		};
+
+		self::assertSame('case-uuid-7', $this->store()->writeCase(objectService: $service, mapped: ['case' => ['title' => 'T'], 'result' => 'r-9']));
+		self::assertSame(
+			[
+				['object' => ['title' => 'T'], 'register' => 'dossiq', 'schema' => 'case'],
+				['object' => ['case' => 'case-uuid-7', 'resultType' => 'r-9'], 'register' => 'dossiq', 'schema' => 'result'],
+			],
+			$service->writes
+		);
+	}//end testASavedEntityAnswersItsUuidAndCarriesTheResult()
+
+	/**
 	 * A stamp without an "at" field writes only the case id.
 	 *
 	 * @return void
