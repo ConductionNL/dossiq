@@ -45,6 +45,7 @@ use OCA\Dossiq\Kernel\Contracts\BounceActionInterface;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
 use OCP\IAppConfig;
 use OCP\Mail\IMailer;
+use OCP\Mail\IMessage;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -96,41 +97,78 @@ class BounceAction implements BounceActionInterface {
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	public function bounce(
-		InboundMessage $message,
-		string $toAddress,
-		string $reason,
-		string $actorId = '',
-		array $results = [],
-	): array {
+	public function bounce(InboundMessage $message, string $toAddress, string $reason, string $actorId = '', array $results = []): array {
+		$recipient = $this->usableRecipient(message: $message, toAddress: $toAddress);
+		if ($recipient === '') {
+			return ['sent' => false, 'entryId' => ''];
+		}
+
+		$sent = $this->forward(message: $message, recipient: $recipient);
+
+		$recorded = self::recordedResults(results: $results);
+		$verdict = FilterVerdict::forward(filterName: self::NAME, reason: $reason, forwardTo: $recipient);
+		$noted = $this->recordedReason(recipient: $recipient, reason: $reason, actorId: $actorId, sent: $sent);
+		$entryId = $this->log->record(message: $message, verdict: $verdict, results: $recorded, outcome: IntakeLog::OUTCOME_FORWARDED, reason: $noted);
+
+		$this->amendForwarded(entryId: $entryId, recipient: $recipient, actorId: $actorId, reason: $reason);
+
+		return ['sent' => $sent, 'entryId' => $entryId];
+	}//end bounce()
+
+	/**
+	 * The address a bounce goes to, or '' (logged) when the asked-for address is not usable.
+	 *
+	 * @param InboundMessage $message   The message.
+	 * @param string         $toAddress The body it goes to.
+	 *
+	 * @return string The address, or ''.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function usableRecipient(InboundMessage $message, string $toAddress): string {
 		$recipient = InboundMessage::addressIn(value: $toAddress);
 		if ($recipient === '' || filter_var($recipient, FILTER_VALIDATE_EMAIL) === false) {
 			$this->logger->warning(
 				'Dossiq: a bounce was asked for without a usable address, so nothing was sent',
 				['messageId' => $message->messageId]
 			);
-			return ['sent' => false, 'entryId' => ''];
+			return '';
 		}
 
-		$sent = $this->forward(message: $message, recipient: $recipient);
+		return $recipient;
+	}//end usableRecipient()
 
+	/**
+	 * The authentication results the log records: the given ones, or unknown when none were given.
+	 *
+	 * @param array<string, string> $results The four authentication results.
+	 *
+	 * @return array<string, string> The results to record.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private static function recordedResults(array $results): array {
 		$recorded = $results;
 		if ($recorded === []) {
 			$recorded = AuthenticationVerdict::unknown();
 		}
 
-		$entryId = $this->log->record(
-			message: $message,
-			verdict: FilterVerdict::forward(
-				filterName: self::NAME,
-				reason: $reason,
-				forwardTo: $recipient
-			),
-			results: $recorded,
-			outcome: IntakeLog::OUTCOME_FORWARDED,
-			reason: $this->recordedReason(recipient: $recipient, reason: $reason, actorId: $actorId, sent: $sent)
-		);
+		return $recorded;
+	}//end recordedResults()
 
+	/**
+	 * Write where a bounce went, by whom and why onto its log entry, when there is one.
+	 *
+	 * @param string $entryId   The log entry, or ''.
+	 * @param string $recipient The address it went to.
+	 * @param string $actorId   Who bounced it.
+	 * @param string $reason    The handler's reason.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function amendForwarded(string $entryId, string $recipient, string $actorId, string $reason): void {
 		if ($entryId !== '') {
 			$this->log->amend(
 				entryId: $entryId,
@@ -141,9 +179,7 @@ class BounceAction implements BounceActionInterface {
 				]
 			);
 		}
-
-		return ['sent' => $sent, 'entryId' => $entryId];
-	}//end bounce()
+	}//end amendForwarded()
 
 	/**
 	 * Put the original on the wire, unchanged.
@@ -172,21 +208,24 @@ class BounceAction implements BounceActionInterface {
 			return false;
 		}
 
-		try {
-			$outbound = $this->mailer->createMessage();
-			$outbound->setFrom([$fromAddress => $fromName]);
-			$outbound->setTo([$recipient]);
-			$outbound->setSubject('Doorgezonden: ' . mb_substr($message->subject, 0, 200));
-			$outbound->setPlainBody($this->coveringNote(message: $message));
-			if ($message->source !== '') {
-				$attachment = $this->mailer->createAttachment(
-					$message->source,
-					'origineel.eml',
-					'message/rfc822'
-				);
-				$outbound->attach($attachment);
-			}
+		return $this->send(message: $message, recipient: $recipient, fromAddress: $fromAddress, fromName: $fromName);
+	}//end forward()
 
+	/**
+	 * Build the outbound copy and hand it to the mailer.
+	 *
+	 * @param InboundMessage $message     The message.
+	 * @param string         $recipient   The address it goes to.
+	 * @param string         $fromAddress The configured from-address.
+	 * @param string         $fromName    The configured from-name.
+	 *
+	 * @return boolean True when the mailer accepted it.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function send(InboundMessage $message, string $recipient, string $fromAddress, string $fromName): bool {
+		try {
+			$outbound = $this->outboundCopy(message: $message, recipient: $recipient, fromAddress: $fromAddress, fromName: $fromName);
 			$this->mailer->send($outbound);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -194,10 +233,36 @@ class BounceAction implements BounceActionInterface {
 				['messageId' => $message->messageId, 'error' => $e->getMessage()]
 			);
 			return false;
-		}//end try
+		}
 
 		return true;
-	}//end forward()
+	}//end send()
+
+	/**
+	 * The outbound copy: the covering note, with the original attached when its source was read.
+	 *
+	 * @param InboundMessage $message     The message.
+	 * @param string         $recipient   The address it goes to.
+	 * @param string         $fromAddress The configured from-address.
+	 * @param string         $fromName    The configured from-name.
+	 *
+	 * @return IMessage The message to send.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function outboundCopy(InboundMessage $message, string $recipient, string $fromAddress, string $fromName): IMessage {
+		$outbound = $this->mailer->createMessage();
+		$outbound->setFrom([$fromAddress => $fromName]);
+		$outbound->setTo([$recipient]);
+		$outbound->setSubject('Doorgezonden: ' . mb_substr($message->subject, 0, 200));
+		$outbound->setPlainBody($this->coveringNote(message: $message));
+		if ($message->source !== '') {
+			$attachment = $this->mailer->createAttachment($message->source, 'origineel.eml', 'message/rfc822');
+			$outbound->attach($attachment);
+		}
+
+		return $outbound;
+	}//end outboundCopy()
 
 	/**
 	 * The covering note the receiving body reads above the original.
