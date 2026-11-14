@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Review;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\BatchSelectionInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseDocumentProvenanceInterface;
 use Throwable;
 
@@ -37,7 +38,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
  */
-class BatchSelection {
+class BatchSelection implements BatchSelectionInterface {
 
 	/**
 	 * The filter fields read from the document's review.

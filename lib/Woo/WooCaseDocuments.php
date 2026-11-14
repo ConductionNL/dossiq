@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Service\Support\FindsFilesById;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\IRootFolder;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
  */
-class WooCaseDocuments {
+class WooCaseDocuments implements WooCaseDocumentsInterface {
 
 	use FindsFilesById;
 	use SearchesObjects;

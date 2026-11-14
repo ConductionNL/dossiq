@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetVerifierInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -35,7 +36,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
  *
  * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
  */
-class WooDeliveredSetVerifier {
+class WooDeliveredSetVerifier implements WooDeliveredSetVerifierInterface {
 
 	use SearchesObjects;
 

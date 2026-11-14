@@ -27,6 +27,7 @@ use DateTimeInterface;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StoppingRulesInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -44,24 +45,14 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
  */
-class StoppingRules {
+class StoppingRules implements StoppingRulesInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * The app config key of the stopping rule schema.
-	 */
-	public const SCHEMA_KEY = 'stopping_rule_schema';
 
 	/**
 	 * The confidences a rule may name.
 	 */
 	public const CONFIDENCES = [0.9, 0.95, 0.99];
-
-	/**
-	 * The refusal sentence once review started.
-	 */
-	public const LOCKED = 'A stopping rule is declared before review. Once a document is marked, it cannot change.';
 
 	/**
 	 * Constructor.

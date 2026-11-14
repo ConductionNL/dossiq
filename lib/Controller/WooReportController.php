@@ -25,9 +25,9 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
-use OCA\Dossiq\Woo\WooReportReadLog;
+use OCA\Dossiq\Kernel\Contracts\WooReportReadLogInterface;
+use OCA\Dossiq\Kernel\Contracts\WooThroughputReportInterface;
 use OCA\Dossiq\Woo\WooReportSwitches;
-use OCA\Dossiq\Woo\WooThroughputReport;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -56,8 +56,8 @@ class WooReportController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param WooReportSwitches $switches The organisation switches.
-	 * @param WooThroughputReport $throughputReport The throughput report.
-	 * @param WooReportReadLog $readLog The read log on the audit trail.
+	 * @param WooThroughputReportInterface $throughputReport The throughput report.
+	 * @param WooReportReadLogInterface $readLog The read log on the audit trail.
 	 * @param IUserSession $userSession The user session.
 	 * @param IL10N $l10n The translations.
 	 * @param CaseDateNormaliserInterface|null $dates Reads a moment as the tenant's calendar date.
@@ -67,8 +67,8 @@ class WooReportController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly WooReportSwitches $switches,
-		private readonly WooThroughputReport $throughputReport,
-		private readonly WooReportReadLog $readLog,
+		private readonly WooThroughputReportInterface $throughputReport,
+		private readonly WooReportReadLogInterface $readLog,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 		private readonly ?CaseDateNormaliserInterface $dates = null,

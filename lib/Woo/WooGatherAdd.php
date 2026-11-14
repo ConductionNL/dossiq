@@ -46,6 +46,7 @@ namespace OCA\Dossiq\Woo;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseFileCollectorInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
+use OCA\Dossiq\Kernel\Contracts\WooGatherAddInterface;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
@@ -58,7 +59,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-picked-results-become-documents-on-the-case-req-woo-013
  */
-class WooGatherAdd {
+class WooGatherAdd implements WooGatherAddInterface {
 
 	/**
 	 * Constructor.

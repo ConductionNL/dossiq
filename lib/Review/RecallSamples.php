@@ -23,9 +23,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Review;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\RecallSamplesInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\WooCaseDocuments;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -36,7 +37,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-the-recall-is-estimated-from-an-elusion-sample-with-its-uncertainty-req-wrs-002
  */
-class RecallSamples {
+class RecallSamples implements RecallSamplesInterface {
 
 	use SearchesObjects;
 
@@ -55,7 +56,7 @@ class RecallSamples {
 	 *
 	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance $reviews The relevance of each document.
-	 * @param WooCaseDocuments $caseDocuments The documents on a case.
+	 * @param WooCaseDocumentsInterface $caseDocuments The documents on a case.
 	 * @param ReviewBatches $batches The batch the sample is judged in.
 	 * @param ReviewDepth $depth The seeded draw.
 	 * @param StoppingRules $rules The case's stopping rule.
@@ -68,7 +69,7 @@ class RecallSamples {
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly DocumentRelevance $reviews,
-		private readonly WooCaseDocuments $caseDocuments,
+		private readonly WooCaseDocumentsInterface $caseDocuments,
 		private readonly ReviewBatches $batches,
 		private readonly ReviewDepth $depth,
 		private readonly StoppingRules $rules,
