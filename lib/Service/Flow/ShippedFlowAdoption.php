@@ -144,10 +144,7 @@ class ShippedFlowAdoption implements ShippedFlowAdoptionInterface {
 		try {
 			$mapper = $this->container->get(self::FLOW_MAPPER);
 		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: no OpenRegister flow store to inspect: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID]
-			);
+			$this->logger->debug('Dossiq: no OpenRegister flow store to inspect: ' . $e->getMessage(), ['app' => AppIdentity::APP_ID]);
 
 			return ['available' => false, 'note' => 'OpenRegister exposes no flow store on this instance.', 'flows' => []];
 		}
@@ -155,14 +152,24 @@ class ShippedFlowAdoption implements ShippedFlowAdoptionInterface {
 		try {
 			$flows = $mapper->findAllFlows(app: AppIdentity::APP_ID, limit: self::PAGE);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: could not read the shipped flows: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID]
-			);
+			$this->logger->warning('Dossiq: could not read the shipped flows: ' . $e->getMessage(), ['app' => AppIdentity::APP_ID]);
 
 			return ['available' => false, 'note' => 'The flow store could not be read: ' . $e->getMessage(), 'flows' => []];
 		}
 
+		return ['available' => true, 'note' => '', 'flows' => $this->rowsOf(flows: $flows)];
+	}//end census()
+
+	/**
+	 * One census row per flow.
+	 *
+	 * @param mixed $flows The flows the store answered.
+	 *
+	 * @return array<int, array{uuid: string, name: string, enabled: bool, owner: string}> The rows.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function rowsOf(mixed $flows): array {
 		$rows = [];
 		foreach ((array)$flows as $flow) {
 			$rows[] = [
@@ -173,8 +180,8 @@ class ShippedFlowAdoption implements ShippedFlowAdoptionInterface {
 			];
 		}
 
-		return ['available' => true, 'note' => '', 'flows' => $rows];
-	}//end census()
+		return $rows;
+	}//end rowsOf()
 
 	/**
 	 * The shipped flows that still need an administrator.
