@@ -109,11 +109,11 @@ class CasePhaseTermListener implements IEventListener {
 	/**
 	 * Start the phase clock of the updated object when it is a case.
 	 *
-	 * @param ObjectUpdatedEvent $event The event.
+	 * @param Event $event The object-updated event.
 	 *
 	 * @return void
 	 */
-	private function enterPhaseFor(ObjectUpdatedEvent $event): void {
+	private function enterPhaseFor(Event $event): void {
 		$case = $this->extractObject(event: $event);
 		if ($case === null || $this->slugResolver->resolveFromPayload(payload: $case) !== 'case') {
 			return;
