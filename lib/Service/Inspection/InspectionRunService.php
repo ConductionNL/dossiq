@@ -344,6 +344,24 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
+		$template = $this->templateById(objects: $objects, register: $register, templateId: $templateId);
+		if ($template !== null) {
+			return $template;
+		}
+
+		return $this->templateFoldedFrom(objects: $objects, register: $register, templateId: $templateId);
+	}//end template()
+
+	/**
+	 * The template with this uuid, or null when it is not a template uuid.
+	 *
+	 * @param object $objects    OpenRegister's object service.
+	 * @param string $register   The register id.
+	 * @param string $templateId The template uuid, or an older checklist uuid.
+	 *
+	 * @return array<string, mixed>|null The template.
+	 */
+	private function templateById(object $objects, string $register, string $templateId): ?array {
 		try {
 			$template = $this->findObjectAsArray(objectService: $objects, register: $register, schema: InspectionTemplateMapper::SCHEMA, id: $templateId);
 		} catch (Throwable) {
@@ -351,10 +369,21 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			$template = null;
 		}
 
-		if ($template !== null) {
-			return $template;
-		}
+		return $template;
+	}//end templateById()
 
+	/**
+	 * The template folded from an older checklist with this uuid.
+	 *
+	 * @param object $objects    OpenRegister's object service.
+	 * @param string $register   The register id.
+	 * @param string $templateId The older checklist uuid.
+	 *
+	 * @return array<string, mixed> The template.
+	 *
+	 * @throws RuntimeException When nothing answers to it.
+	 */
+	private function templateFoldedFrom(object $objects, string $register, string $templateId): array {
 		foreach (['inspectieChecklist/', 'inspectionChecklist/'] as $prefix) {
 			$found = $this->searchObjectsAsArrays(
 				objectService: $objects,
@@ -368,7 +397,7 @@ class InspectionRunService implements InspectionRunServiceInterface {
 		}
 
 		throw new RuntimeException('Unknown checklist template: ' . $templateId);
-	}//end template()
+	}//end templateFoldedFrom()
 
 	/**
 	 * A trimmed string, or null when empty.

@@ -157,24 +157,49 @@ class OrganisationQuotaLimits {
 			return false;
 		}
 
+		$organisation->{'set' . ucfirst($column)}($this->storedUnits(quotaType: $quotaType, limit: $limit));
+
+		return $this->saved(mapper: $mapper, organisation: $organisation, context: ['tenantId' => $tenantId, 'quotaType' => $quotaType]);
+	}//end write()
+
+	/**
+	 * A limit in the column's stored units, null staying unlimited.
+	 *
+	 * @param string       $quotaType The quota dimension.
+	 * @param integer|null $limit     The limit in the quota's own units, or null for unlimited.
+	 *
+	 * @return integer|null The stored value.
+	 */
+	private function storedUnits(string $quotaType, ?int $limit): ?int {
 		$stored = null;
 		if ($limit !== null) {
 			$stored = $this->toStoredUnits(quotaType: $quotaType, limit: $limit);
 		}
 
-		$organisation->{'set' . ucfirst($column)}($stored);
+		return $stored;
+	}//end storedUnits()
 
+	/**
+	 * Save the Organisation carrying a new limit.
+	 *
+	 * @param object               $mapper       OpenRegister's OrganisationMapper.
+	 * @param object               $organisation The Organisation.
+	 * @param array<string, mixed> $context      The tenant and quota type, for the log.
+	 *
+	 * @return boolean Whether the limit was written.
+	 */
+	private function saved(object $mapper, object $organisation, array $context): bool {
 		try {
 			$mapper->update($organisation);
 			return true;
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to write a quota limit onto the organisation',
-				['tenantId' => $tenantId, 'quotaType' => $quotaType, 'exception' => $e->getMessage()],
+				[...$context, 'exception' => $e->getMessage()],
 			);
 			return false;
 		}
-	}//end write()
+	}//end saved()
 
 	/**
 	 * Convert a stored column value into the quota's own units.

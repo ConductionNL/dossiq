@@ -163,11 +163,24 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 		bool $isAdmin = false,
 		string $search = '',
 	): array {
+		return $this->pageOf(cases: $this->visibleCases(forUser: $forUser, isAdmin: $isAdmin, search: $search), offset: $offset, limit: $limit);
+	}//end deletedCases()
+
+	/**
+	 * Every deleted case the caller may see and the search term matches, unsorted.
+	 *
+	 * @param string $forUser The caller's user id; an empty id sees nothing.
+	 * @param bool   $isAdmin Whether the caller is an administrator.
+	 * @param string $search  A term the number, title or deleter must hold; empty for all.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function visibleCases(string $forUser, bool $isAdmin, string $search): array {
 		$cases = [];
 		foreach ($this->deletedRows() as $row) {
-			if ($this->isCase(entity: $row) === false
-				|| $this->maySee(entity: $row, userId: $forUser, isAdmin: $isAdmin) === false
-			) {
+			if ($this->visible(row: $row, forUser: $forUser, isAdmin: $isAdmin) === false) {
 				continue;
 			}
 
@@ -177,6 +190,37 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 			}
 		}
 
+		return $cases;
+	}//end visibleCases()
+
+	/**
+	 * Whether a deleted row is a case the caller may see.
+	 *
+	 * @param mixed  $row     The deleted row.
+	 * @param string $forUser The caller's user id.
+	 * @param bool   $isAdmin Whether the caller is an administrator.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function visible(mixed $row, string $forUser, bool $isAdmin): bool {
+		return $this->isCase(entity: $row) === true
+			&& $this->maySee(entity: $row, userId: $forUser, isAdmin: $isAdmin) === true;
+	}//end visible()
+
+	/**
+	 * One page of the cases, newest deletion first, with the total.
+	 *
+	 * @param array<int, array<string, mixed>> $cases  The cases.
+	 * @param int                              $offset How many rows to skip.
+	 * @param int                              $limit  How many rows to return.
+	 *
+	 * @return array{results: array<int, array<string, mixed>>, total: int}
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function pageOf(array $cases, int $offset, int $limit): array {
 		usort(
 			$cases,
 			static fn (array $first, array $second): int => strcmp($second['deletedAt'], $first['deletedAt'])
@@ -186,7 +230,7 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 			'results' => array_slice($cases, max(0, $offset), max(0, $limit)),
 			'total' => count($cases),
 		];
-	}//end deletedCases()
+	}//end pageOf()
 
 	/**
 	 * The soft-deleted rows the lens chooses from.
