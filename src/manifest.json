@@ -10580,8 +10580,16 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "workflowTemplate",
+				"_folderSidebarNote": "You group templates in folders (capability-rows-say-the-whole-capability 1.20, REQ-CRS-39, row 11.23): one folder per category the templates carry, All templates on top. `source: \"field\"` reads the facet of workflowTemplate.category, which is facetable (lib/Settings/register.d/99-template-category.json), so a category whose templates sit on a later page still gets its folder.",
+				"folderSidebar": {
+					"source": "field",
+					"field": "category",
+					"filterField": "category",
+					"allLabel": "All templates"
+				},
 				"columns": [
 					"title",
+					"category",
 					"caseType",
 					"version",
 					"lifecycleStatus",
