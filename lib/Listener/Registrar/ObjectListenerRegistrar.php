@@ -36,7 +36,6 @@ use OCA\Dossiq\Listener\WooRefusalGroundDeleteGuard;
 use OCA\Dossiq\Listener\DependentTermListener;
 use OCA\Dossiq\Listener\KpiCacheInvalidationListener;
 use OCA\Dossiq\Listener\RoleMutationListener;
-use OCA\Dossiq\Notification\Notifier;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
@@ -74,11 +73,6 @@ class ObjectListenerRegistrar {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
-		// Note @mention notifications (nc-vue #207, ncvue-w2-leaves-adoption):
-		// MentionNotificationService raises `note_mention` notifications;
-		// this Notifier renders them for the bell menu.
-		$context->registerNotifierService(Notifier::class);
-
 		$this->registerCacheInvalidationListeners(context: $context);
 		$this->registerCaseDeleteGuard(context: $context);
 		$this->registerWooRefusalGroundDeleteGuard(context: $context);
