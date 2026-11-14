@@ -296,12 +296,25 @@ class ZgwRuleLookups {
 			throw new LookupNotCompleted(lookup: "{$schemaKey} object {$uuid}", cause: $e);
 		}//end try
 
+		return $this->asArray(obj: $obj);
+	}//end findBySchemaKey()
+
+	/**
+	 * A found object as an array.
+	 *
+	 * @param mixed $obj The object as the store answered it.
+	 *
+	 * @return array|null The object data, or null when there is none
+	 *
+	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function asArray(mixed $obj): ?array {
 		if ($obj === null || is_array($obj) === true) {
 			return $obj;
 		}
 
 		return $obj->jsonSerialize();
-	}//end findBySchemaKey()
+	}//end asArray()
 
 	/**
 	 * Whether a read failed because the caller may not see the object.

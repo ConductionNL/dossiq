@@ -335,13 +335,7 @@ class WorkflowDefinitionRepository {
 
 		try {
 			if ($uuid === null) {
-				return $this->normalize(
-					row: $context['objectService']->saveObject(
-						object: $payload,
-						register: $context['register'],
-						schema: $context['schema'],
-					)
-				);
+				return $this->createDefinition(context: $context, payload: $payload);
 			}
 
 			$merged = $this->mergeOntoStored(
@@ -370,6 +364,26 @@ class WorkflowDefinitionRepository {
 
 		return $this->normalize(row: $written);
 	}//end save()
+
+	/**
+	 * Create a workflow definition row.
+	 *
+	 * @param array<string, mixed> $context The object service, register and schema.
+	 * @param array<string, mixed> $payload The properties to write.
+	 *
+	 * @return array<string, mixed>|null The written row.
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 */
+	private function createDefinition(array $context, array $payload): ?array {
+		return $this->normalize(
+			row: $context['objectService']->saveObject(
+				object: $payload,
+				register: $context['register'],
+				schema: $context['schema'],
+			)
+		);
+	}//end createDefinition()
 
 	/**
 	 * Lay the changed properties over the row as it is stored.

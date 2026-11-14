@@ -82,11 +82,7 @@ class BrcCrossRegisterSync {
 			return;
 		}
 
-		$uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
-		$zaakUuid = '';
-		if (preg_match($uuidPattern, $caseUrl, $match) === 1) {
-			$zaakUuid = $match[1];
-		}
+		$zaakUuid = $this->caseUuidOf(caseUrl: $caseUrl);
 
 		if ($zaakUuid === '') {
 			return;
@@ -99,6 +95,48 @@ class BrcCrossRegisterSync {
 			return;
 		}
 
+		$this->saveCaseDecision(
+			objectService: $objectService,
+			register: $register,
+			zbSchema: $zbSchema,
+			zaakUuid: $zaakUuid,
+			decisionUrl: $decisionUrl
+		);
+	}//end syncZaakBesluitToZrc()
+
+	/**
+	 * The zaak UUID inside a zaak URL, or '' when it carries none.
+	 *
+	 * @param string $caseUrl The zaak URL
+	 *
+	 * @return string The UUID
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function caseUuidOf(string $caseUrl): string {
+		$uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
+		$zaakUuid = '';
+		if (preg_match($uuidPattern, $caseUrl, $match) === 1) {
+			$zaakUuid = $match[1];
+		}
+
+		return $zaakUuid;
+	}//end caseUuidOf()
+
+	/**
+	 * Write the zaakbesluit record; a failure is logged, not thrown (brc-006).
+	 *
+	 * @param object $objectService OpenRegister's object service
+	 * @param string $register The zaken register
+	 * @param string $zbSchema The zaakbesluit schema
+	 * @param string $zaakUuid The zaak UUID
+	 * @param string $decisionUrl The besluit URL
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function saveCaseDecision(object $objectService, string $register, string $zbSchema, string $zaakUuid, string $decisionUrl): void {
 		try {
 			$zbData = [
 				'case' => $zaakUuid,
@@ -120,7 +158,7 @@ class BrcCrossRegisterSync {
 				['rule' => 'brc-006', 'resource' => 'zaakbesluiten', 'case' => $zaakUuid, 'decision' => $decisionUrl, 'exception' => $e]
 			);
 		}
-	}//end syncZaakBesluitToZrc()
+	}//end saveCaseDecision()
 
 	/**
 	 * Create an ObjectInformatieObject in the DRC register (brc-005a).
@@ -199,25 +237,11 @@ class BrcCrossRegisterSync {
 		}
 
 		try {
-			$query = $objectService->buildSearchQuery(
-				requestParams: ['object' => $decisionUrl],
-				register: $oioScope->register,
-				schema: $oioScope->schema
+			$this->deleteOiosMatching(
+				objectService: $objectService,
+				oioScope: $oioScope,
+				requestParams: ['object' => $decisionUrl]
 			);
-			$result = $objectService->searchObjectsPaginated(query: $query);
-
-			foreach (($result['results'] ?? []) as $oio) {
-				$oioData = $this->objectToArray(row: $oio);
-
-				$oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
-				if ($oioUuid !== '') {
-					$objectService->deleteObject(
-						uuid: $oioUuid,
-						_rbac: false,
-						_multitenancy: false
-					);
-				}
-			}
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'brc-009: the objectinformatieobjecten of a besluit were not all deleted from the DRC: ' . $e->getMessage(),
@@ -260,28 +284,14 @@ class BrcCrossRegisterSync {
 		}
 
 		try {
-			$query = $objectService->buildSearchQuery(
+			$this->deleteOiosMatching(
+				objectService: $objectService,
+				oioScope: $oioScope,
 				requestParams: [
 					'object' => $decisionUrl,
 					'document' => $ioUrl,
-				],
-				register: $oioScope->register,
-				schema: $oioScope->schema
+				]
 			);
-			$result = $objectService->searchObjectsPaginated(query: $query);
-
-			foreach (($result['results'] ?? []) as $oio) {
-				$oioData = $this->objectToArray(row: $oio);
-
-				$oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
-				if ($oioUuid !== '') {
-					$objectService->deleteObject(
-						uuid: $oioUuid,
-						_rbac: false,
-						_multitenancy: false
-					);
-				}
-			}
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'brc-005b: the besluitinformatieobject was deleted, but its objectinformatieobject in the DRC was not: ' . $e->getMessage(),
@@ -289,4 +299,37 @@ class BrcCrossRegisterSync {
 			);
 		}//end try
 	}//end deleteOioByBesluitAndIo()
+
+	/**
+	 * Delete every OIO in the DRC that matches the search parameters.
+	 *
+	 * @param object $objectService OpenRegister's object service
+	 * @param ZgwSearchScope $oioScope The OIO register and schema
+	 * @param array<string, string> $requestParams The search parameters
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function deleteOiosMatching(object $objectService, ZgwSearchScope $oioScope, array $requestParams): void {
+		$query = $objectService->buildSearchQuery(
+			requestParams: $requestParams,
+			register: $oioScope->register,
+			schema: $oioScope->schema
+		);
+		$result = $objectService->searchObjectsPaginated(query: $query);
+
+		foreach (($result['results'] ?? []) as $oio) {
+			$oioData = $this->objectToArray(row: $oio);
+
+			$oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
+			if ($oioUuid !== '') {
+				$objectService->deleteObject(
+					uuid: $oioUuid,
+					_rbac: false,
+					_multitenancy: false
+				);
+			}
+		}
+	}//end deleteOiosMatching()
 }//end class

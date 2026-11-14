@@ -110,23 +110,8 @@ class WorkflowStepAuthorizationResolver {
 
 		$rule = ($entry['routingRule'] ?? null);
 		if (is_array($rule) === true) {
-			$single = (string)($rule['roleType'] ?? '');
-			if ($single !== '') {
-				$ids[$single] = true;
-			}
-
-			foreach ((array)($rule['roleTypes'] ?? []) as $roleType) {
-				$roleType = (string)$roleType;
-				if ($roleType !== '') {
-					$ids[$roleType] = true;
-				}
-			}
-
-			$fallback = (string)($rule['fallback'] ?? '');
-			if ($fallback !== '') {
-				$ids[$fallback] = true;
-			}
-		}//end if
+			$ids = $this->routingRuleRoleTypeIds(rule: $rule);
+		}
 
 		$assignee = (string)($entry['assigneeRole'] ?? '');
 		if ($assignee !== '') {
@@ -142,6 +127,36 @@ class WorkflowStepAuthorizationResolver {
 
 		return array_keys($ids);
 	}//end collectRoleTypeIds()
+
+	/**
+	 * The roleType UUIDs a routing rule names: its role, its roles and its fallback.
+	 *
+	 * @param array<string, mixed> $rule The routing rule.
+	 *
+	 * @return array<string, true> The roleType UUIDs, as keys.
+	 */
+	private function routingRuleRoleTypeIds(array $rule): array {
+		$ids = [];
+
+		$single = (string)($rule['roleType'] ?? '');
+		if ($single !== '') {
+			$ids[$single] = true;
+		}
+
+		foreach ((array)($rule['roleTypes'] ?? []) as $roleType) {
+			$roleType = (string)$roleType;
+			if ($roleType !== '') {
+				$ids[$roleType] = true;
+			}
+		}
+
+		$fallback = (string)($rule['fallback'] ?? '');
+		if ($fallback !== '') {
+			$ids[$fallback] = true;
+		}
+
+		return $ids;
+	}//end routingRuleRoleTypeIds()
 
 	/**
 	 * Load a roleType's ncGroupId, caching the result for this publish pass.

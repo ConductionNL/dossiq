@@ -289,7 +289,7 @@ class CaseTimeline implements CaseTimelineInterface {
 			return [];
 		}
 
-		if ($this->settings->isOpenRegisterAvailable() === false || $this->container->has(self::READ_SERVICE) === false) {
+		if ($this->isUnreadable() === true) {
 			return [];
 		}
 
@@ -301,26 +301,12 @@ class CaseTimeline implements CaseTimelineInterface {
 		[$objectService, $register, $schema] = $coordinates;
 
 		try {
-			// UNSCOPED, FOR THIS ONE CASE. The portal asks with no Nextcloud
-			// user, so OpenRegister's RBAC answered nothing and the resident's
-			// timeline was always empty. The caller proves the case is the
-			// reader's before asking (see the docblock), and only the public
-			// entries of the case asked for come back.
-			$object = $objectService->find(
-				$caseId,
+			$entries = $this->readPublicEntries(
+				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				_rbac: false,
-				_multitenancy: false
-			);
-			if ($object === null) {
-				return [];
-			}
-
-			$entries = $this->container->get(self::READ_SERVICE)->listForObject(
-				object: $object,
-				visibility: self::PUBLIC_ENTRY,
-				limit: $limit,
+				caseId: $caseId,
+				limit: $limit
 			);
 		} catch (Throwable $e) {
 			// LOGGED AND RETHROWN, NOT SWALLOWED. "I could not read" and
@@ -336,13 +322,74 @@ class CaseTimeline implements CaseTimelineInterface {
 			throw $e;
 		}
 
+		return $this->projectAll(entries: $entries);
+	}//end publicEntries()
+
+	/**
+	 * Whether OpenRegister or its timeline reader is absent.
+	 *
+	 * @return bool True when the timeline cannot be read.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function isUnreadable(): bool {
+		return ($this->settings->isOpenRegisterAvailable() === false || $this->container->has(self::READ_SERVICE) === false);
+	}//end isUnreadable()
+
+	/**
+	 * Read the public entries of one case, unscoped.
+	 *
+	 * @param object  $objectService OpenRegister's object service.
+	 * @param mixed   $register      The register.
+	 * @param mixed   $schema        The case schema.
+	 * @param string  $caseId        The case to read.
+	 * @param integer $limit         How many entries at most, newest first.
+	 *
+	 * @return mixed The entries as OpenRegister answered them, or an empty list when the case is not there.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function readPublicEntries(object $objectService, mixed $register, mixed $schema, string $caseId, int $limit): mixed {
+		// UNSCOPED, FOR THIS ONE CASE. The portal asks with no Nextcloud
+		// user, so OpenRegister's RBAC answered nothing and the resident's
+		// timeline was always empty. The caller proves the case is the
+		// reader's before asking (see the docblock), and only the public
+		// entries of the case asked for come back.
+		$object = $objectService->find(
+			$caseId,
+			register: $register,
+			schema: $schema,
+			_rbac: false,
+			_multitenancy: false
+		);
+		if ($object === null) {
+			return [];
+		}
+
+		return $this->container->get(self::READ_SERVICE)->listForObject(
+			object: $object,
+			visibility: self::PUBLIC_ENTRY,
+			limit: $limit,
+		);
+	}//end readPublicEntries()
+
+	/**
+	 * Project every entry.
+	 *
+	 * @param mixed $entries The entries as OpenRegister answered them.
+	 *
+	 * @return array<int, array<string, mixed>> The public entries.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function projectAll(mixed $entries): array {
 		$projected = [];
 		foreach ((array)$entries as $entry) {
 			$projected[] = $this->project(entry: $entry);
 		}
 
 		return $projected;
-	}//end publicEntries()
+	}//end projectAll()
 
 	/**
 	 * One entry, cut down to what an applicant may be shown.

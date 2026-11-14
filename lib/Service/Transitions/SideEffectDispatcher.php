@@ -80,37 +80,8 @@ class SideEffectDispatcher {
 				continue;
 			}
 
-			// A type dossiq no longer answers itself (mail, notification,
-			// field, decision, webhook) runs as the node that replaced it,
-			// translated the same way a stored flow step is. A case type
-			// declared before the change keeps doing what it declared.
-			if ($this->retired !== null && $this->retired->handles(type: $type) === true) {
-				$results[] = $this->retired->run(type: $type, action: $action, case: $case, context: $transitionContext);
-				continue;
-			}
-
-			// ADR-065: OpenRegister owns the engine, so a transition side effect
-			// runs the SAME node a flow would — dossiq contributes those nodes
-			// (lib/Flow) and this is the second caller of identical code, not a
-			// parallel implementation. The local-handler path is the fallback for
-			// an instance without OpenRegister, so a transition never silently
-			// skips its side effects because a neighbouring app is absent.
-			// Early-continue rather than if/else: phpcs rejects the inline
-			// ternary this started as, and phpmd's ElseExpression rejects the
-			// else that replaced it. Guard-and-continue satisfies both without
-			// pretending either rule is wrong.
-			if ($nodes !== null) {
-				$results[] = $this->viaNode(
-					nodes: $nodes,
-					type: $type,
-					action: $action,
-					case: $case,
-					transitionContext: $transitionContext
-				);
-				continue;
-			}
-
-			$results[] = $this->viaHandler(
+			$results[] = $this->dispatchOne(
+				nodes: $nodes,
 				type: $type,
 				action: $action,
 				case: $case,
@@ -120,6 +91,56 @@ class SideEffectDispatcher {
 
 		return $results;
 	}//end dispatch()
+
+	/**
+	 * Run one action: as its replacing node when retired, else as an OpenRegister node, else locally.
+	 *
+	 * @param FlowNodeRegistry|null $nodes OpenRegister's node catalogue, or null.
+	 * @param string $type The action type.
+	 * @param array<string, mixed> $action Action config
+	 * @param array<string, mixed> $case Case object
+	 * @param array<string, mixed> $transitionContext Transition context
+	 *
+	 * @return array<string, mixed> The result row.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function dispatchOne(?FlowNodeRegistry $nodes, string $type, array $action, array $case, array $transitionContext): array {
+		// A type dossiq no longer answers itself (mail, notification,
+		// field, decision, webhook) runs as the node that replaced it,
+		// translated the same way a stored flow step is. A case type
+		// declared before the change keeps doing what it declared.
+		if ($this->retired !== null && $this->retired->handles(type: $type) === true) {
+			return $this->retired->run(type: $type, action: $action, case: $case, context: $transitionContext);
+		}
+
+		// ADR-065: OpenRegister owns the engine, so a transition side effect
+		// runs the SAME node a flow would — dossiq contributes those nodes
+		// (lib/Flow) and this is the second caller of identical code, not a
+		// parallel implementation. The local-handler path is the fallback for
+		// an instance without OpenRegister, so a transition never silently
+		// skips its side effects because a neighbouring app is absent.
+		// Early-return rather than if/else: phpcs rejects the inline
+		// ternary this started as, and phpmd's ElseExpression rejects the
+		// else that replaced it. Guard-and-return satisfies both without
+		// pretending either rule is wrong.
+		if ($nodes !== null) {
+			return $this->viaNode(
+				nodes: $nodes,
+				type: $type,
+				action: $action,
+				case: $case,
+				transitionContext: $transitionContext
+			);
+		}
+
+		return $this->viaHandler(
+			type: $type,
+			action: $action,
+			case: $case,
+			transitionContext: $transitionContext
+		);
+	}//end dispatchOne()
 
 	/**
 	 * OpenRegister's node catalogue, or null when OpenRegister is absent.

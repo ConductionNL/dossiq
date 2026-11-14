@@ -291,6 +291,37 @@ class BrcDocumentLinkHandler {
 		}
 
 		$object = $resource . ' ' . $uuid;
+		$bioObj = $this->readBio(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, object: $object);
+		if ($bioObj instanceof JSONResponse) {
+			return $bioObj;
+		}
+
+		try {
+			[$decisionUrl, $ioUrl] = $this->deleteBio(request: $request, objectService: $objectService, bioObj: $bioObj, uuid: $uuid);
+		} catch (\Throwable $e) {
+			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete BIO', object: $object);
+		}
+
+		$this->deleteMatchingOio(decisionUrl: $decisionUrl, ioUrl: $ioUrl);
+
+		$this->zgwService->notifyDeleted(request: $request, zgwApi: self::ZGW_API, resource: $resource, uuid: $uuid);
+
+		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
+	}//end destroy()
+
+	/**
+	 * Read the BIO to delete, or the answer when it cannot be read or is missing.
+	 *
+	 * @param object $objectService OpenRegister's object service
+	 * @param array $mappingConfig The BIO mapping configuration
+	 * @param string $uuid The BIO UUID
+	 * @param string $object The object label for failure logging
+	 *
+	 * @return mixed The stored BIO, or the failure or 404 answer
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function readBio(object $objectService, array $mappingConfig, string $uuid, string $object): mixed {
 		try {
 			// Read the BIO to get besluit URL before deletion.
 			$bioObj = $objectService->find(
@@ -306,36 +337,59 @@ class BrcDocumentLinkHandler {
 			return $this->zgwService->notFoundResponse();
 		}
 
-		try {
-			$bioData = $this->objectToArray(row: $bioObj);
+		return $bioObj;
+	}//end readBio()
 
-			// Build the besluit URL from the stored decision UUID.
-			$decisionUuid = $bioData['decision'] ?? '';
-			$decisionUrl = '';
-			if ($decisionUuid !== '') {
-				$decisionUrl = $this->zgwService->buildBaseUrl(
-					$request,
-					self::ZGW_API,
-					'besluiten'
-				) . '/' . $decisionUuid;
-			}
+	/**
+	 * Delete the BIO and return the besluit and informatieobject URLs it linked.
+	 *
+	 * @param IRequest $request The incoming request
+	 * @param object $objectService OpenRegister's object service
+	 * @param mixed $bioObj The stored BIO
+	 * @param string $uuid The BIO UUID
+	 *
+	 * @return array{0: string, 1: mixed} The besluit URL and the informatieobject URL
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function deleteBio(IRequest $request, object $objectService, mixed $bioObj, string $uuid): array {
+		$bioData = $this->objectToArray(row: $bioObj);
 
-			$ioUrl = $bioData['document'] ?? '';
+		// Build the besluit URL from the stored decision UUID.
+		$decisionUuid = $bioData['decision'] ?? '';
+		$decisionUrl = '';
+		if ($decisionUuid !== '') {
+			$decisionUrl = $this->zgwService->buildBaseUrl(
+				$request,
+				self::ZGW_API,
+				'besluiten'
+			) . '/' . $decisionUuid;
+		}
 
-			// Delete the BIO.
-			$objectService->deleteObject(uuid: $uuid);
-		} catch (\Throwable $e) {
-			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete BIO', object: $object);
-		}//end try
+		$ioUrl = $bioData['document'] ?? '';
 
-		// The BIO is gone. Brc-005b: delete the matching OIO in the DRC; a failure there is
-		// logged at error by the sync, and the delete still answers 204.
+		// Delete the BIO.
+		$objectService->deleteObject(uuid: $uuid);
+
+		return [$decisionUrl, $ioUrl];
+	}//end deleteBio()
+
+	/**
+	 * Delete the OIO in the DRC that matched the deleted BIO.
+	 *
+	 * Brc-005b: a failure there is logged at error by the sync, and the delete
+	 * still answers 204.
+	 *
+	 * @param string $decisionUrl The besluit URL
+	 * @param mixed $ioUrl The informatieobject URL
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function deleteMatchingOio(string $decisionUrl, mixed $ioUrl): void {
 		if ($decisionUrl !== '' && $ioUrl !== '') {
 			$this->sync->deleteOioByDecisionAndIo(decisionUrl: $decisionUrl, ioUrl: $ioUrl);
 		}
-
-		$this->zgwService->notifyDeleted(request: $request, zgwApi: self::ZGW_API, resource: $resource, uuid: $uuid);
-
-		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
-	}//end destroyBesluitInformatieObject()
+	}//end deleteMatchingOio()
 }//end class

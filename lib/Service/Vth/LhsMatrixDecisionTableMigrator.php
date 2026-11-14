@@ -224,6 +224,42 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 			marker: $marker
 		);
 
+		$reconciled = $this->reconcileWithExisting(existing: $existing, table: $table, marker: $marker);
+		if ($reconciled['refusal'] !== null) {
+			return $reconciled['refusal'];
+		}
+
+		$outcome = $reconciled['outcome'];
+		$table = $reconciled['table'];
+
+		if ($dryRun === true) {
+			return ['outcome' => $outcome, 'marker' => $marker, 'detail' => sprintf('%d rule(s)', count($table['rules']))];
+		}
+
+		return $this->storeTable(
+			objectService: $objectService,
+			register: $register,
+			tableSchema: $tableSchema,
+			table: $table,
+			marker: $marker,
+			outcome: $outcome
+		);
+
+	}//end migrateOne()
+
+	/**
+	 * Decide between creating and updating the projected table.
+	 *
+	 * @param array<string, mixed>|null $existing The table already projected, if any.
+	 * @param array<string, mixed>      $table    The projected table.
+	 * @param string                    $marker   The provenance marker.
+	 *
+	 * @return array{refusal: array{outcome: string, marker: string, detail: string}|null, outcome: string, table: array<string, mixed>}
+	 *         The refusal when the existing table was edited, else the outcome and the table to save.
+	 *
+	 * @spec openspec/specs/lhs-decision-table/spec.md
+	 */
+	private function reconcileWithExisting(?array $existing, array $table, string $marker): array {
 		$outcome = 'created';
 		if ($existing !== null) {
 			// 🔴 AN EDITED TABLE IS NOT OVERWRITTEN.
@@ -238,10 +274,14 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 			// Refuse, name it, and let a human decide.
 			if ($this->rulesDiffer(existing: $existing, projected: $table) === true) {
 				return [
-					'outcome' => 'skipped',
-					'marker' => $marker,
-					'detail' => 'the projected table has been edited since it was created; '
-						. 'refusing to overwrite it',
+					'refusal' => [
+						'outcome' => 'skipped',
+						'marker' => $marker,
+						'detail' => 'the projected table has been edited since it was created; '
+							. 'refusing to overwrite it',
+					],
+					'outcome' => $outcome,
+					'table' => $table,
 				];
 			}
 
@@ -249,10 +289,32 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 			$table['id'] = (string)($existing['id'] ?? '');
 		}
 
-		if ($dryRun === true) {
-			return ['outcome' => $outcome, 'marker' => $marker, 'detail' => sprintf('%d rule(s)', count($table['rules']))];
-		}
+		return ['refusal' => null, 'outcome' => $outcome, 'table' => $table];
 
+	}//end reconcileWithExisting()
+
+	/**
+	 * Save the projected table.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $register      The register.
+	 * @param string               $tableSchema   The decision-table schema.
+	 * @param array<string, mixed> $table         The projected table.
+	 * @param string               $marker        The provenance marker.
+	 * @param string               $outcome       `created` or `updated`.
+	 *
+	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
+	 *
+	 * @spec openspec/specs/lhs-decision-table/spec.md
+	 */
+	private function storeTable(
+		object $objectService,
+		string $register,
+		string $tableSchema,
+		array $table,
+		string $marker,
+		string $outcome,
+	): array {
 		try {
 			$objectService->saveObject(object: $table, register: $register, schema: $tableSchema);
 		} catch (Throwable $e) {
@@ -266,7 +328,7 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 
 		return ['outcome' => $outcome, 'marker' => $marker, 'detail' => sprintf('%d rule(s)', count($table['rules']))];
 
-	}//end migrateOne()
+	}//end storeTable()
 
 	/**
 	 * Find the table already projected from this matrix, if any.

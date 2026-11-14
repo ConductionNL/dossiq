@@ -170,13 +170,7 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	public function execute(string $fromUser, string $toUser, string $actor): array {
 		$fromUser = trim($fromUser);
 		$toUser = trim($toUser);
-		if ($fromUser === '' || $toUser === '') {
-			throw new InvalidArgumentException('Both fromUser and toUser are required');
-		}
-
-		if ($fromUser === $toUser) {
-			throw new InvalidArgumentException('Cannot hand a person their own work');
-		}
+		$this->assertHandoverPair(fromUser: $fromUser, toUser: $toUser);
 
 		// The coordinator seats are read BEFORE the cases move. Reading them
 		// afterwards would work today and break the first time the case walk
@@ -204,12 +198,14 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 		$batchId = (string)($job['uuid'] ?? ($job['id'] ?? ''));
 		$now = (new DateTimeImmutable())->format('c');
 
-		$seatsMoved = 0;
-		foreach ($coordinated as $caseId) {
-			if ($this->moveCoordinatorSeat(caseId: $caseId, toUser: $toUser, fromUser: $fromUser, actor: $actor, batchId: $batchId, now: $now) === true) {
-				$seatsMoved += 1;
-			}
-		}
+		$seatsMoved = $this->moveCoordinatorSeats(
+			coordinated: $coordinated,
+			toUser: $toUser,
+			fromUser: $fromUser,
+			actor: $actor,
+			batchId: $batchId,
+			now: $now,
+		);
 
 		// ⚠️ Recorded against the cases the act was ORDERED over, not against
 		// the ones the job has finished writing. The job walks in the
@@ -252,6 +248,60 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 			'tasks' => (array)($batch['tasks'] ?? []),
 		];
 	}//end execute()
+
+	/**
+	 * Refuse a handover that names nobody, or the leaver as their own successor.
+	 *
+	 * @param string $fromUser The person who is leaving, trimmed.
+	 * @param string $toUser   The person receiving the work, trimmed.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When a person is missing, or is their own successor.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 */
+	private function assertHandoverPair(string $fromUser, string $toUser): void {
+		if ($fromUser === '' || $toUser === '') {
+			throw new InvalidArgumentException('Both fromUser and toUser are required');
+		}
+
+		if ($fromUser === $toUser) {
+			throw new InvalidArgumentException('Cannot hand a person their own work');
+		}
+	}//end assertHandoverPair()
+
+	/**
+	 * Give every coordinator seat the leaver held to the receiving person.
+	 *
+	 * @param array<int, string> $coordinated The cases the leaver coordinates.
+	 * @param string $toUser   Who receives the seats.
+	 * @param string $fromUser Who held them.
+	 * @param string $actor    Who ran the act.
+	 * @param string $batchId  The handover's batch id.
+	 * @param string $now      The moment of the act.
+	 *
+	 * @return int How many seats moved.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 */
+	private function moveCoordinatorSeats(
+		array $coordinated,
+		string $toUser,
+		string $fromUser,
+		string $actor,
+		string $batchId,
+		string $now,
+	): int {
+		$seatsMoved = 0;
+		foreach ($coordinated as $caseId) {
+			if ($this->moveCoordinatorSeat(caseId: $caseId, toUser: $toUser, fromUser: $fromUser, actor: $actor, batchId: $batchId, now: $now) === true) {
+				$seatsMoved += 1;
+			}
+		}
+
+		return $seatsMoved;
+	}//end moveCoordinatorSeats()
 
 	/**
 	 * Give one case's coordinator seat to the receiving person.
