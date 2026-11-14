@@ -125,7 +125,8 @@ class AiAuditLog {
 		$limit = $this->clampLimit(limit: $limit);
 		$offset = max(0, $offset);
 
-		$empty = $this->page(entries: [], limit: $limit, offset: $offset);
+		$window = new AuditPageWindow(limit: $limit, offset: $offset);
+		$empty = $this->page(entries: [], window: $window);
 
 		try {
 			$storage = $this->storage();
@@ -133,7 +134,7 @@ class AiAuditLog {
 				return $empty;
 			}
 
-			return $this->pageFrom(storage: $storage, filters: $filters, limit: $limit, offset: $offset);
+			return $this->pageFrom(storage: $storage, filters: $filters, window: $window);
 		} catch (\Exception $e) {
 			$this->logger->error('Failed to list AI audit entries', ['error' => $e->getMessage()]);
 			return $empty;
@@ -145,36 +146,34 @@ class AiAuditLog {
 	 *
 	 * @param array{register: string, schema: string} $storage The storage config.
 	 * @param array<string, mixed>                    $filters Optional filters: 'caseId', 'type'.
-	 * @param int                                     $limit   Page size, already clamped.
-	 * @param int                                     $offset  Paging offset, already clamped.
+	 * @param AuditPageWindow                         $window  Page size and paging offset, already clamped.
 	 *
 	 * @return array{entries: array<int, array<string, mixed>>, total: int|null, limit: int, offset: int}
 	 *
 	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
 	 */
-	private function pageFrom(array $storage, array $filters, int $limit, int $offset): array {
+	private function pageFrom(array $storage, array $filters, AuditPageWindow $window): array {
 		$entries = $this->searchObjectsAsArrays(
 			objectService: $this->container->get('OCA\OpenRegister\Service\ObjectService'),
 			register: $storage['register'],
 			schema: $storage['schema'],
-			filters: $this->query(filters: $filters, limit: $limit, offset: $offset)
+			filters: $this->query(filters: $filters, window: $window)
 		);
 
-		return $this->page(entries: $entries, limit: $limit, offset: $offset);
+		return $this->page(entries: $entries, window: $window);
 	}//end pageFrom()
 
 	/**
 	 * One page of the list answer.
 	 *
 	 * @param array<int, array<string, mixed>> $entries The entries.
-	 * @param int                              $limit   Page size.
-	 * @param int                              $offset  Paging offset.
+	 * @param AuditPageWindow                  $window  Page size and paging offset.
 	 *
 	 * @return array{entries: array<int, array<string, mixed>>, total: int|null, limit: int, offset: int}
 	 *
 	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
 	 */
-	private function page(array $entries, int $limit, int $offset): array {
+	private function page(array $entries, AuditPageWindow $window): array {
 		return [
 			'entries' => $entries,
 			// The array-normalising search bridge (searchObjectsAsArrays)
@@ -183,8 +182,8 @@ class AiAuditLog {
 			// uncapped fetch. Left null rather than faked; callers page
 			// by whether a full page of `limit` rows came back.
 			'total' => null,
-			'limit' => $limit,
-			'offset' => $offset,
+			'limit' => $window->limit,
+			'offset' => $window->offset,
 		];
 	}//end page()
 
@@ -210,15 +209,14 @@ class AiAuditLog {
 	 * Build the OpenRegister query for an audit listing.
 	 *
 	 * @param array<string, mixed> $filters Optional filters: 'caseId', 'type'.
-	 * @param int $limit The clamped page size.
-	 * @param int $offset The clamped offset.
+	 * @param AuditPageWindow      $window  The clamped page size and offset.
 	 *
 	 * @return array<string, mixed> The query.
 	 */
-	private function query(array $filters, int $limit, int $offset): array {
+	private function query(array $filters, AuditPageWindow $window): array {
 		$query = [
-			'_limit' => $limit,
-			'_offset' => $offset,
+			'_limit' => $window->limit,
+			'_offset' => $window->offset,
 			// Newest first — the schema's business timestamp, not OR's
 			// system @self.created, is the ordering key the oversight
 			// page needs (matches when the AI call actually happened).
