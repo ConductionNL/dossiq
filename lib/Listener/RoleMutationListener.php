@@ -85,27 +85,38 @@ class RoleMutationListener implements IEventListener {
 		}
 
 		try {
-			$object = $this->extractObject(event: $event);
-			if ($object === null) {
-				return;
-			}
-
-			if ($this->isRoleSchema(object: $object) === false) {
-				return;
-			}
-
-			$caseId = (string)($object['case'] ?? '');
-			if ($caseId === '') {
-				return;
-			}
-
-			$this->resolver->invalidateCache($caseId);
+			$this->invalidateFor(event: $event);
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'Dossiq: role mutation listener swallowed exception: ' . $e->getMessage(),
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * Drop the role cache of the case a mutated role row belongs to.
+	 *
+	 * @param Event $event The object event.
+	 *
+	 * @return void
+	 */
+	private function invalidateFor(Event $event): void {
+		$object = $this->extractObject(event: $event);
+		if ($object === null) {
+			return;
+		}
+
+		if ($this->isRoleSchema(object: $object) === false) {
+			return;
+		}
+
+		$caseId = (string)($object['case'] ?? '');
+		if ($caseId === '') {
+			return;
+		}
+
+		$this->resolver->invalidateCache($caseId);
+	}//end invalidateFor()
 
 	/**
 	 * Whether the given object belongs to the `role` schema.
