@@ -69,4 +69,18 @@ interface ReviewWritesInterface {
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function pagesSeen(string $caseId, string $documentRef, array $pages, ?int $pageCount, string $userId): array;
+
+	/**
+	 * Open an unmarked review for each document just added to a case, then share the new reviews.
+	 *
+	 * @param string       $caseId       The case UUID.
+	 * @param list<string> $documentRefs The documents just added.
+	 *
+	 * @return int How many reviews were created.
+	 *
+	 * @throws RefusedException When a review cannot be written.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	public function openReviews(string $caseId, array $documentRefs): int;
 }//end interface

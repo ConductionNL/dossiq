@@ -49,6 +49,10 @@ use OCA\Dossiq\Tests\Support\HeaderParsingTextExtraction;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\MakesCaseReviewerAccess;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\Dossiq\Kernel\Contracts\ReviewWritesInterface;
+use OCA\Dossiq\Review\DocumentRelevance;
+use OCA\Dossiq\Review\ReviewConfiguration;
+use OCA\Dossiq\Review\ReviewWrites;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCollection;
 use OCA\Dossiq\Woo\WooGatherAdd;
@@ -93,6 +97,9 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Email\MessageThreadHeaders
  * @uses \OCA\Dossiq\Service\Email\MessageThreadReader
  * @uses \OCA\Dossiq\Service\Email\CompoundFileStreams
+ * @uses \OCA\Dossiq\Review\DocumentRelevance
+ * @uses \OCA\Dossiq\Review\ReviewConfiguration
+ * @uses \OCA\Dossiq\Review\ReviewWrites
  */
 class WooGatherAddTest extends TestCase {
 
@@ -157,6 +164,18 @@ class WooGatherAddTest extends TestCase {
 	private IUser&MockObject $user;
 
 	/**
+	 * The configuration the settings answer; a test adds the review schemas to it.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $config = self::CONFIG;
+
+	/**
+	 * The review writes the add opens reviews through, when a test sets them.
+	 */
+	private ?ReviewWritesInterface $reviews = null;
+
+	/**
 	 * Parses the headers of the mail files the add hands it, from their real bytes.
 	 */
 	private HeaderParsingTextExtraction $extraction;
@@ -202,7 +221,7 @@ class WooGatherAddTest extends TestCase {
 		$this->settings->method('getObjectService')->willReturn($this->register);
 		$this->settings->method('getFileService')->willReturn($fileService);
 		$this->settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key, string $default = ''): string => (self::CONFIG[$key] ?? $default)
+			fn (string $key, string $default = ''): string => ($this->config[$key] ?? $default)
 		);
 
 		$this->user = $this->createMock(IUser::class);
@@ -317,6 +336,7 @@ class WooGatherAddTest extends TestCase {
 			l10n: $l10n,
 			logger: $this->createMock(LoggerInterface::class),
 			collection: $collection,
+			reviews: $this->reviews,
 		);
 	}//end service()
 
@@ -780,4 +800,90 @@ class WooGatherAddTest extends TestCase {
 		self::assertSame('Wethouder Ruimte', $exclusion['custodian']);
 		self::assertSame('Postvak', $exclusion['location']);
 	}//end testAnUnreadablePickIsRecorded()
+
+	/**
+	 * Switch document review on for the Woo case, with the real review writes over the same register.
+	 *
+	 * @param bool $enabled Whether the case type switches document review on.
+	 *
+	 * @return void
+	 */
+	private function withReviews(bool $enabled): void {
+		$this->config += ['document_review_schema' => 'documentReview', 'case_type_schema' => 'caseType'];
+		$this->register->seed('caseType', self::TYPE_ID, ['title' => 'Woo-verzoek', 'documentReview' => ['enabled' => $enabled]]);
+		$this->register->seed('case', self::CASE_ID, ['title' => 'Woo-verzoek Stationsweg', 'caseType' => self::TYPE_ID]);
+		$this->reviews = new ReviewWrites(
+			reviews: new DocumentRelevance(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class)),
+			reviewerAccess: $this->caseReviewerAccessOver($this->settings),
+			configuration: new ReviewConfiguration(settingsService: $this->settings),
+		);
+	}//end withReviews()
+
+	/**
+	 * Each document the add puts on the case gets one unmarked review, shared with the people on the
+	 * case in the same request; a refused pick gets none (woo-review-triage 1.1 and 6.2, REQ-WRT-001).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	public function testEveryAddedDocumentGetsAnUnmarkedReview(): void {
+		$this->withReviews(enabled: true);
+		$this->userFiles[11] = $this->fileDouble(path: '/pjansen/files/Team Ruimte/notulen.pdf', fileId: 11, content: 'notulen');
+		$this->userFiles[12] = $this->fileDouble(path: '/pjansen/files/Team Verkeer/memo.pdf', fileId: 12, content: 'memo');
+		$this->userFiles[13] = $this->fileDouble(path: '/pjansen/files/Directie/geheim.pdf', fileId: 13, content: 'geheim', readable: false);
+
+		$results = $this->service()->addPicks(
+			caseId: self::CASE_ID,
+			picks: [
+				['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '11', 'location' => 'Team Ruimte'],
+				['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '12', 'location' => 'Team Verkeer'],
+				['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '13', 'location' => 'Directie'],
+			],
+			terms: 'Stationsweg',
+			user: $this->user,
+			custodians: self::CUSTODIANS
+		);
+
+		self::assertSame(['added', 'added', 'refused'], array_column($results, 'status'));
+		$reviews = $this->register->all('documentReview');
+		self::assertEqualsCanonicalizing([$results[0]['documentId'], $results[1]['documentId']], array_column($reviews, 'documentRef'));
+		self::assertSame([self::CASE_ID, self::CASE_ID], array_column($reviews, 'case'));
+		self::assertSame(['unmarked', 'unmarked'], array_column($reviews, 'relevance'));
+		self::assertSame(['case' => self::CASE_ID, 'created' => 2], end($this->reconciledAfterCreate), 'the two reviews are shared once, after the add; the refused pick\'s exclusion was shared on its own');
+	}//end testEveryAddedDocumentGetsAnUnmarkedReview()
+
+	/**
+	 * A case type that does not switch document review on gets no review from the add.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeWithoutDocumentReviewGetsNoReview(): void {
+		$this->withReviews(enabled: false);
+		$this->userFiles[11] = $this->fileDouble(path: '/pjansen/files/Team Ruimte/notulen.pdf', fileId: 11, content: 'notulen');
+
+		$results = $this->service()->addPicks(caseId: self::CASE_ID, picks: [['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '11']], terms: 't', user: $this->user, custodians: self::CUSTODIANS);
+
+		self::assertSame('added', $results[0]['status']);
+		self::assertSame([], $this->register->all('documentReview'));
+		self::assertSame([], $this->reconciledAfterCreate);
+	}//end testACaseTypeWithoutDocumentReviewGetsNoReview()
+
+	/**
+	 * A review that cannot be written leaves the documents added and is logged.
+	 *
+	 * @return void
+	 */
+	public function testAReviewThatCannotBeWrittenLeavesTheDocumentAdded(): void {
+		$this->userFiles[11] = $this->fileDouble(path: '/pjansen/files/Team Ruimte/notulen.pdf', fileId: 11, content: 'notulen');
+		$this->reviews = $this->createMock(ReviewWritesInterface::class);
+		$this->reviews->expects(self::once())->method('openReviews')
+			->with(self::CASE_ID, self::callback(static fn (array $refs): bool => count($refs) === 1))
+			->willThrowException(new \RuntimeException('store down'));
+
+		$results = $this->service()->addPicks(caseId: self::CASE_ID, picks: [['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '11']], terms: 't', user: $this->user, custodians: self::CUSTODIANS);
+
+		self::assertSame('added', $results[0]['status']);
+		self::assertNotSame('', (string)$results[0]['documentId']);
+	}//end testAReviewThatCannotBeWrittenLeavesTheDocumentAdded()
 }//end class

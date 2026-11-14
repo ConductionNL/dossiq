@@ -1579,6 +1579,22 @@
         "version": "1.0.2",
         "digest": "c125afbf43c582848d7e4d4f1866ad2025851b6825a8825a44da54bd6976e7d8"
     },
+    "lib/Settings/register.d/88-tender-records.json::bid": {
+        "version": "1.0.0",
+        "digest": "682b5985d0204f55cd722c2fe7b5bacf7b633253fd54c9f78a794fbbc127c97f"
+    },
+    "lib/Settings/register.d/88-tender-records.json::evaluation": {
+        "version": "1.0.0",
+        "digest": "13e3e8900a48e4de2a9e133f1c0f39fa8b7a428ab291d85db790674ccad79f71"
+    },
+    "lib/Settings/register.d/88-tender-records.json::scoringFormula": {
+        "version": "1.0.0",
+        "digest": "1e57cfd2efcf8120fa0c9e55ee1eeaef817c41bad687278ff55ba2b4442e0448"
+    },
+    "lib/Settings/register.d/88-tender-records.json::tenderQuestion": {
+        "version": "1.0.0",
+        "digest": "e8f2a72c2a419f2607dace1b48d50569b5b8a197a8ba53c95b7a40a38c99e885"
+    },
     "lib/Settings/register.d/89-case-document-drafts.json::caseType": {
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -1879,6 +1895,10 @@
         "version": "1.46.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-case-type-social-safeguards.json::case": {
+        "version": "1.63.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/99-case-type-social-safeguards.json::caseType": {
         "version": "1.48.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -1913,6 +1933,10 @@
     },
     "lib/Settings/register.d/99-status-type-off-path.json::statusType": {
         "version": "1.9.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-template-category.json::workflowTemplate": {
+        "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-term-resumed-after-pause.json::termijnGebeurtenis": {

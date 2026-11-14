@@ -2,7 +2,7 @@
 
 ## 1. Package
 
-- [ ] 1.1 Schemas `bid`, `tenderQuestion`, `evaluation`, `scoringFormula` per REQ-TND-004, REQ-TND-007, REQ-EVA-001 and REQ-EVA-003, shipped with the `aanbesteding` package (cross-app schema references, decision 198) or in `lib/Settings/register.d/` if the installer cannot ship schemas yet.
+- [x] 1.1 Schemas `bid`, `tenderQuestion`, `evaluation`, `scoringFormula` per REQ-TND-004, REQ-TND-007, REQ-EVA-001 and REQ-EVA-003, shipped with the `aanbesteding` package (cross-app schema references, decision 198) or in `lib/Settings/register.d/` if the installer cannot ship schemas yet. Built in `lib/Settings/register.d/88-tender-records.json` (the installer ships no schemas yet): the four schemas with the fields the specs name, declared lifecycles for bid, question and evaluation (a late bid goes from received straight to inadmissible), the three common scoring formulas seeded as records, config keys in `SchemaSlugMap`, register 0.20.97. No award schema: the award is a decision. `tests/Unit/Settings/TenderRecordsSchemasTest.php`.
 - [x] 1.2 `lib/Settings/packages/aanbesteding/flows/aanbesteding.json`: the flow over Voorbereiding to Gegund, guarded by the closing date and the standstill term. Built with a generic `dateReached` guard (`lib/Service/Transitions/DateReachedGuard.php`) on the case's `sluiting` (only after the day) and `opschortendeTermijnEinde`; the case type declares both and `gunningsdatum`. Filling `opschortendeTermijnEinde` from the 20-day term is task 1.3.
 - [ ] 1.3 Decision types for award and refusal (REQ-EVA-002); terms for the question deadline and the 20-day standstill (REQ-TND-006, REQ-EVA-005) in the package.
 - [ ] 1.4 `examples/`: one tender in evaluation with two lots and three bids; bump the package version.

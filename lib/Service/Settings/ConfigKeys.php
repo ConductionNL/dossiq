@@ -348,6 +348,10 @@ class ConfigKeys {
 		'review_batch_schema',
 		'stopping_rule_schema',
 		'recall_sample_schema',
+		'bid_schema',
+		'tender_question_schema',
+		'evaluation_schema',
+		'scoring_formula_schema',
 		'dossier_besluitinformatieobject_schema',
 		'dossier_informatieobjecttype_schema',
 		// Maximum upload size in bytes (0 = no app-level limit, NC limit applies).

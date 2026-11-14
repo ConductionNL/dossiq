@@ -42,12 +42,14 @@ class ReviewWrites implements ReviewWritesInterface {
 	 *
 	 * @param DocumentRelevance  $reviews        The reviews.
 	 * @param CaseReviewerAccessInterface $reviewerAccess Shares a review that was just created with the people on its case.
+	 * @param ReviewConfiguration|null    $configuration  Whether the case type switches document review on.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly DocumentRelevance $reviews,
 		private readonly CaseReviewerAccessInterface $reviewerAccess,
+		private readonly ?ReviewConfiguration $configuration = null,
 	) {
 	}//end __construct()
 
@@ -72,6 +74,49 @@ class ReviewWrites implements ReviewWritesInterface {
 
 		return $review;
 	}//end mark()
+
+	/**
+	 * Open an unmarked review for each document just added to a case, then share the new reviews.
+	 *
+	 * Only on a case whose type switches document review on, and only when the
+	 * review schema is configured: without it a document reads as unmarked all
+	 * the same. A document that already has a review keeps it, whoever can read
+	 * that review; the reconcile runs only when a review was created, in the
+	 * same request, so the people on the case read it at once.
+	 *
+	 * @param string       $caseId       The case UUID.
+	 * @param list<string> $documentRefs The documents just added.
+	 *
+	 * @return int How many reviews were created.
+	 *
+	 * @throws RefusedException When a review cannot be written.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	public function openReviews(string $caseId, array $documentRefs): int {
+		if ($this->configuration !== null && ($this->configuration->forCase(caseId: $caseId)['enabled'] ?? false) !== true) {
+			return 0;
+		}
+
+		$created = 0;
+		if ($this->reviews->isAvailable() === true && $caseId !== '') {
+			$reviews = $this->reviews->forCase(caseId: $caseId);
+			foreach (array_unique($documentRefs) as $documentRef) {
+				$documentRef = (string)$documentRef;
+				if ($documentRef === '' || isset($reviews[$documentRef]) === true) {
+					continue;
+				}
+
+				$this->reviews->save(review: ['case' => $caseId, 'documentRef' => $documentRef, 'relevance' => DocumentRelevance::UNMARKED]);
+				$reviews[$documentRef] = ['documentRef' => $documentRef];
+				$created++;
+			}
+		}
+
+		$this->reviewerAccess->reconcileAfterCreate(caseId: $caseId, created: $created);
+
+		return $created;
+	}//end openReviews()
 
 	/**
 	 * Record the pages this person displayed, and say which required pages nobody has seen yet.

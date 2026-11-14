@@ -19,7 +19,7 @@ routes `/api/cases/{id}/review/...`. A case type switches it on with `documentRe
 
 ## 1. Relevance apart from the verdict
 
-- [ ] 1.1 Add schema `documentReview` in `lib/Settings/register.d/87-document-review.json` with the
+- [x] 1.1 Add schema `documentReview` in `lib/Settings/register.d/87-document-review.json` with the
   REQ-WRT-001 properties; create one per document at the gather add and for documents already on a
   Woo case through a repair step (idempotent). Bump the register version (REQ-WRT-001).
   - unit `tests/Unit/Repair/CreateDocumentReviewsTest.php` `testEveryDocumentGetsOneReview`,
@@ -32,6 +32,14 @@ routes `/api/cases/{id}/review/...`. A case type switches it on with `documentRe
     Open: "create one per document at the gather add" belongs in the add that lane L9 builds
     (`woo-requests-gather-documents-from-sources`). Until then a document without a review reads as unmarked,
     which is the same state the add would write.
+  - Built (pass 3): the gather add (`WooGatherAdd::addPicks()`, landed with
+    `woo-requests-gather-documents-from-sources`) opens one unmarked review per added document through
+    `ReviewWrites::openReviews()`, only on a case type with `documentReview.enabled`, keeping a review a document
+    already has, and reconciles the case once in the same request (6.2). A review that cannot be written leaves the
+    document added and is logged. Tests: `WooGatherAddTest::testEveryAddedDocumentGetsAnUnmarkedReview`,
+    `testACaseTypeWithoutDocumentReviewGetsNoReview`, `testAReviewThatCannotBeWrittenLeavesTheDocumentAdded`
+    (red with the call removed), `ReviewWritesTest::testAddedDocumentsEachGetOneUnmarkedReview`,
+    `testOnlyACaseTypeWithDocumentReviewOpensReviews`.
 - [x] 1.2 POST `/api/cases/{id}/review/documents/{documentRef}/relevance` with `{relevance}`, case
   mutation guard. `getOutstanding()` skips out-of-scope documents. The case summary reports the
   three counts (REQ-WRT-001).
@@ -201,6 +209,8 @@ record. OpenRegister refuses a parent that references another schema
   - Built (pass 2): `WooDeliveredSetWriter::open()` reconciles the case after the set is stored, so publishing grants the
     assignee read in the same request (`tests/Unit/Woo/WooDeliveredSetAccessTest.php`). Open: the gather add creates no
     `documentReview` yet (1.1), so it has nothing of the seven to reconcile.
+  - Built (pass 3): the gather add now creates the `documentReview` of each added document and reconciles the case
+    after it (`ReviewWrites::openReviews()`, see 1.1). Still open: the Newman folder `scoped` (needs an instance).
   - Through the caller: `DocumentReviewControllerTest::testCreateBatchGrantsTheReviewerTheirReviews`,
     `testCreateRuleGrantsTheAssignee`; `WooSourcesControllerTest::testTheAddGrantsTheCaseRecords`;
     `WooPublicationServiceTest::testTheDeliveredSetIsGrantedToTheAssignee`;

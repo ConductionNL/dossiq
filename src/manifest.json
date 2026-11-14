@@ -4853,6 +4853,52 @@
 											"emptyText": "No advice from a decision table on this case yet"
 										}
 									}
+								},
+								{
+									"label": "Enforcement recommendations",
+									"widget": {
+										"id": "case-lhs-recommendations",
+										"type": "object-list",
+										"title": "Enforcement recommendations",
+										"_note": "The enforcement recommendations the LHS engine stored on this case (POST /api/lhs/recommend), with the intervention the inspector finally chose. They used to be reachable only through the LhsRecommendations list under settings, which had no menu entry: a recommendation belongs to its case, so the case's Decisions tab is where it is read (enforcement-intervention-from-the-case 3.4). NO CREATE: a recommendation is written by the engine, never by hand. A row opens LhsRecommendationDetail, which stays routable for the object's deep link.",
+										"content": {
+											"register": "dossiq",
+											"schema": "lhsRecommendation",
+											"allowCreate": false,
+											"filter": {
+												"case": "@objectId"
+											},
+											"limit": 25,
+											"rowRoute": "LhsRecommendationDetail",
+											"columns": [
+												{
+													"key": "severity",
+													"label": "Severity"
+												},
+												{
+													"key": "behaviour",
+													"label": "Behaviour"
+												},
+												{
+													"key": "actorType",
+													"label": "Actor type"
+												},
+												{
+													"key": "recommendedIntervention",
+													"label": "Recommended intervention"
+												},
+												{
+													"key": "finalIntervention",
+													"label": "Final intervention"
+												},
+												{
+													"key": "override",
+													"label": "Override"
+												}
+											],
+											"emptyText": "No enforcement recommendations on this case yet"
+										}
+									}
 								}
 							]
 						}
@@ -10534,8 +10580,16 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "workflowTemplate",
+				"_folderSidebarNote": "You group templates in folders (capability-rows-say-the-whole-capability 1.20, REQ-CRS-39, row 11.23): one folder per category the templates carry, All templates on top. `source: \"field\"` reads the facet of workflowTemplate.category, which is facetable (lib/Settings/register.d/99-template-category.json), so a category whose templates sit on a later page still gets its folder.",
+				"folderSidebar": {
+					"source": "field",
+					"field": "category",
+					"filterField": "category",
+					"allLabel": "All templates"
+				},
 				"columns": [
 					"title",
+					"category",
 					"caseType",
 					"version",
 					"lifecycleStatus",

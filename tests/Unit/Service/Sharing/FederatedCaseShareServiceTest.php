@@ -268,6 +268,44 @@ final class FederatedCaseShareServiceTest extends TestCase {
 	}
 
 	/**
+	 * A created share is logged with its record id and the activated record comes back whole.
+	 *
+	 * @return void
+	 */
+	public function testCreateLogsTheShareAndReturnsTheActivatedRecord(): void {
+		$this->logger->expects($this->once())->method('info')->with(
+			'Dossiq: Federated case share created',
+			['caseId' => 'case-1', 'remoteCloudId' => 'bob@partner.example', 'shareId' => 'fshare-1']
+		);
+
+		$result = $this->service(objects: $this->objects(found: ['case-1' => $this->caseRow()], serialise: true), federation: $this->federation())->createFederatedShare(
+			caseId: 'case-1',
+			remoteCloudId: 'bob@partner.example',
+			sharedFields: [2 => 'title'],
+			sharedDocuments: ['doc-1'],
+			permissionLevel: 'bekijken',
+			createdBy: 'ann'
+		);
+
+		$this->assertSame(
+			[
+				'caseId' => 'case-1',
+				'remoteCloudId' => 'bob@partner.example',
+				'sharedFields' => ['title'],
+				'sharedDocuments' => ['doc-1'],
+				'fieldSnapshot' => ['title' => 'Bouwvergunning'],
+				'permissionLevel' => 'bekijken',
+				'status' => 'active',
+				'createdBy' => 'ann',
+				'id' => 'fshare-1',
+				'save' => 1,
+				'federationShareId' => 77,
+			],
+			$result
+		);
+	}
+
+	/**
 	 * Without the federation leaf, with a field outside the allow-list, or unconfigured, nothing is read or written.
 	 *
 	 * @return void

@@ -567,3 +567,22 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Own tests: `tests/Unit/Service/Task/EngineTaskPayloadTest` (4) and `EngineTaskRowTest`
         (3); breaking the once-key precedence or the date format turns them red (checked).
         Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8l `CasePlanProjectionService` (1: ExcessiveClassComplexity 103 against 50; its
+        TooManyMethods finding, 34 against 25, goes too). The service keeps the reads (caseType,
+        published caseModel), the plan creation and its three public conversion methods,
+        which now delegate. The conversion leaves as pure classes the service builds, so its
+        constructor and the container are unchanged: `SentryConverter` (one sentry, its on- and
+        if-part and a criteria list, through the closed tables; the three table constants
+        live here and the service keeps them as aliases), `CaseModelConverter` (the flat
+        planItems list into the nested tree, every structural refusal) and
+        `CaseModelSearchHits` (the first plain row of a lookup, planItems decoded from JSON
+        text). Bodies moved unchanged, refusal messages included. phpmd: zero findings on the
+        four files.
+        Characterisation: `CasePlanProjectionServiceTest` (34), `CasePlanModelLookupTest` (3),
+        `CmmnRetirementTest`, `CasePlanDrain`, `CasePlanProjectionListenerTest`,
+        `BackgroundReadsRunAsSystemTest` and `tests/Unit/Architecture`, green on the old class
+        first and unchanged after but for `@uses` lines.
+        Own tests: `SentryConverterTest` (5), `CaseModelConverterTest` (5) and
+        `CaseModelSearchHitsTest` (2); breaking the sentry position, the `required` flag or the
+        undecodable-text fallback turns them red (checked).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.

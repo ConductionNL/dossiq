@@ -46,6 +46,7 @@ namespace OCA\Dossiq\Woo;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseFileCollectorInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
+use OCA\Dossiq\Kernel\Contracts\ReviewWritesInterface;
 use OCA\Dossiq\Kernel\Contracts\WooGatherAddInterface;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -72,6 +73,7 @@ class WooGatherAdd implements WooGatherAddInterface {
 	 * @param IL10N                     $l10n        The refusal sentences.
 	 * @param LoggerInterface           $logger      Logs a pick that failed for a reason the caller cannot fix.
 	 * @param WooCollection             $collection  Records a duplicate or unreadable pick as an exclusion.
+	 * @param ReviewWritesInterface|null $reviews    Opens an unmarked review for each added document.
 	 */
 	public function __construct(
 		private readonly IRootFolder $rootFolder,
@@ -82,6 +84,7 @@ class WooGatherAdd implements WooGatherAddInterface {
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly WooCollection $collection,
+		private readonly ?ReviewWritesInterface $reviews = null,
 	) {
 	}//end __construct()
 
@@ -112,8 +115,45 @@ class WooGatherAdd implements WooGatherAddInterface {
 			$results[] = $this->addOne(run: $run);
 		}
 
+		$this->openReviews(caseId: $caseId, results: $results);
+
 		return $results;
 	}//end addPicks()
+
+	/**
+	 * Give each document just added an unmarked review, shared with the people on the case.
+	 *
+	 * A review that cannot be written leaves the documents added: a document
+	 * without a review reads as unmarked, the state the review would hold.
+	 *
+	 * @param string                           $caseId  The Woo case uuid.
+	 * @param array<int, array<string, mixed>> $results The answer per pick.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	private function openReviews(string $caseId, array $results): void {
+		$documentRefs = [];
+		foreach ($results as $result) {
+			if (($result['status'] ?? '') === 'added' && (string)($result['documentId'] ?? '') !== '') {
+				$documentRefs[] = (string)$result['documentId'];
+			}
+		}
+
+		if ($this->reviews === null || $documentRefs === []) {
+			return;
+		}
+
+		try {
+			$this->reviews->openReviews(caseId: $caseId, documentRefs: $documentRefs);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'WooGatherAdd: the added documents got no review',
+				['case' => $caseId, 'documents' => count($documentRefs), 'error' => $e->getMessage()]
+			);
+		}
+	}//end openReviews()
 
 	/**
 	 * Add one pick, once its custodian is one the plan names.

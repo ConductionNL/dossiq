@@ -1,0 +1,22 @@
+{
+  "_note": "capability-rows-say-the-whole-capability 1.20 (REQ-CRS-39, row 11.23): you group templates in folders. A template names the category it belongs to, and the Templates page groups on the distinct categories (folderSidebar source field, which reads the facet over the whole query, so `facetable` is the whole contract). Free text rather than an enum: the categories are the municipality's own, the same way a case type's category is. Empty leaves a template under All templates only. A change to `properties` alone, which the importer compares, so the version stays.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "workflowTemplate": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Category",
+            "description": "The folder this template sits in on the Templates page, for example Permits or Enforcement. Empty: the template is listed under All templates only.",
+            "facetable": true
+          }
+        }
+      }
+    }
+  }
+}
