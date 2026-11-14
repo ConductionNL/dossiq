@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\DeadlinePauseServiceInterface;
 use OCA\Dossiq\Service\Pause\ChaseSchedule;
 use OCA\Dossiq\Service\Pause\PauseReasonReader;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -42,7 +43,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
-class DeadlinePauseService {
+class DeadlinePauseService implements DeadlinePauseServiceInterface {
 	/**
 	 * What a resume clears besides the end date. The reason and its counters
 	 * go with the pause. A resumed term that still read "chased twice" would
@@ -62,6 +63,13 @@ class DeadlinePauseService {
 		'lastChasedAt' => null,
 		'chaseEscalatedAt' => null,
 	];
+
+	/**
+	 * Why a term whose pause ran out resumed, on the timer and on the event.
+	 *
+	 * @var string
+	 */
+	public const EXPIRED_RESUME_REASON = 'Pauzetermijn verlopen zonder antwoord; termijn hervat';
 
 	/**
 	 * Constructor.
@@ -490,6 +498,50 @@ class DeadlinePauseService {
 
 		return $updated ?? $instance;
 	}//end resumeAfterPauze()
+
+	/**
+	 * Resume a term whose pause ran out without an answer (REQ-TERM-080).
+	 *
+	 * Every pause day was used, so the end date the pause pushed out stands:
+	 * nothing is pulled back, and the administered calendar still decides the
+	 * day it lands on. The engine timer resumes, the pause is cleared exactly
+	 * as a handler's resume clears it, and a `hervat` event records that the
+	 * term resumed because the pause ended. The event carries the notice, so
+	 * the notification rule on the event schema tells the handler the case and
+	 * the new end date.
+	 *
+	 * @param string                 $termInstanceId Instance id.
+	 * @param array<string, string>  $notice         Who to tell: `notify` (the
+	 *        handler's user id) and `caseTitle`. The new end date is added here.
+	 * @param DateTimeImmutable|null $moment         When the pause ran out (default now).
+	 *
+	 * @return array<string, mixed> The resumed instance.
+	 *
+	 * @throws RuntimeException When the instance is missing or no longer paused.
+	 *
+	 * @spec openspec/changes/expired-pause-resumes-the-term/tasks.md
+	 */
+	public function resumeAfterExpiry(string $termInstanceId, array $notice = [], ?DateTimeImmutable $moment = null): array {
+		$moment = ($moment ?? new DateTimeImmutable());
+		$instance = $this->pausedInstance(termInstanceId: $termInstanceId);
+		$current = new DateTimeImmutable((string)($instance['endDateCurrent'] ?? $moment->format('Y-m-d')));
+		$newEnd = $this->resumedEnd(current: $current, unused: 0);
+
+		$this->timerService?->resumeBeslistermijn(instance: $instance, reason: self::EXPIRED_RESUME_REASON);
+		$updated = $this->termService->updateTermijnInstance($termInstanceId, (['endDateCurrent' => $newEnd] + self::RESUME_CLEARS));
+
+		$this->termService->recordEvent(
+			termInstanceId: $termInstanceId,
+			type: 'hervat',
+			basis: 'AWB 4:15',
+			rationale: self::EXPIRED_RESUME_REASON,
+			daysImpact: 0,
+			moment: $moment,
+			notice: (['endDate' => $newEnd] + $notice),
+		);
+
+		return $updated ?? $instance;
+	}//end resumeAfterExpiry()
 
 	/**
 	 * The instance a resume applies to.

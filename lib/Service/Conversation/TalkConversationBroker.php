@@ -33,8 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Conversation;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IServerContainer;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -121,7 +121,7 @@ class TalkConversationBroker {
 			// status and sentence.
 			$this->logger->warning(
 				'Talk refused a room named "' . $name . '": ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 
 			throw new RefusedException(
@@ -163,7 +163,7 @@ class TalkConversationBroker {
 			// close would leave the case saying its channel is open.
 			$this->logger->warning(
 				'Talk refused to close room "' . $roomId . '": ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 
 			return false;

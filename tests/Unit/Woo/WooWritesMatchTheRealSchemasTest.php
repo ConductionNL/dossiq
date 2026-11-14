@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
@@ -176,7 +177,9 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 		$this->store->seed(schema: 'case', uuid: self::CASE, row: ['title' => 'Parkeren', 'caseType' => WooRequestIntake::CASE_TYPE_ID]);
 		$this->store->seed(schema: 'wooDocumentAssessment', uuid: 'a-1', row: ['caseRef' => self::CASE, 'documentRef' => 'io-1', 'classification' => 'openbaar']);
 
-		$service = new WOODecisionService($this->settings, $assessments, $this->createMock(IUserSession::class), $this->createMock(LoggerInterface::class));
+		$delegation = $this->createMock(ContractDecisionDelegationService::class);
+		$delegation->method('raiseDecision')->willReturn('decidiq-decision-1');
+		$service = new WOODecisionService($this->settings, $assessments, $this->createMock(IUserSession::class), $this->createMock(LoggerInterface::class), decisionDelegation: $delegation);
 		$result = $service->assembleDecision(caseId: self::CASE);
 
 		$decision = $this->store->row(schema: 'decision', uuid: $result['decisionId']);

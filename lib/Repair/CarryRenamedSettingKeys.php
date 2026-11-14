@@ -37,7 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\IAppConfig;
@@ -89,14 +89,14 @@ class CarryRenamedSettingKeys implements IRepairStep {
 		$carried = 0;
 		foreach (array_merge(WooReportSwitches::LEGACY_KEYS, MoneyConfigKeys::LEGACY_KEYS) as $current => $legacy) {
 			try {
-				if ($this->appConfig->hasKey(Application::APP_ID, $current) === true
-					|| $this->appConfig->hasKey(Application::APP_ID, $legacy) === false
+				if ($this->appConfig->hasKey(AppIdentity::APP_ID, $current) === true
+					|| $this->appConfig->hasKey(AppIdentity::APP_ID, $legacy) === false
 				) {
 					continue;
 				}
 
-				$value = $this->appConfig->getValueString(Application::APP_ID, $legacy, '');
-				$this->appConfig->setValueString(Application::APP_ID, $current, $value);
+				$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $legacy, '');
+				$this->appConfig->setValueString(AppIdentity::APP_ID, $current, $value);
 				$carried++;
 			} catch (Throwable $e) {
 				$this->logger->warning(

@@ -40,10 +40,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Recycle\CaseDestructionService;
-use OCA\Dossiq\Service\Recycle\CaseRecycleService;
-use OCA\Dossiq\Service\Recycle\RetentionClocks;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseDestructionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseRecycleServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\RetentionClocksInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -87,10 +87,10 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The HTTP request
-	 * @param CaseRecycleService $recycle The window, the lens and the restore
-	 * @param CaseDestructionService $destruction The destroying role and the act
-	 * @param RetentionClocks $clocks The two clocks, read apart
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization for the clocks read
+	 * @param CaseRecycleServiceInterface $recycle The window, the lens and the restore
+	 * @param CaseDestructionServiceInterface $destruction The destroying role and the act
+	 * @param RetentionClocksInterface $clocks The two clocks, read apart
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization for the clocks read
 	 * @param IGroupManager $groupManager Reads whether the caller is an administrator
 	 * @param IUserSession $userSession The current session
 	 * @param LoggerInterface $logger The logger
@@ -99,10 +99,10 @@ class CaseRecycleController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseRecycleService $recycle,
-		private readonly CaseDestructionService $destruction,
-		private readonly RetentionClocks $clocks,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseRecycleServiceInterface $recycle,
+		private readonly CaseDestructionServiceInterface $destruction,
+		private readonly RetentionClocksInterface $clocks,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IGroupManager $groupManager,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
@@ -161,7 +161,7 @@ class CaseRecycleController extends Controller {
 		$isAdmin = ($this->groupManager->isAdmin($user->getUID()) === true);
 
 		$page = $this->recycle->deletedCases(
-			limit: (int)$this->request->getParam('limit', CaseRecycleService::PAGE_SIZE),
+			limit: (int)$this->request->getParam('limit', CaseRecycleServiceInterface::PAGE_SIZE),
 			offset: (int)$this->request->getParam('offset', 0),
 			forUser: $user->getUID(),
 			isAdmin: $isAdmin,

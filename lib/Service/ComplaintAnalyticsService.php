@@ -23,7 +23,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAnalyticsServiceInterface;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
@@ -33,7 +34,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
  */
-class ComplaintAnalyticsService {
+class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 
 	/**
 	 * Minimum complaints per employee slice before employee data is shown (privacy).
@@ -238,7 +239,7 @@ class ComplaintAnalyticsService {
 		if (empty($systemicIssues) === false) {
 			$this->logger->warning(
 				'Systemic complaint issues detected: ' . count($systemicIssues) . ' categories flagged',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 		}
 
@@ -291,7 +292,7 @@ class ComplaintAnalyticsService {
 
 			$this->logger->warning(
 				'Employee complaint threshold exceeded: ' . $count . ' complaints in 6 months',
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 		}//end foreach
 

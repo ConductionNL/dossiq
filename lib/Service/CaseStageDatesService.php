@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseStageDatesServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -36,7 +37,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseStageDatesService {
+class CaseStageDatesService implements CaseStageDatesServiceInterface {
 	use SearchesObjects;
 
 	/**

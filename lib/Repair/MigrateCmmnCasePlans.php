@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\CasePlanDrain\CasePlanMigrationService;
+use OCA\Dossiq\Kernel\Contracts\CasePlanMigrationServiceInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -41,11 +41,11 @@ class MigrateCmmnCasePlans implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param CasePlanMigrationService $migration The drain.
+	 * @param CasePlanMigrationServiceInterface $migration The drain.
 	 * @param LoggerInterface          $logger    Logger.
 	 */
 	public function __construct(
-		private readonly CasePlanMigrationService $migration,
+		private readonly CasePlanMigrationServiceInterface $migration,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -79,11 +79,11 @@ class MigrateCmmnCasePlans implements IRepairStep {
 			return;
 		}
 
-		$counts = [CasePlanMigrationService::MIGRATED => 0, CasePlanMigrationService::UNMAPPABLE => 0];
+		$counts = [CasePlanMigrationServiceInterface::MIGRATED => 0, CasePlanMigrationServiceInterface::UNMAPPABLE => 0];
 		foreach ($reports as $report) {
 			$outcome = (string)$report['outcome'];
 			$counts[$outcome] = (($counts[$outcome] ?? 0) + 1);
-			if ($outcome === CasePlanMigrationService::UNMAPPABLE) {
+			if ($outcome === CasePlanMigrationServiceInterface::UNMAPPABLE) {
 				$this->logger->warning('Dossiq CMMN case left with its blob', ['case' => $report['caseId'], 'reason' => $report['reason']]);
 				$output->warning(sprintf('CMMN case %s kept its blob: %s', $report['caseId'], $report['reason']));
 			}
@@ -92,8 +92,8 @@ class MigrateCmmnCasePlans implements IRepairStep {
 		$output->info(
 			sprintf(
 				'CMMN case-plan drain: %d migrated, %d unmappable (run occ dossiq:cmmn:migrate-case-plans --strict to list them again).',
-				$counts[CasePlanMigrationService::MIGRATED],
-				$counts[CasePlanMigrationService::UNMAPPABLE]
+				$counts[CasePlanMigrationServiceInterface::MIGRATED],
+				$counts[CasePlanMigrationServiceInterface::UNMAPPABLE]
 			)
 		);
 	}//end run()

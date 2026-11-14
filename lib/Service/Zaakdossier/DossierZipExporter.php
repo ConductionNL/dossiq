@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DossierZipExporterInterface;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZipManifestBuilder;
 use OCP\IUser;
@@ -45,7 +46,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
-class DossierZipExporter {
+class DossierZipExporter implements DossierZipExporterInterface {
 	/**
 	 * Constructor.
 	 *

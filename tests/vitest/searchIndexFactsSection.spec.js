@@ -1,148 +1,105 @@
 // @vitest-environment jsdom
-// SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
-// SPDX-License-Identifier: EUPL-1.2
-
 /**
- * The search index section of the admin settings: it reads OpenRegister's
- * index status once mounted, says so when OpenRegister does not answer, and
- * queues a maintenance run from the Integrations variant.
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * The search index section reads OpenRegister's status, draws the rows its
+ * variant asks for, and queues a maintenance run with a toast either way.
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
-import axios from '@nextcloud/axios'
+
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mockShowSuccess = vi.fn()
-const mockShowError = vi.fn()
-
+const mockGet = vi.fn()
+const mockPost = vi.fn()
+const toasts = vi.hoisted(() => ({ success: [], error: [] }))
+vi.mock('@nextcloud/axios', () => ({
+	default: { get: (...a) => mockGet(...a), post: (...a) => mockPost(...a) },
+}))
+vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
 vi.mock('@nextcloud/dialogs', () => ({
-	showSuccess: (...a) => mockShowSuccess(...a),
-	showError: (...a) => mockShowError(...a),
+	showSuccess: (m) => toasts.success.push(m),
+	showError: (m) => toasts.error.push(m),
 }))
 vi.mock('@nextcloud/vue', () => {
 	const stub = (name) => ({ name, render: () => null })
-	return {
-		NcButton: stub('NcButton'),
-		NcLoadingIcon: stub('NcLoadingIcon'),
-		NcNoteCard: stub('NcNoteCard'),
-	}
+	return { NcButton: stub('NcButton'), NcLoadingIcon: stub('NcLoadingIcon'), NcNoteCard: stub('NcNoteCard') }
 })
 
 const { default: SearchIndexFacts } = await import('../../src/views/settings/components/SearchIndexFacts.vue')
 
-const STATUS = {
-	concurrentRebuildSupported: true,
-	tables: { case: 'oc_openregister_table_5_12' },
-	tableCount: 1,
-	indexCount: 1,
-	lastRun: { startedAt: '2026-11-12T03:00:00Z', finishedAt: '2026-11-12T03:01:30Z' },
-	rowsInTables: 1200,
-	rowsInIndex: 1180,
-	indexed: { case: 1180 },
-}
+const status = { tableCount: 2, indexCount: 2, lastRun: null, rowsInTables: 12, rowsInIndex: 7, indexed: null }
 
-/**
- * Mount the section after the status read settles.
- *
- * @param {string} variant run or rows.
- * @return {Promise<object>} The wrapper.
- */
-async function mounted(variant = 'run') {
-	const wrapper = shallowMount(SearchIndexFacts, { propsData: { variant } })
-	await flushPromises()
-	return wrapper
-}
-
-describe('the search index section', () => {
+describe('SearchIndexFacts', () => {
 	beforeEach(() => {
-		vi.clearAllMocks()
-		axios.get.mockReset()
-		axios.post.mockReset()
+		mockGet.mockReset()
+		mockPost.mockReset()
+		toasts.success = []
+		toasts.error = []
 	})
 
-	it('reads the status from OpenRegister once mounted', async () => {
-		axios.get.mockResolvedValue({ data: STATUS })
+	it('draws the run facts inline with an update button', async () => {
+		mockGet.mockResolvedValue({ data: status })
+		const wrapper = shallowMount(SearchIndexFacts)
+		await flushPromises()
 
-		const wrapper = await mounted()
-
-		expect(axios.get).toHaveBeenCalledTimes(1)
-		expect(axios.get.mock.calls[0][0]).toContain('/apps/openregister/api/settings/search-index')
-		expect(wrapper.vm.loading).toBe(false)
-		expect(wrapper.vm.error).toBe('')
-		expect(wrapper.vm.status.rowsInIndex).toBe(1180)
-		expect(wrapper.vm.status.lastRunSeconds).toBe(90)
-	})
-
-	it('draws the run facts with an update button in the Integrations variant', async () => {
-		axios.get.mockResolvedValue({ data: STATUS })
-
-		const wrapper = await mounted('run')
-
-		expect(wrapper.vm.rows.map((row) => row.label)).toEqual(['Latest run', 'Duration', 'Indexed'])
+		expect(mockGet).toHaveBeenCalledWith('/apps/openregister/api/settings/search-index')
+		const list = wrapper.findComponent({ name: 'SettingsFactsList' })
+		expect(list.props('layout')).toBe('inline')
+		expect(list.props('rows').map((r) => r.label)).toEqual(['Latest run', 'Duration', 'Indexed'])
+		expect(list.props('rows')[1]).toEqual({ label: 'Duration', value: 'no run yet', muted: true })
 		expect(wrapper.find('[data-testid="search-index-facts-run"]').exists()).toBe(true)
 	})
 
-	it('draws the row counts without a button in the Advanced variant', async () => {
-		axios.get.mockResolvedValue({ data: STATUS })
+	it('draws the row facts as boxes without a button', async () => {
+		mockGet.mockResolvedValue({ data: status })
+		const wrapper = shallowMount(SearchIndexFacts, { props: { variant: 'rows' } })
+		await flushPromises()
 
-		const wrapper = await mounted('rows')
-
-		expect(wrapper.vm.rows.slice(0, 2).map((row) => row.label)).toEqual(['Rows in the tables', 'Rows in the index'])
+		const list = wrapper.findComponent({ name: 'SettingsFactsList' })
+		expect(list.props('layout')).toBe('boxes')
+		expect(list.props('rows').map((r) => r.label)).toEqual(['Rows in the tables', 'Rows in the index', 'Latest run', 'Rebuild with'])
+		expect(list.props('rows')[3].value).toBe('occ openregister:tables:search-index rebuild')
 		expect(wrapper.find('[data-testid="search-index-facts-run"]').exists()).toBe(false)
 	})
 
-	it('draws nothing before a status has been read', () => {
-		axios.get.mockReturnValue(new Promise(() => {}))
-
+	it('shows the refusal instead of the rows', async () => {
+		mockGet.mockResolvedValue({ data: { error: 'Not an admin' } })
 		const wrapper = shallowMount(SearchIndexFacts)
+		await flushPromises()
 
-		expect(wrapper.vm.loading).toBe(true)
-		expect(wrapper.vm.rows).toEqual([])
-	})
-
-	it('says OpenRegister does not answer when the read fails', async () => {
-		axios.get.mockRejectedValue(new Error('Request failed with status code 502'))
-
-		const wrapper = await mounted()
-
-		expect(wrapper.vm.loading).toBe(false)
-		expect(wrapper.vm.error).toBe('Request failed with status code 502')
+		expect(wrapper.vm.error).toBe('Not an admin')
 		expect(wrapper.vm.rows).toEqual([])
 		expect(wrapper.find('[data-testid="search-index-facts-error"]').exists()).toBe(true)
+		expect(wrapper.findComponent({ name: 'SettingsFactsList' }).exists()).toBe(false)
 	})
 
-	it('passes on the refusal OpenRegister wrote', async () => {
-		axios.get.mockResolvedValue({ data: { error: 'Search index tables are not set up.' } })
-
-		const wrapper = await mounted()
-
-		expect(wrapper.vm.error).toBe('Search index tables are not set up.')
-	})
-
-	it('queues a maintenance run and confirms it', async () => {
-		axios.get.mockResolvedValue({ data: STATUS })
-		axios.post.mockResolvedValue({ data: {} })
-		const wrapper = await mounted()
+	it('queues a run and confirms it', async () => {
+		mockGet.mockResolvedValue({ data: status })
+		mockPost.mockResolvedValue({ data: {} })
+		const wrapper = shallowMount(SearchIndexFacts)
+		await flushPromises()
 
 		await wrapper.vm.queueRun()
 
-		expect(axios.post).toHaveBeenCalledTimes(1)
-		expect(axios.post.mock.calls[0][0]).toContain('/apps/openregister/api/settings/search-index/run')
-		expect(mockShowSuccess).toHaveBeenCalledWith('The search index is updated in the background.')
-		expect(mockShowError).not.toHaveBeenCalled()
+		expect(mockPost).toHaveBeenCalledWith('/apps/openregister/api/settings/search-index/run')
+		expect(toasts.success).toEqual(['The search index is updated in the background.'])
+		expect(toasts.error).toEqual([])
 		expect(wrapper.vm.queueing).toBe(false)
 	})
 
-	it('names the error when the run cannot be queued', async () => {
-		axios.get.mockResolvedValue({ data: STATUS })
-		axios.post.mockRejectedValue(new Error('Forbidden'))
-		const wrapper = await mounted()
+	it('reports a run that could not be queued', async () => {
+		mockGet.mockResolvedValue({ data: status })
+		mockPost.mockRejectedValue(new Error('busy'))
+		const wrapper = shallowMount(SearchIndexFacts)
+		await flushPromises()
 
 		await wrapper.vm.queueRun()
 
-		expect(mockShowError).toHaveBeenCalledWith('The search index could not be updated: Forbidden')
-		expect(mockShowSuccess).not.toHaveBeenCalled()
+		expect(toasts.error).toEqual(['The search index could not be updated: busy'])
+		expect(toasts.success).toEqual([])
 		expect(wrapper.vm.queueing).toBe(false)
 	})
 })

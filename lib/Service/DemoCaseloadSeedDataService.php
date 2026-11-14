@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\DemoCaseloadSeedDataServiceInterface;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCP\IUserSession;
@@ -51,7 +52,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/dossiq-app-scaffold/spec.md
  */
-class DemoCaseloadSeedDataService {
+class DemoCaseloadSeedDataService implements DemoCaseloadSeedDataServiceInterface {
 	/**
 	 * The shipped dataset, relative to this file.
 	 *

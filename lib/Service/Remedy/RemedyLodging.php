@@ -36,11 +36,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Remedy;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\RemedyLodgingInterface;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
-use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -53,7 +54,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-against-a-decided-case-req-rml-001
  */
-class RemedyLodging {
+class RemedyLodging implements RemedyLodgingInterface {
 	use SearchesObjects;
 
 	/**
@@ -272,7 +273,7 @@ class RemedyLodging {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'A remedy case whose objection failed could not be deleted again',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 		}
 	}//end withdrawOpened()

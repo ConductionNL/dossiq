@@ -41,9 +41,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseAssignmentService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAssignmentServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -79,21 +79,21 @@ class CaseAssignmentController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest              $request         The HTTP request.
-	 * @param CaseAssignmentService $assignment      Claim and release.
-	 * @param CaseAccessGuard       $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAssignmentServiceInterface $assignment      Claim and release.
+	 * @param CaseAccessGuardInterface       $caseAccessGuard Per-case authorization (fails closed).
 	 * @param IUserSession          $userSession     The current session.
 	 * @param IL10N                 $l10n            The translations.
 	 * @param LoggerInterface       $logger          The logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseAssignmentService $assignment,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAssignmentServiceInterface $assignment,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair\Support;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 
 /**
  * Finds a configured schema in the configured register.
@@ -34,10 +34,10 @@ final class RepairSchemas {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService OpenRegister access and the configured register.
+	 * @param SettingsServiceInterface $settingsService OpenRegister access and the configured register.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 	) {
 	}//end __construct()
 

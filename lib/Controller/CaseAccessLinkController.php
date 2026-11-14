@@ -36,9 +36,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseSharingService;
-use OCA\Dossiq\Service\Sharing\CaseLinkShares;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseLinkSharesInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseSharingServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -57,19 +57,19 @@ class CaseAccessLinkController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object
-	 * @param CaseSharingService $caseSharingService Answers whether the caller may open the case
-	 * @param CaseLinkShares $linkShares The share records the links are stored on
+	 * @param CaseSharingServiceInterface $caseSharingService Answers whether the caller may open the case
+	 * @param CaseLinkSharesInterface $linkShares The share records the links are stored on
 	 * @param IUserSession $userSession The user session
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
-		private CaseSharingService $caseSharingService,
-		private CaseLinkShares $linkShares,
+		private CaseSharingServiceInterface $caseSharingService,
+		private CaseLinkSharesInterface $linkShares,
 		private IUserSession $userSession,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

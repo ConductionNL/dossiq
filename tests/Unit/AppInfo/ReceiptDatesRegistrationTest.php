@@ -30,8 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar;
-use OCA\Dossiq\AppInfo\Registrar\WorkflowListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\WorkflowListenerRegistrar;
 use OCA\Dossiq\Listener\AcknowledgementOnCreateListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\IntakeRequirementsListener;

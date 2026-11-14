@@ -1,5 +1,5 @@
 {
-  "_note": "woo-review-recall-and-stopping (rows 19.12 and 19.13). A stopping rule declared before review, and elusion samples that estimate the recall. No x-openregister-hierarchy: OpenRegister refuses a parent that references another schema. The private authorization block comes with woo-review-triage section 6, once woo-request-scoped-access sets the grants; declaring it before then would lock the handler out.",
+  "_note": "woo-review-recall-and-stopping (rows 19.12 and 19.13). A stopping rule declared before review, and elusion samples that estimate the recall. No x-openregister-hierarchy: OpenRegister refuses a parent that references another schema. stoppingRule carries the private authorization block of REQ-WRT-006 (1.0.2): the woo-verzoek case type lists it under reviewerAccess.records for the case assignee to read and update, batch reviewers get nothing, and StoppingRules::declare reconciles the case in the same request.",
   "components": {
     "registers": {
       "dossiq": {
@@ -13,11 +13,18 @@
       "stoppingRule": {
         "slug": "stoppingRule",
         "icon": "FlagCheckered",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "searchable": false,
         "title": "Stopping rule",
         "description": "How much of the relevant material a review must find, declared before the first document is marked.",
         "type": "object",
+        "authorization": {
+          "scope": "private",
+          "read": ["dossiq-medewerkers", "dossiq-background-service"],
+          "create": ["dossiq-medewerkers", "dossiq-background-service"],
+          "update": ["dossiq-medewerkers", "dossiq-background-service"],
+          "delete": ["dossiq-coordinators"]
+        },
         "required": [
           "case",
           "targetRecall",

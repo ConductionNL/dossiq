@@ -43,7 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IUserSession;
 use Throwable;
@@ -299,7 +299,7 @@ class RetiredWebhookSteps {
 		}
 
 		$event = new $eventClass(
-			sourceApp: Application::APP_ID,
+			sourceApp: AppIdentity::APP_ID,
 			baseUrl: $base,
 			purpose: 'the webhook steps dossiq handed to Integriq',
 			timeoutSeconds: $timeout,

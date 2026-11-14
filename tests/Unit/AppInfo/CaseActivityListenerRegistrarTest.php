@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\CaseActivityListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\CaseActivityListenerRegistrar;
 use OCA\Dossiq\Listener\CaseLastActivityListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for the case activity listener registrar.
  *
- * @covers \OCA\Dossiq\AppInfo\Registrar\CaseActivityListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\CaseActivityListenerRegistrar
  */
 class CaseActivityListenerRegistrarTest extends TestCase {
 

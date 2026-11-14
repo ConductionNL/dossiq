@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
-use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 
 /**
@@ -57,10 +57,10 @@ class ZtcUrlValidityFilter {
 	/**
 	 * Constructor.
 	 *
-	 * @param ZgwService $zgwService Supplies the ObjectService and the ZGW mappings
+	 * @param ZgwServiceInterface $zgwService Supplies the ObjectService and the ZGW mappings
 	 */
 	public function __construct(
-		private readonly ZgwService $zgwService,
+		private readonly ZgwServiceInterface $zgwService,
 	) {
 	}//end __construct()
 

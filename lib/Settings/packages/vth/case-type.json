@@ -106,6 +106,7 @@
       "confidentiality": "zaakvertrouwelijk",
       "origin": "ambtshalve",
       "identifier": "handhavingszaak",
+      "adviceDecisionTable": "dossiq.lhs-intervention",
       "workflowDefinition": "6f5b5055-b2a5-5008-a177-528e4b2b4a72",
       "x-index": {
         "columns": [

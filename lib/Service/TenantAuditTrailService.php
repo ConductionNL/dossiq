@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\TenantAuditTrailServiceInterface;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/specs/tenant-compliance/spec.md
  */
-class TenantAuditTrailService {
+class TenantAuditTrailService implements TenantAuditTrailServiceInterface {
 	/**
 	 * OpenRegister register + schema holding tenant objects. An audit row is
 	 * anchored to the tenant ObjectEntity it concerns.

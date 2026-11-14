@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\Import\CaseRecordImport;
+use OCA\Dossiq\Kernel\Contracts\CaseRecordImportInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -45,10 +45,10 @@ class ImportCaseRecordsCommand extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseRecordImport $import The generic import.
+	 * @param CaseRecordImportInterface $import The generic import.
 	 */
 	public function __construct(
-		private readonly CaseRecordImport $import,
+		private readonly CaseRecordImportInterface $import,
 	) {
 		parent::__construct();
 	}//end __construct()

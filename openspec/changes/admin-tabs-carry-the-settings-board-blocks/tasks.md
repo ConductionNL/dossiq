@@ -24,5 +24,5 @@
 - [x] 2.3 Backend: a case type a package placed carries `shipped` and `package`; a copy does not
   - Files: lib/Settings/dossiq_register.json, lib/Service/CaseDefinition/PackageWriter.php, lib/Service/CaseType/DerivedCaseTypePayload.php
   - Test: tests/Unit/Service/CaseDefinition/PackageWriterGoldenTest.php, tests/Unit/Service/CaseType/DerivedCaseTypePayloadTest.php
-- [ ] 2.4 Case types list: the quick filter Shipped and the row line Shipped / Own, once 2.3 is on the instance
+- [x] 2.4 Case types list: the quick filter Shipped and the row line Shipped / Own, once 2.3 is on the instance
 - [ ] 2.2 OpenRegister: rows in the tables and in the index, what a run indexed, and a POST that queues a maintenance run

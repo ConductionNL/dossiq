@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue;
 
+use OCA\Dossiq\Kernel\Contracts\QueueUrgencySettingsInterface;
 use OCA\Dossiq\Service\SettingsService;
 
 /**
@@ -35,7 +36,7 @@ use OCA\Dossiq\Service\SettingsService;
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
-class QueueUrgencySettings {
+class QueueUrgencySettings implements QueueUrgencySettingsInterface {
 
 	public const KEY_CRITICAL_DAYS = 'queue_critical_days';
 	public const KEY_WARNING_DAYS = 'queue_warning_days';

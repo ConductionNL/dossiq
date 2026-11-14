@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Kernel\Contracts\BezwaarAuditTrailInterface;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
@@ -55,12 +56,7 @@ use Throwable;
  *
  * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
  */
-class BezwaarAuditTrail {
-
-	/**
-	 * The action prefix of every bezwaar entry.
-	 */
-	public const ACTION_PREFIX = 'dossiq.bezwaar.';
+class BezwaarAuditTrail implements BezwaarAuditTrailInterface {
 
 	/**
 	 * Awb art. 7:2 — hearing scheduled / invitation sent.

@@ -47,6 +47,7 @@ namespace OCA\Dossiq\Service\Intake;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\AdmissibilityJudgementInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Notification\ApplicantMessage;
@@ -61,7 +62,7 @@ use Throwable;
  *
  * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
-class AdmissibilityJudgement {
+class AdmissibilityJudgement implements AdmissibilityJudgementInterface {
 
 	/**
 	 * The case type property holding the declaration.

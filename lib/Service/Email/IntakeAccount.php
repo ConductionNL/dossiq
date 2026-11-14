@@ -37,7 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\IntakeAccountInterface;
 use OCP\IAppConfig;
 
 /**
@@ -47,7 +48,7 @@ use OCP\IAppConfig;
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  */
-class IntakeAccount {
+class IntakeAccount implements IntakeAccountInterface {
 
 	/**
 	 * The app-config key holding the picked account id.
@@ -86,7 +87,7 @@ class IntakeAccount {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function accountId(): int {
-		return (int)$this->appConfig->getValueString(Application::APP_ID, self::ACCOUNT_KEY, '0');
+		return (int)$this->appConfig->getValueString(AppIdentity::APP_ID, self::ACCOUNT_KEY, '0');
 	}//end accountId()
 
 	/**
@@ -98,7 +99,7 @@ class IntakeAccount {
 	 */
 	public function folder(): string {
 		$folder = trim(
-			$this->appConfig->getValueString(Application::APP_ID, self::FOLDER_KEY, self::DEFAULT_FOLDER)
+			$this->appConfig->getValueString(AppIdentity::APP_ID, self::FOLDER_KEY, self::DEFAULT_FOLDER)
 		);
 		if ($folder === '') {
 			return self::DEFAULT_FOLDER;

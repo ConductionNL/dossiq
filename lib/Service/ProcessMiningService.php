@@ -47,11 +47,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers;
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\ProcessMiningServiceInterface;
 use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
 use OCA\Dossiq\Service\ProcessMining\PhaseSummary;
+use OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
 use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
 use OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder;
@@ -62,7 +63,7 @@ use OCA\Dossiq\Service\Support\LanguageMapText;
  *
  * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
-class ProcessMiningService {
+class ProcessMiningService implements ProcessMiningServiceInterface {
 	/**
 	 * Constructor.
 	 *

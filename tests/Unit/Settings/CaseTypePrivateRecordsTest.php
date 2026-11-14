@@ -105,7 +105,9 @@ class CaseTypePrivateRecordsTest extends TestCase {
 	 */
 	public function testNoListedRecordIsReadableByAllUsers(): void {
 		$listed = ($this->privateRecordSchemas()['woo-verzoek'] ?? []);
-		foreach (['wooDocumentAssessment', 'reviewBatch', 'triageRule', 'documentReview', 'wooSearchPlan', 'wooExclusion', 'wooCollectionQuery'] as $slug) {
+		$expected = ['wooDocumentAssessment', 'reviewBatch', 'triageRule', 'documentReview', 'wooSearchPlan', 'wooExclusion', 'wooCollectionQuery'];
+		$expected[] = 'stoppingRule';
+		foreach ($expected as $slug) {
 			self::assertContains($slug, $listed);
 		}
 
@@ -116,4 +118,36 @@ class CaseTypePrivateRecordsTest extends TestCase {
 			}
 		}
 	}//end testNoListedRecordIsReadableByAllUsers()
+
+	/**
+	 * Both Woo request versions grant the stopping rule to the case assignee,
+	 * who reads and updates it; batch reviewers are not granted it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-recall-and-stopping/tasks.md#1-the-stopping-rule
+	 */
+	public function testTheStoppingRuleIsGrantedToTheAssigneeOnly(): void {
+		$entries = [];
+		foreach (($this->merged['components']['objects'] ?? []) as $object) {
+			$isWooRequest = (($object['@self']['schema'] ?? '') === 'caseType' && ($object['@self']['slug'] ?? '') === 'woo-verzoek');
+			if ($isWooRequest === false) {
+				continue;
+			}
+
+			foreach ((array)($object['reviewerAccess']['records'] ?? []) as $record) {
+				if (($record['schemaKey'] ?? '') === 'stopping_rule_schema') {
+					$entries[] = $record;
+				}
+			}
+		}
+
+		self::assertNotSame(expected: [], actual: $entries);
+		foreach ($entries as $record) {
+			self::assertSame(
+				expected: ['schemaKey' => 'stopping_rule_schema', 'caseField' => 'case', 'readers' => 'assignee', 'assigneeMay' => 'update'],
+				actual: $record
+			);
+		}
+	}//end testTheStoppingRuleIsGrantedToTheAssigneeOnly()
 }//end class

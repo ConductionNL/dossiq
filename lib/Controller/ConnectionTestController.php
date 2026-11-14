@@ -26,8 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Starter\ConnectionTestService;
-use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
+use OCA\Dossiq\Kernel\Contracts\ConnectionTestServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StufRegisterAccessInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -55,15 +55,15 @@ class ConnectionTestController extends Controller {
 	 *
 	 * @param string                $appName The app name.
 	 * @param IRequest              $request The HTTP request.
-	 * @param ConnectionTestService $probe   The live probe.
-	 * @param StufRegisterAccess    $stufRegister The configured StUF endpoints.
+	 * @param ConnectionTestServiceInterface $probe   The live probe.
+	 * @param StufRegisterAccessInterface    $stufRegister The configured StUF endpoints.
 	 * @param LoggerInterface       $logger  Logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ConnectionTestService $probe,
-		private readonly StufRegisterAccess $stufRegister,
+		private readonly ConnectionTestServiceInterface $probe,
+		private readonly StufRegisterAccessInterface $stufRegister,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -106,7 +106,7 @@ class ConnectionTestController extends Controller {
 	private function endpoint(string $endpointId): array|JSONResponse {
 		try {
 			$endpoints = $this->stufRegister->findAll(
-				schema: StufRegisterAccess::SCHEMA_ENDPOINT,
+				schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT,
 				filters: ['id' => $endpointId],
 				limit: 1
 			);
@@ -140,7 +140,7 @@ class ConnectionTestController extends Controller {
 	private function withoutUrl(): JSONResponse {
 		return new JSONResponse(
 			[
-				'state' => ConnectionTestService::FAILED,
+				'state' => ConnectionTestServiceInterface::FAILED,
 				'endpoint' => '',
 				'status' => 0,
 				'reason' => 'The endpoint has no URL.',

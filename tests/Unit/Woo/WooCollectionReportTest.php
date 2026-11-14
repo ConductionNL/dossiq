@@ -273,4 +273,28 @@ class WooCollectionReportTest extends TestCase {
 		self::assertSame([['document_assessed', 409], ['document_not_on_case', 404], ['unknown_reason', 400], ['document_excluded', 409]], $refusals);
 		self::assertSame('A', $this->register->all('wooExclusion')[0]['custodian']);
 	}//end testExcludingRefusesAnAssessedAnUnknownOrARepeatedDocument()
+
+	public function testADuplicateIsTheCaseDocumentWithTheSameHash(): void {
+		$this->document(id: 'doc-1', custodian: 'A');
+		$this->document(id: 'doc-2', custodian: 'B');
+		$this->register->seed('informatieobject', 'doc-1', ['integrity' => ['algorithm' => 'sha_256', 'value' => 'aaa']]);
+		$this->register->seed('informatieobject', 'doc-2', ['integrity' => ['algorithm' => 'sha_256', 'value' => 'bbb']]);
+
+		self::assertSame('doc-2', $this->collection->duplicateOf(caseId: self::CASE_ID, sha256: 'bbb'));
+		self::assertSame('', $this->collection->duplicateOf(caseId: self::CASE_ID, sha256: 'ccc'));
+		self::assertSame('', $this->collection->duplicateOf(caseId: 'another-case', sha256: 'aaa'), 'only this case\'s documents count');
+	}//end testADuplicateIsTheCaseDocumentWithTheSameHash()
+
+	public function testARecordedExclusionDropsEmptyFieldsAndIsStampedWithTheCase(): void {
+		$saved = $this->collection->record(
+			caseId: self::CASE_ID,
+			fields: ['source' => 'files', 'fileName' => 'kapot.msg', 'reason' => 'unreadable', 'note' => '', 'custodian' => null]
+		);
+
+		self::assertSame(self::CASE_ID, $saved['case']);
+		self::assertSame('kapot.msg', $saved['fileName']);
+		self::assertArrayNotHasKey('note', $saved);
+		self::assertArrayNotHasKey('custodian', $saved);
+		self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $saved['excludedAt']);
+	}//end testARecordedExclusionDropsEmptyFieldsAndIsStampedWithTheCase()
 }//end class

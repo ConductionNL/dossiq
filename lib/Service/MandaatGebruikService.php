@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\MandaatGebruikServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -38,7 +39,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
  */
-class MandaatGebruikService {
+class MandaatGebruikService implements MandaatGebruikServiceInterface {
 	use SearchesObjects;
 
 	/**

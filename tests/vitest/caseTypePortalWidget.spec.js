@@ -180,3 +180,85 @@ describe('CaseTypePortalWidget', () => {
 		expect(w.findComponent({ name: 'NcButton' }).props('disabled')).toBe(false)
 	})
 })
+
+describe('CaseTypePortalWidget withdrawal and writable editing', () => {
+	const WITH_WITHDRAWAL = {
+		...CASE_TYPE,
+		portalWithdrawal: {
+			targetStatus: 'st-review',
+			openStatuses: ['st-intake'],
+			closedReason: 'Closed',
+			confirmText: 'Are you sure?',
+		},
+	}
+
+	it('renders the withdrawal block when a target status is stored, and saves its edits', async () => {
+		answer(WITH_WITHDRAWAL)
+		mockPatch.mockResolvedValue({ data: {} })
+		const w = await mountWidget()
+
+		expect(w.find('[data-testid="case-type-portal-withdrawal"]').exists()).toBe(true)
+
+		const selects = w.findAllComponents({ name: 'NcSelect' })
+		// The status-after-withdrawal select is the only single-value one.
+		const targetStatus = selects.find((s) => s.props('inputLabel') === 'Status after withdrawal')
+		targetStatus.vm.$emit('update:modelValue', { id: 'st-intake', label: 'Intake' })
+		// The confirmation and closed-reason text fields are unique to the block.
+		const fields = w.findAllComponents({ name: 'NcTextField' })
+		fields.find((f) => f.props('label') === 'Confirmation text').vm.$emit('update:modelValue', 'Really?')
+		fields.find((f) => f.props('label') === 'Sentence when closed' && f.props('modelValue') === 'Closed').vm.$emit('update:modelValue', 'Not now')
+		await flushPromises()
+
+		await w.find('[data-testid="case-type-portal-save"]').trigger('click')
+		await flushPromises()
+
+		const body = mockPatch.mock.calls[0][1]
+		expect(body.portalWithdrawal.targetStatus).toBe('st-intake')
+		expect(body.portalWithdrawal.confirmText).toBe('Really?')
+		expect(body.portalWithdrawal.closedReason).toBe('Not now')
+	})
+
+	it('turning the withdrawal off drops it from what is saved', async () => {
+		answer(WITH_WITHDRAWAL)
+		mockPatch.mockResolvedValue({ data: {} })
+		const w = await mountWidget()
+
+		w.find('[data-testid="case-type-portal-withdrawal"]').element.dispatchEvent(new Event('click'))
+		w.findAllComponents({ name: 'NcCheckboxRadioSwitch' })
+			.find((c) => c.attributes('data-testid') === 'case-type-portal-withdrawal')
+			.vm.$emit('update:modelValue', false)
+		await flushPromises()
+
+		await w.find('[data-testid="case-type-portal-save"]').trigger('click')
+		await flushPromises()
+
+		expect(mockPatch.mock.calls[0][1].portalWithdrawal.targetStatus ?? '').toBe('')
+	})
+
+	it('choosing statuses for a writable field writes their ids', async () => {
+		mockPatch.mockResolvedValue({ data: {} })
+		const w = await mountWidget()
+
+		const writableSelect = w.findAllComponents({ name: 'NcSelect' })
+			.find((s) => JSON.stringify(s.props('modelValue')) === JSON.stringify([{ id: 'st-intake', label: 'Intake' }, { id: 'st-gone', label: 'st-gone' }]))
+		writableSelect.vm.$emit('update:modelValue', [{ id: 'st-review', label: 'Review' }])
+		await flushPromises()
+
+		await w.find('[data-testid="case-type-portal-save"]').trigger('click')
+		await flushPromises()
+
+		const row = mockPatch.mock.calls[0][1].portalWritable.find((r) => r.field === 'description')
+		expect(row.openStatuses).toEqual(['st-review'])
+	})
+
+	it('labels the ceiling fields and the ways in', async () => {
+		const w = await mountWidget()
+
+		expect(w.vm.fieldLabel('description')).toBe('Description of the request')
+		expect(w.vm.fieldLabel('other')).toBe('other')
+		expect(w.vm.wayInLabel('reference')).toContain('case number')
+		expect(w.vm.wayInLabel('account')).toContain('DigiD')
+		expect(w.vm.idsOf(null)).toEqual([])
+		expect(w.vm.optionsFor(null)).toEqual([])
+	})
+})

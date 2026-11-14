@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Kernel\Contracts\StatusTransitionServiceInterface;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCA\OpenRegister\BulkAction\BulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
@@ -68,7 +68,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param StatusTransitionService $engine The only write path for case.status.
+	 * @param StatusTransitionServiceInterface $engine The only write path for case.status.
 	 * @param IL10N                   $l10n   Localisation, for the label an operator reads.
 	 *
 	 * @return void
@@ -76,7 +76,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly StatusTransitionService $engine,
+		private readonly StatusTransitionServiceInterface $engine,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()

@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeReaderInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SerialisedResult;
@@ -38,7 +39,7 @@ use OCA\Dossiq\Service\Support\SerialisedResult;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class CaseTypeReader {
+class CaseTypeReader implements CaseTypeReaderInterface {
 
 	/**
 	 * Constructor.

@@ -48,6 +48,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Kernel\Contracts\OpenRegisterGrantsGatewayInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -61,7 +62,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class OpenRegisterGrantsGateway {
+class OpenRegisterGrantsGateway implements OpenRegisterGrantsGatewayInterface {
 
 	/**
 	 * OpenRegister's RBAC evaluator, resolved by name.

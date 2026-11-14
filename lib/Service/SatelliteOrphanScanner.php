@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\SatelliteOrphanScannerInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
  */
-class SatelliteOrphanScanner {
+class SatelliteOrphanScanner implements SatelliteOrphanScannerInterface {
 
 	use SearchesObjects;
 
@@ -218,7 +219,6 @@ class SatelliteOrphanScanner {
 			return [];
 		}
 	}//end readSatelliteRows()
-
 
 	/**
 	 * Resolve OpenRegister's OrganisationMapper from the DI container.

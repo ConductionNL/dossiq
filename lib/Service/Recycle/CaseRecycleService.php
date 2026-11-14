@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Recycle;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\CaseRecycleServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -56,7 +57,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseRecycleService {
+class CaseRecycleService implements CaseRecycleServiceInterface {
 
 	use SearchesObjects;
 
@@ -84,13 +85,6 @@ class CaseRecycleService {
 	 * @var string
 	 */
 	public const RESTORE_ACTION = 'object.restored';
-
-	/**
-	 * How many deleted rows one page of the lens holds.
-	 *
-	 * @var int
-	 */
-	public const PAGE_SIZE = 50;
 
 	/**
 	 * OpenRegister's register mapper.
