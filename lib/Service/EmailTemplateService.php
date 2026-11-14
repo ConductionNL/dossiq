@@ -270,6 +270,23 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 			throw new RuntimeException('Template not found');
 		}
 
+		$case = $this->draftableCase(caseId: $caseId);
+
+		return $this->rendered(template: $template, case: $case) + ['caseId' => $caseId, 'templateId' => $templateId];
+	}//end prefillDraft()
+
+	/**
+	 * The case a draft is written for, refused when it is missing or final.
+	 *
+	 * @param string $caseId Case UUID.
+	 *
+	 * @return array<string, mixed> The case.
+	 *
+	 * @throws \RuntimeException When the case is missing or final.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function draftableCase(string $caseId): array {
 		$case = $this->repository->findCase(caseId: $caseId);
 		if ($case === null) {
 			throw new RuntimeException('Case not found');
@@ -279,12 +296,47 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 			throw new RuntimeException('Case is in a final state — drafting is disabled');
 		}
 
+		return $case;
+	}//end draftableCase()
+
+	/**
+	 * The template's subject and body resolved against the case.
+	 *
+	 * @param array<string, mixed> $template The template.
+	 * @param array<string, mixed> $case     The case.
+	 *
+	 * @return array{subject: string, body: string, unresolved: array<int, string>}
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function rendered(array $template, array $case): array {
 		$vars = $this->buildVariableMap(case: $case);
 		$rawSubject = (string)($template['subject'] ?? '');
 		$rawBody = (string)($template['body'] ?? '');
 		$subject = $this->resolve(text: $rawSubject, vars: $vars);
 		$body = $this->resolve(text: $rawBody, vars: $vars);
-		$unresolved = array_values(
+		$unresolved = $this->unresolvedIn(rawSubject: $rawSubject, rawBody: $rawBody, vars: $vars);
+
+		return [
+			'subject' => $subject,
+			'body' => $body,
+			'unresolved' => $unresolved,
+		];
+	}//end rendered()
+
+	/**
+	 * The variable names the subject and body name but the map does not hold.
+	 *
+	 * @param string                $rawSubject The template subject.
+	 * @param string                $rawBody    The template body.
+	 * @param array<string, string> $vars       Variable map.
+	 *
+	 * @return array<int, string> The unresolved names, each once.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function unresolvedIn(string $rawSubject, string $rawBody, array $vars): array {
+		return array_values(
 			array_unique(
 				array_merge(
 					$this->collectUnresolved(text: $rawSubject, vars: $vars),
@@ -292,15 +344,7 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 				)
 			)
 		);
-
-		return [
-			'subject' => $subject,
-			'body' => $body,
-			'unresolved' => $unresolved,
-			'caseId' => $caseId,
-			'templateId' => $templateId,
-		];
-	}//end prefillDraft()
+	}//end unresolvedIn()
 
 	/**
 	 * Resolve `{{name}}` placeholders against the variable map.
