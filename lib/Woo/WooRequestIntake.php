@@ -338,35 +338,11 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	 */
 	public function receive(array $answers, string $receivedAt = '', string $origin = 'portal-form'): array {
 		try {
-			$answersMap = $this->receivedAnswers;
-			if ($answersMap === null) {
-				throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The date reader is not available.');
-			}
-
-			$wooRequest = (new WooRequestForm())->normalise(request: $answersMap->toRequest(answers: $answers, origin: $origin));
-			$intake = $answersMap->intake(answers: $answers, origin: $origin, receivedAt: $receivedAt);
-
-			$objectService = $this->settingsService->getObjectService();
-			$register = $this->settingsService->getConfigValue('register');
-			if ($objectService === null || $register === '') {
-				throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'OpenRegister or the dossiq register is missing.');
-			}
-
-			// NO TERM ENGINE, NO CASE. A Woo request without a running
-			// statutory term is the state this intake exists to prevent, so
-			// it is refused before anything is written (REQ-WTO-002).
-			$receivedTerm = $this->receivedTerm;
-			if ($receivedTerm === null || $receivedTerm->isAvailable() === false) {
-				throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The term engine is not available.');
-			}
+			$request = $this->requestAndIntake(answers: $answers, receivedAt: $receivedAt, origin: $origin);
+			[$objectService, $register, $receivedTerm] = $this->writeTarget();
 
 			$caseType = $this->caseType(objectService: $objectService, register: $register);
-			$saved = $this->writeCase(
-				objectService: $objectService,
-				register: $register,
-				caseType: $caseType,
-				request: ['wooRequest' => $wooRequest, 'intake' => $intake]
-			);
+			$saved = $this->writeCase(objectService: $objectService, register: $register, caseType: $caseType, request: $request);
 		} catch (WooRequestRefused $e) {
 			// An unavailable dependency is `unavailable`; every other refusal is `refused`.
 			$outcome = ([WooRequestRefused::UNAVAILABLE => 'unavailable'][$e->getReason()] ?? 'refused');
@@ -376,6 +352,58 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 
 		return $this->termAnswer(receivedTerm: $receivedTerm, objectService: $objectService, register: $register, caseId: $saved['id']);
 	}//end receive()
+
+	/**
+	 * The normalised Woo request and its intake, read from the answers.
+	 *
+	 * @param array<string, mixed> $answers    The answers in opencatalogi's shape.
+	 * @param string               $receivedAt When the requester sent it (ISO 8601).
+	 * @param string               $origin     `portal-form` or `opencatalogi`.
+	 *
+	 * @return array{wooRequest: array<string, mixed>, intake: array<string, mixed>} The request to write.
+	 *
+	 * @throws WooRequestRefused When the date reader is unavailable or the answers are refused.
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
+	 */
+	private function requestAndIntake(array $answers, string $receivedAt, string $origin): array {
+		$answersMap = $this->receivedAnswers;
+		if ($answersMap === null) {
+			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The date reader is not available.');
+		}
+
+		$wooRequest = (new WooRequestForm())->normalise(request: $answersMap->toRequest(answers: $answers, origin: $origin));
+		$intake = $answersMap->intake(answers: $answers, origin: $origin, receivedAt: $receivedAt);
+
+		return ['wooRequest' => $wooRequest, 'intake' => $intake];
+	}//end requestAndIntake()
+
+	/**
+	 * The object service, register and term engine the case is written with.
+	 *
+	 * @return array{0: object, 1: string, 2: WooReceivedTerm} The object service, register and term engine.
+	 *
+	 * @throws WooRequestRefused When OpenRegister, the register or the term engine is unavailable.
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-armed-means-a-term-runs-counted-from-when-the-requester-sent-it-req-wto-002
+	 */
+	private function writeTarget(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		if ($objectService === null || $register === '') {
+			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'OpenRegister or the dossiq register is missing.');
+		}
+
+		// NO TERM ENGINE, NO CASE. A Woo request without a running
+		// statutory term is the state this intake exists to prevent, so
+		// it is refused before anything is written (REQ-WTO-002).
+		$receivedTerm = $this->receivedTerm;
+		if ($receivedTerm === null || $receivedTerm->isAvailable() === false) {
+			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The term engine is not available.');
+		}
+
+		return [$objectService, $register, $receivedTerm];
+	}//end writeTarget()
 
 	/**
 	 * Armed only when the written case's statutory term runs.
