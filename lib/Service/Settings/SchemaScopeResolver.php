@@ -126,17 +126,41 @@ class SchemaScopeResolver implements SchemaScopeResolverInterface {
 
 		$configured = trim($this->settingsService->getConfigValue($configKey));
 		if ($configured !== '') {
-			if ($this->identifies(candidates: $candidates, expected: $configured) === true) {
-				return self::IN_SCOPE;
-			}
-
-			return self::OUT_OF_SCOPE;
+			return $this->classifyAgainst(candidates: $candidates, expected: $configured);
 		}
 
 		// The key is absent. That says the configuration load never completed,
 		// which is a statement about setup and not about this object.
 		$this->reportMissingKey(configKey: $configKey, slug: $slug);
 
+		return $this->classifyBySlug(candidates: $candidates, slug: $slug);
+	}//end classify()
+
+	/**
+	 * In scope when the payload names the configured schema, out of scope otherwise.
+	 *
+	 * @param array<int, string> $candidates Every identity the payload offers for its schema.
+	 * @param string             $expected   The configured schema id.
+	 *
+	 * @return string IN_SCOPE or OUT_OF_SCOPE.
+	 */
+	private function classifyAgainst(array $candidates, string $expected): string {
+		if ($this->identifies(candidates: $candidates, expected: $expected) === true) {
+			return self::IN_SCOPE;
+		}
+
+		return self::OUT_OF_SCOPE;
+	}//end classifyAgainst()
+
+	/**
+	 * Classify against the live schema the slug names, or the slug alone when none is found.
+	 *
+	 * @param array<int, string> $candidates Every identity the payload offers for its schema.
+	 * @param string             $slug       The schema slug.
+	 *
+	 * @return string One of IN_SCOPE, OUT_OF_SCOPE or UNDECIDED.
+	 */
+	private function classifyBySlug(array $candidates, string $slug): string {
 		$live = $this->liveSchemaId(slug: $slug);
 		if ($live !== '') {
 			if ($this->identifies(candidates: $candidates, expected: $live) === true
@@ -153,7 +177,7 @@ class SchemaScopeResolver implements SchemaScopeResolverInterface {
 		}
 
 		return self::UNDECIDED;
-	}//end classify()
+	}//end classifyBySlug()
 
 	/**
 	 * Every identity the payload offers for its schema.

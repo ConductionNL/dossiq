@@ -138,19 +138,42 @@ class IntakeTermStartListener implements IEventListener {
 	public function handle(Event $event): void {
 		$entity = $this->clock->receipt->objectBeingReceived(event: $event);
 		if ($entity !== null) {
-			$sentAt = '';
-			if ($this->clock->receipt->sendsDraft(event: $event) === true) {
-				$sentAt = $this->clock->time->now()->format('c');
-			}
-
-			$this->setBeforeStore(entity: $entity, sentAt: $sentAt);
+			$this->stampBeforeStore(event: $event, entity: $entity);
 			return;
 		}
 
+		$this->stampCreated(event: $event);
+	}//end handle()
+
+	/**
+	 * Stamp the receipt dates onto a case being stored, its sent moment when a draft is sent.
+	 *
+	 * @param Event        $event  The creating or updating event.
+	 * @param ObjectEntity $entity The case being received.
+	 *
+	 * @return void
+	 */
+	private function stampBeforeStore(Event $event, ObjectEntity $entity): void {
+		$sentAt = '';
+		if ($this->clock->receipt->sendsDraft(event: $event) === true) {
+			$sentAt = $this->clock->time->now()->format('c');
+		}
+
+		$this->setBeforeStore(entity: $entity, sentAt: $sentAt);
+	}//end stampBeforeStore()
+
+	/**
+	 * Write the receipt dates onto a case stored without the creating event.
+	 *
+	 * @param Event $event The event.
+	 *
+	 * @return void
+	 */
+	private function stampCreated(Event $event): void {
 		// The created event, for a path that stored the case without the
 		// creating event. A draft's own create is not a receipt there either,
 		// and any other event answers null.
-		$payload = $this->clock->receipt->receivedObject(event: $event, for: self::class);
+		$payload = $this->receivedPayload(event: $event);
 		if ($payload === null) {
 			return;
 		}
@@ -166,7 +189,18 @@ class IntakeTermStartListener implements IEventListener {
 		}
 
 		$this->write(caseId: $caseId, changes: $changes);
-	}//end handle()
+	}//end stampCreated()
+
+	/**
+	 * The case a created event stored, null for a draft or any other event.
+	 *
+	 * @param Event $event The event.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function receivedPayload(Event $event): ?array {
+		return $this->clock->receipt->receivedObject(event: $event, for: self::class);
+	}//end receivedPayload()
 
 	/**
 	 * Set the stamp and the dates on a case that is about to be stored.

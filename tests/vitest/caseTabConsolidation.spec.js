@@ -390,9 +390,6 @@ describe('the container type this change depends on', () => {
 			// mention endpoint and the one note action dossiq adds.
 			'case-notes-panel': 'notes',
 			'case-change-proposals': 'portaliq-change-proposal-queue',
-			// decidiq's decisions, through the library integration widget,
-			// which says "Decidiq not available" when the leaf is absent.
-			'case-decisions-panel': 'decidesk-decisions',
 		}
 
 		// The tabs a library widget type draws from the manifest alone.
@@ -407,6 +404,12 @@ describe('the container type this change depends on', () => {
 		// integrationId] }`. Same failure it guards against, one level down.
 		const NESTED_LEAVES = {
 			'case-knowledge-panel': ['case-knowledge-pages', 'collectives'],
+			// decidiq's decisions, through the library integration widget,
+			// which says "Decidiq not available" when the leaf is absent. A
+			// group since the advice a decision table gave joined it
+			// (enforcement-intervention-from-the-case 3.3); the leaf moved one
+			// level down and the assertion follows it.
+			'case-decisions-panel': ['case-decidiq-decisions', 'decidesk-decisions'],
 		}
 		const registry = read(path.join(ROOT, 'src/registry.js'))
 

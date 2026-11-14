@@ -134,6 +134,7 @@ class SchemaSlugMap {
 		'automaticAction' => 'automatic_action_schema',
 		'lhsMatrix' => 'lhs_matrix_schema',
 		'lhsRecommendation' => 'lhs_recommendation_schema',
+		'decisionAdvice' => 'decision_advice_schema',
 		'case-location' => 'location_schema',
 		'objectionProceeding' => 'bezwaar_schema',
 		'bezwaaradviescommissie' => 'bezwaaradviescommissie_schema',

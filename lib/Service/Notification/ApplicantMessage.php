@@ -115,23 +115,12 @@ class ApplicantMessage {
 	 *
 	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
 	 */
-	public function send(
-		array $case,
-		array $caseType,
-		string $moment,
-		string $template,
-		array $context = [],
-	): array {
+	public function send(array $case, array $caseType, string $moment, string $template, array $context = []): array {
 		if ($this->declares(caseType: $caseType, moment: $moment) === false) {
 			return $this->outcome(sent: false, reason: 'moment-not-declared');
 		}
 
-		$notice = new ApplicantNotice();
-		$notice->case = $case;
-		$notice->moment = $moment;
-		$notice->template = $template;
-		$notice->context = $context;
-		$notice->recipient = $this->recipientOn(case: $case);
+		$notice = $this->noticeFor(caseRow: $case, moment: $moment, template: $template, context: $context);
 		if ($notice->recipient === '') {
 			return $this->noAddress(notice: $notice);
 		}
@@ -145,6 +134,27 @@ class ApplicantMessage {
 
 		return $this->sentOutcome(notice: $notice);
 	}//end send()
+
+	/**
+	 * The notice for one moment of a case, addressed to the applicant on it.
+	 *
+	 * @param array<string, mixed> $caseRow  The stored case.
+	 * @param string               $moment   The declared moment.
+	 * @param string               $template The template to render.
+	 * @param array<string, mixed> $context  What the template needs beside the case.
+	 *
+	 * @return ApplicantNotice
+	 */
+	private function noticeFor(array $caseRow, string $moment, string $template, array $context): ApplicantNotice {
+		$notice = new ApplicantNotice();
+		$notice->case = $caseRow;
+		$notice->moment = $moment;
+		$notice->template = $template;
+		$notice->context = $context;
+		$notice->recipient = $this->recipientOn(case: $caseRow);
+
+		return $notice;
+	}//end noticeFor()
 
 	/**
 	 * Name the case and the term instance the message goes under, and the moment it is sent.

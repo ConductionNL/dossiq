@@ -279,6 +279,22 @@ class DuplicatePolicy implements DuplicatePolicyInterface {
 			return;
 		}
 
+		$this->assertMayOverride(user: $user);
+		$this->assertReasonGiven(caseRow: $case);
+	}//end assertCreatable()
+
+	/**
+	 * Refuse a blocked duplicate when the account may not override.
+	 *
+	 * @param IUser|null $user The account filing the case.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the account may not override.
+	 *
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
+	 */
+	private function assertMayOverride(IUser|null $user): void {
 		if ($this->mayOverride(user: $user) === false) {
 			throw new RefusedException(
 				rule: self::RULE_BLOCKED,
@@ -287,8 +303,21 @@ class DuplicatePolicy implements DuplicatePolicyInterface {
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
+	}//end assertMayOverride()
 
-		if (trim((string)($case[self::FIELD_REASON] ?? '')) === '') {
+	/**
+	 * Refuse an overriding duplicate that does not say why it is filed.
+	 *
+	 * @param array<string, mixed> $caseRow The case as it would be written.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When no reason is given.
+	 *
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
+	 */
+	private function assertReasonGiven(array $caseRow): void {
+		if (trim((string)($caseRow[self::FIELD_REASON] ?? '')) === '') {
 			throw new RefusedException(
 				rule: self::RULE_BLOCKED,
 				sentence: 'Say why this case is filed although one like it already exists. '
@@ -296,7 +325,7 @@ class DuplicatePolicy implements DuplicatePolicyInterface {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
-	}//end assertCreatable()
+	}//end assertReasonGiven()
 
 	/**
 	 * The uuids of the matches, for the case field that records what it was

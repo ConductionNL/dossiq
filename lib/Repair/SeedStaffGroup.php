@@ -265,29 +265,51 @@ class SeedStaffGroup implements IRepairStep {
 			return [];
 		}
 
+		return $this->assigneesIn(objectService: $objectService, register: $register, caseSchema: $caseSchema);
+	}//end assignees()
+
+	/**
+	 * Every user a case in the case register is assigned to, page by page.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register      The register.
+	 * @param string $caseSchema    The case schema.
+	 *
+	 * @return array<int, string> User ids, possibly repeated.
+	 */
+	private function assigneesIn(object $objectService, string $register, string $caseSchema): array {
 		$userIds = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
-			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)]
-			);
+			$filters = ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)];
+			$rows = $this->searchObjectsAsArraysUnscoped(objectService: $objectService, register: $register, schema: $caseSchema, filters: $filters);
 
-			foreach ($rows as $row) {
-				$assignee = ($row['assignee'] ?? null);
-				if (is_string($assignee) === true && trim($assignee) !== '') {
-					$userIds[] = trim($assignee);
-				}
-			}
-
+			$userIds = array_merge($userIds, $this->assigneesOf(rows: $rows));
 			if (count($rows) < self::PAGE) {
 				break;
 			}
 		}
 
 		return $userIds;
-	}//end assignees()
+	}//end assigneesIn()
+
+	/**
+	 * The assignee of every row that names one.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The case rows.
+	 *
+	 * @return array<int, string> User ids, possibly repeated.
+	 */
+	private function assigneesOf(array $rows): array {
+		$userIds = [];
+		foreach ($rows as $row) {
+			$assignee = ($row['assignee'] ?? null);
+			if (is_string($assignee) === true && trim($assignee) !== '') {
+				$userIds[] = trim($assignee);
+			}
+		}
+
+		return $userIds;
+	}//end assigneesOf()
 
 	/**
 	 * Add every existing account that is not a member yet.

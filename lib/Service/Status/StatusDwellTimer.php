@@ -117,10 +117,7 @@ class StatusDwellTimer {
 		}
 
 		$config = $this->dwellTimerConfig(
-			caseId: $caseId,
-			statusTypeId: $statusTypeId,
-			maximumDwell: $maximumDwell,
-			statusName: $statusName
+			dwell: new StatusDwell(caseId: $caseId, statusTypeId: $statusTypeId, maximumDwell: $maximumDwell, statusName: $statusName)
 		);
 
 		return $this->armOnEngine(engine: $engine, config: $config, caseId: $caseId);
@@ -129,27 +126,24 @@ class StatusDwellTimer {
 	/**
 	 * The timer configuration of a status's maximum dwell.
 	 *
-	 * @param string $caseId       The case.
-	 * @param string $statusTypeId The status entered.
-	 * @param int    $maximumDwell The maximum, in working days.
-	 * @param string $statusName   The status's name, for the timer's title.
+	 * @param StatusDwell $dwell The case, the status entered, the maximum in working days and the status's name.
 	 *
 	 * @return array<string, mixed> The engine configuration.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function dwellTimerConfig(string $caseId, string $statusTypeId, int $maximumDwell, string $statusName): array {
+	private function dwellTimerConfig(StatusDwell $dwell): array {
 		return [
 			'subjectType' => 'object',
-			'subjectUuid' => $caseId,
+			'subjectUuid' => $dwell->caseId,
 			'appId' => 'dossiq',
-			'title' => $this->dwellTitle(statusName: $statusName, statusTypeId: $statusTypeId),
+			'title' => $this->dwellTitle(statusName: $dwell->statusName, statusTypeId: $dwell->statusTypeId),
 			'purpose' => 'due',
 			'legalEffect' => 'none',
-			'sla' => $this->dwellSla(maximumDwell: $maximumDwell),
+			'sla' => $this->dwellSla(maximumDwell: $dwell->maximumDwell),
 			'escalationRules' => $this->dwellEscalationRules(),
 			'anchorEvent' => self::ANCHOR_EVENT,
-			'metadata' => $this->dwellMetadata(caseId: $caseId, statusTypeId: $statusTypeId, maximumDwell: $maximumDwell),
+			'metadata' => $this->dwellMetadata(dwell: $dwell),
 		];
 	}//end dwellTimerConfig()
 
@@ -213,21 +207,19 @@ class StatusDwellTimer {
 	/**
 	 * The timer's metadata, naming the case and the status it guards.
 	 *
-	 * @param string $caseId       The case.
-	 * @param string $statusTypeId The status entered.
-	 * @param int    $maximumDwell The maximum, in working days.
+	 * @param StatusDwell $dwell The case, the status entered and the maximum in working days.
 	 *
 	 * @return array<string, mixed> The metadata.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function dwellMetadata(string $caseId, string $statusTypeId, int $maximumDwell): array {
+	private function dwellMetadata(StatusDwell $dwell): array {
 		return [
 			'source' => self::METADATA_SOURCE,
 			'kind' => self::KIND_STATUS_DWELL,
-			'caseId' => $caseId,
-			'statusTypeId' => $statusTypeId,
-			'maximumDwell' => $maximumDwell,
+			'caseId' => $dwell->caseId,
+			'statusTypeId' => $dwell->statusTypeId,
+			'maximumDwell' => $dwell->maximumDwell,
 		];
 	}//end dwellMetadata()
 

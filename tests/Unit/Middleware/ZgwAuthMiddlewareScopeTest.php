@@ -25,51 +25,34 @@ namespace OCA\Dossiq\Tests\Unit\Middleware;
 use OCA\Dossiq\Controller\ZgwController;
 use OCA\Dossiq\Middleware\ZgwAuthException;
 use OCA\Dossiq\Middleware\ZgwAuthMiddleware;
-use OCA\Dossiq\Service\ZgwJwtValidator;
+use OCA\Dossiq\Service\Zgw\ApiCredentialResolver;
+use OCA\Dossiq\Service\ZgwAuthValidationException;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use ReflectionProperty;
 
 /**
  * Which method needs which scope, which resource prefix a component accepts,
- * and that the signature is checked even for a superuser.
+ * and that the caller is authenticated even when its consumer is a superuser.
  *
  * @covers \OCA\Dossiq\Middleware\ZgwAuthMiddleware
  * @covers \OCA\Dossiq\Middleware\ZgwAuthException
+ * @uses   \OCA\Dossiq\Service\Zgw\ApiCredentialResolver
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class ZgwAuthMiddlewareScopeTest extends TestCase {
 
 	/**
-	 * The signature validator double.
+	 * The credential resolver double.
 	 *
-	 * @var ZgwJwtValidator&MockObject
+	 * @var ApiCredentialResolver&MockObject
 	 */
-	private ZgwJwtValidator&MockObject $validator;
+	private ApiCredentialResolver&MockObject $resolver;
 
 	/**
-	 * The issuers the consumer mapper was asked about.
-	 *
-	 * @var list<array<string, mixed>>
-	 */
-	public array $lookups = [];
-
-	/**
-	 * A bearer header whose payload names the issuer.
-	 *
-	 * @param string $issuer The issuer.
-	 *
-	 * @return string
-	 */
-	private static function bearer(string $issuer): string {
-		return 'Bearer eyJhbGciOiJIUzI1NiJ9.' . base64_encode((string)json_encode(['iss' => $issuer])) . '.c2ln';
-	}//end bearer()
-
-	/**
-	 * The middleware for one request by issuer app-1, whose consumer carries $config.
+	 * The middleware for one request whose caller resolves to a consumer carrying $config.
 	 *
 	 * @param string               $method The HTTP method.
 	 * @param string               $group  The ZGW API group in the URI.
@@ -79,13 +62,8 @@ class ZgwAuthMiddlewareScopeTest extends TestCase {
 	 */
 	private function middleware(string $method, string $group, array $config): ZgwAuthMiddleware {
 		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->with('Authorization')->willReturn(self::bearer(issuer: 'app-1'));
 		$request->method('getMethod')->willReturn($method);
 		$request->method('getRequestUri')->willReturn('/index.php/apps/dossiq/api/zgw/' . $group . '/v1/items');
-
-		$this->validator = $this->createMock(ZgwJwtValidator::class);
-
-		$middleware = new ZgwAuthMiddleware($request, $this->validator, $this->createMock(LoggerInterface::class));
 
 		$consumer = new class ($config) {
 			/**
@@ -106,33 +84,10 @@ class ZgwAuthMiddlewareScopeTest extends TestCase {
 			}
 		};
 
-		$mapper = new class ($consumer, $this) {
-			/**
-			 * Constructor.
-			 *
-			 * @param object                     $consumer The consumer to answer.
-			 * @param ZgwAuthMiddlewareScopeTest $test     The test keeping the lookups.
-			 */
-			public function __construct(private readonly object $consumer, private readonly ZgwAuthMiddlewareScopeTest $test) {
-			}
+		$this->resolver = $this->createMock(ApiCredentialResolver::class);
+		$this->resolver->method('resolve')->with($request)->willReturn($consumer);
 
-			/**
-			 * Record the filters and answer the consumer.
-			 *
-			 * @param array<string, mixed> $filters The filters.
-			 *
-			 * @return list<object>
-			 */
-			public function findAll(array $filters = []): array {
-				$this->test->lookups[] = $filters;
-
-				return [$this->consumer];
-			}
-		};
-
-		(new ReflectionProperty(ZgwAuthMiddleware::class, 'consumerMapper'))->setValue($middleware, $mapper);
-
-		return $middleware;
+		return new ZgwAuthMiddleware($request, $this->resolver, $this->createMock(LoggerInterface::class));
 	}//end middleware()
 
 	/**
@@ -246,32 +201,34 @@ class ZgwAuthMiddlewareScopeTest extends TestCase {
 	}//end testTheRightScopeOnTheWrongComponentDoesNotCover()
 
 	/**
-	 * The validator sees the whole header and the consumer is looked up by the token's issuer.
+	 * A superuser skips the scope check but never authentication: a credential
+	 * that does not resolve is refused with 401 whatever the consumer may do.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-a-calling-system-is-an-openregister-consumer-req-paa-01
 	 */
-	public function testTheIssuerIsLookedUpAfterTheSignatureIsChecked(): void {
-		$middleware = $this->middleware(method: 'GET', group: 'zaken', config: ['scopes' => [['component' => 'zrc', 'scopes' => ['zaken.lezen']]]]);
-		$this->validator->expects($this->once())->method('validate')->with(self::bearer(issuer: 'app-1'));
+	public function testASuperuserIsStillAuthenticated(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getMethod')->willReturn('DELETE');
+		$request->method('getRequestUri')->willReturn('/index.php/apps/dossiq/api/zgw/onbekend/v1/items');
+		$resolver = $this->createMock(ApiCredentialResolver::class);
+		$resolver->expects($this->once())->method('resolve')->willThrowException(new ZgwAuthValidationException('The token does not match the shared secret'));
 
-		$this->assertNull($this->refusal($middleware));
-		$this->assertSame([['name' => 'app-1']], $this->lookups);
-	}//end testTheIssuerIsLookedUpAfterTheSignatureIsChecked()
+		$refusal = $this->refusal(new ZgwAuthMiddleware($request, $resolver, $this->createMock(LoggerInterface::class)));
+
+		$this->assertSame(401, $refusal?->getStatusCode());
+		$this->assertSame('The token is not valid.', $refusal?->getMessage());
+	}//end testASuperuserIsStillAuthenticated()
 
 	/**
-	 * A superuser skips the scope check but never the signature check.
+	 * A superuser consumer that resolves passes any method on any group.
 	 *
 	 * @return void
 	 */
-	public function testASuperuserIsStillSignatureChecked(): void {
-		$middleware = $this->middleware(method: 'DELETE', group: 'onbekend', config: ['superuser' => true]);
-		$this->validator->expects($this->once())->method('validate')->willThrowException(new \RuntimeException('bad signature'));
-
-		$refusal = $this->refusal($middleware);
-
-		$this->assertSame('Authenticatiegegevens zijn niet geldig.', $refusal?->getMessage());
-		$this->assertSame([], $this->lookups);
-	}//end testASuperuserIsStillSignatureChecked()
+	public function testAResolvedSuperuserSkipsTheScopeCheck(): void {
+		$this->assertNull($this->refusal($this->middleware(method: 'DELETE', group: 'onbekend', config: ['superuser' => true])));
+	}//end testAResolvedSuperuserSkipsTheScopeCheck()
 
 	/**
 	 * The refusal's own status code is what afterException answers with.
@@ -281,12 +238,16 @@ class ZgwAuthMiddlewareScopeTest extends TestCase {
 	public function testAfterExceptionAnswersWithTheRefusalsStatus(): void {
 		$middleware = $this->middleware(method: 'GET', group: 'zaken', config: []);
 
-		$response = $middleware->afterException(null, 'index', new ZgwAuthException(message: 'Token expired', statusCode: 401));
+		$response = $middleware->afterException(null, 'index', new ZgwAuthException(message: 'The token has expired.', statusCode: 401));
 
 		$this->assertSame(401, $response->getStatus());
 		$this->assertSame(401, $response->getData()['status']);
-		$this->assertSame('Token expired', $response->getData()['detail']);
-		$this->assertSame('permission_denied', $response->getData()['code']);
+		$this->assertSame('The token has expired.', $response->getData()['detail']);
+		$this->assertSame('not_authenticated', $response->getData()['code']);
+
+		$forbidden = $middleware->afterException(null, 'index', new ZgwAuthException(message: 'no scope', statusCode: 403));
+		$this->assertSame(403, $forbidden->getStatus());
+		$this->assertSame('permission_denied', $forbidden->getData()['code']);
 		$this->assertSame(403, (new ZgwAuthException(message: 'x'))->getStatusCode());
 	}//end testAfterExceptionAnswersWithTheRefusalsStatus()
 }//end class

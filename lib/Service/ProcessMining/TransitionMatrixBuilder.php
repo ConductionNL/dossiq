@@ -160,12 +160,38 @@ class TransitionMatrixBuilder {
 			return [];
 		}
 
+		$visited = $this->firstVisited(sortedRecords: $sortedRecords);
+
+		return $this->transitionsFrom(sortedRecords: $sortedRecords, count: $count, visited: $visited);
+	}//end computeCaseTransitions()
+
+	/**
+	 * The statuses visited before the first transition: the case's first status.
+	 *
+	 * @param array<int, array<string, mixed>> $sortedRecords Chronologically sorted statusRecords for one case.
+	 *
+	 * @return array<string, bool>
+	 */
+	private function firstVisited(array $sortedRecords): array {
 		$visited = [];
 		$first = (string)($sortedRecords[0]['statusType'] ?? '');
 		if ($first !== '') {
 			$visited[$first] = true;
 		}
 
+		return $visited;
+	}//end firstVisited()
+
+	/**
+	 * Pair each status with the one before it, flagging a return to a visited status.
+	 *
+	 * @param array<int, array<string, mixed>> $sortedRecords Chronologically sorted statusRecords for one case.
+	 * @param int                              $count         How many records there are.
+	 * @param array<string, bool>              $visited       The statuses visited so far.
+	 *
+	 * @return array<int, array{from: string, to: string, isRework: bool}>
+	 */
+	private function transitionsFrom(array $sortedRecords, int $count, array $visited): array {
 		$transitions = [];
 		for ($i = 1; $i < $count; $i++) {
 			$from = (string)($sortedRecords[$i - 1]['statusType'] ?? '');
@@ -175,14 +201,10 @@ class TransitionMatrixBuilder {
 			}
 
 			$isRework = isset($visited[$to]);
-			$transitions[] = [
-				'from' => $from,
-				'to' => $to,
-				'isRework' => $isRework,
-			];
+			$transitions[] = ['from' => $from, 'to' => $to, 'isRework' => $isRework];
 			$visited[$to] = true;
 		}
 
 		return $transitions;
-	}//end computeCaseTransitions()
+	}//end transitionsFrom()
 }//end class

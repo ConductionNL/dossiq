@@ -106,10 +106,14 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 
 		$primaryDecisionCase = $this->extractUuid(value: ($decision['case'] ?? ''));
 
-		$this->linkPrimairDecision(objectService: $objectService, register: $schemas['register'], caseSchema: $schemas['case'],
-			objectionCaseId: $objectionCaseId, primaryDecisionCase: $primaryDecisionCase, contestedDecisionId: $contestedDecisionId);
+		$link = new ObjectionLink(objectionCaseId: $objectionCaseId, contestedDecisionId: $contestedDecisionId);
+		$this->linkPrimairDecision(
+			caseStore: new BezwaarCaseStore(objectService: $objectService, register: $schemas['register'], caseSchema: $schemas['case']),
+			link: $link,
+			primaryDecisionCase: $primaryDecisionCase,
+		);
 
-		$objection = $this->buildObjection(objectionCaseId: $objectionCaseId, contestedDecisionId: $contestedDecisionId, payload: $objectionPayload);
+		$objection = $this->buildObjection(link: $link, payload: $objectionPayload);
 
 		$created = $objectService->saveObject(object: $objection, register: $schemas['register'], schema: $schemas['objection']);
 
@@ -205,28 +209,19 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 	 * When the contested decision has no parent case nothing is linked;
 	 * the absence is logged for operational visibility.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register Register id.
-	 * @param string $caseSchema case schema id.
-	 * @param string $objectionCaseId The bezwaar case to update.
+	 * @param BezwaarCaseStore $caseStore Where the bezwaar case is read and saved.
+	 * @param ObjectionLink $link The bezwaar case to update and the contested decision (for logging).
 	 * @param string $primaryDecisionCase The primair besluit case (may be '').
-	 * @param string $contestedDecisionId The contested decision (for logging).
 	 *
 	 * @return void
 	 */
-	private function linkPrimairDecision(
-		object $objectService,
-		string $register,
-		string $caseSchema,
-		string $objectionCaseId,
-		string $primaryDecisionCase,
-		string $contestedDecisionId,
-	): void {
+	private function linkPrimairDecision(BezwaarCaseStore $caseStore, ObjectionLink $link, string $primaryDecisionCase): void {
+		$objectionCaseId = $link->objectionCaseId;
 		if ($primaryDecisionCase === '') {
 			$this->logger->info(
 				'BezwaarCreationHook: contested decision has no parent case; '
 				. 'skipping relatedCases link',
-				['decision' => $contestedDecisionId]
+				['decision' => $link->contestedDecisionId]
 			);
 			return;
 		}
@@ -239,13 +234,7 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 			return;
 		}
 
-		$this->linkRelatedCase(
-			objectService: $objectService,
-			register: $register,
-			caseSchema: $caseSchema,
-			objectionCaseId: $objectionCaseId,
-			relatedCaseId: $primaryDecisionCase
-		);
+		$this->linkRelatedCase(caseStore: $caseStore, objectionCaseId: $objectionCaseId, relatedCaseId: $primaryDecisionCase);
 	}//end linkPrimairBesluit()
 
 	/**
@@ -254,21 +243,17 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 	 * Existing relations are preserved; the new UUID is appended only when
 	 * it is not already present (idempotent).
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register Register id.
-	 * @param string $caseSchema case schema id.
+	 * @param BezwaarCaseStore $caseStore Where the bezwaar case is read and saved.
 	 * @param string $objectionCaseId The bezwaar case to update.
 	 * @param string $relatedCaseId The primair besluit case to link.
 	 *
 	 * @return void
 	 */
-	private function linkRelatedCase(
-		object $objectService,
-		string $register,
-		string $caseSchema,
-		string $objectionCaseId,
-		string $relatedCaseId,
-	): void {
+	private function linkRelatedCase(BezwaarCaseStore $caseStore, string $objectionCaseId, string $relatedCaseId): void {
+		$objectService = $caseStore->objectService;
+		$register = $caseStore->register;
+		$caseSchema = $caseStore->caseSchema;
+
 		$case = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $register,
@@ -317,24 +302,19 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 	/**
 	 * Build the objection record payload.
 	 *
-	 * @param string $objectionCaseId The bezwaar case UUID.
-	 * @param string $contestedDecisionId The contested decision UUID.
+	 * @param ObjectionLink $link The bezwaar case and the contested decision.
 	 * @param array<string, mixed> $payload Caller-supplied fields.
 	 *
 	 * @return array<string, mixed> The objection record.
 	 */
-	private function buildObjection(
-		string $objectionCaseId,
-		string $contestedDecisionId,
-		array $payload,
-	): array {
+	private function buildObjection(ObjectionLink $link, array $payload): array {
 		// Caller fields first, then enforce the canonical references and the
 		// server-derived registrar so a caller can never point the objection
 		// at a different case/decision nor forge who registered it. The status
 		// is the schema's initial one, which OpenRegister fills in.
 		$objection = array_diff_key($payload, CallerIdentity::KEYS + ['status' => true]);
-		$objection['case'] = $objectionCaseId;
-		$objection['contestedDecision'] = $contestedDecisionId;
+		$objection['case'] = $link->objectionCaseId;
+		$objection['contestedDecision'] = $link->contestedDecisionId;
 		$objection['registeredBy'] = $this->resolveUserId();
 
 		return $objection;

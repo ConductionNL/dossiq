@@ -179,18 +179,7 @@ class PersonalAgendaItemService implements PersonalAgendaItemServiceInterface {
 
 		$found = [];
 		foreach ($this->calendarsOf(userId: $userId) as $calendar) {
-			try {
-				$rows = $calendar->search(
-					self::CATEGORY,
-					['CATEGORIES'],
-					['timerange' => ['start' => $now, 'end' => $until]],
-					100
-				);
-			} catch (Throwable $e) {
-				throw new RuntimeException($e->getMessage(), 0, $e);
-			}
-
-			foreach ($rows as $row) {
+			foreach ($this->plannedRowsIn(calendar: $calendar, now: $now, until: $until) as $row) {
 				$item = $this->itemOf(row: $row);
 				if ($item !== null) {
 					$found[$item['uid']] = $item;
@@ -200,6 +189,32 @@ class PersonalAgendaItemService implements PersonalAgendaItemServiceInterface {
 
 		return array_values($found);
 	}//end upcomingFor()
+
+	/**
+	 * The planned rows of one calendar between two moments.
+	 *
+	 * @param \OCP\Calendar\ICalendar $calendar The calendar.
+	 * @param DateTimeImmutable       $now      The moment to look from.
+	 * @param DateTimeImmutable       $until    The end of the horizon.
+	 *
+	 * @return array<int, array<string, mixed>> The rows the calendar answered.
+	 *
+	 * @throws RuntimeException When the calendar cannot be read.
+	 */
+	private function plannedRowsIn(\OCP\Calendar\ICalendar $calendar, DateTimeImmutable $now, DateTimeImmutable $until): array {
+		try {
+			$rows = $calendar->search(
+				self::CATEGORY,
+				['CATEGORIES'],
+				['timerange' => ['start' => $now, 'end' => $until]],
+				100
+			);
+		} catch (Throwable $e) {
+			throw new RuntimeException($e->getMessage(), 0, $e);
+		}
+
+		return $rows;
+	}//end plannedRowsIn()
 
 	/**
 	 * One search row as a planned item.

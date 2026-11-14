@@ -67,12 +67,7 @@ class DecisionRecordComposer {
 	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
 	 */
 	public function compose(object $objectService, string $register, string $caseId): array {
-		$assessments = $this->collectAssessments(
-			objectService: $objectService,
-			register: $register,
-			assessmentSchema: $this->settingsService->getConfigValue('woo_assessment_schema'),
-			caseId: $caseId,
-		);
+		$assessments = $this->collectAssessments(objectService: $objectService, register: $register, caseId: $caseId);
 
 		return [
 			'caseTitle' => $this->readCaseTitle(objectService: $objectService, register: $register, caseId: $caseId),
@@ -127,12 +122,12 @@ class DecisionRecordComposer {
 	 *
 	 * @param object $objectService OpenRegister object service
 	 * @param mixed $register Configured register identifier
-	 * @param mixed $assessmentSchema Configured assessment schema identifier
 	 * @param string $caseId The case UUID
 	 *
 	 * @return array<int, array<string, mixed>> Assessment rows, empty when the schema is not configured
 	 */
-	private function collectAssessments(object $objectService, mixed $register, mixed $assessmentSchema, string $caseId): array {
+	private function collectAssessments(object $objectService, mixed $register, string $caseId): array {
+		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
 		if (empty($assessmentSchema) === true) {
 			return [];
 		}

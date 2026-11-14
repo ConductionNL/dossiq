@@ -199,6 +199,11 @@
               "caseField": "case",
               "readers": "assignee",
               "assigneeMay": "update"
+            },
+            {
+              "schemaKey": "woo_delivered_set_schema",
+              "caseField": "case",
+              "readers": "assignee"
             }
           ],
           "reviewers": [

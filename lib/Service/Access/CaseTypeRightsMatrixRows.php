@@ -151,24 +151,25 @@ class CaseTypeRightsMatrixRows {
 			return [];
 		}
 
-		$base = $this->baseRow(right: $right, group: $group, values: $values, caseTypeId: $caseTypeId, levels: $levels);
-		$inStatuses = $this->inStatuses(base: $base, right: $right);
+		$base = $this->baseRow(right: $right, group: $group, values: $values, caseTypeId: $caseTypeId);
 
-		return $this->rowsWithVerbs(base: $base, inStatuses: $inStatuses, right: $right);
+		return $this->rowsWithVerbs(base: $base, right: $right);
 	}//end rowsFor()
 
 	/**
 	 * The row every verb of a rights row starts from: group, values, case type, levels, and its end.
 	 *
+	 * The confidentiality levels are those up to the rights row's own.
+	 *
 	 * @param array<string, mixed> $right      The rights row.
 	 * @param string               $group      The group the role resolves to.
 	 * @param array<int, string>   $values     The department's values.
 	 * @param string               $caseTypeId The case type it belongs to.
-	 * @param array<int, string>   $levels     The confidentiality levels up to the row's.
 	 *
 	 * @return array<string, mixed> The base row.
 	 */
-	private function baseRow(array $right, string $group, array $values, string $caseTypeId, array $levels): array {
+	private function baseRow(array $right, string $group, array $values, string $caseTypeId): array {
+		$levels = $this->levelsUpTo(level: (string)($right['confidentiality'] ?? ''));
 		$base = [
 			'group' => $group,
 			'values' => $values,
@@ -202,13 +203,15 @@ class CaseTypeRightsMatrixRows {
 	/**
 	 * The read, edit and document rows, without the ones that grant nothing.
 	 *
-	 * @param array<string, mixed> $base       The base row.
-	 * @param array<string, mixed> $inStatuses The base row narrowed to the statuses.
-	 * @param array<string, mixed> $right      The rights row.
+	 * The edit and document-change rows are narrowed to the statuses the rights row names.
+	 *
+	 * @param array<string, mixed> $base  The base row.
+	 * @param array<string, mixed> $right The rights row.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	private function rowsWithVerbs(array $base, array $inStatuses, array $right): array {
+	private function rowsWithVerbs(array $base, array $right): array {
+		$inStatuses = $this->inStatuses(base: $base, right: $right);
 		$verbs = $this->strings(value: ($right['actions'] ?? []));
 		[$readFiles, $changeFiles] = $this->fileVerbs(right: $right, verbs: $verbs);
 

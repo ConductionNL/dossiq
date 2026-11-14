@@ -133,40 +133,79 @@ class WooDossierReturn {
 			return false;
 		}
 
-		$register = $this->settingsService->getWooPublicationConfigValue('woo_collection_register');
-		$schema = $this->settingsService->getWooPublicationConfigValue('woo_collection_schema');
-		$target = ['register' => $register, 'schema' => $schema, 'id' => $collectionId];
+		$target = $this->appendTarget(objectService: $objectService, collectionId: $collectionId);
 
 		try {
-			$collection = $this->ownedCollection(objectService: $objectService, target: $target, case: $case);
-			if ($collection === null) {
-				return false;
-			}
-
-			$items = $this->itemsWith(collection: $collection, publicationId: $publicationId, title: $title);
-			if ($items === null) {
-				return true;
-			}
-
-			$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): mixed => $this->writeItems(
-					objectService: $objectService,
-					target: $target,
-					collection: $collection,
-					items: $items,
-				)
-			);
+			return $this->appendToCollection(target: $target, case: $case, publicationId: $publicationId, title: $title);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'WooDossierReturn: the decision could not be added to its source dossier',
-				['collection' => $collectionId, 'publication' => $publicationId, 'error' => $e->getMessage()]
-			);
+			$this->warnNotAppended(collectionId: $collectionId, publicationId: $publicationId, error: $e);
 			return false;
-		}//end try
+		}
+	}//end append()
+
+	/**
+	 * Log that the decision could not be added to its source dossier.
+	 *
+	 * @param string    $collectionId  The source dossier uuid.
+	 * @param string    $publicationId The publication uuid.
+	 * @param Throwable $error         What went wrong.
+	 *
+	 * @return void
+	 */
+	private function warnNotAppended(string $collectionId, string $publicationId, Throwable $error): void {
+		$this->logger->warning(
+			'WooDossierReturn: the decision could not be added to its source dossier',
+			['collection' => $collectionId, 'publication' => $publicationId, 'error' => $error->getMessage()]
+		);
+	}//end warnNotAppended()
+
+	/**
+	 * The object service, register, schema and id of the source dossier.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $collectionId  The source dossier uuid.
+	 *
+	 * @return array{objectService: object, register: string, schema: string, id: string}
+	 */
+	private function appendTarget(object $objectService, string $collectionId): array {
+		$register = $this->settingsService->getWooPublicationConfigValue('woo_collection_register');
+		$schema = $this->settingsService->getWooPublicationConfigValue('woo_collection_schema');
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema, 'id' => $collectionId];
+	}//end appendTarget()
+
+	/**
+	 * Add the publication to the source dossier when it is still the requester's.
+	 *
+	 * @param array{objectService: object, register: string, schema: string, id: string} $target        The object service, register,
+	 *                                                                                              schema and collection id.
+	 * @param array<string, mixed>                                                       $case          The case, with `portalSubject`.
+	 * @param string                                                                     $publicationId The publication uuid.
+	 * @param string                                                                     $title         What the item's note says.
+	 *
+	 * @return bool True when the dossier holds the publication afterwards.
+	 *
+	 * @throws Throwable When reading or writing the dossier fails.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 */
+	private function appendToCollection(array $target, array $case, string $publicationId, string $title): bool {
+		$collection = $this->ownedCollection(target: $target, case: $case);
+		if ($collection === null) {
+			return false;
+		}
+
+		$items = $this->itemsWith(collection: $collection, publicationId: $publicationId, title: $title);
+		if ($items === null) {
+			return true;
+		}
+
+		$this->runAsSystemIfAvailable(
+			objectService: $target['objectService'],
+			operation: fn (): mixed => $this->writeItems(target: $target, collection: $collection, items: $items)
+		);
 
 		return true;
-	}//end append()
+	}//end appendToCollection()
 
 	/**
 	 * Whether a dossier, a publication and OpenRegister are all in hand.
@@ -184,15 +223,20 @@ class WooDossierReturn {
 	/**
 	 * Read the source dossier, unscoped, when it is still the requester's.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param array<string, mixed> $target        The register, schema and collection id.
-	 * @param array<string, mixed> $case          The case, with `portalSubject`.
+	 * @param array{objectService: object, register: string, schema: string, id: string} $target The object service, register,
+	 *                                                                                       schema and collection id.
+	 * @param array<string, mixed>                                                       $case   The case, with `portalSubject`.
 	 *
 	 * @return array<string, mixed>|null The collection, or null when it is gone or not the requester's.
 	 */
-	private function ownedCollection(object $objectService, array $target, array $case): ?array {
+	private function ownedCollection(array $target, array $case): ?array {
 		$collectionId = $target['id'];
-		$collection = $this->reader->find(objectService: $objectService, register: $target['register'], schema: $target['schema'], id: $collectionId);
+		$collection = $this->reader->find(
+			objectService: $target['objectService'],
+			register: $target['register'],
+			schema: $target['schema'],
+			id: $collectionId
+		);
 		if (is_array($collection) === false) {
 			$this->logger->warning('WooDossierReturn: the source dossier is gone', ['collection' => $collectionId]);
 			return null;
@@ -259,14 +303,15 @@ class WooDossierReturn {
 	 * app wrote meanwhile (a share, a note) is not saved away; otherwise the
 	 * collection as it was just read, with the new items.
 	 *
-	 * @param object                           $objectService The OpenRegister ObjectService.
-	 * @param array{register: string, schema: string, id: string} $target The collection's register, schema and uuid.
-	 * @param array<string, mixed>             $collection    The collection as it was read.
-	 * @param array<int, array<string, mixed>> $items         Its items, with the publication.
+	 * @param array{objectService: object, register: string, schema: string, id: string} $target     The object service and the
+	 *                                                                                           collection's register, schema and uuid.
+	 * @param array<string, mixed>                                                       $collection The collection as it was read.
+	 * @param array<int, array<string, mixed>>                                           $items      Its items, with the publication.
 	 *
 	 * @return mixed What OpenRegister answered.
 	 */
-	private function writeItems(object $objectService, array $target, array $collection, array $items): mixed {
+	private function writeItems(array $target, array $collection, array $items): mixed {
+		$objectService = $target['objectService'];
 		if (method_exists($objectService, 'patchObject') === true) {
 			return $objectService->patchObject(
 				objectId: $target['id'],

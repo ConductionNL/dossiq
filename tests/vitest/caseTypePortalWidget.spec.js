@@ -218,6 +218,32 @@ describe('CaseTypePortalWidget withdrawal and writable editing', () => {
 		expect(body.portalWithdrawal.closedReason).toBe('Not now')
 	})
 
+	it('saves a writable field switched off, an amendment closed sentence and the withdrawal statuses', async () => {
+		answer(WITH_WITHDRAWAL)
+		mockPatch.mockResolvedValue({ data: {} })
+		const w = await mountWidget()
+
+		w.findAllComponents({ name: 'NcCheckboxRadioSwitch' })
+			.find((c) => c.attributes('data-testid') === 'case-type-portal-writable-description')
+			.vm.$emit('update:modelValue', false)
+		w.findAllComponents({ name: 'NcTextField' })
+			.find((f) => f.props('label') === 'Sentence when closed' && f.props('modelValue') === 'Closed now')
+			.vm.$emit('update:modelValue', 'The window is closed')
+		await flushPromises()
+		// With the writable field off, the withdrawal block holds the last "Open in these statuses".
+		const open = w.findAllComponents({ name: 'NcSelect' }).filter((c) => c.props('inputLabel') === 'Open in these statuses')
+		open[open.length - 1].vm.$emit('update:modelValue', [{ id: 'st-intake', label: 'Intake' }, { id: 'st-review', label: 'Review' }])
+		await flushPromises()
+
+		await w.find('[data-testid="case-type-portal-save"]').trigger('click')
+		await flushPromises()
+
+		const body = mockPatch.mock.calls[0][1]
+		expect(body.portalWritable.find((row) => row.field === 'description')).toBeUndefined()
+		expect(body.portalAmendmentWindow.closedReason).toBe('The window is closed')
+		expect(body.portalWithdrawal.openStatuses).toEqual(['st-intake', 'st-review'])
+	})
+
 	it('turning the withdrawal off drops it from what is saved', async () => {
 		answer(WITH_WITHDRAWAL)
 		mockPatch.mockResolvedValue({ data: {} })

@@ -22,7 +22,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Middleware;
 
 use OCA\Dossiq\Middleware\ZgwAuthMiddleware;
-use OCA\Dossiq\Service\ZgwJwtValidator;
+use OCA\Dossiq\Service\Zgw\ApiCredentialResolver;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -43,11 +43,11 @@ class ZgwAuthMiddlewareTest extends TestCase {
 	private IRequest $request;
 
 	/**
-	 * The mocked ZGW JWT validator.
+	 * The mocked credential resolver.
 	 *
-	 * @var ZgwJwtValidator|\PHPUnit\Framework\MockObject\MockObject
+	 * @var ApiCredentialResolver|\PHPUnit\Framework\MockObject\MockObject
 	 */
-	private ZgwJwtValidator $jwtValidator;
+	private ApiCredentialResolver $credentials;
 
 	/**
 	 * The mocked logger interface.
@@ -70,12 +70,12 @@ class ZgwAuthMiddlewareTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->request = $this->createMock(IRequest::class);
-		$this->jwtValidator = $this->createMock(ZgwJwtValidator::class);
+		$this->credentials = $this->createMock(ApiCredentialResolver::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$this->middleware = new ZgwAuthMiddleware(
 			$this->request,
-			$this->jwtValidator,
+			$this->credentials,
 			$this->logger,
 		);
 

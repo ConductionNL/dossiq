@@ -194,6 +194,23 @@ class BrcImmutabilityRules extends ZgwRulesBase {
 
 		$body = $result['enrichedBody'];
 
+		$body = $this->withIdentificatie(body: $body, existingObject: $existingObject);
+		$body = $this->withResponsibleOrganisation(body: $body, existingObject: $existingObject);
+
+		$result['enrichedBody'] = $body;
+
+		return $result;
+	}//end preserveImmutableDecisionFields()
+
+	/**
+	 * Keep the stored identificatie when the body leaves it out or empty.
+	 *
+	 * @param array $body           The enriched besluit body.
+	 * @param array $existingObject The stored besluit.
+	 *
+	 * @return array The body.
+	 */
+	private function withIdentificatie(array $body, array $existingObject): array {
 		if (isset($body['identificatie']) === false || $body['identificatie'] === '') {
 			$existingId = $existingObject['title'] ?? $existingObject['identifier'] ?? '';
 			if ($existingId === '') {
@@ -205,6 +222,18 @@ class BrcImmutabilityRules extends ZgwRulesBase {
 			}
 		}
 
+		return $body;
+	}//end withIdentificatie()
+
+	/**
+	 * Keep the stored verantwoordelijkeOrganisatie when the body leaves it out or empty.
+	 *
+	 * @param array $body           The enriched besluit body.
+	 * @param array $existingObject The stored besluit.
+	 *
+	 * @return array The body.
+	 */
+	private function withResponsibleOrganisation(array $body, array $existingObject): array {
 		if (isset($body['verantwoordelijkeOrganisatie']) === false
 			|| $body['verantwoordelijkeOrganisatie'] === ''
 		) {
@@ -216,8 +245,6 @@ class BrcImmutabilityRules extends ZgwRulesBase {
 			}
 		}
 
-		$result['enrichedBody'] = $body;
-
-		return $result;
-	}//end preserveImmutableDecisionFields()
+		return $body;
+	}//end withResponsibleOrganisation()
 }//end class

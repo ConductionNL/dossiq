@@ -2133,6 +2133,9 @@
 					"notice-of-default-register": {
 						"group": "Case"
 					},
+					"advice-from-decision-table": {
+						"group": "Case"
+					},
 					"start-flow": {
 						"group": "Case",
 						"label": "Start a flow"
@@ -2296,6 +2299,7 @@
 										"case-overview-sections",
 										"case-grant-decisions-card",
 										"case-payment-schedule",
+										"case-settlement",
 										"case-request",
 										"case-details",
 										"case-priority-card",
@@ -4324,6 +4328,72 @@
 							],
 							"emptyText": "No advance schedule on this case",
 							"errorText": "The advance schedule could not be read."
+						}
+					},
+					{
+						"id": "case-settlement",
+						"type": "record-list",
+						"title": "Settlement",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Subsidies",
+								"Grants"
+							]
+						},
+						"_note": "DqSubsidie Vaststelling: the settlement of the grant, its date, the actual costs, the settled amount and its state, from GET /api/cases/{caseId}/settlements. A settlement hangs off the execution, which hangs off the application, two references away from the case, so the server walks that chain. Shown on a case whose case type sits in the Subsidies folder and lists the card in overviewCards, as the Grant decisions card is.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/settlements",
+								"responsePath": "settlements"
+							},
+							"presentation": "table",
+							"tableLook": "data",
+							"valueLabels": {
+								"status": {
+									"determined": "Settled",
+									"draft": "Draft"
+								}
+							},
+							"columns": [
+								{
+									"label": "Settlement date",
+									"value": [
+										"{determinationDate|date}",
+										"Not yet"
+									]
+								},
+								{
+									"label": "Actual costs",
+									"value": [
+										"{actualCostTotal|currency}",
+										"Not yet"
+									],
+									"align": "end"
+								},
+								{
+									"label": "Settled amount",
+									"value": [
+										"{determinedAmount|currency}",
+										"Not yet"
+									],
+									"align": "end"
+								},
+								{
+									"label": "Status",
+									"value": "{status}",
+									"tone": {
+										"field": "status",
+										"map": {
+											"determined": "success",
+											"draft": "default"
+										}
+									}
+								}
+							],
+							"emptyText": "No settlement on this case yet",
+							"errorText": "The settlement could not be read."
 						}
 					},
 					{
@@ -6792,6 +6862,7 @@
 					"request-information",
 					"remedy-lodge",
 					"start-enforcement",
+					"advice-from-decision-table",
 					"advice-request",
 					"woo-publish",
 					"woo-withdraw",

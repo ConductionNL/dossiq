@@ -115,7 +115,7 @@ class AccrualNoticeController extends Controller {
 		}
 
 		$instance = $this->termInstanceOf(caseId: $request['caseId'], instanceId: $request['instanceId']);
-		$refused = $this->refusalFor(instance: $instance, caseId: $request['caseId'], user: $user, receipt: $request['receipt']);
+		$refused = $this->refusalFor(instance: $instance, request: $request, user: $user);
 
 		return ($refused ?? $this->storeNotice(instance: $instance, request: $request, body: $body));
 	}//end register()
@@ -185,16 +185,18 @@ class AccrualNoticeController extends Controller {
 	 * case or a case the caller may not change (403), and a term that still
 	 * runs (409, with the day it ends).
 	 *
-	 * @param array<string, mixed>|null $instance The term instance, or null.
-	 * @param string                    $caseId   The case the caller named, or ''.
-	 * @param IUser                     $user     The caller.
-	 * @param DateTimeImmutable         $receipt  The day the notice came in.
+	 * @param array<string, mixed>|null                                                                 $instance The term instance, or null.
+	 * @param array{caseId: string, instanceId: string, channel: string, receipt: DateTimeImmutable} $request  The notice's fields: the case
+	 *                                                                                                         the caller named, or '', and
+	 *                                                                                                         the day the notice came in.
+	 * @param IUser                                                                                     $user     The caller.
 	 *
 	 * @return JSONResponse|null The refusal, or null.
 	 *
 	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 */
-	private function refusalFor(?array $instance, string $caseId, IUser $user, DateTimeImmutable $receipt): ?JSONResponse {
+	private function refusalFor(?array $instance, array $request, IUser $user): ?JSONResponse {
+		$caseId = $request['caseId'];
 		if ($instance === null) {
 			return new JSONResponse(['message' => 'This case has no decision term to give notice on'], Http::STATUS_NOT_FOUND);
 		}
@@ -206,7 +208,7 @@ class AccrualNoticeController extends Controller {
 			return new JSONResponse(['message' => 'Not authorized for this case'], Http::STATUS_FORBIDDEN);
 		}
 
-		$reason = $this->service->prematureReason(instance: $instance, receiptDate: $receipt);
+		$reason = $this->service->prematureReason(instance: $instance, receiptDate: $request['receipt']);
 		if ($reason === '') {
 			return null;
 		}

@@ -41,3 +41,37 @@ export async function searchUsers(term) {
 		return []
 	}
 }
+
+const SHARE_TYPE_GROUP = 1
+
+/**
+ * The groups whose name or id matches what was typed.
+ *
+ * The same sharee search as `searchUsers`, asked for groups: a group the
+ * reader may not share with is not offered, which is Nextcloud's own answer
+ * to who may hand work to which team. Fewer than two characters and a failed
+ * search both find nothing.
+ *
+ * @param {string} term What was typed.
+ * @return {Promise<Array<{id: string, label: string}>>} The groups.
+ * @spec openspec/changes/capability-rows-say-the-whole-capability/tasks.md
+ */
+export async function searchGroups(term) {
+	const search = String(term ?? '').trim()
+	if (search.length < 2) {
+		return []
+	}
+	try {
+		const { data } = await axios.get(generateOcsUrl('apps/files_sharing/api/v1/sharees'), {
+			params: { search, itemType: 'file', perPage: 20, shareType: [SHARE_TYPE_GROUP], format: 'json' },
+		})
+		const result = data?.ocs?.data ?? {}
+		const groups = [...(result.exact?.groups ?? []), ...(result.groups ?? [])]
+
+		return groups
+			.filter((entry) => entry?.value?.shareType === SHARE_TYPE_GROUP && entry.value.shareWith)
+			.map((entry) => ({ id: String(entry.value.shareWith), label: String(entry.label || entry.value.shareWith) }))
+	} catch {
+		return []
+	}
+}

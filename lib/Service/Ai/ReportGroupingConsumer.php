@@ -373,7 +373,7 @@ class ReportGroupingConsumer implements ReportGroupingConsumerInterface {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		if ($this->isConfigured(objectService: $objectService, register: $register, schema: $schema) === false) {
 			return null;
 		}
 
@@ -387,6 +387,30 @@ class ReportGroupingConsumer implements ReportGroupingConsumerInterface {
 			return null;
 		}
 
+		return $this->rowOf(found: $found);
+	}//end readCase()
+
+	/**
+	 * Whether the object service, register and case schema are all there to read from.
+	 *
+	 * @param object|null $objectService OpenRegister's object service.
+	 * @param string      $register      The register id.
+	 * @param string      $schema        The case schema id.
+	 *
+	 * @return bool
+	 */
+	private function isConfigured(?object $objectService, string $register, string $schema): bool {
+		return $objectService !== null && $register !== '' && $schema !== '';
+	}//end isConfigured()
+
+	/**
+	 * The case row of a found case, null when nothing was found or it reads as no row.
+	 *
+	 * @param mixed $found What the find answered.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function rowOf(mixed $found): ?array {
 		if ($found === null) {
 			return null;
 		}
@@ -397,5 +421,5 @@ class ReportGroupingConsumer implements ReportGroupingConsumerInterface {
 		}
 
 		return $row;
-	}//end readCase()
+	}//end rowOf()
 }//end class

@@ -270,6 +270,21 @@ class WidgetRoles {
 	 * @spec openspec/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
 	 */
 	public function withheldFields(array $manifest, array $held, array $known): array {
+		[$shown, $restricted, $unresolvable] = $this->fieldVerdicts(manifest: $manifest, held: $held, known: $known);
+
+		return ['withhold' => $this->withheld(shown: $shown, restricted: $restricted), 'unresolvable' => $unresolvable];
+	}//end withheldFields()
+
+	/**
+	 * The fields a visible widget shows, the fields a hidden widget shows, and the unresolvable widgets.
+	 *
+	 * @param array<string, mixed> $manifest The app manifest.
+	 * @param array<int, string> $held The groups this reader is in.
+	 * @param array<int, string> $known Every group that exists.
+	 *
+	 * @return array{0: array<string, true>, 1: array<string, true>, 2: array<int, string>} Shown, restricted, unresolvable.
+	 */
+	private function fieldVerdicts(array $manifest, array $held, array $known): array {
 		$shown = [];
 		$restricted = [];
 		$unresolvable = [];
@@ -292,6 +307,18 @@ class WidgetRoles {
 			}
 		}
 
+		return [$shown, $restricted, $unresolvable];
+	}//end fieldVerdicts()
+
+	/**
+	 * The restricted fields no visible widget shows.
+	 *
+	 * @param array<string, true> $shown The fields a visible widget shows.
+	 * @param array<string, true> $restricted The fields a hidden widget shows.
+	 *
+	 * @return array<int, string> The fields to remove.
+	 */
+	private function withheld(array $shown, array $restricted): array {
 		$withhold = [];
 		foreach (array_keys($restricted) as $field) {
 			if (isset($shown[$field]) === false) {
@@ -299,8 +326,8 @@ class WidgetRoles {
 			}
 		}
 
-		return ['withhold' => $withhold, 'unresolvable' => $unresolvable];
-	}//end withheldFields()
+		return $withhold;
+	}//end withheld()
 
 	/**
 	 * A dashboard payload with the fields this reader may not see taken out.

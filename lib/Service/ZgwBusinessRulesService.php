@@ -237,13 +237,7 @@ class ZgwBusinessRulesService implements ZgwBusinessRulesServiceInterface {
 	 * @return array|null The guard response, or null when the write may proceed
 	 */
 	private function caseTypeGuardRefusal(ZgwWriteCheck $write): ?array {
-		return $this->guardCaseTypePublish(
-			resource: $write->resource,
-			action: $write->action,
-			body: $write->body,
-			existingObject: $write->existingObject,
-			mappingConfig: $write->mappingConfig
-		) ?? $this->guardCaseTypeDestroy(write: $write);
+		return $this->guardCaseTypePublish(write: $write) ?? $this->guardCaseTypeDestroy(write: $write);
 	}//end caseTypeGuardRefusal()
 
 	/**
@@ -280,28 +274,20 @@ class ZgwBusinessRulesService implements ZgwBusinessRulesServiceInterface {
 	 * published (isDraft toggled false), require status types + final status
 	 * + validFrom before allowing the save.
 	 *
-	 * @param string $resource The ZGW resource name
-	 * @param string $action The action
-	 * @param array $body The request body
-	 * @param array|null $existingObject The existing object data
-	 * @param array|null $mappingConfig The mapping config
+	 * @param ZgwWriteCheck $write The write being checked: resource, action, body, existing object and mapping config
 	 *
 	 * @return array|null The guard response, or null when the save may proceed
 	 */
-	private function guardCaseTypePublish(
-		string $resource,
-		string $action,
-		array $body,
-		?array $existingObject,
-		?array $mappingConfig,
-	): ?array {
-		if ($this->isCaseTypeEdit(resource: $resource, action: $action) === false
+	private function guardCaseTypePublish(ZgwWriteCheck $write): ?array {
+		$body = $write->body;
+		$existingObject = $write->existingObject;
+		if ($this->isCaseTypeEdit(resource: $write->resource, action: $write->action) === false
 			|| $this->publishesDraft(body: $body, existingObject: $existingObject) === false
 		) {
 			return null;
 		}
 
-		$keys = $this->caseTypeKeys(mappingConfig: $mappingConfig, existingObject: $existingObject);
+		$keys = $this->caseTypeKeys(mappingConfig: $write->mappingConfig, existingObject: $existingObject);
 		if ($keys === null) {
 			return null;
 		}

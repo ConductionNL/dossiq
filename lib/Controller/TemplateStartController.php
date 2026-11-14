@@ -224,6 +224,17 @@ class TemplateStartController extends Controller {
 			return new JSONResponse(['error' => 'Not allowed'], Http::STATUS_FORBIDDEN);
 		}
 
+		return $this->offeredResponse(kind: $kind);
+	}//end contentTemplates()
+
+	/**
+	 * The content templates of a kind offered for the requested case type and search term.
+	 *
+	 * @param string $kind The template kind.
+	 *
+	 * @return JSONResponse
+	 */
+	private function offeredResponse(string $kind): JSONResponse {
 		$caseTypeId = (string)$this->request->getParam('caseType', '');
 		$search = (string)$this->request->getParam('search', '');
 
@@ -236,12 +247,9 @@ class TemplateStartController extends Controller {
 		}
 
 		if ($templates === null) {
-			return new JSONResponse(
-				['error' => 'The register is not available'],
-				Http::STATUS_SERVICE_UNAVAILABLE
-			);
+			return new JSONResponse(['error' => 'The register is not available'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
 		return new JSONResponse(['items' => $templates, 'total' => count($templates)]);
-	}//end contentTemplates()
+	}//end offeredResponse()
 }//end class

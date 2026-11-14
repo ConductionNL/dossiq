@@ -138,7 +138,7 @@ class OpenCatalogiApiClient {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function createPublication(string $register, string $schema, array $payload): array {
-		return $this->storeObject(register: $register, schema: $schema, object: $payload, uuid: null);
+		return $this->storeObject(target: new PublicationTarget(register: $register, schema: $schema), object: $payload, uuid: null);
 	}//end createPublication()
 
 	/**
@@ -168,11 +168,11 @@ class OpenCatalogiApiClient {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function updatePublication(string $register, string $schema, string $id, array $payload): array {
-		$stored = $this->readObjectData(register: $register, schema: $schema, id: $id);
+		$target = new PublicationTarget(register: $register, schema: $schema);
+		$stored = $this->readObjectData(target: $target, id: $id);
 
 		return $this->storeObject(
-			register: $register,
-			schema: $schema,
+			target: $target,
 			object: array_merge($stored, $payload),
 			uuid: $id,
 		);
@@ -192,7 +192,7 @@ class OpenCatalogiApiClient {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function attachDocument(string $register, string $schema, array $payload): array {
-		return $this->storeObject(register: $register, schema: $schema, object: $payload, uuid: null);
+		return $this->storeObject(target: new PublicationTarget(register: $register, schema: $schema), object: $payload, uuid: null);
 	}//end attachDocument()
 
 	/**
@@ -238,10 +238,12 @@ class OpenCatalogiApiClient {
 	): array {
 		$fileService = $this->availableFileService(objectId: $objectId);
 
+		$attachment = new FileAttachment(objectId: $objectId, fileName: $fileName, base64Content: $base64Content);
+
 		try {
-			return $this->addedFile(fileService: $fileService, objectId: $objectId, fileName: $fileName, base64Content: $base64Content);
+			return $this->addedFile(fileService: $fileService, attachment: $attachment);
 		} catch (Throwable $e) {
-			throw $this->attachFailed(objectId: $objectId, fileName: $fileName, error: $e);
+			throw $this->attachFailed(attachment: $attachment, error: $e);
 		}//end try
 	}//end attachFile()
 
@@ -272,20 +274,18 @@ class OpenCatalogiApiClient {
 	/**
 	 * Add the file to the object and return its formatted metadata.
 	 *
-	 * @param object $fileService The OpenRegister file service.
-	 * @param string $objectId The object id to attach the file to.
-	 * @param string $fileName The file name.
-	 * @param string $base64Content The base64-encoded file content.
+	 * @param object         $fileService The OpenRegister file service.
+	 * @param FileAttachment $attachment  The object, file name and base64 content.
 	 *
 	 * @return array<string, mixed> The stored file's metadata, or an empty array.
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
-	private function addedFile(object $fileService, string $objectId, string $fileName, string $base64Content): array {
+	private function addedFile(object $fileService, FileAttachment $attachment): array {
 		$file = $fileService->addFile(
-			objectEntity: $objectId,
-			fileName: $fileName,
-			content: $base64Content,
+			objectEntity: $attachment->objectId,
+			fileName: $attachment->fileName,
+			content: $attachment->base64Content,
 			share: false,
 			tags: [],
 		);
@@ -301,21 +301,20 @@ class OpenCatalogiApiClient {
 	/**
 	 * Log a failed attach and describe it as the domain error.
 	 *
-	 * @param string $objectId The object id the file was meant for.
-	 * @param string $fileName The file name.
-	 * @param Throwable $error Why the attach failed.
+	 * @param FileAttachment $attachment The object and file name the attach was for.
+	 * @param Throwable      $error      Why the attach failed.
 	 *
 	 * @return RuntimeException The domain error to throw.
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
-	private function attachFailed(string $objectId, string $fileName, Throwable $error): RuntimeException {
+	private function attachFailed(FileAttachment $attachment, Throwable $error): RuntimeException {
 		$this->logger->warning(
 			'OpenCatalogiApiClient: file attach failed',
 			[
 				'app' => AppIdentity::APP_ID,
-				'objectId' => $objectId,
-				'fileName' => $fileName,
+				'objectId' => $attachment->objectId,
+				'fileName' => $attachment->fileName,
 				'error' => $error->getMessage(),
 			],
 		);
@@ -347,15 +346,38 @@ class OpenCatalogiApiClient {
 			return null;
 		}
 
+		$catalogs = $this->catalogList(result: $result);
+		if (is_array($catalogs) === false) {
+			return null;
+		}
+
+		return $this->firstWooCatalog(catalogs: $catalogs);
+	}//end resolveCatalog()
+
+	/**
+	 * The catalog list in a discovery answer: its `results`, its `data`, or the answer itself.
+	 *
+	 * @param mixed $result The discovery answer.
+	 *
+	 * @return mixed
+	 */
+	private function catalogList(mixed $result): mixed {
 		$catalogs = ($result['results'] ?? $result['data'] ?? null);
 		if ($catalogs === null) {
 			$catalogs = $result;
 		}
 
-		if (is_array($catalogs) === false) {
-			return null;
-		}
+		return $catalogs;
+	}//end catalogList()
 
+	/**
+	 * The first catalog flagged `hasWooSitemap: true`.
+	 *
+	 * @param array<mixed> $catalogs The catalogs.
+	 *
+	 * @return array<string, mixed>|null The catalog, or null when none is flagged.
+	 */
+	private function firstWooCatalog(array $catalogs): array|null {
 		foreach ($catalogs as $catalog) {
 			if (is_array($catalog) === true && ($catalog['hasWooSitemap'] ?? false) === true) {
 				return $catalog;
@@ -363,7 +385,7 @@ class OpenCatalogiApiClient {
 		}
 
 		return null;
-	}//end resolveCatalog()
+	}//end firstWooCatalog()
 
 	/**
 	 * Resolve OpenRegister's ObjectService, or fail with the domain error.
@@ -401,9 +423,8 @@ class OpenCatalogiApiClient {
 	 * contract defaults (both `true`), which is STRICTER than that route's
 	 * internal read: the merge cannot pull in an object the caller may not see.
 	 *
-	 * @param string $register The register slug.
-	 * @param string $schema The schema slug.
-	 * @param string $id The object id.
+	 * @param PublicationTarget $target The register and schema slugs.
+	 * @param string            $id     The object id.
 	 *
 	 * @return array<string, mixed> The stored property data.
 	 *
@@ -411,14 +432,14 @@ class OpenCatalogiApiClient {
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
-	private function readObjectData(string $register, string $schema, string $id): array {
+	private function readObjectData(PublicationTarget $target, string $id): array {
 		$objectService = $this->requireObjectService();
 
 		try {
 			$stored = $objectService->findSilent(
 				id: $id,
-				register: $register,
-				schema: $schema,
+				register: $target->register,
+				schema: $target->schema,
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
@@ -434,10 +455,9 @@ class OpenCatalogiApiClient {
 	/**
 	 * Persist an object through the published contract and return it as an array.
 	 *
-	 * @param string $register The register slug.
-	 * @param string $schema The schema slug.
+	 * @param PublicationTarget    $target The register and schema slugs.
 	 * @param array<string, mixed> $object The object data to store.
-	 * @param string|null $uuid The uuid to update, or null to create.
+	 * @param string|null          $uuid   The uuid to update, or null to create.
 	 *
 	 * @return array<string, mixed> The stored object, with its id.
 	 *
@@ -445,8 +465,8 @@ class OpenCatalogiApiClient {
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
-	private function storeObject(string $register, string $schema, array $object, ?string $uuid): array {
-		$saved = $this->saveOrFail(register: $register, schema: $schema, object: $object, uuid: $uuid);
+	private function storeObject(PublicationTarget $target, array $object, ?string $uuid): array {
+		$saved = $this->saveOrFail(target: $target, object: $object, uuid: $uuid);
 
 		$data = $this->objectData(entity: $saved);
 		$identifier = $this->objectIdentifier(entity: $saved);
@@ -460,17 +480,18 @@ class OpenCatalogiApiClient {
 	/**
 	 * Save one object through OpenRegister, logging and wrapping any failure.
 	 *
-	 * @param string               $register The register slug.
-	 * @param string               $schema   The schema slug.
-	 * @param array<string, mixed> $object   The object data to store.
-	 * @param string|null          $uuid     The uuid to update, or null to create.
+	 * @param PublicationTarget    $target The register and schema slugs.
+	 * @param array<string, mixed> $object The object data to store.
+	 * @param string|null          $uuid   The uuid to update, or null to create.
 	 *
 	 * @return mixed The saved entity.
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' on any write failure.
 	 */
-	private function saveOrFail(string $register, string $schema, array $object, ?string $uuid): mixed {
+	private function saveOrFail(PublicationTarget $target, array $object, ?string $uuid): mixed {
 		$objectService = $this->requireObjectService();
+		$register = $target->register;
+		$schema = $target->schema;
 
 		try {
 			$saved = $objectService->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);

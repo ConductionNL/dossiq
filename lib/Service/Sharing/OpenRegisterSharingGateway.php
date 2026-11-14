@@ -174,6 +174,19 @@ class OpenRegisterSharingGateway {
 			return null;
 		}
 
+		return $this->withMethods(service: $service, className: $className, methods: $methods);
+	}//end resolve()
+
+	/**
+	 * The service when it carries every method the caller will invoke, null and a warning otherwise.
+	 *
+	 * @param mixed              $service   The resolved service.
+	 * @param string             $className The fully qualified class name.
+	 * @param array<int, string> $methods   The methods the caller will invoke.
+	 *
+	 * @return object|null The service, or null.
+	 */
+	private function withMethods(mixed $service, string $className, array $methods): object|null {
 		foreach ($methods as $method) {
 			if (method_exists($service, $method) === false) {
 				$this->logger->warning(
@@ -185,7 +198,7 @@ class OpenRegisterSharingGateway {
 		}
 
 		return $service;
-	}//end resolve()
+	}//end withMethods()
 
 	/**
 	 * Resolve OpenRegister's FederationShareService — the leaf that owns

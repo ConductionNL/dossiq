@@ -93,10 +93,7 @@ class ChecklistTemplateStore implements ChecklistTemplateStoreInterface {
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
-		$params = ['_limit' => 100, '_order' => 'name'];
-		if ($caseTypeRef !== null && $caseTypeRef !== '') {
-			$params['caseType'] = $caseTypeRef;
-		}
+		$params = $this->listFilters(caseTypeRef: $caseTypeRef);
 
 		try {
 			$templates = $this->searchObjectsAsArrays(
@@ -115,6 +112,22 @@ class ChecklistTemplateStore implements ChecklistTemplateStoreInterface {
 
 		return array_map(fn (array $template): array => $this->mapper->toFlat(template: $template), $templates);
 	}//end all()
+
+	/**
+	 * The search filters for the template list, narrowed to a case type when one is given.
+	 *
+	 * @param string|null $caseTypeRef Optional case type uuid to filter on.
+	 *
+	 * @return array<string, mixed> The filters.
+	 */
+	private function listFilters(?string $caseTypeRef): array {
+		$params = ['_limit' => 100, '_order' => 'name'];
+		if ($caseTypeRef !== null && $caseTypeRef !== '') {
+			$params['caseType'] = $caseTypeRef;
+		}
+
+		return $params;
+	}//end listFilters()
 
 	/**
 	 * Create a checklist template from the editor's flat payload.

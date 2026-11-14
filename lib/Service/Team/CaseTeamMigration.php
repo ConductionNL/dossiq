@@ -201,12 +201,12 @@ class CaseTeamMigration implements CaseTeamMigrationInterface {
 	private function migrate(CaseTeamStore $store, bool $apply): array {
 		$sort = new CaseTeamSort(
 			store: $store,
-			roles: $this->roles(objectService: $store->objectService, register: $store->register, roleSchema: $store->roleSchema),
+			roles: $this->roles(store: $store),
 			apply: $apply,
 			report: new TeamMigrationReport(),
 		);
 
-		foreach ($this->cases(objectService: $store->objectService, register: $store->register, caseSchema: $store->caseSchema) as $case) {
+		foreach ($this->cases(store: $store) as $case) {
 			$this->sortOne(sort: $sort, case: $case);
 		}
 
@@ -332,19 +332,18 @@ class CaseTeamMigration implements CaseTeamMigrationInterface {
 	/**
 	 * Every organisation role, by id.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register      The register.
-	 * @param string $roleSchema    The organisatieRol schema, or '' when not configured.
+	 * @param CaseTeamStore $store OpenRegister's ObjectService, the register and the organisatieRol schema
+	 *                             ('' when not configured).
 	 *
 	 * @return array<string, array<string, mixed>> The roles by id.
 	 */
-	private function roles(object $objectService, string $register, string $roleSchema): array {
-		if ($roleSchema === '') {
+	private function roles(CaseTeamStore $store): array {
+		if ($store->roleSchema === '') {
 			return [];
 		}
 
 		$roles = [];
-		foreach ($this->pages(objectService: $objectService, register: $register, schema: $roleSchema) as $row) {
+		foreach ($this->pages(store: $store, schema: $store->roleSchema) as $row) {
 			$id = $this->referenceId(value: ($row['id'] ?? ($row['uuid'] ?? ($row['@self'] ?? ''))));
 			if ($id !== '') {
 				$roles[$id] = $row;
@@ -357,14 +356,12 @@ class CaseTeamMigration implements CaseTeamMigrationInterface {
 	/**
 	 * Every case, page by page.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register      The register.
-	 * @param string $caseSchema    The case schema.
+	 * @param CaseTeamStore $store OpenRegister's ObjectService, the register and the case schema.
 	 *
 	 * @return iterable<array<string, mixed>> The cases.
 	 */
-	private function cases(object $objectService, string $register, string $caseSchema): iterable {
-		return $this->pages(objectService: $objectService, register: $register, schema: $caseSchema);
+	private function cases(CaseTeamStore $store): iterable {
+		return $this->pages(store: $store, schema: $store->caseSchema);
 	}//end cases()
 
 	/**
@@ -373,19 +370,18 @@ class CaseTeamMigration implements CaseTeamMigrationInterface {
 	 * Stops on a short page, and on a page that repeats the previous one: a
 	 * store that ignores `_offset` would otherwise loop for ever.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register      The register.
-	 * @param string $schema        The schema.
+	 * @param CaseTeamStore $store  OpenRegister's ObjectService and the register.
+	 * @param string        $schema The schema.
 	 *
 	 * @return \Generator<int, array<string, mixed>> The rows.
 	 */
-	private function pages(object $objectService, string $register, string $schema): \Generator {
+	private function pages(CaseTeamStore $store, string $schema): \Generator {
 		$offset = 0;
 		$previous = null;
 		while (true) {
 			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
+				objectService: $store->objectService,
+				register: $store->register,
 				schema: $schema,
 				filters: ['_limit' => self::PAGE, '_offset' => $offset],
 			);

@@ -145,9 +145,7 @@ final class CompoundFileStreams {
 	 * @return array<string, string>
 	 */
 	private function read(): array {
-		$this->sectorSize = (1 << $this->u16(offset: 0x1E));
-		$this->miniSectorSize = (1 << $this->u16(offset: 0x20));
-		if (in_array($this->sectorSize, [512, 4096], true) === false || $this->miniSectorSize !== 64) {
+		if ($this->readSectorSizes() === false) {
 			return [];
 		}
 
@@ -162,6 +160,30 @@ final class CompoundFileStreams {
 		$root = $this->entries[0];
 		$this->miniStream = substr($this->chain(start: $root['start']), 0, $root['size']);
 
+		return $this->rootStreamsByName();
+	}//end read()
+
+	/**
+	 * Read the sector sizes from the header, answering whether they are ones this reader knows.
+	 *
+	 * @return bool
+	 */
+	private function readSectorSizes(): bool {
+		$this->sectorSize = (1 << $this->u16(offset: 0x1E));
+		$this->miniSectorSize = (1 << $this->u16(offset: 0x20));
+		if (in_array($this->sectorSize, [512, 4096], true) === false || $this->miniSectorSize !== 64) {
+			return false;
+		}
+
+		return true;
+	}//end readSectorSizes()
+
+	/**
+	 * The root's stream children, by name.
+	 *
+	 * @return array<string, string>
+	 */
+	private function rootStreamsByName(): array {
 		$streams = [];
 		foreach ($this->rootChildren() as $index) {
 			$entry = $this->entries[$index];
@@ -171,7 +193,7 @@ final class CompoundFileStreams {
 		}
 
 		return $streams;
-	}//end read()
+	}//end rootStreamsByName()
 
 	/**
 	 * The sector allocation table, from the header's list and the extra list sectors.

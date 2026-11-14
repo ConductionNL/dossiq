@@ -16,7 +16,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\NotificatieService;
 use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwDocumentService;
-use OCA\Dossiq\Service\ZgwJwtValidator;
+use OCA\Dossiq\Service\Zgw\ApiCredentialResolver;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwPaginationHelper;
 use OCA\Dossiq\Service\ZgwService;
@@ -65,7 +65,7 @@ class ZgwCreateDropsCallerIdentityTest extends TestCase {
 			$this->createMock(ZgwDocumentService::class),
 			$this->createMock(NotificatieService::class),
 			$rules,
-			$this->createMock(ZgwJwtValidator::class),
+			$this->createMock(ApiCredentialResolver::class),
 			new NullLogger(),
 		);
 

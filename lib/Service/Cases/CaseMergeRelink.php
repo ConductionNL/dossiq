@@ -66,32 +66,64 @@ class CaseMergeRelink {
 		$moves = [];
 
 		foreach ($this->rule->relinkDeclarations() as $declaration) {
-			$slug = (string)($declaration['schema'] ?? '');
-			$field = (string)($declaration['field'] ?? '');
-			$schemaId = $this->store->schemaId(slug: $slug);
-			if ($slug === '' || $field === '' || $schemaId === '') {
-				continue;
-			}
-
-			foreach ($this->store->rowsFor(schemaId: $schemaId, filters: [$field => $fromId]) as $row) {
-				$id = (string)($row['id'] ?? '');
-				if ($id === '') {
-					continue;
-				}
-
-				if ($this->store->patchRow(schemaId: $schemaId, id: $id, changes: [$field => $toId]) === false) {
-					continue;
-				}
-
-				$moves[] = [
-					'schema' => $slug,
-					'id' => $id,
-				];
-			}
+			$moves = array_merge($moves, $this->moveDeclared(declaration: $declaration, fromId: $fromId, toId: $toId));
 		}
 
 		return $moves;
 	}//end move()
+
+	/**
+	 * Move one declared kind of row from the merged case to the survivor.
+	 *
+	 * @param array<string, mixed> $declaration The relink declaration: schema slug and field.
+	 * @param string               $fromId      The merged case.
+	 * @param string               $toId        The survivor.
+	 *
+	 * @return array<int, array{schema: string, id: string}> The moves, for a reversal.
+	 */
+	private function moveDeclared(array $declaration, string $fromId, string $toId): array {
+		$slug = (string)($declaration['schema'] ?? '');
+		$field = (string)($declaration['field'] ?? '');
+		$schemaId = $this->store->schemaId(slug: $slug);
+		if ($slug === '' || $field === '' || $schemaId === '') {
+			return [];
+		}
+
+		$moves = [];
+		foreach ($this->moveRows(schemaId: $schemaId, field: $field, fromId: $fromId, toId: $toId) as $id) {
+			$moves[] = ['schema' => $slug, 'id' => $id];
+		}
+
+		return $moves;
+	}//end moveDeclared()
+
+	/**
+	 * Point every row of a schema that names the merged case at the survivor.
+	 *
+	 * @param string $schemaId The schema.
+	 * @param string $field    The field naming the case.
+	 * @param string $fromId   The merged case.
+	 * @param string $toId     The survivor.
+	 *
+	 * @return array<int, string> The ids of the rows moved.
+	 */
+	private function moveRows(string $schemaId, string $field, string $fromId, string $toId): array {
+		$ids = [];
+		foreach ($this->store->rowsFor(schemaId: $schemaId, filters: [$field => $fromId]) as $row) {
+			$id = (string)($row['id'] ?? '');
+			if ($id === '') {
+				continue;
+			}
+
+			if ($this->store->patchRow(schemaId: $schemaId, id: $id, changes: [$field => $toId]) === false) {
+				continue;
+			}
+
+			$ids[] = $id;
+		}
+
+		return $ids;
+	}//end moveRows()
 
 	/**
 	 * Put the recorded moves back on the case they came from.

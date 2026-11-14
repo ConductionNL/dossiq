@@ -95,13 +95,37 @@ class LinkMarkerListener implements IEventListener {
 			return;
 		}
 
-		try {
-			$rules = (new LinkMarkerRuleReader())->fromJson(json: $this->settingsService->getConfigValue(key: self::RULES_KEY));
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: the link marker rules do not read: '.$e->getMessage());
+		$rules = $this->markerRules();
+		if ($rules === null) {
 			return;
 		}
 
+		$this->applyAll(rules: $rules, source: $source);
+	}//end handle()
+
+	/**
+	 * The configured marker rules, null (and a warning) when they do not read.
+	 *
+	 * @return array<int, LinkMarkerRule>|null
+	 */
+	private function markerRules(): array|null {
+		try {
+			return (new LinkMarkerRuleReader())->fromJson(json: $this->settingsService->getConfigValue(key: self::RULES_KEY));
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: the link marker rules do not read: '.$e->getMessage());
+			return null;
+		}
+	}//end markerRules()
+
+	/**
+	 * Apply each rule to a saved object, skipping a rule that fails.
+	 *
+	 * @param array<int, LinkMarkerRule> $rules  The rules.
+	 * @param array<string, mixed>       $source The saved object.
+	 *
+	 * @return void
+	 */
+	private function applyAll(array $rules, array $source): void {
 		foreach ($rules as $rule) {
 			try {
 				$this->apply(rule: $rule, source: $source);
@@ -112,7 +136,7 @@ class LinkMarkerListener implements IEventListener {
 				);
 			}
 		}
-	}//end handle()
+	}//end applyAll()
 
 	/**
 	 * Apply one rule to a saved object.

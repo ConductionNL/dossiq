@@ -131,6 +131,7 @@
 						"widgetProps": {
 							"actions": [
 								"link-to-case",
+								"file-on-case",
 								"new-case-from-message"
 							]
 						}
@@ -150,6 +151,48 @@
 						"route": "CaseDetail",
 						"params": {
 							"id": "@row.suggestion.case"
+						}
+					},
+					{
+						"id": "file-on-case",
+						"label": "File on a case",
+						"variant": "secondary",
+						"type": "open-modal",
+						"target": "CnActionDialog",
+						"_note": "capability-rows-say-the-whole-capability 2.7 (REQ-CRS-18): file the message on any case the intake worker picks, not only the one its subject suggests. The dialog posts to the intake log's file-on-case route, which holds the intake role, the read check on the picked case and the required reason; a filed message has outcome case and so leaves this queue, which lists inbox and quarantined messages only.",
+						"props": {
+							"config": {
+								"title": "File this message on a case",
+								"eyebrow": "{sender}",
+								"summary": { "title": "{subject}", "meta": "{sender}" },
+								"fields": [
+									{
+										"field": "caseId",
+										"type": "search",
+										"label": "Case",
+										"required": true,
+										"source": { "register": "dossiq", "schema": "case" },
+										"optionLabel": "{title}",
+										"optionSecondary": "{identifier}"
+									},
+									{
+										"field": "reason",
+										"type": "text",
+										"label": "Reason",
+										"required": true,
+										"placeholder": "Why does this message belong on that case?"
+									}
+								],
+								"confirm": {
+									"label": "File it",
+									"icon": "FileMoveOutline",
+									"request": {
+										"method": "POST",
+										"url": "/apps/dossiq/api/mail-intake/log/@objectId/file-on-case"
+									}
+								},
+								"doneText": "The message is filed on the case."
+							}
 						}
 					},
 					{

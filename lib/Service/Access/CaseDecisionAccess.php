@@ -136,13 +136,19 @@ class CaseDecisionAccess implements CaseDecisionAccessInterface {
 			return [$case];
 		}
 
+		return $this->casesLinkedTo(objectUuid: $objectUuid);
+	}//end casesOf()
+
+	/**
+	 * The cases a document is linked to, each once, in link order.
+	 *
+	 * @param string $objectUuid The document's uuid.
+	 *
+	 * @return array<int, array<string, mixed>> The case rows.
+	 */
+	private function casesLinkedTo(string $objectUuid): array {
 		$cases = [];
-		$links = $this->lookup->rowsOf(
-			schema: $this->settingsService->getConfigValue('case_document_schema'),
-			field: self::DOCUMENT_FIELD,
-			caseId: $objectUuid
-		);
-		foreach ($links as $link) {
+		foreach ($this->documentLinks(objectUuid: $objectUuid) as $link) {
 			$caseId = $this->caseTypes->referenceId(value: ($link[self::CASE_FIELD] ?? ''));
 			if ($caseId === '' || isset($cases[$caseId]) === true) {
 				continue;
@@ -155,5 +161,20 @@ class CaseDecisionAccess implements CaseDecisionAccessInterface {
 		}
 
 		return array_values($cases);
-	}//end casesOf()
+	}//end casesLinkedTo()
+
+	/**
+	 * The case-document link rows of a document.
+	 *
+	 * @param string $objectUuid The document's uuid.
+	 *
+	 * @return array<int, array<string, mixed>> The link rows.
+	 */
+	private function documentLinks(string $objectUuid): array {
+		return $this->lookup->rowsOf(
+			schema: $this->settingsService->getConfigValue('case_document_schema'),
+			field: self::DOCUMENT_FIELD,
+			caseId: $objectUuid
+		);
+	}//end documentLinks()
 }//end class

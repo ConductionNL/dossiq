@@ -380,7 +380,7 @@ class RefusalOutcome implements RefusalOutcomeInterface {
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'organisatie_rol_schema');
 
-		if ($objectService === null || $register === '' || $schema === '') {
+		if ($this->isConfigured(hasObjects: $objectService !== null, register: $register, schema: $schema) === false) {
 			return null;
 		}
 
@@ -402,6 +402,19 @@ class RefusalOutcome implements RefusalOutcomeInterface {
 
 		return $rows;
 	}//end roleRowsFor()
+
+	/**
+	 * Whether the object service, register and organisation role schema are all there.
+	 *
+	 * @param bool   $hasObjects Whether OpenRegister's object service is there.
+	 * @param string $register   The register id.
+	 * @param string $schema     The organisation role schema id.
+	 *
+	 * @return bool
+	 */
+	private function isConfigured(bool $hasObjects, string $register, string $schema): bool {
+		return $hasObjects === true && $register !== '' && $schema !== '';
+	}//end isConfigured()
 
 	/**
 	 * Log that the team of a destination could not be resolved.

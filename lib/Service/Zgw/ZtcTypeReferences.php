@@ -203,26 +203,53 @@ class ZtcTypeReferences {
 
 		$resolved = [];
 		foreach ($body['gerelateerdeZaaktypen'] as $rel) {
-			$caseTypeRef = $rel['caseType'] ?? '';
-			if ($caseTypeRef === '' || is_string($caseTypeRef) === false) {
-				continue;
-			}
-
-			if (str_starts_with($caseTypeRef, 'http://') === true || str_starts_with($caseTypeRef, 'https://') === true) {
-				$resolved[] = $rel;
-				continue;
-			}
-
-			$foundIds = $this->lookups->findAllObjectsByField(register: $scope[0], schema: $scope[1], field: 'identifier', value: $caseTypeRef);
-			foreach ($foundIds as $id) {
-				$entry = $rel;
-				$entry['caseType'] = $id;
-				$resolved[] = $entry;
-			}
+			$resolved = array_merge($resolved, $this->resolvedRelations(rel: $rel, scope: $scope));
 		}//end foreach
 
 		$body['gerelateerdeZaaktypen'] = $resolved;
 
 		return $body;
 	}//end resolveGerelateerdeZaaktypen()
+
+	/**
+	 * One gerelateerdeZaaktype relation resolved: kept by URL, one per match by identificatie, or dropped.
+	 *
+	 * @param mixed $rel   The relation.
+	 * @param array $scope The register and the case type schema.
+	 *
+	 * @return array The resolved relations.
+	 */
+	private function resolvedRelations(mixed $rel, array $scope): array {
+		$caseTypeRef = $rel['caseType'] ?? '';
+		if ($caseTypeRef === '' || is_string($caseTypeRef) === false) {
+			return [];
+		}
+
+		if (str_starts_with($caseTypeRef, 'http://') === true || str_starts_with($caseTypeRef, 'https://') === true) {
+			return [$rel];
+		}
+
+		return $this->relationsByIdentifier(rel: $rel, scope: $scope, caseTypeRef: $caseTypeRef);
+	}//end resolvedRelations()
+
+	/**
+	 * One relation per zaaktype whose identificatie matches the reference.
+	 *
+	 * @param mixed  $rel         The relation.
+	 * @param array  $scope       The register and the case type schema.
+	 * @param string $caseTypeRef The identificatie.
+	 *
+	 * @return array The relations.
+	 */
+	private function relationsByIdentifier(mixed $rel, array $scope, string $caseTypeRef): array {
+		$resolved = [];
+		$foundIds = $this->lookups->findAllObjectsByField(register: $scope[0], schema: $scope[1], field: 'identifier', value: $caseTypeRef);
+		foreach ($foundIds as $id) {
+			$entry = $rel;
+			$entry['caseType'] = $id;
+			$resolved[] = $entry;
+		}
+
+		return $resolved;
+	}//end relationsByIdentifier()
 }//end class

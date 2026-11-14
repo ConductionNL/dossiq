@@ -518,7 +518,7 @@ class DrcController extends ZgwController {
 		$needsFileId = ($fileId > 0 && (int)($objectData['fileId'] ?? 0) !== $fileId);
 
 		if ($needsSize === true || $needsFileId === true) {
-			$objectData = $this->withFileFacts(objectData: $objectData, needsSize: $needsSize, fileSize: $fileSize, fileId: $fileId);
+			$objectData = $this->withFileFacts(objectData: $objectData, fileSize: $fileSize, fileId: $fileId);
 			$objectData = $this->saveWholeEio(objectData: $objectData, objectUuid: $objectUuid, mappingConfig: $mappingConfig);
 		}
 
@@ -545,14 +545,13 @@ class DrcController extends ZgwController {
 	 * Stamp the stored file's size (when the document has none) and its file id on a document.
 	 *
 	 * @param array $objectData The saved document.
-	 * @param bool $needsSize Whether the document still lacks a fileSize.
 	 * @param int $fileSize The stored file's size.
 	 * @param int $fileId The stored file's id, 0 when unresolved.
 	 *
 	 * @return array The stamped document.
 	 */
-	private function withFileFacts(array $objectData, bool $needsSize, int $fileSize, int $fileId): array {
-		if ($needsSize === true) {
+	private function withFileFacts(array $objectData, int $fileSize, int $fileId): array {
+		if (empty($objectData['fileSize']) === true) {
 			$objectData['fileSize'] = $fileSize;
 		}
 
@@ -1060,11 +1059,7 @@ class DrcController extends ZgwController {
 			return null;
 		}
 
-		return $this->resolveStoredLockId(
-			objectService: $objectService,
-			mappingConfig: $mappingConfig,
-			uuid: $uuid
-		);
+		return $this->resolveStoredLockId(document: new EioDocument(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid));
 	}//end storedLockIdFor()
 
 	/**
@@ -1097,12 +1092,7 @@ class DrcController extends ZgwController {
 		// Generate one and store it in the data blob for verification.
 		$lockId = bin2hex(random_bytes(16));
 		if ($mappingConfig !== null) {
-			$this->storeLockIdInData(
-				objectService: $objectService,
-				mappingConfig: $mappingConfig,
-				uuid: $uuid,
-				lockId: $lockId
-			);
+			$this->storeLockIdInData(document: new EioDocument(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid), lockId: $lockId);
 		}
 
 		return new JSONResponse(
@@ -1128,7 +1118,7 @@ class DrcController extends ZgwController {
 		}
 
 		try {
-			return $this->lockViaSave(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+			return $this->lockViaSave(document: new EioDocument(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid));
 		} catch (\Throwable $e) {
 			return $this->fallbackFailure(logPrefix: 'DRC lock fallback error: ', e: $e);
 		}//end try
@@ -1137,16 +1127,14 @@ class DrcController extends ZgwController {
 	/**
 	 * Lock a document by writing a fresh lockId into its stored data.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param array  $mappingConfig The EIO mapping configuration
-	 * @param string $uuid          The document UUID
+	 * @param EioDocument $document The document, its object service and its mapping.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @throws \Throwable When the object cannot be read or saved.
 	 */
-	private function lockViaSave(object $objectService, array $mappingConfig, string $uuid): JSONResponse {
-		$existingData = $this->fallbackObjectData(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+	private function lockViaSave(EioDocument $document): JSONResponse {
+		$existingData = $this->fallbackObjectData(document: $document);
 
 		$lockId = bin2hex(random_bytes(16));
 
@@ -1154,7 +1142,7 @@ class DrcController extends ZgwController {
 		$existingData['locked'] = true;
 		$existingData['lockId'] = $lockId;
 
-		$this->saveFallbackObject(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, data: $existingData);
+		$this->saveFallbackObject(document: $document, data: $existingData);
 
 		return new JSONResponse(data: ['lock' => $lockId], statusCode: Http::STATUS_OK);
 	}//end lockViaSave()
@@ -1162,19 +1150,17 @@ class DrcController extends ZgwController {
 	/**
 	 * Read a document's stored data for the lock fallbacks.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param array  $mappingConfig The EIO mapping configuration
-	 * @param string $uuid          The document UUID
+	 * @param EioDocument $document The document, its object service and its mapping.
 	 *
 	 * @return array The object data
 	 *
 	 * @throws \Throwable When the object cannot be found.
 	 */
-	private function fallbackObjectData(object $objectService, array $mappingConfig, string $uuid): array {
-		$existing = $objectService->find(
-			$uuid,
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema']
+	private function fallbackObjectData(EioDocument $document): array {
+		$existing = $document->objectService->find(
+			$document->uuid,
+			register: $document->mappingConfig['sourceRegister'],
+			schema: $document->mappingConfig['sourceSchema']
 		);
 		return $this->objectToArray(row: $existing);
 	}//end fallbackObjectData()
@@ -1182,21 +1168,19 @@ class DrcController extends ZgwController {
 	/**
 	 * Save a document's data for the lock fallbacks.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param array  $mappingConfig The EIO mapping configuration
-	 * @param string $uuid          The document UUID
-	 * @param array  $data          The object data to save
+	 * @param EioDocument $document The document, its object service and its mapping.
+	 * @param array       $data     The object data to save
 	 *
 	 * @return void
 	 *
 	 * @throws \Throwable When the object cannot be saved.
 	 */
-	private function saveFallbackObject(object $objectService, array $mappingConfig, string $uuid, array $data): void {
-		$objectService->saveObject(
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema'],
+	private function saveFallbackObject(EioDocument $document, array $data): void {
+		$document->objectService->saveObject(
+			register: $document->mappingConfig['sourceRegister'],
+			schema: $document->mappingConfig['sourceSchema'],
 			object: $data,
-			uuid: $uuid
+			uuid: $document->uuid
 		);
 	}//end saveFallbackObject()
 
@@ -1313,7 +1297,7 @@ class DrcController extends ZgwController {
 
 		// Clear lockId from the data blob.
 		if ($mappingConfig !== null) {
-			$this->clearLockIdInData(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+			$this->clearLockIdInData(document: new EioDocument(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid));
 		}
 
 		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
@@ -1371,7 +1355,7 @@ class DrcController extends ZgwController {
 		}
 
 		try {
-			return $this->unlockViaSave(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+			return $this->unlockViaSave(document: new EioDocument(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid));
 		} catch (\Throwable $e) {
 			return $this->fallbackFailure(logPrefix: 'DRC unlock fallback error: ', e: $e);
 		}//end try
@@ -1380,16 +1364,14 @@ class DrcController extends ZgwController {
 	/**
 	 * Unlock a document by clearing the lock fields in its stored data.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param array  $mappingConfig The EIO mapping configuration
-	 * @param string $uuid          The document UUID
+	 * @param EioDocument $document The document, its object service and its mapping.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @throws \Throwable When the object cannot be read or saved.
 	 */
-	private function unlockViaSave(object $objectService, array $mappingConfig, string $uuid): JSONResponse {
-		$existingData = $this->fallbackObjectData(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+	private function unlockViaSave(EioDocument $document): JSONResponse {
+		$existingData = $this->fallbackObjectData(document: $document);
 
 		unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
 		$existingData['locked'] = false;
@@ -1401,7 +1383,7 @@ class DrcController extends ZgwController {
 			}
 		}
 
-		$this->saveFallbackObject(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, data: $existingData);
+		$this->saveFallbackObject(document: $document, data: $existingData);
 
 		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 	}//end unlockViaSave()
@@ -1737,6 +1719,28 @@ class DrcController extends ZgwController {
 	 * @return array|null Array with informatieobjectUuid, or null
 	 */
 	private function getGebruiksrechtData(string $uuid): ?array {
+		$source = $this->gebruiksrechtSource();
+		if ($source === null) {
+			return null;
+		}
+
+		[$objectService, $mappingConfig] = $source;
+		try {
+			$obj = $objectService->find($uuid, register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema']);
+			return $this->informatieobjectUuidOf(data: $this->objectToArray(row: $obj));
+		} catch (\Throwable $e) {
+			// Not found.
+		}
+
+		return null;
+	}//end getGebruiksrechtData()
+
+	/**
+	 * The object service and the gebruiksrechten mapping.
+	 *
+	 * @return array{0: object, 1: array}|null Null when either is unavailable.
+	 */
+	private function gebruiksrechtSource(): array|null {
 		$objectService = $this->zgwService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -1747,25 +1751,25 @@ class DrcController extends ZgwController {
 			return null;
 		}
 
-		try {
-			$obj = $objectService->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$data = $this->objectToArray(row: $obj);
+		return [$objectService, $mappingConfig];
+	}//end gebruiksrechtSource()
 
-			$ioRef = $data['document'] ?? ($data['informatieobject'] ?? '');
-			$uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
-			if (preg_match($uuidPattern, (string)$ioRef, $grMatches) === 1) {
-				return ['informatieobjectUuid' => $grMatches[1]];
-			}
-		} catch (\Throwable $e) {
-			// Not found.
+	/**
+	 * The informatieobject uuid a gebruiksrecht refers to.
+	 *
+	 * @param array $data The gebruiksrecht.
+	 *
+	 * @return array|null Array with informatieobjectUuid, or null when it names none.
+	 */
+	private function informatieobjectUuidOf(array $data): array|null {
+		$ioRef = $data['document'] ?? ($data['informatieobject'] ?? '');
+		$uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
+		if (preg_match($uuidPattern, (string)$ioRef, $grMatches) === 1) {
+			return ['informatieobjectUuid' => $grMatches[1]];
 		}
 
 		return null;
-	}//end getGebruiksrechtData()
+	}//end informatieobjectUuidOf()
 
 	/**
 	 * Check if EIO still has gebruiksrechten after deletion (drc-006 VNG).
@@ -1882,7 +1886,10 @@ class DrcController extends ZgwController {
 		$eioConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
 		if ($eioConfig !== null) {
 			try {
-				$this->writeUsageRightsIndication(objectService: $objectService, eioConfig: $eioConfig, eioUuid: $eioUuid, value: null);
+				$this->writeUsageRightsIndication(
+					document: new EioDocument(objectService: $objectService, mappingConfig: $eioConfig, uuid: $eioUuid),
+					value: null
+				);
 			} catch (\Throwable $e) {
 				$this->zgwService->getLogger()->warning(
 					'drc-006: Failed to clear indicatieGebruiksrecht: ' . $e->getMessage()
@@ -1894,31 +1901,29 @@ class DrcController extends ZgwController {
 	/**
 	 * Write usageRightsIndication on a document and save it.
 	 *
-	 * @param object $objectService The object service.
-	 * @param array $eioConfig The EIO mapping.
-	 * @param string $eioUuid The EIO UUID.
-	 * @param bool|null $value The value to set (true or null).
+	 * @param EioDocument $document The document, its object service and its mapping.
+	 * @param bool|null   $value    The value to set (true or null).
 	 *
 	 * @return void
 	 *
 	 * @throws \Throwable When finding or saving the document fails.
 	 */
-	private function writeUsageRightsIndication(object $objectService, array $eioConfig, string $eioUuid, ?bool $value): void {
-		$eioObj = $objectService->find(
-			$eioUuid,
-			register: $eioConfig['sourceRegister'],
-			schema: $eioConfig['sourceSchema']
+	private function writeUsageRightsIndication(EioDocument $document, ?bool $value): void {
+		$eioObj = $document->objectService->find(
+			$document->uuid,
+			register: $document->mappingConfig['sourceRegister'],
+			schema: $document->mappingConfig['sourceSchema']
 		);
 		$eioData = $this->objectToArray(row: $eioObj);
 
 		$eioData['usageRightsIndication'] = $value;
 
 		unset($eioData['@self'], $eioData['id'], $eioData['organisation']);
-		$objectService->saveObject(
-			register: $eioConfig['sourceRegister'],
-			schema: $eioConfig['sourceSchema'],
+		$document->objectService->saveObject(
+			register: $document->mappingConfig['sourceRegister'],
+			schema: $document->mappingConfig['sourceSchema'],
 			object: $eioData,
-			uuid: $eioUuid
+			uuid: $document->uuid
 		);
 	}//end writeUsageRightsIndication()
 
@@ -1946,22 +1951,23 @@ class DrcController extends ZgwController {
 			return;
 		}
 
-		$this->setUsageRightsIndicationOrWarn(objectService: $objectService, eioConfig: $eioConfig, eioUuid: $ioMatches[1], value: $value);
+		$this->setUsageRightsIndicationOrWarn(
+			document: new EioDocument(objectService: $objectService, mappingConfig: $eioConfig, uuid: $ioMatches[1]),
+			value: $value
+		);
 	}//end setIndicatieGebruiksrecht()
 
 	/**
 	 * Write usageRightsIndication on a document, logging a failure instead of raising it.
 	 *
-	 * @param object $objectService The object service.
-	 * @param array $eioConfig The EIO mapping.
-	 * @param string $eioUuid The EIO UUID.
-	 * @param bool|null $value The value to set (true or null).
+	 * @param EioDocument $document The document, its object service and its mapping.
+	 * @param bool|null   $value    The value to set (true or null).
 	 *
 	 * @return void
 	 */
-	private function setUsageRightsIndicationOrWarn(object $objectService, array $eioConfig, string $eioUuid, ?bool $value): void {
+	private function setUsageRightsIndicationOrWarn(EioDocument $document, ?bool $value): void {
 		try {
-			$this->writeUsageRightsIndication(objectService: $objectService, eioConfig: $eioConfig, eioUuid: $eioUuid, value: $value);
+			$this->writeUsageRightsIndication(document: $document, value: $value);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning(
 				'drc-006: Failed to set indicatieGebruiksrecht: ' . $e->getMessage()
@@ -2083,16 +2089,25 @@ class DrcController extends ZgwController {
 			$mergedSize = $this->mergeUploadedChunks(objectData: $objectData, uuid: $uuid, totalParts: $totalParts, mappingConfig: $mappingConfig);
 
 			return $this->chunkProgress(
-				progress: ['sequenceNumber' => $sequenceNumber, 'size' => $chunkSize, 'uploadComplete' => true, 'bestandsomvang' => $mergedSize],
-				uploadedParts: $uploadedParts,
-				totalParts: $totalParts
+				progress: [
+					'sequenceNumber' => $sequenceNumber,
+					'size' => $chunkSize,
+					'uploadComplete' => true,
+					'bestandsomvang' => $mergedSize,
+					'uploadedParts' => $uploadedParts,
+					'totalParts' => $totalParts,
+				]
 			);
 		}//end if
 
 		return $this->chunkProgress(
-			progress: ['sequenceNumber' => $sequenceNumber, 'size' => $chunkSize, 'uploadComplete' => false],
-			uploadedParts: $uploadedParts,
-			totalParts: $totalParts
+			progress: [
+				'sequenceNumber' => $sequenceNumber,
+				'size' => $chunkSize,
+				'uploadComplete' => false,
+				'uploadedParts' => $uploadedParts,
+				'totalParts' => $totalParts,
+			]
 		);
 	}//end receiveChunk()
 
@@ -2223,15 +2238,14 @@ class DrcController extends ZgwController {
 	/**
 	 * The answer to a stored chunk: the chunk's facts, then how many parts are in.
 	 *
-	 * @param array $progress The chunk's sequenceNumber, size, uploadComplete (and bestandsomvang when complete).
-	 * @param int $uploadedParts The number of parts uploaded so far.
-	 * @param int $totalParts The number of parts expected.
+	 * @param array $progress The chunk's sequenceNumber, size, uploadComplete (and bestandsomvang when complete),
+	 *                        then the number of parts uploaded so far and the number expected.
 	 *
 	 * @return JSONResponse
 	 */
-	private function chunkProgress(array $progress, int $uploadedParts, int $totalParts): JSONResponse {
+	private function chunkProgress(array $progress): JSONResponse {
 		return new JSONResponse(
-			data: array_merge($progress, ['uploadedParts' => $uploadedParts, 'totalParts' => $totalParts]),
+			data: $progress,
 			statusCode: Http::STATUS_OK
 		);
 	}//end chunkProgress()
@@ -2626,9 +2640,11 @@ class DrcController extends ZgwController {
 		// Try OpenRegister's LockHandler first, then check the object data
 		// blob (used by lockFallback in JWT-only contexts).
 		$storedLockId = $this->resolveStoredLockId(
-			objectService: $this->zgwService->getObjectService(),
-			mappingConfig: $run->mappingConfig,
-			uuid: $run->uuid
+			document: new EioDocument(
+				objectService: $this->zgwService->getObjectService(),
+				mappingConfig: $run->mappingConfig,
+				uuid: $run->uuid
+			)
 		);
 
 		if ($storedLockId === null) {
@@ -2735,20 +2751,14 @@ class DrcController extends ZgwController {
 	 * Resolve the stored lock ID from either OpenRegister's LockHandler
 	 * or the object data blob (fallback lock).
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param array $mappingConfig The mapping configuration
-	 * @param string $uuid The document UUID
+	 * @param EioDocument $document The document, its object service and its mapping.
 	 *
 	 * @return string|null The stored lock ID, or null if not locked
 	 */
-	private function resolveStoredLockId(
-		object $objectService,
-		array $mappingConfig,
-		string $uuid,
-	): ?string {
+	private function resolveStoredLockId(EioDocument $document): ?string {
 		// Try OpenRegister's dedicated lock system first, then the object data blob.
-		return $this->lockIdFromLockSystem(objectService: $objectService, uuid: $uuid)
-			?? $this->lockIdFromObject(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+		return $this->lockIdFromLockSystem(objectService: $document->objectService, uuid: $document->uuid)
+			?? $this->lockIdFromObject(document: $document);
 	}//end resolveStoredLockId()
 
 	/**
@@ -2780,19 +2790,17 @@ class DrcController extends ZgwController {
 	/**
 	 * The lock id stored on the object by lock/lockFallback, or 'entity-lock' for a locked flag.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param array $mappingConfig The EIO mapping.
-	 * @param string $uuid The document uuid.
+	 * @param EioDocument $document The document, its object service and its mapping.
 	 *
 	 * @return string|null The lock id, or null when the object is not locked or not found.
 	 */
-	private function lockIdFromObject(object $objectService, array $mappingConfig, string $uuid): ?string {
+	private function lockIdFromObject(EioDocument $document): ?string {
 		try {
 			$existingData = $this->objectToArray(
-				row: $objectService->find(
-					$uuid,
-					register: $mappingConfig['sourceRegister'],
-					schema: $mappingConfig['sourceSchema']
+				row: $document->objectService->find(
+					$document->uuid,
+					register: $document->mappingConfig['sourceRegister'],
+					schema: $document->mappingConfig['sourceSchema']
 				)
 			);
 		} catch (\Throwable $e) {
@@ -2817,25 +2825,18 @@ class DrcController extends ZgwController {
 	/**
 	 * Store a ZGW lockId in the object data blob.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param array $mappingConfig The mapping configuration
-	 * @param string $uuid The document UUID
-	 * @param string $lockId The lock ID to store
+	 * @param EioDocument $document The document, its object service and its mapping.
+	 * @param string      $lockId   The lock ID to store
 	 *
 	 * @return void
 	 */
-	private function storeLockIdInData(
-		object $objectService,
-		array $mappingConfig,
-		string $uuid,
-		string $lockId,
-	): void {
+	private function storeLockIdInData(EioDocument $document, string $lockId): void {
 		try {
-			$existingData = $this->lockDataOf(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+			$existingData = $this->lockDataOf(document: $document);
 			$existingData['locked'] = true;
 			$existingData['lockId'] = $lockId;
 
-			$this->saveLockData(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, data: $existingData);
+			$this->saveLockData(document: $document, data: $existingData);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning('DRC: Failed to store lockId in data blob: ' . $e->getMessage());
 		}//end try
@@ -2844,23 +2845,17 @@ class DrcController extends ZgwController {
 	/**
 	 * Clear the ZGW lockId from the object data blob after unlocking.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param array $mappingConfig The mapping configuration
-	 * @param string $uuid The document UUID
+	 * @param EioDocument $document The document, its object service and its mapping.
 	 *
 	 * @return void
 	 */
-	private function clearLockIdInData(
-		object $objectService,
-		array $mappingConfig,
-		string $uuid,
-	): void {
+	private function clearLockIdInData(EioDocument $document): void {
 		try {
-			$existingData = $this->lockDataOf(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+			$existingData = $this->lockDataOf(document: $document);
 			$existingData['locked'] = false;
 			$existingData['lockId'] = '';
 
-			$this->saveLockData(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, data: $existingData);
+			$this->saveLockData(document: $document, data: $existingData);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning('DRC: Failed to clear lockId in data blob: ' . $e->getMessage());
 		}//end try
@@ -2869,19 +2864,17 @@ class DrcController extends ZgwController {
 	/**
 	 * The document's stored data, without the keys a save must not carry.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param array  $mappingConfig The mapping configuration
-	 * @param string $uuid          The document UUID
+	 * @param EioDocument $document The document, its object service and its mapping.
 	 *
 	 * @return array<string, mixed> The data to write back.
 	 *
 	 * @throws \Throwable When the document cannot be found.
 	 */
-	private function lockDataOf(object $objectService, array $mappingConfig, string $uuid): array {
-		$existing = $objectService->find(
-			$uuid,
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema']
+	private function lockDataOf(EioDocument $document): array {
+		$existing = $document->objectService->find(
+			$document->uuid,
+			register: $document->mappingConfig['sourceRegister'],
+			schema: $document->mappingConfig['sourceSchema']
 		);
 		$existingData = $this->objectToArray(row: $existing);
 
@@ -2893,21 +2886,19 @@ class DrcController extends ZgwController {
 	/**
 	 * Write the document's data back.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService
-	 * @param array                $mappingConfig The mapping configuration
-	 * @param string               $uuid          The document UUID
-	 * @param array<string, mixed> $data          The data to write.
+	 * @param EioDocument          $document The document, its object service and its mapping.
+	 * @param array<string, mixed> $data     The data to write.
 	 *
 	 * @return void
 	 *
 	 * @throws \Throwable When the save fails.
 	 */
-	private function saveLockData(object $objectService, array $mappingConfig, string $uuid, array $data): void {
-		$objectService->saveObject(
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema'],
+	private function saveLockData(EioDocument $document, array $data): void {
+		$document->objectService->saveObject(
+			register: $document->mappingConfig['sourceRegister'],
+			schema: $document->mappingConfig['sourceSchema'],
 			object: $data,
-			uuid: $uuid
+			uuid: $document->uuid
 		);
 	}//end saveLockData()
 }//end class

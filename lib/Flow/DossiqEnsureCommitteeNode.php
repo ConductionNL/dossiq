@@ -316,25 +316,15 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
      * @return void
      */
     private function recordMapping(array $committee, string $bodyId): void {
-        $objectService = $this->settings->getObjectService();
-        if ($objectService === null) {
+        $target = $this->committeeTarget(committee: $committee);
+        if ($target === null) {
             return;
         }
 
-        $register = $this->settings->getConfigValue(key: 'register');
-        $schema   = $this->settings->getConfigValue(key: 'bezwaaradviescommissie_schema');
-        $id       = $this->referenceOf(value: ($committee['id'] ?? ($committee['@self']['id'] ?? null)));
-        if ($register === '' || $schema === '' || $id === '') {
-            return;
-        }
-
+        [$objectService, $register, $schema, $id] = $target;
         try {
-            $objectService->saveObject(
-                object: array_merge($committee, ['governanceBodyId' => $bodyId]),
-                register: $register,
-                schema: $schema,
-                uuid: $id,
-            );
+            $object = array_merge($committee, ['governanceBodyId' => $bodyId]);
+            $objectService->saveObject(object: $object, register: $register, schema: $schema, uuid: $id);
         } catch (Throwable $e) {
             $this->logger->warning(
                 'Dossiq ensureCommittee: could not record the governance-body id; the next run will re-resolve it',
@@ -343,6 +333,31 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
         }
 
     }//end recordMapping()
+
+
+    /**
+     * The object service, register, schema and id to write a committee row to.
+     *
+     * @param array $committee The committee row.
+     *
+     * @return array{0: object, 1: string, 2: string, 3: string}|null Null when one is unavailable.
+     */
+    private function committeeTarget(array $committee): array|null {
+        $objectService = $this->settings->getObjectService();
+        if ($objectService === null) {
+            return null;
+        }
+
+        $register = $this->settings->getConfigValue(key: 'register');
+        $schema   = $this->settings->getConfigValue(key: 'bezwaaradviescommissie_schema');
+        $id       = $this->referenceOf(value: ($committee['id'] ?? ($committee['@self']['id'] ?? null)));
+        if ($register === '' || $schema === '' || $id === '') {
+            return null;
+        }
+
+        return [$objectService, $register, $schema, $id];
+
+    }//end committeeTarget()
 
 
     /**

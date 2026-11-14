@@ -154,43 +154,53 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	public function uploadDocument(string $caseId, string $fileName, string $content, array $metadata): array {
 		[$objectService, $register] = $this->requireRegister();
 
-		$type = $this->requireUploadType(caseId: $caseId, fileName: $fileName, metadata: $metadata);
+		$upload = new DocumentUpload(caseId: $caseId, fileName: $fileName, content: $content, metadata: $metadata);
+		$type = $this->requireUploadType(upload: $upload);
 		$classification = $this->resolveUploadClassification(type: $type, metadata: $metadata);
 
-		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
+		$store = new InformatieobjectStore(
+			objectService: $objectService,
+			register: $register,
+			infoSchema: $this->settingsService->getConfigValue('dossier_informatieobject_schema'),
+		);
 
 		// Who the document came from and who it went to, resolved against the
 		// parties this case has. See CorrespondentWriter::resolveFor().
 		$direction = $this->normaliser->direction(value: ($metadata['direction'] ?? null));
-		$correspondents = $this->correspondentsOf(caseId: $caseId, metadata: $metadata, direction: $direction);
+		$correspondents = $this->correspondentsOf(upload: $upload, direction: $direction);
 
-		$informatieobject = $this->uploadedRecord(fileName: $fileName, content: $content, metadata: $metadata, type: $type,
-			classification: $classification, direction: $direction, correspondents: $correspondents);
+		$informatieobject = $this->uploadedRecord(
+			upload: $upload,
+			profile: new UploadedDocumentProfile(
+				type: $type,
+				classification: $classification,
+				direction: $direction,
+				correspondents: $correspondents,
+			),
+		);
 
-		$infoId = $this->storeUploadedRecord(objectService: $objectService, register: $register, infoSchema: $infoSchema, caseId: $caseId,
-			fileName: $fileName, content: $content, informatieobject: $informatieobject);
+		$infoId = $this->storeUploadedRecord(store: $store, upload: $upload, informatieobject: $informatieobject);
 
 		$this->linkAndRecordDispatches(caseId: $caseId, infoId: $infoId, correspondents: $correspondents);
 
-		return $this->uploadSummary(infoId: $infoId, fileName: $fileName, informatieobject: $informatieobject);
+		return $this->uploadSummary(infoId: $infoId, informatieobject: $informatieobject);
 	}//end uploadDocument()
 
 	/**
 	 * Who the document came from and who it went to, resolved against the case's parties.
 	 *
-	 * @param string               $caseId    The case (zaak) UUID.
-	 * @param array<string, mixed> $metadata  Document metadata.
-	 * @param string               $direction The normalised direction.
+	 * @param DocumentUpload $upload    The upload: its case and metadata.
+	 * @param string         $direction The normalised direction.
 	 *
 	 * @return array<string, mixed> The sender and recipients.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
-	private function correspondentsOf(string $caseId, array $metadata, string $direction): array {
+	private function correspondentsOf(DocumentUpload $upload, string $direction): array {
 		return $this->correspondents->resolveFor(
-			caseId: $caseId,
-			sender: ($metadata['sender'] ?? null),
-			recipients: ($metadata['recipients'] ?? null),
+			caseId: $upload->caseId,
+			sender: ($upload->metadata['sender'] ?? null),
+			recipients: ($upload->metadata['recipients'] ?? null),
 			direction: $direction,
 		);
 	}//end correspondentsOf()
@@ -223,18 +233,17 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	 * The summary of an uploaded informatieobject.
 	 *
 	 * @param string               $infoId           The stored informatieobject id.
-	 * @param string               $fileName         The original filename.
-	 * @param array<string, mixed> $informatieobject The record as stored.
+	 * @param array<string, mixed> $informatieobject The record as built for the upload, carrying the original filename.
 	 *
 	 * @return array<string, mixed> The created informatieobject summary.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
-	private function uploadSummary(string $infoId, string $fileName, array $informatieobject): array {
+	private function uploadSummary(string $infoId, array $informatieobject): array {
 		return [
 			'id' => $infoId,
 			'title' => $informatieobject['title'],
-			'fileName' => $fileName,
+			'fileName' => $informatieobject['fileName'],
 			'status' => 'draft',
 			'vertrouwelijkheidaanduiding' => $informatieobject['vertrouwelijkheidaanduiding'],
 			'informatieobjecttype' => $informatieobject['informatieobjecttype'],
@@ -249,9 +258,7 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	/**
 	 * Check the required upload input and return the document type.
 	 *
-	 * @param string $caseId The case (zaak) UUID.
-	 * @param string $fileName The original filename.
-	 * @param array<string, mixed> $metadata The submitted metadata.
+	 * @param DocumentUpload $upload The upload: its case, file name and submitted metadata.
 	 *
 	 * @return string The document type uuid.
 	 *
@@ -259,16 +266,16 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
-	private function requireUploadType(string $caseId, string $fileName, array $metadata): string {
-		if (trim($caseId) === '') {
+	private function requireUploadType(DocumentUpload $upload): string {
+		if (trim($upload->caseId) === '') {
 			throw new RuntimeException('caseId is required');
 		}
 
-		if (trim($fileName) === '') {
+		if (trim($upload->fileName) === '') {
 			throw new RuntimeException('bestandsnaam is required');
 		}
 
-		$type = (string)($metadata['informatieobjecttype'] ?? '');
+		$type = (string)($upload->metadata['informatieobjecttype'] ?? '');
 		if ($type === '') {
 			throw new RuntimeException('informatieobjecttype is required');
 		}
@@ -311,28 +318,20 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	 * time this runs; that record gets the metadata, and only when there is
 	 * none is one created here.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register slug.
-	 * @param string $infoSchema The informatieobject schema.
-	 * @param string $caseId The case (zaak) UUID.
-	 * @param string $fileName The original filename.
-	 * @param string $content The raw binary file content.
+	 * @param InformatieobjectStore $store Where the informatieobject record is saved.
+	 * @param DocumentUpload $upload The upload: its case, file name and content.
 	 * @param array<string, mixed> $informatieobject The record to store.
 	 *
 	 * @return string The informatieobject UUID.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
-	private function storeUploadedRecord(
-		object $objectService,
-		string $register,
-		string $infoSchema,
-		string $caseId,
-		string $fileName,
-		string $content,
-		array $informatieobject,
-	): string {
-		$fileId = $this->recordStore->storeFileOnObject(objectId: $caseId, fileName: $fileName, content: $content);
+	private function storeUploadedRecord(InformatieobjectStore $store, DocumentUpload $upload, array $informatieobject): string {
+		$objectService = $store->objectService;
+		$register = $store->register;
+		$infoSchema = $store->infoSchema;
+
+		$fileId = $this->recordStore->storeFileOnObject(objectId: $upload->caseId, fileName: $upload->fileName, content: $upload->content);
 		$existing = [];
 		if ($fileId > 0) {
 			$existing = ($this->recordStore->findRecord(fileId: $fileId) ?? []);
@@ -362,27 +361,18 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	 * `uploadDocument()` reads as the steps of an upload rather than as one
 	 * long literal in the middle of them.
 	 *
-	 * @param string $fileName The file name.
-	 * @param string $content The bytes, for the size and the hash.
-	 * @param array<string, mixed> $metadata The submitted metadata.
-	 * @param string $type The document type uuid.
-	 * @param string $classification The confidentiality, already checked.
-	 * @param string $direction The direction, already coerced onto the enum.
-	 * @param array{sender: string, recipients: array<int, string>} $correspondents Who it is from and to.
+	 * @param DocumentUpload $upload The upload: file name, bytes (for the size and the hash) and submitted metadata.
+	 * @param UploadedDocumentProfile $profile The type, confidentiality, direction and correspondents already resolved.
 	 *
 	 * @return array<string, mixed> The record to store.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
-	private function uploadedRecord(
-		string $fileName,
-		string $content,
-		array $metadata,
-		string $type,
-		string $classification,
-		string $direction,
-		array $correspondents,
-	): array {
+	private function uploadedRecord(DocumentUpload $upload, UploadedDocumentProfile $profile): array {
+		$fileName = $upload->fileName;
+		$content = $upload->content;
+		$metadata = $upload->metadata;
+		$correspondents = $profile->correspondents;
 		$now = date('Y-m-d\TH:i:s');
 
 		return [
@@ -390,11 +380,11 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 			'fileName' => $fileName,
 			'bestandsomvang' => strlen($content),
 			'format' => (string)($metadata['format'] ?? 'application/octet-stream'),
-			'vertrouwelijkheidaanduiding' => $classification,
+			'vertrouwelijkheidaanduiding' => $profile->classification,
 			'auteur' => (string)($metadata['auteur'] ?? ''),
 			'status' => 'draft',
-			'informatieobjecttype' => $type,
-			'direction' => $direction,
+			'informatieobjecttype' => $profile->type,
+			'direction' => $profile->direction,
 			'sender' => $correspondents['sender'],
 			'recipients' => $correspondents['recipients'],
 			'keywords' => $this->normaliser->keywords(value: ($metadata['keywords'] ?? null)),
@@ -537,7 +527,11 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	public function getDossierForCase(string $caseId, string $correspondent = ''): array {
 		[$objectService, $register] = $this->requireRegister();
 		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
-		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
+		$store = new InformatieobjectStore(
+			objectService: $objectService,
+			register: $register,
+			infoSchema: $this->settingsService->getConfigValue('dossier_informatieobject_schema'),
+		);
 
 		$joins = $this->searchObjectsAsArrays(
 			objectService: $objectService,
@@ -546,7 +540,7 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 			filters: ['case' => $caseId, '_limit' => 500],
 		);
 
-		$documents = $this->joinedDocuments(objectService: $objectService, register: $register, infoSchema: $infoSchema, joins: $joins);
+		$documents = $this->joinedDocuments(store: $store, joins: $joins);
 
 		// Every row carries who the document was from and to, named. The
 		// parties are read once for the whole listing rather than once per
@@ -560,16 +554,14 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	/**
 	 * The informatieobjecten the join rows point at, skipping rows without one and documents that do not resolve.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register id.
-	 * @param string $infoSchema The informatieobject schema id.
+	 * @param InformatieobjectStore $store Where the informatieobjecten are read from.
 	 * @param array<int, array<string, mixed>> $joins The zaakinformatieobject join rows.
 	 *
 	 * @return array<int, array<string, mixed>> The documents.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
-	private function joinedDocuments(object $objectService, string $register, string $infoSchema, array $joins): array {
+	private function joinedDocuments(InformatieobjectStore $store, array $joins): array {
 		$documents = [];
 		foreach ($joins as $join) {
 			$infoId = (string)($join['informatieobject'] ?? '');
@@ -577,7 +569,7 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 				continue;
 			}
 
-			$doc = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $infoSchema, id: $infoId);
+			$doc = $this->findObjectAsArray(objectService: $store->objectService, register: $store->register, schema: $store->infoSchema, id: $infoId);
 
 			if ($doc !== null) {
 				$documents[] = $doc;

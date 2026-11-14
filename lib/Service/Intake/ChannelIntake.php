@@ -151,15 +151,20 @@ class ChannelIntake implements ChannelIntakeInterface {
 	public function caseFor(array $message, array $targetPayload, string $ruleName = ''): string {
 		$channel = trim((string)($message['channelId'] ?? ''));
 		$externalId = trim((string)($message['externalId'] ?? ''));
+		$routed = new RoutedMessage(
+			message: $message,
+			payload: $targetPayload,
+			ruleName: $ruleName,
+			channel: $channel,
+			externalId: $externalId
+		);
 
 		// A message with no channel or no id of its own cannot be recognised
 		// on a second delivery. Opening a case for it means accepting that a
 		// retry opens another one, so it is refused instead, in writing.
 		if ($channel === '' || $externalId === '') {
 			$this->refuse(
-				channel: $channel,
-				externalId: $externalId,
-				message: $message,
+				routed: $routed,
 				reason: 'The message carries no channel or no id of its own, so a second delivery of it '
 					. 'could not be told apart from a new message.'
 			);
@@ -171,13 +176,7 @@ class ChannelIntake implements ChannelIntakeInterface {
 			return $duplicate;
 		}
 
-		return $this->openCase(
-			message: $message,
-			targetPayload: $targetPayload,
-			ruleName: $ruleName,
-			channel: $channel,
-			externalId: $externalId,
-		);
+		return $this->openCase(routed: $routed);
 	}//end caseFor()
 
 	/**
@@ -225,53 +224,39 @@ class ChannelIntake implements ChannelIntakeInterface {
 	/**
 	 * Open a case for a message not seen before, or say why not.
 	 *
-	 * @param array<string, mixed> $message       The message, as integriq stored it.
-	 * @param array<string, mixed> $targetPayload The rule's field mapping, already applied.
-	 * @param string               $ruleName      The rule that matched, for the log.
-	 * @param string               $channel       The channel the message came in on.
-	 * @param string               $externalId    The message's own id on that channel.
+	 * @param RoutedMessage $routed The message, its mapped payload, rule, channel and id.
 	 *
 	 * @return string The case id, or '' when no case was opened.
 	 *
 	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
-	private function openCase(
-		array $message,
-		array $targetPayload,
-		string $ruleName,
-		string $channel,
-		string $externalId,
-	): string {
-		$caseTypeId = $this->caseTypeIdIn(payload: $targetPayload);
+	private function openCase(RoutedMessage $routed): string {
+		$caseTypeId = $this->caseTypeIdIn(payload: $routed->payload);
 		if ($caseTypeId === '') {
 			$this->refuse(
-				channel: $channel,
-				externalId: $externalId,
-				message: $message,
-				reason: 'The routing rule "' . $ruleName . '" names no case type this instance has. '
+				routed: $routed,
+				reason: 'The routing rule "' . $routed->ruleName . '" names no case type this instance has. '
 					. 'A dossiq rule maps a case type id onto `caseType`.'
 			);
 			return '';
 		}
 
-		$caseId = $this->write(caseTypeId: $caseTypeId, message: $message, payload: $targetPayload);
+		$caseId = $this->write(caseTypeId: $caseTypeId, routed: $routed);
 		if ($caseId === '') {
 			$this->refuse(
-				channel: $channel,
-				externalId: $externalId,
-				message: $message,
+				routed: $routed,
 				reason: 'The case could not be written. The reason is in the log beside this entry.'
 			);
 			return '';
 		}
 
 		$this->log->recordChannelMessage(
-			channel: $channel,
-			channelMessageId: $externalId,
-			sender: $this->facts->correspondent(message: $message),
-			subject: $this->facts->titleFor(message: $message, payload: $targetPayload),
+			channel: $routed->channel,
+			channelMessageId: $routed->externalId,
+			sender: $this->facts->correspondent(message: $routed->message),
+			subject: $this->facts->titleFor(message: $routed->message, payload: $routed->payload),
 			outcome: IntakeLog::OUTCOME_CASE,
-			reason: 'Opened by routing rule "' . $ruleName . '".',
+			reason: 'Opened by routing rule "' . $routed->ruleName . '".',
 			caseId: $caseId
 		);
 
@@ -281,15 +266,14 @@ class ChannelIntake implements ChannelIntakeInterface {
 	/**
 	 * Write the case, elevated, from fields this app chose.
 	 *
-	 * @param string               $caseTypeId The case type, already resolved.
-	 * @param array<string, mixed> $message    The message.
-	 * @param array<string, mixed> $payload    The rule's mapped payload.
+	 * @param string        $caseTypeId The case type, already resolved.
+	 * @param RoutedMessage $routed     The message and the rule's mapped payload.
 	 *
 	 * @return string The new case's id, or '' when nothing was written.
 	 *
 	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
-	private function write(string $caseTypeId, array $message, array $payload): string {
+	private function write(string $caseTypeId, RoutedMessage $routed): string {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
@@ -297,7 +281,7 @@ class ChannelIntake implements ChannelIntakeInterface {
 			return '';
 		}
 
-		$object = $this->caseObjectFor(caseTypeId: $caseTypeId, message: $message, payload: $payload);
+		$object = $this->caseObjectFor(caseTypeId: $caseTypeId, routed: $routed);
 
 		try {
 			$created = $this->runAsSystemIfAvailable(
@@ -370,13 +354,14 @@ class ChannelIntake implements ChannelIntakeInterface {
 	/**
 	 * The case a routed message opens, before it is written.
 	 *
-	 * @param string               $caseTypeId The case type the message routed to.
-	 * @param array<string, mixed> $message    The message as the channel delivered it.
-	 * @param array<string, mixed> $payload    What the channel parsed out of it.
+	 * @param string        $caseTypeId The case type the message routed to.
+	 * @param RoutedMessage $routed     The message and what the channel parsed out of it.
 	 *
 	 * @return array<string, mixed> The case object.
 	 */
-	private function caseObjectFor(string $caseTypeId, array $message, array $payload): array {
+	private function caseObjectFor(string $caseTypeId, RoutedMessage $routed): array {
+		$message = $routed->message;
+		$payload = $routed->payload;
 		$object = [
 			'title' => $this->facts->titleFor(message: $message, payload: $payload),
 			'caseType' => $caseTypeId,
@@ -569,26 +554,24 @@ class ChannelIntake implements ChannelIntakeInterface {
 	/**
 	 * Record a refusal where the intake worker reads it.
 	 *
-	 * @param string               $channel    The channel id.
-	 * @param string               $externalId The channel's id for the message.
-	 * @param array<string, mixed> $message    The message.
-	 * @param string               $reason     Why, in a sentence a handler can read.
+	 * @param RoutedMessage $routed The message, its channel and its id.
+	 * @param string        $reason Why, in a sentence a handler can read.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
-	private function refuse(string $channel, string $externalId, array $message, string $reason): void {
+	private function refuse(RoutedMessage $routed, string $reason): void {
 		$this->logger->warning(
 			'ChannelIntake: a routed message opened no case',
-			['channel' => $channel, 'message' => $externalId, 'reason' => $reason]
+			['channel' => $routed->channel, 'message' => $routed->externalId, 'reason' => $reason]
 		);
 
 		$this->log->recordChannelMessage(
-			channel: $channel,
-			channelMessageId: $externalId,
-			sender: $this->facts->correspondent(message: $message),
-			subject: $this->facts->titleFor(message: $message, payload: []),
+			channel: $routed->channel,
+			channelMessageId: $routed->externalId,
+			sender: $this->facts->correspondent(message: $routed->message),
+			subject: $this->facts->titleFor(message: $routed->message, payload: []),
 			outcome: IntakeLog::OUTCOME_REFUSED,
 			reason: $reason
 		);

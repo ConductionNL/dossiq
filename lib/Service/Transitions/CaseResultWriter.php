@@ -110,17 +110,47 @@ class CaseResultWriter implements CaseResultWriterInterface {
 	 */
 	public function resolveClosingResult(string $caseId, string $caseTypeId, ?string $resultTypeId): ?string {
 		if ($resultTypeId === null || $resultTypeId === '') {
-			if ($this->listResultTypeIds(caseTypeId: $caseTypeId) === []) {
-				return null;
-			}
-
-			throw new RefusedException(
-				rule: 'result-type-required',
-				sentence: 'Pick a result before closing this case.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
+			$this->assertNoResultTypes(caseTypeId: $caseTypeId);
+			return null;
 		}
 
+		$this->assertKnownResult(caseTypeId: $caseTypeId, resultTypeId: $resultTypeId);
+
+		return $this->writtenResultId(caseId: $caseId, resultTypeId: $resultTypeId);
+	}//end resolveClosingResult()
+
+	/**
+	 * Refuse closing without a result when the case type has results to pick from.
+	 *
+	 * @param string $caseTypeId The case type uuid.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the case type has results.
+	 */
+	private function assertNoResultTypes(string $caseTypeId): void {
+		if ($this->listResultTypeIds(caseTypeId: $caseTypeId) === []) {
+			return;
+		}
+
+		throw new RefusedException(
+			rule: 'result-type-required',
+			sentence: 'Pick a result before closing this case.',
+			status: RefusedException::STATUS_UNPROCESSABLE,
+		);
+	}//end assertNoResultTypes()
+
+	/**
+	 * Refuse a result that is not one of the case type's results.
+	 *
+	 * @param string $caseTypeId   The case type uuid.
+	 * @param string $resultTypeId The picked result type uuid.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the result is not the case type's.
+	 */
+	private function assertKnownResult(string $caseTypeId, string $resultTypeId): void {
 		// A value that is not one of the case type's results is the handler's
 		// mistake, not the store's: written through, it fails the result
 		// schema's uuid format and the handler reads a 500.
@@ -131,7 +161,19 @@ class CaseResultWriter implements CaseResultWriterInterface {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end assertKnownResult()
 
+	/**
+	 * Write the case's result and answer its id.
+	 *
+	 * @param string $caseId       The case uuid.
+	 * @param string $resultTypeId The picked result type uuid.
+	 *
+	 * @return string
+	 *
+	 * @throws RuntimeException When the result was not written.
+	 */
+	private function writtenResultId(string $caseId, string $resultTypeId): string {
 		$result = $this->writeResult(caseId: $caseId, resultTypeId: $resultTypeId);
 		$resultId = (string)($result['id'] ?? ($result['@self']['id'] ?? ''));
 		if ($resultId === '') {
@@ -139,7 +181,7 @@ class CaseResultWriter implements CaseResultWriterInterface {
 		}
 
 		return $resultId;
-	}//end resolveClosingResult()
+	}//end writtenResultId()
 
 	/**
 	 * The archival future a closing case takes from its result type.

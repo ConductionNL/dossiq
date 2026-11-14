@@ -109,8 +109,25 @@ class CaseRequesterProjectionListener implements IEventListener {
 		$modified = $event->getModifiedData();
 		$payload = array_merge($payload, $modified);
 		$requester = trim((string)($payload['requester'] ?? ''));
-		if ($requester === '') {
+		if ($this->isSettled(payload: $payload, requester: $requester, previous: $previous) === true) {
 			return;
+		}
+
+		$this->project(event: $event, modified: $modified, requester: $requester);
+	}//end apply()
+
+	/**
+	 * Whether there is nothing to project: no requester, or the same one already projected.
+	 *
+	 * @param array<string, mixed> $payload   The case payload with the incoming changes.
+	 * @param string               $requester The requester uuid.
+	 * @param ObjectEntity|null    $previous  The case before the update, null on create.
+	 *
+	 * @return bool
+	 */
+	private function isSettled(array $payload, string $requester, ?ObjectEntity $previous): bool {
+		if ($requester === '') {
+			return true;
 		}
 
 		$before = '';
@@ -119,17 +136,27 @@ class CaseRequesterProjectionListener implements IEventListener {
 		}
 
 		$unprojected = trim((string)($payload['initiatorDisplayName'] ?? '')) === '';
-		if ($requester === $before && $unprojected === false) {
-			return;
-		}
 
+		return $requester === $before && $unprojected === false;
+	}//end isSettled()
+
+	/**
+	 * Add the requester's projection to the incoming changes.
+	 *
+	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event     The event.
+	 * @param array<string, mixed>                    $modified  The incoming changes.
+	 * @param string                                  $requester The requester uuid.
+	 *
+	 * @return void
+	 */
+	private function project(ObjectCreatingEvent|ObjectUpdatingEvent $event, array $modified, string $requester): void {
 		$projection = $this->projection->forRequester(uuid: $requester);
 		if ($projection === []) {
 			return;
 		}
 
 		$event->setModifiedData(array_merge($modified, $projection));
-	}//end apply()
+	}//end project()
 
 	/**
 	 * Read an entity's payload, or null when it cannot be read.

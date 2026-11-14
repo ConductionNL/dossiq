@@ -303,12 +303,12 @@ class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 	 *         inbound edges were dropped because the step had no successor.
 	 */
 	private function bridge(array $edges, string $stepId): array {
-		$successors = $this->successorsOf(edges: $edges, stepId: $stepId);
+		$removed = new RemovedStep(stepId: $stepId, successors: $this->successorsOf(edges: $edges, stepId: $stepId));
 		$orphaned = false;
 		$out = [];
 
 		foreach ($edges as $edge) {
-			$bridged = $this->bridgedEdge(edge: $edge, stepId: $stepId, successors: $successors);
+			$bridged = $this->bridgedEdge(edge: $edge, removed: $removed);
 			if ($bridged === null) {
 				$orphaned = true;
 				continue;
@@ -323,35 +323,35 @@ class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 	/**
 	 * What one edge becomes once the step is removed.
 	 *
-	 * @param mixed              $edge       One edge.
-	 * @param string             $stepId     The step being removed.
-	 * @param array<int, string> $successors The step's successors.
+	 * @param mixed       $edge    One edge.
+	 * @param RemovedStep $removed The step being removed and its successors.
 	 *
 	 * @return array<int, mixed>|null The edges it becomes ([] when dropped), or null when it was orphaned.
 	 */
-	private function bridgedEdge(mixed $edge, string $stepId, array $successors): ?array {
+	private function bridgedEdge(mixed $edge, RemovedStep $removed): ?array {
 		if (is_array($edge) === false) {
 			return [$edge];
 		}
 
-		$edge = $this->withoutSource(edge: $edge, stepId: $stepId);
+		$edge = $this->withoutSource(edge: $edge, stepId: $removed->stepId);
 		if ($edge === null) {
 			return [];
 		}
 
-		return $this->retargeted(edge: $edge, stepId: $stepId, successors: $successors);
+		return $this->retargeted(edge: $edge, removed: $removed);
 	}//end bridgedEdge()
 
 	/**
 	 * Point an edge into the step at the step's successors instead.
 	 *
-	 * @param array<string, mixed> $edge       One edge, no longer leaving the step.
-	 * @param string               $stepId     The step being removed.
-	 * @param array<int, string>   $successors The step's successors.
+	 * @param array<string, mixed> $edge    One edge, no longer leaving the step.
+	 * @param RemovedStep          $removed The step being removed and its successors.
 	 *
 	 * @return array<int, mixed>|null The edges it becomes, or null when the step had no successor.
 	 */
-	private function retargeted(array $edge, string $stepId, array $successors): ?array {
+	private function retargeted(array $edge, RemovedStep $removed): ?array {
+		$stepId = $removed->stepId;
+		$successors = $removed->successors;
 		$targets = $this->endpoints(value: ($edge['to'] ?? null));
 		if (in_array($stepId, $targets, true) === false) {
 			return [$edge];

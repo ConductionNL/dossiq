@@ -38,6 +38,14 @@
 			:fields="textsAndAccessFields">
 		</CnSettingsFieldsSection>
 
+		<CnSettingsFieldsSection
+			id="section-notification-texts"
+			appId="dossiq"
+			:name="t('dossiq', 'Notification texts')"
+			:columns="1"
+			valuesPath="config"
+			:fields="notificationTextFields" />
+
 		<CnSettingsSection
 			id="section-working-days"
 			:actionsInTitle="true"
@@ -797,6 +805,7 @@ import {
 	houseStyleFields,
 	kadasterFields,
 	menuStructureFields,
+	notificationTextFields,
 	paymentCallbackFields,
 	queueOrderFields,
 	queueUrgencyFields,
@@ -1209,6 +1218,16 @@ export default {
 		 */
 		textsAndAccessFields() {
 			return textsAndAccessFields(this.t.bind(this))
+		},
+
+		/**
+		 * The administrator's own text per notification kind (REQ-CRS-13).
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/admin-settings/spec.md#requirement-an-administrator-edits-the-text-of-each-notification-req-crs-13
+		 */
+		notificationTextFields() {
+			return notificationTextFields(this.t.bind(this))
 		},
 
 		/**

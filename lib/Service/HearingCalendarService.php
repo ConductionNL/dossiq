@@ -111,22 +111,20 @@ class HearingCalendarService {
 			return '';
 		}
 
-		return $this->writeHearing(data: $data, start: $start, participants: $participants);
+		return $this->writeHearing(hearing: new PlannedHearing(data: $data, start: $start, participants: $participants));
 	}//end createEvent()
 
 	/**
 	 * Build the hearing's event and write it into every calendar it reaches.
 	 *
-	 * @param array<string, mixed> $data Hearing data with participants.
-	 * @param DateTimeImmutable $start When the hearing starts.
-	 * @param array<int, string> $participants The planned participants.
+	 * @param PlannedHearing $hearing The hearing data, its start and the planned participants.
 	 *
 	 * @return string The event UID, or an empty string when nothing was written.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
-	private function writeHearing(array $data, DateTimeImmutable $start, array $participants): string {
-		[$ics, $organiser, $attendees] = $this->hearingEvent(data: $data, start: $start, participants: $participants);
+	private function writeHearing(PlannedHearing $hearing): string {
+		[$ics, $organiser, $attendees] = $this->hearingEvent(hearing: $hearing);
 
 		$uid = $this->readUid(ics: $ics);
 		if ($uid === '') {
@@ -139,7 +137,7 @@ class HearingCalendarService {
 			return '';
 		}
 
-		$this->logWritten(written: $written, participants: $participants, uid: $uid);
+		$this->logWritten(written: $written, participants: $hearing->participants, uid: $uid);
 
 		return $uid;
 	}//end writeHearing()
@@ -147,25 +145,17 @@ class HearingCalendarService {
 	/**
 	 * The hearing's ICS, with the organiser and the attendees it names.
 	 *
-	 * @param array<string, mixed> $data Hearing data with participants.
-	 * @param DateTimeImmutable $start When the hearing starts.
-	 * @param array<int, string> $participants The planned participants.
+	 * @param PlannedHearing $hearing The hearing data, its start and the planned participants.
 	 *
 	 * @return array{0: string, 1: IUser|null, 2: array<int, mixed>} The ICS, the organiser and the attendees.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
-	private function hearingEvent(array $data, DateTimeImmutable $start, array $participants): array {
+	private function hearingEvent(PlannedHearing $hearing): array {
 		$organiser = $this->userSession->getUser();
-		$attendees = $this->resolveParticipants(participants: $participants);
+		$attendees = $this->resolveParticipants(participants: $hearing->participants);
 
-		$ics = $this->buildEvent(
-			data: $data,
-			start: $start,
-			participants: $participants,
-			organiser: $organiser,
-			attendees: $attendees
-		);
+		$ics = $this->buildEvent(hearing: $hearing, organiser: $organiser, attendees: $attendees);
 
 		return [$ics, $organiser, $attendees];
 	}//end hearingEvent()
@@ -215,7 +205,7 @@ class HearingCalendarService {
 	private function writeForAll(HearingCalendarEvent $event, array $principals): int {
 		$written = 0;
 		foreach ($principals as $principal) {
-			if ($this->writeToCalendar(principal: $principal, uid: $event->uid, ics: $event->ics) === true) {
+			if ($this->writeToCalendar(principal: $principal, event: $event) === true) {
 				$written++;
 			}
 		}
@@ -258,9 +248,7 @@ class HearingCalendarService {
 	/**
 	 * Serialise the hearing as one VEVENT.
 	 *
-	 * @param array<string, mixed> $data Hearing data.
-	 * @param DateTimeImmutable $start When the hearing starts.
-	 * @param array<int, mixed> $participants Participants as stored.
+	 * @param PlannedHearing $hearing The hearing data, its start and the participants as stored.
 	 * @param IUser|null $organiser The account scheduling the hearing.
 	 * @param array<int, array{uid: string, email: string, name: string}> $attendees Addressable attendees.
 	 *
@@ -268,24 +256,35 @@ class HearingCalendarService {
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
-	private function buildEvent(
-		array $data,
-		DateTimeImmutable $start,
-		array $participants,
-		?IUser $organiser,
-		array $attendees,
-	): string {
+	private function buildEvent(PlannedHearing $hearing, ?IUser $organiser, array $attendees): string {
+		$data = $hearing->data;
+		$start = $hearing->start;
 		$builder = $this->calendarManager->createEventBuilder();
 		$builder->setSummary(self::EVENT_SUMMARY_PREFIX . (string)($data['complaint'] ?? ''));
 		$builder->setStartDate($start);
 		$builder->setEndDate($start->setTimestamp($start->getTimestamp() + self::EVENT_DURATION_SECONDS));
-		$builder->setDescription($this->describeHearing(data: $data, participants: $participants));
+		$builder->setDescription($this->describeHearing(data: $data, participants: $hearing->participants));
 
 		$location = (string)($data['location'] ?? '');
 		if ($location !== '') {
 			$builder->setLocation($location);
 		}
 
+		$this->withParties(builder: $builder, organiser: $organiser, attendees: $attendees);
+
+		return $builder->toIcs();
+	}//end buildEvent()
+
+	/**
+	 * Put the organiser, when they have an address, and the attendees on the event.
+	 *
+	 * @param ICalendarEventBuilder                                       $builder   The event being built.
+	 * @param IUser|null                                                  $organiser The organiser.
+	 * @param array<int, array{uid: string, email: string, name: string}> $attendees Addressable attendees.
+	 *
+	 * @return void
+	 */
+	private function withParties(ICalendarEventBuilder $builder, ?IUser $organiser, array $attendees): void {
 		if ($organiser !== null && (string)$organiser->getEMailAddress() !== '') {
 			$builder->setOrganizer(
 				(string)$organiser->getEMailAddress(),
@@ -296,9 +295,7 @@ class HearingCalendarService {
 		foreach ($attendees as $attendee) {
 			$builder->addAttendee($attendee['email'], $attendee['name']);
 		}
-
-		return $builder->toIcs();
-	}//end buildEvent()
+	}//end withParties()
 
 	/**
 	 * Read the UID out of a serialised event.
@@ -404,14 +401,13 @@ class HearingCalendarService {
 	 * Write one ICS into the first writable calendar a principal owns.
 	 *
 	 * @param string $principal Principal URI to write for.
-	 * @param string $uid Event UID, used as the object name.
-	 * @param string $ics The event, already serialised.
+	 * @param HearingCalendarEvent $event The event: its UID (the object name) and its serialised ICS.
 	 *
 	 * @return bool True when a calendar took the event.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
-	private function writeToCalendar(string $principal, string $uid, string $ics): bool {
+	private function writeToCalendar(string $principal, HearingCalendarEvent $event): bool {
 		try {
 			$calendars = $this->calendarManager->getCalendarsForPrincipal($principal);
 		} catch (\Throwable $e) {
@@ -428,7 +424,7 @@ class HearingCalendarService {
 			}
 
 			try {
-				$calendar->createFromString($uid . '.ics', $ics);
+				$calendar->createFromString($event->uid . '.ics', $event->ics);
 				return true;
 			} catch (\Throwable $e) {
 				$this->logger->warning(

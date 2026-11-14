@@ -446,27 +446,26 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 			throw new RuntimeException('case_not_found');
 		}
 
-		$case = $this->fetch(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
+		$lookup = new StartableFlowLookup(objectService: $objectService, register: $register, typeSchema: $typeSchema);
+		$case = $this->fetch(lookup: $lookup, schema: $caseSchema, id: $caseId);
 		if ($case === null) {
 			throw new RuntimeException('case_not_found');
 		}
 
-		return $this->flowIdsOfType(objectService: $objectService, register: $register, typeSchema: $typeSchema, caseRow: $case);
+		return $this->flowIdsOfType(lookup: $lookup, caseRow: $case);
 	}//end startableFlowIds()
 
 	/**
 	 * The flow uuids a case's type marks as startable; none when the type does not resolve.
 	 *
-	 * @param object               $objectService OpenRegister's ObjectService.
-	 * @param string               $register      The register slug.
-	 * @param string               $typeSchema    The case type schema slug.
-	 * @param array<string, mixed> $caseRow       The case.
+	 * @param StartableFlowLookup  $lookup  The ObjectService, register and case type schema.
+	 * @param array<string, mixed> $caseRow The case.
 	 *
 	 * @return array<int, string> The flow uuids.
 	 */
-	private function flowIdsOfType(object $objectService, string $register, string $typeSchema, array $caseRow): array {
+	private function flowIdsOfType(StartableFlowLookup $lookup, array $caseRow): array {
 		$caseTypeId = (string)($caseRow['caseType'] ?? '');
-		$caseType = $this->fetch(objectService: $objectService, register: $register, schema: $typeSchema, id: $caseTypeId);
+		$caseType = $this->fetch(lookup: $lookup, schema: $lookup->typeSchema, id: $caseTypeId);
 		if ($caseType === null) {
 			return [];
 		}
@@ -555,20 +554,19 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 	/**
 	 * Fetch one object, tolerating a fail-closed miss.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register The register slug.
-	 * @param string $schema The schema slug.
-	 * @param string $id The object id.
+	 * @param StartableFlowLookup $lookup The ObjectService and register.
+	 * @param string              $schema The schema slug.
+	 * @param string              $id     The object id.
 	 *
 	 * @return array<string, mixed>|null The object, or null.
 	 */
-	private function fetch(object $objectService, string $register, string $schema, string $id): ?array {
+	private function fetch(StartableFlowLookup $lookup, string $schema, string $id): ?array {
 		if ($id === '') {
 			return null;
 		}
 
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $lookup->objectService->find($id, register: $lookup->register, schema: $schema);
 		} catch (Throwable $e) {
 			$this->logger->debug('CaseFlowActions: object lookup failed', ['id' => $id, 'exception' => $e->getMessage()]);
 

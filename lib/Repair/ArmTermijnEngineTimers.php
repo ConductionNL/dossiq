@@ -306,13 +306,22 @@ class ArmTermijnEngineTimers implements IRepairStep {
 			return [];
 		}
 
+		return $this->findDefinitie(objectService: $objectService, register: $register, schema: $schema, defId: $defId);
+	}//end definitieFor()
+
+	/**
+	 * Read one TermijnDefinitie row.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register.
+	 * @param string $schema        The TermijnDefinitie schema.
+	 * @param string $defId         The definition id.
+	 *
+	 * @return array<string, mixed> The TermijnDefinitie row, or empty.
+	 */
+	private function findDefinitie(object $objectService, string $register, string $schema, string $defId): array {
 		try {
-			$def = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $defId
-			);
+			$def = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $defId);
 			if ($def !== null) {
 				return $def;
 			}
@@ -321,7 +330,7 @@ class ArmTermijnEngineTimers implements IRepairStep {
 		}
 
 		return [];
-	}//end definitieFor()
+	}//end findDefinitie()
 
 	/**
 	 * Parse a stored date string, or null.

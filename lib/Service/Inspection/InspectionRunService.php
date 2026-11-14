@@ -110,7 +110,8 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			throw new RuntimeException('The OpenRegister task layer is not available');
 		}
 
-		$task = $tasks->create(data: $this->taskData(caseId: $caseId, template: $template, payload: $payload, actor: $actor), actor: $actor);
+		$start = new InspectionRunStart(caseId: $caseId, template: $template, payload: $payload, actor: $actor);
+		$task = $tasks->create(data: $this->taskData(start: $start), actor: $actor);
 		$completed = $tasks->complete(
 			uuid: (string)$task->getUuid(),
 			outcome: $this->answers->outcome(snapshot: $template, answers: $answers),
@@ -250,17 +251,14 @@ class InspectionRunService implements InspectionRunServiceInterface {
 	/**
 	 * The fields of the run's task.
 	 *
-	 * @param string               $caseId   The case uuid.
-	 * @param array<string, mixed> $template The frozen template.
-	 * @param array<string, mixed> $payload  The request body.
-	 * @param string               $actor    The inspector.
+	 * @param InspectionRunStart $start The case, the frozen template, the request body and the inspector.
 	 *
 	 * @return array<string, mixed> The task fields.
 	 */
-	private function taskData(string $caseId, array $template, array $payload, string $actor): array {
-		$metadata = $this->metadataOf(payload: $payload);
+	private function taskData(InspectionRunStart $start): array {
+		$metadata = $this->metadataOf(payload: $start->payload);
 
-		$data = $this->baseTaskData(caseId: $caseId, template: $template, payload: $payload, actor: $actor);
+		$data = $this->baseTaskData(start: $start);
 		if ($metadata !== []) {
 			$data['metadata'] = $metadata;
 		}
@@ -289,25 +287,23 @@ class InspectionRunService implements InspectionRunServiceInterface {
 	/**
 	 * The task fields every run carries.
 	 *
-	 * @param string               $caseId   The case uuid.
-	 * @param array<string, mixed> $template The frozen template.
-	 * @param array<string, mixed> $payload  The request body.
-	 * @param string               $actor    The inspector.
+	 * @param InspectionRunStart $start The case, the frozen template, the request body and the inspector.
 	 *
 	 * @return array<string, mixed> The task fields.
 	 */
-	private function baseTaskData(string $caseId, array $template, array $payload, string $actor): array {
+	private function baseTaskData(InspectionRunStart $start): array {
+		$template = $start->template;
 		return [
 			'title' => 'Inspectie: ' . (string)($template['name'] ?? ''),
 			'kind' => self::KIND,
 			'appId' => 'dossiq',
-			'objectUuid' => $caseId,
-			'assignee' => $actor,
+			'objectUuid' => $start->caseId,
+			'assignee' => $start->actor,
 			'state' => 'active',
 			'templateId' => (string)($template['@self']['id'] ?? $template['id'] ?? ''),
 			'templateVersion' => (int)($template['version'] ?? 1),
 			'templateSnapshot' => $template,
-			'startAt' => (string)($payload['inspectionDate'] ?? date(format: 'c')),
+			'startAt' => (string)($start->payload['inspectionDate'] ?? date(format: 'c')),
 		];
 	}//end baseTaskData()
 
@@ -348,6 +344,24 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
+		$template = $this->templateById(objects: $objects, register: $register, templateId: $templateId);
+		if ($template !== null) {
+			return $template;
+		}
+
+		return $this->templateFoldedFrom(objects: $objects, register: $register, templateId: $templateId);
+	}//end template()
+
+	/**
+	 * The template with this uuid, or null when it is not a template uuid.
+	 *
+	 * @param object $objects    OpenRegister's object service.
+	 * @param string $register   The register id.
+	 * @param string $templateId The template uuid, or an older checklist uuid.
+	 *
+	 * @return array<string, mixed>|null The template.
+	 */
+	private function templateById(object $objects, string $register, string $templateId): ?array {
 		try {
 			$template = $this->findObjectAsArray(objectService: $objects, register: $register, schema: InspectionTemplateMapper::SCHEMA, id: $templateId);
 		} catch (Throwable) {
@@ -355,10 +369,21 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			$template = null;
 		}
 
-		if ($template !== null) {
-			return $template;
-		}
+		return $template;
+	}//end templateById()
 
+	/**
+	 * The template folded from an older checklist with this uuid.
+	 *
+	 * @param object $objects    OpenRegister's object service.
+	 * @param string $register   The register id.
+	 * @param string $templateId The older checklist uuid.
+	 *
+	 * @return array<string, mixed> The template.
+	 *
+	 * @throws RuntimeException When nothing answers to it.
+	 */
+	private function templateFoldedFrom(object $objects, string $register, string $templateId): array {
 		foreach (['inspectieChecklist/', 'inspectionChecklist/'] as $prefix) {
 			$found = $this->searchObjectsAsArrays(
 				objectService: $objects,
@@ -372,7 +397,7 @@ class InspectionRunService implements InspectionRunServiceInterface {
 		}
 
 		throw new RuntimeException('Unknown checklist template: ' . $templateId);
-	}//end template()
+	}//end templateFoldedFrom()
 
 	/**
 	 * A trimmed string, or null when empty.

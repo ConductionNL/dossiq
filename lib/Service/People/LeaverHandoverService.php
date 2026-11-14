@@ -183,8 +183,8 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 		$batchId = self::batchIdOf(batch: $batch);
 		$now = (new DateTimeImmutable())->format('c');
 
-		$seatsMoved = $this->moveCoordinatorSeats(coordinated: $coordinated, toUser: $toUser, fromUser: $fromUser,
-			actor: $actor, batchId: $batchId, now: $now);
+		$act = new HandoverAct(fromUser: $fromUser, toUser: $toUser, actor: $actor, batchId: $batchId, now: $now);
+		$seatsMoved = $this->moveCoordinatorSeats(coordinated: $coordinated, act: $act);
 
 		// ⚠️ Recorded against the cases the act was ORDERED over, not against
 		// the ones the job has finished writing. The job walks in the
@@ -194,10 +194,10 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 		// "this person's work was handed over on this date", which is what an
 		// auditor asks; what happened to each individual case is the job's own
 		// report, at /api/bulk-jobs/{id}/members.
-		$this->recordOnCases(cases: (array)($batch['caseIds'] ?? []), fromUser: $fromUser, toUser: $toUser, actor: $actor, batchId: $batchId, now: $now);
+		$this->recordOnCases(cases: (array)($batch['caseIds'] ?? []), act: $act);
 
-		$result = self::handoverResult(batch: $batch, batchId: $batchId, seatsMoved: $seatsMoved, drafts: $drafts);
-		return $this->loggedHandover(result: $result, fromUser: $fromUser, toUser: $toUser, actor: $actor);
+		$result = self::handoverResult(batch: $batch, seatsMoved: $seatsMoved, drafts: $drafts);
+		return $this->loggedHandover(result: $result, act: $act);
 	}//end execute()
 
 	/**
@@ -217,8 +217,9 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	/**
 	 * What a handover moved, and the job that is moving the cases.
 	 *
+	 * The handover's batch id is the job's, read from the batch.
+	 *
 	 * @param array<string, mixed>             $batch      The batch the reassignment service answered.
-	 * @param string                           $batchId    The handover's batch id.
 	 * @param int                              $seatsMoved How many coordinator seats moved.
 	 * @param array<int, array<string, mixed>> $drafts     The drafts the leaver holds.
 	 *
@@ -229,9 +230,9 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
-	private static function handoverResult(array $batch, string $batchId, int $seatsMoved, array $drafts): array {
+	private static function handoverResult(array $batch, int $seatsMoved, array $drafts): array {
 		return [
-			'batchId' => $batchId,
+			'batchId' => self::batchIdOf(batch: $batch),
 			'job' => (array)($batch['job'] ?? []),
 			'succeeded' => count((array)($batch['caseIds'] ?? [])),
 			'failed' => 0,
@@ -244,21 +245,19 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	/**
 	 * Log that a person's work was handed over, and pass the outcome on.
 	 *
-	 * @param array<string, mixed> $result   The handover's outcome.
-	 * @param string               $fromUser The person who is leaving.
-	 * @param string               $toUser   The person receiving the work.
-	 * @param string               $actor    The administrator running the act.
+	 * @param array<string, mixed> $result The handover's outcome.
+	 * @param HandoverAct          $act    Who left, who receives the work and who ran the act.
 	 *
 	 * @return array<string, mixed> The same outcome.
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
-	private function loggedHandover(array $result, string $fromUser, string $toUser, string $actor): array {
+	private function loggedHandover(array $result, HandoverAct $act): array {
 		$this->logger->info('Dossiq leaver handover: a person\'s work was handed over', [
 			'batchId' => $result['batchId'],
-			'from' => $fromUser,
-			'to' => $toUser,
-			'actor' => $actor,
+			'from' => $act->fromUser,
+			'to' => $act->toUser,
+			'actor' => $act->actor,
 			'cases' => $result['succeeded'],
 			'job' => $result['batchId'],
 			'coordinatorSeats' => $result['coordinatorSeats'],
@@ -323,27 +322,16 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	 * Give every coordinator seat the leaver held to the receiving person.
 	 *
 	 * @param array<int, string> $coordinated The cases the leaver coordinates.
-	 * @param string $toUser   Who receives the seats.
-	 * @param string $fromUser Who held them.
-	 * @param string $actor    Who ran the act.
-	 * @param string $batchId  The handover's batch id.
-	 * @param string $now      The moment of the act.
+	 * @param HandoverAct        $act         Who held the seats, who receives them, and the act they move in.
 	 *
 	 * @return int How many seats moved.
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
-	private function moveCoordinatorSeats(
-		array $coordinated,
-		string $toUser,
-		string $fromUser,
-		string $actor,
-		string $batchId,
-		string $now,
-	): int {
+	private function moveCoordinatorSeats(array $coordinated, HandoverAct $act): int {
 		$seatsMoved = 0;
 		foreach ($coordinated as $caseId) {
-			if ($this->moveCoordinatorSeat(caseId: $caseId, toUser: $toUser, fromUser: $fromUser, actor: $actor, batchId: $batchId, now: $now) === true) {
+			if ($this->moveCoordinatorSeat(caseId: $caseId, act: $act) === true) {
 				$seatsMoved += 1;
 			}
 		}
@@ -354,21 +342,16 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	/**
 	 * Give one case's coordinator seat to the receiving person.
 	 *
-	 * @param string $caseId   The case uuid.
-	 * @param string $toUser   Who receives the seat.
-	 * @param string $fromUser Who held it.
-	 * @param string $actor    Who ran the act.
-	 * @param string $batchId  The act this seat moved in.
-	 * @param string $now      When it moved.
+	 * @param string      $caseId The case uuid.
+	 * @param HandoverAct $act    Who held the seat, who receives it, and the act it moves in.
 	 *
 	 * @return bool True when the seat moved.
 	 */
-	private function moveCoordinatorSeat(string $caseId, string $toUser, string $fromUser,
-		string $actor, string $batchId, string $now): bool {
+	private function moveCoordinatorSeat(string $caseId, HandoverAct $act): bool {
 		try {
-			$this->seats->nameCoordinator(caseId: $caseId, participant: $toUser);
-			$record = ['fromUser' => $fromUser, 'toUser' => $toUser, 'actor' => $actor,
-				'seat' => CaseSeats::COORDINATOR, 'batchId' => $batchId, 'movedAt' => $now];
+			$this->seats->nameCoordinator(caseId: $caseId, participant: $act->toUser);
+			$record = ['fromUser' => $act->fromUser, 'toUser' => $act->toUser, 'actor' => $act->actor,
+				'seat' => CaseSeats::COORDINATOR, 'batchId' => $act->batchId, 'movedAt' => $act->now];
 			$this->recordOnCase(caseId: $caseId, record: $record);
 		} catch (Throwable $e) {
 			$context = ['caseId' => $caseId, 'exception' => $e->getMessage()];
@@ -387,26 +370,22 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	 * held it, who holds it now and whose act moved it. Without it, the only
 	 * evidence is a log line nobody reading the case will find.
 	 *
-	 * @param array<int, string>               $cases    The case uuids the act covers.
-	 * @param string                           $fromUser Who held the case.
-	 * @param string                           $toUser   Who holds it now.
-	 * @param string                           $actor    Who ran the act.
-	 * @param string                           $batchId  The act.
-	 * @param string                           $now      When.
+	 * @param array<int, string> $cases The case uuids the act covers.
+	 * @param HandoverAct        $act   Who held the cases, who holds them now, and the act.
 	 *
 	 * @return void
 	 */
-	private function recordOnCases(array $cases, string $fromUser, string $toUser, string $actor, string $batchId, string $now): void {
+	private function recordOnCases(array $cases, HandoverAct $act): void {
 		foreach ($cases as $caseId) {
 			$this->recordOnCase(
 				caseId: (string)$caseId,
 				record: [
-					'fromUser' => $fromUser,
-					'toUser' => $toUser,
-					'actor' => $actor,
+					'fromUser' => $act->fromUser,
+					'toUser' => $act->toUser,
+					'actor' => $act->actor,
 					'seat' => CaseSeats::HANDLER,
-					'batchId' => $batchId,
-					'movedAt' => $now,
+					'batchId' => $act->batchId,
+					'movedAt' => $act->now,
 				],
 			);
 		}
