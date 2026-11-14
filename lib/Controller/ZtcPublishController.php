@@ -88,7 +88,7 @@ class ZtcPublishController extends ZgwController {
 		}
 
 		try {
-			return new JSONResponse(data: $this->publishAndMap(resource: $resource, uuid: $uuid, mappingConfig: $mappingConfig), statusCode: Http::STATUS_CREATED);
+			return new JSONResponse(data: $this->published(resource: $resource, uuid: $uuid, mappingConfig: $mappingConfig), statusCode: Http::STATUS_CREATED);
 		} catch (\Throwable $e) {
 			return $this->publishFailure(e: $e);
 		}//end try
@@ -123,7 +123,7 @@ class ZtcPublishController extends ZgwController {
 	 *
 	 * @throws \Throwable When the type cannot be read or saved.
 	 */
-	private function publishAndMap(string $resource, string $uuid, array $mappingConfig): array {
+	private function published(string $resource, string $uuid, array $mappingConfig): array {
 		$existing = $this->zgwService->getObjectService()->find(
 			$uuid,
 			register: $mappingConfig['sourceRegister'],
@@ -138,7 +138,7 @@ class ZtcPublishController extends ZgwController {
 			uuid: $uuid
 		);
 		return $this->mapPublished(resource: $resource, mappingConfig: $mappingConfig, objectData: $this->objectToArray(row: $object));
-	}//end publishAndMap()
+	}//end published()
 
 	/**
 	 * Apply the outbound mapping to the published type.
