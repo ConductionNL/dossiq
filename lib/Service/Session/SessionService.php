@@ -343,10 +343,7 @@ class SessionService {
 	 */
 	public function addMinutes(string $sessionId, array $payload): array {
 		[$objectService, $register, $current, $definition] = $this->loadSession(sessionId: $sessionId);
-		$definition->rules()->assertDenialKept(
-			stored: (string)($current['recordingConsent'] ?? ''),
-			asked: (string)($payload['recordingConsent'] ?? 'denied')
-		);
+		$this->assertDenialKept(definition: $definition, current: $current, payload: $payload);
 
 		$summary  = $this->field(primary: $payload, fallback: $current, key: 'minutesSummary');
 		$document = $this->field(primary: $payload, fallback: $current, key: 'minutesDocument');
@@ -357,6 +354,44 @@ class SessionService {
 			consent: $this->field(primary: $payload, fallback: $current, key: 'recordingConsent')
 		);
 
+		$changes = $this->minutesChanges(definition: $definition, payload: $payload, summary: $summary, document: $document);
+
+		return $this->patch(objectService: $objectService, register: $register, sessionId: $sessionId, current: $current, changes: $changes);
+	}//end addMinutes()
+
+	/**
+	 * Refuse a payload that changes a stored recording-consent denial.
+	 *
+	 * @param SessionDefinition    $definition The session's definition.
+	 * @param array<string, mixed> $current    The stored session.
+	 * @param array<string, mixed> $payload    The minutes payload.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When the payload changes a stored denial.
+	 *
+	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-attendance-and-minutes-follow-the-session-definition-req-css-3
+	 */
+	private function assertDenialKept(SessionDefinition $definition, array $current, array $payload): void {
+		$definition->rules()->assertDenialKept(
+			stored: (string)($current['recordingConsent'] ?? ''),
+			asked: (string)($payload['recordingConsent'] ?? 'denied')
+		);
+	}//end assertDenialKept()
+
+	/**
+	 * The changes that close the session with its minutes.
+	 *
+	 * @param SessionDefinition    $definition The session's definition.
+	 * @param array<string, mixed> $payload    The minutes payload.
+	 * @param string               $summary    The minutes summary.
+	 * @param string               $document   The minutes document.
+	 *
+	 * @return array<string, mixed> The changes.
+	 *
+	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-attendance-and-minutes-follow-the-session-definition-req-css-3
+	 */
+	private function minutesChanges(SessionDefinition $definition, array $payload, string $summary, string $document): array {
 		$changes = [
 			'minutesSummary'  => $this->nullIfEmpty(value: $summary),
 			'minutesDocument' => $this->nullIfEmpty(value: $document),
@@ -368,14 +403,8 @@ class SessionService {
 			}
 		}
 
-		return $this->patch(
-			objectService: $objectService,
-			register: $register,
-			sessionId: $sessionId,
-			current: $current,
-			changes: $changes
-		);
-	}//end addMinutes()
+		return $changes;
+	}//end minutesChanges()
 
 	/**
 	 * The session, its register context and its definition.
