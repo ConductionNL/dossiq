@@ -453,15 +453,23 @@ class WOOAssessmentController extends Controller {
 
 		$this->requireCaseMutationAccess(caseId: $id, user: $user);
 
+		return $this->proposalFor(id: $id, documentRef: $documentRef, user: $user);
+	}//end proposeRedaction()
+
+	/**
+	 * Propose the redaction spans for the posted text, answering a refusal or failure as JSON.
+	 *
+	 * @param string $id          The case id.
+	 * @param string $documentRef The document reference.
+	 * @param IUser  $user        The reviewer.
+	 *
+	 * @return JSONResponse
+	 */
+	private function proposalFor(string $id, string $documentRef, IUser $user): JSONResponse {
 		$text = (string)$this->request->getParam('text', '');
 
 		try {
-			$result = $this->anonymisationAssist->proposeSpans(
-				caseId: $id,
-				documentRef: $documentRef,
-				text: $text,
-				userId: $user->getUID(),
-			);
+			$result = $this->anonymisationAssist->proposeSpans(caseId: $id, documentRef: $documentRef, text: $text, userId: $user->getUID());
 			return new JSONResponse($result);
 		} catch (RefusedException $e) {
 			// Another reviewer's assessment (REQ-CRA-003): the rule and its status, not a 400.
@@ -469,13 +477,26 @@ class WOOAssessmentController extends Controller {
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		} catch (\RuntimeException $e) {
-			$this->logger->warning(
-				'WOO redaction proposal failed: ' . $e->getMessage(),
-				['app' => 'dossiq','caseId' => $id, 'documentRef' => $documentRef],
-			);
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+			return $this->proposalFailed(id: $id, documentRef: $documentRef, error: $e->getMessage());
 		}
-	}//end proposeRedaction()
+	}//end proposalFor()
+
+	/**
+	 * Log a failed redaction proposal and answer it as a bad request.
+	 *
+	 * @param string $id          The case id.
+	 * @param string $documentRef The document reference.
+	 * @param string $error       What went wrong.
+	 *
+	 * @return JSONResponse
+	 */
+	private function proposalFailed(string $id, string $documentRef, string $error): JSONResponse {
+		$this->logger->warning(
+			'WOO redaction proposal failed: ' . $error,
+			['app' => 'dossiq','caseId' => $id, 'documentRef' => $documentRef],
+		);
+		return new JSONResponse(['error' => $error], Http::STATUS_BAD_REQUEST);
+	}//end proposalFailed()
 
 	/**
 	 * Record a human reviewer's approve/reject decision on a pending
