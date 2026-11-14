@@ -97,13 +97,8 @@ class RemedyLodging implements RemedyLodgingInterface {
 	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-lodged-remedy-is-judged-timely-against-the-declared-term-req-rml-002
 	 */
 	public function lodge(string $caseId, array $objection): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = (string)$this->settingsService->getConfigValue(key: 'register');
-		$caseSchema = (string)$this->settingsService->getConfigValue(key: 'case_schema');
+		$objectService = $this->requireObjectService();
+		[$register, $caseSchema] = $this->registerAndCaseSchema();
 		$decision = $this->requireDecision(objectService: $objectService, register: $register, caseId: $caseId);
 
 		$this->assertComplete(objection: $objection);
@@ -112,36 +107,88 @@ class RemedyLodging implements RemedyLodgingInterface {
 
 		$received = ($this->dates->tryParse(value: ($objection['receivedDate'] ?? null)) ?? $this->dates->today());
 		$isTimely = $this->isTimely(decision: $decision, termDays: $remedy['termDays'], received: $received);
-		$opened = $this->openRemedyCase(
-			objectService: $objectService,
-			register: $register,
-			caseSchema: $caseSchema,
-			caseId: $caseId,
-			kind: $remedy['kind'],
-			remedyType: $remedy['caseType'],
-			received: $received,
-		);
+		$opened = $this->openRemedyCase(objectService: $objectService, register: $register, caseSchema: $caseSchema, caseId: $caseId,
+			kind: $remedy['kind'], remedyType: $remedy['caseType'], received: $received);
+		$openedId = self::openedIdOf(opened: $opened);
+
+		$record = $this->recordObjection(objectService: $objectService, register: $register, caseSchema: $caseSchema, openedId: $openedId,
+			decision: $decision, objection: ['receivedDate' => $received->format('Y-m-d'), 'isTimely' => $isTimely] + $objection);
+
+		return self::lodged(openedId: $openedId, record: $record, opened: $opened, isTimely: $isTimely);
+	}//end lodge()
+
+	/**
+	 * OpenRegister's object service, or an exception when it is absent.
+	 *
+	 * @return object The object service.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable.
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-against-a-decided-case-req-rml-001
+	 */
+	private function requireObjectService(): object {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		return $objectService;
+	}//end requireObjectService()
+
+	/**
+	 * The configured register and case schema.
+	 *
+	 * @return array{0: string, 1: string} The register and the case schema.
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-against-a-decided-case-req-rml-001
+	 */
+	private function registerAndCaseSchema(): array {
+		$register = (string)$this->settingsService->getConfigValue(key: 'register');
+		$caseSchema = (string)$this->settingsService->getConfigValue(key: 'case_schema');
+
+		return [$register, $caseSchema];
+	}//end registerAndCaseSchema()
+
+	/**
+	 * The id of the opened remedy case, or an exception when it has none.
+	 *
+	 * @param array<string, mixed> $opened The opened remedy case.
+	 *
+	 * @return string The id.
+	 *
+	 * @throws RuntimeException When the remedy case could not be opened.
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-against-a-decided-case-req-rml-001
+	 */
+	private static function openedIdOf(array $opened): string {
 		$openedId = (string)($opened['id'] ?? ($opened['uuid'] ?? ''));
 		if ($openedId === '') {
 			throw new RuntimeException('The remedy case could not be opened');
 		}
 
-		$record = $this->recordObjection(
-			objectService: $objectService,
-			register: $register,
-			caseSchema: $caseSchema,
-			openedId: $openedId,
-			decision: $decision,
-			objection: ['receivedDate' => $received->format('Y-m-d'), 'isTimely' => $isTimely] + $objection,
-		);
+		return $openedId;
+	}//end openedIdOf()
 
+	/**
+	 * What lodging a remedy answers.
+	 *
+	 * @param string               $openedId The opened remedy case.
+	 * @param array<string, mixed> $record   The recorded objection.
+	 * @param array<string, mixed> $opened   The opened remedy case, for its deadline.
+	 * @param bool                 $isTimely Whether the remedy was lodged in time.
+	 *
+	 * @return array{caseId: string, objectionId: string, deadline: string, isTimely: bool}
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-against-a-decided-case-req-rml-001
+	 */
+	private static function lodged(string $openedId, array $record, array $opened, bool $isTimely): array {
 		return [
 			'caseId' => $openedId,
 			'objectionId' => (string)($record['id'] ?? ($record['uuid'] ?? '')),
 			'deadline' => (string)($opened['plannedEndDate'] ?? ($opened['deadline'] ?? '')),
 			'isTimely' => $isTimely,
 		];
-	}//end lodge()
+	}//end lodged()
 
 	/**
 	 * The latest decision of the case, refusing when there is none.
