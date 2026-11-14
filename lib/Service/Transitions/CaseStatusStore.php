@@ -39,6 +39,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\TranslatedText;
+use OCA\Dossiq\Service\Timeline\StatusMoveEntry;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -51,14 +53,20 @@ class CaseStatusStore {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister + config.
-	 * @param LoggerInterface $logger The logger.
+	 * @param SettingsService   $settingsService  Bridge to OpenRegister + config.
+	 * @param StatusTypeLookup  $statusTypeLookup Reads a statusType, by id or by name.
+	 * @param LoggerInterface   $logger           The logger.
+	 * @param StatusMoveEntry|null $moveEntry    The timeline entry a recorded move writes.
+	 * @param TranslatedText       $text         Reads a translatable status description as text, in the reader's language.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly StatusTypeLookup $statusTypeLookup,
 		private readonly LoggerInterface $logger,
+		private readonly ?StatusMoveEntry $moveEntry = null,
+		private readonly TranslatedText $text = new TranslatedText(),
 	) {
 	}//end __construct()
 
@@ -130,6 +138,7 @@ class CaseStatusStore {
 	 * @param string|null $comment Free-form comment.
 	 * @param array<int, array<string, mixed>> $evaluatedGuards Guard snapshots.
 	 * @param bool $noWorkflowTemplate Flag for free-form transitions.
+	 * @param string $actor Who made the move, or the empty string when the caller names nobody.
 	 *
 	 * @return array<string, mixed> The written statusRecord.
 	 *
@@ -145,7 +154,51 @@ class CaseStatusStore {
 		?string $comment,
 		array $evaluatedGuards,
 		bool $noWorkflowTemplate,
+		string $actor = '',
 	): array {
+		[$objectService, $register, $recordSchema] = $this->statusRecordStore();
+
+		$payload = [
+			'case' => $caseId,
+			'statusType' => $toStatus,
+			'transitionLabel' => $label,
+			'evaluatedGuards' => $evaluatedGuards,
+			'dispatchedActions' => [],
+			'noWorkflowTemplate' => $noWorkflowTemplate,
+		];
+
+		$payload = $this->withOptionalStatusFields(
+			payload: $payload,
+			fromStatus: $fromStatus,
+			comment: $comment,
+			actor: $actor,
+		);
+
+		$record = $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
+
+		$this->moveEntry?->record(
+			caseId: $caseId,
+			toStatus: $toStatus,
+			fromStatus: $fromStatus,
+			label: $label,
+			comment: $comment,
+			record: $record,
+			actor: $actor,
+		);
+
+		return $record;
+	}//end writeStatusRecord()
+
+	/**
+	 * The object service, register and statusRecord schema.
+	 *
+	 * @return array{0: object, 1: string, 2: string} The store.
+	 *
+	 * @throws RuntimeException When OpenRegister or the statusRecord schema is unavailable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function statusRecordStore(): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('storage_unavailable');
@@ -157,14 +210,32 @@ class CaseStatusStore {
 			throw new RuntimeException('status_record_schema_not_configured');
 		}
 
-		$payload = [
-			'case' => $caseId,
-			'statusType' => $toStatus,
-			'transitionLabel' => $label,
-			'evaluatedGuards' => $evaluatedGuards,
-			'dispatchedActions' => [],
-			'noWorkflowTemplate' => $noWorkflowTemplate,
-		];
+		return [$objectService, $register, $recordSchema];
+	}//end statusRecordStore()
+
+	/**
+	 * Add the actor, prior status and comment to a statusRecord payload when given.
+	 *
+	 * @param array<string, mixed> $payload The statusRecord payload.
+	 * @param string $fromStatus Prior statusType UUID.
+	 * @param string|null $comment Free-form comment.
+	 * @param string $actor Who made the move, or the empty string when the caller names nobody.
+	 *
+	 * @return array<string, mixed> The payload with the optional fields.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function withOptionalStatusFields(array $payload, string $fromStatus, ?string $comment, string $actor): array {
+		// WHO made this move. The four-eyes rule reads this chain to find who
+		// performed a named earlier act, and before this property the only
+		// answer was the row's OpenRegister owner, which is a fact about who
+		// wrote the record rather than about who took the step. They agree
+		// today and they are not the same claim. Written only when the caller
+		// names somebody: an empty string is not an actor, and a record
+		// stamped with one would read as a move nobody made.
+		if (trim($actor) !== '') {
+			$payload['actor'] = $actor;
+		}
 		if ($fromStatus !== '') {
 			$payload['fromStatus'] = $fromStatus;
 		}
@@ -173,8 +244,25 @@ class CaseStatusStore {
 			$payload['description'] = $comment;
 		}
 
-		return $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
-	}//end writeStatusRecord()
+		return $payload;
+	}//end withOptionalStatusFields()
+
+	/**
+	 * Where the move's timeline entry is built.
+	 *
+	 * Nothing here. {@see StatusMoveEntry} builds it, and this class calls it
+	 * once, from {@see self::writeStatusRecord()}. That method is the one place
+	 * all four movers reach: the guarded transition, the admin free-form move,
+	 * the ending acts and a reopen. A writer placed in the engine instead would
+	 * have covered the first two and left a closed case with no line saying it
+	 * closed.
+	 *
+	 * A derived move writes no statusRecord and never reaches here.
+	 * `DerivedStatusTimelineListener` records that one, after the save lands.
+	 *
+	 * @see StatusMoveEntry
+	 * @see \OCA\Dossiq\Listener\DerivedStatusTimelineListener
+	 */
 
 	/**
 	 * Persist an updated statusRecord.
@@ -224,42 +312,83 @@ class CaseStatusStore {
 			return null;
 		}
 
+		$query = $this->statusRecordQuery(caseId: $caseId);
+		if ($query === null) {
+			return null;
+		}
+
+		$records = $this->searchStatusRecords(objectService: $objectService, query: $query);
+		if ($records === null) {
+			return null;
+		}
+
+		return $this->recordArrays(records: $records);
+	}//end findStatusRecords()
+
+	/**
+	 * The searchObjects() query for a case's status records, or null when they are not configured.
+	 *
+	 * @param string $caseId Case UUID.
+	 *
+	 * @return array<string, mixed>|null The query.
+	 */
+	private function statusRecordQuery(string $caseId): ?array {
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$recordSchema = $this->settingsService->getConfigValue(key: 'status_record_schema');
 		if ($register === '' || $recordSchema === '') {
 			return null;
 		}
 
+		return [
+			'@self' => [
+				'register' => (int)$register,
+				'schema' => (int)$recordSchema,
+			],
+			'case' => $caseId,
+		];
+	}//end statusRecordQuery()
+
+	/**
+	 * Run the status record search; a failed read is logged and answers null.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param array<string, mixed> $query         The query, its `case` the case UUID.
+	 *
+	 * @return array<int, mixed>|null The records found, or null when the history cannot be read.
+	 */
+	private function searchStatusRecords(object $objectService, array $query): ?array {
 		try {
-			$records = $objectService->searchObjects(
-				[
-					'@self' => [
-						'register' => (int)$register,
-						'schema' => (int)$recordSchema,
-					],
-					'case' => $caseId,
-				],
-			);
+			$records = $objectService->searchObjects($query);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'StatusTransitionService: replay searchObjects failed',
-				['exception' => $e->getMessage(), 'caseId' => $caseId],
+				['exception' => $e->getMessage(), 'caseId' => $query['case']],
 			);
 			return null;
 		}//end try
 
-		$recordList = [];
 		if (is_array($records) === true) {
-			$recordList = $records;
+			return $records;
 		}
 
+		return [];
+	}//end searchStatusRecords()
+
+	/**
+	 * Every record as an array.
+	 *
+	 * @param array<int, mixed> $records The records found.
+	 *
+	 * @return array<int, array<string, mixed>> The records.
+	 */
+	private function recordArrays(array $records): array {
 		$list = [];
-		foreach ($recordList as $record) {
+		foreach ($records as $record) {
 			$list[] = $this->toArray(value: $record);
 		}
 
 		return $list;
-	}//end findStatusRecords()
+	}//end recordArrays()
 
 	/**
 	 * Look up a human-readable status name for the case-detail panel header.
@@ -271,29 +400,53 @@ class CaseStatusStore {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function lookupStatusName(string $statusTypeId): string {
-		if ($statusTypeId === '') {
-			return '';
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return '';
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$statusTypeSchema = $this->settingsService->getConfigValue(key: 'status_type_schema');
-		if ($register === '' || $statusTypeSchema === '') {
-			return '';
-		}
-
-		try {
-			$statusType = $this->toArray(value: $objectService->find($statusTypeId, register: $register, schema: $statusTypeSchema));
-		} catch (\Throwable $e) {
-			return '';
-		}
-
-		return (string)($statusType['name'] ?? ($statusType['title'] ?? ''));
+		return $this->statusTypeLookup->nameFor(statusTypeId: $statusTypeId);
 	}//end lookupStatusName()
+
+	/**
+	 * Look up the colour a status is drawn in.
+	 *
+	 * The case page's transition strip renders the current status as a badge,
+	 * and a badge with no colour says the same thing about every status. The
+	 * colour travels with the status name rather than being fetched a second
+	 * time by the browser: both come off the same row, and a second round trip
+	 * to colour a label the page already has is a request nobody needs.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 *
+	 * @return string The colour name, or the empty string when the status
+	 *                carries none. The frontend falls back to grey.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	public function lookupStatusColour(string $statusTypeId): string {
+		$colour = ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['colour'] ?? '');
+
+		if (is_string($colour) === false) {
+			return '';
+		}
+
+		return $colour;
+	}//end lookupStatusColour()
+
+	/**
+	 * The explanation an administrator wrote on a status.
+	 *
+	 * `statusType.description` has existed for as long as the schema has, and
+	 * nothing rendered it: an administrator who wrote one was writing into a
+	 * field nobody read. It travels with the name and the colour because all
+	 * three come off the same row, and a second round trip to fetch a sentence
+	 * the page is already asking about is a request nobody needs.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 *
+	 * @return string The description, or the empty string.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function lookupStatusDescription(string $statusTypeId): string {
+		return $this->text->forReader(value: ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['description'] ?? ''));
+	}//end lookupStatusDescription()
 
 	/**
 	 * Validate that a statusType belongs to the case's caseType.
@@ -308,41 +461,26 @@ class CaseStatusStore {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function assertStatusBelongsToCaseType(string $caseTypeId, string $statusTypeId): void {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('storage_unavailable');
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$caseTypeSchema = $this->settingsService->getConfigValue(key: 'case_type_schema');
-		$unconfigured = in_array('', [$register, $caseTypeSchema, $caseTypeId, $statusTypeId], true);
+		$unconfigured = in_array('', [$caseTypeId, $statusTypeId], true);
 		if ($unconfigured === true) {
 			throw new RuntimeException('case_type_not_configured');
 		}
 
-		try {
-			$caseType = $this->toArray(value: $objectService->find($caseTypeId, register: $register, schema: $caseTypeSchema));
-		} catch (\Throwable $e) {
-			throw new RuntimeException('case_type_not_found');
+		// 🔴 THE LINK LIVES ON THE CHILD. This asked the CASE TYPE for a
+		// `statusTypes` list, a property the schema does not declare — every
+		// `statusType` carries a `caseType` back-reference instead. The list was
+		// therefore empty on every real case type, the membership loop matched
+		// nothing, and an admin's free-form move was refused with
+		// `status_type_not_in_case_type` whatever it was asked to do. Reading
+		// the back-reference asks the question the schema can answer.
+		$parent = ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['caseType'] ?? '');
+		if (is_array($parent) === true) {
+			$parent = ($parent['id'] ?? ($parent['uuid'] ?? ''));
 		}
 
-		$statuses = $caseType['statusTypes'] ?? ($caseType['statusses'] ?? []);
-		if (is_array($statuses) === false) {
-			$statuses = [];
+		if ((string)$parent !== $caseTypeId) {
+			throw new RuntimeException('status_type_not_in_case_type');
 		}
-
-		foreach ($statuses as $entry) {
-			$id = (string)$entry;
-			if (is_array($entry) === true) {
-				$id = (string)($entry['id'] ?? ($entry['uuid'] ?? ''));
-			}
-
-			if ($id === $statusTypeId) {
-				return;
-			}
-		}
-
-		throw new RuntimeException('status_type_not_in_case_type');
 	}//end assertStatusBelongsToCaseType()
 
 	/**

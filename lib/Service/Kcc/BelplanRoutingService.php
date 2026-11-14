@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ namespace OCA\Dossiq\Service\Kcc;
 /**
  * Belplan-driven KCC call routing.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
 class BelplanRoutingService {
 	/**
@@ -52,6 +52,19 @@ class BelplanRoutingService {
 	public const AVAILABLE_STATUSES = ['beschikbaar', 'available', 'idle'];
 
 	/**
+	 * The route of a call that needs no skill: nobody, no escalation.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private const NO_SKILL_ROUTE = [
+		'destinationSpecialistId' => null,
+		'escalatieFlag' => false,
+		'estimatedWaitTime' => 0,
+		'vaardigheid' => '',
+		'candidatePool' => 0,
+	];
+
+	/**
 	 * Match a phone number against a belplan's triggerNummer (E.164 or local).
 	 *
 	 * @param string $phoneNumber The inbound number.
@@ -59,7 +72,7 @@ class BelplanRoutingService {
 	 *
 	 * @return array<string, mixed>|null The matched belplan or null when none matches.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function getActiveBelplan(string $phoneNumber, array $belplannen): ?array {
 		$normalised = $this->normalisePhone(phoneNumber: $phoneNumber);
@@ -90,7 +103,7 @@ class BelplanRoutingService {
 	 *
 	 * @return string The vaardigheid, or '' when not resolvable.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function resolveVaardigheid(array $belplan, string|int $menuSelection): string {
 		$steps = $belplan['routingSteps'] ?? [];
@@ -100,14 +113,38 @@ class BelplanRoutingService {
 
 		// Numeric selection: 1-based index into routeringStappen[].
 		if (is_int($menuSelection) === true || ctype_digit((string)$menuSelection) === true) {
-			$idx = ((int)$menuSelection) - 1;
-			if (isset($steps[$idx]) === true && is_array($steps[$idx]) === true) {
-				return (string)($steps[$idx]['vaardigheid'] ?? '');
-			}
-
-			return '';
+			return $this->byIndex(steps: $steps, menuSelection: $menuSelection);
 		}
 
+		return $this->byLabel(steps: $steps, menuSelection: $menuSelection);
+	}//end resolveVaardigheid()
+
+	/**
+	 * The vaardigheid of the routing step a numeric menu choice picks.
+	 *
+	 * @param array      $steps         The belplan's routing steps.
+	 * @param string|int $menuSelection The 1-based menu choice.
+	 *
+	 * @return string The vaardigheid, or '' when no step has that number.
+	 */
+	private function byIndex(array $steps, string|int $menuSelection): string {
+		$idx = ((int)$menuSelection) - 1;
+		if (isset($steps[$idx]) === true && is_array($steps[$idx]) === true) {
+			return (string)($steps[$idx]['vaardigheid'] ?? '');
+		}
+
+		return '';
+	}//end byIndex()
+
+	/**
+	 * The vaardigheid of the routing step whose label matches the choice, ignoring case.
+	 *
+	 * @param array      $steps         The belplan's routing steps.
+	 * @param string|int $menuSelection The menu choice.
+	 *
+	 * @return string The vaardigheid, or '' when no label matches.
+	 */
+	private function byLabel(array $steps, string|int $menuSelection): string {
 		// Otherwise, match the option label case-insensitively.
 		$needle = mb_strtolower((string)$menuSelection);
 		foreach ($steps as $step) {
@@ -122,7 +159,7 @@ class BelplanRoutingService {
 		}
 
 		return '';
-	}//end resolveVaardigheid()
+	}//end byLabel()
 
 	/**
 	 * Pick the best specialist for a given vaardigheid from the supplied pool.
@@ -144,7 +181,7 @@ class BelplanRoutingService {
 	 *               estimatedWaitTime: int, vaardigheid: string,
 	 *               candidatePool: int}
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function routeCall(
 		string $vaardigheid,
@@ -153,50 +190,120 @@ class BelplanRoutingService {
 		int $maxQueueLengte = self::DEFAULT_OVERFLOW_WACHTRIJ_LENGTE,
 	): array {
 		if ($vaardigheid === '') {
-			return [
-				'destinationSpecialistId' => null,
-				'escalatieFlag' => false,
-				'estimatedWaitTime' => 0,
-				'vaardigheid' => '',
-				'candidatePool' => 0,
-			];
+			return self::NO_SKILL_ROUTE;
 		}
 
-		$candidates = $this->filterCandidates(pool: $pool, vaardigheid: $vaardigheid);
+		$routing = $this->routingFor(vaardigheid: $vaardigheid, pool: $pool, overflowWachttijd: $overflowWachttijd, maxQueueLengte: $maxQueueLengte);
 
-		if (count($candidates) === 0) {
-			return [
-				'destinationSpecialistId' => null,
-				'escalatieFlag' => true,
-				'estimatedWaitTime' => 0,
-				'vaardigheid' => $vaardigheid,
-				'candidatePool' => 0,
-			];
+		return $this->routeAmong(routing: $routing);
+	}//end routeCall()
+
+	/**
+	 * Build the routing request with the candidates that hold the skill.
+	 *
+	 * @param string                           $vaardigheid       The required skill.
+	 * @param array<int, array<string, mixed>> $pool              The specialist pool.
+	 * @param int                              $overflowWachttijd The overflow wait time.
+	 * @param int                              $maxQueueLengte    The maximum queue length.
+	 *
+	 * @return CallRouting
+	 */
+	private function routingFor(string $vaardigheid, array $pool, int $overflowWachttijd, int $maxQueueLengte): CallRouting {
+		$routing = new CallRouting();
+		$routing->vaardigheid = $vaardigheid;
+		$routing->overflowWachttijd = $overflowWachttijd;
+		$routing->maxQueueLengte = $maxQueueLengte;
+		$routing->candidates = $this->filterCandidates(pool: $pool, vaardigheid: $vaardigheid);
+
+		return $routing;
+	}//end routingFor()
+
+	/**
+	 * Route among the candidates: escalate, overflow or pick a specialist.
+	 *
+	 * @param CallRouting $routing The routing request.
+	 *
+	 * @return array<string, mixed> The route.
+	 */
+	private function routeAmong(CallRouting $routing): array {
+		if (count($routing->candidates) === 0) {
+			return $this->escalatedRoute(vaardigheid: $routing->vaardigheid);
 		}
 
-		$available = array_filter(
+		$available = $this->availableOf(candidates: $routing->candidates);
+
+		// No-one available: overflow check.
+		if (count($available) === 0) {
+			return $this->overflowRoute(routing: $routing);
+		}
+
+		return $this->pickedRoute(routing: $routing, available: $available);
+	}//end routeAmong()
+
+	/**
+	 * The route when no specialist in the pool holds the skill.
+	 *
+	 * @param string $vaardigheid The required skill.
+	 *
+	 * @return array<string, mixed> The escalated route.
+	 */
+	private function escalatedRoute(string $vaardigheid): array {
+		return [
+			'destinationSpecialistId' => null,
+			'escalatieFlag' => true,
+			'estimatedWaitTime' => 0,
+			'vaardigheid' => $vaardigheid,
+			'candidatePool' => 0,
+		];
+	}//end escalatedRoute()
+
+	/**
+	 * The candidates whose status says they can take a call now.
+	 *
+	 * @param array<int, array<string, mixed>> $candidates The specialists with the skill.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function availableOf(array $candidates): array {
+		return array_filter(
 			$candidates,
 			static function (array $c): bool {
 				$status = mb_strtolower((string)($c['status'] ?? ''));
 				return in_array($status, self::AVAILABLE_STATUSES, true);
 			}
 		);
+	}//end availableOf()
 
-		// No-one available: overflow check.
-		if (count($available) === 0) {
-			$minQueue = $this->minQueueLength(pool: $candidates);
-			$estWait = $minQueue * $this->avgHandlingDuration(pool: $candidates);
-			$overflow = ($estWait > $overflowWachttijd) || ($minQueue > $maxQueueLengte);
+	/**
+	 * The route when nobody is available: escalate when the wait or the queue is too long.
+	 *
+	 * @param CallRouting $routing The call being routed.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function overflowRoute(CallRouting $routing): array {
+		$minQueue = $this->minQueueLength(pool: $routing->candidates);
+		$estWait = $minQueue * $this->avgHandlingDuration(pool: $routing->candidates);
+		$overflow = ($estWait > $routing->overflowWachttijd) || ($minQueue > $routing->maxQueueLengte);
 
-			return [
-				'destinationSpecialistId' => null,
-				'escalatieFlag' => $overflow,
-				'estimatedWaitTime' => $estWait,
-				'vaardigheid' => $vaardigheid,
-				'candidatePool' => count($candidates),
-			];
-		}
+		return [
+			'destinationSpecialistId' => null,
+			'escalatieFlag' => $overflow,
+			'estimatedWaitTime' => $estWait,
+			'vaardigheid' => $routing->vaardigheid,
+			'candidatePool' => count($routing->candidates),
+		];
+	}//end overflowRoute()
 
+	/**
+	 * The route to the available specialist with the shortest queue, then the shortest handling.
+	 *
+	 * @param CallRouting                      $routing   The call being routed.
+	 * @param array<int, array<string, mixed>> $available The available candidates.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function pickedRoute(CallRouting $routing, array $available): array {
 		usort(
 			$available,
 			static function (array $a, array $b): int {
@@ -220,10 +327,10 @@ class BelplanRoutingService {
 			'destinationSpecialistId' => (string)($picked['employeeId'] ?? ($picked['id'] ?? '')),
 			'escalatieFlag' => false,
 			'estimatedWaitTime' => $picked['currentQueueLength'] * $picked['averageHandlingDuration'],
-			'vaardigheid' => $vaardigheid,
-			'candidatePool' => count($candidates),
+			'vaardigheid' => $routing->vaardigheid,
+			'candidatePool' => count($routing->candidates),
 		];
-	}//end routeCall()
+	}//end pickedRoute()
 
 	/**
 	 * Normalise a phone number: keep digits + leading +.

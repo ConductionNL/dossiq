@@ -856,7 +856,7 @@ License and copyright metadata on PHP files lives **only** in the main file docb
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/{change-name}/tasks.md#task-N
+ * @spec `openspec/changes/{change-name}/tasks.md#task-N`
  */
 
 declare(strict_types=1);

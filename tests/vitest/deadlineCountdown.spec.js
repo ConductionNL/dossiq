@@ -1,0 +1,68 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * Days until a deadline, and whether it has passed.
+ *
+ * The arithmetic is worth pinning down because two of its cases are ones a
+ * reader notices only when they are wrong. A case due TODAY must not flip to
+ * overdue at some hour of the afternoon, which is what a timestamp comparison
+ * does. And a case with NO deadline has no days left at all: zero is a claim
+ * about a deadline, and a case that has none has made no such claim.
+ *
+ * @spec openspec/changes/one-case-list/specs/signalering-widgets/spec.md
+ */
+
+import { describe, expect, it } from 'vitest'
+import { daysUntilDeadline, isOverdue } from '../../src/utils/deadlineCountdown.js'
+
+/** A fixed "now" so the suite does not drift with the wall clock. */
+const NOW = new Date(2026, 8, 8, 14, 30)
+
+/**
+ * A date-only string N days from the fixed now.
+ *
+ * @param {number} offset Days ahead (negative for the past).
+ * @return {string} `YYYY-MM-DD`.
+ */
+function day(offset) {
+	const d = new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate() + offset)
+	const month = String(d.getMonth() + 1).padStart(2, '0')
+	const date = String(d.getDate()).padStart(2, '0')
+	return `${d.getFullYear()}-${month}-${date}`
+}
+
+describe('daysUntilDeadline', () => {
+	it('counts a date-only deadline as a LOCAL day', () => {
+		// `new Date('2026-09-11')` is UTC midnight, which is 2026-09-10 for
+		// every reader west of Greenwich — the deadline would silently read
+		// one day nearer than it is.
+		expect(daysUntilDeadline('2026-09-11', NOW)).toBe(3)
+	})
+
+	it('is negative once the deadline has passed', () => {
+		expect(daysUntilDeadline(day(-5), NOW)).toBe(-5)
+	})
+
+	it('is null when there is nothing to count', () => {
+		expect(daysUntilDeadline(null, NOW)).toBeNull()
+	})
+})
+
+describe('isOverdue', () => {
+	// A term is late only from the day after its last day (one-term-engine,
+	// REQ-OTE-05 and REQ-OTE-07), whatever the hour.
+	it('is not overdue on the last day, even in the afternoon', () => {
+		expect(isOverdue(day(0), NOW)).toBe(false)
+	})
+
+	it('is overdue from the day after', () => {
+		expect(isOverdue(day(-1), NOW)).toBe(true)
+	})
+
+	it('is not overdue before the deadline or without one', () => {
+		expect(isOverdue(day(2), NOW)).toBe(false)
+		expect(isOverdue(null, NOW)).toBe(false)
+		expect(isOverdue('', NOW)).toBe(false)
+	})
+})

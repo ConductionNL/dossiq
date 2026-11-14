@@ -28,13 +28,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DossierZipExporterInterface;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZipManifestBuilder;
 use OCP\IUser;
@@ -43,9 +44,9 @@ use Psr\Log\LoggerInterface;
 /**
  * Builds clearance-filtered dossier ZIP exports.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
-class DossierZipExporter {
+class DossierZipExporter implements DossierZipExporterInterface {
 	/**
 	 * Constructor.
 	 *
@@ -72,11 +73,22 @@ class DossierZipExporter {
 	 *
 	 * @throws \RuntimeException When the dossier cannot be read.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function collectDocuments(string $caseId, array $selectedIds): array {
 		$file = $this->fileService->getDossierForCase(caseId: $caseId);
-		$documents = ($file['informatieobjecten'] ?? []);
+
+		// The dossier reader is declared array<string, mixed>, so this key is
+		// mixed and psalm collapsed it to array<never, never>. On that type the
+		// array_values() below looks redundant, and removing it would have been
+		// a real bug: array_filter() preserves keys, so the JSON response would
+		// turn from a list into an object with gaps. Narrowing here keeps the
+		// call honest instead.
+		$raw = ($file['informatieobjecten'] ?? []);
+		$documents = [];
+		if (is_array($raw) === true) {
+			$documents = $raw;
+		}
 
 		if (empty($selectedIds) === true) {
 			return $documents;
@@ -103,7 +115,7 @@ class DossierZipExporter {
 	 *
 	 * @throws \Throwable When the archive cannot be written or read back.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function buildZipData(IUser $user, array $documents, bool $flatLayout): string {
 		$layout = ZipManifestBuilder::LAYOUT_PER_TYPE;

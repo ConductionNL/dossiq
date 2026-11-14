@@ -33,7 +33,11 @@ use OCA\Decidiq\Event\DecisionConcludedEvent;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\Dossiq\Service\BesluitMaterialisationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
+use OCA\Dossiq\Service\Product\CaseOutcomeProductIssuer;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CaseObjectReference;
+use OCA\Dossiq\Service\Support\FlowDecisionSubject;
+use OCA\Dossiq\Tests\Support\MakesBezwaarAuditTrail;
 use OCA\OpenRegister\Db\FlowRun;
 use OCA\OpenRegister\Db\FlowRunMapper;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
@@ -59,8 +63,19 @@ interface ConcludedObjectServiceStub {
  * Unit tests for DecisionConcludedListener.
  *
  * @covers \OCA\Dossiq\Listener\DecisionConcludedListener
+ * @uses \OCA\Dossiq\Service\Support\CaseObjectReference
+ * @uses \OCA\Dossiq\Service\Support\FlowDecisionSubject
+ * @uses \OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService
+ * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
+ * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException
+ * @uses \OCA\Dossiq\Service\DecisionDocument\ConcludedDecisionRecord
+ * @uses \OCA\Dossiq\Service\Flow\WaitingRunResumer
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class DecisionConcludedListenerTest extends TestCase {
+	use MakesBezwaarAuditTrail;
+
 	/**
 	 * A terminal decidesk outcome for this app materialises the ZGW Besluit.
 	 *
@@ -223,7 +238,7 @@ class DecisionConcludedListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function testAConcludedDecisionResumesTheRunThatAskedForIt(): void {
 		$signals = [];
@@ -250,7 +265,7 @@ class DecisionConcludedListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function testAnUnrelatedDecisionLeavesTheRunSuspended(): void {
 		$signals = [];
@@ -270,7 +285,7 @@ class DecisionConcludedListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function testOnlyTheRunNamingTheRefIsResumed(): void {
 		$signals = [];
@@ -297,7 +312,7 @@ class DecisionConcludedListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function testWithoutFlowCollaboratorsNothingIsResumedAndNothingRaises(): void {
 		$listener = $this->listenerForDecision(
@@ -408,6 +423,183 @@ class DecisionConcludedListenerTest extends TestCase {
 	}//end listenerForDecision()
 
 	/**
+	 * Decision 172: every terminal outcome is handed to the product issuer
+	 * with its status, so the case type decides which outcome issues.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-10-30-portal-permits-as-held-products/tasks.md#2.1
+	 */
+	public function testATerminalOutcomeIsHandedToTheProductIssuerWithItsStatus(): void {
+		foreach (['approved', 'rejected'] as $status) {
+			$objectService = $this->createMock(ConcludedObjectServiceStub::class);
+			$objectService->method('searchObjectsBySlug')
+				->willReturn([['decisionRef' => 'dec-1', 'case' => 'case-9', 'besluitRef' => 'bes-2']]);
+			$settings = $this->createMock(SettingsService::class);
+			$settings->method('getObjectService')->willReturn($objectService);
+			$materialiser = $this->createMock(BesluitMaterialisationService::class);
+			$materialiser->method('materialiseFromConcludedEvent')->willReturn(['ok' => true]);
+
+			$products = $this->createMock(CaseOutcomeProductIssuer::class);
+			$products->expects($this->once())
+				->method('onConcludedDecision')
+				->with('case-9', 'dec-1', $status, '2026-06-15T10:00:00+00:00');
+
+			$listener = new DecisionConcludedListener(
+				settingsService: $settings,
+				decisionMaterialiser: $materialiser,
+				bacService: $this->createMock(AdvisoryCommitteeService::class),
+				logger: $this->createMock(LoggerInterface::class),
+				products: $products
+			);
+			$listener->handle($this->event(sourceApp: 'procest', status: $status));
+		}
+	}//end testATerminalOutcomeIsHandedToTheProductIssuerWithItsStatus()
+
+
+	/**
+	 * A concluded decision whose case cannot be resolved is logged and materialises nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnUnresolvedCaseIsLoggedAndMaterialisesNothing(): void {
+		$objectService = $this->createMock(ConcludedObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')->willReturn([]);
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$materialiser = $this->createMock(BesluitMaterialisationService::class);
+		$materialiser->expects($this->never())->method('materialiseFromConcludedEvent');
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with(
+			'Dossiq DecisionConcludedListener: could not resolve a case for the concluded decision',
+			['decisionId' => 'dec-1', 'externalReference' => '']
+		);
+		$products = $this->createMock(CaseOutcomeProductIssuer::class);
+		$products->expects($this->never())->method('onConcludedDecision');
+
+		$listener = new DecisionConcludedListener(
+			settingsService: $settings,
+			decisionMaterialiser: $materialiser,
+			bacService: $this->createMock(AdvisoryCommitteeService::class),
+			logger: $logger,
+			products: $products
+		);
+		$listener->handle(
+			new DecisionConcludedEvent('dec-1', 'contract-renewal', 'approved', 'granted', false, null, [], null, 'procest', 'r', 's', '', '', 'c')
+		);
+	}//end testAnUnresolvedCaseIsLoggedAndMaterialisesNothing()
+
+	/**
+	 * Without an object service a terminal outcome is dropped silently.
+	 *
+	 * @return void
+	 */
+	public function testWithoutAnObjectServiceNothingIsMaterialised(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->expects($this->once())->method('getObjectService')->willReturn(null);
+		$materialiser = $this->createMock(BesluitMaterialisationService::class);
+		$materialiser->expects($this->never())->method('materialiseFromConcludedEvent');
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->never())->method('warning');
+
+		$listener = new DecisionConcludedListener(
+			$settings,
+			$materialiser,
+			$this->createMock(AdvisoryCommitteeService::class),
+			$logger
+		);
+		$listener->handle($this->event(sourceApp: 'procest', status: 'withdrawn'));
+	}//end testWithoutAnObjectServiceNothingIsMaterialised()
+
+	/**
+	 * A failing materialisation is swallowed and logged with its message.
+	 *
+	 * @return void
+	 */
+	public function testAFailingMaterialisationIsLoggedNotRaised(): void {
+		$objectService = $this->createMock(ConcludedObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')
+			->willReturn([['decisionRef' => 'dec-1', 'case' => 'case-9', 'besluitRef' => 'bes-2']]);
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$materialiser = $this->createMock(BesluitMaterialisationService::class);
+		$materialiser->method('materialiseFromConcludedEvent')->willThrowException(new \RuntimeException('store down'));
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->never())->method('info');
+		$logger->expects($this->once())->method('warning')->with(
+			'Dossiq DecisionConcludedListener: could not materialise Besluit from decidesk outcome: store down'
+		);
+		$products = $this->createMock(CaseOutcomeProductIssuer::class);
+		$products->expects($this->never())->method('onConcludedDecision');
+
+		$listener = new DecisionConcludedListener(
+			settingsService: $settings,
+			decisionMaterialiser: $materialiser,
+			bacService: $this->createMock(AdvisoryCommitteeService::class),
+			logger: $logger,
+			products: $products
+		);
+		$listener->handle($this->event(sourceApp: 'procest', status: 'approved'));
+	}//end testAFailingMaterialisationIsLoggedNotRaised()
+
+	/**
+	 * The outcome handed over carries the first signer and the signature method, and the info line names the case.
+	 *
+	 * @return void
+	 */
+	public function testTheProjectedOutcomeNamesTheFirstSignerAndTheSignature(): void {
+		$objectService = $this->createMock(ConcludedObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')
+			->willReturn([['decisionRef' => 'dec-1', 'case' => 'case-9', 'besluitRef' => 'bes-2']]);
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$materialiser = $this->createMock(BesluitMaterialisationService::class);
+		$materialiser->expects($this->once())->method('materialiseFromConcludedEvent')->with(
+			'case-9',
+			'bes-2',
+			[
+				'status' => 'Approved',
+				'outcome' => 'granted',
+				'decidedAt' => '2026-06-15T10:00:00+00:00',
+				'signer' => 'mayor',
+				'method' => 'signature',
+				'signers' => ['mayor', ['id' => 'clerk']],
+				'signingReference' => 'sig-ref-1',
+			]
+		)->willReturn(['ok' => true]);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('info')->with(
+			'Dossiq DecisionConcludedListener: materialised ZGW Besluit from decidesk outcome',
+			['decisionId' => 'dec-1', 'caseId' => 'case-9', 'status' => 'approved']
+		);
+
+		$listener = new DecisionConcludedListener(
+			$settings,
+			$materialiser,
+			$this->createMock(AdvisoryCommitteeService::class),
+			$logger
+		);
+		$listener->handle(
+			new DecisionConcludedEvent(
+				'dec-1',
+				'contract-renewal',
+				'Approved',
+				'granted',
+				true,
+				'sig-ref-1',
+				['mayor', ['id' => 'clerk']],
+				'2026-06-15T10:00:00+00:00',
+				'procest',
+				'register-slug',
+				'supplierContract',
+				'sub-1',
+				'case-9',
+				'corr-1'
+			)
+		);
+	}//end testTheProjectedOutcomeNamesTheFirstSignerAndTheSignature()
+
+	/**
 	 * Build a DecisionConcludedEvent fixture.
 	 *
 	 * @param string $sourceApp The source app id.
@@ -433,4 +625,185 @@ class DecisionConcludedListenerTest extends TestCase {
 			'corr-1'
 		);
 	}//end event()
+	/**
+	 * The case recogniser over dossiq's configured register (12) and case schema (34).
+	 *
+	 * @return CaseObjectReference The recogniser.
+	 */
+	private function caseReference(): CaseObjectReference {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => ['register' => '12', 'case_schema' => '34'][$key] ?? ''
+		);
+
+		return new CaseObjectReference($settings);
+	}//end caseReference()
+
+	/**
+	 * A decision raised by Decidiq's flow step.
+	 *
+	 * @param string $register The subject register.
+	 * @param string $schema   The subject schema.
+	 *
+	 * @return DecisionConcludedEvent The event.
+	 */
+	private function flowEvent(string $register, string $schema): DecisionConcludedEvent {
+		return new DecisionConcludedEvent(
+			'dec-7',
+			'advice',
+			'approved',
+			'granted',
+			false,
+			null,
+			[],
+			'2026-09-28T10:00:00+00:00',
+			'decidiq-flow',
+			$register,
+			$schema,
+			'case-5',
+			'flow-run:run-1:decide-commissie',
+			'corr-7'
+		);
+	}//end flowEvent()
+
+	/**
+	 * A flow decision about a dossiq case becomes its besluit, on the subject, and wakes no run.
+	 *
+	 * Decidiq's own listener wakes the run that asked; waking it here as well
+	 * would signal it twice.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	public function testAFlowDecisionOnADossiqCaseIsMaterialisedOnItsSubject(): void {
+		$objectService = $this->createMock(ConcludedObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')->willReturn([]);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+
+		$materialiser = $this->createMock(BesluitMaterialisationService::class);
+		$materialiser->expects($this->once())
+			->method('materialiseFromConcludedEvent')
+			->with('case-5', '', $this->anything())
+			->willReturn(['ok' => true]);
+
+		$mapper = $this->createMock(FlowRunMapper::class);
+		$mapper->expects($this->never())->method('findSuspendedBySubject');
+
+		$listener = new DecisionConcludedListener(
+			$settings,
+			$materialiser,
+			$this->createMock(AdvisoryCommitteeService::class),
+			$this->createMock(LoggerInterface::class),
+			$mapper,
+			null,
+			new FlowDecisionSubject($this->caseReference())
+		);
+
+		$listener->handle($this->flowEvent(register: '12', schema: '34'));
+	}//end testAFlowDecisionOnADossiqCaseIsMaterialisedOnItsSubject()
+
+	/**
+	 * A flow decision about another app's object is left alone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	public function testAFlowDecisionOnAnotherAppsObjectIsIgnored(): void {
+		$materialiser = $this->createMock(BesluitMaterialisationService::class);
+		$materialiser->expects($this->never())->method('materialiseFromConcludedEvent');
+
+		$listener = new DecisionConcludedListener(
+			$this->createMock(SettingsService::class),
+			$materialiser,
+			$this->createMock(AdvisoryCommitteeService::class),
+			$this->createMock(LoggerInterface::class),
+			null,
+			null,
+			new FlowDecisionSubject($this->caseReference())
+		);
+
+		$listener->handle($this->flowEvent(register: '12', schema: '99'));
+		$listener->handle($this->flowEvent(register: 'pipelinq', schema: 'case'));
+	}//end testAFlowDecisionOnAnotherAppsObjectIsIgnored()
+
+	/**
+	 * A deviating decision writes an Awb art. 7:13 row on the advice request (REQ-BAT-001).
+	 *
+	 * Through the listener, on the real AdvisoryCommitteeService and BezwaarAuditTrail.
+	 *
+	 * @return void
+	 */
+	public function testADeviatingDecisionWritesAnAwb713RowOnTheAdviceRequest(): void {
+		$this->startBezwaarStore();
+		$this->store->seed('bacAdviceRequest', 'req-7', ['bezwaar' => 'bezwaar-1', 'status' => 'advice-issued']);
+
+		$this->listenerOverRealBac(logger: $this->createMock(LoggerInterface::class))
+			->handle($this->event(sourceApp: 'procest', status: 'approved'));
+
+		$context = $this->rowContext(uuid: 'req-7', action: 'dossiq.bezwaar.council-deviation-recorded');
+		$this->assertSame('awb-art-7:13', $context['tag']);
+		$this->assertSame(['decision' => 'bes-2', 'motivatie' => 'Commissie miste de nieuwe feiten'], $context['payload']);
+		$this->assertArrayNotHasKey('auditTrail', $this->store->row('bacAdviceRequest', 'req-7'));
+	}//end testADeviatingDecisionWritesAnAwb713RowOnTheAdviceRequest()
+
+	/**
+	 * A deviation entry that cannot be written is logged by the listener with the entry (REQ-BAT-003).
+	 *
+	 * @return void
+	 */
+	public function testAFailedDeviationEntryIsLoggedWithTheEntry(): void {
+		$this->startBezwaarStore();
+		$this->store->seed('bacAdviceRequest', 'req-7', ['bezwaar' => 'bezwaar-1', 'status' => 'advice-issued']);
+		$this->trail->failsAll = true;
+
+		$logged = [];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('error')->willReturnCallback(
+			static function (string|\Stringable $message, array $context = []) use (&$logged): void {
+				$logged[] = [(string) $message, $context];
+			}
+		);
+
+		$this->listenerOverRealBac(logger: $logger)->handle($this->event(sourceApp: 'procest', status: 'approved'));
+
+		$entries = array_values(array_filter($logged, static fn (array $line): bool => ($line[1]['action'] ?? '') === 'dossiq.bezwaar.council-deviation-recorded'));
+		$this->assertCount(1, $entries, 'the listener must log the unwritten deviation entry once, at error level');
+		$this->assertSame('req-7', $entries[0][1]['object']);
+		$this->assertSame('awb-art-7:13', $entries[0][1]['entry']['tag']);
+		$this->assertSame('Commissie miste de nieuwe feiten', $entries[0][1]['entry']['payload']['motivatie']);
+	}//end testAFailedDeviationEntryIsLoggedWithTheEntry()
+
+	/**
+	 * A listener over the real BAC service, whose decision lookup finds a deviating besluit.
+	 *
+	 * @param LoggerInterface $logger The listener's logger.
+	 *
+	 * @return DecisionConcludedListener The listener.
+	 */
+	private function listenerOverRealBac(LoggerInterface $logger): DecisionConcludedListener {
+		$record = [
+			'decisionRef' => 'dec-1',
+			'case' => 'case-9',
+			'besluitRef' => 'bes-2',
+			'advisoryOpinion' => 'req-7',
+			'followsAdvice' => false,
+			'deviationRationale' => 'Commissie miste de nieuwe feiten',
+		];
+		$objectService = $this->createMock(ConcludedObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')->willReturn([$record]);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+
+		return new DecisionConcludedListener(
+			$settings,
+			$this->createMock(BesluitMaterialisationService::class),
+			$this->realAdvisoryService(trail: $this->bezwaarAuditTrail(uid: null)),
+			$logger
+		);
+	}//end listenerOverRealBac()
 }//end class

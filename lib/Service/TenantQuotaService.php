@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
 
 declare(strict_types=1);
@@ -29,6 +29,9 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TenantQuotaServiceInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -37,9 +40,9 @@ use Throwable;
 /**
  * Quota service.
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
-class TenantQuotaService {
+class TenantQuotaService implements TenantQuotaServiceInterface {
 	/**
 	 * Tier defaults: tier => quotaType => [limit, enforcement].
 	 *
@@ -75,16 +78,31 @@ class TenantQuotaService {
 	public const DECISION_WARN = 'warn';
 
 	/**
+	 * What each enforcement decides once the hard limit is reached.
+	 *
+	 * @var array<string, array{decision:string, soft:bool, reason:string}>
+	 */
+	private const EXCEEDED_DECISIONS = [
+		self::DECISION_BLOCK => ['decision' => self::DECISION_BLOCK, 'soft' => true, 'reason' => 'block_limit_exceeded'],
+		self::DECISION_THROTTLE => ['decision' => self::DECISION_THROTTLE, 'soft' => true, 'reason' => 'throttle_limit_exceeded'],
+		self::DECISION_WARN => ['decision' => self::DECISION_WARN, 'soft' => true, 'reason' => 'warn_limit_exceeded'],
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IAppManager $appManager App manager.
 	 * @param ContainerInterface $container Service container.
 	 * @param LoggerInterface $logger Logger.
+	 * @param OrganisationQuotaLimits $organisationLimits The two limits the Organisation owns.
+	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly OrganisationQuotaLimits $organisationLimits,
+		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 	) {
 	}//end __construct()
 
@@ -112,34 +130,92 @@ class TenantQuotaService {
 
 		$rows = [];
 		foreach (self::TIER_DEFAULTS[$tier] as $quotaType => $cfg) {
-			try {
-				$row = $objectService->saveObject(
-					object: [
-						'tenantRef' => $tenantId,
-						'quotaType' => $quotaType,
-						'limit' => $cfg['limit'],
-						'currentUsage' => 0,
-						'softLimitWarningPercent' => 80,
-						'enforcement' => $cfg['enforcement'],
-						'resetAt' => $this->nextResetAt(quotaType: $quotaType),
-					],
-					register: TenantSaasService::REGISTER,
-					schema: 'tenantQuota',
-					uuid: null,
-				);
-				if (is_array($row) === true) {
-					$rows[] = $row;
-				}
-			} catch (Throwable $e) {
-				$this->logger->error('Dossiq: quota initialise write failed', ['exception' => $e->getMessage()]);
-			}//end try
-		}//end foreach
+			$object = $this->initialQuotaRow(tenantId: $tenantId, quotaType: $quotaType, cfg: $cfg);
+
+			$row = $this->persistQuotaRow(objectService: $objectService, object: $object);
+			if ($row !== null) {
+				$rows[] = $row;
+			}
+		}
 
 		return $rows;
 	}//end initialize()
 
 	/**
+	 * The quota row a tier default starts a tenant on.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param string $quotaType Type.
+	 * @param array<string, mixed> $cfg The tier default (limit, enforcement).
+	 *
+	 * @return array<string, mixed> The row to persist.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
+	 */
+	private function initialQuotaRow(string $tenantId, string $quotaType, array $cfg): array {
+		$object = [
+			'tenantRef' => $tenantId,
+			'quotaType' => $quotaType,
+			'currentUsage' => 0,
+			'softLimitWarningPercent' => 80,
+			'enforcement' => $cfg['enforcement'],
+			'resetAt' => $this->nextResetAt(quotaType: $quotaType),
+		];
+
+		// The mapped two carry no `limit` on the row. The tier default goes
+		// onto the Organisation instead, so there is exactly one copy of it.
+		$isMapped = $this->organisationLimits->owns(quotaType: $quotaType);
+		if ($isMapped === true) {
+			$this->organisationLimits->write(
+				tenantId: $tenantId,
+				quotaType: $quotaType,
+				limit: $cfg['limit']
+			);
+		}
+
+		if ($isMapped === false) {
+			$object['limit'] = $cfg['limit'];
+		}
+
+		return $object;
+	}//end initialQuotaRow()
+
+	/**
+	 * Persist one initial quota row.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param array<string, mixed> $object The row to persist.
+	 *
+	 * @return array<string, mixed>|null The persisted row, or null when the write failed.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
+	 */
+	private function persistQuotaRow(object $objectService, array $object): ?array {
+		try {
+			$row = $objectService->saveObject(
+				object: $object,
+				register: AppIdentity::REGISTER_SLUG,
+				schema: 'tenantQuota',
+				uuid: null,
+			);
+			if (is_array($row) === true) {
+				return $row;
+			}
+		} catch (Throwable $e) {
+			$this->logger->error('Dossiq: quota initialise write failed', ['exception' => $e->getMessage()]);
+		}//end try
+
+		return null;
+	}//end persistQuotaRow()
+
+	/**
 	 * Get the quota row for (tenant, type).
+	 *
+	 * `findAll()` returns `ObjectEntity` objects. This method used to return
+	 * one from a method typed `?array`; the `TypeError` was caught below and
+	 * read as "no quota row", and `consume()` allows a tenant with no row. So
+	 * every quota allowed everything. The row is read as an array first, and
+	 * the array keeps the object's `id`, which `persistQuota()` updates by.
 	 *
 	 * @param string $tenantId Tenant UUID.
 	 * @param string $quotaType Type.
@@ -155,31 +231,104 @@ class TenantQuotaService {
 		}
 
 		try {
-			// ObjectService::findAll() takes a single $config array — the previous
-			// named-argument form threw "Unknown named parameter $register" and
-			// was swallowed by the catch below. Register/schema live inside
-			// `filters`; limit/offset are top-level config keys.
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => TenantSaasService::REGISTER,
-						'schema' => 'tenantQuota',
-						'tenantRef' => $tenantId,
-						'quotaType' => $quotaType,
-					],
-					'limit' => 1,
-					'offset' => 0,
-				]
-			);
-			if (is_array($rows) === true && count($rows) > 0) {
-				return $rows[0];
+			$quota = $this->firstQuotaRow(rows: $objectService->findAll($this->quotaQuery(tenantId: $tenantId, quotaType: $quotaType)));
+			if ($quota === null) {
+				return null;
 			}
 
-			return null;
+			return $this->withOrganisationLimit(quota: $quota, tenantId: $tenantId, quotaType: $quotaType);
 		} catch (Throwable $e) {
 			return null;
 		}//end try
 	}//end getQuota()
+
+	/**
+	 * The findAll() config for one tenant's row of one quota type.
+	 *
+	 * @param string $tenantId  Tenant UUID.
+	 * @param string $quotaType Type.
+	 *
+	 * @return array<string, mixed> The config.
+	 */
+	private function quotaQuery(string $tenantId, string $quotaType): array {
+		// ObjectService::findAll() takes a single $config array — the previous
+		// named-argument form threw "Unknown named parameter $register" and
+		// was swallowed by the catch in getQuota(). Register/schema live inside
+		// `filters`; limit/offset are top-level config keys.
+		return [
+			'filters' => [
+				'register' => AppIdentity::REGISTER_SLUG,
+				'schema' => 'tenantQuota',
+				'tenantRef' => $tenantId,
+				'quotaType' => $quotaType,
+			],
+			'limit' => 1,
+			'offset' => 0,
+		];
+	}//end quotaQuery()
+
+	/**
+	 * The first quota row found, as an array.
+	 *
+	 * @param mixed $rows The rows as findAll() answers them.
+	 *
+	 * @return array<string,mixed>|null The row, or null when there is none or it carries nothing.
+	 */
+	private function firstQuotaRow(mixed $rows): ?array {
+		if (is_array($rows) === false || count($rows) === 0) {
+			return null;
+		}
+
+		return $this->quotaRowAsArray(row: $rows[0]);
+	}//end firstQuotaRow()
+
+	/**
+	 * Overlay the limit the Organisation carries, for the two types that map.
+	 *
+	 * For `storage_gb` and `api_calls_per_hour` the Organisation is the ONLY
+	 * place a limit lives, so whatever the row says about `limit` is replaced
+	 * rather than merged. A stale `limit` left on a row by an install
+	 * predating the move would otherwise win over the one an operator set, and
+	 * no response would say which number was being enforced.
+	 *
+	 * @param array<string,mixed> $quota     The quota row.
+	 * @param string              $tenantId  Tenant uuid, which is the Organisation uuid.
+	 * @param string              $quotaType The quota dimension.
+	 *
+	 * @return array<string,mixed> The row with its limit resolved.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
+	 */
+	private function withOrganisationLimit(array $quota, string $tenantId, string $quotaType): array {
+		if ($this->organisationLimits->owns(quotaType: $quotaType) === false) {
+			return $quota;
+		}
+
+		$quota['limit'] = $this->organisationLimits->read(tenantId: $tenantId, quotaType: $quotaType);
+
+		return $quota;
+	}//end withOrganisationLimit()
+
+	/**
+	 * Read one tenantQuota row as an array, whatever shape it arrives in.
+	 *
+	 * Public because `ResetMonthlyQuotasJob` reads the same rows through
+	 * `findAll()` and hands each one to `resetIfDue()`, which takes an array.
+	 *
+	 * @param mixed $row One findAll() row: an `ObjectEntity` or an array.
+	 *
+	 * @return array<string,mixed>|null The row, or null when it carries nothing readable.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-real-time-quota-enforcement-req-005-b-req-005-c
+	 */
+	public function quotaRowAsArray(mixed $row): ?array {
+		$data = $this->rowNormaliser->normalise(row: $row)['data'];
+		if ($data === []) {
+			return null;
+		}
+
+		return $data;
+	}//end quotaRowAsArray()
 
 	/**
 	 * Decide what to do for the next request — given the current quota row
@@ -197,37 +346,44 @@ class TenantQuotaService {
 		$current = (int)($quota['currentUsage'] ?? 0);
 		$enforcement = (string)($quota['enforcement'] ?? self::DECISION_WARN);
 		$warningPct = (int)($quota['softLimitWarningPercent'] ?? 80);
-
 		if ($limit === null) {
 			return ['decision' => self::DECISION_ALLOW, 'soft' => false, 'reason' => 'unlimited'];
 		}
 
-		$limitInt = (int)$limit;
 		$next = ($current + $increment);
-		$softLimit = (int)floor($limitInt * ($warningPct / 100));
-		$softHit = $next >= $softLimit;
-		$hardHit = $next > $limitInt;
-
-		if ($hardHit === false) {
-			$reason = 'within_limit';
-			if ($softHit === true) {
-				$reason = 'soft_limit';
-			}
-
-			return ['decision' => self::DECISION_ALLOW, 'soft' => $softHit, 'reason' => $reason];
+		if ($next > (int)$limit) {
+			return $this->exceededDecision(enforcement: $enforcement);
 		}
 
-		// Hard limit reached.
-		if ($enforcement === self::DECISION_BLOCK) {
-			return ['decision' => self::DECISION_BLOCK, 'soft' => true, 'reason' => 'block_limit_exceeded'];
-		}
-
-		if ($enforcement === self::DECISION_THROTTLE) {
-			return ['decision' => self::DECISION_THROTTLE, 'soft' => true, 'reason' => 'throttle_limit_exceeded'];
-		}
-
-		return ['decision' => self::DECISION_WARN, 'soft' => true, 'reason' => 'warn_limit_exceeded'];
+		return $this->allowDecision(softHit: $next >= (int)floor((int)$limit * ($warningPct / 100)));
 	}//end decide()
+
+	/**
+	 * The decision once the hard limit is reached: what the row's enforcement says, else warn.
+	 *
+	 * @param string $enforcement The row's enforcement.
+	 *
+	 * @return array{decision:string, soft:bool, reason:string}
+	 */
+	private function exceededDecision(string $enforcement): array {
+		return (self::EXCEEDED_DECISIONS[$enforcement] ?? self::EXCEEDED_DECISIONS[self::DECISION_WARN]);
+	}//end exceededDecision()
+
+	/**
+	 * The decision below the hard limit, flagged soft once the warning threshold is reached.
+	 *
+	 * @param bool $softHit Whether the next usage reaches the warning threshold.
+	 *
+	 * @return array{decision:string, soft:bool, reason:string}
+	 */
+	private function allowDecision(bool $softHit): array {
+		$reason = 'within_limit';
+		if ($softHit === true) {
+			$reason = 'soft_limit';
+		}
+
+		return ['decision' => self::DECISION_ALLOW, 'soft' => $softHit, 'reason' => $reason];
+	}//end allowDecision()
 
 	/**
 	 * Atomic check + increment.
@@ -272,6 +428,17 @@ class TenantQuotaService {
 		$quota = $this->getQuota(tenantId: $tenantId, quotaType: $quotaType);
 		if ($quota === null) {
 			return null;
+		}
+
+		// The mapped two are written to the Organisation and NOT back to the
+		// row. Writing both would create the second copy this decision exists
+		// to avoid, and the two would then drift silently, with the row's copy
+		// invisible to OpenRegister's own enforcement.
+		if ($this->organisationLimits->owns(quotaType: $quotaType) === true) {
+			$this->organisationLimits->write(tenantId: $tenantId, quotaType: $quotaType, limit: $limit);
+			$quota['limit'] = $limit;
+
+			return $quota;
 		}
 
 		$quota['limit'] = $limit;
@@ -332,6 +499,17 @@ class TenantQuotaService {
 			return;
 		}
 
+		// The row must not carry a limit for the two types the Organisation
+		// owns. `getQuota()` puts the resolved limit into the array it returns,
+		// and `consume()` hands that same array back here to write the new
+		// usage. Saving it as-is would persist a second copy of the limit onto
+		// the row, which is exactly the drift this decision removes, and the
+		// row's copy would be the one nothing else can see.
+		$quotaType = (string)($quota['quotaType'] ?? '');
+		if ($this->organisationLimits->owns(quotaType: $quotaType) === true) {
+			unset($quota['limit']);
+		}
+
 		try {
 			$uuid = (string)($quota['uuid'] ?? $quota['id'] ?? '');
 			$uuidArg = null;
@@ -341,7 +519,7 @@ class TenantQuotaService {
 
 			$objectService->saveObject(
 				object: $quota,
-				register: TenantSaasService::REGISTER,
+				register: AppIdentity::REGISTER_SLUG,
 				schema: 'tenantQuota',
 				uuid: $uuidArg
 			);

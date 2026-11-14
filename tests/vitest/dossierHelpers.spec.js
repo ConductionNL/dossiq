@@ -13,8 +13,13 @@
 import { describe, expect, it } from 'vitest'
 import {
 	canShare,
+	collectKeywords,
 	CONFIDENTIALITY_HIERARCHY,
 	confidentialityOrdinal,
+	DEFAULT_DIRECTION,
+	DOCUMENT_DIRECTIONS,
+	documentKeywords,
+	filterGroupsByKeywords,
 	formatSize,
 	groupByType,
 	isClassificationAllowed,
@@ -105,5 +110,113 @@ describe('formatSize', () => {
 		expect(formatSize(2048)).toBe('2.0 KB')
 		expect(formatSize(5 * 1024 * 1024)).toBe('5.0 MB')
 		expect(formatSize(undefined)).toBe('0 B')
+	})
+})
+
+describe('documentKeywords', () => {
+	it('returns the keywords of a tagged document', () => {
+		expect(documentKeywords({ keywords: ['bezwaar', 'bouwtekening'] })).toEqual([
+			'bezwaar',
+			'bouwtekening',
+		])
+	})
+
+	it('is empty for a document written before the property existed', () => {
+		expect(documentKeywords({ title: 'Advies' })).toEqual([])
+		expect(documentKeywords({ keywords: null })).toEqual([])
+		expect(documentKeywords(undefined)).toEqual([])
+	})
+
+	it('drops blanks and non-strings rather than rendering them', () => {
+		expect(
+			documentKeywords({ keywords: ['bezwaar', '', '  ', 7, null] }),
+		).toEqual(['bezwaar'])
+	})
+
+	it('trims, so " bezwaar" and "bezwaar" are one facet entry', () => {
+		expect(documentKeywords({ keywords: [' bezwaar '] })).toEqual(['bezwaar'])
+	})
+})
+
+describe('collectKeywords', () => {
+	const groups = [
+		{
+			informatieobjecttype: 'Advies',
+			documents: [
+				{ id: '1', keywords: ['bouwtekening', 'bezwaar'] },
+				{ id: '2' },
+			],
+		},
+		{
+			informatieobjecttype: 'Aanvraag',
+			documents: [{ id: '3', keywords: ['bezwaar'] }],
+		},
+	]
+
+	it('offers every keyword in use, once, sorted', () => {
+		expect(collectKeywords(groups)).toEqual(['bezwaar', 'bouwtekening'])
+	})
+
+	it('offers nothing when nothing is tagged', () => {
+		expect(collectKeywords([{ documents: [{ id: '1' }] }])).toEqual([])
+		expect(collectKeywords(undefined)).toEqual([])
+	})
+})
+
+describe('filterGroupsByKeywords', () => {
+	const groups = [
+		{
+			informatieobjecttype: 'Advies',
+			count: 2,
+			documents: [
+				{ id: '1', keywords: ['bezwaar'] },
+				{ id: '2', keywords: [] },
+			],
+		},
+		{
+			informatieobjecttype: 'Aanvraag',
+			count: 1,
+			documents: [{ id: '3', keywords: ['bouwtekening'] }],
+		},
+	]
+
+	it('shows only the tagged document', () => {
+		const filtered = filterGroupsByKeywords(groups, ['bezwaar'])
+		expect(filtered).toHaveLength(1)
+		expect(filtered[0].documents.map((d) => d.id)).toEqual(['1'])
+		expect(filtered[0].count).toBe(1)
+	})
+
+	it('clearing the filter shows everything again', () => {
+		expect(filterGroupsByKeywords(groups, [])).toBe(groups)
+		expect(filterGroupsByKeywords(groups, undefined)).toBe(groups)
+	})
+
+	it('narrows to documents carrying EVERY chosen keyword', () => {
+		expect(filterGroupsByKeywords(groups, ['bezwaar', 'bouwtekening'])).toEqual(
+			[],
+		)
+	})
+
+	it('drops a type heading whose documents were all filtered out', () => {
+		const filtered = filterGroupsByKeywords(groups, ['bouwtekening'])
+		expect(filtered.map((g) => g.informatieobjecttype)).toEqual(['Aanvraag'])
+	})
+
+	it('leaves the caller groups untouched', () => {
+		filterGroupsByKeywords(groups, ['bezwaar'])
+		expect(groups[0].documents).toHaveLength(2)
+		expect(groups[0].count).toBe(2)
+	})
+})
+
+describe('direction vocabulary', () => {
+	it('matches the enum the register fragment declares', () => {
+		expect(DOCUMENT_DIRECTIONS).toEqual(['incoming', 'outgoing', 'internal'])
+	})
+
+	it('defaults to internal, like the schema', () => {
+		expect(DEFAULT_DIRECTION).toBe('internal')
+		expect(DOCUMENT_DIRECTIONS).toContain(DEFAULT_DIRECTION)
 	})
 })

@@ -2,16 +2,31 @@
  * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Case detail — the KPI row, the tabbed panels and the right column.
+ * Case detail — the identity row, the tabbed panels and the right column.
  *
  * Every assertion here is one that a unit test could not make, because each
  * covers a seam between the manifest, the widget catalog and a live register:
  *
  *  - the countdown reads a DATE off the loaded record and turns it into words;
- *  - the case-type tile resolves a uuid to the referenced object's title;
+ *  - the identity row resolves a case-type uuid to the referenced title;
+ *  - the stepper shows the case's STEP, and the milestone endpoint the
+ *    retired Completed tile called is no longer asked at all;
  *  - the tabs widget renders one panel per configured tab and mounts only the
  *    open one;
  *  - the hoisted Actions menu sits beside the strip rather than inside it.
+ *
+ * THE IDENTITY ROW IS FIVE CONFIGURED LIBRARY TILES, not one custom
+ * component. Ruben ruled on 2026-09-12 that the widgets on top of the page
+ * should be actual KPI widgets configured to show what they show and that none
+ * of them spans a row, so `case-header` and its per-fact testids are gone with
+ * CaseHeaderRow. A manifest widget cannot set a testid and CnDetailPage puts
+ * no widget id on the grid cell, so the tiles are addressed by their place in
+ * `config.layout`, which `tests/vitest/manifestCaseHeader.spec.js` pins.
+ *
+ * Each fact still reads ONCE: the spec asserts the tile shows it AND that no
+ * second tile of the same kind stands beside it, because a fold that leaves
+ * the old tile standing prints the same fact twice and only the second half of
+ * that pair fails visibly.
  *
  * The empty-state trap is worth stating, because this page has now hit it
  * twice: a widget whose query 404s renders "No X yet", which is exactly what
@@ -20,37 +35,98 @@
  */
 
 import { expect, test } from '@playwright/test'
+import { openCasePanel, openCaseTab } from './helpers/case-panels.ts'
 import {
+	adoptableCaseTypes,
 	getRequestToken,
-	listObjects,
 	objectId,
 	REGISTER,
 	seedCase,
+	updateObject,
 } from './helpers/fixtures.ts'
-import { trackDossiqErrors } from './helpers/nav.ts'
+import { dismissSupportDialog, trackDossiqErrors } from './helpers/nav.ts'
 
 /**
- * Every title this spec matches, in either locale the instance may run.
+ * The THIRTEEN tabs the strip holds, in order.
  *
- * Nothing forces the language of the E2E instance, and the sibling
- * case-detail-flow-runs spec already guards its title the same way. An exact
- * English string here would pass or fail on the instance's locale rather than
- * on the feature, which is the least useful thing a test can assert.
+ * These are exact strings and not locale alternatives, unlike almost every
+ * other title this spec matches. A tab label is not translated: it is read
+ * verbatim out of `content.tabs[].label` in the manifest, with no `t()`
+ * anywhere on the path, so an instance running in Dutch shows these English
+ * words too. The `|Gegevens` half of the old patterns could never match, and
+ * a pattern that can only match one of its alternatives hides which one.
  */
+/**
+ * Where each identity tile sits in `config.layout`, which is the only handle a
+ * configured widget has: a manifest widget definition cannot set a testid, and
+ * CnDetailPage puts no widget id on the grid cell it renders. The order is
+ * pinned by `tests/vitest/manifestCaseHeader.spec.js`.
+ */
+// Three tiles, not five: the status reads on the stages widget beside the
+// panels and in the Data tab, the assignee in the Data tab (Ruben's layout of
+// 2026-09-12). The hours card fills the fourth cell of the row.
+const TILE = { number: 0, type: 1, deadline: 2 } as const
+
+/** REQ-CDV-16: the five tabs on the strip, English or Dutch; a tab may carry its count. */
 const TAB_LABELS = [
-	/Notes|Notities/,
-	/Files|Bestanden/,
-	/Related cases|Gerelateerde zaken/,
-	/Sub-cases|Deelzaken/,
-	/Mail/,
-	/Appointments|Afspraken/,
-	// Decisions is decidiq's widget, not dossiq's own list — dossiq no longer
-	// renders its `decision` schema at all. Contacts and Locations moved in
-	// from the page body, so the case's collections all live in one strip.
-	/Decisions|Besluiten|Besluitvorming/,
-	/Contacts|Contacten/,
-	/Locations|Locaties/,
+	/^(Overview|Overzicht)\b/,
+	/^(Files|Bestanden)\b/,
+	/^Contact\b/,
+	/^(Tasks|Taken)\b/,
+	/^(Case history|Historie)\b/,
 ]
+
+const OVERVIEW = /^(Overview|Overzicht)\b/
+const PEOPLE = /^(People|Betrokkenen)\b/
+const CONTACT = /^Contact\b/
+const TASKS = /^(Tasks|Taken)\b/
+const RELATED = /^(Related|Gerelateerd)\b/
+
+
+/**
+ * The panels that were folded INTO a tab, and the section each one is now.
+ *
+ * The count is the headline of this change, and a count is exactly the kind
+ * of assertion that can be satisfied by deleting things. These are what make
+ * the difference between a small strip and four missing features.
+ */
+const FOLDED_SECTIONS: Array<[RegExp, string, 'registry' | 'integration']> = [
+	[OVERVIEW, 'case-section-case-core', 'registry'],
+	[OVERVIEW, 'case-section-case-location-map', 'registry'],
+	[PEOPLE, 'case-section-case-roles', 'registry'],
+	[CONTACT, 'case-section-case-communication', 'registry'],
+	[TASKS, 'case-section-case-tasks', 'registry'],
+	[TASKS, 'case-section-case-calendar', 'integration'],
+	[RELATED, 'case-section-case-related', 'registry'],
+	[RELATED, 'case-section-case-sub-cases', 'registry'],
+	[RELATED, 'case-section-case-objects', 'registry'],
+]
+
+/**
+ * Tab labels the strip must NOT carry.
+ *
+ * A removed tab leaves no trace: the widget is simply gone from the manifest
+ * and the strip renders one panel fewer, which a count alone would notice but
+ * a name-based assertion would not. `Contacts` is the tab an earlier change
+ * retired. The other four are the tabs THIS change retired, three of them
+ * because a sidebar tab already carried the same thing, and re-adding one
+ * looks like adding a feature rather than restoring a duplicate.
+ */
+const RETIRED_TAB_LABELS = [
+	/^(Contacts|Contacten|Connected contacts)$/,
+	/^Mail$/,
+	// The Documents group went on 2026-09-13: its Files half IS the Files tab
+	// now, and the ZGW document list left the page with it.
+	/^(Documents|Documenten)$/,
+	// Objects and locations went the same day: its objects are a section of
+	// Related and its locations are the map on the Data tab.
+	/^(Objects and locations|Objecten en locaties)$/,
+]
+
+// `Besluiten` and `Notes` were on this list until 2026-09-13. Both are strip
+// TABS now, because the duplication REQ-CDV-17 bars was resolved the other way
+// round: the sidebar copies went instead of the body ones. Keeping them here
+// would assert the opposite of what the page is for.
 
 /**
  * The right column, top to bottom.
@@ -59,18 +135,34 @@ const TAB_LABELS = [
  * was open (#1615); it supersedes the `case-runs` this branch had. Only the
  * PLACEMENT is ours — the right column beside Hours, rather than the middle
  * cell it shipped in.
+ *
+ * 🔴 `Hours booked` IS DELIBERATELY NOT IN THIS LIST, and its absence is the
+ * assertion rather than an omission. The heading is real, but it MOVED. It used
+ * to be drawn by the `stats-block`'s own CnWidgetWrapper. `case-kpis-hours` is
+ * now an integration widget placing humaniq's `humaniq-hours` leaf, and the
+ * heading comes from inside that leaf: a mount-mode leaf is handed no title
+ * (`integrationMountProps` carries surface, register, schema, objectId and the
+ * integration context, and nothing else), so humaniq renders its own `<h3>`
+ * caption, `hq-hours-caption`. Without it the tile was a bare number with
+ * nothing saying what was counted.
+ *
+ * A heading that lives inside the leaf is present exactly when the leaf is.
+ * Nothing renders in the cell at all where humaniq is absent: the host resolves
+ * no renderer, and the grid `<h3>` is drawn only for consumer slot widgets,
+ * which this page does not supply for this id. This file runs on a CI instance
+ * that installs openregister and nothing else, so requiring the title here
+ * would fail every run. It is asserted where the condition can be stated:
+ * `case-hours-leaf.spec.ts` requires the caption where humaniq is enabled, and
+ * requires its absence where it is not.
  */
-const COLUMN_TITLES = [
-	/Hours booked|Geboekte uren/,
-	/Flow runs|Flow-uitvoeringen/,
-	/Tasks|Taken/,
-]
+const COLUMN_TITLES = [/Flow runs|Flow-uitvoeringen/, /Tasks|Taken/]
 
 test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	test.setTimeout(180_000)
 
 	let caseId = ''
 	let caseTypeTitle = ''
+	let caseTypeUsesTheCaseLayer = false
 
 	test.beforeAll(async ({ playwright, baseURL }) => {
 		const api = await playwright.request.newContext({ baseURL })
@@ -90,11 +182,15 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// `processingDeadline` is what makes the countdown testable: `case.deadline`
 		// is COMPUTED by OpenRegister from the type's duration, so a type without
 		// one yields no deadline and the tile correctly shows a dash.
-		const caseTypes = await listObjects(api, 'caseType')
+		const caseTypes = await adoptableCaseTypes(api)
 		const withDeadline = caseTypes.filter((ct: any) => ct.processingDeadline)
 		const chosen = withDeadline[0] ?? caseTypes[0]
-		expect(chosen, 'the instance must ship at least one case type').toBeTruthy()
+		expect(
+			chosen,
+			'the instance must ship at least one PUBLISHED case type — adoptableCaseTypes() excludes drafts (isDraft !== false) and fixture-owned rows',
+		).toBeTruthy()
 		caseTypeTitle = String(chosen.title ?? chosen.name ?? '')
+		caseTypeUsesTheCaseLayer = chosen.handlingModel === 'cmmn'
 
 		const seeded = await seedCase(api, token, {
 			title: `E2E KPI case ${Date.now().toString(36)}`,
@@ -110,13 +206,19 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	// is not ours to remove, so there is nothing to tear down — and nothing is
 	// left dangling either, which is the point.
 
-	test('the KPI row headlines time left, case type and completion', async ({
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-progress-tile-is-gone
+	// @e2e openspec/specs/retire-cmmn-caseplanstate/spec.md#a-bpmn-case-is-untouched
+	test('the identity row headlines the case, and the KPI tiles are gone', async ({
 		page,
 	}) => {
 		const errors = trackDossiqErrors(page)
 		const milestoneCalls: string[] = []
 		const failures: Array<{ status: number; url: string }> = []
+		const planCalls: string[] = []
 		page.on('response', (r) => {
+			if (/\/apps\/openregister\/api\/cases\//.test(r.url())) {
+				planCalls.push(`${r.status()} ${r.url()}`)
+			}
 			if (r.url().includes('milestones/progress')) {
 				milestoneCalls.push(`${r.status()} ${r.url()}`)
 			}
@@ -126,51 +228,79 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		})
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 
-		const kpis = page.locator('.cn-kpi-card')
-		await expect(kpis.first()).toBeVisible({ timeout: 30_000 })
+		// The identity row is three CONFIGURED library tiles now, so the cells
+		// are addressed by their place in the manifest layout. `case-header`
+		// and its per-fact testids went with CaseHeaderRow.
+		const cell = (index: number) =>
+			page.locator('.cn-detail-page__grid-item').nth(index)
+		await expect(cell(TILE.number)).toBeVisible({ timeout: 30_000 })
 
-		// Time left is COMPUTED from the deadline, not printed from it.
-		await expect(page.locator('.cn-countdown-widget')).toContainText(
-			/day(s)? left|dag(en)? te gaan/,
-			{
-				timeout: 15_000,
-			},
+		// Time left is COMPUTED from the deadline, not printed from it. It is
+		// the library `countdown` widget, the only one on the page.
+		const countdown = page.locator('.cn-countdown-widget')
+		await expect(countdown).toHaveCount(1)
+		await expect(countdown).toContainText(/\d+ (days?|dagen?)/, {
+			timeout: 15_000,
+		})
+
+		// The band is a real colour, not a transparent or missing one. The
+		// widget paints the headline from its own VARIANT_COLORS map rather
+		// than from a `--color-<band>` fill token, which is the trap the row
+		// this replaced had to work around: the Nextcloud 34 band tokens are
+		// pale FILLS (#FFE7E7 for error) and "26 days overdue" once rendered
+		// pink on white.
+		const paint = await countdown
+			.locator('.cn-countdown-widget__value')
+			.evaluate((el) => getComputedStyle(el).color)
+		expect(paint, 'the countdown headline is painted').not.toBe(
+			'rgba(0, 0, 0, 0)',
 		)
 
 		// The case type field holds a uuid. Showing the uuid would be a pass for
 		// "renders something" and a failure for the feature.
-		const caseTypeCard = kpis.filter({ hasText: /Case type|Zaaktype/ })
-		await expect(caseTypeCard).toContainText(caseTypeTitle, {
-			timeout: 20_000,
-		})
+		const caseTypeTile = cell(TILE.type).locator('.cn-kpi-card__value')
+		await expect(caseTypeTile).toContainText(caseTypeTitle, { timeout: 20_000 })
 		// A uuid is 36 chars with four dashes; the tile must show a NAME.
-		await expect(caseTypeCard).not.toContainText(
+		await expect(caseTypeTile).not.toContainText(
 			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 		)
 
-		// Completion comes from the milestone endpoint. 0% is the honest answer
-		// for a case type with no milestones, so asserting the NUMBER would prove
-		// nothing: a failed fetch renders 0% too. The request itself is asserted
-		// below, which is the part that can actually break.
-		await expect(kpis.filter({ hasText: /Completed|Afgerond/ })).toContainText(
-			/%/,
-			{
-				timeout: 20_000,
-			},
-		)
+		// The row also carries the case number, so the page says which case
+		// you are on without opening the Data tab. The status is not a tile:
+		// it reads on the stages widget beside the panels.
+		await expect(cell(TILE.number).locator('.cn-kpi-card__value')).toBeVisible({
+			timeout: 15_000,
+		})
+		await expect(page.getByTestId('cn-stat-widget-badge')).toHaveCount(0)
 
-		// The milestone request must actually succeed. It used to fire twice: once
-		// with an empty `@object.caseType` path segment before the record loaded
-		// (404), then correctly. The tile showed 0% throughout, so only the
-		// request tells the two apart.
+		// EACH FACT ONCE. The identity row and the old standalone tiles said the
+		// same two things, and the fold that retired the tiles is what this
+		// guards: exactly one countdown, exactly one case type tile.
+		await expect(
+			page.locator('.cn-kpi-card').filter({ hasText: /Case type|Zaaktype/ }),
+		).toHaveCount(1)
+		await expect(page.getByText(/^(Time left|Resterende tijd)$/)).toHaveCount(0)
+
+		// The Completed tile is GONE (case-lifecycle-on-the-page, REQ-CDV-13).
+		// It read milestone progress, milestones are configured on almost no
+		// case type, and it therefore showed 0% on every case — an honest number
+		// that told a handler nothing. The stepper over the case type's statuses
+		// took its cell; the milestone endpoint stays for its other readers.
+		//
+		// Both halves are asserted, because either alone passes for the wrong
+		// reason: a tile can be removed from the layout while its widget still
+		// fires the request, and a request can stop while the tile still renders
+		// from cache.
+		await expect(
+			page.locator('.cn-kpi-card').filter({ hasText: /Completed|Afgerond/ }),
+		).toHaveCount(0)
+		await expect(page.getByTestId('cn-stages-widget')).toBeVisible({
+			timeout: 20_000,
+		})
 		expect(
-			milestoneCalls.length,
-			`milestone requests: ${milestoneCalls.join(', ')}`,
-		).toBeGreaterThan(0)
-		expect(
-			milestoneCalls.every((c) => Number(c.split(' ')[0]) < 400),
-			`milestone requests: ${milestoneCalls.join(', ')}`,
-		).toBe(true)
+			milestoneCalls,
+			'the case page no longer asks for milestone progress',
+		).toEqual([])
 
 		// Assert on the RESPONSES, not on the console text.
 		//
@@ -188,16 +318,10 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		const ABSENT_APPS = /\/apps\/(hermiq|humaniq)\//
 		const OWN = /\/apps\/dossiq\/|\/objects\/dossiq\//
 		const serverErrors = failures.filter((f) => f.status >= 500)
-		// The CMMN panel probes whether this case is CMMN-managed and is answered
-		// 409 for a BPMN-managed one. That is the app saying "no", not failing,
-		// and it is a dossiq URL — so it has to be excluded HERE, not only from
-		// the console list, or this assertion fails on correct behaviour.
+		// No allowance for a 409: the local case engine and its probe routes are
+		// gone, so nothing dossiq owns has a reason to answer one on this page.
 		const ownClientErrors = failures.filter(
-			(f) =>
-				f.status >= 400
-				&& f.status < 500
-				&& OWN.test(f.url)
-				&& !(f.status === 409 || /cmmn-plan/.test(f.url)),
+			(f) => f.status >= 400 && f.status < 500 && OWN.test(f.url),
 		)
 		expect(
 			serverErrors,
@@ -208,13 +332,16 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			`dossiq 4xx: ${ownClientErrors.map((f) => `${f.status} ${f.url}`).join(' | ')}`,
 		).toEqual([])
 
-		// KNOWN GAP, deliberately not asserted away. The hours tile queries
-		// humaniq's register, so on an instance without humaniq it 404s and
-		// renders 0 — indistinguishable from a real zero. The `Log hours` action
-		// beside it IS gated on `visibleWhen: { appInstalled: "humaniq" }`; the
-		// tile cannot be, because the manifest schema allows `visibleWhen` on
-		// actions and fields but not on a widget or a layout cell. Closing it
-		// needs that gating in nextcloud-vue's CnDetailPage, not a change here.
+		// THE GAP THAT USED TO STAND HERE IS CLOSED. The hours tile queried
+		// humaniq's register, so on an instance without humaniq it 404'd and
+		// rendered 0, which is what a case with no hours booked renders too. It
+		// is now a placement of humaniq's `humaniq-hours` leaf, and an
+		// unregistered leaf renders nothing rather than a zero. The absence is
+		// asserted in `case-hours-leaf.spec.ts`, not here.
+		//
+		// The filter below stays, and it is still worth its lines: `hermiq` is
+		// on it, and a humaniq the manifest starts querying again would show up
+		// as a URL in this log rather than as a silent zero on the page.
 		const absent = failures.filter((f) => ABSENT_APPS.test(f.url))
 		if (absent.length > 0) {
 			console.log(
@@ -224,50 +351,200 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			)
 		}
 
-		// The CMMN panel probes whether this case is CMMN-managed and gets a 409
-		// for a BPMN-managed one, which is the app answering "no" rather than
-		// failing.
-		const unexpected = errors.filter(
-			(e) => !/\b409\b|cmmn-plan|Failed to load resource/.test(e),
-		)
+		const unexpected = errors.filter((e) => !/Failed to load resource/.test(e))
 		expect(unexpected, `console errors: ${unexpected.join(' | ')}`).toEqual([])
+
+		// A BPMN case is untouched by the case layer: a type without
+		// `handlingModel: cmmn` makes the page ask OpenRegister for no plan.
+		// The adopted type is whatever this instance ships, so the claim is
+		// made only when it is a BPMN one.
+		if (!caseTypeUsesTheCaseLayer) {
+			expect(
+				planCalls,
+				'a BPMN case page asks OpenRegister for no case plan',
+			).toEqual([])
+		}
 	})
 
-	test('a KPI tile shows its label once, without widget chrome', async ({
+	test('the identity row carries no heading and no actions menu', async ({
 		page,
 	}) => {
-		// The KPI cells carry `showTitle: false`, because a KPI tile already
-		// renders its own label inside the card. Without the flag the grid draws
-		// a CnWidgetWrapper header on top — the title twice, and an Actions menu
-		// on a read-only tile, which the Cards-vs-Widgets split says a card must
-		// not have.
+		// THIS ASSERTION HAS NOW FLIPPED TWICE, so both turns are recorded.
 		//
-		// This regressed once already: rebuilding the layout from a list of
-		// tuples silently dropped the flag from five cells, and nothing failed.
-		// Every gate passed and the E2E passed, because no assertion described
-		// what a KPI tile is supposed to look like. This is that assertion.
+		// It began as a full-width band with `showTitle: false`, because facts
+		// laid out in a line label themselves and a heading over them printed
+		// the same word twice. dossiq#2322 rebuilt it as a titled card in the
+		// four-column rail, where the same facts STACK: a stacked group with no
+		// heading says nothing about what the group is, so the heading became
+		// the design and this assertion flipped to require it.
+		//
+		// dossiq#2360 moved it back to full width, and the reason the first
+		// objection does not return is that the facts are no longer a line of
+		// text: each is a card with `flex: 1 1 0`, so the row divides evenly
+		// across twelve columns instead of ending in dead space. Cards label
+		// themselves, so `showTitle` is false again and the heading is gone.
+		//
+		// The tiles then made every fact its own CONFIGURED library widget, and
+		// the first objection still does not return: a `stat` or `countdown`
+		// tile draws its own label from `content.label`, so `showTitle: false`
+		// on the layout cell is the whole of the design and CnDetailWidgetHost
+		// draws no card header above it.
+		//
+		// The second half did NOT flip, and the reason is worth keeping. The
+		// overflow Actions menu lives inside CnWidgetWrapper's own
+		// `v-if="showTitle"` header, so a card whose header is off gains no
+		// menu. Read-only content still must not offer one.
+		//
+		// The absence half regressed once already on the tiles this row
+		// replaced: rebuilding the layout from a list of tuples silently
+		// dropped the flag from five cells, and nothing failed. Every gate
+		// passed and the E2E passed, because no assertion described what the
+		// cell is supposed to look like. This is still that assertion, pointed
+		// at the shape the page has now.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
 		})
 
-		const timeLeft = page.locator('.cn-countdown-widget')
-		await expect(timeLeft).toBeVisible({ timeout: 20_000 })
+		const cell = page.locator('.cn-detail-page__grid-item').nth(TILE.type)
+		await expect(cell).toBeVisible({ timeout: 20_000 })
 
-		// The label appears exactly once in the tile's own cell.
-		const cell = page
-			.locator('.cn-widget-grid__item, .grid-stack-item')
-			.filter({ has: page.locator('.cn-countdown-widget') })
-			.first()
-		const labelCount = await cell
-			.getByText(/^(Time left|Resterende tijd)$/)
-			.count()
-		expect(labelCount, 'the KPI label must render once, not twice').toBe(1)
+		// A KPI tile draws its own label, so nothing names it a second time
+		// above it. `showTitle: false` on every identity cell is what turns the
+		// card wrapper's header off.
+		expect(
+			await cell.getByText(/^(Case type|Zaaktype)$/).count(),
+			'the case type tile must print its label once, inside the tile',
+		).toBe(1)
+		await expect(cell.locator('.cn-widget-wrapper__header')).toHaveCount(0)
 
-		// And a read-only tile carries no Actions menu of its own.
+		// The fact itself is still there, which is what makes the absent
+		// heading a design rather than a widget that failed to render.
+		await expect(cell.locator('.cn-kpi-card__value')).toBeVisible({
+			timeout: 15_000,
+		})
+
+		// And read-only content carries no Actions menu of its own.
 		await expect(
 			cell.getByRole('button', { name: /^(Actions|Acties)$/ }),
 		).toHaveCount(0)
+	})
+
+	// @e2e openspec/specs/case-dashboard-view/spec.md
+	test('the Data panel holds its content directly, with no card inside the card', async ({
+		page,
+	}) => {
+		// The tabs card already draws the border, and the open tab already
+		// names the panel, so a widget card inside it repeats both: a second
+		// border around the fields and a "Data" heading under the "Data" tab.
+		//
+		// That heading was never a choice. `CnObjectDataWidget.title` carries a
+		// DEFAULT of "Data", so the `undefined` bare mode passed became the
+		// default. nextcloud-vue 2.45.0 lets a host ask for no title while
+		// keeping the actions, which is what previously blocked it: the Save
+		// button for an inline edit lives in that same header, so hiding the
+		// header hid Save with it.
+		//
+		// So the panel keeps a header when there are controls in it. A control
+		// is not chrome, and a panel that silently cannot be saved is a worse
+		// outcome than a row of buttons.
+		//
+		// Asserted in a browser because it is chrome: jsdom computes no layout
+		// and a unit test can only see the props, not the card.
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		// `openCasePanel(page, 'data')` returns the OPEN tabpanel itself, which
+		// is the handle this needs. Scoping matters: the sidebar has tabpanels
+		// of its own and a panel can contain another panel, so a page-wide
+		// query would count the wrong node.
+		const panel = await openCasePanel(page, 'data')
+		await expect(panel).toBeVisible({ timeout: 20_000 })
+
+		// The fields are there, so an absent card is a decision and not a
+		// widget that failed to mount.
+		await expect(panel).toContainText(/Case type|Zaaktype/, { timeout: 20_000 })
+
+		// No widget card of its own inside the panel — and "no card" is about
+		// what is DRAWN, not about which elements exist.
+		//
+		// This used to assert `.cn-widget-wrapper` had a count of zero, which
+		// asked for the wrong thing. That element is load-bearing:
+		// `CnObjectDataWidget` finds `.cn-widget-wrapper__content` with
+		// `closest()` to measure whether its field grid overflows and to
+		// observe the cell resizing, and nextcloud-vue's table and detail-page
+		// CSS size their content areas through the same node. Deleting it takes
+		// the whole-row clip and the "Show all N fields" affordance out
+		// silently, because a `closest()` that finds nothing returns null and
+		// the widget reads null as "nothing overflows" rather than as an error.
+		//
+		// So the contract is: the wrapper renders, and draws nothing. Asserted
+		// on computed style, which is the only place a border width is a real
+		// number, and which fails on a card whatever the class names are called
+		// that day.
+		const wrappers = panel.locator('.cn-widget-wrapper')
+		const wrapperCount = await wrappers.count()
+		expect(
+			wrapperCount,
+			'the data widget must still render its wrapper: it measures its own overflow against that node',
+		).toBeGreaterThan(0)
+
+		for (let i = 0; i < wrapperCount; i++) {
+			const chrome = await wrappers.nth(i).evaluate((el) => {
+				const card = getComputedStyle(el)
+				const content = el.querySelector(
+					':scope > .cn-widget-wrapper__content',
+				)
+				const inner = content ? getComputedStyle(content) : null
+				return {
+					border: [
+						card.borderTopWidth,
+						card.borderRightWidth,
+						card.borderBottomWidth,
+						card.borderLeftWidth,
+					],
+					background: card.backgroundColor,
+					padding: inner
+						? [
+								inner.paddingTop,
+								inner.paddingRight,
+								inner.paddingBottom,
+								inner.paddingLeft,
+							]
+						: null,
+					title:
+						el
+							.querySelector('.cn-widget-wrapper__title')
+							?.textContent?.trim() ?? null,
+				}
+			})
+
+			expect(
+				chrome.border,
+				'a widget in a tab panel draws no border of its own: the strip drew it',
+			).toEqual(['0px', '0px', '0px', '0px'])
+			expect(
+				chrome.background,
+				'a widget in a tab panel paints no card behind itself',
+			).toBe('rgba(0, 0, 0, 0)')
+			expect(
+				chrome.padding,
+				'the panel supplies the inset, so the widget adds none of its own',
+			).toEqual(['0px', '0px', '0px', '0px'])
+			expect(
+				chrome.title,
+				'the open tab already names the panel, so the widget prints no heading',
+			).toBeNull()
+		}
+
+		// And no second heading repeating the open tab's label. Scoped to the
+		// panel, because the tab itself says "Data" and is outside it.
+		expect(
+			await panel.getByText(/^(Data|Gegevens)$/).count(),
+			'the panel must not repeat the label its own tab already carries',
+		).toBe(0)
 	})
 
 	test('the tabs widget renders one tab per configured panel', async ({
@@ -286,13 +563,177 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 				timeout: 15_000,
 			})
 		}
+
+		for (const label of RETIRED_TAB_LABELS) {
+			await expect(strip.getByRole('tab', { name: label })).toHaveCount(0)
+		}
+	})
+
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-five-tabs-and-meer
+	test('the strip holds exactly five tabs, in order, and More', async ({
+		page,
+	}) => {
+		// An exact count: asserting that five named tabs are present would
+		// pass on a strip of twelve.
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		const strip = page.locator('.cn-tabs-widget')
+		await expect(strip).toBeVisible({ timeout: 30_000 })
+		await expect(strip.getByRole('tab')).toHaveCount(TAB_LABELS.length)
+
+		const labels = (await strip.getByRole('tab').allInnerTexts()).map((l) =>
+			l.trim(),
+		)
+		labels.forEach((label, index) => expect(label).toMatch(TAB_LABELS[index]))
+		await expect(strip.locator('.cn-tabs__more')).toBeVisible()
+
+		for (const label of RETIRED_TAB_LABELS) {
+			await expect(strip.getByRole('tab', { name: label })).toHaveCount(0)
+		}
+	})
+
+	test('every folded panel still renders, inside the tab it moved to', async ({
+		page,
+	}) => {
+		// The half of the fold that fails silently. `case-sections` renders its
+		// children through CnDetailWidgetHost, which renders NOTHING and logs
+		// nothing for a type it cannot resolve, and a section whose widget did
+		// not resolve leaves a tab that opens onto an empty panel. Four tabs
+		// that each dropped half their content would satisfy the count test
+		// above and look like a successful consolidation.
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		// The support dialog and the first-run wizard each mount a modal mask
+		// that swallows every click behind it, and a swallowed click reports as
+		// a locator timeout, which reads here as a missing tab. Dismissed AFTER
+		// the navigation, because that is when they mount.
+		await dismissSupportDialog(page)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		const strip = page.locator('.cn-tabs-widget')
+		await expect(strip).toBeVisible({ timeout: 30_000 })
+
+		for (const [tabLabel, testid, kind] of FOLDED_SECTIONS) {
+			await openCaseTab(page, tabLabel)
+			const panel = strip.locator(
+				'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
+			)
+			const section = panel.locator(`[data-testid="${testid}"]`)
+			// ATTACHED, not visible, and the difference matters now that
+			// `case-sections` hides an empty section's heading and drops its
+			// divider: such a section has zero height, so `toBeVisible` would
+			// fail on it for the very reason the component is correct. The
+			// registry sections get the visibility check below, where it is a
+			// real claim rather than a measurement of CSS.
+			await expect(
+				section,
+				`${testid} did not render inside ${tabLabel}`,
+			).toBeAttached({ timeout: 30_000 })
+
+			// THE SECTION WRAPPER IS NOT THE EVIDENCE. CnDetailWidgetHost
+			// renders NOTHING for a widget type it cannot resolve, so a broken
+			// `case-sections` registration leaves a section that is present and
+			// says nothing, and the visibility check above passes on it.
+			//
+			// The invariant, for BOTH kinds: a section is ABSENT OR NON-EMPTY,
+			// never a heading over a void. `case-sections` hides the heading
+			// until its host has content precisely so that state cannot exist,
+			// and this is what holds it to that.
+			//
+			// One instrument, not two: the heading and the host are read in the
+			// SAME evaluate, inside a poll. Reading the host with a snapshot and
+			// the heading with a retrying matcher would compare two different
+			// moments and could pass on either being briefly right.
+			const state = async () =>
+				await section.evaluate((el) => {
+					const heading = el.querySelector('h3')
+					const host = el.querySelector(':scope > *:not(h3)')
+					const filled =
+						!!host && (host.textContent || '').trim().length > 0
+					if (!heading)
+						return filled ? 'heading-missing' : 'empty-and-silent'
+					return filled ? 'filled-with-heading' : 'heading-over-void'
+				})
+
+			await expect
+				.poll(state, {
+					timeout: 30_000,
+					message: `${testid} must never be a heading over nothing, which is worse than the empty tab it replaced`,
+				})
+				.not.toBe('heading-over-void')
+
+			// ⚠️ THE `integration` SECTIONS STOP HERE, AND THAT IS A NARROWING
+			// RATHER THAN A WEAKENING, so: an integration leaf is served by
+			// OpenRegister's global registry bundle, which CI NEVER HAS,
+			// because openregister gitignores its `/js/`. Demanding content
+			// from `case-files` or `case-calendar` asserts a property of the
+			// environment rather than of this change, and it went red on CI
+			// while passing locally for exactly that reason.
+			//
+			// The eight that resolve from dossiq's OWN bundle keep the full
+			// assertion, and they are the eight a broken registration would
+			// take down, which is the mutation this test was proved against. So
+			// the teeth are still where the failure mode is.
+			if (kind === 'registry') {
+				await expect
+					.poll(state, {
+						timeout: 30_000,
+						message: `${testid} rendered nothing, which is what a widget type the registry cannot resolve looks like`,
+					})
+					.toBe('filled-with-heading')
+				await expect(
+					section,
+					`${testid} resolved but is not on screen`,
+				).toBeVisible({ timeout: 30_000 })
+			}
+		}
+	})
+
+	// @e2e openspec/specs/case-dashboard-view/spec.md#files-is-the-case-folder-and-nothing-else
+	test('Files is a tab holding the case folder as a files browser, and nothing else', async ({
+		page,
+	}) => {
+		// One title on the page, and the word is files (Ruben, 2026-09-13).
+		// The tab used to be Documents, holding the ZGW document list above the
+		// case folder as two sections under two headings, three "Documents"
+		// on one screen. It is the folder now, through the files leaf, whose
+		// browser draws its own crumbs, so no section heading sits above it.
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await dismissSupportDialog(page)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+		const strip = page.locator('.cn-tabs-widget')
+		await expect(strip).toBeVisible({ timeout: 30_000 })
+		await expect(
+			strip.getByRole('tab', { name: /^(Documents|Documenten)$/ }),
+		).toHaveCount(0)
+		await strip.getByRole('tab', { name: /^(Files|Bestanden)$/ }).click()
+		const panel = strip.locator(
+			'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
+		)
+		await expect(panel.getByTestId('cn-files-browser')).toBeVisible({
+			timeout: 30_000,
+		})
+		await expect(panel.locator('[data-testid^="case-section-"]')).toHaveCount(0)
+		await expect(panel.locator('.case-sections__heading')).toHaveCount(0)
+		await expect(panel.getByText(/^(Documents|Documenten)/)).toHaveCount(0)
+		// The trail runs from the user's files root down to this case's folder.
+		await expect(
+			panel.getByTestId('cn-files-browser-crumb'),
+			'the crumbs must read the whole path to the case folder',
+		).not.toHaveCount(1)
 	})
 
 	test('the Actions menu sits beside the strip, not inside the tablist', async ({
 		page,
 	}) => {
 		// A control nested in role="tablist" is announced as one of the tabs, so
-		// a reader counting six tabs would hear seven.
+		// a reader counting thirteen tabs would hear fourteen.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -309,9 +750,10 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	test('only the open tab mounts, and a switched-to tab stays mounted', async ({
 		page,
 	}) => {
-		// Six eager panels would fire six requests on load to answer five
+		// Nine eager panels would fire nine requests on load to answer eight
 		// questions nobody asked. This is the assertion that keeps them lazy.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
 		})
@@ -319,21 +761,28 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 
+		// The strip's OWN panels. A panel can contain another `role="tabpanel"`
+		// — the related-objects widget renders a `<section>` with that role
+		// inside its panel — and a descendant query counts that as a second
+		// mounted panel.
 		const mounted = () =>
 			strip
-				.locator('[role="tabpanel"]')
+				.locator('.cn-tabs__content > [role="tabpanel"]')
 				.evaluateAll(
 					(panels) => panels.filter((p) => p.children.length > 0).length,
 				)
 
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(1)
 
-		await strip.getByRole('tab', { name: /Sub-cases|Deelzaken/ }).click()
+		await strip.getByRole('tab', { name: 'Related', exact: true }).click()
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(2)
 
-		// Switching back must not tear the first panel down, or every switch
-		// refetches.
-		await strip.getByRole('tab', { name: /Notes|Notities/ }).click()
+		// Switching BACK must not tear the first panel down, or every switch
+		// refetches. Back to the tab that was open on load, which is what this
+		// asserts: opening a THIRD tab would leave three panels mounted, since
+		// staying mounted is the property under test, and the count would be
+		// right while the scenario said nothing.
+		await strip.getByRole('tab', { name: 'Data', exact: true }).click()
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(2)
 	})
 
@@ -351,11 +800,13 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			})
 		}
 
-		// Decisions and Locations MOVED into the tab strip. Asserting only that
-		// the column shows three things would still pass if they had stayed and
-		// the page simply grew, so assert they are gone from the body: their
-		// only remaining owner is a tab.
-		for (const gone of [/Decisions|Besluiten/, /Locations|Locaties/]) {
+		// Locations MOVED into the tab strip. Asserting only that the column
+		// shows three things would still pass if it had stayed and the page
+		// simply grew, so assert it is gone from the body: its only remaining
+		// owner is a section of the Objects and locations tab. Decisions is no
+		// longer checked here because it is no longer on the body at all: it
+		// duplicated the Besluitvorming sidebar tab and the body copy went.
+		for (const gone of [/Locations|Locaties/]) {
 			await expect(
 				page.locator('.cn-widget-wrapper').filter({ hasText: gone }),
 			).toHaveCount(0)
@@ -377,14 +828,12 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			timeout: 30_000,
 		})
 
-		// Locations moved into the tab strip, and tab panels are LAZY — the
-		// widget does not mount, so it does not query, until its tab is opened.
-		// Without this click the poll below times out on zero responses and
-		// reads as "the schema 404s again", which is the very thing this spec
-		// exists to tell apart from an empty state.
-		const strip = page.locator('.cn-tabs-widget')
-		await expect(strip).toBeVisible({ timeout: 30_000 })
-		await strip.getByRole('tab', { name: /Locations|Locaties/ }).click()
+		// Locations is a SECTION of the Objects and locations tab, and tab
+		// panels are LAZY: the widget does not mount, so it does not query,
+		// until its tab is opened. Without this the poll below times out on
+		// zero responses and reads as "the schema 404s again", which is the
+		// very thing this spec exists to tell apart from an empty state.
+		await openCasePanel(page, 'locations')
 
 		await expect
 			.poll(() => responses.length, { timeout: 20_000 })
@@ -393,5 +842,120 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			responses.every((s) => s < 400),
 			`statuses: ${responses.join(',')}`,
 		).toBe(true)
+	})
+
+	// @e2e openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	test('the sidebar Notes tab renders the notes leaf, not an unknown element', async ({
+		page,
+	}) => {
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await dismissSupportDialog(page)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		// NcAppSidebar renders its own toggle while closed; open it when so.
+		const toggle = page.locator('.app-sidebar__toggle')
+		if (await toggle.isVisible()) await toggle.click()
+		const sidebar = page.locator('.app-sidebar')
+		await expect(sidebar).toBeVisible({ timeout: 15_000 })
+
+		// The leaf this tab renders comes from dossiq's OWN bundle
+		// (`builtinIntegrations` in @conduction/nextcloud-vue, resolved by
+		// `leafTab('notes')`), not from OpenRegister's global registry bundle,
+		// which CI never has (openregister gitignores `/js/`). Probe that
+		// registry anyway and record the answer, so a failure here can be read
+		// against it, but do not skip on it: the tab must render without it.
+		const registryHasNotes = await page.evaluate(() => {
+			const w = window as unknown as {
+				OCA?: {
+					OpenRegister?: {
+						integrations?: { has?: (id: string) => boolean }
+					}
+				}
+			}
+			const registry = w.OCA?.OpenRegister?.integrations
+			return registry ? Boolean(registry.has?.('notes')) : null
+		})
+		test.info().annotations.push({
+			type: 'openregister-integrations-registry',
+			description:
+				registryHasNotes === null
+					? 'absent (no global registry bundle on this instance)'
+					: `has('notes') = ${registryHasNotes}`,
+		})
+
+		// By id, not label: NcAppSidebarTab renders `#tab-button-<id>` for the
+		// manifest tab id, which is the same on an English and a Dutch instance.
+		const tabButton = sidebar.locator('#tab-button-notes')
+		test.skip(
+			(await tabButton.count()) === 0,
+			'the case sidebar declares no `notes` tab in this build; nothing to render',
+		)
+		await tabButton.click()
+		const panel = sidebar.locator('[data-testid="cn-object-sidebar-tab-notes"]')
+		await expect(panel).toBeVisible({ timeout: 15_000 })
+
+		// The tab used to write its resolved leaf as a TAG, which Vue emits as
+		// a literal unknown element with nothing inside. Assert the element is
+		// absent AND that real content mounted, so an empty panel cannot pass.
+		await expect(panel.locator('cnnotestabcomponent')).toHaveCount(0)
+		await expect
+			.poll(() => panel.evaluate((el) => el.querySelectorAll('*').length), {
+				timeout: 15_000,
+			})
+			.toBeGreaterThan(1)
+		// And the thing that mounted is the notes leaf itself, not the panel's
+		// own chrome: CnNotesTab renders a `.cn-sidebar-tab` root with the
+		// add-note composer inside it.
+		await expect(panel.locator('.cn-sidebar-tab').first()).toBeVisible({
+			timeout: 15_000,
+		})
+		await expect(panel.locator('.cn-sidebar-tab__composer').first()).toBeVisible(
+			{ timeout: 15_000 },
+		)
+	})
+
+	// @e2e openspec/specs/realtime-updates-ui/spec.md#a-colleagues-change-appears
+	// @e2e realtime-updates-ui::a-colleagues-change-appears
+	test('a change made in another session appears without a reload', async ({
+		page,
+		playwright,
+		baseURL,
+	}) => {
+		// Gap register row 2.20. The subscription is pinned against a store
+		// double in `tests/vitest/caseLiveUpdates.spec.js`; what only a live
+		// instance can show is whether an event ever ARRIVES. Three things have
+		// to line up for that and none of them is dossiq: notify_push has to be
+		// running, OpenRegister has to emit for the object, and the transport
+		// has to reach this browser. Where it does not, the plugin falls back
+		// to its own object poll, which is slower than this test can wait for
+		// on a `php -S` runner.
+		//
+		// So the WAIT is generous and the failure is NAMED rather than left as
+		// a bare timeout: a title that never changes here means the page is not
+		// subscribed, or nothing is delivering, and those are worth telling
+		// apart in the report.
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await dismissSupportDialog(page)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		// The SECOND session: a separate request context, which is what makes
+		// this a colleague's change rather than this page's own write.
+		const colleague = await playwright.request.newContext({ baseURL })
+		const token = await getRequestToken(colleague)
+		const renamed = `E2E live update ${Date.now().toString(36)}`
+		await updateObject(colleague, token, 'case', caseId, { title: renamed })
+		await colleague.dispose()
+
+		// No reload, no navigation, no click. Anything that refetches by hand
+		// would pass on a page that is not subscribed at all, which is the one
+		// result this test must not be able to produce.
+		await expect(
+			page.locator('.cn-detail-page'),
+			'the case page did not pick up a change made in another session: either it is not subscribed, or no live event reached this browser and the plugin poll had not yet fired',
+		).toContainText(renamed, { timeout: 90_000 })
 	})
 })

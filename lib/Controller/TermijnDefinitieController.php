@@ -5,7 +5,7 @@
  *
  * The admin settings surface for statutory term definitions (AWB 4:13/4:14).
  *
- * Closes the `/api/termijn/definities` half of procest#794. `TermijnDefinitiesTab.vue`
+ * Closes the `/api/termijn/definities` half of procest#794 (now `/api/deadlines/definitions`). `DeadlineDefinitionsTab.vue`
  * has always called this collection; `appinfo/routes.php` declared
  * `/api/termijn/instances*` and nothing else, so every request was answered by
  * Nextcloud's own HTML page under HTTP 200. The tab uses the correct
@@ -41,8 +41,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\ConfiguredRegistryServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermEndRollInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -74,16 +76,20 @@ class TermijnDefinitieController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param ConfiguredRegistryService $registry Generic configured-schema registry CRUD.
+	 * @param ConfiguredRegistryServiceInterface $registry Generic configured-schema registry CRUD.
 	 * @param LoggerInterface $logger Logger.
+	 * @param CaseDateNormaliserInterface $dates The one date path, which knows the zone.
+	 * @param TermEndRollInterface $ends The Algemene termijnenwet roll, which knows whether a calendar answers.
 	 *
 	 * @spec openspec/specs/termijn-verification-admin/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ConfiguredRegistryService $registry,
+		private readonly ConfiguredRegistryServiceInterface $registry,
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliserInterface $dates,
+		private readonly TermEndRollInterface $ends,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -109,6 +115,34 @@ class TermijnDefinitieController extends Controller {
 			statusCode: Http::STATUS_OK
 		);
 	}//end index()
+
+	/**
+	 * What the terms on this instance are counted against.
+	 *
+	 * WHY THE ADMIN PAGE ASKS AT ALL. Two facts decide every statutory date
+	 * on this instance and neither of them is visible from the definitions
+	 * themselves: which zone a day is counted in, and whether an organisation
+	 * calendar is answering. A term whose roll was asked for and could not be
+	 * made looks exactly like a term that did not need one, so the page says
+	 * which of the two it is instead of leaving an administrator to infer it
+	 * from dates that are all plausible.
+	 *
+	 * @return JSONResponse The zone and whether the calendar answers.
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function calendar(): JSONResponse {
+		return new JSONResponse(
+			data: [
+				'timezone' => $this->dates->timeZone()->getName(),
+				'rollAvailable' => $this->ends->calendarAnswers(),
+			],
+			statusCode: Http::STATUS_OK
+		);
+	}//end calendar()
 
 	/**
 	 * Create a TermijnDefinitie version.
@@ -169,7 +203,7 @@ class TermijnDefinitieController extends Controller {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Failed to save TermijnDefinitie: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['message' => 'Failed to save term definition: ' . $e->getMessage()],
@@ -177,4 +211,70 @@ class TermijnDefinitieController extends Controller {
 			);
 		}//end try
 	}//end persist()
+
+	/**
+	 * index() on its old address.
+	 *
+	 * Deprecated alias of GET /api/deadlines/definitions; remove after the next major.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/termijn-verification-admin/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function indexLegacyPath(): JSONResponse {
+		return $this->index();
+	}//end indexLegacyPath()
+
+	/**
+	 * calendar() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/calendar; remove after the next major.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function calendarLegacyPath(): JSONResponse {
+		return $this->calendar();
+	}//end calendarLegacyPath()
+
+	/**
+	 * create() on its old address.
+	 *
+	 * Deprecated alias of POST /api/deadlines/definitions; remove after the next major.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/termijn-verification-admin/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function createLegacyPath(): JSONResponse {
+		return $this->create();
+	}//end createLegacyPath()
+
+	/**
+	 * update() on its old address.
+	 *
+	 * Deprecated alias of PATCH /api/deadlines/definitions/{id}; remove after the next major.
+	 *
+	 * @param string $id The definition id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/termijn-verification-admin/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function updateLegacyPath(string $id): JSONResponse {
+		return $this->update(id: $id);
+	}//end updateLegacyPath()
 }//end class

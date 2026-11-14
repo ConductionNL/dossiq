@@ -23,19 +23,31 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\CaseDeclarations;
+use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
+use OCA\Dossiq\Service\Archival\ArchivalBaseDateResolver;
+use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
+use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
+use OCA\Dossiq\Service\Transitions\StatusChecklist;
 use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCA\Dossiq\Service\WorkflowTemplateLoader;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
+use OCA\Dossiq\Tests\Support\MakesTransitionDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * Minimal OpenRegister ObjectService shape used by StatusTransitionService.
@@ -51,11 +63,28 @@ interface ReplayObjectServiceStub {
  * Regression tests for StatusTransitionService::replay().
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionAsk
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionStep
+ * @uses \OCA\Dossiq\Service\Transitions\CaseDeclarations
+ * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
+ * @uses \OCA\Dossiq\Service\Archival\ArchivalBaseDateResolver
+ * @uses \OCA\Dossiq\Service\Archival\ArchivalNominationDeriver
+ * @uses \OCA\Dossiq\Service\CaseTypeResolver
+ * @uses \OCA\Dossiq\Service\CaseTypeStore
  *
+ * @uses \OCA\Dossiq\Service\Transitions\CaseResultWriter
  * @uses \OCA\Dossiq\Service\Transitions\CaseStatusStore
  * @uses \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
+ * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
+ * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
+ * @uses   \OCA\Dossiq\Service\Transitions\TransitionSpecReader
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class StatusTransitionServiceReplayRegressionTest extends TestCase {
+	use MakesStatusDeclarations;
+	use MakesTransitionDeclarations;
+
 
 	/**
 	 * @var SettingsService&MockObject
@@ -84,14 +113,30 @@ class StatusTransitionServiceReplayRegressionTest extends TestCase {
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$this->service = new StatusTransitionService(
-			$this->createMock(WorkflowTemplateLoader::class),
-			$this->createMock(GuardRegistry::class),
-			$this->createMock(SideEffectDispatcher::class),
-			new CaseStatusStore($this->settingsService, $this->logger),
-			new TransitionAuthorizer($this->createMock(IGroupManager::class), $this->logger),
-			new TransitionSpecReader(),
-			$this->createMock(IUserSession::class),
-			$this->logger,
+			templateLoader: $this->createMock(WorkflowTemplateLoader::class),
+			guardRegistry: $this->createMock(GuardRegistry::class),
+			authorizer: new TransitionAuthorizer($this->createMock(IGroupManager::class), $this->logger),
+			specReader: new TransitionSpecReader(),
+			userSession: $this->createMock(IUserSession::class),
+			logger: $this->logger,
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
+			declarations: new CaseDeclarations(
+				statuses: $this->undeclaredStatuses(),
+				moves: $this->undeclaredTransitions(),
+				offered: $this->offeredTransitions(
+					guards: $this->createMock(originalClassName: GuardRegistry::class),
+					reader: new TransitionSpecReader(),
+					statuses: $this->undeclaredStatuses(),
+				),
+				checklist: $this->createMock(StatusChecklist::class),
+				store: new CaseStatusStore($this->settingsService, new StatusTypeLookup($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService))), $this->logger),
+			),
+			ledger: new CaseMoveLedger(
+				store: new CaseStatusStore($this->settingsService, new StatusTypeLookup($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService))), $this->logger),
+				resultWriter: new CaseResultWriter($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService)), new ArchivalNominationDeriver($this->settingsService, new ArchivalBaseDateResolver($this->settingsService), $this->logger)),
+				dispatcher: $this->createMock(SideEffectDispatcher::class),
+				logger: $this->logger,
+			),
 		);
 
 	}//end setUp()

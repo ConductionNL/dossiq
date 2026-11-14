@@ -26,9 +26,12 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Substitution\HumaniqLeaveReader;
 use OCA\Dossiq\Service\Substitution\SubstitutedWorkResolver;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Substitution\SubstitutionValidator;
 use OCA\Dossiq\Service\SubstitutionService;
+use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -53,8 +56,17 @@ if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
 		/** @param mixed ...$args @return mixed */
 		public function saveObject(...$args): mixed;
 
-		/** @param mixed ...$args @return mixed */
-		public function updateObject(...$args): mixed;
+		/**
+		 * Replace an object, in openregister's shape.
+		 *
+		 * @param string               $objectId      The object id.
+		 * @param array<string, mixed> $data          The object's complete new data.
+		 * @param bool                 $_rbac         Apply register RBAC.
+		 * @param bool                 $_multitenancy Apply organisation scoping.
+		 *
+		 * @return mixed
+		 */
+		public function updateObject(string $objectId, array $data, bool $_rbac = true, bool $_multitenancy = true): mixed;
 	}//end interface
 }//end if
 
@@ -65,6 +77,7 @@ if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
  *
  * @uses \OCA\Dossiq\Service\Substitution\SubstitutedWorkResolver
  * @uses \OCA\Dossiq\Service\Substitution\SubstitutionValidator
+ * @uses \OCA\Dossiq\Service\Substitution\HumaniqLeaveReader
  */
 class SubstitutionServiceTest extends TestCase {
 
@@ -77,6 +90,13 @@ class SubstitutionServiceTest extends TestCase {
 	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
 	 */
 	private $logger;
+
+	/**
+	 * The engine inbox for the next `makeService()`, or null for an empty one.
+	 *
+	 * @var EngineTaskInbox|null
+	 */
+	private ?EngineTaskInbox $engineTasks = null;
 
 	/**
 	 * Set up fixtures.
@@ -92,10 +112,15 @@ class SubstitutionServiceTest extends TestCase {
 	 * Build the service with a configured ObjectService mock.
 	 *
 	 * @param object|null $objectService The ObjectService mock (slug-aware) or null.
+	 * @param HumaniqLeaveReader|null $leaveReader The leave reader, or null for one
+	 *                                            on an instance without humaniq.
 	 *
 	 * @return SubstitutionService
 	 */
-	private function makeService(?object $objectService): SubstitutionService {
+	private function makeService(
+		?object $objectService,
+		?HumaniqLeaveReader $leaveReader = null,
+	): SubstitutionService {
 		// Fresh SettingsService mock per service so repeated makeService() calls
 		// in one test do not clobber each other's getObjectService() return.
 		$this->settingsService = $this->createMock(SettingsService::class);
@@ -114,13 +139,105 @@ class SubstitutionServiceTest extends TestCase {
 			}
 		);
 
+		// The absentee's TASKS come from the engine, not the object store.
+		// `$this->engineTasks` is seeded per test by `engineHoldsTasksFor()`;
+		// by default the engine holds nothing, which is what every test that
+		// only cares about cases wants.
+		$engineTasks = ($this->engineTasks ?? $this->engineInbox([]));
+
 		return new SubstitutionService(
 			$this->settingsService,
 			$this->logger,
 			new SubstitutionValidator($this->settingsService),
-			new SubstitutedWorkResolver($this->settingsService)
+			new SubstitutedWorkResolver(settingsService: $this->settingsService, engineTasks: $engineTasks),
+			($leaveReader ?? $this->leaveReader(installed: false))
 		);
 	}//end makeService()
+
+	/**
+	 * A real leave reader over a stubbed humaniq register.
+	 *
+	 * The REAL reader rather than a double, because the branch that matters
+	 * most here is the one where humaniq is not installed at all, and a double
+	 * returning null would pass on a reader that never checked.
+	 *
+	 * @param boolean $installed Whether humaniq is installed on the instance.
+	 * @param array<int, array<string, mixed>> $employees The Employee rows humaniq answers.
+	 * @param array<int, array<string, mixed>> $leave The LeaveRequest rows it answers.
+	 * @param LoggerInterface|null $logger A logger to assert on, or null.
+	 *
+	 * @return HumaniqLeaveReader The reader.
+	 */
+	private function leaveReader(
+		bool $installed,
+		array $employees = [],
+		array $leave = [],
+		?LoggerInterface $logger = null,
+	): HumaniqLeaveReader {
+		$appManager = $this->createMock(originalClassName: IAppManager::class);
+		$appManager->method('isInstalled')->willReturn($installed);
+
+		$objectService = $this->createMock(originalClassName: SubstitutionObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')->willReturnCallback(
+			static function (string $register, string $schema, array $filters = []) use ($employees, $leave): array {
+				if ($schema === 'Employee') {
+					return $employees;
+				}
+
+				return $leave;
+			}
+		);
+
+		// A settings mock of its own: the humaniq read must not borrow the
+		// substitution store's stub, or a leave test would pass on rows the
+		// substitution schema answered.
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key, string $default = ''): string {
+				if ($key === 'humaniq_register') {
+					return 'humaniq';
+				}
+
+				return $default;
+			}
+		);
+
+		return new HumaniqLeaveReader(
+			appManager: $appManager,
+			settingsService: $settings,
+			logger: ($logger ?? $this->createMock(originalClassName: LoggerInterface::class))
+		);
+	}//end leaveReader()
+
+	/**
+	 * An engine inbox answering with these open tasks, by assignee.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $byAssignee The tasks per uid.
+	 *
+	 * @return EngineTaskInbox&\PHPUnit\Framework\MockObject\MockObject The double.
+	 */
+	private function engineInbox(array $byAssignee): EngineTaskInbox {
+		$inbox = $this->getMockBuilder(EngineTaskInbox::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$inbox->method('openForAssignee')->willReturnCallback(
+			static fn (string $actor, int $limit = 200): array => ($byAssignee[$actor] ?? [])
+		);
+
+		return $inbox;
+	}//end engineInbox()
+
+	/**
+	 * Seed the engine for the next `makeService()` call.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $byAssignee The tasks per uid.
+	 *
+	 * @return void
+	 */
+	private function engineHoldsTasksFor(array $byAssignee): void {
+		$this->engineTasks = $this->engineInbox($byAssignee);
+	}//end engineHoldsTasksFor()
 
 	/**
 	 * Build a slug-aware ObjectService mock.
@@ -144,6 +261,45 @@ class SubstitutionServiceTest extends TestCase {
 		$this->expectExceptionMessageMatches('/own waarnemer/');
 		$service->create(absentee: 'jan', substitute: 'jan', startDate: '2026-07-01', endDate: '2026-07-21');
 	}//end testSelfSubstitutionRejected()
+
+	/**
+	 * An empty absentee or substitute is rejected before anything else.
+	 *
+	 * @return void
+	 */
+	public function testEmptyIdentityRejected(): void {
+		$service = $this->makeService($this->objectServiceMock());
+
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('Both absentee and substitute are required');
+		$service->create(absentee: '  ', substitute: 'marieke', startDate: '2026-07-01', endDate: '2026-07-21');
+	}//end testEmptyIdentityRejected()
+
+	/**
+	 * A scope outside all|caseTypes|cases is rejected.
+	 *
+	 * @return void
+	 */
+	public function testUnknownScopeRejected(): void {
+		$service = $this->makeService($this->objectServiceMock());
+
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('Invalid scope; expected all, caseTypes or cases');
+		$service->create(absentee: 'jan', substitute: 'marieke', startDate: '2026-07-01', endDate: '2026-07-21', scope: 'everything');
+	}//end testUnknownScopeRejected()
+
+	/**
+	 * A reason outside verlof|ziekte|anders is rejected, after the scope check passes.
+	 *
+	 * @return void
+	 */
+	public function testUnknownReasonRejected(): void {
+		$service = $this->makeService($this->objectServiceMock());
+
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('Invalid reason; expected verlof, ziekte or anders');
+		$service->create(absentee: 'jan', substitute: 'marieke', startDate: '2026-07-01', endDate: '2026-07-21', reason: 'vakantie');
+	}//end testUnknownReasonRejected()
 
 	/**
 	 * Missing endDate is rejected.
@@ -265,6 +421,201 @@ class SubstitutionServiceTest extends TestCase {
 	}//end testActiveResolutionDateBoundaries()
 
 	/**
+	 * An approved humaniq leave sets the period, over the typed dates.
+	 *
+	 * The case the requirement exists for: the substitution was typed to end
+	 * yesterday, the leave behind it runs another week, and statutory terms do
+	 * not pause for either. Without this the absentee's cases go back to a desk
+	 * nobody is sitting at and are invisible until they breach.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 */
+	public function testLeaveOverridesTypedPeriod(): void {
+		$row = [
+			'id' => 'sub-leave',
+			'absentee' => 'jan',
+			'substitute' => 'marieke',
+			'scope' => 'all',
+			'status' => 'active',
+			'startDate' => '2026-07-01',
+			// Typed to have ended YESTERDAY, relative to the reference day.
+			'endDate' => '2026-07-09',
+		];
+
+		$os = $this->objectServiceMock();
+		$os->method('searchObjectsBySlug')->willReturn([$row]);
+		// And it must NOT be lazily marked ended: the leave says it is running.
+		$os->expects($this->never())->method('updateObject');
+
+		$reader = $this->leaveReader(
+			installed: true,
+			employees: [['id' => 'emp-1', 'nextcloudUserId' => 'jan']],
+			leave: [
+				[
+					'id' => 'leave-1',
+					'employeeId' => 'emp-1',
+					'status' => 'approved',
+					'startDate' => '2026-07-01',
+					'endDate' => '2026-07-17',
+				],
+			]
+		);
+
+		$active = $this->makeService(objectService: $os, leaveReader: $reader)->getActiveSubstitutionsFor(
+			'marieke',
+			new DateTimeImmutable('2026-07-10')
+		);
+
+		$this->assertCount(expectedCount: 1, haystack: $active);
+		// The LEAVE's end, not the typed one, because that is the day the work
+		// actually goes back and the day My work prints on the marker.
+		$this->assertSame(expected: '2026-07-17', actual: $active[0]['_activeUntil']);
+	}//end testLeaveOverridesTypedPeriod()
+
+	/**
+	 * A leave that does not cover the day changes nothing.
+	 *
+	 * The control for the test above: the same installed humaniq, answering a
+	 * leave request that ended before the reference day. Without it, a reader
+	 * that returned its first row regardless of date would pass there.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 */
+	public function testLeaveOutsideTheDayDoesNotExtend(): void {
+		$row = [
+			'id' => 'sub-leave-past',
+			'absentee' => 'jan',
+			'substitute' => 'marieke',
+			'scope' => 'all',
+			'status' => 'active',
+			'startDate' => '2026-07-01',
+			'endDate' => '2026-07-09',
+		];
+
+		$os = $this->objectServiceMock();
+		$os->method('searchObjectsBySlug')->willReturn([$row]);
+
+		$reader = $this->leaveReader(
+			installed: true,
+			employees: [['id' => 'emp-1', 'nextcloudUserId' => 'jan']],
+			leave: [
+				[
+					'id' => 'leave-old',
+					'employeeId' => 'emp-1',
+					'status' => 'approved',
+					'startDate' => '2026-06-01',
+					'endDate' => '2026-06-14',
+				],
+			]
+		);
+
+		$active = $this->makeService(objectService: $os, leaveReader: $reader)->getActiveSubstitutionsFor(
+			'marieke',
+			new DateTimeImmutable('2026-07-10')
+		);
+
+		$this->assertCount(expectedCount: 0, haystack: $active);
+	}//end testLeaveOutsideTheDayDoesNotExtend()
+
+	/**
+	 * An unapproved leave request grants nothing.
+	 *
+	 * The filter asks humaniq for `status: approved`, and this asserts the
+	 * reader re-checks what came back. A search that silently ignores an
+	 * unknown field answers the whole collection, and a submitted request
+	 * would then set a period no manager granted.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 */
+	public function testUnapprovedLeaveDoesNotExtend(): void {
+		$row = [
+			'id' => 'sub-leave-draft',
+			'absentee' => 'jan',
+			'substitute' => 'marieke',
+			'scope' => 'all',
+			'status' => 'active',
+			'startDate' => '2026-07-01',
+			'endDate' => '2026-07-09',
+		];
+
+		$os = $this->objectServiceMock();
+		$os->method('searchObjectsBySlug')->willReturn([$row]);
+
+		$reader = $this->leaveReader(
+			installed: true,
+			employees: [['id' => 'emp-1', 'nextcloudUserId' => 'jan']],
+			leave: [
+				[
+					'id' => 'leave-draft',
+					'employeeId' => 'emp-1',
+					'status' => 'submitted',
+					'startDate' => '2026-07-01',
+					'endDate' => '2026-07-17',
+				],
+			]
+		);
+
+		$active = $this->makeService(objectService: $os, leaveReader: $reader)->getActiveSubstitutionsFor(
+			'marieke',
+			new DateTimeImmutable('2026-07-10')
+		);
+
+		$this->assertCount(expectedCount: 0, haystack: $active);
+	}//end testUnapprovedLeaveDoesNotExtend()
+
+	/**
+	 * Without humaniq the typed dates rule, and the absence is said once.
+	 *
+	 * An instance that never installed the HR app must behave exactly as it
+	 * did before this change: inside the typed window the substitution routes
+	 * work, outside it, it does not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 */
+	public function testWithoutHumaniqTypedDatesRule(): void {
+		$row = [
+			'id' => 'sub-no-hr',
+			'absentee' => 'jan',
+			'substitute' => 'marieke',
+			'scope' => 'all',
+			'status' => 'active',
+			'startDate' => '2026-07-01',
+			'endDate' => '2026-07-21',
+		];
+
+		$readerLogger = $this->createMock(originalClassName: LoggerInterface::class);
+		$readerLogger->expects($this->once())->method('info');
+
+		$inside = $this->objectServiceMock();
+		$inside->method('searchObjectsBySlug')->willReturn([$row]);
+		$active = $this->makeService(
+			objectService: $inside,
+			leaveReader: $this->leaveReader(installed: false, logger: $readerLogger)
+		)->getActiveSubstitutionsFor('marieke', new DateTimeImmutable('2026-07-10'));
+
+		$this->assertCount(expectedCount: 1, haystack: $active);
+		$this->assertSame(expected: '2026-07-21', actual: $active[0]['_activeUntil']);
+
+		// And past the typed end, with no leave to extend it, it stops.
+		$outside = $this->objectServiceMock();
+		$outside->method('searchObjectsBySlug')->willReturn([$row]);
+		$ended = $this->makeService(
+			objectService: $outside,
+			leaveReader: $this->leaveReader(installed: false)
+		)->getActiveSubstitutionsFor('marieke', new DateTimeImmutable('2026-07-22'));
+
+		$this->assertCount(expectedCount: 0, haystack: $ended);
+	}//end testWithoutHumaniqTypedDatesRule()
+
+	/**
 	 * A revoked substitution never resolves as active.
 	 *
 	 * @return void
@@ -318,6 +669,71 @@ class SubstitutionServiceTest extends TestCase {
 	}//end testGetSubstitutedWorkScopeFilter()
 
 	/**
+	 * 🔴 THE ABSENTEE'S TASKS COME BACK, AND THEY COME FROM THE ENGINE.
+	 *
+	 * This path had NO test at all, which is exactly why it broke in
+	 * silence. `SubstitutedWorkResolver` read `task_schema`, the guard
+	 * `if ($taskSchema !== '')` stayed TRUE the whole time, and the query
+	 * returned steadily fewer rows as each writer moved to the engine,
+	 * until a substitute saw the absentee's cases with no tasks under them.
+	 * Nothing threw and no branch noticed.
+	 *
+	 * @return void
+	 */
+	public function testTheAbsenteesOpenTasksAreRoutedToTheSubstitute(): void {
+		$sub = ['id' => 'sub-4', 'absentee' => 'jan', 'substitute' => 'marieke', 'scope' => 'all', 'status' => 'active', 'startDate' => '2026-07-01', 'endDate' => '2026-07-21'];
+
+		$os = $this->objectServiceMock();
+		$os->method('searchObjectsBySlug')->willReturnCallback(
+			static function (string $reg, string $schema, array $filters) use ($sub) {
+				return ($schema === 'substitution') ? [$sub] : [];
+			}
+		);
+
+		$this->engineHoldsTasksFor([
+			'jan' => [
+				['id' => 't-1', 'title' => 'Meetrapport opvragen', 'case' => 'case-a'],
+				['id' => 't-2', 'title' => 'Bezwaar beoordelen', 'case' => 'case-b'],
+			],
+		]);
+
+		$work = $this->makeService($os)->getSubstitutedWorkFor('marieke', new DateTimeImmutable('2026-07-10'));
+
+		$this->assertCount(2, $work['tasks'], "the substitute must see the absentee's open tasks");
+		$this->assertSame('t-1', $work['tasks'][0]['id']);
+		$this->assertSame('jan', $work['tasks'][0]['_substituted']['absentee']);
+		$this->assertSame('sub-4', $work['tasks'][0]['_substituted']['substitutionId']);
+	}//end testTheAbsenteesOpenTasksAreRoutedToTheSubstitute()
+
+	/**
+	 * A substitution narrowed to named cases carries only those cases' tasks.
+	 *
+	 * @return void
+	 */
+	public function testANarrowedSubstitutionOnlyCarriesItsOwnCasesTasks(): void {
+		$sub = ['id' => 'sub-5', 'absentee' => 'jan', 'substitute' => 'marieke', 'scope' => 'cases', 'scopeRefs' => ['case-a'], 'status' => 'active', 'startDate' => '2026-07-01', 'endDate' => '2026-07-21'];
+
+		$os = $this->objectServiceMock();
+		$os->method('searchObjectsBySlug')->willReturnCallback(
+			static function (string $reg, string $schema, array $filters) use ($sub) {
+				return ($schema === 'substitution') ? [$sub] : [];
+			}
+		);
+
+		$this->engineHoldsTasksFor([
+			'jan' => [
+				['id' => 't-1', 'title' => 'In scope', 'case' => 'case-a'],
+				['id' => 't-2', 'title' => 'Out of scope', 'case' => 'case-b'],
+			],
+		]);
+
+		$work = $this->makeService($os)->getSubstitutedWorkFor('marieke', new DateTimeImmutable('2026-07-10'));
+
+		$this->assertCount(1, $work['tasks']);
+		$this->assertSame('t-1', $work['tasks'][0]['id']);
+	}//end testANarrowedSubstitutionOnlyCarriesItsOwnCasesTasks()
+
+	/**
 	 * resolveActingCapacity returns the covering substitution for a third-party
 	 * case and null for own work.
 	 *
@@ -346,11 +762,86 @@ class SubstitutionServiceTest extends TestCase {
 		$os = $this->objectServiceMock();
 		$os->method('find')->willReturn(['id' => 'sub-4', 'status' => 'active', 'absentee' => 'jan', 'substitute' => 'marieke']);
 		$os->expects($this->once())->method('updateObject')->willReturnCallback(
-			function (string $r, string $s, string $id, array $payload) {
+			function (string $id, array $payload) {
 				return $payload;
 			}
 		);
 		$result = $this->makeService($os)->revoke('sub-4');
 		$this->assertSame('revoked', $result['status']);
 	}//end testRevoke()
+	/**
+	 * Create stores the trimmed people, the period as days, the re-indexed refs and who created it.
+	 *
+	 * @return void
+	 */
+	public function testCreateStoresTheWholeRow(): void {
+		$saved = [];
+		$os    = $this->objectServiceMock();
+		$os->method('saveObject')->willReturnCallback(
+			static function (...$args) use (&$saved): array {
+				$saved[] = $args;
+				return ['id' => 'sub-9'];
+			}
+		);
+		$service = $this->makeService($os);
+
+		$result = $service->create(
+			absentee: ' jan ',
+			substitute: ' pieter ',
+			startDate: '2026-07-01',
+			endDate: '2026-07-21',
+			scope: 'caseTypes',
+			scopeRefs: [3 => 'objectionProceeding'],
+			reason: 'ziekte',
+			comment: 'griep'
+		);
+		$this->assertSame(['id' => 'sub-9'], $result);
+		$this->assertSame(
+			[
+				'absentee' => 'jan',
+				'substitute' => 'pieter',
+				'startDate' => '2026-07-01',
+				'endDate' => '2026-07-21',
+				'scope' => 'caseTypes',
+				'scopeRefs' => ['objectionProceeding'],
+				'reason' => 'ziekte',
+				'comment' => 'griep',
+				'status' => 'active',
+				'createdBy' => 'jan',
+			],
+			$saved[0]['object']
+		);
+
+		$service->create(absentee: 'jan', substitute: 'pieter', startDate: '2026-07-01', endDate: '2026-07-21', scope: 'caseTypes', scopeRefs: ['x'], createdBy: 'coordinator');
+		$this->assertSame('coordinator', $saved[1]['object']['createdBy']);
+	}//end testCreateStoresTheWholeRow()
+
+	/**
+	 * Acting capacity: allowed for a covered absentee in scope; refused for another absentee,
+	 * out of scope, an empty actor or absentee, and own work.
+	 *
+	 * @return void
+	 */
+	public function testActingCapacityAllowedAndRefusedOutcomes(): void {
+		$day    = new DateTimeImmutable('2026-07-10');
+		$period = ['substitute' => 'marieke', 'status' => 'active', 'startDate' => '2026-07-01', 'endDate' => '2026-07-21'];
+		$os     = $this->objectServiceMock();
+		$os->method('searchObjectsBySlug')->willReturn(
+			[
+				['id' => 'sub-other', 'absentee' => 'kees', 'scope' => 'all'] + $period,
+				['id' => 'sub-narrow', 'absentee' => 'jan', 'scope' => 'cases', 'scopeRefs' => ['case-a']] + $period,
+				['id' => 'sub-types', 'absentee' => 'jan', 'scope' => 'caseTypes', 'scopeRefs' => ['permit']] + $period,
+			]
+		);
+		$service = $this->makeService($os);
+
+		$this->assertSame('sub-narrow', $service->resolveActingCapacity('marieke', 'jan', 'case-a', 'objection', $day)['id']);
+		$this->assertSame('sub-types', $service->resolveActingCapacity('marieke', 'jan', 'case-b', 'permit', $day)['id']);
+		$this->assertSame('sub-other', $service->resolveActingCapacity('marieke', 'kees', 'case-z', null, $day)['id']);
+		$this->assertNull($service->resolveActingCapacity('marieke', 'jan', 'case-b', 'objection', $day));
+		$this->assertNull($service->resolveActingCapacity('marieke', 'piet', 'case-a', null, $day));
+		$this->assertNull($service->resolveActingCapacity('', 'jan', 'case-a', null, $day));
+		$this->assertNull($service->resolveActingCapacity('marieke', '', 'case-a', null, $day));
+		$this->assertNull($service->resolveActingCapacity('jan', 'jan', 'case-a', null, $day));
+	}//end testActingCapacityAllowedAndRefusedOutcomes()
 }//end class

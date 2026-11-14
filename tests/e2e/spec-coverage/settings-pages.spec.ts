@@ -107,7 +107,9 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 	// what a flow came from. Flows are authored at /flows, covered by
 	// flows.spec.ts, whose create control is a canvas action rather than the
 	// "Add X" button every row in this table asserts on.
-	{ name: 'Organisations', route: '/settings/tenants', addBtn: 'Add Tenant' },
+	// The tenant admin page (Organisations, /settings/tenants) retired with
+	// dossiq's tenant store: a tenant is an OpenRegister organisation
+	// (tenancy-onto-openregister-organisation step 5). Entry removed.
 	// The standalone "Status history" (StatusRecords) settings page was retired
 	// by retire-status-history-page — change history is now the CaseDetail
 	// audit-trail surface, not a page/menu item. Entry removed accordingly.
@@ -119,7 +121,11 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 
 for (const { name, route, addBtn } of SETTINGS_PAGES) {
 	test.describe(`Settings · ${name}`, () => {
-		// @e2e openspec/specs/admin-settings/spec.md#settings-page-renders-distinct-control
+		// @e2e exclude No canonical spec covers the shell contract this loop
+		// asserts. admin-settings has a list scenario per entity (status
+		// types, result types, role types, property definitions), but none of
+		// them says every settings page renders its OWN create control, which
+		// is the thing that catches one page rendering another's list.
 		test(`${name} settings page renders its own "${addBtn}" control`, async ({
 			page,
 		}) => {

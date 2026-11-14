@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Substitution;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -48,11 +49,13 @@ class SubstitutedWorkResolver {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings/config + ObjectService bridge.
+	 * @param EngineTaskInbox $engineTasks The engine's task reader.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly EngineTaskInbox $engineTasks,
 	) {
 	}//end __construct()
 
@@ -70,172 +73,208 @@ class SubstitutedWorkResolver {
 	 */
 	public function resolve(array $subs): array {
 		$result = ['cases' => [], 'tasks' => []];
-		if (count($subs) === 0) {
+		$run = $this->workRun(subs: $subs);
+		if ($run === null) {
 			return $result;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		if ($objectService === null) {
-			return $result;
+		foreach (array_filter($subs, static fn (array $sub): bool => (string)($sub['absentee'] ?? '') !== '') as $sub) {
+			$run->sub = $sub;
+			$result['cases'] = array_merge($result['cases'], $this->collectCases(run: $run));
+			$result['tasks'] = array_merge($result['tasks'], $this->collectTasks(sub: $sub, seen: $run->seenTasks));
 		}
-
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		$taskSchema = (string)$this->settingsService->getConfigValue('task_schema');
-		$finalIds = $this->finalStatusIds(objectService: $objectService, register: $register);
-
-		$seenCases = [];
-		$seenTasks = [];
-
-		foreach ($subs as $sub) {
-			$absentee = (string)($sub['absentee'] ?? '');
-			if ($absentee === '') {
-				continue;
-			}
-
-			if ($caseSchema !== '') {
-				$result['cases'] = array_merge(
-					$result['cases'],
-					$this->collectCases(
-						objectService: $objectService,
-						register: $register,
-						caseSchema: $caseSchema,
-						sub: $sub,
-						finalIds: $finalIds,
-						seen: $seenCases
-					)
-				);
-			}
-
-			if ($taskSchema !== '') {
-				$result['tasks'] = array_merge(
-					$result['tasks'],
-					$this->collectTasks(
-						objectService: $objectService,
-						register: $register,
-						taskSchema: $taskSchema,
-						sub: $sub,
-						seen: $seenTasks
-					)
-				);
-			}
-		}//end foreach
 
 		return $result;
 	}//end resolve()
 
 	/**
+	 * Where this gathering reads, or null when there is nothing to gather or no OpenRegister.
+	 *
+	 * @param array<int, array<string, mixed>> $subs The active substitution records.
+	 *
+	 * @return SubstitutionWorkRun|null The run.
+	 */
+	private function workRun(array $subs): ?SubstitutionWorkRun {
+		if (count($subs) === 0) {
+			return null;
+		}
+
+		$run = new SubstitutionWorkRun();
+		$objectService = $this->settingsService->getObjectService();
+		$run->register = (string)$this->settingsService->getConfigValue('register');
+		if ($objectService === null) {
+			return null;
+		}
+
+		$run->objectService = $objectService;
+		$run->caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
+		$run->finalIds = $this->finalStatusIds(objectService: $objectService, register: $run->register);
+
+		return $run;
+	}//end workRun()
+
+	/**
 	 * Collect the absentee's in-scope, non-final cases for one substitution.
 	 *
-	 * @param object $objectService The ObjectService.
-	 * @param string $register Register id.
-	 * @param string $caseSchema Case schema id.
-	 * @param array<string, mixed> $sub The substitution record.
-	 * @param array<int, string> $finalIds Final statusType ids to exclude.
-	 * @param array<string, bool> $seen Dedup map, mutated in place.
+	 * @param SubstitutionWorkRun $run The gathering, with the substitution in hand; its seen cases are updated.
 	 *
 	 * @return array<int, array<string, mixed>> The newly collected cases.
 	 *
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
-	private function collectCases(
-		object $objectService,
-		string $register,
-		string $caseSchema,
-		array $sub,
-		array $finalIds,
-		array &$seen,
-	): array {
-		$absentee = (string)($sub['absentee'] ?? '');
-		$subId = (string)($sub['id'] ?? ($sub['uuid'] ?? ''));
-		$scope = (string)($sub['scope'] ?? 'all');
-		$scopeRefs = array_map('strval', (array)($sub['scopeRefs'] ?? []));
+	private function collectCases(SubstitutionWorkRun $run): array {
+		if ($run->caseSchema === '') {
+			return [];
+		}
 
-		$cases = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseSchema,
-			filters: ['assignee' => $absentee]
-		);
-
+		$stamp = $this->stampOf(sub: $run->sub);
+		$cases = $this->casesAssignedTo(run: $run, absentee: $stamp['absentee']);
 		$collected = [];
 		foreach ($cases as $case) {
-			if ($this->caseInScope(case: $case, scope: $scope, scopeRefs: $scopeRefs) === false) {
-				continue;
+			if ($this->caseRoutes(run: $run, case: $case) === true) {
+				$case['_substituted'] = $stamp;
+				$collected[] = $case;
 			}
-
-			if (in_array((string)($case['status'] ?? ''), $finalIds, true) === true) {
-				continue;
-			}
-
-			$id = (string)($case['id'] ?? ($case['uuid'] ?? ''));
-			if ($id === '' || isset($seen[$id]) === true) {
-				continue;
-			}
-
-			$seen[$id] = true;
-			$case['_substituted'] = ['absentee' => $absentee, 'substitutionId' => $subId];
-			$collected[] = $case;
-		}//end foreach
+		}
 
 		return $collected;
 	}//end collectCases()
 
 	/**
+	 * The cases assigned to the absentee, read as the substitute.
+	 *
+	 * @param SubstitutionWorkRun $run      The gathering.
+	 * @param string              $absentee The absentee.
+	 *
+	 * @return array<int, array<string, mixed>> The cases.
+	 */
+	private function casesAssignedTo(SubstitutionWorkRun $run, string $absentee): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: $run->caseSchema,
+			filters: ['assignee' => $absentee]
+		);
+	}//end casesAssignedTo()
+
+	/**
+	 * Whether a case of the absentee is routed: in scope, not final, and not routed already.
+	 *
+	 * A routed case is marked as seen.
+	 *
+	 * @param SubstitutionWorkRun  $run  The gathering, with the substitution in hand.
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return bool Whether it is routed.
+	 */
+	private function caseRoutes(SubstitutionWorkRun $run, array $case): bool {
+		$scope = (string)($run->sub['scope'] ?? 'all');
+		$scopeRefs = array_map('strval', (array)($run->sub['scopeRefs'] ?? []));
+		if ($this->caseInScope(case: $case, scope: $scope, scopeRefs: $scopeRefs) === false) {
+			return false;
+		}
+
+		if (in_array((string)($case['status'] ?? ''), $run->finalIds, true) === true) {
+			return false;
+		}
+
+		return self::claim(seen: $run->seenCases, item: $case);
+	}//end caseRoutes()
+
+	/**
+	 * Claim an item by its id: true the first time, false for an item without id or already claimed.
+	 *
+	 * @param array<string, bool>  $seen The ids claimed so far, updated in place.
+	 * @param array<string, mixed> $item The case or task.
+	 *
+	 * @return bool Whether it was claimed now.
+	 */
+	private static function claim(array &$seen, array $item): bool {
+		$id = (string)($item['id'] ?? ($item['uuid'] ?? ''));
+		if ($id === '' || isset($seen[$id]) === true) {
+			return false;
+		}
+
+		$seen[$id] = true;
+
+		return true;
+	}//end claim()
+
+	/**
+	 * What a routed item carries about the substitution that routed it.
+	 *
+	 * @param array<string, mixed> $sub The substitution record.
+	 *
+	 * @return array{absentee: string, substitutionId: string, until: string} The stamp.
+	 */
+	private function stampOf(array $sub): array {
+		return [
+			'absentee' => (string)($sub['absentee'] ?? ''),
+			'substitutionId' => (string)($sub['id'] ?? ($sub['uuid'] ?? '')),
+			'until' => $this->routedUntil(sub: $sub),
+		];
+	}//end stampOf()
+
+	/**
 	 * Collect the absentee's open tasks for one substitution.
 	 *
-	 * @param object $objectService The ObjectService.
-	 * @param string $register Register id.
-	 * @param string $taskSchema Task schema id.
-	 * @param array<string, mixed> $sub The substitution record.
-	 * @param array<string, bool> $seen Dedup map, mutated in place.
+	 * 🔴 THE TASKS MOVED AND THIS READ DID NOT, which is why it is being
+	 * rewritten rather than tidied. `task_schema` was read, found, and
+	 * queried, and it returned steadily fewer rows as every writer moved to
+	 * the engine, until the substitution screen showed an absentee's cases
+	 * with no tasks at all. Nothing failed: the guard `if ($taskSchema !==
+	 * '')` was TRUE the whole time, so there was no branch to notice.
 	 *
-	 * @return array<int, array<string, mixed>> The newly collected tasks.
+	 * The terminal filter is the engine's now (`openForAssignee` asks for
+	 * `isTerminal: false`), so the three state names are gone from here too.
+	 *
+	 * @param array<string, mixed> $sub  The substitution record.
+	 * @param array<string, bool>  $seen Dedup map, mutated in place.
+	 *
+	 * @return array<int, array<string, mixed>> The tasks.
 	 *
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
-	private function collectTasks(
-		object $objectService,
-		string $register,
-		string $taskSchema,
-		array $sub,
-		array &$seen,
-	): array {
-		$absentee = (string)($sub['absentee'] ?? '');
-		$subId = (string)($sub['id'] ?? ($sub['uuid'] ?? ''));
+	private function collectTasks(array $sub, array &$seen): array {
+		$stamp = $this->stampOf(sub: $sub);
 		$scope = (string)($sub['scope'] ?? 'all');
 		$scopeRefs = array_map('strval', (array)($sub['scopeRefs'] ?? []));
 
-		$tasks = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $taskSchema,
-			filters: ['assignee' => $absentee]
-		);
-
 		$collected = [];
-		foreach ($tasks as $task) {
-			$tStatus = (string)($task['status'] ?? '');
-			if (in_array($tStatus, ['completed', 'terminated', 'disabled'], true) === true) {
-				continue;
+		foreach ($this->engineTasks->openForAssignee(actor: $stamp['absentee']) as $task) {
+			$outOfScope = ($scope === 'cases' && in_array((string)($task['case'] ?? ''), $scopeRefs, true) === false);
+			if ($outOfScope === false && self::claim(seen: $seen, item: $task) === true) {
+				$task['_substituted'] = $stamp;
+				$collected[] = $task;
 			}
-
-			if ($scope === 'cases' && in_array((string)($task['case'] ?? ''), $scopeRefs, true) === false) {
-				continue;
-			}
-
-			$id = (string)($task['id'] ?? ($task['uuid'] ?? ''));
-			if ($id === '' || isset($seen[$id]) === true) {
-				continue;
-			}
-
-			$seen[$id] = true;
-			$task['_substituted'] = ['absentee' => $absentee, 'substitutionId' => $subId];
-			$collected[] = $task;
-		}//end foreach
+		}
 
 		return $collected;
 	}//end collectTasks()
+
+	/**
+	 * The day this substitution stops routing work, as the marker prints it.
+	 *
+	 * The typed `endDate`, unless an approved humaniq leave set a different
+	 * one: `SubstitutionService` stamps the effective end on `_activeUntil`
+	 * when it resolves the substitution as active, so the marker on My work
+	 * names the day the work actually goes back rather than a date the leave
+	 * has already overtaken.
+	 *
+	 * @param array<string, mixed> $sub The substitution record.
+	 *
+	 * @return string The end date (`Y-m-d`), or '' when the record has none.
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	private function routedUntil(array $sub): string {
+		$effective = (string)($sub['_activeUntil'] ?? '');
+		if ($effective !== '') {
+			return $effective;
+		}
+
+		return (string)($sub['endDate'] ?? '');
+	}//end routedUntil()
 
 	/**
 	 * Whether a case falls within a substitution scope.

@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
  */
 
 declare(strict_types=1);
@@ -25,6 +25,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Tenant\TenantBrandingSanitiser;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -38,7 +40,7 @@ use Throwable;
  * owns configuration storage — read, merge, persist — plus locale and feature
  * flags.
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
  */
 class TenantConfigurationService {
 	/**
@@ -90,23 +92,32 @@ class TenantConfigurationService {
 	 * @param ContainerInterface $container Service container.
 	 * @param TenantBrandingSanitiser $sanitiser Fail-closed branding input validation.
 	 * @param LoggerInterface $logger Logger.
+	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly TenantBrandingSanitiser $sanitiser,
 		private readonly LoggerInterface $logger,
+		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 	) {
 	}//end __construct()
 
 	/**
 	 * Get the full configuration row for a tenant.
 	 *
+	 * `findAll()` returns `ObjectEntity` objects. This method used to return
+	 * one from a signature typed `?array`; the TypeError was caught below and
+	 * read as "no configuration", so a tenant's branding, locale and feature
+	 * flags were never found, and every write started from an empty
+	 * configuration. The row is read as an array first, and the array keeps
+	 * the object's `id`, which `mergeConfig()` updates by.
+	 *
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return array<string,mixed>|null
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
 	 */
 	public function getConfig(string $tenantId): ?array {
 		$objectService = $this->getObjectService();
@@ -119,26 +130,52 @@ class TenantConfigurationService {
 			// named-argument form threw "Unknown named parameter $register" and
 			// was swallowed by the catch below. Register/schema live inside
 			// `filters`; limit/offset are top-level config keys.
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => TenantSaasService::REGISTER,
-						'schema' => 'tenantConfiguration',
-						'tenantRef' => $tenantId,
-					],
-					'limit' => 1,
-					'offset' => 0,
-				]
-			);
-			if (is_array($rows) === true && count($rows) > 0) {
-				return $rows[0];
-			}
+			$rows = $objectService->findAll($this->configQuery(tenantId: $tenantId));
 
-			return null;
+			return $this->firstConfig(rows: $rows);
 		} catch (Throwable $e) {
 			return null;
 		}//end try
 	}//end getConfig()
+
+	/**
+	 * The findAll() config that reads one tenant's configuration row.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 *
+	 * @return array<string, mixed> The query.
+	 */
+	private function configQuery(string $tenantId): array {
+		return [
+			'filters' => [
+				'register' => AppIdentity::REGISTER_SLUG,
+				'schema' => 'tenantConfiguration',
+				'tenantRef' => $tenantId,
+			],
+			'limit' => 1,
+			'offset' => 0,
+		];
+	}//end configQuery()
+
+	/**
+	 * The first row's data, or null when there is no row or it is empty.
+	 *
+	 * @param mixed $rows What findAll() answered.
+	 *
+	 * @return array<string,mixed>|null
+	 */
+	private function firstConfig($rows): ?array {
+		if (is_array($rows) === true && count($rows) > 0) {
+			$config = $this->rowNormaliser->normalise(row: $rows[0])['data'];
+			if ($config === []) {
+				return null;
+			}
+
+			return $config;
+		}
+
+		return null;
+	}//end firstConfig()
 
 	/*
 	 * NO updateBranding() / updateLocale() HERE.
@@ -166,7 +203,7 @@ class TenantConfigurationService {
 	 *
 	 * @return array<string,mixed>
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
 	 */
 	public function setFeatureFlag(string $tenantId, string $flag, bool $enabled): array {
 		$current = $this->getConfig(tenantId: $tenantId) ?? ['tenantRef' => $tenantId, 'features' => []];
@@ -295,7 +332,7 @@ class TenantConfigurationService {
 
 			return $objectService->saveObject(
 				object: $next,
-				register: TenantSaasService::REGISTER,
+				register: AppIdentity::REGISTER_SLUG,
 				schema: 'tenantConfiguration',
 				uuid: $uuidArg
 			);

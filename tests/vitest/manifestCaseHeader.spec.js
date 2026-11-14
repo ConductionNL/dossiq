@@ -1,0 +1,399 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * The case page's identity header, as the manifest declares it.
+ *
+ * Every assertion here guards a declaration that renders nothing when it is
+ * wrong and says nothing about it: a `subtitleField` no host reads, a layout
+ * cell pointing at a widget id that no longer exists, a tab whose widget was
+ * never declared. The manifest validator checks SHAPES; it cannot check that
+ * the shapes refer to each other.
+ *
+ * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
+ * @spec openspec/specs/deelzaak-support/spec.md#requirement-parent-case-breadcrumb-navigation
+ */
+
+import fs from 'fs'
+import path from 'path'
+import { describe, expect, it } from 'vitest'
+const panels = require('./helpers/casePanels.js')
+
+const ROOT = path.resolve(__dirname, '../..')
+const manifest = JSON.parse(
+	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+)
+
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
+const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
+
+/** The CaseDetail page as the manifest declares it. @return {object} The page. */
+const caseDetail = () => manifest.pages.find((page) => page.id === 'CaseDetail')
+
+/**
+ * One widget of the CaseDetail page.
+ *
+ * @param {string} id The manifest widget id.
+ * @return {object|undefined} The widget entry.
+ */
+const widget = (id) => caseDetail().config.widgets.find((entry) => entry.id === id)
+
+/**
+ * The layout cells that place one widget.
+ *
+ * @param {string} id The manifest widget id.
+ * @return {Array<object>} The layout entries.
+ */
+function cells(id) {
+	return caseDetail().config.layout.filter((cell) => cell.widgetId === id)
+}
+
+describe('CaseDetail — the case number under the title (task 1.1)', () => {
+	it('names identifier as the subtitle field', () => {
+		expect(caseDetail().config.subtitleField).toBe('identifier')
+	})
+
+	it('leaves the menu and the page count alone', () => {
+		// The subtitle is one key on one page. A change that moves the page
+		// count or the menu has done something else as well.
+		//
+		// 50, not 44: `pluggable-integration-registry` adds Integrations,
+		// `contacts-domain` adds Contacts, ContactDetail and
+		// OrganisationDetail, `contacts-you-can-find` adds Organisations —
+		// the index that makes OrganisationDetail reachable by something other
+		// than a case that already names the company — and
+		// `dashboard-my-work-split` adds MyWorkHome, the new landing page that
+		// carries the widgets split off the Dashboard. The number is what makes
+		// this assertion worth anything, so it is raised by exactly the pages
+		// that were added rather than loosened to a range.
+		// 50 -> 51: `case-recycle-window` adds CasesDeleted, the deleted lens.
+		// It is a page rather than a chip on the case list because the objects
+		// endpoint those chips filter excludes soft-deleted rows by design.
+		// 51 -> 53: `one-personal-queue` (#2842) adds PersonalQueue, the one
+		// list of everything waiting on the reader across four stores, and
+		// EndOfDay, the screen that closes the day against what they opened
+		// in it. Neither is a lens on an existing page: both cross stores no
+		// index page can name.
+		// 53 -> 54: `attribute-catalogue-folders` adds PropertyDefinitions,
+		// the attribute catalogue. It is a page rather than a lens because an
+		// attribute with no case type is shared across every one of them, so
+		// there is no existing index it could be a filter over.
+		// 54 -> 62: eight registers that shipped with stored data and no page
+		// to read it on. `the-two-schemas-holding-personal-data` (#2958) adds
+		// SupplierUsers and AvgIncidents, `the-offline-inspection-schemas`
+		// (#2959) adds FieldEvidence, OfflineSyncQueue and
+		// OfflineSyncConflicts, and `the-last-sociaal-domein-schemas` (#2961)
+		// adds Indicatiestellingen, MdoOverleggen and ReIntegratieTrajecten.
+		// Each is a page and not a lens for the same reason the four above
+		// are: there is no existing index any of them could be a filter over.
+		// 62 -> 64: `woo-refusal-grounds-list` adds WooRefusalGrounds and
+		// WooRefusalGroundDetail, the settings list of the grounds a refusal
+		// cites. A settings register, so a page and not a lens on a case list.
+		// 64 -> 62: `tenancy-onto-openregister-organisation` step 5 retires
+		// Tenants and TenantDetail; a tenant is an OpenRegister organisation.
+		// 62 -> 63: `woo-delivered-set-is-a-record` adds one page.
+		// 63 -> 62: the WorkflowBoard page retires; the board is the Cases list.
+		// 62 -> 63: the redaction page of a case (DqLakken).
+		// 63 -> 62: the CaseMap page retires; the map is the Cases list.
+		// 62 -> 60: `lists-are-views` retires Queue and MyWork; they are views of Cases.
+		// 60 -> 58: DeelzaakList and DeelzaakDetail retire; their addresses redirect to CaseDetail.
+		// 58 -> 57: SubstitutionAdmin retires; substitution admin lives in the admin settings.
+		// 57 -> 56: ReIntegratieTrajecten retires; re-integration trajectories are cases, their list a view of Cases.
+		expect(manifest.pages).toHaveLength(56)
+		// Two entries open Cases as a place: the list, and the Werkbord, which is the
+		// same list in its board view (`query: { _view: 'board' }`). The
+		// team queue opens a view of it (`savedView`), which is not a page.
+		expect(
+			manifest.menu
+				.filter((entry) => entry.route === 'Cases' && !entry.query?.savedView)
+				.map((entry) => entry.query?._view ?? ''),
+		).toEqual(['', 'board'])
+	})
+})
+
+describe('CaseDetail — the identity row is three configured tiles and the hours card', () => {
+	// Ruben, 2026-09-12: "The widgets on top of the page should be actual KPI
+	// widgets configured to show what they show... it should not be a custom
+	// widget spanning an entire row."
+	//
+	// So every assertion here is about a widget the LIBRARY renders from
+	// `content`. A `type` the library does not know falls back to the page's
+	// `widget-<id>` slot, and a page with no such slot renders an empty cell
+	// and logs nothing, which is the failure this file exists to catch.
+	//
+	// Three tiles, not five. Ruben laid the row out by hand in Buildiq edit
+	// mode on 2026-09-12 and dropped the status and the assignee: both read
+	// in the Data tab, the open tab on load, and the status also reads on the
+	// stages widget, which is where a case is moved. The hours card (the
+	// humaniq leaf) fills the fourth cell of the row.
+	const TILES = [
+		['case-tile-number', 'stat', 0, 3],
+		['case-tile-type', 'stat', 3, 3],
+		['case-tile-deadline', 'countdown', 6, 3],
+	]
+	const HOURS = ['case-kpis-hours', 'integration', 9, 3]
+
+	it('has retired the custom band and its slot', () => {
+		expect(widget('case-header')).toBeUndefined()
+		expect(cells('case-header')).toHaveLength(0)
+		expect((caseDetail().slots || {})['widget-case-header']).toBeUndefined()
+		// The IMPORT and the ENTRY, not the name: the registry keeps a comment
+		// saying the three components went and why, and a bare name match would
+		// read that explanation as the thing it explains.
+		expect(registrySource).not.toContain('CaseHeaderRow.vue')
+		expect(registrySource).not.toContain('CaseHeaderRow: {')
+	})
+
+	for (const [id, type, gridX, gridWidth] of TILES) {
+		it(`declares ${id} as a configured ${type} widget`, () => {
+			const entry = widget(id)
+			expect(entry).toBeDefined()
+			expect(entry.type).toBe(type)
+			// A configured widget carries its config, not a registry key. An
+			// empty `content` renders a tile with no label and no value, which
+			// looks exactly like a tile whose data has not arrived.
+			expect(Object.keys(entry.content ?? {}).length).toBeGreaterThan(0)
+		})
+
+		it(`places ${id} in the top row without spanning it`, () => {
+			const placed = cells(id)
+			expect(placed).toHaveLength(1)
+			expect(placed[0].gridY).toBe(0)
+			expect(placed[0].gridX).toBe(gridX)
+			expect(placed[0].gridWidth).toBe(gridWidth)
+			expect(placed[0].gridWidth).toBeLessThan(12)
+			// A card widget draws its own label, so the wrapper header would
+			// print the title twice.
+			expect(placed[0].showTitle).toBe(false)
+		})
+	}
+
+	it('places the hours card in the fourth cell of the row', () => {
+		const [id, type, gridX, gridWidth] = HOURS
+		expect(widget(id).type).toBe(type)
+		const placed = cells(id)
+		expect(placed).toHaveLength(1)
+		expect(placed[0].gridY).toBe(0)
+		expect(placed[0].gridX).toBe(gridX)
+		expect(placed[0].gridWidth).toBe(gridWidth)
+	})
+
+	it('declares neither a status tile nor an assignee tile', () => {
+		for (const id of ['case-tile-status', 'case-tile-assignee']) {
+			expect(widget(id), `${id} is declared`).toBeUndefined()
+			expect(cells(id), `${id} is placed`).toHaveLength(0)
+		}
+	})
+
+	it('fills the top row exactly, leaving no gap and no overhang', () => {
+		const top = caseDetail().config.layout.filter((c) => c.gridY === 0)
+		expect(top).toHaveLength(TILES.length + 1)
+		expect(top.reduce((sum, c) => sum + c.gridWidth, 0)).toBe(12)
+		expect(Math.min(...caseDetail().config.layout.map((c) => c.gridY))).toBe(0)
+	})
+
+	it('resolves the case type through the register, not in JavaScript', () => {
+		// The uuid-to-title resolve CaseHeaderRow did by hand. `emptyText` is
+		// what keeps a raw uuid off the page when the lookup finds nothing: a
+		// uuid under the title is a fact about the database, not about the case.
+		const content = widget('case-tile-type').content
+		expect(content.objectField.field).toBe('caseType')
+		expect(content.objectField.resolve).toMatchObject({
+			register: 'dossiq',
+			schema: 'caseType',
+			labelField: 'title',
+		})
+		expect(content.emptyText).toBeTruthy()
+	})
+
+	it('still prints the case number, which subtitleField does not', () => {
+		// REQ-CDV-14 asks for the number under the title through
+		// `config.subtitleField`. The key is set and no detail-page code in
+		// @conduction/nextcloud-vue reads it, so the number renders nowhere
+		// unless a widget carries it. Assert BOTH: the declaration the
+		// requirement names, and the tile that actually delivers it.
+		expect(caseDetail().config.subtitleField).toBe('identifier')
+		expect(widget('case-tile-number').content.objectField).toBe('identifier')
+	})
+
+	it('counts the deadline down in the bands the retired tile used', () => {
+		const content = widget('case-tile-deadline').content
+		expect(content.field).toBe('deadline')
+		expect(content.thresholds).toEqual({ warn: 14, danger: 5 })
+	})
+
+	it('names only icons that src/icons.js registers', () => {
+		// An unregistered name renders NO icon, not a fallback glyph (gate-60).
+		// Both spellings matter: the wrapper header reads `widget.icon` and the
+		// tile itself reads `content.icon`.
+		const names = TILES.flatMap(([id]) => [
+			widget(id).icon,
+			widget(id).content.icon,
+		]).filter(Boolean)
+		expect(names.length).toBeGreaterThan(0)
+		for (const name of names) {
+			expect(iconsSource, `icon ${name} is not registered`).toContain(
+				`import ${name} from 'vue-material-design-icons/${name}.vue'`,
+			)
+		}
+	})
+
+	it('has retired the Time left and Case type tiles from the page', () => {
+		// Both facts read in the identity row. Leaving the old tiles beside it
+		// would print each of them twice.
+		for (const retired of ['case-kpi-time-left', 'case-kpi-casetype']) {
+			expect(widget(retired), `${retired} is still declared`).toBeUndefined()
+			expect(cells(retired), `${retired} is still placed`).toHaveLength(0)
+		}
+		// And no tab child names them either: a tabs entry is the third place
+		// a widget id can hide, and it is not covered by the two above.
+		const tabIds = (widget('case-panels')?.content?.tabs ?? []).map(
+			(tab) => tab.widgetId,
+		)
+		expect(tabIds).not.toContain('case-kpi-time-left')
+		expect(tabIds).not.toContain('case-kpi-casetype')
+	})
+
+	it('keeps every layout cell pointing at a declared widget', () => {
+		const declared = new Set(caseDetail().config.widgets.map((w) => w.id))
+		for (const cell of caseDetail().config.layout) {
+			expect(declared, `layout cell ${cell.id}`).toContain(cell.widgetId)
+		}
+	})
+})
+
+describe('CaseDetail — the trail ends on the case number (REQ-CDV-15)', () => {
+	it('reads All cases / <identifier>, so no crumb repeats the title', () => {
+		expect(caseDetail().config.breadcrumb[0]).toEqual({
+			label: 'All cases',
+			route: 'Cases',
+			currentField: 'identifier',
+			separator: '/',
+		})
+		expect(caseDetail().config.breadcrumbs).toBeUndefined()
+	})
+
+	it('puts a sub-case\'s parent number between the two, as a link to the parent (deelzaak-support)', () => {
+		const parent = caseDetail().config.breadcrumb[1]
+		expect(parent).toEqual({ parent: 'parentCase', labelField: 'identifier', route: 'CaseDetail' })
+		// The crumb reads the context record it names; without the entry it renders nothing.
+		expect(caseDetail().config.visibilityContext[parent.parent]).toEqual({
+			field: 'parentCase',
+			register: 'dossiq',
+			schema: 'case',
+		})
+		expect(caseDetail().config.breadcrumb).toHaveLength(2)
+	})
+})
+
+describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
+	/** @return {Array<object>} The tab entries, in declaration order. */
+	function tabs() {
+		return widget('case-panels').content.tabs
+	}
+
+	it('is the work a handler does, in order, and nothing else', () => {
+		// REQ-CDV-16: the five everyday tabs lead (boards DqZaak), the rest
+		// follow under More (DqZaakMeer). The whole strip, as an exact list.
+		expect(tabs().map((tab) => tab.widgetId)).toEqual([
+			'case-data-panel',
+			'case-files',
+			'case-communication-panel',
+			'case-work-panel',
+			'case-timeline-panel',
+			'case-notes-panel',
+			'case-people-panel',
+			'case-email-panel',
+			'case-decisions-panel',
+			'case-related-panel',
+			'case-custody-panel',
+			'case-archival-panel',
+			'case-knowledge-panel',
+			'case-document-review',
+			'case-change-proposals',
+		])
+	})
+
+	it('still renders every collection that used to close the strip', () => {
+		// REQ-CDV-16 named four tabs that could be empty and asked for them to
+		// come last. Three of them are SECTIONS now and the fourth is gone from
+		// the body entirely, so "last" no longer describes anything. What the
+		// requirement was protecting is that they are still reachable, and that
+		// is what this asserts: a fold that dropped one instead of moving it
+		// would leave a shorter strip and a passing count.
+		const stillOnThePage = {
+			'case-sub-cases': 'Related',
+			'case-calendar': 'Tasks',
+			'case-objects': 'Related',
+		}
+		for (const [id, tab] of Object.entries(stillOnThePage)) {
+			const where = panels.caseTabOf(id)
+			expect(where, `${id} is not reachable from the strip`).toBeTruthy()
+			expect(where.tab, `${id} is on the wrong tab`).toBe(tab)
+		}
+
+		// `case-locaties` is the exception that was RETIRED rather than moved.
+		// `case-location` already carries latitude and longitude, so the list
+		// was a table of coordinates nobody could picture. The map on the Data
+		// tab is what makes that a replacement instead of a deletion, so the
+		// map is what gets asserted.
+		expect(panels.caseWidget('case-locaties')).toBeUndefined()
+		expect(panels.caseTabOf('case-location-map')?.tab).toBe('Overview')
+
+		// `case-decidesk-decisions` is the fourth. It left the body when it
+		// duplicated the Besluitvorming sidebar tab; on 2026-09-13 that
+		// duplication was resolved the other way round, so the sidebar tab is
+		// gone and the decisions leaf is the Besluiten TAB.
+		expect(panels.caseWidget('case-decidesk-decisions')).toBeUndefined()
+		expect(caseDetail().config.sidebar.tabs.map((tab) => tab.id)).not.toContain(
+			'besluitvorming',
+		)
+		expect(panels.caseTabOf('case-decisions-panel')?.tab).toBe('Decisions')
+	})
+
+	it('names a declared widget in every tab', () => {
+		const declared = new Set(caseDetail().config.widgets.map((w) => w.id))
+		for (const tab of tabs()) {
+			expect(declared, `tab ${tab.widgetId}`).toContain(tab.widgetId)
+		}
+	})
+
+	it('places no tab child on the layout grid', () => {
+		// A tab child that also has a layout cell renders TWICE: once in the
+		// grid and once in its panel.
+		const placed = new Set(caseDetail().config.layout.map((c) => c.widgetId))
+		for (const tab of tabs()) {
+			expect(
+				placed,
+				`${tab.widgetId} is both a tab and a grid cell`,
+			).not.toContain(tab.widgetId)
+		}
+	})
+
+	it('declares no tab whose widget type resolves to nothing', () => {
+		// A `type: "custom"` widget resolves through the page's `widget-<id>`
+		// slot, which CnDetailPage renders for LAYOUT items only. As a tab
+		// child it renders nothing and logs nothing: CnTabsWidget dispatches
+		// through CnDetailWidgetHost, which resolves by widget TYPE.
+		for (const tab of tabs()) {
+			expect(widget(tab.widgetId).type, `tab ${tab.widgetId}`).not.toBe(
+				'custom',
+			)
+		}
+	})
+
+	it('grew case-panels to take the Data tab it absorbed', () => {
+		const panels = cells('case-panels')[0]
+		expect(cells('case-core')).toHaveLength(0)
+		// Nine rows by nine columns: Ruben's hand layout of 2026-09-12.
+		expect(panels.gridWidth).toBe(9)
+		expect(panels.gridHeight).toBeGreaterThanOrEqual(9)
+		// The left column runs to the bottom of the right one, so the page has
+		// no reserved void under the strip (ADR-062: the cell is the budget).
+		const bottom = (cell) => cell.gridY + cell.gridHeight
+		const right = caseDetail().config.layout.filter(
+			(c) => c.gridX >= 9 && c.gridY >= 2,
+		)
+		expect(bottom(panels)).toBe(Math.max(...right.map(bottom)))
+	})
+})

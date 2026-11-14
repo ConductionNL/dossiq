@@ -29,29 +29,36 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use Throwable;
 
 /**
  * Resolves a statusType by id or by name within a case type.
  *
- * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class StatusTypeLookup {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Resolves the object service and configured schemas.
+	 * @param SettingsService  $settingsService   Resolves the object service and configured schemas.
+	 * @param CaseTypeResolver $caseTypeResolver  The effective blueprint, so a child type's
+	 *                                            inherited statuses are found too.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly CaseTypeResolver $caseTypeResolver,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -62,17 +69,58 @@ class StatusTypeLookup {
 	 *
 	 * @return string The name, or the empty string when unresolvable.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function nameFor(string $statusTypeId): string {
+		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
+
+		return $this->text->textOf(value: ($statusType['name'] ?? ($statusType['title'] ?? null)));
+	}//end nameFor()
+
+	/**
+	 * The words a status is announced in, or '' when it is not announced.
+	 *
+	 * NOT THE SAME QUESTION AS {@see StatusPublicLabels::publicLabelOf()}, and
+	 * the difference is the whole point. That one answers "what does the
+	 * applicant read for this status" and falls back to the administered name,
+	 * which is right for a page that has already decided to show the status.
+	 * This one answers "is this status announced at all", and a fallback would
+	 * make every status announced the moment a case type forgot to fill a
+	 * public label in. The empty string here is a decision, not a gap.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 *
+	 * @return string The public label, or '' when the status is not announced.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	public function announcedLabelOf(string $statusTypeId): string {
+		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
+
+		return $this->text->textOf(value: ($statusType['publicLabel'] ?? ''));
+	}//end announcedLabelOf()
+
+	/**
+	 * The whole statusType row, for the callers that need more than its name.
+	 *
+	 * The checklist a status brings with it is read here rather than through a
+	 * second reader, for the reason this class exists at all: one place asks
+	 * the store what a status is, so a status that resolves for one caller
+	 * cannot silently answer nothing for another.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 *
+	 * @return array<string, mixed> The row, or an empty array when unresolvable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function rowFor(string $statusTypeId): array {
 		if ($statusTypeId === '') {
-			return '';
+			return [];
 		}
 
-		$statusType = $this->read(schemaKey: 'status_type_schema', id: $statusTypeId);
-
-		return (string)($statusType['name'] ?? ($statusType['title'] ?? ''));
-	}//end nameFor()
+		return $this->read(schemaKey: 'status_type_schema', id: $statusTypeId);
+	}//end rowFor()
 
 	/**
 	 * A case type's statusType id, by name.
@@ -90,7 +138,7 @@ class StatusTypeLookup {
 	 *
 	 * @return string The statusType UUID, or '' when there is no such status.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function idForName(string $caseTypeId, string $statusName): string {
 		$wanted = strtolower(trim($statusName));
@@ -113,7 +161,7 @@ class StatusTypeLookup {
 	 * WHY A ROLE AND NOT A NAME. A shipped flow cannot carry a statusType uuid,
 	 * so it named the status instead — and a name is not an identifier either:
 	 *
-	 * - `statusType.name` is declared `x-translatable`, so the same status is
+	 * - `statusType.name` is declared `translatable`, so the same status is
 	 *   "In behandeling" on one instance and "In progress" on another. A flow
 	 *   matching a literal is broken by translation alone.
 	 * - Every case type spells its working phase differently and all of them are
@@ -131,7 +179,7 @@ class StatusTypeLookup {
 	 *
 	 * @return string The statusType UUID, or '' when this case type models no such role.
 	 *
-	 * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function idForRole(string $caseTypeId, string $role): string {
 		$wanted = strtolower(trim($role));
@@ -179,7 +227,7 @@ class StatusTypeLookup {
 	 *
 	 * @return array<string, string> The statuses, keyed by id.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function statusesOf(string $caseTypeId): array {
 		if (trim($caseTypeId) === '') {
@@ -189,7 +237,7 @@ class StatusTypeLookup {
 		$resolved = [];
 		foreach ($this->statusRowsFor(caseTypeId: $caseTypeId) as $row) {
 			$id = (string)($row['id'] ?? ($row['uuid'] ?? ''));
-			$name = (string)($row['name'] ?? ($row['title'] ?? ''));
+			$name = $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null)));
 
 			if ($id === '' || $name === '') {
 				continue;
@@ -202,80 +250,54 @@ class StatusTypeLookup {
 	}//end statusesOf()
 
 	/**
-	 * The raw statusType rows belonging to one case type.
+	 * The statusType rows a case of this type can be in.
 	 *
-	 * Filtered SERVER-side on the back-reference. Fetching every status type and
-	 * filtering here would drop rows the first page did not contain, and would
-	 * match a same-named status belonging to another case type.
+	 * 🔴 THROUGH THE RESOLVER, NOT STRAIGHT AT THE STORE. This asked the store
+	 * for `statusType where caseType = X`, which is the CHILD's own rows. A
+	 * case type that derives from a parent and declares no statuses of its own
+	 * therefore had none: `idForName()` returned '' for every name, and
+	 * `SetStatusHandler` refused every move on a case of that type. Not an
+	 * error anywhere — an empty list is a valid answer to the question that
+	 * was asked, it was simply the wrong question. The resolver still filters
+	 * server-side per ancestor, so the reason the old code gave for going to
+	 * the store directly (never fetch-then-filter in PHP) still holds.
 	 *
 	 * @param string $caseTypeId CaseType UUID.
 	 *
-	 * @return array<int, array<string, mixed>> The rows.
+	 * @return array<int, array<string, mixed>> The rows, inherited ones included.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function statusRowsFor(string $caseTypeId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$statusTypeSchema = $this->settingsService->getConfigValue(key: 'status_type_schema');
-		if ($register === '' || $statusTypeSchema === '') {
-			return [];
-		}
-
-		try {
-			$found = $objectService->searchObjects(
-				[
-					'@self' => ['register' => $register, 'schema' => $statusTypeSchema],
-					'caseType' => $caseTypeId,
-					'_limit' => 200,
-				]
-			);
-		} catch (Throwable $e) {
-			return [];
-		}
-
-		return $this->asRows(value: $found);
+		return $this->caseTypeResolver->statusTypesFor(caseTypeId: $caseTypeId);
 	}//end statusRowsFor()
 
 	/**
-	 * Normalise whatever the object store returned into plain rows.
+	 * The statusType ROWS a case of this type can be in, inherited ones included.
 	 *
-	 * The store answers with either a bare list or a paged envelope, and each
-	 * row as an array or an entity. Reading only one of those shapes is how a
-	 * lookup silently finds nothing on an instance that answers the other way.
+	 * `statusesOf()` answers id to name, which is what a status picker needs
+	 * and not what an act needs: finishing a case has to know which statuses
+	 * are terminal, and closing it early has to know which phases it never
+	 * reached, and both of those live on the row rather than in its name.
 	 *
-	 * @param mixed $value The search result.
+	 * The same resolver, deliberately. A second read of the same relation
+	 * would be a second answer about which statuses a derived case type has,
+	 * and that question has already been got wrong twice in this class.
 	 *
-	 * @return array<int, array<string, mixed>> The rows.
+	 * @param string $caseTypeId CaseType UUID.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 * @return array<int, array<string, mixed>> The rows, empty when unresolvable.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function asRows(mixed $value): array {
-		if (is_array($value) === true && isset($value['results']) === true) {
-			$value = $value['results'];
-		}
-
-		if (is_array($value) === false) {
+	public function rowsOf(string $caseTypeId): array {
+		if (trim($caseTypeId) === '') {
 			return [];
 		}
 
-		$out = [];
-		foreach ($value as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
-			}
+		return $this->statusRowsFor(caseTypeId: $caseTypeId);
+	}//end rowsOf()
 
-			if (is_array($row) === true) {
-				$out[] = $row;
-			}
-		}
-
-		return $out;
-	}//end asRows()
 
 	/**
 	 * Read one object from a configured schema.
@@ -285,7 +307,7 @@ class StatusTypeLookup {
 	 *
 	 * @return array<string, mixed> The object, or an empty array when unreadable.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function read(string $schemaKey, string $id): array {
 		$objectService = $this->settingsService->getObjectService();

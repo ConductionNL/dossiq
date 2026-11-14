@@ -1,7 +1,7 @@
 # inspection-forms-via-forms-leaf Specification
 
 ## Purpose
-TBD - created by archiving change migrate-inspection-forms-to-forms-leaf. Update Purpose after archive.
+Render inspection checklists and advice forms through OpenRegister's forms leaf and store photos through its photos leaf. The inspection rules stay in dossiq.
 ## Requirements
 ### Requirement: Checklist And Advice Forms Render Through The OR Forms Leaf
 

@@ -1,0 +1,443 @@
+<?php
+
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * The store's OpenRegister calls, against a stub object service that records
+ * what it was asked: which schema, which filters, which uuid.
+ *
+ * @spec openspec/specs/document-projection/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
+
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
+
+class DocumentRecordStoreTest extends TestCase {
+	private const CONFIG = [
+		'register' => 'dossiq',
+		'case_schema' => 'case',
+		'dossier_informatieobject_schema' => 'informatieobject',
+		'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject',
+		'dossier_informatieobjecttype_schema' => 'informatieobjecttype',
+	];
+
+	/** @var object The stub object service. */
+	private object $objects;
+
+	/** @var SettingsService&MockObject The settings double answering the stub and the config. */
+	private SettingsService&MockObject $settings;
+
+	/** @var DocumentRecordStore The store under test. */
+	private DocumentRecordStore $store;
+
+	/**
+	 * A store over a stub object service that records what it was asked.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->objects = new class {
+			/** @var array<string, array<string, mixed>> uuid => row */
+			public array $rows = [];
+			/** @var array<int, array<string, mixed>> Every search asked. */
+			public array $searches = [];
+			/** @var array<int, array<string, mixed>> Every save asked. */
+			public array $saves = [];
+			/** @var array<int, string> Every uuid deleted. */
+			public array $deleted = [];
+			/** @var array<string, array<int, array<string, mixed>>> schema => rows answered to a search. */
+			public array $answers = [];
+
+			/**
+			 * @param string $id The uuid.
+			 * @param string|int|null $register The register.
+			 * @param string|int|null $schema The schema.
+			 *
+			 * @return array<string, mixed> The row.
+			 */
+			public function find(string $id, string|int|null $register = null, string|int|null $schema = null): array {
+				if (isset($this->rows[$id]) === false) {
+					throw new RuntimeException('not found: ' . $id);
+				}
+
+				return $this->rows[$id];
+			}
+
+			/**
+			 * @param string $register The register slug.
+			 * @param string $schema The schema slug.
+			 * @param array<string, mixed> $filters The filters.
+			 *
+			 * @return array<int, array<string, mixed>> The matching rows.
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+				$this->searches[] = ['register' => $register, 'schema' => $schema, 'filters' => $filters];
+				$fields = array_filter($filters, static fn (string $key): bool => str_starts_with($key, '_') === false, ARRAY_FILTER_USE_KEY);
+				return array_values(array_filter(
+					($this->answers[$schema] ?? []),
+					static function (array $row) use ($fields): bool {
+						foreach ($fields as $key => $value) {
+							if (($row[$key] ?? null) !== $value) {
+								return false;
+							}
+						}
+
+						return true;
+					}
+				));
+			}
+
+			/**
+			 * @param array<string, mixed> $object The object.
+			 * @param string|int|null $register The register.
+			 * @param string|int|null $schema The schema.
+			 * @param string|null $uuid The uuid on an update.
+			 *
+			 * @return array<string, mixed> The saved row.
+			 */
+			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): array {
+				$uuid = ($uuid ?? ('new-' . count($this->saves)));
+				$this->saves[] = ['schema' => $schema, 'uuid' => $uuid, 'object' => $object];
+				$this->rows[$uuid] = ($object + ['id' => $uuid]);
+				return ['id' => $uuid] + $object;
+			}
+
+			/**
+			 * @param string $uuid The uuid.
+			 * @param string|int|null $register The register.
+			 * @param string|int|null $schema The schema.
+			 *
+			 * @return void
+			 */
+			public function deleteObject(string $uuid, string|int|null $register = null, string|int|null $schema = null): void {
+				$this->deleted[] = $uuid;
+			}
+		};
+
+		$this->settings = $this->createMock(originalClassName: SettingsService::class);
+		$this->settings->method('getObjectService')->willReturn($this->objects);
+		$this->settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (self::CONFIG[$key] ?? $default)
+		);
+		$this->store = new DocumentRecordStore(settingsService: $this->settings);
+	}//end setUp()
+
+	/**
+	 * @return void
+	 */
+	public function testARecordIsFoundByItsFileIdInTheRecordSchema(): void {
+		$this->objects->rows['rec-9'] = ['@self' => ['id' => 'rec-9'], 'title' => 'by uuid'];
+		$this->assertSame(expected: 'by uuid', actual: $this->store->findRecord(recordId: 'rec-9')['title']);
+		$this->assertNull(actual: $this->store->findRecord(recordId: 'gone'));
+		$this->objects->answers['informatieobject'] = [['@self' => ['id' => 'rec-1'], 'title' => 'x', 'fileId' => 501]];
+
+		$record = $this->store->findRecord(fileId: 501);
+
+		$this->assertSame(expected: 'rec-1', actual: $record['id']);
+		$this->assertSame(expected: ['fileId' => 501, '_limit' => 1], actual: $this->objects->searches[0]['filters']);
+		$this->assertSame(expected: 'informatieobject', actual: $this->objects->searches[0]['schema']);
+		$this->assertNull(actual: $this->store->findRecord(fileId: 999), message: 'no row, no record');
+	}//end testARecordIsFoundByItsFileIdInTheRecordSchema()
+
+	/**
+	 * @return void
+	 */
+	public function testACaseIsOnlyACaseWhenTheCaseSchemaKnowsIt(): void {
+		$this->objects->rows['case-1'] = ['@self' => ['id' => 'case-1'], 'title' => 'Dakkapel'];
+
+		$this->assertSame(expected: 'case-1', actual: $this->store->findCase(caseId: 'case-1')['id']);
+		$this->assertNull(actual: $this->store->findCase(caseId: 'rec-1'));
+	}//end testACaseIsOnlyACaseWhenTheCaseSchemaKnowsIt()
+
+	/**
+	 * @return void
+	 */
+	public function testSavingARecordWithoutAnIdCreatesAndWithAnIdUpdates(): void {
+		$created = $this->store->saveRecord(record: ['title' => 'new']);
+		$this->assertSame(expected: 'new-0', actual: $created);
+		$this->assertSame(expected: 'new-0', actual: $this->objects->saves[0]['uuid'], message: 'a create passes no uuid, so the stub minted one');
+
+		$updated = $this->store->saveRecord(record: ['id' => 'rec-1', 'title' => 'renamed', '@self' => ['id' => 'rec-1']]);
+		$this->assertSame(expected: 'rec-1', actual: $updated);
+		$this->assertSame(expected: 'rec-1', actual: $this->objects->saves[1]['uuid']);
+		$this->assertArrayNotHasKey(key: '@self', array: $this->objects->saves[1]['object'], message: 'the metadata block is not written back');
+	}//end testSavingARecordWithoutAnIdCreatesAndWithAnIdUpdates()
+
+	/**
+	 * @return void
+	 */
+	public function testAJoinIsCreatedOnceAndDeletedByCase(): void {
+		$this->assertTrue(condition: $this->store->ensureJoin(caseId: 'case-1', recordId: 'rec-1'));
+		$join = $this->objects->saves[0];
+		$this->assertSame(expected: 'zaakinformatieobject', actual: $join['schema']);
+		$this->assertSame(expected: 'case-1', actual: $join['object']['case']);
+		$this->assertSame(expected: 'rec-1', actual: $join['object']['informatieobject']);
+		$this->assertArrayHasKey(key: 'registrationDate', array: $join['object']);
+
+		$this->objects->answers['zaakinformatieobject'] = [['@self' => ['id' => 'join-1'], 'case' => 'case-1', 'informatieobject' => 'rec-1']];
+		$this->assertFalse(condition: $this->store->ensureJoin(caseId: 'case-1', recordId: 'rec-1'), message: 'joined already');
+		$this->assertCount(expectedCount: 1, haystack: $this->objects->saves);
+
+		$this->assertSame(expected: 1, actual: $this->store->deleteJoins(recordId: 'rec-1', caseId: 'case-1'));
+		$this->assertSame(expected: ['join-1'], actual: $this->objects->deleted);
+		$last = end($this->objects->searches);
+		$this->assertSame(expected: 'case-1', actual: $last['filters']['case']);
+		$this->assertSame(expected: 'rec-1', actual: $last['filters']['informatieobject']);
+	}//end testAJoinIsCreatedOnceAndDeletedByCase()
+
+	/**
+	 * @return void
+	 */
+	public function testTheDocumentTypeFallsBackToTheRegistersFirst(): void {
+		$this->objects->rows['type-1'] = ['@self' => ['id' => 'type-1'], 'title' => 'Aanvraag', 'vertrouwelijkheidaanduiding' => 'openbaar'];
+		$this->objects->answers['informatieobjecttype'] = [['@self' => ['id' => 'type-0'], 'title' => 'Aanvullend']];
+
+		$this->assertSame(expected: 'type-1', actual: $this->store->findDocumentType(typeId: 'type-1')['id']);
+		$this->assertSame(expected: 'type-0', actual: $this->store->findDocumentType(typeId: '')['id']);
+		$this->assertSame(expected: 'type-0', actual: $this->store->findDocumentType(typeId: 'gone')['id'], message: 'an unknown uuid falls back too');
+		$this->assertSame(expected: ['title' => 'ASC'], actual: end($this->objects->searches)['filters']['_order']);
+
+		$this->objects->answers['informatieobjecttype'] = [];
+		$this->assertSame(expected: [], actual: $this->store->findDocumentType(typeId: ''), message: 'a register without types answers none');
+	}//end testTheDocumentTypeFallsBackToTheRegistersFirst()
+
+	/**
+	 * @return void
+	 */
+	public function testAFileIsStoredOnTheObjectThroughTheFileService(): void {
+		$fileService = new class {
+			/** @var array<int, array<string, mixed>> Every addFile asked. */
+			public array $added = [];
+
+			/**
+			 * @param mixed $objectEntity The object.
+			 * @param string $fileName The name.
+			 * @param mixed $content The bytes.
+			 * @param bool $share Whether to share.
+			 * @param array<int, string> $tags Tags.
+			 * @param mixed $_schema Unused.
+			 * @param mixed $_register Unused.
+			 * @param mixed $registerId The register.
+			 *
+			 * @return object A file with getFileId().
+			 */
+			public function addFile(
+				mixed $objectEntity,
+				string $fileName,
+				mixed $content,
+				bool $share = false,
+				array $tags = [],
+				mixed $_schema = null,
+				mixed $_register = null,
+				mixed $registerId = null,
+			): object {
+				$this->added[] = ['object' => $objectEntity, 'fileName' => $fileName, 'register' => $registerId];
+				return new class {
+					/**
+					 * @return int The file id.
+					 */
+					public function getFileId(): int {
+						return 4711;
+					}
+				};
+			}
+		};
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getFileService')->willReturn($fileService);
+		$settings->method('getConfigValue')->willReturn('dossiq');
+		$store = new DocumentRecordStore(settingsService: $settings);
+
+		$this->assertSame(expected: 4711, actual: $store->storeFileOnObject(objectId: 'case-1', fileName: 'a.pdf', content: 'PDF'));
+		$this->assertSame(expected: 'case-1', actual: $fileService->added[0]['object']);
+		$this->assertSame(expected: 'dossiq', actual: $fileService->added[0]['register']);
+
+		$without = $this->createMock(originalClassName: SettingsService::class);
+		$without->method('getFileService')->willReturn(null);
+		$this->expectException(exception: RuntimeException::class);
+		(new DocumentRecordStore(settingsService: $without))->storeFileOnObject(objectId: 'case-1', fileName: 'a.pdf', content: 'PDF');
+	}//end testAFileIsStoredOnTheObjectThroughTheFileService()
+
+	/**
+	 * @return void
+	 */
+	public function testTheStoreRefusesToWorkWithoutOpenRegister(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$store = new DocumentRecordStore(settingsService: $settings);
+
+		$this->assertNull(actual: $store->findCase(caseId: 'case-1'), message: 'a read answers nothing');
+		$this->expectException(exception: RuntimeException::class);
+		$store->saveRecord(record: ['title' => 'x']);
+	}//end testTheStoreRefusesToWorkWithoutOpenRegister()
+
+	/**
+	 * OpenRegister's find answers a uuid from any schema of the register, so a
+	 * document's uuid must not pass for a case: a file attached to a document's
+	 * own folder would otherwise be projected as a second record of that file.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/document-projection/spec.md
+	 */
+	public function testALookupAnswersOnlyARowOfTheSchemaItAskedFor(): void {
+		$this->objects->rows['doc-1'] = ['@self' => ['id' => 'doc-1', 'register' => 'dossiq', 'schema' => 'informatieobject'], 'title' => 'Advies'];
+		$this->objects->rows['case-1'] = ['@self' => ['id' => 'case-1', 'register' => 'dossiq', 'schema' => 'case'], 'title' => 'Kapvergunning'];
+		$this->objects->rows['case-2'] = ['@self' => ['id' => 'case-2', 'schema' => '/api/registers/dossiq/schemas/case'], 'title' => 'Path'];
+		$this->objects->rows['case-3'] = ['@self' => ['id' => 'case-3', 'schema' => '172'], 'title' => 'Id against a slug'];
+
+		$this->assertNull(actual: $this->store->findCase(caseId: 'doc-1'), message: 'a document is not a case');
+		$this->assertSame(expected: 'Kapvergunning', actual: $this->store->findCase(caseId: 'case-1')['title']);
+		$this->assertSame(expected: 'Path', actual: $this->store->findCase(caseId: 'case-2')['title']);
+		$this->assertSame(
+			expected: 'Id against a slug',
+			actual: $this->store->findCase(caseId: 'case-3')['title'],
+			message: 'an id cannot be told from a slug, so it is kept'
+		);
+		$this->assertNull(actual: $this->store->findRecord(recordId: 'case-1'), message: 'a case is not a document');
+		$this->assertSame(expected: 'Advies', actual: $this->store->findRecord(recordId: 'doc-1')['title']);
+	}//end testALookupAnswersOnlyARowOfTheSchemaItAskedFor()
+
+	/**
+	 * A record is deleted from the record schema by its uuid.
+	 *
+	 * @return void
+	 */
+	public function testARecordIsDeletedByItsUuid(): void {
+		$this->store->deleteRecord(recordId: 'rec-1');
+
+		$this->assertSame(expected: ['rec-1'], actual: $this->objects->deleted);
+	}//end testARecordIsDeletedByItsUuid()
+
+	/**
+	 * A join the search answers without any uuid is skipped, not counted.
+	 *
+	 * @return void
+	 */
+	public function testAJoinWithoutAUuidIsSkippedOnDelete(): void {
+		$this->objects->answers['zaakinformatieobject'] = [
+			['case' => 'case-1', 'informatieobject' => 'rec-1'],
+			['uuid' => 'join-2', 'case' => 'case-1', 'informatieobject' => 'rec-1'],
+		];
+
+		$this->assertSame(expected: 1, actual: $this->store->deleteJoins(recordId: 'rec-1', caseId: 'case-1'));
+		$this->assertSame(expected: ['join-2'], actual: $this->objects->deleted);
+	}//end testAJoinWithoutAUuidIsSkippedOnDelete()
+
+	/**
+	 * A lookup that answers an empty row finds nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyRowIsNotARecord(): void {
+		$this->objects->rows['empty'] = [];
+
+		$this->assertNull(actual: $this->store->findRecord(recordId: 'empty'));
+		$this->assertNull(actual: $this->store->findRecord(recordId: 'unknown'), message: 'a failing lookup finds nothing too');
+	}//end testAnEmptyRowIsNotARecord()
+
+	/**
+	 * A write without a configured record schema is refused, naming the key.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredSchemaIsRefused(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => ($key === 'register' ? 'dossiq' : '')
+		);
+
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage('Dossier schema dossier_informatieobject_schema not configured');
+		(new DocumentRecordStore(settingsService: $settings))->saveRecord(record: ['title' => 'x']);
+	}//end testAnUnconfiguredSchemaIsRefused()
+
+	/**
+	 * A save answered with an entity reads the uuid from the entity.
+	 *
+	 * @return void
+	 */
+	public function testASavedEntityAnswersItsUuid(): void {
+		$objects = new class {
+			/**
+			 * @param array<string, mixed> $object The object.
+			 * @param string|int|null $register The register.
+			 * @param string|int|null $schema The schema.
+			 * @param string|null $uuid The uuid on an update.
+			 *
+			 * @return object An entity.
+			 */
+			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): object {
+				return new class {
+					/**
+					 * @return string The uuid.
+					 */
+					public function getUuid(): string {
+						return 'entity-uuid';
+					}
+				};
+			}
+		};
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (self::CONFIG[$key] ?? $default)
+		);
+
+		$this->assertSame(expected: 'entity-uuid', actual: (new DocumentRecordStore(settingsService: $settings))->saveRecord(record: ['title' => 'x']));
+	}//end testASavedEntityAnswersItsUuid()
+
+	/**
+	 * A failing file write is refused with the object and the cause; a write
+	 * answered without a file reads back as file id 0.
+	 *
+	 * @return void
+	 */
+	public function testAFileWriteFailureIsRefusedAndAnUnreadableAnswerIsZero(): void {
+		$fileService = new class {
+			/** @var bool Whether addFile fails. */
+			public bool $fail = false;
+
+			/**
+			 * @param mixed $objectEntity The object.
+			 * @param string $fileName The name.
+			 * @param mixed $content The bytes.
+			 * @param bool $share Whether to share.
+			 * @param array<int, string> $tags Tags.
+			 * @param mixed $registerId The register.
+			 *
+			 * @return array<string, mixed> Not a file.
+			 */
+			public function addFile(mixed $objectEntity, string $fileName, mixed $content, bool $share = false, array $tags = [], mixed $registerId = null): array {
+				if ($this->fail === true) {
+					throw new RuntimeException('disk full');
+				}
+
+				return ['fileId' => 9];
+			}
+		};
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getFileService')->willReturn($fileService);
+		$settings->method('getConfigValue')->willReturn('dossiq');
+		$store = new DocumentRecordStore(settingsService: $settings);
+
+		$this->assertSame(expected: 0, actual: $store->storeFileOnObject(objectId: 'case-1', fileName: 'a.pdf', content: 'PDF'));
+
+		$fileService->fail = true;
+		try {
+			$store->storeFileOnObject(objectId: 'case-1', fileName: 'a.pdf', content: 'PDF');
+			$this->fail('a failing write must be refused');
+		} catch (RuntimeException $e) {
+			$this->assertSame(expected: 'The file could not be stored on case-1: disk full', actual: $e->getMessage());
+			$this->assertSame(expected: 'disk full', actual: $e->getPrevious()?->getMessage());
+		}
+	}//end testAFileWriteFailureIsRefusedAndAnUnreadableAnswerIsZero()
+}//end class

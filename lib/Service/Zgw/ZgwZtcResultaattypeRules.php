@@ -53,6 +53,16 @@ use Psr\Log\LoggerInterface;
  */
 class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 	/**
+	 * The archive field each selectielijstklasse value is derived into (ztc-002f/g), in that order.
+	 *
+	 * @var array<string, string>
+	 */
+	private const ARCHIVE_FIELD_SOURCES = [
+		'archiefnominatie' => 'waardering',
+		'archiefactietermijn' => 'bewaartermijn',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger The logger
@@ -109,7 +119,7 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 	 *
 	 * @return array The validation result
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesResultaattypenCreate(array $body): array {
 		// Ztc-002: Validate and fetch external URLs for enrichment.
@@ -123,14 +133,26 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 		}
 
 		// Ztc-002b/f/g: Enrich body with derived fields from external data.
-		$body = $this->enrichResultaattype(body: $body, selectielijstData: $selectielijstData, rtoData: $rtoData);
+		$body = self::withGenericDescription(body: $body, rtoData: $rtoData);
+		$body = self::withArchiveFields(body: $body, selectielijstData: $selectielijstData);
 
+		return $this->validateEnriched(body: $body, selectielijstData: $selectielijstData, errors: $errors);
+	}//end rulesResultaattypenCreate()
+
+	/**
+	 * Validate an enriched resultaattype body: its procestype and its archive procedure.
+	 *
+	 * @param array      $body              The enriched body.
+	 * @param array|null $selectielijstData The selectielijstklasse, null when none was fetched.
+	 * @param array      $errors            The reference errors so far.
+	 *
+	 * @return array The rule result.
+	 */
+	private function validateEnriched(array $body, ?array $selectielijstData, array $errors): array {
 		// Ztc-002e: Validate selectielijstklasse procesType matches zaaktype selectielijstProcestype.
-		if ($selectielijstData !== null) {
-			$procestypeError = $this->validateProcestypeMatch(body: $body, selectielijstData: $selectielijstData);
-			if ($procestypeError !== null) {
-				return $procestypeError;
-			}
+		$procestypeError = $this->procestypeError(body: $body, selectielijstData: $selectielijstData);
+		if ($procestypeError !== null) {
+			return $procestypeError;
 		}
 
 		// Validate brondatumArchiefprocedure cross-field constraints (ztc-003 to ztc-008).
@@ -144,7 +166,23 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 		}
 
 		return $this->isValid(body: $body);
-	}//end rulesResultaattypenCreate()
+	}//end validateEnriched()
+
+	/**
+	 * The procestype mismatch error, null when there is no selectielijstklasse or it matches.
+	 *
+	 * @param array      $body              The enriched body.
+	 * @param array|null $selectielijstData The selectielijstklasse, null when none was fetched.
+	 *
+	 * @return array|null
+	 */
+	private function procestypeError(array $body, ?array $selectielijstData): ?array {
+		if ($selectielijstData === null) {
+			return null;
+		}
+
+		return $this->validateProcestypeMatch(body: $body, selectielijstData: $selectielijstData);
+	}//end procestypeError()
 
 	/**
 	 * Fetch the two external VNG references a resultaattype is built from (ztc-002).
@@ -164,79 +202,127 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 	private function fetchResultaattypeReferences(array $body): array {
 		$errors = [];
 
-		$selectieUrl = $body['selectielijstklasse'] ?? '';
-		$selectielijstData = null;
-		if (empty($selectieUrl) === false) {
-			$selectielijstData = $this->fetchExternalUrl(url: $selectieUrl);
-			if ($selectielijstData === null) {
-				$errors[] = $this->fieldError(
-					fieldName: 'selectielijstklasse',
-					code: 'invalid',
-					reason: 'De selectielijstklasse URL is ongeldig of niet bereikbaar.'
-				);
-			}
+		$selectielijstData = $this->fetchReference(url: ($body['selectielijstklasse'] ?? ''));
+		if ($selectielijstData === false) {
+			$errors[] = $this->unreachableReference(fieldName: 'selectielijstklasse');
 		}
 
-		$rtoUrl = $body['resultaattypeomschrijving'] ?? '';
-		if (is_array($rtoUrl) === true) {
-			$rtoUrl = $rtoUrl[0] ?? '';
-		}
-
-		$rtoData = null;
-		if (empty($rtoUrl) === false) {
-			$rtoData = $this->fetchExternalUrl(url: $rtoUrl);
-			if ($rtoData === null) {
-				$errors[] = $this->fieldError(
-					fieldName: 'resultaattypeomschrijving',
-					code: 'invalid',
-					reason: 'De resultaattypeomschrijving URL is ongeldig of niet bereikbaar.'
-				);
-			}
+		$rtoData = $this->fetchReference(url: self::firstOf(value: ($body['resultaattypeomschrijving'] ?? '')));
+		if ($rtoData === false) {
+			$errors[] = $this->unreachableReference(fieldName: 'resultaattypeomschrijving');
 		}
 
 		return [
-			'selectielijstData' => $selectielijstData,
-			'rtoData' => $rtoData,
+			'selectielijstData' => self::dataOrNull(fetched: $selectielijstData),
+			'rtoData' => self::dataOrNull(fetched: $rtoData),
 			'errors' => $errors,
 		];
 	}//end fetchResultaattypeReferences()
 
 	/**
-	 * Enrich a resultaattype body with derived fields from external APIs (ztc-002b/f/g).
+	 * Fetch one optional external reference.
 	 *
-	 * - ztc-002b: Derive omschrijvingGeneriek from resultaattypeomschrijving.omschrijving
-	 * - ztc-002f: Derive archiefnominatie from selectielijstklasse.waardering
-	 * - ztc-002g: Derive archiefactietermijn from selectielijstklasse.bewaartermijn
+	 * @param mixed $url The reference, or empty when there is none.
 	 *
-	 * @param array $body The request body
-	 * @param array|null $selectielijstData The fetched selectielijstklasse data
+	 * @return array|false|null The data, false when it could not be read, null when there is none.
+	 */
+	private function fetchReference(mixed $url): array|false|null {
+		if (empty($url) === true) {
+			return null;
+		}
+
+		return ($this->fetchExternalUrl(url: $url) ?? false);
+	}//end fetchReference()
+
+	/**
+	 * The first reference of a list, or the value itself.
+	 *
+	 * @param mixed $value The reference or a list of them.
+	 *
+	 * @return mixed The reference.
+	 */
+	private static function firstOf(mixed $value): mixed {
+		if (is_array($value) === true) {
+			return ($value[0] ?? '');
+		}
+
+		return $value;
+	}//end firstOf()
+
+	/**
+	 * Fetched data, or null for a reference that could not be read or was not given.
+	 *
+	 * @param array|false|null $fetched What fetchReference answered.
+	 *
+	 * @return array|null The data.
+	 */
+	private static function dataOrNull(array|false|null $fetched): ?array {
+		if ($fetched === false) {
+			return null;
+		}
+
+		return $fetched;
+	}//end dataOrNull()
+
+	/**
+	 * The field error for an external reference that is invalid or cannot be reached.
+	 *
+	 * @param string $fieldName The field holding the reference.
+	 *
+	 * @return array The field error.
+	 */
+	private function unreachableReference(string $fieldName): array {
+		return $this->fieldError(
+			fieldName: $fieldName,
+			code: 'invalid',
+			reason: 'De ' . $fieldName . ' URL is ongeldig of niet bereikbaar.'
+		);
+	}//end unreachableReference()
+
+	/**
+	 * Ztc-002b: derive omschrijvingGeneriek from resultaattypeomschrijving.omschrijving,
+	 * when the body leaves it empty.
+	 *
+	 * @param array      $body    The request body
 	 * @param array|null $rtoData The fetched resultaattypeomschrijving data
 	 *
 	 * @return array The enriched body
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
-	private function enrichResultaattype(array $body, ?array $selectielijstData, ?array $rtoData): array {
+	private static function withGenericDescription(array $body, ?array $rtoData): array {
 		if ($rtoData !== null && empty($body['omschrijvingGeneriek']) === true) {
 			$body['omschrijvingGeneriek'] = $rtoData['omschrijving'] ?? '';
 		}
 
-		if ($selectielijstData !== null && empty($body['archiefnominatie']) === true) {
-			$waardering = $selectielijstData['waardering'] ?? null;
-			if ($waardering !== null) {
-				$body['archiefnominatie'] = $waardering;
-			}
+		return $body;
+	}//end withGenericDescription()
+
+	/**
+	 * Ztc-002f/g: derive archiefnominatie from selectielijstklasse.waardering and
+	 * archiefactietermijn from selectielijstklasse.bewaartermijn, each when the
+	 * body leaves it empty and the selectielijstklasse carries it.
+	 *
+	 * @param array      $body              The request body
+	 * @param array|null $selectielijstData The fetched selectielijstklasse data
+	 *
+	 * @return array The enriched body
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private static function withArchiveFields(array $body, ?array $selectielijstData): array {
+		if ($selectielijstData === null) {
+			return $body;
 		}
 
-		if ($selectielijstData !== null && empty($body['archiefactietermijn']) === true) {
-			$retentionPeriod = $selectielijstData['bewaartermijn'] ?? null;
-			if ($retentionPeriod !== null) {
-				$body['archiefactietermijn'] = $retentionPeriod;
+		foreach (self::ARCHIVE_FIELD_SOURCES as $field => $source) {
+			if (empty($body[$field]) === true && ($selectielijstData[$source] ?? null) !== null) {
+				$body[$field] = $selectielijstData[$source];
 			}
 		}
 
 		return $body;
-	}//end enrichResultaattype()
+	}//end withArchiveFields()
 
 	/**
 	 * Validate selectielijstklasse procesType matches zaaktype selectielijstProcestype (ztc-002e).
@@ -249,22 +335,7 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private function validateProcestypeMatch(array $body, array $selectielijstData): ?array {
-		$caseTypeUrl = $body['caseType'] ?? '';
-		if (empty($caseTypeUrl) === true || $this->objectService === null) {
-			return null;
-		}
-
-		$zaaktypeUuid = $this->extractUuid(url: $caseTypeUrl);
-		if ($zaaktypeUuid === null) {
-			return null;
-		}
-
-		$ztData = $this->findBySchemaKey(uuid: $zaaktypeUuid, schemaKey: 'case_type_schema');
-		if ($ztData === null) {
-			return null;
-		}
-
-		$caseTypeProcestype = $ztData['selectionListProcessType'] ?? '';
+		$caseTypeProcestype = $this->caseTypeProcestypeOf(body: $body);
 		$selectieProcestype = $selectielijstData['procesType'] ?? '';
 
 		if (empty($caseTypeProcestype) === true || empty($selectieProcestype) === true) {
@@ -272,16 +343,55 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 		}
 
 		if ($caseTypeProcestype !== $selectieProcestype) {
-			$detail = 'Het procestype van de selectielijstklasse komt niet overeen met het procestype van het zaaktype.';
-			return $this->error(
-				status: 400,
-				detail: $detail,
-				invalidParams: [
-					$this->fieldError(fieldName: 'nonFieldErrors', code: 'procestype-mismatch', reason: $detail),
-				]
-			);
+			return $this->procestypeMismatch();
 		}
 
 		return null;
 	}//end validateProcestypeMatch()
+
+	/**
+	 * The selectielijst procestype of the zaaktype the body names, or '' when it cannot be read.
+	 *
+	 * @param array $body The request body (with zaaktype URL)
+	 *
+	 * @return mixed The procestype, or ''.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function caseTypeProcestypeOf(array $body): mixed {
+		$caseTypeUrl = $body['caseType'] ?? '';
+		if (empty($caseTypeUrl) === true || $this->objectService === null) {
+			return '';
+		}
+
+		$zaaktypeUuid = $this->extractUuid(url: $caseTypeUrl);
+		if ($zaaktypeUuid === null) {
+			return '';
+		}
+
+		$ztData = $this->findBySchemaKey(uuid: $zaaktypeUuid, schemaKey: 'case_type_schema');
+		if ($ztData === null) {
+			return '';
+		}
+
+		return $ztData['selectionListProcessType'] ?? '';
+	}//end caseTypeProcestypeOf()
+
+	/**
+	 * The ztc-002e error for a selectielijstklasse whose procestype is not the zaaktype's.
+	 *
+	 * @return array The validation error result.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function procestypeMismatch(): array {
+		$detail = 'Het procestype van de selectielijstklasse komt niet overeen met het procestype van het zaaktype.';
+		return $this->error(
+			status: 400,
+			detail: $detail,
+			invalidParams: [
+				$this->fieldError(fieldName: 'nonFieldErrors', code: 'procestype-mismatch', reason: $detail),
+			]
+		);
+	}//end procestypeMismatch()
 }//end class

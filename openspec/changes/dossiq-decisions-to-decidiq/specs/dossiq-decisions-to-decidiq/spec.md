@@ -2,6 +2,8 @@
 
 dossiq owns cases; decidiq owns decisions. dossiq raises every decision in decidiq over the typed event seam and records only what decidiq concluded.
 
+## ADDED Requirements
+
 ### Requirement: REQ-DDTD-001 — No local decision authoring
 
 dossiq SHALL NOT author a decision verdict it computed itself. Every new decision SHALL be raised in decidiq via the delegation services (`DecisionRequestedEvent`) or the `dossiq.requestDecision` flow node, and SHALL fail closed when decidiq is unavailable. Decision outcomes on a case SHALL be written only as projections of a decidiq conclusion (`BesluitMaterialisationService`), as record keeping mandated by Awb/ZGW, or by one-time migrations. The set of files allowed to write decision-schema objects is closed and reason-bearing.

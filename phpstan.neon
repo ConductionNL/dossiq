@@ -15,6 +15,7 @@ includes:
     - vendor/conduction/hydra-gates/quality-config/phpstan-base.neon
 
 parameters:
+
     # App-specific only. The base already sets level, paths, bootstrapFiles,
     # excludePaths, scanDirectories and every fleet-wide ignore.
     scanDirectories:
@@ -37,6 +38,9 @@ parameters:
         # reported 57 false errors against a clean baseline — e.g. "Call to an
         # undefined method OCP\Http\Client\IClient::delete()".
         - tests/Stubs/Flow
+        # OpenRegister's #[McpTool] attribute and IMcpScannableServices
+        # (hermiq-ai-tooling): declaration-only, same reason as Flow/.
+        - tests/Stubs/Mcp
         # The decision app's event contract, under BOTH namespaces it has
         # shipped (OCA\Decidiq, formerly OCA\Decidesk). Scanned for the same
         # reason as Flow/ and with the same scoping discipline: these are
@@ -52,6 +56,15 @@ parameters:
         # DeliveryConcludedEvent), same declaration-only-stub discipline as
         # the decision-app namespaces above.
         - tests/Stubs/Integriq
+        # OpenRegister's people-on-objects event contract, same
+        # declaration-only-stub discipline as the apps above.
+        - tests/Stubs/OpenRegister/Event
+        # Filinq's document events (flow-nodes-to-their-owners), same
+        # declaration-only-stub discipline as the apps above.
+        - tests/Stubs/Filinq
+        # Shillinq's payout commands (Money\PayoutRequester), same
+        # declaration-only-stub discipline as the apps above.
+        - tests/Stubs/Shillinq/Event
         # OpenRegister's AppHost store plane (ADR-080). StoreController takes
         # GenericStoreService as an INJECTED type-hint rather than extending a
         # cross-app base, precisely so one scanned stub resolves it; an
@@ -63,6 +76,11 @@ parameters:
         # includes with their own class_exists guards, and widening the scope
         # is how the HttpClientStubs shadowing incident happened.
         - tests/Stubs/AppHost/Service
+        # The same plane's observability controllers. HealthController and
+        # MetricsController EXTEND these, and phpstan refuses to ignore
+        # "extends unknown class" at all, so a scanned declaration is the only
+        # way to resolve them.
+        - tests/Stubs/AppHost/Controller
 
     typeAliases:
         # OCP declares `@psalm-type DataResponseType = ...` in the DataResponse
@@ -75,6 +93,24 @@ parameters:
         DataResponseType: 'array|int|float|string|bool|object|null|\stdClass|\JsonSerializable'
 
     ignoreErrors:
+        # CaseFieldWriter probes a DUCK-TYPED OpenRegister object service for
+        # the seams it offers (`patchObject`, else `find` + `saveObject`),
+        # because OpenRegister is an optional runtime dependency whose service
+        # this app cannot type-hint. phpstan narrows an `object` parameter to
+        # `stdClass` the moment `method_exists()` is called on it, and then
+        # reports every probed call as unknown on stdClass.
+        #
+        # Fixing at source was tried and does not work: `mixed` narrows the
+        # same way, and an `is_object()` guard makes phpstan call THAT
+        # comparison always-false, turning five errors into six. The code is
+        # correct and the narrowing is the false positive, which is the case
+        # this file's header reserves a documented ignore for.
+        -
+            message: '#Unknown parameter \$(data|objectId|register|schema) in call to method stdClass::patchObject\(\)#'
+            path: lib/Service/CaseFieldWriter.php
+        -
+            message: '#Call to an undefined method object::saveObject\(\)#'
+            path: lib/Service/CaseFieldWriter.php
         # ApprovalStepNotificationListener dispatches on ANOTHER APP's event classes.
         #
         # It compares get_class($event) against
@@ -114,7 +150,6 @@ parameters:
         - message: '#Strict comparison using === between true and false will always evaluate to false#'
           paths:
               - lib/Controller/CaseDefinitionController.php
-              - lib/Repair/SeedVthWorkflowTemplates.php
         # ApprovalStepNotificationListener dispatches on `get_class($event)` against
         # OpenRegister's ApprovalStep{Approved,Rejected}Event class-strings. Those
         # classes are co-installed at runtime but absent from static analysis, so

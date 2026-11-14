@@ -26,14 +26,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
-use OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler;
-use OCA\Dossiq\Service\Settings\SchemaKeyReconciler;
-use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
-use OCA\Dossiq\Service\Settings\SchemaSlugMap;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
+use OCA\Dossiq\Service\Settings\ConfigKeys;
+use OCA\Dossiq\Service\Settings\ConfigurationImport;
+use OCA\Dossiq\Service\Settings\OpenRegisterBridge;
+use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
+use OCP\IGroupManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -42,7 +44,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
-class SettingsService {
+class SettingsService implements SettingsServiceInterface {
 	/**
 	 * Configuration keys that contain secrets and must be redacted for non-admin callers.
 	 *
@@ -55,269 +57,50 @@ class SettingsService {
 		'appointment_backend_api_key',
 		// AI model URL reveals internal infrastructure topology; redact for non-admins.
 		'ai_model_url',
-		// Dwangsom callback HMAC secret — never expose to non-admin callers.
-		'dwangsom_callback_secret',
+		// Payout callback HMAC secret: never expose to non-admin callers.
+		'payout_callback_secret',
 	];
 
-	private const CONFIG_KEYS = [
-		'register',
-		'catalogus_schema',
-		'case_schema',
-		'task_schema',
-		'status_schema',
-		'status_record_schema',
-		'role_schema',
-		'result_schema',
-		'decision_schema',
-		'case_type_schema',
-		'status_type_schema',
-		'result_type_schema',
-		'role_type_schema',
-		'property_definition_schema',
-		'document_type_schema',
-		'decision_type_schema',
-		'zaaktype_informatieobjecttype_schema',
-		'case_property_schema',
-		'case_document_schema',
-		'case_object_schema',
-		'customer_contact_schema',
-		'decision_document_schema',
-		'dispatch_schema',
-		'document_schema',
-		'document_link_schema',
-		'usage_rights_schema',
-		'kanaal_schema',
-		'abonnement_schema',
-		'map_layer_schema',
-		// WMS/WFS overlay layers (wms-wfs-layers spec REQ-WMS-1).
-		'wms_layer_schema',
-		'workflow_template_schema',
-		// Stable alias for consumer specs (status-transition-engine,
-		// role-based-step-routing) that refer to the workflow definition
-		// independent of the legacy schema slug.
-		'workflow_definition_schema',
-		'objection_schema',
-		'hearing_session_schema',
-		'advisory_report_schema',
-		'appeal_decision_schema',
-		'default_case_type',
-		'inspectie_checklist_schema',
-		'inspectie_rapport_schema',
-		'handhavingsactie_schema',
-		'advies_aanvraag_schema',
-		'advice_reminder_days',
-		'tenant_schema',
-		'appointment_schema',
-		'appointment_product_schema',
-		'appointment_location_schema',
-		'appointment_backend',
-		'appointment_backend_url',
-		'appointment_backend_api_key',
-		'appointment_reminder_days',
-		'case_share_schema',
-		'partner_organization_schema',
-		'share_permission_level_schema',
-		'case_transfer_schema',
-		// Federated case collaboration (OCM, via OpenRegister's federation leaf).
-		'case_federated_share_schema',
-		'case_federated_activity_schema',
-		'automatic_action_schema',
-		'location_schema',
-		// Bezwaar (lifecycle) — Awb Hoofdstuk 7.
-		'bezwaar_schema',
-		// Bezwaar advisory committee (BAC) — Awb Art. 7:13.
-		'bezwaaradviescommissie_schema',
-		'bac_advice_request_schema',
-		'bac_default_committee',
-		// Beroep escalation (beroep-escalation spec) — Awb hoofdstuk 8.
-		'beroep_schema',
-		// Bezwaar decision (bezwaar-decision spec) — Awb art. 7:11/7:12.
-		'bezwaar_decision_schema',
-		// KCC klantcontact-integratie (kcc-klantcontact-integratie spec).
-		// contactMoment reuses the existing customer_contact_schema; only the
-		// KCC-specific operational schemas get new config keys here.
-		'routing_rule_schema',
-		'kcc_agent_schema',
-		'callback_request_schema',
-		// DMN decision tables (dmn-decision-tables spec).
-		'decision_table_schema',
-		// Subsidieverlening-keten (subsidieverlening-keten spec) — AWB titel 4.2.
-		'subsidie_regeling_schema',
-		'subsidie_aanvraag_schema',
-		'subsidie_beoordeling_schema',
-		'subsidie_beschikking_schema',
-		'subsidie_uitvoering_schema',
-		'tussenrapportage_schema',
-		'subsidie_vaststelling_schema',
-		'terugvordering_schema',
-		'bewijsstuk_schema',
-		'lhsMatrix',
-		'lhs_matrix_schema',
-		'lhs_recommendation_schema',
-		// AI-Assisted Processing settings.
-		'ai_audit_entry_schema',
-		'ai_enabled',
-		'ai_model_type',
-		'ai_model_url',
-		'ai_model_name',
-		'ai_api_key',
-		'ai_feature_classification',
-		'ai_feature_extraction',
-		'ai_feature_qa',
-		'ai_feature_summary',
-		'ai_feature_routing',
-		'ai_feature_decision_support',
-		'ai_dpia_acknowledged',
-		'ai_pii_stripping',
-		// PDOK integration settings (pdok-integration spec).
-		// Endpoint overrides — empty falls back to PDOK service defaults.
-		'pdok_locatieserver_endpoint',
-		'pdok_bag_endpoint',
-		'pdok_kadaster_endpoint',
-		// OpenConnector source slugs — empty = call PDOK directly.
-		'pdok_locatieserver_source',
-		'pdok_bag_source',
-		'pdok_kadaster_source',
-		// Cache TTLs (seconds).
-		'pdok_cache_lookup_ttl_seconds',
-		'pdok_cache_suggest_ttl_seconds',
-		// Per-service rate ceiling (requests / second).
-		'pdok_rate_ceiling_rps',
-		// Outage banner copy (nl + en).
-		'pdok_outage_banner_nl',
-		'pdok_outage_banner_en',
-		// KCC-werkplek bridge schema config keys (kcc-werkplek-zaaksysteem-bridge).
-		'contactmoment_schema',
-		'kcc_quick_action_schema',
-		'belplan_schema',
-		'specialist_beschikbaarheid_schema',
-		'doorverbinding_schema',
-		'klant_sentiment_schema',
-		// KCC-werkplek bridge behaviour settings.
-		'identification_method',
-		'identification_score_threshold',
-		'sentiment_polling_interval',
-		'specialist_availability_polling_interval',
-		'max_zaken_voorblad',
-		'max_contactmomenten_history',
-		'quick_action_templates',
-		'belplan_overflow_threshold_wachttijd',
-		'belplan_overflow_threshold_wachtrij_lengte',
-		'sentiment_trigger_words',
-		// Complaint management (klachtafhandeling) — Awb chapter 9.
-		'complaint_schema',
-		'hearing_schema',
-		'complaint_disposition_schema',
-		'complaint_category_schema',
-		// Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente).
-		'portaal_bericht_schema',
-		'portaal_verzoek_schema',
-		'portaal_notificatie_voorkeur_schema',
-		// Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17).
-		'termijn_definitie_schema',
-		'termijn_instance_schema',
-		'termijn_gebeurtenis_schema',
-		'ingebrekestelling_schema',
-		'dwangsom_berekening_schema',
-		'dwangsom_uitbetaling_schema',
-		// Shared secret validating the X-Procest-Signature HMAC-SHA256 header
-		// on the public dwangsom payment-confirmation callback (ADR-005;
-		// enforce-dwangsom-callback-signature spec). Empty = callback fails
-		// closed (401) rather than treated as an implicit pass.
-		'dwangsom_callback_secret',
-		// Mandaat-matrix authorization engine.
-		'mandaterings_besluit_schema',
-		'mandaat_schema',
-		'organisatie_rol_schema',
-		'medewerker_rol_toewijzing_schema',
-		'mandaat_gebruik_schema',
-		'mandaat_escalatie_schema',
-		// Mandate-matrix behaviour knobs edited by MandaatMatrixSettingsTab.vue.
-		// ⚠️ Same measured caveat as the consultation_* block above: nothing
-		// reads these three yet. They are registered so the admin's save
-		// persists rather than being dropped by the CONFIG_KEYS allowlist.
-		'mandaat_decidesk_connection',
-		'mandaat_default_extension_days',
-		'mandaat_auto_finalize_approved',
-		// Handler vervanging/waarneming (handler-vervanging-waarneming spec).
-		'substitution_schema',
-		// Archief / e-Depot SIP handover engine.
-		'bewaar_termijn_regel_schema',
-		'overdracht_trigger_schema',
-		'sip_bundel_schema',
-		'overdracht_transactie_schema',
-		'archief_bewijs_schema',
-		'overdracht_audit_log_schema',
-		// Case-email integration (case-email-integration spec).
-		// emailTemplate is the only net-new schema; sending/threading live in NC Mail.
-		'email_template_schema',
-		// Shared-mailbox poller / IMAP-side config (ADR-022 exception).
-		'email_imap_host',
-		'email_imap_port',
-		'email_imap_encryption',
-		'email_imap_username',
-		'email_imap_password',
-		'email_imap_folder',
-		'email_transport',
-		'email_poll_interval',
-		'email_poll_batch_size',
-		'email_max_attachment_size',
-		// Consultation management (consultation-management spec).
-		'consultation_schema',
-		'advice_response_schema',
-		'advisory_body_schema',
-		// Consultation behaviour knobs edited by ConsultationSettingsTab.vue.
-		// ⚠️ Registered here because updateSettings() is an ALLOWLIST: a key
-		// absent from CONFIG_KEYS is silently dropped on save — the same
-		// silent-discard failure as the dead route these fields used to POST to
-		// (procest#794), just one layer deeper.
-		// ⚠️ MEASURED, not assumed: as of this commit NOTHING reads these four
-		// values. A repo-wide grep finds them only in the Vue tab and in this
-		// list; the n8n consultation workflows (n8n/consultation-deadline-
-		// monitor.json, n8n/consultation-bottleneck-detection.json) do not
-		// reference them either. Registering them makes the admin's save
-		// round-trip honestly instead of vanishing; wiring a consumer is
-		// tracked separately and must not be inferred from their presence here.
-		'consultation_default_deadline_days',
-		'consultation_warning_offset_days',
-		'consultation_external_response_url',
-		'consultation_bottleneck_threshold',
-		// Besluitvorming workflow integration endpoints (besluitvorming-workflow spec).
-		// Official publication (DROP / LVBB) — empty disables dispatch.
-		'drop_lvbb_endpoint',
-		'drop_lvbb_token',
-		// Mandaatregister authority validation — empty falls back to manual confirmation.
-		'mandaatregister_endpoint',
-		'mandaatregister_token',
-		// ZGW DRC case dossier (document-zaakdossier spec).
-		'dossier_informatieobject_schema',
-		'dossier_zaakinformatieobject_schema',
-		'dossier_besluitinformatieobject_schema',
-		'dossier_informatieobjecttype_schema',
-		// Maximum upload size in bytes (0 = no app-level limit, NC limit applies).
-		'dossier_max_file_size',
-		// Toggle: organise ZIP export into per-informatieobjecttype sub-folders.
-		'dossier_subfolder_per_type',
-		// Comma-separated map of NC group ids to clearance levels, e.g.
-		// "vertrouwelijk-cleared:vertrouwelijk,geheim-cleared:geheim". Empty
-		// means every authenticated user has the baseline clearance below.
-		'dossier_clearance_group_map',
-		// Baseline clearance for any authenticated user lacking a mapped group.
-		'dossier_default_clearance',
-		// GIS / geo viewer settings (gis-integration spec).
-		// Map library used by the frontend viewer ('leaflet' or 'openlayers').
-		'geo_map_library',
-		// Default map centre + zoom (Netherlands) for the cases-on-map view.
-		'geo_default_center_lat',
-		'geo_default_center_lon',
-		'geo_default_zoom',
-		// Pixel radius for client-side marker clustering.
-		'geo_max_cluster_radius',
-		// Toggle: expose the public /wfs/cases OGC WFS endpoint.
-		'geo_wfs_endpoint_enabled',
-		// PDOK Locatieserver cache TTL (seconds) + endpoint override.
-		'pdok_locatieserver_cache_ttl',
-		'pdok_locatieserver_url',
+	/**
+	 * The appconfig keys this app owns.
+	 *
+	 * The list lives in {@see ConfigKeys} because it is data, not behaviour,
+	 * and because this class sits on the phpmd ExcessiveClassLength ceiling:
+	 * 200 array entries in a 1000-line class meant no new key could be added
+	 * without reddening the whole tree.
+	 *
+	 * @var string[]
+	 */
+	private const CONFIG_KEYS = ConfigKeys::ALL;
+
+	/**
+	 * The bounds and choices of the settings the admin tabs save
+	 * ({@see \OCA\Dossiq\Service\Settings\SettingValueRules}). A string and
+	 * not a `::class` reference: this class sits at PHPMD's coupling ceiling.
+	 * SettingValueRulesTest asserts the name resolves.
+	 *
+	 * @var string
+	 */
+	public const VALUE_RULES = 'OCA\\Dossiq\\Service\\Settings\\SettingValueRules';
+
+	/**
+	 * Current key => the procedure-named key it replaces, read while the current key is missing.
+	 *
+	 * @var array<string, string>
+	 */
+	private const RENAMED_KEYS = MoneyConfigKeys::LEGACY_KEYS;
+
+	/**
+	 * Keys that are written and never read back, to anyone.
+	 *
+	 * A settings read answers `<key>Set` (whether one is stored) in their
+	 * place, so a form can say "ingesteld" without the key leaving the server.
+	 *
+	 * @var string[]
+	 */
+	private const WRITE_ONLY_KEYS = [
+		'integration.brk.apiKey',
+		'integration.woz.apiKey',
 	];
 
 	/**
@@ -347,36 +130,31 @@ class SettingsService {
 	 * `publication`/`document`) so publishing works out of the box on a
 	 * default install; overridable per instance via getWooPublicationConfigValue().
 	 *
-	 * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d1
+	 * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d1
 	 */
 	public const WOO_PUBLICATION_DEFAULTS = [
 		'woo_publication_register' => 'publication',
 		'woo_publication_schema' => 'publication',
 		'woo_publication_document_schema' => 'document',
+		// The resident's dossier (hydra woo-citizen-journey C1): opencatalogi's
+		// `collection`, in the same register as its publications.
+		'woo_collection_register' => 'publication',
+		'woo_collection_schema' => 'collection',
 	];
 
-	private const OPENREGISTER_APP_ID = 'openregister';
+	/**
+	 * Reaching OpenRegister's optional services by name.
+	 *
+	 * @var OpenRegisterBridge
+	 */
+	private OpenRegisterBridge $openRegister;
 
 	/**
-	 * The ADR-037 register-fragment merger.
+	 * Importing the shipped register, and reconciling what the import drops.
 	 *
-	 * @var RegisterFragmentMerger
+	 * @var ConfigurationImport
 	 */
-	private RegisterFragmentMerger $fragments;
-
-	/**
-	 * Reconciles `*_schema` appconfig keys against live OpenRegister schema ids.
-	 *
-	 * @var SchemaKeyReconciler
-	 */
-	private SchemaKeyReconciler $schemaKeys;
-
-	/**
-	 * Reconciles declarative `x-openregister-*` blocks onto live schemas.
-	 *
-	 * @var SchemaAnnotationReconciler
-	 */
-	private SchemaAnnotationReconciler $schemaAnnotations;
+	private ConfigurationImport $import;
 
 	/**
 	 * The app-config key holding the Besluit schema id.
@@ -405,7 +183,7 @@ class SettingsService {
 	 * The three collaborators are constructed here rather than injected so the
 	 * container-facing signature stays `(appConfig, appManager, container,
 	 * logger)` — the shape the bespoke factory in
-	 * {@see \OCA\Dossiq\AppInfo\Registrar\BespokeServiceRegistrar} and ~180
+	 * {@see \OCA\Dossiq\Service\Registrar\BespokeServiceRegistrar} and ~180
 	 * injection sites already use.
 	 *
 	 * @param IAppConfig $appConfig The app configuration service
@@ -421,28 +199,17 @@ class SettingsService {
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
 	) {
-		$this->fragments = new RegisterFragmentMerger();
-
-		// One resolver, shared by both reconcilers. They must agree on which
-		// schema a slug means: when they disagreed, the config keys pointed at
-		// one `task` schema while the calculations were merged onto another.
-		$slugResolver = new SchemaSlugResolver(
-			appConfig: $appConfig,
+		$this->openRegister = new OpenRegisterBridge(
+			appManager: $appManager,
 			container: $container,
 			logger: $logger
 		);
 
-		$this->schemaKeys = new SchemaKeyReconciler(
+		$this->import = new ConfigurationImport(
+			openRegister: $this->openRegister,
 			appConfig: $appConfig,
 			container: $container,
-			logger: $logger,
-			slugResolver: $slugResolver
-		);
-		$this->schemaAnnotations = new SchemaAnnotationReconciler(
-			container: $container,
-			fragments: $this->fragments,
-			logger: $logger,
-			slugResolver: $slugResolver
+			logger: $logger
 		);
 	}//end __construct()
 
@@ -460,8 +227,7 @@ class SettingsService {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function isOpenRegisterAvailable(): bool {
-		return $this->appManager->isEnabledForUser(self::OPENREGISTER_APP_ID) === true
-			|| $this->appManager->isInstalled(self::OPENREGISTER_APP_ID) === true;
+		return $this->openRegister->isAvailable();
 	}//end isOpenRegisterAvailable()
 
 	/**
@@ -477,26 +243,37 @@ class SettingsService {
 	 *
 	 * @return object|null The OpenRegister ObjectService or null when unavailable
 	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getObjectService(): ?object {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-		} catch (\Exception $e) {
-			$this->logger->error(
-				'Dossiq: Could not access OpenRegister ObjectService',
-				['exception' => $e->getMessage()]
-			);
-			return null;
-		}
+		return $this->openRegister->objectService();
 	}//end getObjectService()
+
+	/**
+	 * Lazily resolve OpenRegister's per-object grant resolver.
+	 *
+	 * THE ONE THING DOSSIQ CANNOT ANSWER FOR ITSELF. A grant is a real
+	 * Nextcloud share on the object's folder, resolved per request by
+	 * OpenRegister, and since openregister#3873 that resolution walks the
+	 * declared hierarchy: a grant on a parent case answers for its deelzaken.
+	 * Asking this service is how dossiq consumes that instead of keeping a
+	 * second, parallel answer, which is what ADR-022 is about and what
+	 * `deelzaken-inherit-the-parent-grants` D-2 asks for by name.
+	 *
+	 * Same lazy-resolve contract as {@see self::getObjectService()}: an
+	 * optional runtime dependency, resolved at call time rather than
+	 * type-hinted, and callers MUST handle null. A null answer means dossiq
+	 * cannot ask, which every caller here treats as NOT GRANTED — the
+	 * fail-closed direction, and the behaviour dossiq had before inheritance
+	 * existed at all.
+	 *
+	 * @return object|null OpenRegister's ObjectGrantResolver, or null when unavailable.
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	public function getObjectGrantResolver(): ?object {
+		return $this->openRegister->objectGrantResolver();
+	}//end getObjectGrantResolver()
 
 	/**
 	 * Lazily resolve OpenRegister's FileService for in-process file attachment.
@@ -510,68 +287,18 @@ class SettingsService {
 	 * rather than worked around with a self-addressed HTTP call, which is what
 	 * ADR-080 D2/D3 forbids.
 	 *
-	 * Same lazy-resolve contract as {@see self::getObjectService()} and
-	 * {@see self::getApprovalService()}: OpenRegister is an optional runtime
-	 * dependency, so the class is resolved through the container at call time
-	 * rather than type-hinted in the constructor, and callers MUST handle null.
+	 * Same lazy-resolve contract as {@see self::getObjectService()}: OpenRegister is an
+	 * optional runtime dependency, so the class is resolved through the
+	 * container at call time rather than type-hinted in the constructor, and
+	 * callers MUST handle null.
 	 *
 	 * @return object|null The OpenRegister FileService or null when unavailable
 	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
-	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function getFileService(): ?object {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\FileService');
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq: Could not access OpenRegister FileService',
-				['exception' => $e->getMessage()]
-			);
-			return null;
-		}
+		return $this->openRegister->fileService();
 	}//end getFileService()
-
-	/**
-	 * Lazily resolve OpenRegister's ApprovalService for parafering chain delegation.
-	 *
-	 * Per ADR-022 (apps consume OpenRegister abstractions) the parafering
-	 * (sign-off routing) chain-state backend is OpenRegister's
-	 * `approval-workflow` capability, exposed through
-	 * `OCA\OpenRegister\Service\ApprovalService`. OpenRegister is an optional
-	 * runtime dependency, so — exactly like getObjectService() — the class is
-	 * resolved through the container at call time rather than type-hinted in the
-	 * constructor. Callers MUST handle the null case (graceful degradation to
-	 * the legacy in-array path during the migration window).
-	 *
-	 * @return object|null The OpenRegister ApprovalService or null when unavailable
-	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
-	 *
-	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
-	 */
-	public function getApprovalService(): ?object {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\ApprovalService');
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq: Could not access OpenRegister ApprovalService',
-				['exception' => $e->getMessage()]
-			);
-			return null;
-		}
-	}//end getApprovalService()
 
 	/**
 	 * Lazily resolve an OpenRegister DI class by fully-qualified name.
@@ -584,25 +311,10 @@ class SettingsService {
 	 *
 	 * @return object|null The resolved service, or null when unavailable
 	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
-	 *
-	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
+	 * @spec openspec/changes/archive/2026-06-14-migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
 	 */
 	public function getOpenRegisterClass(string $class): ?object {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get($class);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq: Could not access OpenRegister class',
-				['class' => $class, 'exception' => $e->getMessage()]
-			);
-			return null;
-		}
+		return $this->openRegister->classNamed(class: $class);
 	}//end getOpenRegisterClass()
 
 	/**
@@ -614,163 +326,32 @@ class SettingsService {
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $force is a simple re-import toggle
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function loadConfiguration(bool $force = false): array {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return [
-				'success' => false,
-				'message' => 'OpenRegister is not installed or enabled',
-			];
-		}
-
-		try {
-			$configurationService = $this->container->get(
-				'OCA\OpenRegister\Service\ConfigurationService'
-			);
-		} catch (\Exception $e) {
-			$this->logger->error(
-				'Dossiq: Could not access ConfigurationService',
-				['exception' => $e->getMessage()]
-			);
-			return [
-				'success' => false,
-				'message' => 'Could not access ConfigurationService: ' . $e->getMessage(),
-			];
-		}
-
-		$effective = $this->readEffectiveConfiguration();
-		if (isset($effective['error']) === true) {
-			return $effective['error'];
-		}
-
-		$configData = $effective['data'];
-		$configVersion = ($configData['info']['version'] ?? '0.0.0');
-
-		try {
-			$importResult = $configurationService->importFromApp(
-				appId: Application::APP_ID,
-				data: $configData,
-				version: $configVersion,
-				force: $force,
-			);
-
-			$configuredCount = $this->schemaKeys->autoConfigureAfterImport(importResult: $importResult);
-			$this->reconcileSchemaConfig();
-
-			// 🔴 THE IMPORT DOES NOT CARRY THE DECLARATIVE ANNOTATION BLOCKS, SO
-			// MERGE THEM HERE. Importing the register creates the schemas, but the
-			// `x-openregister-*` blocks declared alongside them in
-			// dossiq_register.json do not survive onto the live schema. Without
-			// this call a FRESH instance never gets them: `isTerminalStatus` never
-			// materialises, so every completed task keeps reading false and the
-			// widgets filtering on it keep showing finished work, and
-			// `daysUntilDue` does not exist to extend, so due-date columns render
-			// blank. Both failures are silent. The e2e suite caught it on a clean
-			// CI install after passing on a dev box where the reconcile had been
-			// run by hand. Idempotent, so it is safe on every import.
-			$this->reconcileSchemaDeclarativeConfig();
-
-			$this->logger->info(
-				'Dossiq: Configuration imported and reconciled',
-				['version' => $configVersion, 'configured' => $configuredCount]
-			);
-
-			return [
-				'success' => true,
-				'message' => 'Configuration imported and auto-configured (' . $configuredCount . ' schemas mapped)',
-				'version' => $configVersion,
-				'configured' => $configuredCount,
-				'result' => $importResult,
-			];
-		} catch (\Exception $e) {
-			$this->logger->error(
-				'Dossiq: Configuration import failed',
-				['exception' => $e->getMessage()]
-			);
-			return [
-				'success' => false,
-				'message' => 'Import failed: ' . $e->getMessage(),
-			];
-		}//end try
+		return $this->import->loadConfiguration(force: $force);
 	}//end loadConfiguration()
-
-	/**
-	 * Read dossiq_register.json and deep-merge the ADR-037 register fragments
-	 * on top of it, producing the effective register configuration to import.
-	 *
-	 * Returns either `['data' => array]` on success or `['error' => array]`
-	 * carrying the caller-facing failure shape, so {@see loadConfiguration()}
-	 * stays a single import flow rather than also being a file reader.
-	 *
-	 * @return array{data?: array, error?: array}
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	private function readEffectiveConfiguration(): array {
-		$configPath = __DIR__ . '/../Settings/dossiq_register.json';
-		if (file_exists($configPath) === false) {
-			$this->logger->error(
-				'Dossiq: Configuration file not found at ' . $configPath
-			);
-			return [
-				'error' => [
-					'success' => false,
-					'message' => 'Configuration file not found',
-				],
-			];
-		}
-
-		$configContent = file_get_contents($configPath);
-		$configData = json_decode($configContent, true);
-
-		if (json_last_error() !== JSON_ERROR_NONE) {
-			$this->logger->error('Dossiq: Invalid JSON in configuration file');
-			return [
-				'error' => [
-					'success' => false,
-					'message' => 'Invalid JSON in configuration file',
-				],
-			];
-		}
-
-		// ADR-037: deep-merge any modular register fragments from
-		// lib/Settings/register.d/*.json on top of the monolith. This lets
-		// concurrent same-app builds add registers/schemas via isolated
-		// fragment files instead of all editing dossiq_register.json and
-		// conflicting. Fragments are applied in sorted filename order.
-		// The merge also returns a hash of the fragment set. It is deliberately
-		// not captured: it used to be folded into the version so that adding or
-		// changing a fragment forced a re-import, but OpenRegister gates with
-		// version_compare, which treats `+…` as further version parts and
-		// compares them LEXICALLY rather than as semver build metadata — so
-		// whether the gate fired depended on how two md5 hashes happened to
-		// sort. Unchanged content re-imported about half the time; a real
-		// change was skipped the other half. OpenRegister now hashes the merged
-		// configuration itself and skips on hash equality, which detects a
-		// changed fragment from the data. The version stays a version.
-		[$configData] = $this->fragments->merge(
-			base: $configData,
-			fragmentDir: __DIR__ . '/../Settings/register.d'
-		);
-
-		return ['data' => $configData];
-	}//end readEffectiveConfiguration()
 
 	/**
 	 * Get all current settings as an associative array.
 	 *
-	 * Returns full (unredacted) settings including secrets. Callers MUST
+	 * Returns full (unredacted) settings including secrets, except the
+	 * write-only keys, which read as `<key>Set`. Callers MUST
 	 * ensure only admin users receive this response.
 	 *
 	 * @return array
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getSettings(): array {
 		$config = [];
 		foreach (self::CONFIG_KEYS as $key) {
-			$config[$key] = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+			if (in_array(needle: $key, haystack: self::WRITE_ONLY_KEYS, strict: true) === true) {
+				$config[$key.'Set'] = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '') !== '';
+				continue;
+			}
+
+			$config[$key] = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 		}
 
 		return $config;
@@ -805,12 +386,28 @@ class SettingsService {
 	 *
 	 * @return array
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @throws \OCA\Dossiq\Exception\RefusedException When the throughput report would go on without an existing reader group.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function updateSettings(array $data): array {
+		$data = $this->withCurrentReportKeys(data: $data);
+		// Refused before anything is written, so a refused save changes nothing.
+		if ($this->container->has(self::VALUE_RULES) === true) {
+			$this->container->get(self::VALUE_RULES)->assertValid(data: $data);
+		}
+
+		// Only a save that touches the throughput switch or its readers is checked.
+		if (array_key_exists(WooReportSwitches::THROUGHPUT, $data) === true
+			|| array_key_exists(WooReportSwitches::READERS, $data) === true
+		) {
+			$this->wooReportSwitches()->assertSaveAllowed(data: $data);
+		}
+
 		foreach (self::CONFIG_KEYS as $key) {
 			if (isset($data[$key]) === true) {
-				$this->appConfig->setValueString(Application::APP_ID, $key, (string)$data[$key]);
+				$this->appConfig->setValueString(AppIdentity::APP_ID, $key, (string)$data[$key]);
 			}
 		}
 
@@ -818,6 +415,58 @@ class SettingsService {
 
 		return $this->getSettings();
 	}//end updateSettings()
+
+	/**
+	 * A save with each report switch posted under its earlier key carried onto its current key.
+	 *
+	 * A value posted under the current key wins. Written here rather than through
+	 * {@see \OCA\Dossiq\Service\Settings\RenamedSettingKeys} to keep this class's
+	 * coupling at phpmd's limit.
+	 *
+	 * @param array<string, mixed> $data The settings as posted.
+	 *
+	 * @return array<string, mixed> The settings, current keys filled in.
+	 *
+	 * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
+	 */
+	private function withCurrentReportKeys(array $data): array {
+		foreach (array_diff_key(WooReportSwitches::LEGACY_KEYS, $data) as $current => $earlier) {
+			if (array_key_exists($earlier, $data) === true) {
+				$data[$current] = $data[$earlier];
+			}
+		}
+
+		return $data;
+	}//end withCurrentReportKeys()
+
+	/**
+	 * The Woo review report switches, built on the group manager the container holds.
+	 *
+	 * Built here rather than injected so the constructor keeps the shape its
+	 * ~180 injection sites use.
+	 *
+	 * @return WooReportSwitches The switches.
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	private function wooReportSwitches(): WooReportSwitches {
+		return new WooReportSwitches(
+			appConfig: $this->appConfig,
+			groupManager: $this->container->get(IGroupManager::class),
+		);
+	}//end wooReportSwitches()
+
+	/**
+	 * The resident portal's name as portaliq holds it ("Mijn Zuiddrecht"),
+	 * or '' when portaliq names none.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/requester-identified-at-intake/spec.md#requirement-a-portal-intake-records-how-the-requester-logged-in-and-where
+	 */
+	public function getPortalName(): string {
+		return mb_substr(trim($this->appConfig->getValueString('portaliq', 'portalName', '')), 0, 255);
+	}//end getPortalName()
 
 	/**
 	 * Get a single configuration value by key.
@@ -830,7 +479,13 @@ class SettingsService {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getConfigValue(string $key, string $default = ''): string {
-		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, $default);
+
+		// A renamed money key reads its legacy key until CarryRenamedSettingKeys has run.
+		$legacy = (self::RENAMED_KEYS[$key] ?? null);
+		if ($value === '' && $legacy !== null && $this->appConfig->hasKey(AppIdentity::APP_ID, $key) === false) {
+			$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $legacy, $default);
+		}
 
 		// LAST, and only when nothing local answered.
 		//
@@ -869,7 +524,7 @@ class SettingsService {
 	 *
 	 * @return string The schema id, or '' when decidiq or its schema is absent.
 	 *
-	 * @spec openspec/changes/the-besluit-resolves-to-decidiqs-decision/specs/zgw-brc/spec.md#requirement-the-besluit-resolves-to-decidiqs-decision-req-brc-020
+	 * @spec openspec/specs/zgw-brc/spec.md#requirement-the-besluit-resolves-to-decidiqs-decision-req-brc-020
 	 */
 	private function decidiqDecisionSchemaId(): string {
 		if ($this->appManager->isInstalled(self::DECIDIQ_APP_ID) === false) {
@@ -913,7 +568,7 @@ class SettingsService {
 	 */
 	public function getKccConfigValue(string $key): string {
 		$default = (self::KCC_DEFAULTS[$key] ?? '');
-		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, $default);
 		if ($value === '') {
 			return $default;
 		}
@@ -934,11 +589,11 @@ class SettingsService {
 	 *
 	 * @return string The configured value, or the documented default.
 	 *
-	 * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d1
+	 * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d1
 	 */
 	public function getWooPublicationConfigValue(string $key): string {
 		$default = (self::WOO_PUBLICATION_DEFAULTS[$key] ?? '');
-		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, $default);
 		if ($value === '') {
 			return $default;
 		}
@@ -957,7 +612,7 @@ class SettingsService {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function setConfigValue(string $key, string $value): void {
-		$this->appConfig->setValueString(Application::APP_ID, $key, $value);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, $key, $value);
 	}//end setConfigValue()
 
 	/**
@@ -968,7 +623,7 @@ class SettingsService {
 	 * idempotent re-import returns an empty `schemas` list, so the per-schema
 	 * config keys (case_type_schema, status_type_schema, status_record_schema,
 	 * workflow_template_schema, …) were never written — the status-name lookup
-	 * and the WorkflowBoard then silently broke on a fresh deploy.
+	 * and the workflow board then silently broke on a fresh deploy.
 	 *
 	 * This method closes that gap: for each schema slug Dossiq knows about it
 	 * resolves the LIVE schema ID via OpenRegister's SchemaMapper (slug-aware
@@ -981,11 +636,7 @@ class SettingsService {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function reconcileSchemaConfig(): int {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return 0;
-		}
-
-		return $this->schemaKeys->reconcile();
+		return $this->import->reconcileSchemaConfig();
 	}//end reconcileSchemaConfig()
 
 	/**
@@ -1001,9 +652,9 @@ class SettingsService {
 	 * those blocks from `Schema::getConfiguration()`, so a dropped block silently
 	 * disables auto-deadline / auto-identifier / initial-status on create.
 	 *
-	 * The reconcile itself lives in {@see SchemaAnnotationReconciler}: for every
+	 * The reconcile itself lives in {@see \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler}: for every
 	 * schema defined in the (fragment-merged) register JSON it reads the
-	 * annotation keys listed in {@see SchemaSlugMap::SCHEMA_ANNOTATION_KEYS} and
+	 * annotation keys listed in {@see \OCA\Dossiq\Service\Settings\SchemaSlugMap::SCHEMA_ANNOTATION_KEYS} and
 	 * writes them onto the live schema's configuration via the SchemaMapper,
 	 * MERGING (never replacing) so existing keys such as `objectNameField` are
 	 * preserved. Fully idempotent: a schema whose live configuration already
@@ -1014,10 +665,6 @@ class SettingsService {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function reconcileSchemaDeclarativeConfig(): int {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return 0;
-		}
-
-		return $this->schemaAnnotations->reconcile();
+		return $this->import->reconcileSchemaDeclarativeConfig();
 	}//end reconcileSchemaDeclarativeConfig()
 }//end class

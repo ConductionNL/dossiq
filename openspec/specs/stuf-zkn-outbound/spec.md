@@ -1,7 +1,7 @@
 # stuf-zkn-outbound Specification
 
 ## Purpose
-TBD - created by archiving change dossiq-stuf-zkn-outbound-gateway. Update Purpose after archive.
+Send case data to another zaaksysteem over StUF-ZKN: build the envelopes, keep payloads within their limit and handle credentials securely.
 
 @e2e exclude The StUF-ZKN/BG outbound gateway is a SOAP integration engine: envelope construction (Lk01/Lk02/Lv01/Du01), Bv01/La01/Fo02 response parsing, WSSE-from-vault, HTTPS-only + mTLS transport, circuit-breaker thresholds, retry scheduling and contact-betrokkene mapping are all backend behaviours proven by the Vitest-free PHPUnit unit suite (`StufMessageBuilderOutboundTest`, `StufMessageParserTest`, `CircuitBreakerServiceTest`, `ContactBetrokkeneMapperTest`) and, where a live peer is required, by the env-gated live-e2e + Newman jobs that talk to a seeded zaaksysteem. There is no dossiq-only browser surface that drives a real StUF round-trip without an external zaaksysteem endpoint installed; the two admin read-only views (StufEndpoints, StufAuditLog) only render what the backend persists. Mirrors the `zgw-autorisaties-api` (Newman/PHPUnit, no Playwright UI) precedent.
 
@@ -134,6 +134,27 @@ updates.
 - **GIVEN** a contact already mapped to an external betrokkene for an endpoint
 - **WHEN** the mapper resolves the same contact again
 - **THEN** it MUST reuse the existing mapping rather than create a duplicate
+
+> **The case half is implemented; the contact half is not.**
+> `StufCaseMappingStore` writes and reuses `sourceEntity: 'case'` rows and runs on
+> the live outbound path. The contact half was `ContactBetrokkeneMapper`, which
+> nothing ever constructed, and it was retired on 2026-09-18 rather than left
+> dark. Two things have to be settled before it comes back:
+>
+> 1. **There is no outbound `npsLv01`.** `findOrCreateBetrokkene()` took a lookup
+>    callable performing a geefBetrokkene query, and the only Lv01 this app builds
+>    is `zakLv01` (geefZaakDetails). `StufController` *handles* an inbound
+>    `npsLv01`; nothing *sends* one. Without it, the mapper's own question — does
+>    this zaaksysteem already know this person — cannot be asked.
+> 2. **The betrokkene entries on the outbound path carry no dossiq contact id.**
+>    `StufMessageBuilder` embeds `<bg:inp.bsn>` inline per betrokkene, and the
+>    entries it iterates are built by `StufMessageParser` with `role` and `bsn`
+>    only. A mapping row keyed on an empty `sourceId` is worse than no row.
+>
+> When both are settled, generalise `StufCaseMappingStore`'s identity to take the
+> entity rather than reintroducing a second near-identical store: the retired
+> mapper duplicated `find()` and `persist()` line for line and differed in two
+> string literals.
 
 ### Requirement: Circuit breaker and retry
 

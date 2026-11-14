@@ -1,0 +1,21 @@
+{
+  "_note": "enforcement-wizard (lane DQ2-D, 6 Nov): the estimated cost board DqHandhaving asks for at administrative enforcement. Declared here because OpenRegister stores only declared keys. handhavingsactie moves to 1.2.0 so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "handhavingsactie": {
+        "version": "1.2.0",
+        "properties": {
+          "estimatedCost": {
+            "type": "number",
+            "title": "Estimated cost",
+            "description": "What administrative enforcement is expected to cost, to recover from the offender (EUR)."
+          }
+        }
+      }
+    }
+  }
+}

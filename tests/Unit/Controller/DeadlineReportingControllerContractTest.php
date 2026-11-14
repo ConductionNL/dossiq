@@ -39,9 +39,14 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DeadlineReportingController;
 use OCA\Dossiq\Service\DeadlineReportingService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
+use OCA\Dossiq\Service\Term\FirstResponseOutcome;
+use OCA\Dossiq\Service\Termijn\PenaltyPaymentRows;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
+use OCA\Dossiq\Service\Reporting\ReportingAudience;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -51,6 +56,18 @@ use Psr\Log\LoggerInterface;
  * Wire-contract tests for DeadlineReportingController.
  *
  * @covers \OCA\Dossiq\Controller\DeadlineReportingController
+ * @uses \OCA\Dossiq\Service\DeadlineReportingService
+ * @uses \OCA\Dossiq\Service\Reporting\ReportingAudience
+ * @uses \OCA\Dossiq\Service\Term\FirstResponseOutcome
+ * @uses \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
+ * @uses \OCA\Dossiq\Service\Termijn\TermOutcome
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Reporting\PerTypeRows
+ * @uses \OCA\Dossiq\Service\Termijn\TermDashboardFigures
+ * @uses \OCA\Dossiq\Service\Reporting\AnnualPayoutStatement
+ * @uses \OCA\Dossiq\Service\Termijn\TermLookups
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
  */
 class DeadlineReportingControllerContractTest extends TestCase {
 
@@ -74,6 +91,13 @@ class DeadlineReportingControllerContractTest extends TestCase {
 	 * @var IUserSession|MockObject
 	 */
 	private IUserSession $userSession;
+
+	/**
+	 * Who may read a figure about every case.
+	 *
+	 * @var ReportingAudience
+	 */
+	private ReportingAudience $audience;
 
 	/**
 	 * The LoggerInterface mock.
@@ -100,6 +124,8 @@ class DeadlineReportingControllerContractTest extends TestCase {
 		$this->request = $this->createMock(IRequest::class);
 		$this->service = $this->createMock(DeadlineReportingService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
+		$this->audience = $this->createMock(ReportingAudience::class);
+		$this->audience->method('isInAudience')->willReturn(true);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new DeadlineReportingController(
@@ -108,6 +134,9 @@ class DeadlineReportingControllerContractTest extends TestCase {
 			service: $this->service,
 			userSession: $this->userSession,
 			logger: $this->logger,
+			// A double that SAYS YES keeps this file measuring the reporting
+			// contract rather than the gate; the gate has its own test.
+			audience: $this->audience,
 		);
 	}//end setUp()
 
@@ -391,4 +420,252 @@ class DeadlineReportingControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 		$this->assertSame(['message' => 'Geen dwangsomregister geconfigureerd'], $response->getData());
 	}//end testAnnualStatementReportsAServiceRefusalAs400WithItsMessage()
+	/**
+	 * The first-response report refuses a caller outside the audience.
+	 *
+	 * Contract coverage for `deadlineReporting#firstResponseReport` (gate-25).
+	 * It is a figure about EVERY case, so the audience check is the whole of
+	 * its authorization, and the refusal is a 403 like its siblings rather
+	 * than the 401 the rest of the app uses.
+	 *
+	 * @return void
+	 */
+	public function testFirstResponseReportRefusesACallerOutsideTheAudience(): void {
+		$audience = $this->createMock(ReportingAudience::class);
+		$audience->method('isInAudience')->willReturn(false);
+
+		$outcome = $this->createMock(FirstResponseOutcome::class);
+		$outcome->expects(self::never())->method('report');
+
+		$controller = new DeadlineReportingController(
+			appName: 'dossiq',
+			request: $this->request,
+			service: $this->service,
+			userSession: $this->userSession,
+			logger: $this->logger,
+			audience: $audience,
+			firstResponse: $outcome,
+		);
+
+		$response = $controller->firstResponseReport();
+
+		self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testFirstResponseReportRefusesACallerOutsideTheAudience()
+
+	/**
+	 * The two filter names on the wire reach the service under its own names.
+	 *
+	 * `organisation` on the wire is `competentAuthority` in the filter. That
+	 * rename is the contract: passing the wire name through unchanged would
+	 * filter on a key nothing stores and answer a confident zero.
+	 *
+	 * @return void
+	 */
+	public function testFirstResponseReportTranslatesOrganisationToCompetentAuthority(): void {
+		$this->signIn();
+		$seen = null;
+		$outcome = $this->createMock(FirstResponseOutcome::class);
+		$outcome->method('report')->willReturnCallback(
+			static function (array $filters) use (&$seen): array {
+				$seen = $filters;
+				return ['total' => 4, 'met' => 3, 'missed' => 1];
+			}
+		);
+
+		$controller = new DeadlineReportingController(
+			appName: 'dossiq',
+			request: $this->request,
+			service: $this->service,
+			userSession: $this->userSession,
+			logger: $this->logger,
+			audience: $this->audience,
+			firstResponse: $outcome,
+		);
+
+		$response = $controller->firstResponseReport(caseType: 'ct-kap', organisation: 'org-9');
+
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame(['caseType' => 'ct-kap', 'competentAuthority' => 'org-9'], $seen);
+		self::assertSame(4, $response->getData()['total']);
+	}//end testFirstResponseReportTranslatesOrganisationToCompetentAuthority()
+
+	/**
+	 * An empty filter is omitted rather than sent as an empty string.
+	 *
+	 * A filter of `caseType => ''` matches nothing, so a report asked without
+	 * a case type would answer zero everywhere instead of the whole figure.
+	 *
+	 * @return void
+	 */
+	public function testAnUnsetFilterIsOmittedRatherThanSentEmpty(): void {
+		$this->signIn();
+		$seen = null;
+		$outcome = $this->createMock(FirstResponseOutcome::class);
+		$outcome->method('report')->willReturnCallback(
+			static function (array $filters) use (&$seen): array {
+				$seen = $filters;
+				return [];
+			}
+		);
+
+		$controller = new DeadlineReportingController(
+			appName: 'dossiq',
+			request: $this->request,
+			service: $this->service,
+			userSession: $this->userSession,
+			logger: $this->logger,
+			audience: $this->audience,
+			firstResponse: $outcome,
+		);
+
+		$controller->firstResponseReport(caseType: 'ct-kap');
+
+		self::assertSame(['caseType' => 'ct-kap'], $seen);
+	}//end testAnUnsetFilterIsOmittedRatherThanSentEmpty()
+
+	/**
+	 * Without the collaborator the endpoint says unavailable, not broken.
+	 *
+	 * @return void
+	 */
+	public function testFirstResponseReportIsUnavailableRatherThanFiveHundredWithoutItsService(): void {
+		$this->signIn();
+		$controller = new DeadlineReportingController(
+			appName: 'dossiq',
+			request: $this->request,
+			service: $this->service,
+			userSession: $this->userSession,
+			logger: $this->logger,
+			audience: $this->audience,
+		);
+
+		$response = $controller->firstResponseReport();
+
+		self::assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+	}//end testFirstResponseReportIsUnavailableRatherThanFiveHundredWithoutItsService()
+
+	/**
+	 * REQ-WTR-004 through the route: GET kwartaal groups each term by the case
+	 * type of its case, over the real reporting service.
+	 *
+	 * @return void
+	 */
+	public function testTheQuarterlyRouteGroupsByCaseType(): void {
+		$this->signIn();
+		$store = new FakeTermijnStore();
+		$store->seed('caseType', ['id' => 'ct-woo', 'identifier' => 'woo-verzoek', 'title' => 'Woo-verzoek']);
+		foreach (['w1', 'w2'] as $id) {
+			$store->seed('case', ['id' => 'case-' . $id, 'caseType' => 'ct-woo']);
+			$store->seed('deadlineInstance', [
+				'id' => $id,
+				'case' => 'case-' . $id,
+				'startDate' => '2026-10-05T09:00:00+02:00',
+				'endDateCurrent' => '2026-11-02',
+				'status' => 'lopend',
+			]);
+		}
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'termijn_instance_schema' => 'deadlineInstance',
+				'termijn_definitie_schema' => 'deadlineDefinition',
+				'case_schema' => 'case',
+				'case_type_schema' => 'caseType',
+				default => '',
+			}
+		);
+		$controller = new DeadlineReportingController(
+			appName: 'dossiq',
+			request: $this->request,
+			service: new DeadlineReportingService($settings),
+			userSession: $this->userSession,
+			logger: $this->logger,
+			audience: $this->audience,
+		);
+
+		$data = $controller->quarterlyReport(period: '2026-Q4')->getData();
+
+		$this->assertSame(['woo-verzoek'], array_keys($data['perType']));
+		$this->assertSame(2, $data['perType']['woo-verzoek']['totaal']);
+		$this->assertSame([], $data['metadata']['unresolvedInstances']);
+	}//end testTheQuarterlyRouteGroupsByCaseType()
+
+	/**
+	 * The penalty payment route answers the year's rows for a caller in the audience.
+	 *
+	 * Contract coverage for `deadlineReporting#penaltyPayments`.
+	 *
+	 * @return void
+	 */
+	public function testPenaltyPaymentsAnswersTheYearsRows(): void {
+		$this->signIn();
+		$rows = $this->createMock(PenaltyPaymentRows::class);
+		$rows->expects($this->once())->method('forYear')->with(2026)
+			->willReturn(['year' => 2026, 'rows' => [['caseIdentifier' => '2026-0018']], 'summary' => ['count' => 1, 'totalEuros' => 1260.0, 'disputedCount' => 0]]);
+
+		$response = $this->paymentsController(rows: $rows)->penaltyPayments(year: 2026);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('2026-0018', $response->getData()['rows'][0]['caseIdentifier']);
+	}//end testPenaltyPaymentsAnswersTheYearsRows()
+
+	/**
+	 * The penalty payment route refuses an anonymous caller and a year out of range.
+	 *
+	 * @return void
+	 */
+	public function testPenaltyPaymentsRefusesAnonymousAndOutOfRange(): void {
+		$rows = $this->createMock(PenaltyPaymentRows::class);
+		$rows->expects($this->never())->method('forYear');
+
+		$this->userSession->method('getUser')->willReturn(null);
+		$this->assertSame(Http::STATUS_FORBIDDEN, $this->paymentsController(rows: $rows)->penaltyPayments(year: 2026)->getStatus());
+	}//end testPenaltyPaymentsRefusesAnonymousAndOutOfRange()
+
+	/**
+	 * A year outside 2020..2100 is a 400.
+	 *
+	 * @return void
+	 */
+	public function testPenaltyPaymentsRefusesAYearOutOfRange(): void {
+		$this->signIn();
+		$rows = $this->createMock(PenaltyPaymentRows::class);
+		$rows->expects($this->never())->method('forYear');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->paymentsController(rows: $rows)->penaltyPayments(year: 2019)->getStatus());
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->paymentsController(rows: $rows)->penaltyPayments()->getStatus());
+	}//end testPenaltyPaymentsRefusesAYearOutOfRange()
+
+	/**
+	 * Without the payment rows the route says it is not available.
+	 *
+	 * @return void
+	 */
+	public function testPenaltyPaymentsIsUnavailableWithoutTheRows(): void {
+		$this->signIn();
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $this->controller->penaltyPayments(year: 2026)->getStatus());
+	}//end testPenaltyPaymentsIsUnavailableWithoutTheRows()
+
+	/**
+	 * A controller holding the given payment rows.
+	 *
+	 * @param PenaltyPaymentRows $rows The payment rows.
+	 *
+	 * @return DeadlineReportingController
+	 */
+	private function paymentsController(PenaltyPaymentRows $rows): DeadlineReportingController {
+		return new DeadlineReportingController(
+			appName: 'dossiq',
+			request: $this->request,
+			service: $this->service,
+			userSession: $this->userSession,
+			logger: $this->logger,
+			audience: $this->audience,
+			penaltyPayments: $rows,
+		);
+	}//end paymentsController()
 }//end class

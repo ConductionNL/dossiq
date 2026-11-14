@@ -60,6 +60,14 @@ Fix ~56 failing VNG Newman test suite assertions across ZRC, ZTC, DRC, and BRC b
 #### ZRC-021: Archiefactiedatum Derivation
 - **GIVEN** a resultaat is set on a zaak
 - **THEN** `archiefactiedatum` MUST be derived from the resultaattype's `brondatumArchiefprocedure`
+- **AND** `archiefnominatie` MUST be taken from the resultaattype's archival action
+- **AND** the derivation MUST be the SAME for a zaak closed over this API and a case closed in
+  the app: one implementation (`Service\Archival\ArchivalNominationDeriver`), called by both.
+  Two implementations that agree today is the defect, not the fix
+- **AND** an `afleidingswijze` of `afgehandeld` MUST resolve to the zaak's einddatum. The
+  English `handled` is accepted alongside it and is produced by nothing
+- **AND** a resultaattype archival action of `bewaren` MUST be recorded as `blijvend_bewaren`,
+  which is the value `archiefnominatie` declares and means the same thing
 
 #### ZRC-002: Identification Uniqueness
 - **GIVEN** a zaak with `identificatie` + `bronorganisatie` combination

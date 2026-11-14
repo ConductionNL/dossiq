@@ -25,31 +25,105 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\DemoDataServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use RuntimeException;
 use Throwable;
 
 /**
  * Reads what the case-flow seed has already created.
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 class CaseFlowSeedIndex {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Resolves the ObjectService.
+	 * @param SettingsServiceInterface $settingsService Resolves the ObjectService and reads the seed markers.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 	) {
 	}//end __construct()
+
+	/**
+	 * Whether this run plants the demo cases.
+	 *
+	 * ONCE PER SEED VERSION, AND ONLY ON AN INSTANCE THAT OPTED IN. The cases
+	 * were looked up by title on every repair and upgrade and created again
+	 * when missing, so a demo case an operator deleted came back (and one
+	 * whose title lookup missed came back twice). The case type and its
+	 * statuses are configuration and are still completed on every run.
+	 *
+	 * @param array<string,mixed> $data The decoded seed.
+	 *
+	 * @return bool True when the demo cases are due.
+	 *
+	 * @spec openspec/specs/seed-cases-once/spec.md#requirement-the-demo-cases-are-seeded-once
+	 */
+	public function casesDue(array $data): bool {
+		if ($this->settingsService->getConfigValue(key: DemoDataServiceInterface::DECIDED_KEY) !== DemoDataServiceInterface::DECIDED_INSTALLED) {
+			return false;
+		}
+
+		return $this->settingsService->getConfigValue(key: CaseFlowSeedDataRepairStep::CASES_SEEDED_KEY) !== $this->seedVersion(data: $data);
+	}//end casesDue()
+
+	/**
+	 * The seed's version, as the marker records it.
+	 *
+	 * @param array<string,mixed> $data The decoded seed.
+	 *
+	 * @return string The version, `0` when the seed names none.
+	 */
+	public function seedVersion(array $data): string {
+		$version = trim((string)($data['version'] ?? ''));
+		if ($version === '') {
+			return '0';
+		}
+
+		return $version;
+	}//end seedVersion()
+
+	/**
+	 * An existing case type with this slug, or null.
+	 *
+	 * The seed names each case type by a slug, and the slug is what makes a
+	 * rerun find what an earlier run created. Looking it up by title found
+	 * nothing: `title` is translatable, so OpenRegister stores it as a
+	 * language map and a filter on the plain string matches no row. Every
+	 * repair pass then created the case type again, which is how
+	 * "Omgevingsvergunning kleine bouwactiviteit" came to be offered twice
+	 * (review-check, 11 October 2026, N-5).
+	 *
+	 * @param array<string,string> $schemas Register and schema names.
+	 * @param string               $slug    The slug the seed gives the case type.
+	 *
+	 * @return array<string,mixed>|null The case type, or null.
+	 *
+	 * @spec openspec/specs/case-type-seed-data/spec.md
+	 */
+	public function caseTypeBySlug(array $schemas, string $slug): ?array {
+		$rows = $this->rows(
+			query: [
+				'@self' => ['register' => $schemas['register'], 'schema' => $schemas['caseType'], 'slug' => $slug],
+				'_limit' => 5,
+			]
+		);
+
+		if ($rows === []) {
+			return null;
+		}
+
+		return $rows[0];
+	}//end caseTypeBySlug()
 
 	/**
 	 * An existing case type with this title, or null.
@@ -59,7 +133,7 @@ class CaseFlowSeedIndex {
 	 *
 	 * @return array<string,mixed>|null The case type, or null.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function caseTypeByTitle(array $schemas, string $title): ?array {
 		$rows = $this->rows(
@@ -85,7 +159,7 @@ class CaseFlowSeedIndex {
 	 *
 	 * @return string[] The titles.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function caseTitlesFor(array $schemas, string $caseTypeId): array {
 		$titles = [];
@@ -116,7 +190,7 @@ class CaseFlowSeedIndex {
 	 *
 	 * @return array<int, array<string,mixed>> The rows.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	private function rows(array $query): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -125,9 +199,11 @@ class CaseFlowSeedIndex {
 		}
 
 		try {
-			$found = $objectService->searchObjects($query);
+			// Unscoped: a repair run has no user to scope the read to.
+			$found = $objectService->searchObjects($query, _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
-			return [];
+			// An unreadable store is not an empty one; the caller decides.
+			throw new RuntimeException('the store could not be read: ' . $e->getMessage(), 0, $e);
 		}
 
 		return $this->normalise(value: $found);
@@ -140,7 +216,7 @@ class CaseFlowSeedIndex {
 	 *
 	 * @return array<int, array<string,mixed>> The rows.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	private function normalise(mixed $value): array {
 		if (is_array($value) === true && isset($value['results']) === true) {

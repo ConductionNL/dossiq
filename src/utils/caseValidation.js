@@ -3,33 +3,64 @@
  */
 
 /**
+ * The id a reference holds, whether it is a string or an expanded object.
+ *
+ * @param {string|object|null} value The stored reference.
+ * @return {string} The id, or an empty string when there is none.
+ * @spec openspec/specs/zaaktype-versioning/spec.md
+ */
+function referenceId(value) {
+	if (typeof value === 'string') return value.trim()
+	if (value && typeof value === 'object') {
+		return String(value.id || value.uuid || '').trim()
+	}
+	return ''
+}
+
+/**
+ * Whether this is the version of its case type that new cases get.
+ *
+ * A case type version that has been replaced keeps running its own cases: they
+ * hold its id, and their statuses are its statuses. It is closed to NEW cases,
+ * which is exactly what `supersededBy` says. Anything that offers a case type
+ * to start a case with asks this, so the answer lives in one place: two
+ * versions of one case type carry the same name, and a picker showing both
+ * gives the person choosing no way to tell them apart.
+ *
+ * @param {object} caseType Case type object
+ * @return {boolean} True while nothing has replaced it.
+ * @spec openspec/specs/zaaktype-versioning/spec.md
+ */
+export function isCurrentCaseTypeVersion(caseType) {
+	if (!caseType) return false
+	return referenceId(caseType.supersededBy) === ''
+}
+
+/**
  * Check whether a case type is usable for creating cases.
- * Must be published (not draft), validFrom <= today, and validUntil >= today or null.
+ * Must be the current version, published (not draft), validFrom <= today, and
+ * validUntil >= today or null.
  *
  * @param {object} caseType Case type object
  * @return {boolean}
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 export function isCaseTypeUsable(caseType) {
 	if (!caseType) return false
-	if (caseType.isDraft === true || caseType.isDraft === 'true') return false
+	if (isDraftCaseType(caseType)) return false
+	if (!isCurrentCaseTypeVersion(caseType)) return false
 
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
+	return validityWindow(caseType) === ''
+}
 
-	if (caseType.validFrom) {
-		const validFrom = new Date(caseType.validFrom)
-		validFrom.setHours(0, 0, 0, 0)
-		if (validFrom > today) return false
-	}
-
-	if (caseType.validUntil) {
-		const validUntil = new Date(caseType.validUntil)
-		validUntil.setHours(0, 0, 0, 0)
-		if (validUntil < today) return false
-	}
-
-	return true
+/**
+ * Whether a case type is still a draft.
+ *
+ * @param {object} caseType Case type object
+ * @return {boolean} True for a draft
+ */
+function isDraftCaseType(caseType) {
+	return caseType.isDraft === true || caseType.isDraft === 'true'
 }
 
 /**
@@ -37,45 +68,83 @@ export function isCaseTypeUsable(caseType) {
  *
  * @param {object} caseType Case type object
  * @return {string|null} Reason why the case type cannot be used, or null if usable
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 export function getCaseTypeUnusableReason(caseType) {
 	if (!caseType) return t('dossiq', 'Case type not found')
 
-	if (caseType.isDraft === true || caseType.isDraft === 'true') {
+	if (isDraftCaseType(caseType)) {
 		return t(
 			'dossiq',
 			'Cannot create a case with a draft case type. The case type must be published first.',
 		)
 	}
 
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
-
-	if (caseType.validFrom) {
-		const validFrom = new Date(caseType.validFrom)
-		validFrom.setHours(0, 0, 0, 0)
-		if (validFrom > today) {
-			const dateStr = caseType.validFrom.split('T')[0]
-			return t(
-				'dossiq',
-				'Cannot create a case with a case type that is not yet valid. The case type is valid from {date}.',
-				{ date: dateStr },
-			)
-		}
+	if (!isCurrentCaseTypeVersion(caseType)) {
+		return t(
+			'dossiq',
+			'This version of the case type has been replaced. Cases already running on it continue. New cases go on the current version.',
+		)
 	}
 
-	if (caseType.validUntil) {
-		const validUntil = new Date(caseType.validUntil)
-		validUntil.setHours(0, 0, 0, 0)
-		if (validUntil < today) {
-			const dateStr = caseType.validUntil.split('T')[0]
-			return t(
-				'dossiq',
-				'Cannot create a case with an expired case type. The case type was valid until {date}.',
-				{ date: dateStr },
-			)
-		}
+	return validityReason(caseType)
+}
+
+/**
+ * A date at the start of its day, in place.
+ *
+ * @param {Date} date The date.
+ * @return {Date} The same date, at midnight.
+ */
+function startOfDay(date) {
+	date.setHours(0, 0, 0, 0)
+	return date
+}
+
+/**
+ * Where today lies against a case type's validity window.
+ *
+ * @param {object} caseType Case type object
+ * @return {string} `not-yet-valid`, `expired`, or '' when it is valid today
+ */
+function validityWindow(caseType) {
+	const today = startOfDay(new Date())
+
+	if (caseType.validFrom && startOfDay(new Date(caseType.validFrom)) > today) {
+		return 'not-yet-valid'
+	}
+
+	if (caseType.validUntil && startOfDay(new Date(caseType.validUntil)) < today) {
+		return 'expired'
+	}
+
+	return ''
+}
+
+/**
+ * Why a published, current case type cannot be used today: not yet valid,
+ * or expired.
+ *
+ * @param {object} caseType Case type object
+ * @return {string|null} The reason, or null when it is valid today
+ */
+function validityReason(caseType) {
+	const window = validityWindow(caseType)
+
+	if (window === 'not-yet-valid') {
+		return t(
+			'dossiq',
+			'Cannot create a case with a case type that is not yet valid. The case type is valid from {date}.',
+			{ date: caseType.validFrom.split('T')[0] },
+		)
+	}
+
+	if (window === 'expired') {
+		return t(
+			'dossiq',
+			'Cannot create a case with an expired case type. The case type was valid until {date}.',
+			{ date: caseType.validUntil.split('T')[0] },
+		)
 	}
 
 	return null
@@ -87,7 +156,7 @@ export function getCaseTypeUnusableReason(caseType) {
  * @param {object} form The form data with title, caseType, etc.
  * @param {object[]} caseTypes Available case types for validation context
  * @return {{ valid: boolean, errors: object }} Validation result
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 export function validateCaseCreate(form, caseTypes = []) {
 	const errors = {}
@@ -121,7 +190,7 @@ export function validateCaseCreate(form, caseTypes = []) {
  *
  * @param {object} form The form data with title
  * @return {{ valid: boolean, errors: object }} Validation result
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 export function validateCaseUpdate(form) {
 	const errors = {}
@@ -143,7 +212,7 @@ export function validateCaseUpdate(form) {
  * @param {object} caseObj The case object
  * @param {object[]} statusTypes Available status types for the case type
  * @return {{ valid: boolean, error: string|null }} Validation result
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 export function validateStatusChange(targetStatus, caseObj, statusTypes) {
 	if (!targetStatus) {

@@ -37,6 +37,15 @@ export function parseDuration(iso) {
 	}
 }
 
+// The units of a duration, largest first, each with its one and many form
+// as literal t() calls so the string extraction reads them.
+const DURATION_UNITS = [
+	{ key: 'years', one: () => t('dossiq', '1 year'), many: (n) => t('dossiq', '{n} years', { n }) },
+	{ key: 'months', one: () => t('dossiq', '1 month'), many: (n) => t('dossiq', '{n} months', { n }) },
+	{ key: 'weeks', one: () => t('dossiq', '1 week'), many: (n) => t('dossiq', '{n} weeks', { n }) },
+	{ key: 'days', one: () => t('dossiq', '1 day'), many: (n) => t('dossiq', '{n} days', { n }) },
+]
+
 /**
  * Format an ISO 8601 duration as a human-readable string.
  *
@@ -48,33 +57,26 @@ export function formatDuration(iso) {
 	const parsed = parseDuration(iso)
 	if (!parsed) return iso || ''
 
-	const parts = []
-
-	if (parsed.years === 1) {
-		parts.push(t('dossiq', '1 year'))
-	} else if (parsed.years > 1) {
-		parts.push(t('dossiq', '{n} years', { n: parsed.years }))
-	}
-
-	if (parsed.months === 1) {
-		parts.push(t('dossiq', '1 month'))
-	} else if (parsed.months > 1) {
-		parts.push(t('dossiq', '{n} months', { n: parsed.months }))
-	}
-
-	if (parsed.weeks === 1) {
-		parts.push(t('dossiq', '1 week'))
-	} else if (parsed.weeks > 1) {
-		parts.push(t('dossiq', '{n} weeks', { n: parsed.weeks }))
-	}
-
-	if (parsed.days === 1) {
-		parts.push(t('dossiq', '1 day'))
-	} else if (parsed.days > 1) {
-		parts.push(t('dossiq', '{n} days', { n: parsed.days }))
-	}
+	const parts = DURATION_UNITS
+		.map((unit) => unitWords(unit, parsed[unit.key]))
+		.filter((words) => words !== null)
 
 	return parts.length > 0 ? parts.join(', ') : iso
+}
+
+/**
+ * One unit of a duration in words: its one form, its many form, or null
+ * for none of it.
+ *
+ * @param {{key: string, one: () => string, many: (n: number) => string}} unit The unit.
+ * @param {number} count How many of it.
+ * @return {string|null} The words.
+ */
+function unitWords(unit, count) {
+	if (count === 1) {
+		return unit.one()
+	}
+	return count > 1 ? unit.many(count) : null
 }
 
 /**

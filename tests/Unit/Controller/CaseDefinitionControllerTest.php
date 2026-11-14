@@ -36,6 +36,7 @@ use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Unit tests for CaseDefinitionController::copy() and ::delete().
@@ -108,43 +109,65 @@ class CaseDefinitionControllerTest extends TestCase {
 	}//end testCopyReturns404WhenSourceMissing()
 
 	/**
-	 * delete() returns 200 on a successful draft delete.
+	 * copy() reports a service fault as a 500 rather than as a copy.
 	 *
 	 * @return void
 	 */
-	public function testDeleteReturns200OnSuccess(): void {
-		$this->copyService->method('deleteDraft')->with('draft-uuid')->willReturn(['ok' => true]);
+	public function testCopyReturns500WhenTheServiceThrows(): void {
+		$this->copyService->method('copy')->willThrowException(new RuntimeException('storage gone'));
 
-		$response = $this->controller->delete('draft-uuid');
+		$response = $this->controller->copy('source-uuid');
+
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
+		$this->assertArrayHasKey('error', $response->getData());
+	}//end testCopyReturns500WhenTheServiceThrows()
+
+	/**
+	 * newVersion() returns 200 with the new draft version on success.
+	 *
+	 * @return void
+	 */
+	public function testNewVersionReturnsTheDraftVersion(): void {
+		$next = ['id' => 'ct-2', 'title' => 'Omgevingsvergunning', 'version' => 2];
+		$this->copyService->method('newVersion')->with('ct-1')->willReturn($next);
+
+		$response = $this->controller->newVersion('ct-1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertTrue($response->getData()['success']);
-	}//end testDeleteReturns200OnSuccess()
+		$this->assertSame($next, $response->getData());
+	}//end testNewVersionReturnsTheDraftVersion()
 
 	/**
-	 * delete() returns 404 when the case type does not resolve.
+	 * newVersion() returns 404 when the case type does not resolve.
 	 *
 	 * @return void
 	 */
-	public function testDeleteReturns404WhenNotFound(): void {
-		$this->copyService->method('deleteDraft')->willReturn(['ok' => false, 'reason' => 'not_found']);
+	public function testNewVersionReturns404WhenSourceMissing(): void {
+		$this->copyService->method('newVersion')->with('missing')->willReturn(null);
 
-		$response = $this->controller->delete('missing');
+		$response = $this->controller->newVersion('missing');
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
-	}//end testDeleteReturns404WhenNotFound()
+		$this->assertArrayHasKey('error', $response->getData());
+	}//end testNewVersionReturns404WhenSourceMissing()
 
 	/**
-	 * delete() returns 409 when the case type is published.
+	 * newVersion() reports a service fault as a 500.
+	 *
+	 * A half-made version reported as a success is worse than a refusal: the
+	 * page would navigate to a draft that may not carry its children.
 	 *
 	 * @return void
 	 */
-	public function testDeleteReturns409WhenPublished(): void {
-		$this->copyService->method('deleteDraft')->willReturn(['ok' => false, 'reason' => 'published']);
+	public function testNewVersionReturns500WhenTheServiceThrows(): void {
+		$this->copyService->method('newVersion')->willThrowException(new RuntimeException('storage gone'));
 
-		$response = $this->controller->delete('published-uuid');
+		$response = $this->controller->newVersion('ct-1');
 
-		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
 		$this->assertArrayHasKey('error', $response->getData());
-	}//end testDeleteReturns409WhenPublished()
+	}//end testNewVersionReturns500WhenTheServiceThrows()
+
+
+
 }//end class

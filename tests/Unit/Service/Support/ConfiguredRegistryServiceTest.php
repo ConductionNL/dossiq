@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Support;
 
+use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use PHPUnit\Framework\TestCase;
@@ -186,6 +187,7 @@ class ConfiguredRegistryServiceTest extends TestCase {
 		return new ConfiguredRegistryService(
 			settingsService: $this->settingsService,
 			logger: $this->logger,
+			integrationStatus: $this->createMock(IntegrationStatusService::class),
 		);
 	}//end subject()
 
@@ -390,7 +392,7 @@ class ConfiguredRegistryServiceTest extends TestCase {
 	 *
 	 * `ObjectService::deleteObject()`'s first parameter is `$uuid`. Passing
 	 * `id:` raises "Unknown named parameter $id" at runtime — the bug that made
-	 * InspectionChecklistService::deleteChecklist() 500 on every call. This
+	 * ChecklistTemplateStore::delete() 500 on every call. This
 	 * test fails if that regression returns.
 	 *
 	 * @return void

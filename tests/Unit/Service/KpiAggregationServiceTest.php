@@ -37,9 +37,18 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\KpiSources;
 use OCA\Dossiq\Service\KpiAggregationService;
+use OCA\Dossiq\Service\Queue\QueueFigures;
+use OCA\Dossiq\Service\Term\DayCount;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCA\Dossiq\Service\Team\PrimaryTeamService;
+use OCA\Dossiq\Service\Team\ReaderTeamCases;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
+use OCP\IL10N;
+use OCP\IUser;
+use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -87,15 +96,44 @@ final class KpiAggregationServiceTest extends TestCase {
 	}
 
 	/**
+	 * The My work tile reads the reader's own closed cases, this month and the
+	 * month before it, with both month names.
+	 *
+	 * @return void
+	 */
+	public function testReportsTheReadersOwnClosedCasesThisAndLastMonth(): void {
+		$kpis = $this->service()->computeKpis('admin');
+
+		$this->assertSame(7, $kpis['myCompletedCount'], 'myCompletedCount must count this month for the reader.');
+		$this->assertSame(5, $kpis['myCompletedLastMonth'], 'myCompletedLastMonth must count the month before.');
+		$this->assertSame(
+			mb_strtolower(date('F')),
+			$kpis['thisMonthName'],
+			'thisMonthName must name the current month.'
+		);
+		$this->assertSame(
+			mb_strtolower((new \DateTimeImmutable('first day of last month'))->format('F')),
+			$kpis['lastMonthName'],
+			'lastMonthName must name the month before, also in January.'
+		);
+	}
+
+	/**
 	 * 🔴 THE REGRESSION. A count issued after a read of ANOTHER schema must still
 	 * count in its own schema.
 	 *
-	 * The service reads the closed cases and the open cases before it counts the
-	 * tasks. `findAll()` leaves its register/schema on the shared ObjectService,
-	 * and `count()` honours that context rather than its own filters, so a
-	 * service that does not reset the context counts tasks inside the CASE schema
-	 * and answers 0. Measured on the dev instance: 23 on its own, 0 straight
-	 * after a findAll over cases.
+	 * The service reads the closed cases and the open cases before it counts
+	 * anything. `findAll()` leaves its register/schema on the shared
+	 * ObjectService, and `count()` honours that context rather than its own
+	 * filters, so a service that does not reset the context counts in the
+	 * wrong schema and answers 0. Measured on the dev instance: 23 on its
+	 * own, 0 straight after a findAll over cases.
+	 *
+	 * ⚠️ THE REGRESSION MOVED, IT DID NOT GO AWAY. It used to be asserted on
+	 * `taskCount`, which the engine now answers and which never touches the
+	 * shared object service. Every remaining count in this payload is a CASE
+	 * count issued after the same two findAll reads, so the assertion moves
+	 * there rather than being deleted with the task tile.
 	 *
 	 * @return void
 	 */
@@ -104,9 +142,9 @@ final class KpiAggregationServiceTest extends TestCase {
 		$kpis = $this->service(objectService: $objectService)->computeKpis('admin');
 
 		$this->assertSame(
-			23,
-			$kpis['taskCount'],
-			'taskCount is counted after the case reads; without resetting the schema context it reads 0.'
+			6,
+			$kpis['overdueCount'],
+			'overdueCount is counted after the case reads; without resetting the schema context it reads 0.'
 		);
 		$this->assertGreaterThan(
 			0,
@@ -179,6 +217,7 @@ final class KpiAggregationServiceTest extends TestCase {
 		$this->assertSame(0, $kpis['openCount']);
 		$this->assertNull($kpis['avgProcessingDays']);
 		$this->assertSame([], $kpis['statusBreakdown']);
+		$this->assertSame(expected: 'the oldest case in the queue', actual: $kpis['queueOldestNote']);
 	}
 
 	/**
@@ -193,6 +232,64 @@ final class KpiAggregationServiceTest extends TestCase {
 			[['status' => 'in-behandeling', 'count' => 2], ['status' => 'ontvangen', 'count' => 1]],
 			$kpis['statusBreakdown'],
 			'the breakdown groups by status, most frequent first.'
+		);
+	}
+
+	/**
+	 * The queue figures count the reader's teams only, as the team queue list
+	 * and its menu badge do; a reader in no team counts every case, as the list
+	 * drops its team filter then.
+	 *
+	 * @return void
+	 */
+	public function testQueueFiguresCountTheReadersTeamsOnly(): void {
+		$rows = [
+			['caseType' => 'woo', 'assignee' => '', 'assignedGroup' => 'woo', 'startDate' => $this->today],
+			['caseType' => 'woo', 'assignee' => '', 'assignedGroup' => 'vergunningen', 'startDate' => $this->today],
+			['caseType' => 'woo', 'assignee' => '', 'assignedGroup' => 'handhaving', 'startDate' => $this->today],
+			['caseType' => 'woo', 'assignee' => 'pieter', 'assignedGroup' => 'woo', 'startDate' => $this->today],
+		];
+		$teams = [['groupId' => 'woo', 'name' => 'Woo'], ['groupId' => 'vergunningen', 'name' => 'Vergunningen']];
+
+		$kpis = $this->service(objectService: $this->objectService(openRows: $rows), teams: $teams)->computeKpis('pieter');
+		$this->assertSame(2, $kpis['queueCount'], 'only the unassigned cases of the reader\'s two teams.');
+
+		$kpis = $this->service(objectService: $this->objectService(openRows: $rows), teams: [])->computeKpis('pieter');
+		$this->assertSame(3, $kpis['queueCount'], 'a reader in no team counts every unassigned case, as the list.');
+	}//end testQueueFiguresCountTheReadersTeamsOnly()
+
+	/**
+	 * The queue figures count the open cases without a handler, and group every open case by type.
+	 *
+	 * @return void
+	 */
+	public function testQueueFiguresFoldTheUnassignedCases(): void {
+		$today = new \DateTimeImmutable($this->today);
+		$rows = [
+			['caseType' => 'woo', 'assignee' => '', 'startDate' => $today->modify('-6 days')->format('Y-m-d'), 'deadline' => $today->modify('+4 days')->format('Y-m-d')],
+			['caseType' => 'woo', 'assignee' => '', 'startDate' => $this->today, 'deadline' => $today->modify('+20 days')->format('Y-m-d')],
+			['caseType' => 'woo', 'assignee' => 'pieter', 'startDate' => $today->modify('-30 days')->format('Y-m-d')],
+			['caseType' => 'bezwaar', 'startDate' => $today->modify('-2 days')->format('Y-m-d'), 'deadline' => $this->today],
+		];
+
+		$kpis = $this->service(objectService: $this->objectService(openRows: $rows))->computeKpis('admin');
+
+		$this->assertSame(3, $kpis['queueCount'], 'a case without a handler is in the queue.');
+		$this->assertSame(1, $kpis['queueNewToday']);
+		$this->assertSame(2, $kpis['queueDueSoon'], 'due today and due in four days fall in the coming week.');
+		$this->assertSame(6, $kpis['queueOldestDays'], 'the oldest case IN the queue, not the oldest open case.');
+		$this->assertSame(
+			expected: 'Woo-verzoek, deadline in 4 days',
+			actual: $kpis['queueOldestNote'],
+			message: 'DqTeamwachtrij: the oldest case\'s type and the days to its deadline.'
+		);
+		$this->assertSame(
+			[
+				['caseType' => 'woo', 'title' => 'Woo-verzoek', 'open' => 3, 'waiting' => 2],
+				['caseType' => 'bezwaar', 'title' => 'Bezwaar', 'open' => 1, 'waiting' => 1],
+			],
+			$kpis['queueByType'],
+			'every open case counts per type under its title, the unassigned ones also as waiting.'
 		);
 	}
 
@@ -238,7 +335,7 @@ final class KpiAggregationServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testOpenRegisterAbsentYieldsTheEmptyShape(): void {
-		$kpis = $this->service(openRegisterInstalled: false)->computeKpis('admin');
+		$kpis = $this->service(openRegisterInstalled: false, engineTaskCounts: [0, 0])->computeKpis('admin');
 
 		$this->assertSame(0, $kpis['openCount']);
 		$this->assertSame(0, $kpis['taskCount']);
@@ -269,6 +366,8 @@ final class KpiAggregationServiceTest extends TestCase {
 		$closed = [
 			['startDate' => '2026-09-01', 'endDate' => '2026-09-11', 'deadline' => '2026-09-30'],
 			['startDate' => 'not-a-date', 'endDate' => 'also-not-a-date'],
+			['startDate' => 'not-a-date', 'endDate' => '2026-09-05'],
+			['startDate' => '2026-09-01', 'endDate' => 'not-a-date'],
 			['endDate' => '2026-09-05'],
 		];
 
@@ -279,6 +378,25 @@ final class KpiAggregationServiceTest extends TestCase {
 			$kpis['avgProcessingDays'],
 			'only the one readable pair counts, so the mean is its own duration.'
 		);
+	}
+
+	/**
+	 * A case that ended before it started pulls the mean down by its days.
+	 *
+	 * The duration carries its sign, so a typo in one date shows in the figure
+	 * instead of reading as an ordinary lead time.
+	 *
+	 * @return void
+	 */
+	public function testAnEndBeforeTheStartCountsAsNegativeDays(): void {
+		$closed = [
+			['startDate' => '2026-09-01', 'endDate' => '2026-09-21'],
+			['startDate' => '2026-09-11', 'endDate' => '2026-09-01'],
+		];
+
+		$kpis = $this->service(closedCases: $closed)->computeKpis('admin');
+
+		$this->assertSame(5.0, $kpis['avgProcessingDays'], '20 and -10 days average 5.');
 	}
 
 	/**
@@ -357,6 +475,8 @@ final class KpiAggregationServiceTest extends TestCase {
 	 * @param boolean $configured Whether the register ids are set.
 	 * @param boolean $openRegisterInstalled Whether OpenRegister is present.
 	 * @param boolean $containerThrows Whether the container fails to resolve it.
+	 * @param array{0: int, 1: int} $engineTaskCounts What the engine answers:
+	 *                              [open tasks, open tasks due inside the window].
 	 *
 	 * @return KpiAggregationService The service under test.
 	 */
@@ -366,6 +486,8 @@ final class KpiAggregationServiceTest extends TestCase {
 		bool $configured = true,
 		bool $openRegisterInstalled = true,
 		bool $containerThrows = false,
+		array $engineTaskCounts = [23, 2],
+		?array $teams = null,
 	): KpiAggregationService {
 		$objectService = ($objectService ?? $this->objectService(closedCases: $closedCases));
 
@@ -380,6 +502,7 @@ final class KpiAggregationServiceTest extends TestCase {
 					'register' => self::IDS['register'],
 					'case_schema' => self::IDS['case'],
 					'task_schema' => self::IDS['caseTask'],
+					'case_type_schema' => '174',
 					default => $default,
 				};
 			}
@@ -395,7 +518,57 @@ final class KpiAggregationServiceTest extends TestCase {
 			$container->method('get')->willReturn($objectService);
 		}
 
-		return new KpiAggregationService($appConfig, $container, $appManager, new NullLogger());
+		// The tasks come from the ENGINE, not the register, so they are not
+		// on the object-service fake at all. The window is the discriminator:
+		// only the "due today" tile passes one, and a service that passed it
+		// to both, or to neither, would answer the same number twice.
+		$engineTasks = $this->getMockBuilder(EngineTaskInbox::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$engineTasks->method('countOpenForAssignee')->willReturnCallback(
+			static function (string $actor, ?string $dueAfter = null, ?string $dueBefore = null) use ($engineTaskCounts): int {
+				if ($dueAfter === null && $dueBefore === null) {
+					return $engineTaskCounts[0];
+				}
+
+				return $engineTaskCounts[1];
+			}
+		);
+
+		// The app catalogue: the month names are keys, so an identity
+		// translator is the English reader's view.
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters)
+		);
+		$l10n->method('n')->willReturnCallback(
+			static function (string $one, string $many, int $count, array $parameters = []): string {
+				$text = $many;
+				if ($count === 1) {
+					$text = $one;
+				}
+
+				return vsprintf(str_replace('%n', (string)$count, $text), $parameters);
+			}
+		);
+
+		$teamCases = null;
+		if ($teams !== null) {
+			$teamService = $this->createMock(PrimaryTeamService::class);
+			$teamService->method('teamsOf')->willReturn($teams);
+			$users = $this->createMock(IUserManager::class);
+			$users->method('get')->willReturn($this->createMock(IUser::class));
+			$teamCases = new ReaderTeamCases(teams: $teamService, users: $users);
+		}
+
+		return new KpiAggregationService(
+			appConfig: $appConfig,
+			container: $container,
+			appManager: $appManager,
+			sources: new KpiSources(engineTasks: $engineTasks, queueFigures: new QueueFigures(dayCount: new DayCount(), teamCases: $teamCases)),
+			l10n: $l10n,
+			logger: new NullLogger(),
+		);
 	}
 
 	/**
@@ -518,6 +691,13 @@ final class KpiAggregationServiceTest extends TestCase {
 						return 1;
 					}
 
+					// The reader's own closed cases: this month and last differ,
+					// so a service that sent one range for both answers the same
+					// number twice.
+					if (isset($f['assignee'], $f['endDate']) === true) {
+						return ((string)$f['endDate']['gte'] === date('Y-m-01')) ? 7 : 5;
+					}
+
 					return 16;
 				}
 
@@ -553,6 +733,10 @@ final class KpiAggregationServiceTest extends TestCase {
 				$rows = $this->open;
 				if (isset($f['endDate']) === true) {
 					$rows = $this->closed;
+				}
+
+				if ($this->schema === '174') {
+					$rows = [['id' => 'woo', 'title' => 'Woo-verzoek'], ['@self' => ['id' => 'bezwaar'], 'title' => 'Bezwaar'], ['title' => 'No id']];
 				}
 
 				if ($this->malformedEnvelope === true) {
@@ -614,5 +798,20 @@ final class KpiAggregationServiceTest extends TestCase {
 				return ['results' => $rows];
 			}
 		};
+	}
+	/**
+	 * The KPI contract answers every key in one order: the queue figures first.
+	 *
+	 * @return void
+	 */
+	public function testTheKpisAnswerEveryKeyInOrder(): void {
+		$keys = array_keys($this->service()->computeKpis('admin'));
+		$tail = [
+			'queueOldestNote', 'openCount', 'newToday', 'overdueCount', 'completedCount',
+			'myCompletedCount', 'myCompletedLastMonth', 'thisMonthName', 'lastMonthName',
+			'taskCount', 'tasksDueToday', 'statusBreakdown', 'typeBreakdown', 'avgProcessingDays', 'slaCompliance',
+		];
+		$this->assertSame($tail, array_slice($keys, -count($tail)));
+		$this->assertContains('queueOldestType', array_slice($keys, 0, -count($tail)));
 	}
 }

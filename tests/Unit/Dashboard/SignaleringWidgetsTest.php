@@ -23,8 +23,6 @@ namespace OCA\Dossiq\Tests\Unit\Dashboard;
 
 use OCA\Dossiq\Dashboard\CasesOverviewWidget;
 use OCA\Dossiq\Dashboard\DeadlineAlertsWidget;
-use OCA\Dossiq\Dashboard\MyTasksWidget;
-use OCA\Dossiq\Dashboard\OverdueCasesWidget;
 use OCA\Dossiq\Dashboard\StalledCasesWidget;
 use OCA\Dossiq\Dashboard\TaskRemindersWidget;
 use OCP\IL10N;
@@ -36,12 +34,12 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Dashboard\CasesOverviewWidget
  * @covers \OCA\Dossiq\Dashboard\DeadlineAlertsWidget
- * @covers \OCA\Dossiq\Dashboard\OverdueCasesWidget
  * @covers \OCA\Dossiq\Dashboard\StalledCasesWidget
- * @covers \OCA\Dossiq\Dashboard\MyTasksWidget
  * @covers \OCA\Dossiq\Dashboard\TaskRemindersWidget
+ * @uses   \OCA\Dossiq\Dashboard\DashboardPageWidget
  */
 class SignaleringWidgetsTest extends TestCase {
+
 
 	/**
 	 * The mocked L10N service.
@@ -142,17 +140,6 @@ class SignaleringWidgetsTest extends TestCase {
 	}//end testDeadlineAlertsWidgetIconClass()
 
 	/**
-	 * Test OverdueCasesWidget returns the correct widget ID.
-	 *
-	 * @return void
-	 */
-	public function testOverdueCasesWidgetId(): void {
-		$widget = new OverdueCasesWidget($this->l10n, $this->url);
-		$this->assertSame('procest_overdue_cases_widget', $widget->getId());
-
-	}//end testOverdueCasesWidgetId()
-
-	/**
 	 * Test StalledCasesWidget returns the correct widget ID.
 	 *
 	 * @return void
@@ -183,10 +170,8 @@ class SignaleringWidgetsTest extends TestCase {
 		$widgets = [
 			new CasesOverviewWidget($this->l10n, $this->url),
 			new DeadlineAlertsWidget($this->l10n, $this->url),
-			new OverdueCasesWidget($this->l10n, $this->url),
 			new StalledCasesWidget($this->l10n, $this->url),
 			new TaskRemindersWidget($this->l10n, $this->url),
-			new MyTasksWidget($this->l10n, $this->url),
 		];
 
 		foreach ($widgets as $widget) {
@@ -205,10 +190,8 @@ class SignaleringWidgetsTest extends TestCase {
 		$widgets = [
 			new CasesOverviewWidget($this->l10n, $this->url),
 			new DeadlineAlertsWidget($this->l10n, $this->url),
-			new OverdueCasesWidget($this->l10n, $this->url),
 			new StalledCasesWidget($this->l10n, $this->url),
 			new TaskRemindersWidget($this->l10n, $this->url),
-			new MyTasksWidget($this->l10n, $this->url),
 		];
 
 		$ids = array_map(
@@ -231,10 +214,8 @@ class SignaleringWidgetsTest extends TestCase {
 		$widgets = [
 			new CasesOverviewWidget($this->l10n, $this->url),
 			new DeadlineAlertsWidget($this->l10n, $this->url),
-			new OverdueCasesWidget($this->l10n, $this->url),
 			new StalledCasesWidget($this->l10n, $this->url),
 			new TaskRemindersWidget($this->l10n, $this->url),
-			new MyTasksWidget($this->l10n, $this->url),
 		];
 
 		foreach ($widgets as $widget) {
@@ -242,5 +223,4 @@ class SignaleringWidgetsTest extends TestCase {
 		}
 
 	}//end testAllWidgetsHaveNonEmptyTitles()
-
 }//end class

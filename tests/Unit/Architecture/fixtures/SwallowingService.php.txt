@@ -1,0 +1,31 @@
+<?php
+
+// Fixture for ServiceCatchReturnsNullTest. Not autoloaded, not analysed: the
+// extension keeps it out of every tool that walks *.php, and the scanner is
+// handed the path directly.
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Fixtures;
+
+class SwallowingService {
+	public function findThing(string $id): ?array {
+		try {
+			return $this->store->find($id);
+		} catch (\Throwable $e) {
+			return null;
+		}
+	}
+
+	public function listThings(): array {
+		try {
+			return $this->store->all();
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the things could not be listed',
+				['exception' => $e->getMessage()]
+			);
+			return [];
+		}
+	}
+}

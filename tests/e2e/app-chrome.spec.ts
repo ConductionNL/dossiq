@@ -22,18 +22,22 @@
  */
 
 import { expect, test } from '@playwright/test'
+import { PAGE_LOAD } from './helpers/nav.ts'
 
 const APP_BASE = '/index.php/apps/dossiq'
 
 test.describe('app chrome (ADR-114)', () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto(`${APP_BASE}/`, { waitUntil: 'domcontentloaded' })
+		await page.goto(`${APP_BASE}/`, {
+			...PAGE_LOAD,
+			waitUntil: 'domcontentloaded',
+		})
 		await expect(page.locator('[data-testid="cn-nav"]')).toBeVisible({
 			timeout: 30_000,
 		})
 	})
 
-	test('the footer reads Documentation, Store, Reports, Features & roadmap, each with a glyph', async ({
+	test('the footer reads Documentation, Marketplace, Features & roadmap, each with a glyph', async ({
 		page,
 	}) => {
 		const footer = page.locator(
@@ -48,16 +52,15 @@ test.describe('app chrome (ADR-114)', () => {
 
 		// ORDER is the rule, not the numbers, and not the entry ids either:
 		// this app reaches its reports through an entry called AnalyticsGroup
-		// LABELLED "Reports", which is compliant — ADR-114 constrains the label
-		// and the position, not the id.
+		// LABELLED "Reports". It sits in the Advanced foldout now, so the
+		// footer must no longer carry it.
 		const seen = texts.filter((t) =>
-			/Documentation|Store|Reports|roadmap/i.test(t),
+			/Documentation|Marketplace|Reports|roadmap/i.test(t),
 		)
-		expect(seen.length).toBe(4)
+		expect(seen.length).toBe(3)
 		expect(seen[0]).toMatch(/Documentation/i)
-		expect(seen[1]).toMatch(/Store/i)
-		expect(seen[2]).toMatch(/Reports/i)
-		expect(seen[3]).toMatch(/roadmap/i)
+		expect(seen[1]).toMatch(/Marketplace/i)
+		expect(seen[2]).toMatch(/roadmap/i)
 
 		for (const row of await rows.all()) {
 			await expect(
@@ -67,10 +70,11 @@ test.describe('app chrome (ADR-114)', () => {
 	})
 
 	test('Reports carries the three reports as cards', async ({ page }) => {
-		const footer = page.locator(
-			'[data-testid="cn-nav"] .cn-app-nav__footer-list',
-		)
-		await footer
+		// Reports sits in the Advanced foldout, so open it first.
+		const nav = page.locator('[data-testid="cn-nav"]')
+		await nav.locator('[data-testid="cn-nav-settings"]').click()
+		await nav
+			.locator('[data-testid="cn-nav-entry-AnalyticsGroup"]')
 			.getByRole('link', { name: /^Reports$/ })
 			.first()
 			.click()
@@ -107,6 +111,7 @@ test.describe('app chrome (ADR-114)', () => {
 			// as a broken route. The SPA mounts after DOM ready, and the
 			// assertions below are what prove the mount.
 			await page.goto(`${APP_BASE}${path}`, {
+				...PAGE_LOAD,
 				waitUntil: 'domcontentloaded',
 			})
 			await expect(page).toHaveURL(new RegExp(`${path}(\\?|$)`), {
@@ -114,6 +119,89 @@ test.describe('app chrome (ADR-114)', () => {
 			})
 			await expect(page.locator('[data-testid="cn-nav"]')).toBeVisible()
 		}
+	})
+
+	// No citation, on purpose. This test used to cite
+	// openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+	// with no anchor, which names a change-local file gate 19 cannot read and
+	// credits no scenario. Every scenario in it is about page topology (dashboard type,
+	// one heading, no nesting) and this test asserts none of that. The nearest
+	// canonical scenario, `termijn-reporting::dashboard-kpi-endpoint-returns-aggregates`,
+	// names a path, a field and a cache the endpoint does not have, so moving
+	// the citation there would make it false. It stays as the regression
+	// guard for the rename it was written for (e2e-citation-integrity, audit
+	// group 3).
+	test('the deadline-monitoring report loads its KPIs from the dossiq route', async ({
+		page,
+	}) => {
+		// The store addressed /apps/procest/ after the rename, so the page
+		// mounted and every figure 404'd. Assert the REQUEST, because the
+		// empty state and the broken state look the same on screen.
+		const kpiResponses: Array<{ status: number; url: string }> = []
+		page.on('response', (r) => {
+			if (r.url().includes('/api/deadlines/dashboard/kpi')) {
+				kpiResponses.push({ status: r.status(), url: r.url() })
+			}
+		})
+		await page.goto(`${APP_BASE}/termijn-dashboard`, {
+			...PAGE_LOAD,
+			waitUntil: 'domcontentloaded',
+		})
+		await expect
+			.poll(() => kpiResponses.length, { timeout: 30_000 })
+			.toBeGreaterThan(0)
+		for (const r of kpiResponses) {
+			expect(r.url, 'the request must address the dossiq app id').toContain(
+				'/apps/dossiq/',
+			)
+			expect(r.status, r.url).toBeLessThan(400)
+		}
+	})
+
+	test('Features & roadmap lists the shipped features', async ({ page }) => {
+		// The page reads its list from initial state (ADR-018); dossiq handed
+		// it nothing, so the tab was empty while docs/features.json held 23.
+		await page.goto(`${APP_BASE}/features-roadmap`, {
+			...PAGE_LOAD,
+			waitUntil: 'domcontentloaded',
+		})
+		await expect(page.locator('.cn-features-and-roadmap-view')).toBeVisible({
+			timeout: 30_000,
+		})
+		await expect(page.locator('.cn-features-tab__card').first()).toBeVisible({
+			timeout: 15_000,
+		})
+		expect(await page.locator('.cn-features-tab__card').count()).toBeGreaterThan(
+			5,
+		)
+	})
+
+	// @e2e openspec/specs/features-roadmap/spec.md#the-comparison-is-one-link-away
+	//
+	// The comparison left this page for dossiq.conduction.nl/compare on
+	// 2026-10-07 (Ruben: how an app compares belongs on its public site). Its
+	// caveats and tallies are asserted in tests/vitest/capabilityComparisonCopy.spec.js
+	// and tests/vitest/capabilityComparison.spec.js; this test pins the two
+	// things only a browser can: the tab is gone, and the link to its new home
+	// is on the page.
+	test('the features page links to the comparison from its notice instead of carrying it', async ({
+		page,
+	}) => {
+		await page.goto(`${APP_BASE}/features-roadmap`, {
+			...PAGE_LOAD,
+			waitUntil: 'domcontentloaded',
+		})
+		const notice = page.locator('.cn-features-board__notice')
+		await expect(notice).toBeVisible({ timeout: 30_000 })
+
+		const link = notice.getByRole('link', { name: 'conduction.nl' })
+		await expect(link).toHaveAttribute('href', /\/compare$/)
+		await expect(link).toHaveAttribute('target', '_blank')
+
+		await expect(
+			page.getByRole('tab', { name: 'How dossiq compares' }),
+		).toHaveCount(0)
+		await expect(page.getByText('Before you use this table')).toHaveCount(0)
 	})
 
 	test('the settings foldout carries Personal settings, Admin settings and Flows', async ({
@@ -142,6 +230,7 @@ test.describe('app chrome (ADR-114)', () => {
 		)
 	})
 
+	// @e2e settings-navigation::an-administrator-opens-advanced
 	test('Case types and Map layers stay in the settings foldout', async ({
 		page,
 	}) => {
@@ -150,7 +239,7 @@ test.describe('app chrome (ADR-114)', () => {
 		// a later promotion fails here rather than in the footer-order test,
 		// where the cause would be much harder to read.
 		const nav = page.locator('[data-testid="cn-nav"]')
-		for (const id of ['CaseTypesMenu', 'WmsLayersMenu']) {
+		for (const id of ['CaseTypesMenu', 'ObjectTypesMenu', 'WmsLayersMenu']) {
 			await expect(
 				nav.locator(`[data-testid="cn-nav-entry-${id}"]`),
 			).toBeAttached({ timeout: 15_000 })

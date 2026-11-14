@@ -32,8 +32,12 @@ namespace OCA\Dossiq\Service\Subsidie;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\SubsidieServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
+use OCA\Dossiq\Service\Support\RowList;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\TermijnTimerService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -43,13 +47,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — aggregates CRUD,
- * the aanvraag status machine, voorschot/verplichting validation and
- * termijn math for the subsidy domain.
- *
- * @spec openspec/changes/subsidieverlening-keten/specs.md
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
-class SubsidieService {
+class SubsidieService implements SubsidieServiceInterface {
 
 	use SearchesObjects;
 
@@ -84,19 +84,23 @@ class SubsidieService {
 	];
 
 	/**
-	 * Default AWB 4:13 decision term in weeks when the regeling is silent.
-	 */
-	public const DEFAULT_AANVRAAG_TERMIJN_WEKEN = 13;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Schema/register bridge.
 	 * @param LoggerInterface $logger Logger.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
+	 * @param CofinancieringValidator $cofinanciering Whether the budget adds up
+	 *        (REQ-SUB-008). Defaulted rather than required: this service is
+	 *        constructed directly in several suites, and a required argument
+	 *        would make wiring the validator a test-rewriting exercise instead
+	 *        of a wiring one.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
+		private readonly CofinancieringValidator $cofinanciering = new CofinancieringValidator(),
 	) {
 	}//end __construct()
 
@@ -108,7 +112,7 @@ class SubsidieService {
 	 *
 	 * @return bool True when the transition is allowed.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function isTransitionAllowed(string $from, string $to): bool {
 		$allowed = self::TRANSITIONS[$from] ?? null;
@@ -127,7 +131,7 @@ class SubsidieService {
 	 *
 	 * @return string The formatted beschikkingnummer.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function generateBeschikkingnummer(int $sequence, ?DateTimeImmutable $now = null): string {
 		$now = ($now ?? new DateTimeImmutable());
@@ -141,14 +145,17 @@ class SubsidieService {
 	 *
 	 * @param DateTimeImmutable $registration The registration date.
 	 * @param int $weken The regeling term in weeks.
+	 * @param array<string, mixed> $definitie The term definition, when one is known.
 	 *
-	 * @return DateTimeImmutable The decision deadline.
+	 * @return DateTimeImmutable The decision deadline, on a working day.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
-	public function computeBeslistermijn(DateTimeImmutable $registration, int $weken): DateTimeImmutable {
+	public function computeBeslistermijn(DateTimeImmutable $registration, int $weken, array $definitie = []): DateTimeImmutable {
 		$weken = max(1, $weken);
-		return $registration->add(new DateInterval('P' . ($weken * 7) . 'D'));
+		$deadline = $registration->add(new DateInterval('P' . ($weken * 7) . 'D'));
+
+		return ($this->timerService?->rollTermEndFor(date: $deadline, definitie: $definitie) ?? $deadline);
 	}//end computeBeslistermijn()
 
 	/**
@@ -160,7 +167,7 @@ class SubsidieService {
 	 *
 	 * @return bool True when the schedule reconciles to the granted amount.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function voorschotSchemaReconciles(array $advanceSchema, float $grantedAmount): bool {
 		$sum = 0.0;
@@ -183,7 +190,7 @@ class SubsidieService {
 	 *
 	 * @return bool True when the voorschot is releasable.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function isVoorschotReleasable(array $voorschot, array $approvedReports): bool {
 		$voorwaarde = trim((string)($voorschot['voorwaarde'] ?? ''));
@@ -208,7 +215,7 @@ class SubsidieService {
 	 *
 	 * @return array<int, array<string, mixed>> The unmet conditions.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function unmetVerplichtingen(array $verplichtingen): array {
 		$unmet = [];
@@ -236,11 +243,14 @@ class SubsidieService {
 	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-002-awb-termijn-binding-for-each-phase
 	 */
 	public function createAanvraag(array $payload, int $termWeken = self::DEFAULT_AANVRAAG_TERMIJN_WEKEN): array {
+		$payload = array_diff_key($payload, CallerIdentity::KEYS);
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'subsidie_aanvraag_schema');
 
 		if (((string)($payload['subsidyScheme'] ?? '')) === '') {
 			throw new OCSBadRequestException('subsidieregeling is verplicht');
 		}
+
+		$this->assertCofinancieringReconciles(payload: $payload);
 
 		$now = new DateTimeImmutable();
 		$record = array_merge(
@@ -262,6 +272,79 @@ class SubsidieService {
 			throw new OCSBadRequestException('Kon subsidieaanvraag niet aanmaken');
 		}
 	}//end createAanvraag()
+
+	/**
+	 * Refuse an application whose co-financing does not add up.
+	 *
+	 * `CofinancieringValidator` has answered this since the subsidy chain
+	 * shipped and nothing asked it, so a budget that did not reconcile was
+	 * accepted at intake and discovered, if at all, at the beschikking, by
+	 * which point a decision term has been running for weeks.
+	 *
+	 * 🔴 IT ONLY FIRES ON AN APPLICATION THAT DECLARED BOTH HALVES. An
+	 * application with no `coFinancingList`, or no project total, is passed
+	 * through untouched: those are the applications every caller sends today,
+	 * and refusing them would be this wiring inventing a requirement rather
+	 * than enforcing one.
+	 *
+	 * The error code is the validator's own (`COFIN_SUM_MISMATCH`,
+	 * `COFIN_PROJECT_TOTAL_INVALID`) and travels in the message, because an
+	 * applicant told only "that did not work" cannot tell a typo in the project
+	 * total from a missing contribution.
+	 *
+	 * @param array<string, mixed> $payload The application as submitted.
+	 *
+	 * @return void
+	 *
+	 * @throws OCSBadRequestException When the declared budget does not reconcile.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md
+	 */
+	private function assertCofinancieringReconciles(array $payload): void {
+		$rows = $this->rowsOf(value: ($payload['coFinancingList'] ?? null));
+		if ($rows === []) {
+			return;
+		}
+
+		// 🔴 `budget` IS NOT A NUMBER. The schema declares it as a JSON array of
+		// cost items, `[{kostenpost, bedrag, eenheid}]`, so casting it to float
+		// yields 0 and this guard would return early on every real application:
+		// wired that way it would have looked wired and done nothing, which is
+		// the failure this whole sweep is about. The project total is the sum of
+		// the cost items.
+		$projectTotal = $this->cofinanciering->sumBedragen(rows: $this->rowsOf(value: ($payload['budget'] ?? null)));
+		if ($projectTotal <= 0.0) {
+			return;
+		}
+
+		$verdict = $this->cofinanciering->validate(
+			subsidyAmount: (float)($payload['requestedAmount'] ?? 0),
+			cofinanciering: array_values($rows),
+			projectTotal: $projectTotal,
+		);
+
+		if ($verdict['valid'] === false) {
+			throw new OCSBadRequestException(
+				'De cofinanciering sluit niet aan op het projecttotaal (' . (string)$verdict['error'] . ')'
+			);
+		}
+	}//end assertCofinancieringReconciles()
+
+	/**
+	 * One declared list as rows, however it was stored.
+	 *
+	 * Both `coFinancingList` and `budget` are declared as JSON STRINGS holding
+	 * an array, so a caller may hand over either the string or the decoded
+	 * array. Reading only one shape is how a guard ends up looking wired and
+	 * doing nothing.
+	 *
+	 * @param mixed $value The stored value.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function rowsOf(mixed $value): array {
+		return RowList::from(value: $value);
+	}//end rowsOf()
 
 	/**
 	 * Transition an aanvraag to a new status, enforcing the state machine.
@@ -293,12 +376,12 @@ class SubsidieService {
 		}
 
 		try {
-			return ($this->saveObjectAsArray(
+			return ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				object: ['status' => $toStatus],
-				uuid: (string)$id
+				id: (string)$id,
+				changes: ['status' => $toStatus]
 			) ?? array_merge($current, ['status' => $toStatus]));
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: transitionAanvraag failed: ' . $e->getMessage());
@@ -358,17 +441,7 @@ class SubsidieService {
 	 * @throws OCSBadRequestException When OpenRegister is unavailable or unconfigured.
 	 */
 	private function resolve(string $schemaConfigKey): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new OCSBadRequestException('OpenRegister is niet beschikbaar');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue($schemaConfigKey);
-		if ($register === '' || $schema === '') {
-			throw new OCSBadRequestException('Subsidie-schema is niet geconfigureerd');
-		}
-
-		return [$objectService, $register, $schema];
+		$lookup = new SubsidieSchemaLookup(settingsService: $this->settingsService);
+		return $lookup->resolve(schemaConfigKey: $schemaConfigKey, unconfiguredMessage: 'Subsidie-schema is niet geconfigureerd');
 	}//end resolve()
 }//end class

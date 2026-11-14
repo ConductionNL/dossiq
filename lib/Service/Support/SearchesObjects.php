@@ -35,23 +35,25 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCP\IUserSession;
+use RuntimeException;
+
 /**
  * Trait providing the canonical OpenRegister object-search bridge.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
 trait SearchesObjects {
 	/**
 	 * Search OpenRegister objects and return them as plain associative arrays.
 	 *
-	 * Replacement for the non-existent `ObjectService::findObjects()`. Chooses
-	 * the numeric-ID search path when both register and schema are numeric
-	 * identifiers, otherwise delegates to the slug-aware bridge.
+	 * Replacement for the non-existent `ObjectService::findObjects()`. Reads
+	 * as the caller: whatever RBAC and tenancy allow them.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService instance.
 	 * @param int|string $register Register numeric ID or slug.
@@ -64,13 +66,82 @@ trait SearchesObjects {
 	 * @throws \OCP\AppFramework\Db\DoesNotExistException When a slug cannot be resolved
 	 *                                                    in the caller's organisation.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function searchObjectsAsArrays(
 		object $objectService,
 		int|string $register,
 		int|string $schema,
 		array $filters = [],
+	): array {
+		return $this->searchObjectsWithin(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: $filters,
+			scope: []
+		);
+	}//end searchObjectsAsArrays()
+
+	/**
+	 * The same search, reading the whole register regardless of the caller.
+	 *
+	 * For seeding and repair, which run with no user session: OpenRegister
+	 * fail-closes an anonymous caller, so a scoped read there returns nothing
+	 * and the step reports success over an empty result.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService instance.
+	 * @param int|string $register Register numeric ID or slug.
+	 * @param int|string $schema Schema numeric ID or slug.
+	 * @param array<string, mixed> $filters Object-field filters plus OpenRegister
+	 *                                      pagination keys (`_limit`, `_offset`).
+	 *
+	 * @return array<int, array<string, mixed>> Matching objects as associative arrays.
+	 *
+	 * @throws \OCP\AppFramework\Db\DoesNotExistException When a slug cannot be resolved.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
+	 */
+	protected function searchObjectsAsArraysUnscoped(
+		object $objectService,
+		int|string $register,
+		int|string $schema,
+		array $filters = [],
+	): array {
+		return $this->searchObjectsWithin(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: $filters,
+			scope: ['_rbac' => false, '_multitenancy' => false]
+		);
+	}//end searchObjectsAsArraysUnscoped()
+
+	/**
+	 * The one bridge both entry points run through.
+	 *
+	 * Chooses the numeric-ID search path when both register and schema are
+	 * numeric identifiers, otherwise delegates to the slug-aware bridge.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService instance.
+	 * @param int|string $register Register numeric ID or slug.
+	 * @param int|string $schema Schema numeric ID or slug.
+	 * @param array<string, mixed> $filters Object-field filters plus OpenRegister
+	 *                                      pagination keys.
+	 * @param array<string, bool> $scope The scope-lifting parameters, or none.
+	 *
+	 * @return array<int, array<string, mixed>> Matching objects as associative arrays.
+	 *
+	 * @throws \OCP\AppFramework\Db\DoesNotExistException When a slug cannot be resolved.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
+	 */
+	private function searchObjectsWithin(
+		object $objectService,
+		int|string $register,
+		int|string $schema,
+		array $filters,
+		array $scope,
 	): array {
 		$registerIsNumeric = (is_int($register) === true || ctype_digit((string)$register) === true);
 		$schemaIsNumeric = (is_int($schema) === true || ctype_digit((string)$schema) === true);
@@ -82,7 +153,10 @@ trait SearchesObjects {
 				rows: $objectService->searchObjectsBySlug(
 					(string)$register,
 					(string)$schema,
-					$filters
+					$filters,
+					// Passed only when asked, so a service without these
+					// parameters still accepts the call.
+					...$scope
 				)
 			);
 		}
@@ -95,8 +169,8 @@ trait SearchesObjects {
 		$self['schema'] = (int)$schema;
 		$query['@self'] = $self;
 
-		return $this->normaliseObjectRows(rows: $objectService->searchObjects($query));
-	}//end searchObjectsAsArrays()
+		return $this->normaliseObjectRows(rows: $objectService->searchObjects($query, ...$scope));
+	}//end searchObjectsWithin()
 
 	/**
 	 * Fetch a single OpenRegister object by id and return it as a plain array.
@@ -115,7 +189,7 @@ trait SearchesObjects {
 	 * @return array<string, mixed>|null The object as an associative array, or
 	 *                                   null when it does not exist.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function findObjectAsArray(
 		object $objectService,
@@ -124,27 +198,12 @@ trait SearchesObjects {
 		string $id,
 	): ?array {
 		try {
-			$object = $objectService->find(
-				id: $id,
-				register: $register,
-				schema: $schema
-			);
+			$object = $objectService->find(id: $id, register: $register, schema: $schema);
 		} catch (\OCP\AppFramework\Db\DoesNotExistException $e) {
 			return null;
 		}
 
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
+		return $this->objectToArrayOrNull(value: $object);
 	}//end findObjectAsArray()
 
 	/**
@@ -165,7 +224,7 @@ trait SearchesObjects {
 	 *
 	 * @return array<string,mixed>|null The stored object, or null if it cannot be represented as one.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function saveObjectAsArray(
 		object $objectService,
@@ -196,6 +255,104 @@ trait SearchesObjects {
 	}//end saveObjectAsArray()
 
 	/**
+	 * Write only these fields onto a stored object, and return it as an array.
+	 *
+	 * `saveObject()` with a uuid is PUT-semantic: the payload IS the new
+	 * object. A property it leaves out is written back as null, and with hard
+	 * validation on (OpenRegister's default) a payload missing a required
+	 * property is refused. So a save of `['status' => ...]` alone does not
+	 * change a status; it fails, or it wipes the rest of the record.
+	 *
+	 * This is the PATCH seam for a caller that owns a few fields:
+	 *
+	 *  - `patchObject()` when the installed OpenRegister has it, which reads,
+	 *    merges and saves under one roof, with validation, audit trail and
+	 *    events still applied;
+	 *  - otherwise a fresh read with the changes merged on top, saved whole.
+	 *    The `@self` metadata block and the id stay out of that payload, so a
+	 *    save never re-applies the owner, organisation or folder it read.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param int|string           $register      Register id, UUID or slug.
+	 * @param int|string           $schema        Schema id, UUID or slug.
+	 * @param string               $id            The stored object's uuid.
+	 * @param array<string, mixed> $changes       The fields to write, and nothing else.
+	 *
+	 * @return array<string, mixed>|null The stored object, or null if it cannot be represented as one.
+	 *
+	 * @throws RuntimeException When the object cannot be read on the fallback path,
+	 *                           or the service offers no seam that writes partially.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
+	 */
+	protected function patchObjectAsArray(
+		object $objectService,
+		int|string $register,
+		int|string $schema,
+		string $id,
+		array $changes,
+	): ?array {
+		if (method_exists($objectService, 'patchObject') === true) {
+			return $this->objectToArrayOrNull(
+				value: $objectService->patchObject(
+					objectId: $id,
+					data: $changes,
+					register: $register,
+					schema: $schema
+				)
+			);
+		}
+
+		if (method_exists($objectService, 'find') === false) {
+			// Neither seam: a partial payload would replace the object, and
+			// saving one is exactly the defect this method exists to remove.
+			throw new RuntimeException('object_service_cannot_write_partially');
+		}
+
+		$stored = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			id: $id
+		);
+		if ($stored === null) {
+			throw new RuntimeException('object_not_found_for_partial_write');
+		}
+
+		unset($stored['@self'], $stored['id']);
+
+		return $this->saveObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			object: array_merge($stored, $changes),
+			uuid: $id
+		);
+	}//end patchObjectAsArray()
+
+	/**
+	 * Coerce an ObjectService write result to an array.
+	 *
+	 * @param mixed $value The raw result.
+	 *
+	 * @return array<string, mixed>|null The object data, or null when uncoercible.
+	 */
+	private function objectToArrayOrNull(mixed $value): ?array {
+		if (is_array($value) === true) {
+			return $value;
+		}
+
+		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
+			$serialized = $value->jsonSerialize();
+			if (is_array($serialized) === true) {
+				return $serialized;
+			}
+		}
+
+		return null;
+	}//end objectToArrayOrNull()
+
+	/**
 	 * Run a callable through `ObjectService::runAsSystem()` when available,
 	 * falling back to a direct call otherwise.
 	 *
@@ -221,7 +378,7 @@ trait SearchesObjects {
 	 *      Without the tag PHPStan carries the pre-call state across, and
 	 *      reported a counter incremented inside the closure as "always 0".
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function runAsSystemIfAvailable(object $objectService, callable $operation): mixed {
 		if (method_exists($objectService, 'runAsSystem') === true) {
@@ -230,6 +387,31 @@ trait SearchesObjects {
 
 		return $operation();
 	}//end runAsSystemIfAvailable()
+
+	/**
+	 * Run an operation as the system when nobody is signed in, else as the caller.
+	 *
+	 * An install, an import, an occ command or a cron job has no user, and
+	 * OpenRegister refuses every read by "Anonymous". A signed-in caller
+	 * keeps their own rights: this never elevates a request that has a user.
+	 *
+	 * @param object            $objectService The OpenRegister ObjectService instance.
+	 * @param IUserSession|null $userSession   The session; null runs the operation as it is.
+	 * @param callable          $operation     The operation.
+	 *
+	 * @return mixed Whatever the callable returns.
+	 *
+	 * @phpstan-impure Runs the caller's closure.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-read-or-write-with-nobody-signed-in-runs-as-the-system-req-cm-83
+	 */
+	protected function asSystemWithoutUser(object $objectService, ?IUserSession $userSession, callable $operation): mixed {
+		if ($userSession === null || $userSession->getUser() !== null) {
+			return $operation();
+		}
+
+		return $this->runAsSystemIfAvailable(objectService: $objectService, operation: $operation);
+	}//end asSystemWithoutUser()
 
 	/**
 	 * Coerce a searchObjects()/searchObjectsBySlug() return into a list of arrays.
@@ -242,7 +424,7 @@ trait SearchesObjects {
 	 *
 	 * @return array<int, array<string, mixed>> Normalised list of object arrays.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	private function normaliseObjectRows(mixed $rows): array {
 		if (is_array($rows) === false) {

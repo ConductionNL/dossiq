@@ -3,16 +3,21 @@
 /**
  * A completed task wakes the run that asked for it.
  *
- * Tasks are ordinary OpenRegister objects edited through the generic object
- * API, so "completing a task" is an object update — there is no dossiq task
- * endpoint to hang this on. This listener is therefore where the human step
- * closes: it sees the update, recognises a task that a flow is waiting on, and
- * signals the run.
+ * A task is an OpenRegister `Task` row owned by the flow engine, and the
+ * engine announces terminality itself: `TaskService` dispatches one
+ * {@see TaskTerminalEvent} after the terminal write commits. This listener is
+ * therefore where the human step closes: it sees that announcement,
+ * recognises a task that a flow is waiting on, and signals the run.
+ *
+ * It listens to the ENGINE event rather than `ObjectUpdatedEvent` because
+ * nothing writes a `caseTask` object any more, so an object-update listener
+ * would never fire again and the run would only resume on
+ * DossiqAskPersonNode's 30-minute heartbeat.
  *
  * THE GUARD IS THE ENGINE'S NOW. This path used to consult the assignee rule
  * itself, because `FlowRunService::signal()` delivers unconditionally and the
  * HTTP guard was not inherited. openregister#3332 turned that duty into one
- * seam: {@see FlowRunSignalService::signalAs()} resolves the run, applies the
+ * seam: {@see FlowRunSignalService::answerByUuid()} resolves the run, applies the
  * recorded-assignee rule (group resolution included), audits a refusal, and
  * delivers — so there is nothing left here to remember. A refusal arrives as
  * one typed {@see FlowSignalRefused}, whose reason says exactly what was
@@ -35,16 +40,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCA\OpenRegister\Exception\FlowSignalRefused;
 use OCA\OpenRegister\Service\Flow\FlowRunSignalService;
+use OCA\OpenRegister\Service\Flow\RunSignal;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IUserSession;
@@ -56,7 +62,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 class TaskCompletionResumeListener implements IEventListener {
 	/**
@@ -89,10 +95,10 @@ class TaskCompletionResumeListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/adopt-flow-engine-consumer-seams/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function handle(Event $event): void {
-		if (($event instanceof ObjectUpdatedEvent) === false) {
+		if (($event instanceof TaskTerminalEvent) === false) {
 			return;
 		}
 
@@ -101,27 +107,24 @@ class TaskCompletionResumeListener implements IEventListener {
 			return;
 		}
 
+		$this->resume(task: $task);
+	}//end handle()
+
+	/**
+	 * Answer the run the completed task names, recording a refusal or failure.
+	 *
+	 * @param array<string, mixed> $task The completed flow task.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/task-management/spec.md
+	 */
+	private function resume(array $task): void {
 		$runUuid = (string)$task['flowRun'];
 		$uid = $this->userSession->getUser()?->getUID();
 
 		try {
-			$this->signals->signalAs(
-				runUuid: $runUuid,
-				payload: [
-					// A resume with no `decision` is a nudge, not an answer, and
-					// the awaiting node suspends again. Saying `completed`
-					// explicitly is what makes this an answer.
-					'decision' => 'completed',
-					'node' => (string)$task['flowNode'],
-					'taskId' => (string)($task['id'] ?? ''),
-					'completedBy' => (string)$uid,
-				],
-				actorUid: $uid,
-				// Addressing the node the task names makes the guard check THAT
-				// node's recorded assignee, so a run awaiting two steps never
-				// refuses this one for the other's audience.
-				nodeId: (string)$task['flowNode'],
-			);
+			$this->signals->answerByUuid(runUuid: $runUuid, signal: $this->completionSignal(task: $task, uid: $uid));
 		} catch (FlowSignalRefused $e) {
 			$this->recordRefusal(refusal: $e, runUuid: $runUuid, task: $task, uid: $uid);
 		} catch (Throwable $e) {
@@ -130,7 +133,36 @@ class TaskCompletionResumeListener implements IEventListener {
 				['error' => $e->getMessage(), 'task' => ($task['id'] ?? null)]
 			);
 		}//end try
-	}//end handle()
+	}//end resume()
+
+	/**
+	 * The signal that answers the task's node as completed.
+	 *
+	 * @param array<string, mixed> $task The completed flow task.
+	 * @param string|null          $uid  Who completed it.
+	 *
+	 * @return RunSignal The signal.
+	 *
+	 * @spec openspec/specs/task-management/spec.md
+	 */
+	private function completionSignal(array $task, ?string $uid): RunSignal {
+		return new RunSignal(
+			payload: [
+				// A resume with no `decision` is a nudge, not an answer, and
+				// the awaiting node suspends again. Saying `completed`
+				// explicitly is what makes this an answer.
+				'decision' => 'completed',
+				'node' => (string)$task['flowNode'],
+				'taskId' => (string)($task['id'] ?? ''),
+				'completedBy' => (string)$uid,
+			],
+			actorUid: $uid,
+			// Addressing the node the task names makes the guard check THAT
+			// node's recorded assignee, so a run awaiting two steps never
+			// refuses this one for the other's audience.
+			nodeId: (string)$task['flowNode'],
+		);
+	}//end completionSignal()
 
 	/**
 	 * Record a refusal at the loudness its reason deserves.
@@ -149,7 +181,7 @@ class TaskCompletionResumeListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/adopt-flow-engine-consumer-seams/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	private function recordRefusal(FlowSignalRefused $refusal, string $runUuid, array $task, ?string $uid): void {
 		if ($refusal->getReason() === FlowSignalRefused::NOT_ASSIGNEE) {
@@ -170,71 +202,52 @@ class TaskCompletionResumeListener implements IEventListener {
 	/**
 	 * The task this event just completed, when it is one a flow is waiting on.
 	 *
-	 * Returns null for everything else — an update to a non-task object, a task
-	 * belonging to no run, an unrelated field change, or a re-save of a task
-	 * that was already completed. Each of those is an ordinary thing to do and
-	 * must resume nothing.
+	 * Returns null for everything else: a write whose transaction has not
+	 * committed and may still roll back, a task belonging to no run, a task
+	 * naming no node, and a terminal state that is not a completion. Each of
+	 * those is an ordinary thing to happen and must resume nothing.
 	 *
-	 * @param ObjectUpdatedEvent $event The update.
+	 * @param TaskTerminalEvent $event The engine's terminal event.
 	 *
 	 * @return array|null The task, or null when nothing should be resumed.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
-	private function completedFlowTask(ObjectUpdatedEvent $event): ?array {
-		try {
-			$new = $event->getNewObject()->getObject();
-			$old = $event->getOldObject()?->getObject();
-		} catch (Throwable $e) {
+	private function completedFlowTask(TaskTerminalEvent $event): ?array {
+		// UNCOMMITTED means the transaction may still roll back. Signalling a
+		// run on it would resume a flow over a completion that never happened.
+		if ($event->isCommitted() === false) {
 			return null;
 		}
 
-		if (is_array($new) === false) {
+		try {
+			$entity = $event->getTask();
+			$task = [
+				'flowRun'  => (string)($entity->getRunUuid() ?? ''),
+				'flowNode' => (string)($entity->getNodeId() ?? ''),
+				'status'   => (string)($entity->getState() ?? ''),
+				'id'       => (string)($entity->getUuid() ?? ''),
+			];
+		} catch (Throwable $e) {
 			return null;
 		}
 
 		// Both are required. A task naming a run but no node cannot say WHICH
 		// of that run's awaiting nodes it answers, so it resumes nothing rather
 		// than guessing.
-		if (trim((string)($new['flowRun'] ?? '')) === '' || trim((string)($new['flowNode'] ?? '')) === '') {
+		if ($task['flowRun'] === '' || $task['flowNode'] === '') {
 			return null;
 		}
 
-		if ($this->justCompleted(new: $new, old: $old) === false) {
+		// Only a COMPLETION answers the question. `terminated` and `disabled`
+		// are the question being withdrawn, and a run that carried on past a
+		// cancelled ask would proceed as though somebody had answered it.
+		// The engine fires this event for all three.
+		if ($task['status'] !== self::STATUS_COMPLETED) {
 			return null;
 		}
 
-		return $new;
+		return $task;
 	}//end completedFlowTask()
 
-	/**
-	 * Whether this update is the moment the task became completed.
-	 *
-	 * The transition matters, not the state. Any later edit of an
-	 * already-completed task — a typo fixed in its description — is still an
-	 * update whose status reads `completed`, and resuming on that would advance
-	 * the run a second time.
-	 *
-	 * A missing previous state is treated as NOT a transition. Resuming on it
-	 * would mean every unrelated write to a completed task re-signals the run,
-	 * which is the more damaging of the two possible mistakes.
-	 *
-	 * @param array      $new The task after the update.
-	 * @param array|null $old The task before it, when known.
-	 *
-	 * @return boolean True when the task has just become completed.
-	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
-	 */
-	private function justCompleted(array $new, ?array $old): bool {
-		if (strtolower(trim((string)($new['status'] ?? ''))) !== self::STATUS_COMPLETED) {
-			return false;
-		}
-
-		if (is_array($old) === false) {
-			return false;
-		}
-
-		return strtolower(trim((string)($old['status'] ?? ''))) !== self::STATUS_COMPLETED;
-	}//end justCompleted()
 }//end class

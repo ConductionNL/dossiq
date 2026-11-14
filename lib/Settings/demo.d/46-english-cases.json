@@ -1,0 +1,533 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"description": "Optional English demo cases: a building permit, grant, complaint and FOI caseload with its contact moments, documents, case objects, advice requests, decisions and a portal message. Loaded only on request, with the rest of the example data, never on install. The case types and statuses they use ship in the register (register.d/46-demo-cases-english.json); a @ref:caseType:<slug> or @ref:statusType:<slug> is resolved against those stored rows when the set is loaded. @me is the user who loads the set; @today and @now are relative to the moment of loading. Every person, address and document is fictional."
+	},
+	"components": {
+		"objects": [
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "case-bp-dormer-lindenstraat"
+				},
+				"title": "Dormer window: Lindenstraat 8",
+				"description": "Building permit for installing a dormer window on the front facade.",
+				"identifier": "2026-0118",
+				"tags": [
+					"spoed",
+					"wijk-noord"
+				],
+				"legalBasis": "Awb 4:13",
+				"statutoryTerm": "P56D",
+				"archiveNomination": "blijvend_bewaren",
+				"archiveStatus": "nog_te_archiveren",
+				"paymentIndication": "geheel",
+				"lastPaymentDate": "@today-140d",
+				"caseType": "@ref:caseType:building-permit-type",
+				"status": "@ref:statusType:bp-completed",
+				"startDate": "@today-179d",
+				"deadline": "@today-123d",
+				"confidentiality": "openbaar",
+				"assignee": "@me",
+				"intakeChannel": "manual",
+				"priority": "low",
+				"extensionCount": 0,
+				"isFinalStatus": true
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "case-bp-tree-dorpsstraat"
+				},
+				"title": "Tree felling permit: oak, Dorpsstraat 12",
+				"description": "Permit to fell a mature oak tree at Dorpsstraat 12.",
+				"identifier": "2026-0142",
+				"tags": [
+					"wijk-noord"
+				],
+				"legalBasis": "Awb 4:13",
+				"statutoryTerm": "P56D",
+				"caseType": "@ref:caseType:building-permit-type",
+				"status": "@ref:statusType:bp-inprogress",
+				"startDate": "@today-70d",
+				"deadline": "@today-14d",
+				"confidentiality": "openbaar",
+				"assignee": "@me",
+				"assignedGroup": "behandelaars",
+				"intakeChannel": "manual",
+				"priority": "normal",
+				"extensionCount": 0,
+				"isFinalStatus": false
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "case-bp-dormer-lindenlaan"
+				},
+				"title": "Building permit: dormer, Lindenlaan 8",
+				"description": "Environmental building permit for a dormer window at Lindenlaan 8.",
+				"identifier": "2026-0155",
+				"caseType": "@ref:caseType:building-permit-type",
+				"status": "@ref:statusType:bp-inprogress",
+				"startDate": "@today-39d",
+				"deadline": "@today+17d",
+				"confidentiality": "openbaar",
+				"assignee": "@me",
+				"intakeChannel": "manual",
+				"priority": "normal",
+				"extensionCount": 0,
+				"isFinalStatus": false
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "case-bp-extension-2025"
+				},
+				"title": "Building permit: rear extension (2025)",
+				"description": "Environmental building permit for a rear extension (2025).",
+				"identifier": "2025-0501",
+				"caseType": "@ref:caseType:building-permit-type",
+				"status": "@ref:statusType:bp-received",
+				"startDate": "@today-251d",
+				"deadline": "@today-195d",
+				"confidentiality": "openbaar",
+				"assignee": "@me",
+				"intakeChannel": "manual",
+				"priority": "low",
+				"extensionCount": 0,
+				"isFinalStatus": false
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "case-grant-festival-oranjewijk"
+				},
+				"title": "Grant application: neighbourhood festival, Oranjewijk",
+				"description": "Grant application to fund a neighbourhood festival in Oranjewijk.",
+				"identifier": "2026-0137",
+				"tags": [
+					"spoed"
+				],
+				"legalBasis": "Awb 4:23",
+				"statutoryTerm": "P42D",
+				"archiveNomination": "vernietigen",
+				"paymentIndication": "gedeeltelijk",
+				"caseType": "@ref:caseType:grant-application-type",
+				"status": "@ref:statusType:grant-inprogress",
+				"startDate": "@today-52d",
+				"deadline": "@today+32d",
+				"confidentiality": "openbaar",
+				"assignee": "@me",
+				"intakeChannel": "manual",
+				"priority": "low",
+				"extensionCount": 0,
+				"isFinalStatus": false
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "case-grant-sportsclub-deeik"
+				},
+				"title": "Grant application: sports club De Eik",
+				"description": "Grant application from sports club De Eik for youth activities.",
+				"identifier": "2026-0161",
+				"caseType": "@ref:caseType:grant-application-type",
+				"status": "@ref:statusType:grant-received",
+				"startDate": "@today-30d",
+				"deadline": "@today+43d",
+				"confidentiality": "openbaar",
+				"assignee": "@me",
+				"intakeChannel": "manual",
+				"priority": "normal",
+				"extensionCount": 0,
+				"isFinalStatus": false
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "case-complaint-noise-marktplein"
+				},
+				"title": "Complaint: noise nuisance, Marktplein",
+				"description": "Citizen complaint about noise nuisance from bars on the Marktplein.",
+				"identifier": "2026-0149",
+				"tags": [
+					"spoed"
+				],
+				"legalBasis": "Awb 9:11",
+				"statutoryTerm": "P42D",
+				"caseType": "@ref:caseType:citizen-complaint-type",
+				"status": "@ref:statusType:complaint-investigation",
+				"startDate": "@today-21d",
+				"deadline": "@today+21d",
+				"confidentiality": "openbaar",
+				"assignee": "@me",
+				"assignedGroup": "behandelaars",
+				"intakeChannel": "manual",
+				"priority": "high",
+				"extensionCount": 0,
+				"isFinalStatus": false
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "case-complaint-slow-permit"
+				},
+				"title": "Complaint: slow permit processing",
+				"description": "Citizen complaint about slow processing of a permit application.",
+				"identifier": "2026-0167",
+				"caseType": "@ref:caseType:citizen-complaint-type",
+				"status": "@ref:statusType:complaint-inprogress",
+				"startDate": "@today-15d",
+				"deadline": "@today+27d",
+				"confidentiality": "openbaar",
+				"assignee": "@me",
+				"intakeChannel": "manual",
+				"priority": "normal",
+				"extensionCount": 0,
+				"isFinalStatus": false
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "case-foi-ministerial-correspondence"
+				},
+				"title": "FOI request: ministerial correspondence 2025",
+				"description": "Request for access to correspondence between the ministry and external advisors in 2025.",
+				"identifier": "2026-0201",
+				"legalBasis": "Wet open overheid 4.4",
+				"statutoryTerm": "P30D",
+				"caseType": "@ref:caseType:foi-request-type",
+				"status": "@ref:statusType:foi-inprogress",
+				"startDate": "@today-13d",
+				"deadline": "@today+17d",
+				"confidentiality": "openbaar",
+				"assignee": "@me",
+				"intakeChannel": "manual",
+				"priority": "normal",
+				"extensionCount": 0,
+				"isFinalStatus": false
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "case-foi-infrastructure-budget"
+				},
+				"title": "FOI request: infrastructure project budget",
+				"description": "Journalist request for budget documents on a national infrastructure project.",
+				"identifier": "2026-0202",
+				"caseType": "@ref:caseType:foi-request-type",
+				"status": "@ref:statusType:foi-received",
+				"startDate": "@today-4d",
+				"deadline": "@today+26d",
+				"confidentiality": "openbaar",
+				"assignee": "@me",
+				"intakeChannel": "manual",
+				"priority": "high",
+				"extensionCount": 0,
+				"isFinalStatus": false
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "contactmoment",
+					"slug": "contact-tree-dorpsstraat-call"
+				},
+				"notificationChannel": "phone",
+				"direction": "inbound",
+				"startTime": "@now-67d",
+				"endTime": "@now-67d",
+				"callerIdentification": "Mr Bakker, neighbour",
+				"identificationMethod": "non_geidentificeerd",
+				"kccEmployeeId": "@me",
+				"case": "@ref:case:case-bp-tree-dorpsstraat",
+				"relatedCases": [
+					"case-bp-tree-dorpsstraat"
+				],
+				"nature": "statusverzoek",
+				"summary": "Called to ask when the felling permit will be decided.",
+				"firstTimeFix": true
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "contactmoment",
+					"slug": "contact-tree-dorpsstraat-mail"
+				},
+				"notificationChannel": "email",
+				"direction": "outbound",
+				"startTime": "@now-65d",
+				"callerIdentification": "Mr Bakker, neighbour",
+				"identificationMethod": "non_geidentificeerd",
+				"kccEmployeeId": "@me",
+				"case": "@ref:case:case-bp-tree-dorpsstraat",
+				"relatedCases": [
+					"case-bp-tree-dorpsstraat"
+				],
+				"nature": "informatieverzoek",
+				"summary": "Sent the inspection report and the decision date by e-mail.",
+				"firstTimeFix": false
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "informatieobject",
+					"slug": "doc-tree-objection"
+				},
+				"title": "Objection to the felling permit",
+				"fileName": "objection-dorpsstraat-12.pdf",
+				"bestandsomvang": 184320,
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "openbaar",
+				"auteur": "Mr Bakker",
+				"status": "draft",
+				"informatieobjecttype": "iot-objection",
+				"direction": "incoming",
+				"keywords": [
+					"bezwaar"
+				],
+				"creatiedatum": "@today-67d",
+				"taal": "nld",
+				"description": "Neighbour objection against felling the oak at Dorpsstraat 12."
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "informatieobject",
+					"slug": "doc-tree-acknowledgement"
+				},
+				"title": "Acknowledgement of receipt",
+				"fileName": "acknowledgement-zaak-2026-0142.pdf",
+				"bestandsomvang": 45056,
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "openbaar",
+				"auteur": "admin",
+				"status": "final",
+				"informatieobjecttype": "iot-acknowledgement",
+				"direction": "outgoing",
+				"creatiedatum": "@today-69d",
+				"taal": "nld",
+				"description": "Letter confirming the felling permit application was received."
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "zaakinformatieobject",
+					"slug": "zio-tree-objection"
+				},
+				"case": "case-bp-tree-dorpsstraat",
+				"informatieobject": "doc-tree-objection",
+				"registrationDate": "@now-67d"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "zaakinformatieobject",
+					"slug": "zio-tree-acknowledgement"
+				},
+				"case": "case-bp-tree-dorpsstraat",
+				"informatieobject": "doc-tree-acknowledgement",
+				"registrationDate": "@now-69d"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "caseObject",
+					"slug": "obj-lindenlaan-building"
+				},
+				"case": "@ref:case:case-bp-dormer-lindenlaan",
+				"objectType": "building",
+				"objectIdentification": "0363100012345678",
+				"objectUrl": "https://bagviewer.kadaster.nl/lvbag/bag-viewer/#?searchQuery=0363100012345678",
+				"description": "The house the dormer window is built on."
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "caseObject",
+					"slug": "obj-lindenlaan-vehicle"
+				},
+				"case": "@ref:case:case-bp-dormer-lindenlaan",
+				"objectType": "vehicle",
+				"objectIdentification": "12-ABC-3",
+				"description": "The contractor's crane truck, parked on the pavement during the works."
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "caseObject",
+					"slug": "obj-extension-building"
+				},
+				"case": "@ref:case:case-bp-extension-2025",
+				"objectType": "building",
+				"objectIdentification": "0363100012345678",
+				"objectUrl": "https://bagviewer.kadaster.nl/lvbag/bag-viewer/#?searchQuery=0363100012345678",
+				"description": "The same house, from the earlier rear-extension permit."
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "adviesAanvraag",
+					"slug": "advies-welstand-2026-0042"
+				},
+				"case": "@ref:case:case-bp-dormer-lindenlaan",
+				"advisor": "welstandscommissie",
+				"type": "intern",
+				"subject": "Welstandstoets gevelwijziging Keizersgracht 123",
+				"deadline": "@today-71d",
+				"status": "requested",
+				"requestedAt": "@now-85d",
+				"questions": "Voldoet de voorgestelde gevelwijziging aan het welstandsbeleid voor de historische binnenstad?"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "adviesAanvraag",
+					"slug": "advies-veiligheidsregio-2026-0038"
+				},
+				"case": "@ref:case:case-grant-festival-oranjewijk",
+				"advisor": "Veiligheidsregio Amsterdam-Amstelland",
+				"type": "extern",
+				"subject": "Veiligheidsadvies evenement Museumplein 500+ bezoekers",
+				"deadline": "@today-76d",
+				"status": "requested",
+				"requestedAt": "@now-91d",
+				"questions": "Is de nooduitgang-capaciteit voldoende voor 500 bezoekers? Zijn er aanvullende EHBO-posten vereist?"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "adviesAanvraag",
+					"slug": "advies-rud-2026-0031"
+				},
+				"case": "@ref:case:case-complaint-noise-marktplein",
+				"advisor": "Regionale Uitvoeringsdienst Noord-Holland",
+				"type": "extern",
+				"subject": "Milieukundig advies lozing grondwater bouwproject",
+				"deadline": "@today-104d",
+				"status": "expired",
+				"requestedAt": "@now-125d",
+				"questions": "Is lozing van het opgepompte grondwater toelaatbaar gezien de nabijgelegen watergang?"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "adviesAanvraag",
+					"slug": "advies-juridisch-2026-0055"
+				},
+				"case": "@ref:case:case-complaint-slow-permit",
+				"advisor": "juridische-dienst",
+				"type": "intern",
+				"subject": "Juridische toets ontvankelijkheid bezwaarschrift",
+				"deadline": "@today-69d",
+				"status": "received",
+				"requestedAt": "@now-90d",
+				"receivedAt": "@now-86d",
+				"questions": "Is het bezwaar tijdig ingediend en is de bezwaarmaker ontvankelijk?"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "adviesAanvraag",
+					"slug": "advies-brandweer-2026-0047"
+				},
+				"case": "@ref:case:case-bp-extension-2025",
+				"advisor": "Brandweer Amsterdam-Amstelland",
+				"type": "extern",
+				"subject": "Brandveiligheidsadvies transformatie kantoorpand naar woningen",
+				"deadline": "@today-57d",
+				"status": "requested",
+				"requestedAt": "@now-87d",
+				"questions": "Voldoet het vluchtrouteplan aan de eisen uit het Bouwbesluit 2012, art. 2.113 e.v.?"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "beschikking",
+					"slug": "besch-2026-00156"
+				},
+				"caseId": "@ref:case:case-bp-dormer-lindenstraat",
+				"caseType": "omgevingsvergunning",
+				"decisionType": "toekenning",
+				"reference": "Z/2026/00156/B01",
+				"templateId": "tpl-omgevingsvergunning-reguliere-procedure-v3",
+				"draftVersion": 1,
+				"currentStatus": "signed",
+				"addressee": {
+					"type": "bedrijf",
+					"oin": "00000001234567890000",
+					"name": "Bouwbedrijf de Vries B.V.",
+					"messageBoxChannel": "eherkenning",
+					"messageBoxConfirmed": true
+				},
+				"decision": {
+					"kind": "toekenning",
+					"subject": "bouwactiviteiten Kerkstraat 12",
+					"size": "n.v.t.",
+					"effectiveDate": "@today-70d"
+				},
+				"rationale": "De aanvrager heeft voldaan aan de eisen van de Omgevingswet.",
+				"signature": {
+					"tspProvider": "kpn-gekwalificeerde-handtekening",
+					"signatory": "afdelingsmanager-bouw-23",
+					"signingMoment": "@now-79d",
+					"validationRapportId": "val-2026-99405"
+				}
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "beschikking",
+					"slug": "besch-2026-00489"
+				},
+				"caseId": "@ref:case:case-grant-festival-oranjewijk",
+				"caseType": "subsidieaanvraag",
+				"decisionType": "toekenning",
+				"reference": "Z/2026/00489/B01",
+				"templateId": "tpl-subsidie-v2",
+				"draftVersion": 1,
+				"currentStatus": "draft",
+				"addressee": {
+					"type": "burger",
+					"bsn": "987654321",
+					"name": "J. Pieterse",
+					"messageBoxChannel": "mijnoverheid",
+					"messageBoxConfirmed": false
+				},
+				"decision": {
+					"kind": "toekenning",
+					"subject": "subsidie culturele activiteiten",
+					"size": "2500",
+					"effectiveDate": "@today-39d",
+					"endDate": "@today+174d"
+				}
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "portaalBericht",
+					"slug": "portaal-bericht-demo-1"
+				},
+				"caseId": "@ref:case:case-bp-dormer-lindenlaan",
+				"caseReference": "2026-0155",
+				"senderType": "burger",
+				"senderRef": "demo-burger-123456789",
+				"senderName": "M.A. Janssen-de Vries",
+				"subject": "Vraag over voorwaarde 3 in beschikking",
+				"content": "Geachte mevrouw Bakker, kunt u toelichten wat exact wordt bedoeld met 'voorgeschreven dakhellingshoek'?",
+				"direction": "citizen_to_handler",
+				"sentAt": "@now-91d"
+			}
+		]
+	}
+}

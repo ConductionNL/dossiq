@@ -19,8 +19,8 @@ namespace OCA\Dossiq\Flow;
 /**
  * Base for the LIVE transition-action nodes.
  *
- * `lib/Service/Transitions/` — the nine actions SideEffectDispatcher fires on
- * every case status change. They take the plain `dossiq.*` id space because
+ * `lib/Service/Transitions/`: the case actions SideEffectDispatcher fires on
+ * a case status change and that no other app owns. They take the plain `dossiq.*` id space because
  * they are the vocabulary that actually runs.
  *
  * The subclass states its own id: these handlers carry no `type()` of their

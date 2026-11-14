@@ -27,6 +27,7 @@
  *
  * @covers \OCA\Dossiq\Flow\DossiqAskPersonNode
  * @uses   \OCA\Dossiq\Flow\AskPersonTaskStore
+ * @uses   \OCA\Dossiq\Service\AssigneeResolver
  *
  * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
  */
@@ -35,24 +36,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Flow;
 
-// 🔑 ASK FOR THE REAL ENGINE, HERE, AT FILE SCOPE.
-//
-// The bootstrap registers OpenRegister's own source and its dependencies only
-// when this is set, and every other suite in this app runs against the stubs
-// it always did. That is deliberate rather than shy: swapping the whole app's
-// suite onto the real classes surfaces 48 stub-versus-real disagreements, each
-// a real finding and none of them this change's business.
-//
-// File scope, because PHPUnit loads every test file while building the suite —
-// long before it forks the isolated processes below, which inherit it.
-putenv('DOSSIQ_REAL_FLOW_ENGINE=1');
-
 use OCA\Dossiq\Flow\DossiqAskPersonNode;
+use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\OpenRegister\Db\FlowClaim;
+use OCA\OpenRegister\Db\FlowClaimMapper;
 use OCA\OpenRegister\Db\FlowDefinition;
 use OCA\OpenRegister\Db\FlowDefinitionMapper;
-use OCA\OpenRegister\Db\FlowClaimMapper;
 use OCA\OpenRegister\Db\FlowRun;
 use OCA\OpenRegister\Db\FlowRunMapper;
 use OCA\OpenRegister\Db\FlowRunStep;
@@ -68,13 +59,23 @@ use OCA\OpenRegister\Service\Flow\FlowDefinitionBuilder;
 use OCA\OpenRegister\Service\Flow\FlowDefinitionPin;
 use OCA\OpenRegister\Service\Flow\FlowEngine;
 use OCA\OpenRegister\Service\Flow\FlowItems;
+use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use OCA\OpenRegister\Service\Flow\FlowPlaceClaims;
+use OCA\OpenRegister\Service\Flow\FlowRunAssignee;
 use OCA\OpenRegister\Service\Flow\FlowRunCommit;
+use OCA\OpenRegister\Service\Flow\FlowRunCommitRows;
+use OCA\OpenRegister\Service\Flow\FlowRunOrigin;
+use OCA\OpenRegister\Service\Flow\FlowRunPass;
+use OCA\OpenRegister\Service\Flow\FlowRunQueueOptions;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
 use OCA\OpenRegister\Service\Flow\FlowRunSignalService;
+use OCA\OpenRegister\Service\Flow\FlowRunStores;
+use OCA\OpenRegister\Service\Flow\FlowRunStreamStores;
+use OCA\OpenRegister\Service\Flow\FlowRunWalkServices;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent;
+use OCA\OpenRegister\Service\Flow\RunSignal;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -117,7 +118,8 @@ class AskPersonPassNode implements IFlowNode {
 	public function validateConfig(array $config): void {
 	}
 
-	public function execute(array $items, array $config, array $context): array {
+	public function execute(FlowNodeCall $call): array {
+		$items = $call->items;
 		return $items;
 	}
 }//end class
@@ -131,6 +133,32 @@ class AskPersonPassNode implements IFlowNode {
 #[RunTestsInSeparateProcesses]
 #[PreserveGlobalState(false)]
 class AskPersonHeartbeatRecoveryTest extends TestCase {
+
+	/**
+	 * Ask for the real engine, for this class's processes only.
+	 *
+	 * The bootstrap registers OpenRegister's own source and its dependencies
+	 * only when DOSSIQ_REAL_FLOW_ENGINE is set; every other suite in this app
+	 * runs against the stubs. PHPUnit calls this in the parent before it forks
+	 * this class's isolated processes, which inherit the variable, and again
+	 * inside each of them. It used to be set at file scope, which PHPUnit runs
+	 * while it builds the whole suite, so every isolated test of every class
+	 * ran against the real engine.
+	 *
+	 * @return void
+	 */
+	public static function setUpBeforeClass(): void {
+		putenv('DOSSIQ_REAL_FLOW_ENGINE=1');
+	}//end setUpBeforeClass()
+
+	/**
+	 * Hand the stubs back to the isolated tests of the classes after this one.
+	 *
+	 * @return void
+	 */
+	public static function tearDownAfterClass(): void {
+		putenv('DOSSIQ_REAL_FLOW_ENGINE');
+	}//end tearDownAfterClass()
 
 	/**
 	 * The task rows the store holds, by uuid.
@@ -212,28 +240,28 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 		$steps->method('highestSequence')->willReturn(0);
 		$steps->method('insert')->willReturnCallback(static fn (FlowRunStep $step): FlowRunStep => $step);
 
-		$this->service = new FlowRunService(
-			$runs,
-			$this->createMock(FlowStateMapper::class),
-			new FlowEngine(new FlowDefinitionBuilder(), new NullLogger()),
-			new FlowNodeRegistry($dispatcher, $this->createMock(LoggerInterface::class)),
-			$this->createMock(LoggerInterface::class),
-			$this->container(),
-			null,
-			null,
-			$streamMapper,
-			new FlowPlaceClaims(claims: $claimMapper, db: $db, logger: new NullLogger()),
-			new FlowRunCommit(
-				db: $db,
-				runs: $runs,
-				streams: $streamMapper,
-				claims: $claimMapper,
-				steps: $steps,
-				logger: new NullLogger()
-			)
+		$claims = new FlowPlaceClaims(claims: $claimMapper, db: $db, logger: new NullLogger());
+		$commit = new FlowRunCommit(
+			db: $db,
+			rows: new FlowRunCommitRows(runs: $runs, streams: $streamMapper, claims: $claimMapper, steps: $steps),
+			logger: new NullLogger()
 		);
 
-		$this->signals = new FlowRunSignalService($runs, $this->service, new NullLogger());
+		$this->service = new FlowRunService(
+			stores: new FlowRunStores(
+				mapper: $runs,
+				stateMapper: $this->createMock(FlowStateMapper::class),
+				streams: new FlowRunStreamStores(streamMapper: $streamMapper, claims: $claims, commit: $commit)
+			),
+			walk: new FlowRunWalkServices(
+				engine: new FlowEngine(new FlowDefinitionBuilder(), new NullLogger()),
+				registry: new FlowNodeRegistry($dispatcher, $this->createMock(LoggerInterface::class))
+			),
+			logger: $this->createMock(LoggerInterface::class),
+			container: $this->container()
+		);
+
+		$this->signals = new FlowRunSignalService($runs, $this->service, new FlowRunAssignee(), new NullLogger());
 	}//end setUp()
 
 	/**
@@ -268,48 +296,65 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 	}//end requireTheRealEngine()
 
 	/**
+	 * A session with a user, because the engine is fail-closed and refuses a
+	 * verb with no acting identity.
+	 *
+	 * @return \OCP\IUserSession The session.
+	 */
+	private function userSession(): \OCP\IUserSession {
+		$user = $this->createMock(\OCP\IUser::class);
+		$user->method('getUID')->willReturn('admin');
+		$session = $this->createMock(\OCP\IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+
+		return $session;
+	}//end userSession()
+
+	/**
 	 * The node under test, wired to an in-memory task store.
 	 *
 	 * @return DossiqAskPersonNode The node.
 	 */
 	private function askPersonNode(): DossiqAskPersonNode {
-		$objectService = new class($this->tasks, $this->created) {
+		// The engine gateway, over the SAME in-memory rows the object-service
+		// double used to hold. `dossiq.askPerson` stores its task in the engine
+		// now, so this is where the storage seam is; the tests' subject — does a
+		// heartbeat re-read the task, and does terminality advance the run — is
+		// unchanged.
+		$engineTasks = new class($this->tasks, $this->created) extends EngineTaskGateway {
+			/**
+			 * @param array $tasks   The in-memory rows.
+			 * @param array $created The ids created, in order.
+			 */
 			public function __construct(private array &$tasks, private array &$created) {
 			}
 
-			public function saveObject(array $object, string $register, string $schema): ObjectEntity {
+			/**
+			 * @param array       $task   The task.
+			 * @param string      $caseId The case.
+			 * @param string|null $actor  The actor.
+			 *
+			 * @return string The new task id.
+			 */
+			public function mirrorImport(array $task, string $caseId, ?string $actor): string {
 				$uuid = 'task-' . (count($this->created) + 1);
 				$this->created[] = $uuid;
-				$this->tasks[$uuid] = $object;
+				$this->tasks[$uuid] = $task;
 
-				$entity = new ObjectEntity();
-				$entity->setUuid($uuid);
-				$entity->setObject($object);
-
-				return $entity;
+				return $uuid;
 			}
 
-			public function find(
-				int|string $id,
-				?array $_extend = [],
-				bool $files = false,
-				mixed $register = null,
-				mixed $schema = null
-			): ?ObjectEntity {
-				if (isset($this->tasks[(string)$id]) === false) {
-					throw new DoesNotExistException(sprintf('No task %s', $id));
-				}
-
-				$entity = new ObjectEntity();
-				$entity->setUuid((string)$id);
-				$entity->setObject($this->tasks[(string)$id]);
-
-				return $entity;
+			/**
+			 * @param string $taskId The task id.
+			 *
+			 * @return array|null The task, or null when it is gone.
+			 */
+			public function find(string $taskId): ?array {
+				return ($this->tasks[$taskId] ?? null);
 			}
 		};
 
 		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => ($key === 'register' ? 'dossiq' : 'caseTask')
 		);
@@ -317,7 +362,13 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new DossiqAskPersonNode($settings, $l10n, new NullLogger());
+		return new DossiqAskPersonNode(
+			new AssigneeResolver(new NullLogger()),
+			$l10n,
+			new NullLogger(),
+			$engineTasks,
+			$this->userSession()
+		);
 	}//end askPersonNode()
 
 	/**
@@ -454,7 +505,8 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
 			static function (string $id) use ($versions, $pin): object {
-				if ($id === FlowVersionMapper::class) {
+				// OpenRegister main asks for the mapper by its interface.
+				if ($id === FlowVersionMapper::class || $id === 'OCA\\OpenRegister\\Db\\FlowVersionMapperInterface') {
 					return $versions;
 				}
 
@@ -514,12 +566,10 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 	 * @return FlowRun The suspended run.
 	 */
 	private function suspendedOnBothTasks(): FlowRun {
-		$run = $this->service->queue('case-flow', user: 'alice');
-		$run = $this->service->execute(
-			$run,
-			$this->flow(),
-			new AskPersonSubject(),
-			seedItems: [FlowItems::item(json: ['id' => 'case-7', 'title' => 'Dakkapel'])]
+		$run = $this->service->queueRun('case-flow', new FlowRunQueueOptions(user: 'alice'));
+		$run = $this->service->executePass(
+			new FlowRunPass(run: $run, flow: $this->flow(), subject: new AskPersonSubject()),
+			new FlowRunOrigin(items: [FlowItems::item(json: ['id' => 'case-7', 'title' => 'Dakkapel'])])
 		);
 
 		self::assertSame(FlowRun::STATUS_SUSPENDED, $run->getStatus(), (string)$run->getError());
@@ -568,12 +618,10 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 	 * @return FlowRun The suspended run.
 	 */
 	private function suspendedOnOneTask(): FlowRun {
-		$run = $this->service->queue('case-flow', user: 'alice');
-		$run = $this->service->execute(
-			$run,
-			$this->chainFlow(),
-			new AskPersonSubject(),
-			seedItems: [FlowItems::item(json: ['id' => 'case-7', 'title' => 'Dakkapel'])]
+		$run = $this->service->queueRun('case-flow', new FlowRunQueueOptions(user: 'alice'));
+		$run = $this->service->executePass(
+			new FlowRunPass(run: $run, flow: $this->chainFlow(), subject: new AskPersonSubject()),
+			new FlowRunOrigin(items: [FlowItems::item(json: ['id' => 'case-7', 'title' => 'Dakkapel'])])
 		);
 
 		self::assertSame(FlowRun::STATUS_SUSPENDED, $run->getStatus(), (string)$run->getError());
@@ -627,11 +675,9 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 		// deliver, and the run is left exactly as it was.
 		$refused = false;
 		try {
-			$this->signals->signalAs(
+			$this->signals->answerByUuid(
 				runUuid: (string)$run->getUuid(),
-				payload: ['decision' => 'completed'],
-				actorUid: 'mallory',
-				nodeId: 'ask-indiener'
+				signal: new RunSignal(payload: ['decision' => 'completed'], actorUid: 'mallory', nodeId: 'ask-indiener')
 			);
 		} catch (FlowSignalRefused $refusal) {
 			$refused = true;
@@ -646,7 +692,7 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 		$this->complete($task);
 
 		// The heartbeat fires: findDue() -> advance() -> execute().
-		$run = $this->service->execute($run, $this->chainFlow(), new AskPersonSubject());
+		$run = $this->service->executePass(new FlowRunPass(run: $run, flow: $this->chainFlow(), subject: new AskPersonSubject()), new FlowRunOrigin());
 
 		self::assertSame(FlowRun::STATUS_COMPLETED, $run->getStatus(), 'The heartbeat must deliver the answer, not roll again.');
 
@@ -671,7 +717,7 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 		$run = $this->suspendedOnBothTasks();
 		$before = $this->slot($run, 'ask-indiener');
 
-		$run = $this->service->execute($run, $this->flow(), new AskPersonSubject());
+		$run = $this->service->executePass(new FlowRunPass(run: $run, flow: $this->flow(), subject: new AskPersonSubject()), new FlowRunOrigin());
 
 		self::assertSame(FlowRun::STATUS_SUSPENDED, $run->getStatus());
 		self::assertCount(2, $this->created, 'A wake must never create a second task for a parked node.');
@@ -699,7 +745,7 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 
 		$this->complete($taskA);
 
-		$run = $this->service->execute($run, $this->flow(), new AskPersonSubject());
+		$run = $this->service->executePass(new FlowRunPass(run: $run, flow: $this->flow(), subject: new AskPersonSubject()), new FlowRunOrigin());
 
 		self::assertSame(FlowRun::STATUS_SUSPENDED, $run->getStatus(), 'The other branch still waits.');
 		self::assertCount(2, $this->created);
@@ -723,14 +769,12 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 		$this->complete($task);
 
 		// The assignee answers, so the guard delivers.
-		$run = $this->signals->signalAs(
+		$run = $this->signals->answerByUuid(
 			runUuid: (string)$run->getUuid(),
-			payload: ['decision' => 'completed', 'completedBy' => 'alice'],
-			actorUid: 'alice',
-			nodeId: 'ask-indiener'
+			signal: new RunSignal(payload: ['decision' => 'completed', 'completedBy' => 'alice'], actorUid: 'alice', nodeId: 'ask-indiener')
 		);
 
-		$run = $this->service->execute($run, $this->chainFlow(), new AskPersonSubject());
+		$run = $this->service->executePass(new FlowRunPass(run: $run, flow: $this->chainFlow(), subject: new AskPersonSubject()), new FlowRunOrigin());
 
 		self::assertSame(FlowRun::STATUS_COMPLETED, $run->getStatus());
 

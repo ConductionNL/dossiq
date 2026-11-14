@@ -18,7 +18,7 @@ The tasks list supports the same two view modes as cases:
 
 ## Current State
 
-The task list view depends on the OpenRegister object type "task" being properly registered. Task schemas must be configured in the Settings > Configuration page.
+You do not configure a task schema. Tasks are kept by OpenRegister's task engine, not as register objects. The Tasks page works as soon as OpenRegister is enabled.
 
 ## Planned Features
 

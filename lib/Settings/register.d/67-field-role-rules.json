@@ -1,0 +1,69 @@
+{
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "fieldRoleRules": {
+            "type": "array",
+            "title": "Field rights",
+            "description": "Which fields a role may see and which it may change, in every status. The matrix beside this one says who may open a case of this type; this says what they read once it is open. A rule is declared here and enforced in OpenRegister, on every read path it has. dossiq filters nothing itself, so a field withheld here is absent from the search, the export and the API answer too, not just from the form.",
+            "items": {
+              "type": "object",
+              "required": [
+                "field",
+                "rule"
+              ],
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "title": "Field",
+                  "description": "The case field the rule is about, spelled as the case schema spells it. A field the schema does not declare is left unpublished rather than invented: OpenRegister refuses a whole schema save over a rule naming a field it cannot find, and one stale row must not make every other rule unpublishable.",
+                  "maxLength": 255
+                },
+                "rule": {
+                  "type": "string",
+                  "title": "Rule",
+                  "description": "What the rule does to the field. Hidden keeps it out of the read and refuses it on write. Read only shows it and refuses the change.",
+                  "enum": [
+                    "hidden",
+                    "readOnly"
+                  ],
+                  "x-enum-labels": {
+                    "hidden": "Not shown",
+                    "readOnly": "Cannot be changed"
+                  },
+                  "x-enum-order": {
+                    "hidden": 1,
+                    "readOnly": 2
+                  }
+                },
+                "groups": {
+                  "type": "array",
+                  "title": "Applies to",
+                  "description": "The groups the rule takes the field away from. Leave it empty and no rule is published for them, because a rule naming nobody applies to everybody, administrators included. This list is the one the case lifecycle reads, and it is a list of who LOSES the field.",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "heldBy": {
+                  "type": "array",
+                  "title": "Held by",
+                  "description": "The groups that keep the field. This is the opposite list to the one above, and it is deliberately not derived from it: naming who loses a field says nothing about who keeps it unless you know every group on the server, which a case type does not. A group written in both lists loses the field. That resolution is visible to the person it affects, and the other one hands the field to somebody the author wrote down as restricted.",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "reason": {
+                  "type": "string",
+                  "title": "Why",
+                  "description": "One sentence saying why. The access tab shows it beside the field, so a handler who cannot see something reads the rule instead of guessing. OpenRegister returns it as the refusal message when the rule stops a save.",
+                  "maxLength": 512
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

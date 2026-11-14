@@ -1,0 +1,426 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * The case identity card, the trail and the tab order (REQ-CDV-15, REQ-CDV-16).
+ *
+ * Everything here is a seam a unit test cannot reach. The manifest spec
+ * already pins the declarations; this spec asks whether the page built from
+ * them says which case you are on.
+ *
+ *  - the row turns a stored uuid into a status NAME and a stored date into a
+ *    number of days, both of which need a live register;
+ *  - the trail ends on the case number, never on the title above it;
+ *  - the tab strip's geometry at 1024, which only exists in a browser.
+ *
+ * Assert ids and testids, not labels, wherever a label would do. The instance
+ * may run in Dutch: five of seven specs went red once on a correct navigation
+ * because they asserted English. The two places a label IS asserted here (the
+ * status name, the case type title) are seeded by this spec, so they read the
+ * same in either locale.
+ */
+
+import type { Page } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
+import {
+	createObject,
+	getRequestToken,
+	objectId,
+	REGISTER,
+	RUN_PREFIX,
+	seedCase,
+	seedStateMachine,
+	showObject,
+	updateObject,
+} from './helpers/fixtures.ts'
+import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
+
+/**
+ * The five tabs boards DqZaak and DqZaakMeer draw (REQ-CDV-16), English or
+ * Dutch by the test user's language; a tab may carry its count ("Bestanden 7").
+ * Every other panel is listed under More.
+ */
+const WORK_TABS = [
+	/^(Overview|Overzicht)\b/,
+	/^(Files|Bestanden)\b/,
+	/^Contact\b/,
+	/^(Tasks|Taken)\b/,
+	/^(Case history|Historie)\b/,
+]
+
+/**
+ * The identity row is five CONFIGURED library tiles now, not one custom
+ * component, so there is no `case-header` element and no per-tile testid to
+ * ask for: a manifest widget definition cannot set one, and CnDetailPage puts
+ * no widget id on the grid cell it renders.
+ *
+ * So the tiles are addressed by POSITION, which the manifest fixes. CnDetailPage
+ * renders `.cn-detail-page__grid-item` in `config.layout` order, and the first
+ * three entries are the identity row: number, type, deadline, with the hours
+ * card in the fourth cell. The status and the assignee are not tiles (Ruben's
+ * layout of 2026-09-12): the status reads on the stages widget beside the
+ * panels and in the Data tab, the assignee in the Data tab.
+ * `tests/vitest/manifestCaseHeader.spec.js` pins that order and those widths, so
+ * a reordering fails there with a readable message before it reaches a browser.
+ *
+ * The one tile that HAS a stable hook is addressed by it instead: the deadline
+ * is the only `.cn-countdown-widget` on the page.
+ */
+const TILE = { number: 0, type: 1, deadline: 2 } as const
+
+/** The Status field of the Data tab, the open tab on load. */
+const DATA_TAB_STATUS =
+	'.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value'
+
+/**
+ * One identity tile, by its place in the row.
+ *
+ * @param page The page under test.
+ * @param index The tile's layout position, from TILE.
+ * @return The tile's grid cell.
+ */
+function tile(page: Page, index: number) {
+	return page.locator('.cn-detail-page__grid-item').nth(index)
+}
+
+/**
+ * The value one identity tile prints, without its label.
+ *
+ * @param page The page under test.
+ * @param index The tile's layout position, from TILE.
+ * @return The tile's value element.
+ */
+function tileValue(page: Page, index: number) {
+	return tile(page, index).locator('.cn-kpi-card__value')
+}
+
+test.describe('Case header — identity, trail and tab order', () => {
+	test.setTimeout(180_000)
+
+	/** The case with a status, an assignee and a deadline behind it. */
+	let caseId = ''
+	let caseIdentifier = ''
+	let caseTitle = ''
+	let statusName = ''
+	let caseTypeTitle = ''
+
+	/** The case with neither a status record nor a deadline. */
+	let bareCaseId = ''
+
+	test.beforeAll(async ({ playwright, baseURL }) => {
+		const api = await playwright.request.newContext({ baseURL })
+		const token = await getRequestToken(api)
+
+		// A throwaway state machine gives this spec a status type it OWNS, so
+		// the badge assertion reads a name this spec wrote rather than whatever
+		// the instance happens to be seeded with.
+		const machine = await seedStateMachine(api, token)
+		const inProgress = await showObject(
+			api,
+			'statusType',
+			machine.statusInProgress,
+		)
+		statusName = String(inProgress.name ?? '')
+		// GIVE THE TYPE A TERM. `case.deadline` is computed declaratively as
+		// `startDate + caseType.processingDeadline`, and `seedStateMachine`
+		// creates its case type WITHOUT one — so without this the register has
+		// nothing to compute from, `deadline` stays empty, and the countdown
+		// element is never rendered at all. The spec then reads as "the
+		// countdown is missing from the header" when the header is correct and
+		// the FIXTURE never gave it a deadline to show.
+		//
+		// Set here rather than in `seedStateMachine`, which many specs share:
+		// each call mints its own case type, so this touches only this run's.
+		await updateObject(api, token, 'caseType', machine.caseTypeId, {
+			processingDeadline: 'P30D',
+		})
+
+		const caseType = await showObject(api, 'caseType', machine.caseTypeId)
+		caseTypeTitle = String(caseType.title ?? caseType.name ?? '')
+
+		caseTitle = `${RUN_PREFIX} Aanbouw Beethovenlaan 8`
+		const seeded = await seedCase(api, token, {
+			title: caseTitle,
+			caseType: machine.caseTypeId,
+			status: machine.statusInProgress,
+			assignee: 'admin',
+			// A start date well behind us, so the deadline the register COMPUTES
+			// from the case type lands in the past whatever its term. The
+			// expected words are read back off the stored deadline below rather
+			// than assumed, because `deadline` is readOnly and calculated: an
+			// assertion on a number this spec wrote would test the fixture.
+			startDate: '2024-01-15',
+		})
+		caseId = objectId(seeded)
+		caseIdentifier = String(seeded.identifier ?? '')
+
+		// The second case: a case type with no status types at all, so the case
+		// gets no status prefill and no processing deadline, which is the pair
+		// REQ-CDV-14's third scenario is about.
+		const bareType = await createObject(api, token, 'caseType', {
+			title: `${RUN_PREFIX} Bare`,
+			identifier: `${RUN_PREFIX.toLowerCase()}-bare`,
+			description:
+				'Case type with no statuses and no term, for the header row.',
+		})
+		const bare = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Zaak zonder status`,
+			caseType: objectId(bareType),
+		})
+		bareCaseId = objectId(bare)
+
+		await api.dispose()
+	})
+
+	// No afterAll. The `case` schema is archival, so a user-driven DELETE is
+	// refused with 403 by design, and deleting the case TYPE out from under an
+	// undeletable case leaves every reader of it resolving a dangling
+	// reference. A fixture that cannot clean up after itself breaks its
+	// neighbours; this one leaves nothing dangling instead.
+
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-number-reads-under-the-title
+	//
+	// 🔴 THIS GUARDED THE MECHANISM THE SCENARIO DOES NOT NAME. It measured as
+	// verified on 2026-09-11 and as partial on 2026-09-12. The scenario has two
+	// THENs: the page TITLE reads the case title, and the SUBTITLE under it
+	// reads the identifier. This test asserted neither. It read
+	// `case-header-identifier`, a `dd` in `CaseHeaderRow.vue`, so two
+	// mechanisms print the case number and the test guarded the one the
+	// scenario is not about; the page title was never asserted at all.
+	//
+	// ⚠️ AND THE MECHANISM REQ-CDV-14 NAMES RENDERS NOTHING. The requirement
+	// says `CaseDetail` SHALL set `config.subtitleField` to `identifier`, "so
+	// the case number reads under the title". The manifest does set it. Nothing
+	// consumes it: in @conduction/nextcloud-vue 2.41 `subtitleField` is read by
+	// `CnObjectRow`, `CnIndexPage` and `CnObjectList`, and by no detail-page
+	// code at all, so a `type: "detail"` page's `config.subtitleField` is inert.
+	// That is why deleting it from the manifest changes nothing on screen, and
+	// it is a finding about the product rather than about this test.
+	//
+	// ✅ MUTATION CHECK RUN 2026-09-12, with `tests/e2e/helpers/mutate-bundle.ts`:
+	//
+	//   find    /displayTitle\(\)\{return this\.objectDisplayName\|\|this\.resolvedTitle\}/
+	//   replace 'displayTitle(){return this.resolvedTitle}'
+	//   page    the header read "Case", the manifest's page title
+	//   red on  "the case page must name the case in its own title"
+	//
+	// The assertions this test carried before proved nothing about the page
+	// title at all, so they stay green through that break.
+	//
+	// So the clause is asserted by what it MEANS rather than by the key that
+	// was supposed to deliver it: the case number is on the page, and it is
+	// BELOW the title. Both halves, because either alone is satisfied by a
+	// layout the requirement exists to rule out. The page title is asserted
+	// outright, which closes the THEN that was never covered by anything.
+	test('the case number and the case type read under the title', async ({
+		page,
+	}) => {
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
+		await dismissSupportDialog(page)
+
+		const numberTile = tileValue(page, TILE.number)
+		await expect(numberTile).toBeVisible({ timeout: 30_000 })
+
+		// THEN the page title reads the case title.
+		const pageTitle = page.locator('.cn-detail-page__title')
+		await expect(
+			pageTitle,
+			'the case page must name the case in its own title',
+		).toHaveText(caseTitle, { timeout: 20_000 })
+
+		await expect(numberTile).toHaveText(caseIdentifier, { timeout: 20_000 })
+
+		// AND the number reads UNDER it, which is the clause the scenario
+		// states, measured against the element that delivers it. That element
+		// is a tile rather than the subtitle the requirement names, because
+		// `config.subtitleField` is inert on a detail page in
+		// @conduction/nextcloud-vue 2.49: CnObjectRow, CnIndexPage and
+		// CnObjectList read it and no detail-page code does.
+		const titleBox = await pageTitle.boundingBox()
+		const numberBox = await numberTile.boundingBox()
+		expect(titleBox, 'the page title must have a box').not.toBeNull()
+		expect(numberBox, 'the case number must have a box').not.toBeNull()
+		expect(
+			numberBox!.y,
+			`the case number must read under the title, not beside or above it: `
+				+ `title at y=${titleBox!.y}, number at y=${numberBox!.y}`,
+		).toBeGreaterThan(titleBox!.y)
+
+		// The case type is a uuid on the case. A tile printing that uuid would
+		// pass "renders something" and fail the feature.
+		const typeTile = tileValue(page, TILE.type)
+		await expect(typeTile).toHaveText(caseTypeTitle, { timeout: 20_000 })
+
+		// The row sits ABOVE the tab strip: an identity a reader has to scroll
+		// to is the state this row replaced.
+		const rowBox = await tile(page, TILE.number).boundingBox()
+		const stripBox = await page.locator('.cn-tabs-widget').boundingBox()
+		expect(rowBox, 'the identity row must have a box').not.toBeNull()
+		expect(stripBox, 'the tab strip must have a box').not.toBeNull()
+		expect(rowBox!.y).toBeLessThan(stripBox!.y)
+
+		// AND NO TILE SPANS THE ROW. That is the whole of Ruben's 2026-09-12
+		// ruling, and it is a geometry claim, so it belongs in a browser: the
+		// band this replaced was twelve columns wide and mostly air.
+		const pageWidth = (await page.locator('.cn-detail-page').boundingBox())!
+			.width
+		for (const index of Object.values(TILE)) {
+			const box = await tile(page, index).boundingBox()
+			expect(box, `tile ${index} must have a box`).not.toBeNull()
+			expect(
+				box!.width,
+				`tile ${index} is ${box!.width}px of a ${pageWidth}px row`,
+			).toBeLessThan(pageWidth * 0.9)
+		}
+	})
+
+	// @e2e openspec/specs/case-dashboard-view/spec.md#status-and-deadline-sit-in-the-header-row
+	test('the status reads in the Data tab and the overdue countdown sits in the row', async ({
+		page,
+	}) => {
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
+		await dismissSupportDialog(page)
+		await expect(tile(page, TILE.number)).toBeVisible({ timeout: 30_000 })
+
+		// The case carries a status UUID. A field showing the uuid would pass
+		// "renders something" and fail the feature. The status is not a tile:
+		// it reads in the Data tab, the open tab on load, and on the stages
+		// widget beside the panels.
+		const status = page.locator(DATA_TAB_STATUS)
+		await expect(status).toHaveText(statusName, { timeout: 30_000 })
+		await expect(status).not.toContainText(
+			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
+		)
+		await expect(page.getByTestId('cn-stat-widget-badge')).toHaveCount(0)
+
+		// A start date in early 2024 puts the computed deadline behind us
+		// whatever term the case type carries, so the countdown reads overdue.
+		// It is the library `countdown` widget now, which says "N days overdue"
+		// rather than a negative number and paints itself in the error variant:
+		// "-3 days left" is a puzzle, and overdue is the one state a handler
+		// must not have to decode.
+		const countdown = page.locator('.cn-countdown-widget')
+		await expect(countdown).toHaveCount(1)
+		await expect(countdown).toBeVisible({ timeout: 20_000 })
+		await expect(countdown).toHaveClass(/cn-countdown-widget--error/)
+		await expect(countdown).toContainText(/\d+ (days?|dagen?)/)
+	})
+
+	// @e2e openspec/specs/case-dashboard-view/spec.md#a-case-without-a-status-or-a-deadline-still-has-a-header
+	test('a case with no status and no deadline still has a header', async ({
+		page,
+	}) => {
+		await page.goto(`/apps/${REGISTER}/cases/${bareCaseId}`, PAGE_LOAD)
+		await dismissSupportDialog(page)
+
+		await expect(tile(page, TILE.number)).toBeVisible({ timeout: 30_000 })
+
+		// The Data tab's status field names nothing it does not know: no uuid,
+		// and no name the record does not carry.
+		const status = page.locator(DATA_TAB_STATUS)
+		await expect(status).toBeVisible({ timeout: 20_000 })
+		await expect(status).not.toContainText(
+			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
+		)
+
+		// The countdown tile is still PLACED, and it says nothing. A dash and
+		// no threshold colour: a case with no deadline is not urgent and is not
+		// on time, and "0 days left" would be a claim this case has not made.
+		const countdown = page.locator('.cn-countdown-widget')
+		await expect(countdown).toBeVisible({ timeout: 20_000 })
+		await expect(countdown).toContainText('—')
+		await expect(countdown).not.toHaveClass(/cn-countdown-widget--error/)
+		await expect(countdown).not.toHaveClass(/cn-countdown-widget--warning/)
+	})
+
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-trail-ends-on-the-case-number
+	test('the trail under the title ends on the case number', async ({ page }) => {
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
+		await dismissSupportDialog(page)
+		const trail = page.locator('.cn-detail-page__breadcrumbs')
+		await expect(trail).toBeVisible({ timeout: 30_000 })
+
+		await expect(trail.getByRole('link', { name: /^(All cases|Alle zaken)$/ })).toBeVisible()
+		await expect(trail.locator('[aria-current="page"]')).toHaveText(caseIdentifier)
+		await expect(trail).not.toContainText(caseTitle)
+	})
+
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-five-tabs-and-meer
+	test('the strip shows five tabs, in order, and the rest under More', async ({
+		page,
+	}) => {
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
+		await dismissSupportDialog(page)
+
+		const strip = page.locator('.cn-tabs-widget')
+		await expect(strip).toBeVisible({ timeout: 30_000 })
+		const labels = (await strip.getByRole('tab').allInnerTexts()).map((l) =>
+			l.trim(),
+		)
+
+		expect(labels).toHaveLength(WORK_TABS.length)
+		labels.forEach((label, index) => expect(label).toMatch(WORK_TABS[index]))
+		await expect(strip.locator('.cn-tabs__more')).toBeVisible()
+	})
+
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-five-tabs-and-meer
+	test('every work tab is reachable at 1024, with the strip above the fold', async ({
+		page,
+	}) => {
+		// Row A33 asked for one line. It cannot be had: measured 2026-09-09, six
+		// tabs need 661px on one line and this strip's tab row has about 280, and
+		// even a full-width strip yields roughly 570. `CnTabs` wraps rather than
+		// scrolls on purpose, because a scrolling strip hides tabs behind an edge
+		// with nothing to say they are there. So the thing worth guarding is the
+		// one the handler actually loses when this breaks: a tab that is clipped,
+		// off-screen, or below the fold.
+		await page.setViewportSize({ width: 1024, height: 768 })
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
+		await dismissSupportDialog(page)
+
+		const strip = page.locator('.cn-tabs-widget')
+		await expect(strip).toBeVisible({ timeout: 30_000 })
+
+		const stripBox = await strip.boundingBox()
+		expect(stripBox, 'the strip must have a box').not.toBeNull()
+		expect(
+			stripBox!.y,
+			`the tab strip starts at y=${stripBox!.y}, below a 768px fold`,
+		).toBeLessThan(768)
+
+		const boxes = await strip.getByRole('tab').evaluateAll(
+			(tabs, count) =>
+				tabs.slice(0, count).map((tab) => {
+					const box = (tab as HTMLElement).getBoundingClientRect()
+					return {
+						left: box.left,
+						right: box.right,
+						width: box.width,
+						height: box.height,
+					}
+				}),
+			WORK_TABS.length,
+		)
+
+		// A strip that rendered no tabs at all would otherwise pass every
+		// assertion below by having nothing to assert on.
+		expect(boxes, 'every work tab must be on the strip').toHaveLength(
+			WORK_TABS.length,
+		)
+
+		boxes.forEach((box, index) => {
+			const tab = String(WORK_TABS[index])
+			expect(box.width, `${tab} has no width`).toBeGreaterThan(0)
+			expect(box.height, `${tab} has no height`).toBeGreaterThan(0)
+			expect(
+				box.left,
+				`${tab} starts at x=${box.left}, off the left edge`,
+			).toBeGreaterThanOrEqual(0)
+			expect(
+				box.right,
+				`${tab} ends at x=${box.right}, past the 1024px viewport`,
+			).toBeLessThanOrEqual(1024)
+		})
+	})
+})

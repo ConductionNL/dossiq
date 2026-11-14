@@ -3,7 +3,28 @@
  * identifier generation, and overdue logic.
  */
 
+import { daysUntilDeadline, isOverdue } from './deadlineCountdown.js'
 import { formatDuration, parseDuration } from './durationHelpers.js'
+
+/**
+ * The confidentiality a new case gets when its case type sets none.
+ *
+ * Confidentiality is a safety property, so the fallback errs closed. The
+ * specs say a case inherits its level from its case type and name no value
+ * for a type without one. `zaakvertrouwelijk` keeps the case to the people
+ * working on it. Anything lower opens it to the whole organisation or the
+ * public, which nobody decided. Anything higher needs a clearance that the
+ * people handling the case may not have. Omitting the field is no answer
+ * either: the ZGW filters read a missing level as `openbaar`.
+ *
+ * The value is one of the case schema's ZGW `vertrouwelijkheidaanduiding`
+ * levels, which OpenRegister enforces. The English `'public'` this replaced
+ * was refused, so no sub-case could be created for such a case type.
+ *
+ * @type {string}
+ * @spec openspec/specs/case-management/spec.md
+ */
+export const DEFAULT_CASE_CONFIDENTIALITY = 'zaakvertrouwelijk'
 
 /**
  * Parse a case field that the schema stores as a JSON-encoded array
@@ -16,14 +37,24 @@ import { formatDuration, parseDuration } from './durationHelpers.js'
 export function parseJsonArray(value) {
 	if (Array.isArray(value)) return value
 	if (typeof value === 'string' && value.length > 0) {
-		try {
-			const parsed = JSON.parse(value)
-			return Array.isArray(parsed) ? parsed : []
-		} catch {
-			return []
-		}
+		return parseJsonArrayString(value)
 	}
 	return []
+}
+
+/**
+ * Parse a JSON string that should hold an array.
+ *
+ * @param {string} json The JSON-encoded value
+ * @return {Array} The parsed array, or [] when it is not an array or not JSON
+ */
+function parseJsonArrayString(json) {
+	try {
+		const parsed = JSON.parse(json)
+		return Array.isArray(parsed) ? parsed : []
+	} catch {
+		return []
+	}
 }
 
 /**
@@ -32,7 +63,7 @@ export function parseJsonArray(value) {
  * @param {string|Date} startDate Start date (ISO string or Date)
  * @param {string} durationString ISO 8601 duration (e.g., "P56D")
  * @return {Date|null} The calculated deadline, or null if inputs are invalid
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 export function calculateDeadline(startDate, durationString) {
 	if (!startDate || !durationString) return null
@@ -42,12 +73,22 @@ export function calculateDeadline(startDate, durationString) {
 	const date = new Date(startDate)
 	if (isNaN(date.getTime())) return null
 
+	addDuration(date, parsed)
+	return date
+}
+
+/**
+ * Add each non-zero part of a parsed duration to a date, in place.
+ *
+ * @param {Date} date The date to move forward
+ * @param {{years: number, months: number, weeks: number, days: number}} parsed The parsed duration
+ * @return {void}
+ */
+function addDuration(date, parsed) {
 	if (parsed.years) date.setFullYear(date.getFullYear() + parsed.years)
 	if (parsed.months) date.setMonth(date.getMonth() + parsed.months)
 	if (parsed.weeks) date.setDate(date.getDate() + parsed.weeks * 7)
 	if (parsed.days) date.setDate(date.getDate() + parsed.days)
-
-	return date
 }
 
 /**
@@ -55,7 +96,7 @@ export function calculateDeadline(startDate, durationString) {
  *
  * @return {string} Generated identifier (e.g., "2026-4281")
  */
-/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md */
 export function generateIdentifier() {
 	const year = new Date().getFullYear()
 	const suffix = Date.now() % 10000
@@ -69,16 +110,13 @@ export function generateIdentifier() {
  * @param {object} caseObj Case object with deadline property
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {boolean}
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function isCaseOverdue(caseObj, isFinal = false) {
 	if (!caseObj.deadline) return false
 	if (isFinal) return false
-	const deadline = new Date(caseObj.deadline)
-	const now = new Date()
-	deadline.setHours(0, 0, 0, 0)
-	now.setHours(0, 0, 0, 0)
-	return deadline < now
+	return isOverdue(caseObj.deadline)
 }
 
 /**
@@ -87,18 +125,13 @@ export function isCaseOverdue(caseObj, isFinal = false) {
  * @param {object} caseObj Case object with deadline property
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {boolean}
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function isCaseDueToday(caseObj, isFinal = false) {
 	if (!caseObj.deadline) return false
 	if (isFinal) return false
-	const deadline = new Date(caseObj.deadline)
-	const now = new Date()
-	return (
-		deadline.getFullYear() === now.getFullYear()
-		&& deadline.getMonth() === now.getMonth()
-		&& deadline.getDate() === now.getDate()
-	)
+	return daysUntilDeadline(caseObj.deadline) === 0
 }
 
 /**
@@ -107,19 +140,13 @@ export function isCaseDueToday(caseObj, isFinal = false) {
  * @param {object} caseObj Case object with deadline property
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {boolean}
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function isCaseDueTomorrow(caseObj, isFinal = false) {
 	if (!caseObj.deadline) return false
 	if (isFinal) return false
-	const deadline = new Date(caseObj.deadline)
-	const tomorrow = new Date()
-	tomorrow.setDate(tomorrow.getDate() + 1)
-	return (
-		deadline.getFullYear() === tomorrow.getFullYear()
-		&& deadline.getMonth() === tomorrow.getMonth()
-		&& deadline.getDate() === tomorrow.getDate()
-	)
+	return daysUntilDeadline(caseObj.deadline) === 1
 }
 
 /**
@@ -128,16 +155,12 @@ export function isCaseDueTomorrow(caseObj, isFinal = false) {
  * @param {object} caseObj Case object with deadline property
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {string|null} Overdue text or null if not overdue
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function getCaseOverdueText(caseObj, isFinal = false) {
 	if (!isCaseOverdue(caseObj, isFinal)) return null
-	const deadline = new Date(caseObj.deadline)
-	const now = new Date()
-	deadline.setHours(0, 0, 0, 0)
-	now.setHours(0, 0, 0, 0)
-	const diffMs = now - deadline
-	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+	const diffDays = -daysUntilDeadline(caseObj.deadline)
 	if (diffDays === 1) {
 		return t('dossiq', '1 day overdue')
 	}
@@ -148,11 +171,11 @@ export function getCaseOverdueText(caseObj, isFinal = false) {
  * Format deadline countdown text with style classification.
  *
  * @param {object} caseObj Case object with deadline property
- * @param {boolean} isFinal Whether the case is at a final status
+ * @param {boolean} [isFinal] Whether the case is at a final status
  * @return {{ text: string, style: string }} Countdown text and style class
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
-export function formatDeadlineCountdown(caseObj, isFinal = false) {
+export function formatDeadlineCountdown(caseObj, isFinal) {
 	if (!caseObj.deadline) return { text: '—', style: '' }
 	if (isFinal) {
 		return { text: formatDate(caseObj.deadline), style: 'deadline--final' }
@@ -163,10 +186,20 @@ export function formatDeadlineCountdown(caseObj, isFinal = false) {
 			style: 'deadline--overdue',
 		}
 	}
-	if (isCaseDueToday(caseObj, isFinal)) {
+	return upcomingDeadlineCountdown(caseObj)
+}
+
+/**
+ * The countdown of an open case whose deadline has not passed.
+ *
+ * @param {object} caseObj Case object with a deadline property
+ * @return {{ text: string, style: string }} Countdown text and style class
+ */
+function upcomingDeadlineCountdown(caseObj) {
+	if (isCaseDueToday(caseObj)) {
 		return { text: t('dossiq', 'Due today'), style: 'deadline--today' }
 	}
-	if (isCaseDueTomorrow(caseObj, isFinal)) {
+	if (isCaseDueTomorrow(caseObj)) {
 		return { text: t('dossiq', 'Due tomorrow'), style: 'deadline--tomorrow' }
 	}
 	const days = getDaysRemaining(caseObj.deadline)
@@ -181,7 +214,7 @@ export function formatDeadlineCountdown(caseObj, isFinal = false) {
  *
  * @param {string} startDate ISO date string
  * @return {number} Days elapsed (0 if today or invalid)
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 export function getDaysElapsed(startDate) {
 	if (!startDate) return 0
@@ -198,16 +231,11 @@ export function getDaysElapsed(startDate) {
  *
  * @param {string} deadline ISO date string
  * @return {number} Days remaining (negative if overdue)
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function getDaysRemaining(deadline) {
-	if (!deadline) return 0
-	const dl = new Date(deadline)
-	const now = new Date()
-	dl.setHours(0, 0, 0, 0)
-	now.setHours(0, 0, 0, 0)
-	const diffMs = dl - now
-	return Math.floor(diffMs / (1000 * 60 * 60 * 24))
+	return daysUntilDeadline(deadline) ?? 0
 }
 
 /**
@@ -215,7 +243,7 @@ export function getDaysRemaining(deadline) {
  *
  * @param {string} dateString ISO date string
  * @return {string} Formatted date
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 export function formatDate(dateString) {
 	if (!dateString) return '—'
@@ -232,7 +260,7 @@ export function formatDate(dateString) {
  *
  * @param {string} dateString ISO date string
  * @return {string} Formatted date
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 export function formatDateShort(dateString) {
 	if (!dateString) return '—'

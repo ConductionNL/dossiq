@@ -1,0 +1,306 @@
+<?php
+
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * An OpenRegister object store that lives in an array.
+ *
+ * 🔑 IT IS A REAL STORE, NOT A METHOD STUB. The handover reads a case, writes
+ * it, reads it back through a second service, and the whole point of several
+ * of these tests is that what came out is what went in. A per-call `willReturn`
+ * cannot express that: it answers the same row whatever was written, so a save
+ * that dropped a field would pass. This one keeps the rows.
+ *
+ * It implements the four methods the handover path actually calls, with the
+ * named-parameter signatures the real service has. A narrower double would let
+ * a call with a wrong argument name pass here and fail in production, which is
+ * exactly what tests/Stubs/Contract/ObjectServiceInterface.php exists to stop.
+ *
+ * @category Tests
+ * @package  OCA\Dossiq\Tests\Support
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @link https://conduction.nl
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Support;
+
+use OCP\AppFramework\Db\DoesNotExistException;
+
+/**
+ * An in-memory stand-in for OpenRegister's ObjectService.
+ */
+class InMemoryRegister {
+	/**
+	 * Every find made as the system, without the caller's access check, as schema/id.
+	 *
+	 * @var array<int, string>
+	 */
+	public array $unscopedReads = [];
+
+
+	/**
+	 * Every stored row, keyed by schema and then by uuid.
+	 *
+	 * @var array<string, array<string, array<string, mixed>>>
+	 */
+	public array $rows = [];
+
+	/**
+	 * Schemas whose rows a search under the caller's own access does not answer,
+	 * as OpenRegister does for a private record the caller holds no grant on.
+	 * A search with `_rbac` false still answers them.
+	 *
+	 * @var list<string>
+	 */
+	public array $hiddenFromCaller = [];
+
+	/**
+	 * Schemas whose rows a find or save under the caller's own access refuses,
+	 * as OpenRegister refuses an anonymous `occ` run on a schema with
+	 * authorization rules. With `_rbac` false they answer.
+	 *
+	 * @var list<string>
+	 */
+	public array $refusedToCaller = [];
+
+	/**
+	 * Whether a search honours `_limit` and `_offset`, as OpenRegister does.
+	 * Off by default: most tests pass a limit they never reach.
+	 *
+	 * @var bool
+	 */
+	public bool $pages = false;
+
+	/**
+	 * Schemas the register does not hold: a search on one throws, as an unresolvable slug does in OpenRegister.
+	 *
+	 * @var list<string>
+	 */
+	public array $missingSchemas = [];
+
+	/**
+	 * Schemas whose saves fail, as an OpenRegister write that throws.
+	 *
+	 * @var array<int, string>
+	 */
+	public array $refusedSchemas = [];
+
+	/**
+	 * How many times a row was saved, so a test can say a write happened once.
+	 *
+	 * @var int
+	 */
+	public int $writes = 0;
+
+	/**
+	 * Seed one row.
+	 *
+	 * @param string               $schema The schema slug.
+	 * @param string               $uuid   The row's uuid.
+	 * @param array<string, mixed> $row    The row.
+	 *
+	 * @return void
+	 */
+	public function seed(string $schema, string $uuid, array $row): void {
+		$row['id'] = $uuid;
+		$this->rows[$schema][$uuid] = $row;
+	}//end seed()
+
+	/**
+	 * One stored row as the test sees it.
+	 *
+	 * @param string $schema The schema slug.
+	 * @param string $uuid   The row's uuid.
+	 *
+	 * @return array<string, mixed> The row, or [].
+	 */
+	public function row(string $schema, string $uuid): array {
+		return ($this->rows[$schema][$uuid] ?? []);
+	}//end row()
+
+	/**
+	 * Every stored row of one schema.
+	 *
+	 * @param string $schema The schema slug.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	public function all(string $schema): array {
+		return array_values($this->rows[$schema] ?? []);
+	}//end all()
+
+	/**
+	 * Find one object, as ObjectService::find() does.
+	 *
+	 * @param int|string  $id       The uuid.
+	 * @param mixed       $_extend  Ignored.
+	 * @param bool        $files    Ignored.
+	 * @param int|string  $register Ignored.
+	 * @param int|string  $schema   The schema slug.
+	 * @param bool        $_rbac          Ignored: this store is not scoped.
+	 * @param bool        $_multitenancy  Ignored: this store is not scoped.
+	 *
+	 * @return array<string, mixed>|null The row, or null.
+	 */
+	public function find(
+		int|string $id,
+		mixed $_extend = null,
+		bool $files = false,
+		int|string $register = '',
+		int|string $schema = '',
+		bool $_rbac = true,
+		bool $_multitenancy = true,
+	): ?array {
+		if ($_rbac === false) {
+			$this->unscopedReads[] = (string)$schema . '/' . (string)$id;
+		}
+
+		if ($_rbac === true && in_array((string)$schema, $this->refusedToCaller, true) === true) {
+			throw new \RuntimeException("User 'Anonymous' does not have permission to 'read' objects in schema '" . (string)$schema . "'");
+		}
+
+		return ($this->rows[(string)$schema][(string)$id] ?? null);
+	}//end find()
+
+	/**
+	 * Search by slug, as ObjectService::searchObjectsBySlug() does.
+	 *
+	 * Only equality filters, which is all the handover path uses, plus the
+	 * `_limit` key it passes and this store ignores.
+	 *
+	 * @param string               $register       Ignored.
+	 * @param string               $schema         The schema slug.
+	 * @param array<string, mixed> $filters        Equality filters.
+	 * @param bool                 $_rbac          Ignored: this store is not scoped.
+	 * @param bool                 $_multitenancy  Ignored: this store is not scoped.
+	 *
+	 * @return array<int, array<string, mixed>> The matching rows.
+	 */
+	public function searchObjectsBySlug(
+		string $register,
+		string $schema,
+		array $filters = [],
+		bool $_rbac = true,
+		bool $_multitenancy = true,
+	): array {
+		if (in_array($schema, $this->missingSchemas, true) === true) {
+			throw new DoesNotExistException('No schema '.$schema.' in this register');
+		}
+
+		$matches = [];
+		if ($_rbac === true && in_array($schema, $this->hiddenFromCaller, true) === true) {
+			return $matches;
+		}
+
+		foreach (($this->rows[$schema] ?? []) as $row) {
+			if ($this->matches(row: $row, filters: $filters) === true) {
+				$matches[] = $row;
+			}
+		}
+
+		if ($this->pages === true) {
+			return array_slice($matches, (int)($filters['_offset'] ?? 0), (int)($filters['_limit'] ?? count($matches)));
+		}
+
+		return $matches;
+	}//end searchObjectsBySlug()
+
+	/**
+	 * Store one object, as ObjectService::saveObject() does.
+	 *
+	 * @param array<string, mixed> $object   The row.
+	 * @param int|string           $register Ignored.
+	 * @param int|string           $schema   The schema slug.
+	 * @param string|null          $uuid     The uuid to update, or null to create.
+	 * @param bool                 $_rbac          Ignored: this store is not scoped.
+	 * @param bool                 $_multitenancy  Ignored: this store is not scoped.
+	 *
+	 * @return array<string, mixed> The stored row.
+	 */
+	public function saveObject(
+		array $object,
+		int|string $register = '',
+		int|string $schema = '',
+		?string $uuid = null,
+		bool $_rbac = true,
+		bool $_multitenancy = true,
+	): array {
+		if (in_array((string)$schema, $this->refusedSchemas, true) === true) {
+			throw new \RuntimeException('Save refused for ' . (string)$schema);
+		}
+
+		if ($_rbac === true && in_array((string)$schema, $this->refusedToCaller, true) === true) {
+			throw new \RuntimeException("User 'Anonymous' does not have permission to 'update' objects in schema '" . (string)$schema . "'");
+		}
+
+		$id = ($uuid ?? ('generated-' . (count($this->rows[(string)$schema] ?? []) + 1)));
+		$object['id'] = $id;
+		$this->rows[(string)$schema][$id] = $object;
+		$this->writes += 1;
+
+		return $object;
+	}//end saveObject()
+
+	/**
+	 * Remove one object, as ObjectService::deleteObject() does.
+	 *
+	 * @param int|string  $register Ignored.
+	 * @param int|string  $schema   The schema slug.
+	 * @param string      $uuid     The uuid.
+	 *
+	 * @return bool True when a row was removed.
+	 */
+	public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = ''): bool {
+		if (isset($this->rows[(string)$schema][$uuid]) === false) {
+			return false;
+		}
+
+		unset($this->rows[(string)$schema][$uuid]);
+
+		return true;
+	}//end deleteObject()
+
+	/**
+	 * Whether a row satisfies every equality filter.
+	 *
+	 * @param array<string, mixed> $row     The row.
+	 * @param array<string, mixed> $filters The filters.
+	 * @param bool $_rbac Ignored: this store is not scoped.
+	 * @param bool $_multitenancy Ignored: this store is not scoped.
+	 *
+	 * @return bool True when it matches.
+	 */
+	private function matches(array $row, array $filters): bool {
+		// `_ids` is OpenRegister's batched id restriction (MagicSearchHandler).
+		if (array_key_exists('_ids', $filters) === true
+			&& in_array((string)($row['id'] ?? ''), array_map('strval', (array)$filters['_ids']), true) === false
+		) {
+			return false;
+		}
+
+		foreach ($filters as $key => $value) {
+			if (str_starts_with((string)$key, '_') === true || $key === '@self') {
+				continue;
+			}
+
+			// A list against a scalar property is "any of", as OpenRegister matches it.
+			$anyOf = (is_array($value) === true && array_is_list($value) === true && is_array($row[$key] ?? null) === false);
+			if ($anyOf === true && in_array(($row[$key] ?? null), $value, true) === false) {
+				return false;
+			}
+
+			if ($anyOf === false && ($row[$key] ?? null) !== $value) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end matches()
+}//end class

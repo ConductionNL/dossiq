@@ -22,26 +22,33 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/zaaktype-copy/tasks.md#T01
- * @spec openspec/changes/zaaktype-copy/tasks.md#T02
- * @spec openspec/changes/zaaktype-copy/tasks.md#T03
- * @spec openspec/changes/zaaktype-copy/tasks.md#T04
- * @spec openspec/changes/zaaktype-copy/tasks.md#T05
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T02
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T03
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T04
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T05
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeCopyServiceInterface;
+use OCA\Dossiq\Service\CaseType\CaseTypeChildCopy;
+use OCA\Dossiq\Service\CaseType\CaseTypeCopyTarget;
+use OCA\Dossiq\Service\CaseType\CaseTypeDerivation;
+use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
+use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use Psr\Log\LoggerInterface;
 
 /**
  * Service for duplicating case type definitions and guarding their
  * deletion to draft-status definitions.
  *
- * @spec openspec/changes/zaaktype-copy/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
  */
-class CaseTypeCopyService {
+class CaseTypeCopyService implements CaseTypeCopyServiceInterface {
 
 	/**
 	 * Config keys (resolved via {@see SettingsService::getConfigValue()})
@@ -60,14 +67,48 @@ class CaseTypeCopyService {
 	];
 
 	/**
+	 * The workflow templates, copied for a VERSION and not for a duplicate.
+	 *
+	 * 🔴 IT IS NOT IN THE LIST ABOVE ON PURPOSE. A duplicate is a second case
+	 * type and starts with no process, which is what its own payload says by
+	 * clearing `workflowDefinition`. A version is the same case type later on,
+	 * and a version that lost the route its cases run is not the same case type
+	 * at all. Copying it for both would change the duplicate gesture as a side
+	 * effect of fixing the version one.
+	 *
+	 * @var string
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private const WORKFLOW_TEMPLATE_CONFIG_KEY = 'workflow_template_schema';
+
+	/**
+	 * What the copy in progress could not carry.
+	 *
+	 * Held on the instance because the refusal becomes visible several frames
+	 * below the caller that reports it.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $notCarried = [];
+
+	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Shared OR register/schema resolver.
-	 * @param LoggerInterface $logger Logger.
+	 * @param SettingsService        $settingsService Shared OR register/schema resolver.
+	 * @param CaseTypeStore          $store           The app's one row and reference normaliser.
+	 * @param DerivedCaseTypePayload    $payloads        What a duplicate and a version look like.
+	 * @param DerivedCaseTypeReferences $references      Pointing the copy at its own children.
+	 * @param LoggerInterface           $logger          Logger.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly CaseTypeStore $store,
+		private readonly DerivedCaseTypePayload $payloads,
+		private readonly DerivedCaseTypeReferences $references,
 		private readonly LoggerInterface $logger,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -86,251 +127,409 @@ class CaseTypeCopyService {
 	 *                                   resolve (or OpenRegister is
 	 *                                   unavailable / misconfigured).
 	 *
-	 * @spec openspec/changes/zaaktype-copy/tasks.md#T01
-	 * @spec openspec/changes/zaaktype-copy/tasks.md#T02
-	 * @spec openspec/changes/zaaktype-copy/tasks.md#T03
-	 * @spec openspec/changes/zaaktype-copy/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T04
 	 */
 	public function copy(string $caseTypeId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
-		if ($register === '' || $caseTypeSchema === '') {
-			return null;
-		}
-
-		$source = $this->fetchObject(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseTypeSchema,
-			id: $caseTypeId
-		);
-		if ($source === null) {
-			return null;
-		}
-
-		$payload = $this->buildCopyPayload(source: $source);
-
-		try {
-			$created = $objectService->saveObject(
-				object: $payload,
-				register: $register,
-				schema: $caseTypeSchema,
-			);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'CaseTypeCopyService: failed to create case type copy',
-				['caseTypeId' => $caseTypeId, 'exception' => $e->getMessage()]
-			);
-			return null;
-		}
-
-		$newCaseType = $this->toArray(value: $created);
-		$newCaseTypeId = (string)($newCaseType['id'] ?? '');
-		if ($newCaseTypeId === '') {
-			return null;
-		}
-
-		foreach (self::CHILD_SCHEMA_CONFIG_KEYS as $configKey) {
-			$this->copyChildren(
-				objectService: $objectService,
-				register: $register,
-				configKey: $configKey,
-				sourceCaseTypeId: $caseTypeId,
-				newCaseTypeId: $newCaseTypeId
-			);
-		}
-
-		$this->logger->info(
-			'CaseTypeCopyService: copied case type',
-			['source' => $caseTypeId, 'copy' => $newCaseTypeId]
-		);
-
-		return $newCaseType;
+		return $this->derive(caseTypeId: $caseTypeId, asVersion: false);
 	}//end copy()
 
 	/**
-	 * Delete a case type, but only when it is a draft.
+	 * Deep-copy a case type and say what the copy could not carry.
 	 *
-	 * @param string $caseTypeId The case type's OpenRegister id.
+	 * 🔑 A COPY THAT SILENTLY DROPPED A CHILD LOOKS EXACTLY LIKE ONE THAT
+	 * CARRIED EVERYTHING. {@see copy()} already logged a warning per child it
+	 * failed on and then returned the new case type as though nothing had
+	 * happened, so an administrator standing up a case type from a template got
+	 * a green tick and found the missing document types weeks later. This is
+	 * the same act with the tally attached; `copy()` is kept for the callers
+	 * that only want the row.
 	 *
-	 * @return array{ok: bool, reason?: string} `reason` is one of
-	 *                                          `not_found`, `published`,
-	 *                                          or `error` when `ok` is
-	 *                                          `false`.
+	 * @param string $caseTypeId The source case type's OpenRegister id.
 	 *
-	 * @spec openspec/changes/zaaktype-copy/tasks.md#T05
+	 * @return array{caseType: array<string, mixed>|null, complete: bool, notCarried: array<int, string>}
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
-	public function deleteDraft(string $caseTypeId): array {
+	public function copyReport(string $caseTypeId): array {
+		$this->notCarried = [];
+		$caseType = $this->derive(caseTypeId: $caseTypeId, asVersion: false);
+		$notCarried = $this->takeNotCarried();
+
+		return [
+			'caseType' => $caseType,
+			// A copy whose source did not resolve is not a complete copy
+			// either, and reporting `complete: true` with a null case type
+			// would be the worst of both answers.
+			'complete' => ($caseType !== null && $notCarried === []),
+			'notCarried' => $notCarried,
+		];
+	}//end copyReport()
+
+	/**
+	 * What the copy just finished could not carry, clearing the tally.
+	 *
+	 * A method rather than reading the property inline, because the property is
+	 * filled several frames down inside `derive()` and static analysis cannot
+	 * see that: it narrows the property to the empty array it was initialised
+	 * to and then calls `$notCarried === []` always true. A typed return says
+	 * what the list actually is.
+	 *
+	 * @return array<int, string> The names of what did not come along.
+	 */
+	private function takeNotCarried(): array {
+		$notCarried = $this->notCarried;
+		$this->notCarried = [];
+
+		return $notCarried;
+	}//end takeNotCarried()
+
+	/**
+	 * Whether a case type is offered as a starting point for a new one.
+	 *
+	 * @param array<string, mixed> $caseType The case type row.
+	 *
+	 * @return boolean True when the case type is marked as a template.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	public function isTemplate(array $caseType): bool {
+		return (($caseType['isTemplate'] ?? false) === true);
+	}//end isTemplate()
+
+	/**
+	 * Start a new version of a published case type.
+	 *
+	 * A version is NOT a duplicate, and the difference is the whole point.
+	 * A duplicate is a second case type: new title, new identifier, no relation
+	 * to the first. A version is the SAME case type later on, so it keeps the
+	 * title and the identifier (ZGW's `identificatie` is what makes two rows
+	 * versions of one zaaktype) and gains a link back to the version it came
+	 * from.
+	 *
+	 * 🔴 THE POINT OF MINTING AN OBJECT RATHER THAN EDITING ONE IS THE CASES
+	 * THAT ARE ALREADY RUNNING. Every case carries `caseType` as the id of one
+	 * specific row, and its `status` is a statusType owned by that row. Editing
+	 * a published case type in place reaches every case of that type
+	 * immediately, which is why the page's own banner ("changes will only apply
+	 * to new cases") was not true. Copying instead leaves the running cases on
+	 * the objects they started under, and pins them there with no extra field
+	 * on the case: the reference they already hold IS the pin. Nothing migrates
+	 * a running case forward BY ITSELF, deliberately. Its current status is a
+	 * row the new version does not contain, and its deadline was computed from
+	 * the old version's `processingDeadline`. Moving one is a deliberate act
+	 * somebody performs and gives a reason for, and it is
+	 * {@see \OCA\Dossiq\Service\CaseType\CaseVersionMove}, never a consequence
+	 * of publishing.
+	 *
+	 * The new version starts as a draft. It becomes the version new cases get
+	 * when it is published, which is when {@see CaseTypePublishService} writes
+	 * `supersededBy` onto the version it replaces.
+	 *
+	 * @param string $caseTypeId The case type to make the next version of.
+	 *
+	 * @return array<string, mixed>|null The new draft version, or `null` when
+	 *                                   the source does not resolve.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	public function newVersion(string $caseTypeId): ?array {
+		return $this->derive(caseTypeId: $caseTypeId, asVersion: true);
+	}//end newVersion()
+
+	/**
+	 * Make a new case type out of an existing one.
+	 *
+	 * The two gestures share every mechanic and differ only in what the
+	 * payload says: a duplicate renames and re-identifies and starts its own
+	 * chain, a version keeps both and links back. Sharing the mechanics is the
+	 * point rather than a tidiness: the initial-status repointing below was
+	 * missing from the copy path for as long as it had its own copy of this,
+	 * and two paths would have meant fixing it twice.
+	 *
+	 * @param string  $caseTypeId The source case type's id.
+	 * @param boolean $asVersion  True for the next version, false for a duplicate.
+	 *
+	 * @return array<string, mixed>|null The new case type, or `null` when the
+	 *                                   source does not resolve.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function derive(string $caseTypeId, bool $asVersion): ?array {
+		$target = $this->caseTypeTarget();
+		if ($target === null) {
+			return null;
+		}
+
+		return $this->deriveFrom(
+			derivation: new CaseTypeDerivation(target: $target, sourceId: $caseTypeId, asVersion: $asVersion)
+		);
+	}//end derive()
+
+	/**
+	 * Where case types live, or null when OpenRegister is unavailable or unconfigured.
+	 *
+	 * @return CaseTypeCopyTarget|null
+	 */
+	private function caseTypeTarget(): ?CaseTypeCopyTarget {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return ['ok' => false, 'reason' => 'not_found'];
+			return null;
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
 		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
 		if ($register === '' || $caseTypeSchema === '') {
-			return ['ok' => false, 'reason' => 'not_found'];
+			return null;
 		}
 
-		$source = $this->fetchObject(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseTypeSchema,
-			id: $caseTypeId
-		);
+		return new CaseTypeCopyTarget(objectService: $objectService, register: $register, schema: $caseTypeSchema);
+	}//end caseTypeTarget()
+
+	/**
+	 * Write the new case type, then carry its children over.
+	 *
+	 * @param CaseTypeDerivation $derivation The source and the kind of copy.
+	 *
+	 * @return array<string, mixed>|null The new case type, or `null` when the
+	 *                                   source does not resolve or the write fails.
+	 */
+	private function deriveFrom(CaseTypeDerivation $derivation): ?array {
+		$source = $this->fetchObject(target: $derivation->target, id: $derivation->sourceId);
 		if ($source === null) {
-			return ['ok' => false, 'reason' => 'not_found'];
+			return null;
 		}
 
-		if (($source['isDraft'] ?? false) !== true) {
-			return ['ok' => false, 'reason' => 'published'];
+		$payload = $this->payloads->duplicate(source: $source);
+		if ($derivation->asVersion === true) {
+			$payload = $this->payloads->nextVersion(source: $source, sourceId: $derivation->sourceId);
 		}
 
+		$created = $this->saveNew(derivation: $derivation, payload: $payload);
+		if ($created === null) {
+			return null;
+		}
+
+		return $this->carryChildren(derivation: $derivation, created: $created);
+	}//end deriveFrom()
+
+	/**
+	 * Copy the children onto the new case type and point it at its own copies.
+	 *
+	 * @param CaseTypeDerivation   $derivation The source and the kind of copy.
+	 * @param array<string, mixed> $created    The new case type, with its id.
+	 *
+	 * @return array<string, mixed> The new case type, repointed.
+	 */
+	private function carryChildren(CaseTypeDerivation $derivation, array $created): array {
+		$newCaseTypeId = (string)$created['id'];
+		$statusMap = $this->copyEveryChild(derivation: $derivation, newCaseTypeId: $newCaseTypeId);
+		$templateMap = $this->copyTemplates(derivation: $derivation, newCaseTypeId: $newCaseTypeId);
+
+		$target = $derivation->target;
+		$created = $this->references->repoint(
+			objectService: $target->objectService,
+			register: $target->register,
+			schema: $target->schema,
+			caseType: $created,
+			statusMap: $statusMap,
+			templateMap: $templateMap
+		);
+
+		$this->logger->info(
+			'CaseTypeCopyService: derived a new case type',
+			[
+				'source' => $derivation->sourceId,
+				'created' => $newCaseTypeId,
+				'asVersion' => $derivation->asVersion,
+				'version' => (int)($created['version'] ?? 0),
+			]
+		);
+
+		return $created;
+	}//end carryChildren()
+
+	/**
+	 * Save a payload as a new object, answering null when the write fails
+	 * or the created object has no id.
+	 *
+	 * @param CaseTypeDerivation   $derivation Where to write, and the source id for the log line.
+	 * @param array<string, mixed> $payload    The object to create.
+	 *
+	 * @return array<string, mixed>|null The created object.
+	 */
+	private function saveNew(CaseTypeDerivation $derivation, array $payload): ?array {
+		$target = $derivation->target;
 		try {
-			$deleted = $objectService->deleteObject(
-				uuid: $caseTypeId,
-				register: $register,
-				schema: $caseTypeSchema,
+			$created = $target->objectService->saveObject(
+				object: $payload,
+				register: $target->register,
+				schema: $target->schema,
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'CaseTypeCopyService: failed to delete draft case type',
-				['caseTypeId' => $caseTypeId, 'exception' => $e->getMessage()]
+				'CaseTypeCopyService: failed to create the new case type',
+				['caseTypeId' => $derivation->sourceId, 'exception' => $e->getMessage()]
 			);
-			return ['ok' => false, 'reason' => 'error'];
+			return null;
 		}
 
-		if ($deleted !== true) {
-			return ['ok' => false, 'reason' => 'error'];
+		$row = $this->store->asRow(value: $created);
+		if ((string)($row['id'] ?? '') === '') {
+			return null;
 		}
 
-		return ['ok' => true];
-	}//end deleteDraft()
+		return $row;
+	}//end saveNew()
 
 	/**
-	 * Build the payload for the new case type: strips identity fields and
-	 * resets the fields a duplicate must not blindly inherit.
+	 * Copy every owned sub-schema, and answer the status id map.
 	 *
-	 * @param array<string, mixed> $source The source case type.
+	 * @param CaseTypeDerivation $derivation    The source case type.
+	 * @param string             $newCaseTypeId The new case type's id.
 	 *
-	 * @return array<string, mixed> The payload to save as a new object.
+	 * @return array<string, string> Old status id to new status id.
 	 */
-	private function buildCopyPayload(array $source): array {
-		$payload = $this->stripIdentity(data: $source);
+	private function copyEveryChild(CaseTypeDerivation $derivation, string $newCaseTypeId): array {
+		$statusMap = [];
+		foreach (self::CHILD_SCHEMA_CONFIG_KEYS as $configKey) {
+			$copied = $this->copyChildren(
+				derivation: $derivation,
+				copy: new CaseTypeChildCopy(target: $derivation->target, configKey: $configKey, newCaseTypeId: $newCaseTypeId)
+			);
 
-		$sourceTitle = (string)($source['title'] ?? '');
-		$payload['title'] = 'Copy of ' . $sourceTitle;
-		$payload['isDraft'] = true;
-		$payload['identifier'] = $this->generateIdentifier(sourceIdentifier: (string)($source['identifier'] ?? ''));
-		$payload['publicationRequired'] = false;
-		if (array_key_exists('publicationText', $payload) === true) {
-			$payload['publicationText'] = '';
+			if ($configKey === 'status_type_schema') {
+				$statusMap = $copied;
+			}
 		}
 
-		// Versions reset: a copy does not inherit the source's pinned
-		// workflow definition version.
-		$payload['workflowDefinition'] = null;
+		return $statusMap;
+	}//end copyEveryChild()
 
-		// A duplicate is a new definition, not a sibling of the source's
-		// related/sub case types.
-		$payload['relatedCaseTypes'] = [];
-		$payload['subCaseTypes'] = [];
+	/**
+	 * Copy the workflow templates for a version; a duplicate carries none.
+	 *
+	 * @param CaseTypeDerivation $derivation    The source case type.
+	 * @param string             $newCaseTypeId The new case type's id.
+	 *
+	 * @return array<string, string> Old template id to new template id.
+	 */
+	private function copyTemplates(CaseTypeDerivation $derivation, string $newCaseTypeId): array {
+		if ($derivation->asVersion !== true) {
+			return [];
+		}
 
-		return $payload;
-	}//end buildCopyPayload()
+		return $this->copyChildren(
+			derivation: $derivation,
+			copy: new CaseTypeChildCopy(
+				target: $derivation->target,
+				configKey: self::WORKFLOW_TEMPLATE_CONFIG_KEY,
+				newCaseTypeId: $newCaseTypeId
+			)
+		);
+	}//end copyTemplates()
 
 	/**
 	 * Copy every child object of one owned sub-schema, re-pointed at the
 	 * new case type's id.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register The register slug.
-	 * @param string $configKey The `SettingsService` config key for
-	 *                          the child schema.
-	 * @param string $sourceCaseTypeId The source case type's id.
-	 * @param string $newCaseTypeId The new case type's id.
+	 * @param CaseTypeDerivation $derivation The source case type.
+	 * @param CaseTypeChildCopy  $copy       The child schema's settings key and the new case type's id.
+	 *
+	 * @return array<string, string> Old child id to new child id, for the
+	 *                               children that copied. Callers use it to
+	 *                               repoint references the parent holds.
+	 */
+	private function copyChildren(CaseTypeDerivation $derivation, CaseTypeChildCopy $copy): array {
+		$schema = $this->settingsService->getConfigValue($copy->configKey);
+		if ($schema === '') {
+			return [];
+		}
+
+		$copy = $copy->forSchema(schema: $schema);
+		$map = [];
+		foreach ($this->findChildren(target: $copy->target, caseTypeId: $derivation->sourceId) as $child) {
+			try {
+				$created = $this->saveChild(copy: $copy, child: $child);
+			} catch (\Throwable $e) {
+				$this->childNotCopied(copy: $copy, child: $child, error: $e);
+				continue;
+			}
+
+			$map = array_replace($map, $this->idPair(child: $child, created: $created));
+		}
+
+		return $map;
+	}//end copyChildren()
+
+	/**
+	 * Save one child object under the new case type.
+	 *
+	 * @param CaseTypeChildCopy    $copy  Where the child goes.
+	 * @param array<string, mixed> $child The child row.
+	 *
+	 * @return mixed What the store answers.
+	 */
+	private function saveChild(CaseTypeChildCopy $copy, array $child): mixed {
+		$payload = $this->stripIdentity(data: $child);
+		$payload['caseType'] = $copy->newCaseTypeId;
+
+		return $copy->target->objectService->saveObject(
+			object: $payload,
+			register: $copy->target->register,
+			schema: $copy->target->schema,
+		);
+	}//end saveChild()
+
+	/**
+	 * Log a child that could not be copied and record it as not carried.
+	 *
+	 * @param CaseTypeChildCopy    $copy  Where the child went.
+	 * @param array<string, mixed> $child The child row.
+	 * @param \Throwable           $error Why the save failed.
 	 *
 	 * @return void
 	 */
-	private function copyChildren(
-		object $objectService,
-		string $register,
-		string $configKey,
-		string $sourceCaseTypeId,
-		string $newCaseTypeId,
-	): void {
-		$schema = $this->settingsService->getConfigValue($configKey);
-		if ($schema === '') {
-			return;
+	private function childNotCopied(CaseTypeChildCopy $copy, array $child, \Throwable $error): void {
+		$this->logger->warning(
+			'CaseTypeCopyService: failed to copy child object',
+			['schema' => $copy->target->schema, 'exception' => $error->getMessage()]
+		);
+		$oldId = $this->store->referenceId(value: ($child['id'] ?? ''));
+		$this->notCarried[] = ($copy->configKey . ':' . $this->text->textOr(value: ($child['name'] ?? ($child['title'] ?? null)), fallback: $oldId));
+	}//end childNotCopied()
+
+	/**
+	 * The old id mapped to the new one, or nothing when either is missing.
+	 *
+	 * @param array<string, mixed> $child   The source row.
+	 * @param mixed                $created What the store answered.
+	 *
+	 * @return array<string, string> The pair.
+	 */
+	private function idPair(array $child, mixed $created): array {
+		$oldId = $this->store->referenceId(value: ($child['id'] ?? ''));
+		$newId = $this->store->referenceId(value: ($this->store->asRow(value: $created)['id'] ?? ''));
+		if ($oldId !== '' && $newId !== '') {
+			return [$oldId => $newId];
 		}
 
-		$children = $this->findChildren(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			caseTypeId: $sourceCaseTypeId
-		);
-
-		foreach ($children as $child) {
-			$payload = $this->stripIdentity(data: $child);
-			$payload['caseType'] = $newCaseTypeId;
-
-			try {
-				$objectService->saveObject(
-					object: $payload,
-					register: $register,
-					schema: $schema,
-				);
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'CaseTypeCopyService: failed to copy child object',
-					['schema' => $schema, 'exception' => $e->getMessage()]
-				);
-			}
-		}//end foreach
-	}//end copyChildren()
+		return [];
+	}//end idPair()
 
 	/**
 	 * Find every object of a schema owned by (filtered on `caseType` ==)
 	 * a given case type.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register The register slug.
-	 * @param string $schema The schema id.
-	 * @param string $caseTypeId The owning case type's id.
+	 * @param CaseTypeCopyTarget $target     Where the children live.
+	 * @param string             $caseTypeId The owning case type's id.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function findChildren(
-		object $objectService,
-		string $register,
-		string $schema,
-		string $caseTypeId,
-	): array {
-		try {
-			$results = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => $register,
-						'schema' => $schema,
-						'caseType' => $caseTypeId,
-					],
-					'limit' => 500,
-				],
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'CaseTypeCopyService: failed to list child objects',
-				['schema' => $schema, 'exception' => $e->getMessage()]
-			);
-			return [];
-		}
-
+	private function findChildren(CaseTypeCopyTarget $target, string $caseTypeId): array {
+		$results = $this->listChildren(target: $target, caseTypeId: $caseTypeId);
 		if (is_array($results) === true && isset($results['results']) === true) {
 			$results = $results['results'];
 		}
@@ -340,38 +539,64 @@ class CaseTypeCopyService {
 		}
 
 		return array_map(
-			fn ($result): array => $this->toArray(value: $result),
+			fn ($result): array => $this->store->asRow(value: $result),
 			$results
 		);
 	}//end findChildren()
 
 	/**
+	 * Ask the object service for one schema's children of a case type.
+	 *
+	 * @param CaseTypeCopyTarget $target     Where the children live.
+	 * @param string             $caseTypeId The owning case type's id.
+	 *
+	 * @return mixed The object service's answer, or null when the list failed.
+	 */
+	private function listChildren(CaseTypeCopyTarget $target, string $caseTypeId): mixed {
+		try {
+			return $target->objectService->findAll(
+				[
+					'filters' => [
+						'register' => $target->register,
+						'schema' => $target->schema,
+						'caseType' => $caseTypeId,
+					],
+					'limit' => 500,
+				],
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'CaseTypeCopyService: failed to list child objects',
+				['schema' => $target->schema, 'exception' => $e->getMessage()]
+			);
+			// A schema the copy could not even LIST is the worst case for a
+			// silent partial: zero children copied is indistinguishable from a
+			// case type that had none.
+			$this->notCarried[] = $target->schema;
+			return null;
+		}
+	}//end listChildren()
+
+	/**
 	 * Fetch a single object by id, tolerating a missing ObjectService
 	 * result (RBAC / not-found) by returning `null`.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register The register slug.
-	 * @param string $schema The schema id.
-	 * @param string $id The object id.
+	 * @param CaseTypeCopyTarget $target Where the object lives.
+	 * @param string             $id     The object id.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function fetchObject(
-		object $objectService,
-		string $register,
-		string $schema,
-		string $id,
-	): ?array {
+	private function fetchObject(CaseTypeCopyTarget $target, string $id): ?array {
 		if ($id === '') {
 			return null;
 		}
 
 		try {
-			$obj = $objectService->find($id, register: $register, schema: $schema);
+			$obj = $target->objectService->find($id, register: $target->register, schema: $target->schema);
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'CaseTypeCopyService: object lookup failed',
-				['id' => $id, 'schema' => $schema, 'exception' => $e->getMessage()]
+				['id' => $id, 'schema' => $target->schema, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -380,7 +605,7 @@ class CaseTypeCopyService {
 			return null;
 		}
 
-		return $this->toArray(value: $obj);
+		return $this->store->asRow(value: $obj);
 	}//end fetchObject()
 
 	/**
@@ -396,45 +621,4 @@ class CaseTypeCopyService {
 		return $data;
 	}//end stripIdentity()
 
-	/**
-	 * Generate a fresh, human-traceable identifier for a copy.
-	 *
-	 * @param string $sourceIdentifier The source case type's identifier.
-	 *
-	 * @return string
-	 */
-	private function generateIdentifier(string $sourceIdentifier): string {
-		$suffix = substr(bin2hex(random_bytes(4)), 0, 8);
-		if ($sourceIdentifier === '') {
-			return 'CT-' . $suffix;
-		}
-
-		return $sourceIdentifier . '-copy-' . $suffix;
-	}//end generateIdentifier()
-
-	/**
-	 * Normalise an OpenRegister entity (or array) into a plain array.
-	 *
-	 * @param mixed $value The value to normalise.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		if (is_object($value) === true) {
-			return (array)$value;
-		}
-
-		return [];
-	}//end toArray()
 }//end class

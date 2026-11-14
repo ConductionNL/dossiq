@@ -1,0 +1,647 @@
+<?php
+
+/**
+ * Asking the holder of a case for it, and the answer they give.
+ *
+ * A case nobody holds is CLAIMED, and claiming needs nobody's permission; that
+ * is `case-claim-action` and it stops exactly where this begins. A case
+ * somebody holds needs that person's answer, and the difference is not
+ * politeness: the holder knows something the asker does not, which is why a
+ * refusal carries a reason (D-3).
+ *
+ * A request nobody answers escalates to the unit holding the case rather than
+ * expiring in silence (D-4). A request that times out quietly teaches people
+ * not to use it, and the case where the holder is unavailable is the case where
+ * a pull matters most.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service\Custody
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @spec openspec/specs/case-management/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\Custody;
+
+use DateInterval;
+use DateTimeImmutable;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseTakeoverRequestInterface;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * The pull: request, accept, refuse, escalate.
+ *
+ * @spec openspec/specs/case-management/spec.md
+ */
+class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
+
+	use SearchesObjects;
+
+	/**
+	 * The refusal when the case cannot be read.
+	 *
+	 * @var string
+	 */
+	public const CASE_UNREADABLE = 'takeover-case-unreadable';
+
+	/**
+	 * The refusal when the request itself cannot be found.
+	 *
+	 * @var string
+	 */
+	public const REQUEST_UNKNOWN = 'takeover-unknown';
+
+	/**
+	 * The refusal when the request has already been answered.
+	 *
+	 * @var string
+	 */
+	public const ALREADY_ANSWERED = 'takeover-already-answered';
+
+	/**
+	 * The refusal when a refusal arrives without a reason.
+	 *
+	 * @var string
+	 */
+	public const REASON_MISSING = 'takeover-reason-missing';
+
+	/**
+	 * The refusal when the asker already holds the case.
+	 *
+	 * @var string
+	 */
+	public const ALREADY_YOURS = 'takeover-already-yours';
+
+	/**
+	 * The refusal when the record cannot be written.
+	 *
+	 * @var string
+	 */
+	public const UNWRITABLE = 'takeover-unwritable';
+
+	/**
+	 * How long the holder has to answer, when the case type declares nothing.
+	 *
+	 * @var int
+	 */
+	public const DEFAULT_ANSWER_DAYS = 3;
+
+	/**
+	 * How many requests one read takes at most.
+	 *
+	 * @var int
+	 */
+	public const PAGE_SIZE = 200;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param CaseCustodyChain  $custody         The chain the answer writes into.
+	 * @param EngineTaskGateway $tasks           Carries the request to the holder.
+	 * @param LoggerInterface   $logger          Records every request and every answer.
+	 * @param TakeoverStore     $store           Where the records and the cases are kept.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function __construct(
+		private readonly CaseCustodyChain $custody,
+		private readonly EngineTaskGateway $tasks,
+		private readonly LoggerInterface $logger,
+		private readonly TakeoverStore $store,
+	) {
+	}//end __construct()
+
+	/**
+	 * Ask the holder for a case.
+	 *
+	 * @param string $caseId      The case being asked for.
+	 * @param string $requestedBy Who wants it.
+	 * @param string $reason      Why they should have it.
+	 *
+	 * @return array<string, mixed> The request as stored.
+	 *
+	 * @throws RefusedException When the case cannot be read, the asker already holds it, or the record cannot be written.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	public function request(string $caseId, string $requestedBy, string $reason): array {
+		$caseId = trim($caseId);
+		$requestedBy = trim($requestedBy);
+		$reason = trim($reason);
+
+		$this->assertReasonGiven(reason: $reason);
+
+		$case = $this->store->requireCase(caseId: $caseId);
+		$holding = $this->holdingOf(caseId: $caseId, case: $case);
+		$holder = $holding['holder'];
+		$unit = $holding['unit'];
+
+		$this->assertNotHeldBy(holder: $holder, requestedBy: $requestedBy);
+
+		$record = $this->storeRequest(
+			case: $case,
+			ask: new TakeoverAsk(caseId: $caseId, requestedBy: $requestedBy, holder: $holder, unit: $unit, reason: $reason),
+		);
+
+		$this->logger->info(
+			'Dossiq takeover: a case was asked for',
+			['caseId' => $caseId, 'requestedBy' => $requestedBy, 'holder' => $holder, 'unit' => $unit],
+		);
+
+		return $record;
+	}//end request()
+
+	/**
+	 * Refuse a request without a reason.
+	 *
+	 * @param string $reason Why they should have it, trimmed.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When no reason is given.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function assertReasonGiven(string $reason): void {
+		if ($reason === '') {
+			throw new RefusedException(
+				rule: self::REASON_MISSING,
+				sentence: 'Say why you should have the case, so the holder can answer.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertReasonGiven()
+
+	/**
+	 * Refuse a request by the person who already holds the case.
+	 *
+	 * @param string $holder      The current holder, or ''.
+	 * @param string $requestedBy Who wants it.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the asker already holds the case.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function assertNotHeldBy(string $holder, string $requestedBy): void {
+		if ($holder !== '' && $holder === $requestedBy) {
+			throw new RefusedException(
+				rule: self::ALREADY_YOURS,
+				sentence: 'You already hold this case, so there is nobody to ask.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertNotHeldBy()
+
+	/**
+	 * Who holds the case and in which unit, the open holding winning over the case fields.
+	 *
+	 * @param string               $caseId The case being asked for.
+	 * @param array<string, mixed> $case   The case.
+	 *
+	 * @return array{holder: string, unit: string} The holder and the holding unit.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function holdingOf(string $caseId, array $case): array {
+		$holder = trim((string)($case['assignee'] ?? ''));
+		$unit = trim((string)($case['assignedGroup'] ?? ''));
+
+		$open = $this->custody->openHoldingFor(caseId: $caseId);
+		if ($open !== null) {
+			$unit = trim((string)($open['organisationUnit'] ?? $unit));
+			$holder = trim((string)($open['handler'] ?? $holder));
+		}
+
+		return ['holder' => $holder, 'unit' => $unit];
+	}//end holdingOf()
+
+	/**
+	 * Write the pending request, and again with its task when one was raised.
+	 *
+	 * @param array<string, mixed> $case The case being asked for.
+	 * @param TakeoverAsk          $ask  The case id, who wants it, who holds it, the holding unit and why.
+	 *
+	 * @return array<string, mixed> The request as stored.
+	 *
+	 * @throws RefusedException When the record cannot be written.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	private function storeRequest(array $case, TakeoverAsk $ask): array {
+		$now = (new DateTimeImmutable())->format('c');
+		$record = $this->store->write(
+			record: [
+				'caseId' => $ask->caseId,
+				'requestedBy' => $ask->requestedBy,
+				'holder' => $ask->holder,
+				'holdingUnit' => $ask->unit,
+				'reason' => $ask->reason,
+				'status' => 'pending',
+				'requestedAt' => $now,
+			],
+			uuid: null,
+		);
+
+		$record['taskId'] = $this->raiseTask(record: $record, case: $case);
+		if ($record['taskId'] !== '') {
+			$record = $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
+		}
+
+		return $record;
+	}//end storeRequest()
+
+	/**
+	 * The holder accepts: the case moves to the asker and a holding opens.
+	 *
+	 * @param string $takeoverId The request's uuid.
+	 * @param string $acceptedBy Who answered.
+	 * @param string $caseId     The case the caller was authorised on; the request must be on it.
+	 *
+	 * @return array<string, mixed> The answered request.
+	 *
+	 * @throws RefusedException When the request is unknown, on another case, or already answered.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	public function accept(string $takeoverId, string $acceptedBy, string $caseId): array {
+		$record = $this->requireOpenRequest(takeoverId: $takeoverId, caseId: $caseId);
+		$caseId = trim((string)($record['caseId'] ?? ''));
+		$asker = trim((string)($record['requestedBy'] ?? ''));
+		$unit = trim((string)($record['holdingUnit'] ?? ''));
+
+		$this->custody->move(
+			caseId: $caseId,
+			organisationUnit: $unit,
+			handler: $asker,
+			reason: trim((string)($record['reason'] ?? '')),
+			movedBy: trim($acceptedBy),
+		);
+
+		$case = $this->store->requireCase(caseId: $caseId);
+		$this->store->writeCase(case: $case, changes: ['assignee' => $asker]);
+
+		$record['status'] = 'accepted';
+		$record['answeredBy'] = trim($acceptedBy);
+		$record['answeredAt'] = (new DateTimeImmutable())->format('c');
+
+		return $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
+	}//end accept()
+
+	/**
+	 * The holder refuses: the case stays, and the reason is on the record.
+	 *
+	 * @param string $takeoverId The request's uuid.
+	 * @param string $reason     Why the holder is keeping the case.
+	 * @param string $refusedBy  Who answered.
+	 * @param string $caseId     The case the caller was authorised on; the request must be on it.
+	 *
+	 * @return array<string, mixed> The answered request.
+	 *
+	 * @throws RefusedException When the request is unknown, on another case, already answered, or the reason is missing.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	public function refuse(string $takeoverId, string $reason, string $refusedBy, string $caseId): array {
+		$reason = trim($reason);
+		if ($reason === '') {
+			throw new RefusedException(
+				rule: self::REASON_MISSING,
+				sentence: 'A refusal without a reason is not an answer, so nothing was recorded.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		$record = $this->requireOpenRequest(takeoverId: $takeoverId, caseId: $caseId);
+		$record['status'] = 'refused';
+		$record['refusalReason'] = $reason;
+		$record['answeredBy'] = trim($refusedBy);
+		$record['answeredAt'] = (new DateTimeImmutable())->format('c');
+
+		$this->logger->info(
+			'Dossiq takeover: the holder kept the case',
+			['caseId' => ($record['caseId'] ?? ''), 'refusedBy' => $refusedBy],
+		);
+
+		return $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
+	}//end refuse()
+
+	/**
+	 * Move every unanswered request past its period to the holding unit.
+	 *
+	 * The status becomes `escalated`, which is still OPEN: the question moved,
+	 * it was not answered. A request that simply expired would be indexed the
+	 * same as one somebody refused, and the two are not the same fact.
+	 *
+	 * @param string $now The moment to measure from, in ISO 8601, or empty for now.
+	 *
+	 * @return array<int, array<string, mixed>> The requests that escalated.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	public function escalateOverdue(string $now = ''): array {
+		$moment = (new StoredInstant())->parse(value: $now) ?? new DateTimeImmutable();
+		$escalated = [];
+
+		foreach ($this->pending() as $record) {
+			$due = $this->answerDue(record: $record);
+			if ($due === null || $due > $moment) {
+				continue;
+			}
+
+			$escalated[] = $this->escalate(record: $record, moment: $moment);
+		}
+
+		return $escalated;
+	}//end escalateOverdue()
+
+	/**
+	 * When the holder's answer to a request is due.
+	 *
+	 * @param array<string, mixed> $record The pending request.
+	 *
+	 * @return DateTimeImmutable|null The moment, or null when the request carries no readable date.
+	 */
+	private function answerDue(array $record): ?DateTimeImmutable {
+		$asked = (new StoredInstant())->parse(value: (string)($record['requestedAt'] ?? ''));
+		if ($asked === null) {
+			return null;
+		}
+
+		$days = $this->answerPeriodDays(caseId: (string)($record['caseId'] ?? ''));
+
+		return $asked->add(new DateInterval('P' . $days . 'D'));
+	}//end answerDue()
+
+	/**
+	 * Mark one overdue request escalated, store it, and hand its task to the holding unit.
+	 *
+	 * @param array<string, mixed> $record The overdue request.
+	 * @param DateTimeImmutable    $moment The moment it escalates.
+	 *
+	 * @return array<string, mixed> The stored request.
+	 */
+	private function escalate(array $record, DateTimeImmutable $moment): array {
+		$record['status'] = 'escalated';
+		$record['escalatedAt'] = $moment->format('c');
+		$stored = $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
+		$this->handTaskToUnit(record: $record);
+
+		return $stored;
+	}//end escalate()
+
+	/**
+	 * Reassign the request's engine task to the holding unit, when it has both.
+	 *
+	 * @param array<string, mixed> $record The escalated request.
+	 *
+	 * @return void
+	 */
+	private function handTaskToUnit(array $record): void {
+		$unit = trim((string)($record['holdingUnit'] ?? ''));
+		$taskId = trim((string)($record['taskId'] ?? ''));
+		if ($taskId !== '' && $unit !== '') {
+			$this->tasks->reassign(taskId: $taskId, assignee: $unit, actor: null);
+		}
+	}//end handTaskToUnit()
+
+	/**
+	 * Every request on a case, newest first.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array<int, array<string, mixed>> The requests.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	public function onCase(string $caseId): array {
+		$caseId = trim($caseId);
+		if ($caseId === '') {
+			return [];
+		}
+
+		$rows = $this->store->rows(filters: ['caseId' => $caseId, '_limit' => self::PAGE_SIZE]);
+		usort(
+			$rows,
+			static function (array $left, array $right): int {
+				return (((string)($right['requestedAt'] ?? '')) <=> ((string)($left['requestedAt'] ?? '')));
+			},
+		);
+
+		return $rows;
+	}//end onCase()
+
+	/**
+	 * The requests nobody has answered yet.
+	 *
+	 * @return array<int, array<string, mixed>> The pending requests.
+	 */
+	private function pending(): array {
+		return $this->store->rows(filters: ['status' => 'pending', '_limit' => self::PAGE_SIZE]);
+	}//end pending()
+
+	/**
+	 * How long the holder has to answer, for this case's type.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return int The number of days.
+	 */
+	private function answerPeriodDays(string $caseId): int {
+		try {
+			$case = $this->store->requireCase(caseId: $caseId);
+		} catch (RefusedException $e) {
+			return self::DEFAULT_ANSWER_DAYS;
+		}
+
+		$caseTypeId = trim((string)($case['caseType'] ?? ''));
+		if ($caseTypeId === '') {
+			return self::DEFAULT_ANSWER_DAYS;
+		}
+
+		return $this->declaredAnswerDays(caseTypeId: $caseTypeId);
+	}//end answerPeriodDays()
+
+	/**
+	 * The answer period the case type declares, or the default.
+	 *
+	 * @param string $caseTypeId The case type.
+	 *
+	 * @return int The number of days.
+	 */
+	private function declaredAnswerDays(string $caseTypeId): int {
+		try {
+			[$objectService, $register] = $this->store->context();
+			$schema = $this->store->schema(key: 'case_type_schema');
+			$caseType = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseTypeId);
+		} catch (Throwable $e) {
+			return self::DEFAULT_ANSWER_DAYS;
+		}
+
+		$declared = (int)($caseType['takeoverAnswerPeriodDays'] ?? 0);
+		if ($declared < 1) {
+			return self::DEFAULT_ANSWER_DAYS;
+		}
+
+		return $declared;
+	}//end declaredAnswerDays()
+
+	/**
+	 * Raise the engine task that carries the request to the holder.
+	 *
+	 * @param array<string, mixed> $record The stored request.
+	 * @param array<string, mixed> $case   The case being asked for.
+	 *
+	 * @return string The engine task uuid, or an empty string when the engine did not take it.
+	 */
+	private function raiseTask(array $record, array $case): string {
+		$holder = trim((string)($record['holder'] ?? ''));
+		$unit = trim((string)($record['holdingUnit'] ?? ''));
+		$title = 'A colleague is asking for ' . trim((string)($case['title'] ?? 'this case'));
+
+		try {
+			return $this->tasks->mirrorImport(
+				task: [
+					'id' => $this->store->uuidOf(row: $record),
+					'title' => $title,
+					'description' => trim((string)($record['reason'] ?? '')),
+					'status' => 'available',
+					'assignee' => $holder,
+					'assigneeGroup' => $unit,
+					'priority' => 'normal',
+				],
+				caseId: trim((string)($record['caseId'] ?? '')),
+				actor: trim((string)($record['requestedBy'] ?? '')),
+			);
+		} catch (Throwable $e) {
+			// The request is already recorded. A task the engine would not
+			// take is a delivery failure, not a reason to lose the question.
+			$this->logger->warning(
+				'Dossiq takeover: the request was recorded but the engine did not take the task',
+				['caseId' => ($record['caseId'] ?? ''), 'exception' => $e->getMessage()],
+			);
+
+			return '';
+		}
+	}//end raiseTask()
+
+	/**
+	 * A request that is still open, or a refusal.
+	 *
+	 * @param string $takeoverId The request's uuid.
+	 * @param string $caseId     The case the request must be on.
+	 *
+	 * @return array<string, mixed> The request.
+	 *
+	 * @throws RefusedException When it is unknown, on another case, or already answered.
+	 */
+	private function requireOpenRequest(string $takeoverId, string $caseId): array {
+		$record = $this->requireOnCase(record: $this->readRequest(takeoverId: trim($takeoverId)), caseId: $caseId);
+		$this->requireUnanswered(record: $record);
+
+		return $record;
+	}//end requireOpenRequest()
+
+	/**
+	 * Read a request by its uuid, refusing when the store cannot be read.
+	 *
+	 * @param string $takeoverId The request's uuid, trimmed.
+	 *
+	 * @return array<string, mixed>|null The request, or null when there is none.
+	 *
+	 * @throws RefusedException When the request could not be read.
+	 */
+	private function readRequest(string $takeoverId): ?array {
+		try {
+			[$objectService, $register] = $this->store->context();
+			return $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $this->store->schema(key: 'case_takeover_schema'),
+				id: $takeoverId,
+			);
+		} catch (Throwable $e) {
+			throw $this->unreadableRequest(previous: $e);
+		}
+	}//end readRequest()
+
+	/**
+	 * The refusal for a request the store could not read.
+	 *
+	 * @param Throwable $previous The read failure.
+	 *
+	 * @return RefusedException The refusal.
+	 */
+	private function unreadableRequest(Throwable $previous): RefusedException {
+		return new RefusedException(
+			rule: self::REQUEST_UNKNOWN,
+			sentence: 'We could not read that request, so nothing was changed.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $previous,
+		);
+	}//end unreadableRequest()
+
+	/**
+	 * The request, when it exists and is on the case the caller was authorised on.
+	 *
+	 * @param array<string, mixed>|null $record The request read, or null.
+	 * @param string                    $caseId The case the request must be on.
+	 *
+	 * @return array<string, mixed> The request.
+	 *
+	 * @throws RefusedException When it is unknown or on another case.
+	 */
+	private function requireOnCase(?array $record, string $caseId): array {
+		// A request on ANOTHER case reads as unknown. The caller was
+		// authorised on the case in the URL, and nothing else: answering a
+		// request by its id alone let anyone who may change one case move a
+		// different one (decision 168 rests on this per-case check holding).
+		if ($record === null || trim((string)($record['caseId'] ?? '')) !== trim($caseId)) {
+			throw new RefusedException(
+				rule: self::REQUEST_UNKNOWN,
+				sentence: 'That request could not be found.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $record;
+	}//end requireOnCase()
+
+	/**
+	 * Refuse a request that was already answered; pending and escalated are still open.
+	 *
+	 * @param array<string, mixed> $record The request.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When it was already answered.
+	 */
+	private function requireUnanswered(array $record): void {
+		$status = trim((string)($record['status'] ?? ''));
+		if ($status !== 'pending' && $status !== 'escalated') {
+			throw new RefusedException(
+				rule: self::ALREADY_ANSWERED,
+				sentence: 'That request was already answered, so nothing was changed.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end requireUnanswered()
+
+}//end class

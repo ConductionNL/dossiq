@@ -38,7 +38,7 @@ use OCA\OpenRegister\Lifecycle\LifecycleGuardInterface;
  * Allows the bezwaar `beslissen` transition only while the statutory
  * decision deadline (AWB art. 7:10) has not been exceeded.
  *
- * @spec openspec/changes/migrate-status-engine-to-or-lifecycle/tasks.md#P-3.3
+ * @spec openspec/changes/archive/2026-06-15-migrate-status-engine-to-or-lifecycle/tasks.md#P-3.3
  */
 class BezwaarDeadlineGuard implements LifecycleGuardInterface {
 	/**
@@ -59,7 +59,7 @@ class BezwaarDeadlineGuard implements LifecycleGuardInterface {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $action/$userId are mandated by the interface; this guard reads only the payload.
 	 * @SuppressWarnings(PHPMD.StaticAccess)          GuardResult has a private constructor upstream; see the note above.
 	 *
-	 * @spec openspec/changes/migrate-status-engine-to-or-lifecycle/tasks.md#P-3.3
+	 * @spec openspec/changes/archive/2026-06-15-migrate-status-engine-to-or-lifecycle/tasks.md#P-3.3
 	 */
 	public function check(array $object, string $action, string $userId): GuardResult {
 		$deadlineRaw = trim((string)($object['decisionDeadline'] ?? ''));

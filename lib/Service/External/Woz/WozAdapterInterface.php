@@ -47,7 +47,7 @@
  * @link https://conduction.nl
  * @link https://kadaster.github.io/WOZ-bevragen/
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -72,7 +72,7 @@ namespace OCA\Dossiq\Service\External\Woz;
  *  3. `Application::register()` already binds `WozApiAdapter` once the
  *     mode resolves to a non-`log` tier — no further code change needed.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 interface WozAdapterInterface {
 	/**
@@ -89,7 +89,7 @@ interface WozAdapterInterface {
 	 * @return WozLookupResult The lookup outcome (status + normalized
 	 *                         envelope, empty unless FOUND).
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupAddress(
 		string $postcode,
@@ -109,7 +109,7 @@ interface WozAdapterInterface {
 	 *
 	 * @return WozLookupResult
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByNummeraanduiding(string $addressDesignationId, array $context = []): WozLookupResult;
 
@@ -121,7 +121,7 @@ interface WozAdapterInterface {
 	 *
 	 * @return WozLookupResult
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByWozObjectNummer(string $wozobjectnummer, array $context = []): WozLookupResult;
 
@@ -131,7 +131,7 @@ interface WozAdapterInterface {
 	 *
 	 * @return bool TRUE when the adapter is a log-only stub.
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function isDormant(): bool;
 }//end interface

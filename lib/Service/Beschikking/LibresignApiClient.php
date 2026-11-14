@@ -39,7 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
 use OCP\IURLGenerator;
@@ -149,23 +149,7 @@ class LibresignApiClient {
 	private function call(string $method, string $path, ?array $payload): array {
 		$url = rtrim($this->urlGenerator->getBaseUrl(), '/') . $path;
 
-		$options = [
-			'timeout' => self::TIMEOUT_SECONDS,
-			'headers' => [
-				'OCS-APIREQUEST' => 'true',
-				'Accept' => 'application/json',
-			],
-		];
-
-		$serviceUid = $this->appConfig->getValueString(Application::APP_ID, 'libresign_service_uid', '');
-		$serviceAppPass = $this->appConfig->getValueString(Application::APP_ID, 'libresign_service_app_password', '');
-		if ($serviceUid !== '' && $serviceAppPass !== '') {
-			$options['auth'] = [$serviceUid, $serviceAppPass];
-		}
-
-		if ($payload !== null) {
-			$options['json'] = $payload;
-		}
+		$options = $this->requestOptions(payload: $payload);
 
 		try {
 			$client = $this->clientService->newClient();
@@ -174,25 +158,67 @@ class LibresignApiClient {
 				default => $client->get($url, $options),
 			};
 
-			$decoded = json_decode((string)$response->getBody(), true);
-			if (is_array($decoded) === false) {
-				throw new RuntimeException('libresign_api_error');
-			}
-
-			$data = ($decoded['ocs']['data'] ?? null);
-			if (is_array($data) === false) {
-				throw new RuntimeException('libresign_api_error');
-			}
-
-			return $data;
+			return $this->ocsData(body: (string)$response->getBody());
 		} catch (RuntimeException $e) {
 			throw $e;
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'LibresignApiClient: request failed',
-				['app' => Application::APP_ID, 'url' => $url, 'method' => $method, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'url' => $url, 'method' => $method, 'error' => $e->getMessage()],
 			);
 			throw new RuntimeException('libresign_api_error', 0, $e);
 		}//end try
 	}//end call()
+
+	/**
+	 * The request options: timeout, OCS headers, service auth and JSON body.
+	 *
+	 * @param array<string, mixed>|null $payload The JSON body for POST requests.
+	 *
+	 * @return array<string, mixed> The client options.
+	 */
+	private function requestOptions(?array $payload): array {
+		$options = [
+			'timeout' => self::TIMEOUT_SECONDS,
+			'headers' => [
+				'OCS-APIREQUEST' => 'true',
+				'Accept' => 'application/json',
+			],
+		];
+
+		$serviceUid = $this->appConfig->getValueString(AppIdentity::APP_ID, 'libresign_service_uid', '');
+		$serviceAppPass = $this->appConfig->getValueString(AppIdentity::APP_ID, 'libresign_service_app_password', '');
+		if ($serviceUid !== '' && $serviceAppPass !== '') {
+			$options['auth'] = [$serviceUid, $serviceAppPass];
+		}
+
+		if ($payload !== null) {
+			$options['json'] = $payload;
+		}
+
+		return $options;
+	}//end requestOptions()
+
+	/**
+	 * The `ocs.data` of a response body.
+	 *
+	 * @param string $body The raw response body.
+	 *
+	 * @return array<string, mixed> The OCS data.
+	 *
+	 * @throws RuntimeException 'libresign_api_error' when the body carries no OCS data.
+	 */
+	private function ocsData(string $body): array {
+		$decoded = json_decode($body, true);
+		if (is_array($decoded) === false) {
+			throw new RuntimeException('libresign_api_error');
+		}
+
+		$data = ($decoded['ocs']['data'] ?? null);
+		if (is_array($data) === false) {
+			throw new RuntimeException('libresign_api_error');
+		}
+
+		return $data;
+	}//end ocsData()
 }//end class

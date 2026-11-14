@@ -4,11 +4,10 @@
 // Pure presentation helpers for the deelzaak (sub-case) UI surface.
 //
 // These functions hold the user-facing string + visibility logic for the
-// case-list sub-case count badge (T10) and the parent-deletion orphan
-// warning (T11). They are deliberately DOM-free and side-effect-free so the
+// case-list sub-case count badge (T10) and for what a refused delete says
+// (REQ-CM-35). They are deliberately DOM-free and side-effect-free so the
 // vitest suite (node environment) can pin the exact rendered copy without a
-// browser. The Vue layer (formatters.js, DeelzaakList.vue, the orphan
-// warning modal) consumes them.
+// browser. formatters.js consumes them.
 
 import { translate as t } from '@nextcloud/l10n'
 
@@ -22,7 +21,7 @@ import { translate as t } from '@nextcloud/l10n'
  *
  * @param {number} count Number of sub-cases for the case.
  * @return {string} Badge label, or '' when no badge should be shown.
- * @spec openspec/changes/deelzaak-support/tasks.md#T10
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T10
  */
 export function subCaseCountBadge(count) {
 	const n = Number(count)
@@ -37,7 +36,7 @@ export function subCaseCountBadge(count) {
  *
  * @param {number} count Number of sub-cases for the case.
  * @return {boolean} True when count > 0.
- * @spec openspec/changes/deelzaak-support/tasks.md#T10
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T10
  */
 export function hasSubCaseBadge(count) {
 	const n = Number(count)
@@ -45,35 +44,43 @@ export function hasSubCaseBadge(count) {
 }
 
 /**
- * Warning message shown before deleting a parent case that has sub-cases.
+ * What a refused delete tells the person who asked for it.
  *
- * Mirrors the exact copy mandated by spec REQ-DZS-006-A: deleting unlinks the
- * sub-cases from their parent rather than cascade-deleting them.
+ * REQ-CM-35 refuses the delete of a held case with a sentence naming every
+ * rule that holds it, and that sentence is the whole point: a generic "could
+ * not be deleted" throws away the only thing the person needs to act on. It
+ * is read from the server's refusal body, which OpenRegister nests under
+ * `errors` when a guard stopped the write and puts at the top level when the
+ * refusal came from a dossiq door.
  *
- * @param {number} count Number of sub-cases attached to the parent.
- * @return {string} The localized warning sentence.
- * @spec openspec/changes/deelzaak-support/tasks.md#T11
+ * The generic line is the fallback for a failure that carried no sentence at
+ * all (a network drop, a 500), never a replacement for one that did.
+ *
+ * @param {object} err The error the delete threw.
+ * @return {string} The refusal sentence, or the generic fallback.
+ * @spec openspec/specs/case-management/spec.md
  */
-export function orphanWarningMessage(count) {
-	const n = Math.max(0, Number(count) || 0)
-	return t(
-		'dossiq',
-		'This case has {count} sub-cases. Deleting it will unlink the sub-cases from their parent. Do you want to continue?',
-		{ count: n },
-	)
+export function refusalMessage(err) {
+	const body = err?.response?.data ?? {}
+	const sentence = body?.errors?.message ?? body?.message ?? body?.detail
+	if (typeof sentence === 'string' && sentence.trim() !== '') {
+		return sentence
+	}
+	return t('dossiq', 'The case could not be deleted. Please try again.')
 }
 
 /**
- * Whether deleting a case requires the orphan-warning flow.
+ * The status a new sub-case starts in: its case type's `initialStatus`.
  *
- * A parent with one or more sub-cases needs the warning + unlink step; a case
- * with no sub-cases takes the standard delete confirmation (REQ-DZS-006-C).
+ * OpenRegister starts a created case in that status and refuses another
+ * start state, so a sub-case type without one sends no status at all.
  *
- * @param {number} count Number of sub-cases attached to the case.
- * @return {boolean} True when the orphan-warning dialog must be shown first.
- * @spec openspec/changes/deelzaak-support/tasks.md#T11
+ * @param {object|null} caseType The selected sub-case type.
+ * @return {string|null} The status id, or null when the type declares none.
+ * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
  */
-export function requiresOrphanWarning(count) {
-	const n = Number(count)
-	return Number.isFinite(n) && n > 0
+export function subCaseInitialStatus(caseType) {
+	const initial = caseType?.initialStatus
+	const id = typeof initial === 'object' && initial !== null ? initial.id : initial
+	return typeof id === 'string' && id !== '' ? id : null
 }

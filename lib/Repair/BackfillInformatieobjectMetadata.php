@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T09
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -32,9 +32,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
 use OCP\Files\Folder;
@@ -47,7 +47,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Repair step that back-fills informatieobject metadata for existing files.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T09
  */
 class BackfillInformatieobjectMetadata implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -61,12 +61,12 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Settings service (config + ObjectService).
+	 * @param SettingsServiceInterface $settingsService Settings service (config + ObjectService).
 	 * @param IRootFolder $rootFolder Nextcloud root folder.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IRootFolder $rootFolder,
 		private readonly LoggerInterface $logger,
 	) {
@@ -77,7 +77,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T09
 	 */
 	public function getName(): string {
 		return 'Back-fill ZGW informatieobject metadata for existing Dossiq dossier files';
@@ -90,7 +90,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T09
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -118,14 +118,12 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T09
 	 */
 	private function runInner(object $objectService, IOutput $output): void {
 
-		$register = $this->settingsService->getConfigValue('register');
-		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
-		if ($register === '' || $infoSchema === '') {
-			$output->info('Dossiq backfill: dossier schemas not configured; skipping.');
+		$target = $this->configuredTarget(output: $output);
+		if ($target === null) {
 			return;
 		}
 
@@ -135,7 +133,43 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			return;
 		}
 
-		$existing = $this->existingFilenames(objectService: $objectService, register: $register, schema: $infoSchema);
+		[$register, $infoSchema] = $target;
+		[$created, $skipped] = $this->backfillEveryFolder(
+			target: new InformatieobjectTarget(objectService: $objectService, register: $register, schema: $infoSchema),
+			folder: $folder
+		);
+
+		$output->info('Dossiq backfill: created ' . $created . ' informatieobject(en), skipped ' . $skipped . ' existing.');
+	}//end runInner()
+
+	/**
+	 * The register and informatieobject schema, when both are configured.
+	 *
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return array{0: string, 1: string}|null The register and schema, or null when not configured.
+	 */
+	private function configuredTarget(IOutput $output): ?array {
+		$register = $this->settingsService->getConfigValue('register');
+		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
+		if ($register === '' || $infoSchema === '') {
+			$output->info('Dossiq backfill: dossier schemas not configured; skipping.');
+			return null;
+		}
+
+		return [$register, $infoSchema];
+	}//end configuredTarget()
+
+	/**
+	 * Back-fill every case folder under the storage folder.
+	 *
+	 * @param InformatieobjectTarget $target The object service, register and informatieobject schema.
+	 * @param Folder                 $folder The storage folder.
+	 *
+	 * @return array{0: int, 1: int} The number created and the number skipped.
+	 */
+	private function backfillEveryFolder(InformatieobjectTarget $target, Folder $folder): array {
+		$existing = $this->existingFilenames(target: $target);
 
 		$created = 0;
 		$skipped = 0;
@@ -144,20 +178,14 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 				continue;
 			}
 
-			$result = $this->backfillFolderNode(
-				objectService: $objectService,
-				register: $register,
-				schema: $infoSchema,
-				node: $node,
-				existing: $existing,
-			);
+			$result = $this->backfillFolderNode(target: $target, node: $node, existing: $existing);
 			$created += $result['created'];
 			$skipped += $result['skipped'];
 			$existing = $result['existing'];
 		}//end foreach
 
-		$output->info('Dossiq backfill: created ' . $created . ' informatieobject(en), skipped ' . $skipped . ' existing.');
-	}//end runInner()
+		return [$created, $skipped];
+	}//end backfillEveryFolder()
 
 	/**
 	 * Back-fill every not-yet-registered file inside one case folder.
@@ -165,27 +193,23 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	 * Files whose name is already registered are counted as skipped; `_part_` upload fragments are
 	 * ignored entirely. A per-file failure is logged and does not abort the folder.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register slug.
-	 * @param string $schema The informatieobject schema slug.
-	 * @param Folder $node The case folder to walk.
-	 * @param array<int, string> $existing Filenames already registered.
+	 * @param InformatieobjectTarget $target   The object service, register and informatieobject schema.
+	 * @param Folder                 $node     The case folder to walk.
+	 * @param array<int, string>     $existing Filenames already registered.
 	 *
 	 * @return array{created: int, skipped: int, existing: array<int, string>} Counts plus the grown filename list.
 	 */
-	private function backfillFolderNode(object $objectService, string $register, string $schema, Folder $node, array $existing): array {
+	private function backfillFolderNode(InformatieobjectTarget $target, Folder $node, array $existing): array {
 		$created = 0;
 		$skipped = 0;
 
 		foreach ($node->getDirectoryListing() as $fileNode) {
-			if ($fileNode instanceof File === false) {
+			$file = $this->backfillableFile(node: $fileNode);
+			if ($file === null) {
 				continue;
 			}
 
-			$fileName = $fileNode->getName();
-			if (str_starts_with($fileName, '_part_') === true) {
-				continue;
-			}
+			$fileName = $file->getName();
 
 			if (in_array($fileName, $existing, true) === true) {
 				$skipped++;
@@ -193,19 +217,13 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			}
 
 			try {
-				$this->backfillFile(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					folderUuid: $node->getName(),
-					file: $fileNode,
-				);
+				$this->backfillFile(target: $target, folderUuid: $node->getName(), file: $file);
 				$existing[] = $fileName;
 				$created++;
 			} catch (\Throwable $e) {
 				$this->logger->warning(
 					'Dossiq backfill: failed for ' . $fileName . ': ' . $e->getMessage(),
-					['app' => Application::APP_ID],
+					['app' => AppIdentity::APP_ID],
 				);
 			}
 		}//end foreach
@@ -214,25 +232,97 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	}//end backfillFolderNode()
 
 	/**
+	 * The node as a file to back-fill, or null for a folder or an upload fragment.
+	 *
+	 * @param mixed $node An entry of a case folder's directory listing.
+	 *
+	 * @return File|null The file, or null when it is not back-filled.
+	 */
+	private function backfillableFile(mixed $node): ?File {
+		if ($node instanceof File === false) {
+			return null;
+		}
+
+		if (str_starts_with($node->getName(), '_part_') === true) {
+			return null;
+		}
+
+		return $node;
+	}//end backfillableFile()
+
+	/**
 	 * Create an informatieobject (+ join when possible) for one existing file.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register slug.
-	 * @param string $schema The informatieobject schema slug.
-	 * @param string $folderUuid The storing folder UUID (used as the link key).
-	 * @param File $file The Nextcloud file node.
+	 * @param InformatieobjectTarget $target     The object service, register and informatieobject schema.
+	 * @param string                 $folderUuid The storing folder UUID (used as the link key).
+	 * @param File                   $file       The Nextcloud file node.
 	 *
 	 * @return void
 	 */
-	private function backfillFile(object $objectService, string $register, string $schema, string $folderUuid, File $file): void {
+	private function backfillFile(InformatieobjectTarget $target, string $folderUuid, File $file): void {
+		$informatieobject = $this->informatieobjectFor(file: $file);
+
+		$saved = $target->objectService->saveObject(object: $informatieobject, register: $target->register, schema: $target->schema);
+		$infoId = $this->savedUuid(saved: $saved);
+
+		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
+		if ($joinSchema !== '' && $infoId !== '') {
+			$target->objectService->saveObject(
+				object: $this->joinRecord(folderUuid: $folderUuid, infoId: $infoId),
+				register: $target->register,
+				schema: $joinSchema,
+			);
+		}
+	}//end backfillFile()
+
+	/**
+	 * The informatieobject to register for one existing file, integrity hash included.
+	 *
+	 * @param File $file The Nextcloud file node.
+	 *
+	 * @return array<string, mixed> The informatieobject.
+	 */
+	private function informatieobjectFor(File $file): array {
 		$content = (string)$file->getContent();
+		$author = $this->authorOf(file: $file);
+
+		$informatieobject = $this->describedFile(file: $file, author: $author);
+		$informatieobject['integrity'] = [
+			'algorithm' => 'sha256',
+			'value' => hash('sha256', $content),
+			'date' => date('Y-m-d\TH:i:s'),
+		];
+
+		return $informatieobject;
+	}//end informatieobjectFor()
+
+	/**
+	 * The display name of the file's owner, or an empty string without one.
+	 *
+	 * @param File $file The Nextcloud file node.
+	 *
+	 * @return string The author.
+	 */
+	private function authorOf(File $file): string {
 		$owner = $file->getOwner();
 		$author = '';
 		if ($owner !== null) {
 			$author = $owner->getDisplayName();
 		}
 
-		$informatieobject = [
+		return $author;
+	}//end authorOf()
+
+	/**
+	 * The descriptive informatieobject fields read off the file.
+	 *
+	 * @param File $file The Nextcloud file node.
+	 * @param string $author The owner's display name.
+	 *
+	 * @return array<string, mixed> The fields.
+	 */
+	private function describedFile(File $file, string $author): array {
+		return [
 			'title' => $file->getName(),
 			'fileName' => $file->getName(),
 			'bestandsomvang' => $file->getSize(),
@@ -244,48 +334,54 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			'creatiedatum' => date('Y-m-d', $file->getMTime()),
 			'taal' => 'nld',
 			'fileId' => $file->getId(),
-			'integrity' => [
-				'algorithm' => 'sha256',
-				'value' => hash('sha256', $content),
-				'date' => date('Y-m-d\TH:i:s'),
-			],
 		];
+	}//end describedFile()
 
-		$saved = $objectService->saveObject(object: $informatieobject, register: $register, schema: $schema);
+	/**
+	 * The UUID of a saved object, or an empty string when the save returned none.
+	 *
+	 * @param mixed $saved What the object service returned.
+	 *
+	 * @return string The UUID.
+	 */
+	private function savedUuid(mixed $saved): string {
 		$infoId = '';
 		if (is_object($saved) === true) {
 			$infoId = $saved->getUuid();
 		}
 
-		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
-		if ($joinSchema !== '' && $infoId !== '') {
-			$objectService->saveObject(
-				object: [
-					'case' => $folderUuid,
-					'informatieobject' => $infoId,
-					'natureRelationshipDisplay' => 'Hoort at omgekeerd',
-					'registrationDate' => date('Y-m-d\TH:i:s\Z'),
-				],
-				register: $register,
-				schema: $joinSchema,
-			);
-		}
-	}//end backfillFile()
+		return $infoId;
+	}//end savedUuid()
+
+	/**
+	 * The join record that links a registered informatieobject to its case.
+	 *
+	 * @param string $folderUuid The storing folder UUID (used as the link key).
+	 * @param string $infoId The informatieobject UUID.
+	 *
+	 * @return array<string, string> The join record.
+	 */
+	private function joinRecord(string $folderUuid, string $infoId): array {
+		return [
+			'case' => $folderUuid,
+			'informatieobject' => $infoId,
+			'natureRelationshipDisplay' => 'Hoort at omgekeerd',
+			'registrationDate' => date('Y-m-d\TH:i:s\Z'),
+		];
+	}//end joinRecord()
 
 	/**
 	 * Collect the bestandsnaam of every existing informatieobject for idempotency.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register slug.
-	 * @param string $schema The informatieobject schema slug.
+	 * @param InformatieobjectTarget $target The object service, register and informatieobject schema.
 	 *
 	 * @return string[] Filenames already represented by an informatieobject.
 	 */
-	private function existingFilenames(object $objectService, string $register, string $schema): array {
+	private function existingFilenames(InformatieobjectTarget $target): array {
 		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+			objectService: $target->objectService,
+			register: $target->register,
+			schema: $target->schema,
 			filters: ['_limit' => 10000],
 		);
 

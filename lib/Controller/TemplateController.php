@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\TemplateLibraryService;
+use OCA\Dossiq\Kernel\Contracts\TemplateLibraryServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -36,7 +36,7 @@ use OCP\IUserSession;
 /**
  * Controller for zaaktype template management.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class TemplateController extends Controller {
 	/**
@@ -44,13 +44,13 @@ class TemplateController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param TemplateLibraryService $templateService The template service
+	 * @param TemplateLibraryServiceInterface $templateService The template service
 	 * @param IUserSession $userSession The user session
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly TemplateLibraryService $templateService,
+		private readonly TemplateLibraryServiceInterface $templateService,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -63,7 +63,7 @@ class TemplateController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function index(): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -92,7 +92,7 @@ class TemplateController extends Controller {
 	 * authenticated caller, so a per-object guard here would protect nothing
 	 * that is not already listable. No OpenRegister object is touched.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function show(string $id): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -116,7 +116,7 @@ class TemplateController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function activate(string $id): JSONResponse {
 		if ($this->userSession->getUser() === null) {

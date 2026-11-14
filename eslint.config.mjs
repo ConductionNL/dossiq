@@ -71,6 +71,13 @@ export default [
 	...recommended,
 
 	{
+		// A case definition package's manifest is named package.json (hydra
+		// ADR-118) but is not an npm manifest, so the npm sort rule does not
+		// apply to it. The package validator checks it instead.
+		ignores: ['tests/fixtures/packages/*/package.json', 'lib/Settings/packages/*/package.json'],
+	},
+
+	{
 		// 🔴 SCOPED, and it must be. Flat config resolves a rule's plugin from the
 		// config object the rule sits in, and v9 also lints `.json` (it ships
 		// `@eslint/json`), where `jsdoc` is not registered. An unscoped `jsdoc/*`
@@ -241,7 +248,11 @@ export default [
 		//
 		// ⚠️ `.js` and `.cjs` ONLY. A `scripts/*.mjs` is genuinely ESM and must
 		// keep the default `sourceType`, or `import` stops parsing there.
-		files: ['scripts/**/*.js', 'scripts/**/*.cjs'],
+		//
+		// `tools/` is the same kind of file and joins the same block: a
+		// CommonJS Node CLI that prints its report. `tools/merge-l10n.js` is a
+		// git merge driver, so git, not a browser, is what runs it.
+		files: ['scripts/**/*.js', 'scripts/**/*.cjs', 'tools/**/*.js', 'tools/**/*.cjs'],
 		languageOptions: {
 			sourceType: 'commonjs',
 			globals: {

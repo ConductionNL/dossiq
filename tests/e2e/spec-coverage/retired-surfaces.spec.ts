@@ -17,7 +17,7 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { navToRoute } from '../helpers/nav.ts'
+import { journeyBudget, navToRoute } from '../helpers/nav.ts'
 
 // NO trackDossiqErrors HERE, deliberately.
 //
@@ -35,10 +35,32 @@ test.describe('Retired: automatic-actions settings page (C2)', () => {
 	// inline type. They migrate to OpenRegister flows via
 	// `occ dossiq:actions:migrate-to-flows`.
 	//
-	// @e2e openspec/changes/page-topology-cleanup/proposal.md
+	// @e2e openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md#the-pages-are-gone
+	//
+	// 🔴 IT CITED A PROPOSAL AND NO REQUIREMENT, AND IT NAMES THE SCENARIO
+	// NOW. `proposal.md` states why a change is being made; it declares no
+	// scenario, so there was nothing for a reader to check the claim against
+	// and nothing for gate-19 to resolve.
+	//
+	// ⚠️ THIS STILL CREDITS NOTHING, AND THAT IS NOT THE CITATION'S FAULT.
+	// Gate-19 parses `openspec/specs/**` only, so an anchor into an
+	// unarchived change resolves for a human and not for the gate. There is
+	// no published `automatic-actions-surface` capability to point at, and
+	// the published `automatic-actions` capability is about executing
+	// actions, not about retiring their administration pages: it declares no
+	// scenario this test proves. Re-anchoring there to satisfy the gate would
+	// claim coverage of a requirement this test never exercises, which is
+	// harder to catch later than a citation that credits nothing.
+	//
+	// This becomes live the moment `page-topology-cleanup` is archived and
+	// the delta lands under `openspec/specs/`. Until then the honest reading
+	// is: the test proves the retirement, and the gate cannot see it.
 	test('the retired route no longer renders an automatic-actions view', async ({
 		page,
 	}) => {
+		// A retired route resolves under neither URL form, so navToRoute loads
+		// both: two page loads. See `journeyBudget`.
+		test.setTimeout(journeyBudget(2))
 		await navToRoute(page, '/settings/automatic-actions')
 
 		// The create control the page used to own. Asserting on THIS rather than
@@ -78,10 +100,37 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 	// decidiq owns agenda-building and meetings, and surfaces them on a case
 	// through the `decidesk-decisions` integration leaf.
 	//
-	// @e2e openspec/changes/page-topology-cleanup/proposal.md
+	// @e2e openspec/changes/page-topology-cleanup/specs/decision-making-surface/spec.md#procest-hosts-no-decision-making-pages
+	//
+	// 🔴 IT CITED A PROPOSAL AND NO REQUIREMENT. Same repair as the C2 test
+	// above, and the same limit: gate-19 parses `openspec/specs/**` only, so
+	// this resolves for a reader and not for the gate until
+	// `page-topology-cleanup` is archived.
+	//
+	// 🔴 AND THE NEAREST PUBLISHED REQUIREMENT SAYS THE OPPOSITE, SO DO NOT
+	// RE-ANCHOR ONTO IT. `besluitvorming-leaf` REQ-BVL-002 is titled "The
+	// standalone Besluitvorming nav MUST be retired while its pages stay
+	// routable", and its scenario `#former-pages-stay-reachable-by-deep-link`
+	// requires that `/besluitvorming/agenda` "still renders (the route is
+	// registered)". This test asserts it does NOT render and falls through to
+	// the app root. Citing it there would attach the test to a requirement it
+	// disproves, and it would read as coverage.
+	//
+	// The two are not both true, and the conflict is in the published set
+	// rather than in this file: REQ-BVL-002 was superseded by D1 of
+	// `page-topology-cleanup`, which has not been archived, so the retired
+	// requirement is still the published one. Reported with this change;
+	// resolving it belongs to that change's archive step, not to a test file.
+	//
+	// This scenario has three clauses and this test proves the first. The
+	// sibling below proves the second, and carries the same citation for that
+	// reason: one test citing the whole scenario would over-claim it.
 	test('the agenda compiler route no longer renders its view', async ({
 		page,
 	}) => {
+		// A retired route resolves under neither URL form, so navToRoute loads
+		// both: two page loads. See `journeyBudget`.
+		test.setTimeout(journeyBudget(2))
 		await navToRoute(page, '/besluitvorming/agenda')
 
 		// The compiler's own control. A "no error" assertion alone would pass on
@@ -94,9 +143,18 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
+	// @e2e openspec/changes/page-topology-cleanup/specs/decision-making-surface/spec.md#procest-hosts-no-decision-making-pages
+	//
+	// The scenario's SECOND clause, "no `/besluitvorming/vergaderingen/:id`
+	// page exists". Cited here as well as above because the scenario names
+	// both routes and no single test drives both: a citation on one test
+	// alone would claim the pair.
 	test('the vergadering detail route no longer renders its view', async ({
 		page,
 	}) => {
+		// A retired route resolves under neither URL form, so navToRoute loads
+		// both: two page loads. See `journeyBudget`.
+		test.setTimeout(journeyBudget(2))
 		await navToRoute(page, '/besluitvorming/vergaderingen/does-not-exist')
 
 		await expect(page).toHaveURL(/\/apps\/dossiq\/?$/)
@@ -112,14 +170,38 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 		// indistinguishable from "besluitvorming was deleted": the leaf is what
 		// carries the capability now, and it is registered by decidiq's init
 		// script on every page, not by dossiq.
-		// THREE OUTCOMES, not two. The previous version returned `null` both when
-		// the registry was absent and when the leaf was missing from it, then
-		// reported every null as "registry not present" — so a real missing leaf
-		// would have been described as an environment problem, and an
-		// environment problem (this repo's CI does not install the decision app)
-		// was reported as a missing leaf. A lookup failure must not wear the same
-		// words as a judgement.
+		// FOUR OUTCOMES, not three. The previous version read the ABSENCE OF THE
+		// REGISTRY as "the decision app is not installed", and those are two
+		// different apps: the registry is OpenRegister's, installed by its
+		// `openregister-integration-global` bundle on every page. That bundle
+		// was never built in CI (openregister gitignores `/js/`, and the shared
+		// workflow cloned it without building), so the registry was absent on
+		// every run and this test skipped on every run, reporting a fact about
+		// openregister's packaging in the words of decidiq's absence. A skip
+		// renders exactly like a pass, so it read as covered for as long as it
+		// existed.
+		//
+		// ConductionNL/.github#722 builds that bundle, and the moment it did,
+		// this test started running and failing — correctly, because decidiq
+		// really is not installed here. So the guard now asks the question it
+		// was always meant to ask, of the right app.
+		//
+		// `OC.appswebroots` is how Nextcloud itself resolves an installed app,
+		// and it is already this suite's probe for exactly this (see
+		// dutch-value-l10n.spec.ts). BOTH ids are accepted: the fleet rename is
+		// in flight and `lib/Support/FleetAppId.php` maps
+		// `decidiq => ['decidiq', 'decidesk']`, so naming only one would make
+		// this skip on whichever side of the rename the instance is on.
 		const probe = await page.evaluate(() => {
+			const oc = (
+				window as unknown as {
+					OC?: { appswebroots?: Record<string, string> }
+				}
+			).OC
+			const roots = oc?.appswebroots ?? {}
+			const decisionsApp =
+				['decidiq', 'decidesk'].find((id) => id in roots) ?? null
+
 			const registry = (
 				window as unknown as {
 					OCA?: {
@@ -128,12 +210,13 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 				}
 			).OCA?.OpenRegister?.integrations
 			if (!registry?.list) {
-				return { registry: false as const }
+				return { decisionsApp, registry: false as const }
 			}
 
 			const entries = registry.list() as Array<{ id?: string; tab?: unknown }>
 			const found = entries.find((entry) => entry.id === 'decidesk-decisions')
 			return {
+				decisionsApp,
 				registry: true as const,
 				ids: entries.map((entry) => entry.id).filter(Boolean),
 				leaf: found
@@ -142,14 +225,24 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 			}
 		})
 
-		// No registry at all = the decision app is not installed on this
-		// instance. That is an environment fact, not a defect in this repo, and
-		// dossiq's CI does not install it. Skip with the reason stated, rather
-		// than failing red on something this PR cannot affect.
+		// THE ONLY ENVIRONMENT FACT THAT EARNS A SKIP: the app that registers
+		// the leaf is not on this instance. dossiq's CI installs openregister
+		// and nothing else, so this is the branch CI takes — but it now says so
+		// about the app it actually measured.
 		test.skip(
-			probe.registry === false,
-			'OpenRegister integration registry absent — the decision app is not installed on this instance',
+			probe.decisionsApp === null,
+			'neither `decidiq` nor `decidesk` is installed on this instance, so nothing can register the decisions leaf',
 		)
+
+		// The decisions app IS installed. An absent registry is now a REAL
+		// failure and must not be skipped past: it means OpenRegister shipped
+		// without its integration bundle, and every integration leaf in this
+		// app is silently rendering nothing. That is the condition that hid
+		// this test for its whole life, so it fails loudly rather than quietly.
+		expect(
+			probe.registry,
+			`\`${probe.decisionsApp}\` is installed but OpenRegister's integration registry is absent, so no integration leaf can render. Its \`openregister-integration-global\` bundle is missing — an unbuilt openregister checkout serves nothing to register the providers with.`,
+		).toBe(true)
 
 		// Registry present: now a missing leaf IS a real finding, and the message
 		// can name what was actually registered instead of guessing.

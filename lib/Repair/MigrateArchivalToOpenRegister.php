@@ -43,9 +43,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\HoldOrder;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -56,6 +57,8 @@ use Psr\Log\LoggerInterface;
  * Migrates the retired app-local archival state onto OpenRegister.
  *
  * @spec openspec/specs/archief-edepot-handover/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class MigrateArchivalToOpenRegister implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -103,13 +106,13 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settings Shared OR/settings resolver.
+	 * @param SettingsServiceInterface $settings Shared OR/settings resolver.
 	 * @param ContainerInterface $container DI container (OR collaborators resolved lazily).
 	 * @param IAppConfig $appConfig App config for the completion marker.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 		private readonly ContainerInterface $container,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
@@ -206,18 +209,11 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 
 		try {
 			$entity = $mapper->find($register);
-			if (is_object($entity) === false
-				|| method_exists($entity, 'getConfiguration') === false
-				|| method_exists($entity, 'setConfiguration') === false
-			) {
+			if ($this->isConfigurable(entity: $entity) === false) {
 				return;
 			}
 
-			$config = ($entity->getConfiguration() ?? []);
-			if (is_array($config) === false) {
-				$config = [];
-			}
-
+			$config = $this->configurationOf(entity: $entity);
 			if (($config['tmloEnabled'] ?? false) === true) {
 				return;
 			}
@@ -235,6 +231,35 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	}//end enableTmlo()
 
 	/**
+	 * Whether a register entity carries a configuration that can be read and written.
+	 *
+	 * @param mixed $entity What the register mapper found.
+	 *
+	 * @return bool
+	 */
+	private function isConfigurable(mixed $entity): bool {
+		return is_object($entity) === true
+			&& method_exists($entity, 'getConfiguration') === true
+			&& method_exists($entity, 'setConfiguration') === true;
+	}//end isConfigurable()
+
+	/**
+	 * A register's configuration, empty when it has none or it is not a list.
+	 *
+	 * @param object $entity The register entity.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function configurationOf(object $entity): array {
+		$config = ($entity->getConfiguration() ?? []);
+		if (is_array($config) === false) {
+			return [];
+		}
+
+		return $config;
+	}//end configurationOf()
+
+	/**
 	 * Place an OR legal hold on every case whose OverdrachtTrigger was
 	 * suspended for a running Awb procedure.
 	 *
@@ -243,19 +268,16 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	 * @return int Number of holds placed.
 	 */
 	private function placeHoldsForSuspendedTriggers(string $register): int {
-		$objectService = $this->settings->getObjectService();
-		$schema = (string)$this->settings->getConfigValue('overdracht_trigger_schema');
-		$legalHold = $this->resolveOr(fqn: self::LEGAL_HOLD_SERVICE);
-		$objectMapper = $this->resolveOr(fqn: self::OBJECT_MAPPER);
-		if ($objectService === null || $schema === '' || $legalHold === null || $objectMapper === null) {
+		$tools = $this->holdTools();
+		if ($tools === []) {
 			return 0;
 		}
 
 		try {
 			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
+				objectService: $tools['objectService'],
 				register: $register,
-				schema: $schema,
+				schema: $tools['schema'],
 				filters: ['status' => 'opgeschort-juridische-procedure']
 			);
 		} catch (\Throwable $e) {
@@ -263,20 +285,45 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 			return 0;
 		}
 
+		return $this->placeHoldsOnRows(rows: $rows, tools: $tools);
+	}//end placeHoldsForSuspendedTriggers()
+
+	/**
+	 * The store, the trigger schema, the hold service and the object mapper, or nothing when any is missing.
+	 *
+	 * @return array{objectService: object, schema: string, legalHold: object, objectMapper: object}|array{}
+	 */
+	private function holdTools(): array {
+		$objectService = $this->settings->getObjectService();
+		$schema = (string)$this->settings->getConfigValue('overdracht_trigger_schema');
+		$legalHold = $this->resolveOr(fqn: self::LEGAL_HOLD_SERVICE);
+		$objectMapper = $this->resolveOr(fqn: self::OBJECT_MAPPER);
+		if ($objectService === null || $schema === '' || $legalHold === null || $objectMapper === null) {
+			return [];
+		}
+
+		return ['objectService' => $objectService, 'schema' => $schema, 'legalHold' => $legalHold, 'objectMapper' => $objectMapper];
+	}//end holdTools()
+
+	/**
+	 * Place a hold on the case of every suspended trigger that names one.
+	 *
+	 * @param array<int, array<string, mixed>>                                                    $rows  The suspended triggers.
+	 * @param array{objectService: object, schema: string, legalHold: object, objectMapper: object} $tools The resolved collaborators.
+	 *
+	 * @return int Number of holds placed.
+	 */
+	private function placeHoldsOnRows(array $rows, array $tools): int {
 		$placed = 0;
 		foreach ($rows as $row) {
 			$caseId = (string)($row['caseId'] ?? '');
-			if ($caseId === '') {
-				continue;
-			}
-
-			if ($this->placeHoldOnCase(legalHold: $legalHold, objectMapper: $objectMapper, caseId: $caseId) === true) {
+			if ($caseId !== '' && $this->placeHoldOnCase(legalHold: $tools['legalHold'], objectMapper: $tools['objectMapper'], caseId: $caseId) === true) {
 				$placed++;
 			}
 		}
 
 		return $placed;
-	}//end placeHoldsForSuspendedTriggers()
+	}//end placeHoldsOnRows()
 
 	/**
 	 * Place an OR legal hold on a single case (idempotent, fail-safe).
@@ -294,7 +341,10 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 				return false;
 			}
 
-			$legalHold->placeHold($caseObject, 'Awb-procedure — gemigreerd uit OverdrachtTrigger (opgeschort-juridische-procedure)');
+			$legalHold->placeHold(
+				object: $caseObject,
+				order: new HoldOrder(reason: 'Awb-procedure — gemigreerd uit OverdrachtTrigger (opgeschort-juridische-procedure)')
+			);
 			return true;
 		} catch (\Throwable $e) {
 			$this->logger->warning('Archival migration: hold placement failed', ['caseId' => $caseId, 'error' => $e->getMessage()]);
@@ -319,6 +369,27 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 			return 0;
 		}
 
+		$proofs = $this->readProofs(objectService: $objectService, register: $register, proofSchema: $proofSchema);
+		if ($proofs === null) {
+			return 0;
+		}
+
+		return $this->exportProofs(
+			target: new ProofDocumentTarget(objectService: $objectService, register: $register, docSchema: $docSchema),
+			proofs: $proofs
+		);
+	}//end exportProofRecords()
+
+	/**
+	 * Read the proof-of-transfer records.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      Register slug or id.
+	 * @param string $proofSchema   The proof schema.
+	 *
+	 * @return array<int, array<string, mixed>>|null The records, or null when they could not be read.
+	 */
+	private function readProofs(object $objectService, string $register, string $proofSchema): ?array {
 		try {
 			$proofs = $this->searchObjectsAsArrays(
 				objectService: $objectService,
@@ -327,42 +398,87 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning('Archival migration: could not read proof records', ['error' => $e->getMessage()]);
+			return null;
+		}
+
+		return $proofs;
+	}//end readProofs()
+
+	/**
+	 * Export every proof record as a caseDocument.
+	 *
+	 * @param ProofDocumentTarget              $target The object service, register and case document schema.
+	 * @param array<int, array<string, mixed>> $proofs The proof records.
+	 *
+	 * @return int Number of proof records exported.
+	 */
+	private function exportProofs(ProofDocumentTarget $target, array $proofs): int {
+		$exported = 0;
+		foreach ($proofs as $proof) {
+			$exported += $this->exportProof(target: $target, proof: $proof);
+		}
+
+		return $exported;
+	}//end exportProofs()
+
+	/**
+	 * Export one proof record as a caseDocument.
+	 *
+	 * @param ProofDocumentTarget  $target The object service, register and case document schema.
+	 * @param array<string, mixed> $proof  The proof record.
+	 *
+	 * @return int 1 when exported, 0 otherwise.
+	 */
+	private function exportProof(ProofDocumentTarget $target, array $proof): int {
+		$caseId = (string)($proof['caseId'] ?? '');
+		if ($caseId === '') {
 			return 0;
 		}
 
-		$exported = 0;
-		foreach ($proofs as $proof) {
-			$caseId = (string)($proof['caseId'] ?? '');
-			if ($caseId === '') {
-				continue;
-			}
+		$payload = $this->proofDocument(caseId: $caseId, proof: $proof);
 
-			$payload = [
-				'case' => $caseId,
-				'title' => 'Bewijs van overbrenging (e-Depot)',
-				'description' => 'Gemigreerd proof-of-transfer; OpenRegister beheert voortaan overbrenging en bewijs.',
-				'document' => (string)($proof['archivId'] ?? ($proof['id'] ?? 'proof')),
-				'source' => 'archief-migration',
-				'proofOfTransfer' => $proof,
-			];
+		return $this->saveProofDocument(target: $target, payload: $payload);
+	}//end exportProof()
 
-			try {
-				$objectService->saveObject(
-					object: $payload,
-					register: $register,
-					schema: $docSchema
-				);
-				$exported++;
-			} catch (\Throwable $e) {
-				$this->logger->error(
-					'Archival migration: proof export failed — source record preserved in place',
-					['caseId' => $caseId, 'error' => $e->getMessage()]
-				);
-			}
-		}//end foreach
+	/**
+	 * The caseDocument a proof record becomes.
+	 *
+	 * @param string               $caseId The case the proof belongs to.
+	 * @param array<string, mixed> $proof  The proof record.
+	 *
+	 * @return array<string, mixed> The caseDocument payload.
+	 */
+	private function proofDocument(string $caseId, array $proof): array {
+		return [
+			'case' => $caseId,
+			'title' => 'Bewijs van overbrenging (e-Depot)',
+			'description' => 'Gemigreerd proof-of-transfer; OpenRegister beheert voortaan overbrenging en bewijs.',
+			'document' => (string)($proof['archivId'] ?? ($proof['id'] ?? 'proof')),
+			'source' => 'archief-migration',
+			'proofOfTransfer' => $proof,
+		];
+	}//end proofDocument()
 
-		return $exported;
-	}//end exportProofRecords()
+	/**
+	 * Save a proof's caseDocument, logging a failure and leaving the source in place.
+	 *
+	 * @param ProofDocumentTarget  $target  The object service, register and case document schema.
+	 * @param array<string, mixed> $payload The caseDocument payload, with its `case`.
+	 *
+	 * @return int 1 when exported, 0 otherwise.
+	 */
+	private function saveProofDocument(ProofDocumentTarget $target, array $payload): int {
+		try {
+			$target->objectService->saveObject(object: $payload, register: $target->register, schema: $target->docSchema);
+			return 1;
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Archival migration: proof export failed — source record preserved in place',
+				['caseId' => $payload['case'], 'error' => $e->getMessage()]
+			);
+			return 0;
+		}
+	}//end saveProofDocument()
 
 	/**
 	 * Resolve an OpenRegister collaborator by FQN, or null when unavailable.

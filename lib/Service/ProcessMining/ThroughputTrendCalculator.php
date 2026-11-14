@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -36,13 +36,24 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\ProcessMining;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 
 /**
  * Computes the weekly closed-case throughput trend.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 class ThroughputTrendCalculator {
+	/**
+	 * Constructor.
+	 *
+	 * @param CaseDateNormaliser $dates The one date write path.
+	 */
+	public function __construct(
+		private readonly CaseDateNormaliser $dates,
+	) {
+	}//end __construct()
+
 	/**
 	 * Weekly throughput trend: cases closed (by `endDate`) per ISO week
 	 * within `[from, to]`.
@@ -53,24 +64,18 @@ class ThroughputTrendCalculator {
 	 *
 	 * @return array<int, array{week: string, count: int}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeThroughputTrend(array $cases, DateTimeImmutable $from, DateTimeImmutable $to): array {
 		// Seed every ISO week in range so gaps render as zero, not "missing".
 		$buckets = $this->seedWeekBuckets(from: $from, to: $to);
 
 		foreach ($cases as $caseData) {
-			$endDate = ($caseData['endDate'] ?? null);
-			if (is_string($endDate) === false || $endDate === '') {
+			$week = $this->closedWeek(caseData: $caseData, from: $from, to: $to);
+			if ($week === '') {
 				continue;
 			}
 
-			$closedAt = $this->parseDate(value: $endDate, fallback: null);
-			if ($closedAt === null || $closedAt < $from || $closedAt > $to) {
-				continue;
-			}
-
-			$week = $closedAt->format('o-\WW');
 			if (isset($buckets[$week]) === false) {
 				$buckets[$week] = 0;
 			}
@@ -78,16 +83,63 @@ class ThroughputTrendCalculator {
 			$buckets[$week]++;
 		}//end foreach
 
+		return $this->sortedWeeks(buckets: $buckets);
+	}//end computeThroughputTrend()
+
+	/**
+	 * The ISO week a case closed in, when it closed within `[from, to]`.
+	 *
+	 * @param array<string, mixed> $caseData A case row.
+	 * @param DateTimeImmutable    $from     Inclusive period start.
+	 * @param DateTimeImmutable    $to       Inclusive period end.
+	 *
+	 * @return string The ISO week ("o-\WW"), or '' when it did not close in the period.
+	 */
+	private function closedWeek(array $caseData, DateTimeImmutable $from, DateTimeImmutable $to): string {
+		$closedAt = $this->closedAt(caseData: $caseData);
+		if ($closedAt === null || $closedAt < $from || $closedAt > $to) {
+			return '';
+		}
+
+		return $closedAt->format('o-\WW');
+	}//end closedWeek()
+
+	/**
+	 * The moment a case closed, by its `endDate`.
+	 *
+	 * @param array<string, mixed> $caseData A case row.
+	 *
+	 * @return DateTimeImmutable|null The moment, or null when it has none or it does not parse.
+	 */
+	private function closedAt(array $caseData): DateTimeImmutable|null {
+		$endDate = ($caseData['endDate'] ?? null);
+		if (is_string($endDate) === false || $endDate === '') {
+			return null;
+		}
+
+		return $this->dates->tryParse($endDate);
+	}//end closedAt()
+
+	/**
+	 * The week buckets as rows, in week order.
+	 *
+	 * @param array<string, int> $buckets The counts, keyed by ISO week.
+	 *
+	 * @return array<int, array{week: string, count: int}>
+	 */
+	private function sortedWeeks(array $buckets): array {
 		$out = [];
 		foreach ($buckets as $week => $count) {
 			$out[] = ['week' => $week, 'count' => $count];
 		}
 
-		ksort($out);
+		// `$out` is built with `$out[] =`, so its keys are already 0..n and
+		// the ksort() that stood here sorted nothing. The usort below is what
+		// puts the weeks in order.
 		usort($out, static fn (array $left, array $right): int => strcmp($left['week'], $right['week']));
 
 		return $out;
-	}//end computeThroughputTrend()
+	}//end sortedWeeks()
 
 	/**
 	 * Seed a zero-valued bucket for every ISO week that starts within `[from, to]`.
@@ -97,7 +149,7 @@ class ThroughputTrendCalculator {
 	 *
 	 * @return array<string, int> Zero-valued buckets, keyed by ISO week ("o-\WW").
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	private function seedWeekBuckets(DateTimeImmutable $from, DateTimeImmutable $to): array {
 		$buckets = [];
@@ -110,25 +162,4 @@ class ThroughputTrendCalculator {
 		return $buckets;
 	}//end seedWeekBuckets()
 
-	/**
-	 * Parse a date/datetime string; return `$fallback` on empty/invalid input.
-	 *
-	 * @param mixed $value Raw date value.
-	 * @param DateTimeImmutable|null $fallback Value to return when parsing fails.
-	 *
-	 * @return DateTimeImmutable|null
-	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
-	 */
-	private function parseDate(mixed $value, ?DateTimeImmutable $fallback): ?DateTimeImmutable {
-		if (is_string($value) === false || $value === '') {
-			return $fallback;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (\Throwable $e) {
-			return $fallback;
-		}
-	}//end parseDate()
 }//end class

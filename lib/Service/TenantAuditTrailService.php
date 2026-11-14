@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-12-isolation-tests-compliance/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-12-isolation-tests-compliance/tasks.md
  */
 
 declare(strict_types=1);
@@ -40,6 +40,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\TenantAuditTrailServiceInterface;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -50,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/specs/tenant-compliance/spec.md
  */
-class TenantAuditTrailService {
+class TenantAuditTrailService implements TenantAuditTrailServiceInterface {
 	/**
 	 * OpenRegister register + schema holding tenant objects. An audit row is
 	 * anchored to the tenant ObjectEntity it concerns.
@@ -136,35 +138,41 @@ class TenantAuditTrailService {
 		}
 
 		try {
-			$mapper = $this->getAuditTrailMapper();
-			$object = $this->resolveTenantEntity(tenantId: $tenantId);
-			if ($mapper === null || $object === null) {
-				$this->logger->error(
-					'Dossiq AUDIT: OpenRegister audit sink unavailable — durable audit row NOT written',
-					$entry
-				);
-				return false;
-			}
-
-			$mapper->createAuditTrailEntry(
-				object: $object,
-				// FROZEN PREFIX — still `procest.`, deliberately. Written into
-				// OpenRegister's append-only audit trail; every existing tenant
-				// audit row already carries it and readers filter on it, so a
-				// rename splits the trail and shows a partial history as though
-				// it were complete.
-				action: 'procest.tenant.' . $entry['action'],
-				context: $entry,
-			);
-			return true;
+			return $this->writeRow(entry: $entry, tenantId: $tenantId);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq AUDIT: durable audit row failed',
-				['exception' => $e->getMessage()] + $entry
-			);
+			$this->logger->error('Dossiq AUDIT: durable audit row failed', ['exception' => $e->getMessage()] + $entry);
 			return false;
 		}//end try
 	}//end persist()
+
+	/**
+	 * Record the entry on the tenant's ObjectEntity through the audit trail mapper.
+	 *
+	 * @param array<string, mixed> $entry    Normalised audit entry.
+	 * @param string               $tenantId The tenant the row is anchored to.
+	 *
+	 * @return bool True when a durable audit row was written.
+	 */
+	private function writeRow(array $entry, string $tenantId): bool {
+		$mapper = $this->getAuditTrailMapper();
+		$object = $this->resolveTenantEntity(tenantId: $tenantId);
+		if ($mapper === null || $object === null) {
+			$this->logger->error('Dossiq AUDIT: OpenRegister audit sink unavailable — durable audit row NOT written', $entry);
+			return false;
+		}
+
+		$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
+			object: $object,
+			// FROZEN PREFIX — still `procest.`, deliberately. Written into
+			// OpenRegister's append-only audit trail; every existing tenant
+			// audit row already carries it and readers filter on it, so a
+			// rename splits the trail and shows a partial history as though
+			// it were complete.
+			action: 'procest.tenant.' . $entry['action'],
+			context: $entry,
+		));
+		return true;
+	}//end writeRow()
 
 	/**
 	 * Report whether the durable audit sink is currently resolvable. Backs the
@@ -201,7 +209,43 @@ class TenantAuditTrailService {
 	}//end getAuditTrailMapper()
 
 	/**
+	 * Report whether OpenRegister's organisation row filter is on.
+	 *
+	 * Tenant isolation is OpenRegister's `MagicSearchHandler`, which adds a
+	 * WHERE on the organisation column when multitenancy is on. This asks
+	 * OpenRegister's `SettingsService::isMultiTenancyEnabled()` live. A false
+	 * answer, an exception, or an absent OpenRegister all read as false, so
+	 * the checklist fails closed to `unverified`.
+	 *
+	 * @return bool True only when OpenRegister says multitenancy is on.
+	 *
+	 * @spec openspec/specs/tenant-isolation/spec.md
+	 */
+	public function rowFilterEnabled(): bool {
+		$installed = (array)$this->appManager->getInstalledApps();
+		if (in_array('openregister', $installed, true) === false) {
+			return false;
+		}
+
+		try {
+			$settings = $this->container->get('OCA\\OpenRegister\\Service\\SettingsService');
+			return $settings->isMultiTenancyEnabled() === true;
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not probe OpenRegister multitenancy; tenant isolation reads unverified',
+				['exception' => $e->getMessage()]
+			);
+			return false;
+		}
+	}//end rowFilterEnabled()
+
+	/**
 	 * Resolve the tenant ObjectEntity an audit row anchors to.
+	 *
+	 * The anchor is a system record (decision Q6), so it is read without RBAC
+	 * and without the caller's organisation filter: whoever's request writes
+	 * the entry, the anchor of the bound tenant must be found. No anchor means
+	 * no row, and the caller logs that.
 	 *
 	 * @param string $tenantId Tenant UUID.
 	 *
@@ -210,7 +254,13 @@ class TenantAuditTrailService {
 	private function resolveTenantEntity(string $tenantId): mixed {
 		try {
 			$objectService = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-			return $objectService->find($tenantId, register: self::REGISTER, schema: self::SCHEMA_TENANT);
+			return $objectService->find(
+				$tenantId,
+				register: self::REGISTER,
+				schema: self::SCHEMA_TENANT,
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq AUDIT: could not resolve tenant ObjectEntity',
@@ -258,50 +308,141 @@ class TenantAuditTrailService {
 	 * unreachable — previously it hardcoded a pass while `emit()` wrote nothing
 	 * but a log line.
 	 *
+	 * `tenant_scoped_queries` and `no_tenant_info_leak` cite OpenRegister's
+	 * organisation row filter, the control that actually runs, and pass only
+	 * when `rowFilterEnabled()` says multitenancy is on. They used to cite a
+	 * search_path middleware that isolated nothing (dossiq#2470).
+	 *
 	 * @return array<int, array{key:string, description:string, evidence:string, status:string}>
 	 *
 	 * @spec openspec/specs/tenant-compliance/spec.md
 	 */
 	public function hardeningChecklist(): array {
 		// Live probe — never a hardcoded pass.
+		$auditStatus = $this->auditStatus();
+
+		$isolationStatus = $this->isolationStatus();
+
+		$rowFilter = $this->rowFilterEvidence();
+
+		return [
+			...$this->queryAndAuditControls(rowFilter: $rowFilter, isolationStatus: $isolationStatus, auditStatus: $auditStatus),
+			...$this->secretAndLeakControls(rowFilter: $rowFilter, isolationStatus: $isolationStatus),
+			...$this->supplyChainControls(),
+		];
+	}//end hardeningChecklist()
+
+	/**
+	 * The live status of the durable audit sink.
+	 *
+	 * @return string `pass` when OpenRegister's audit trail is reachable, `unverified` otherwise.
+	 *
+	 * @spec openspec/specs/tenant-compliance/spec.md
+	 */
+	private function auditStatus(): string {
 		$auditStatus = 'unverified';
 		if ($this->auditSinkAvailable() === true) {
 			$auditStatus = 'pass';
 		}
 
+		return $auditStatus;
+	}//end auditStatus()
+
+	/**
+	 * The live status of OpenRegister's organisation row filter.
+	 *
+	 * @return string `pass` when multitenancy is on, `unverified` otherwise.
+	 *
+	 * @spec openspec/specs/tenant-compliance/spec.md
+	 */
+	private function isolationStatus(): string {
+		$isolationStatus = 'unverified';
+		if ($this->rowFilterEnabled() === true) {
+			$isolationStatus = 'pass';
+		}
+
+		return $isolationStatus;
+	}//end isolationStatus()
+
+	/**
+	 * The evidence line naming the organisation row filter.
+	 *
+	 * @return string The evidence.
+	 *
+	 * @spec openspec/specs/tenant-compliance/spec.md
+	 */
+	private function rowFilterEvidence(): string {
+		return 'OpenRegister organisation row filter (MagicSearchHandler adds a WHERE on the organisation column '
+			. 'when multitenancy is on), probed live through SettingsService::isMultiTenancyEnabled()';
+	}//end rowFilterEvidence()
+
+	/**
+	 * The tenant-scoped-query and audit-logging controls.
+	 *
+	 * @param string $rowFilter       The row filter evidence line.
+	 * @param string $isolationStatus The live row filter status.
+	 * @param string $auditStatus     The live audit sink status.
+	 *
+	 * @return array<int, array{key:string, description:string, evidence:string, status:string}>
+	 *
+	 * @spec openspec/specs/tenant-compliance/spec.md
+	 */
+	private function queryAndAuditControls(string $rowFilter, string $isolationStatus, string $auditStatus): array {
 		return [
 			[
 				'key' => 'tenant_scoped_queries',
-				'description' => 'Every query carries the request-scoped tenant filter',
-				'evidence' => 'TenantIsolationMiddleware sets the Postgres search_path; TenantContext carries the active tenant',
-				'status' => 'pass',
-			],
-			[
-				'key' => 'claim_validation',
-				'description' => 'JWT tenant_id claim is cross-checked against the request tenant',
-				'evidence' => 'TenantClaimValidationMiddleware',
-				'status' => 'pass',
+				'description' => 'Every object query is filtered to the active organisation',
+				'evidence' => $rowFilter,
+				'status' => $isolationStatus,
 			],
 			[
 				'key' => 'audit_logged_mutations',
-				'description' => 'Mandate decisions, tenant provisioning, and tenant status changes each write a hash-chained OpenRegister audit row',
-				'evidence' => 'TenantAuditTrailService::emit -> AuditTrailMapper::createAuditTrailEntry '
+				'description' => 'Mandate decisions and tenant status changes, provisioning included, each write a hash-chained OpenRegister audit row',
+				'evidence' => 'TenantAuditTrailService::emit -> AuditTrailMapper::recordObjectEvent '
 					. '(probed live); MandateValidationMiddleware::logDecision; '
-					. 'TenantSaasService::create/updateStatus',
+					. 'OrganisationStatusChangeListener on OpenRegister\'s OrganisationUpdatedEvent',
 				'status' => $auditStatus,
 			],
+		];
+	}//end queryAndAuditControls()
+
+	/**
+	 * The hardcoded-secret and tenant-leak controls.
+	 *
+	 * @param string $rowFilter       The row filter evidence line.
+	 * @param string $isolationStatus The live row filter status.
+	 *
+	 * @return array<int, array{key:string, description:string, evidence:string, status:string}>
+	 *
+	 * @spec openspec/specs/tenant-compliance/spec.md
+	 */
+	private function secretAndLeakControls(string $rowFilter, string $isolationStatus): array {
+		return [
 			[
 				'key' => 'no_hardcoded_secrets',
 				'description' => 'JWT signing secret + Shillinq credentials resolved from app config',
-				'evidence' => 'Application.php registerService factory for TenantJwtService + ShillinqIntegrationService',
+				'evidence' => 'PortalAssertionVerifier reads jwt_signing_secret from app config; '
+					. 'shillinq is asked in-process (BillablePeriodClosedEvent), so no Shillinq credential exists',
 				'status' => 'pass',
 			],
 			[
 				'key' => 'no_tenant_info_leak',
 				'description' => 'Cross-tenant queries return 404 (not 403) to prevent existence leak',
-				'evidence' => 'TenantIsolationMiddleware search_path scoping + controller-level 404 responses',
-				'status' => 'pass',
+				'evidence' => $rowFilter . '; another organisation\'s object finds no row, so the lookup answers 404',
+				'status' => $isolationStatus,
 			],
+		];
+	}//end secretAndLeakControls()
+
+	/**
+	 * The dependency-audit and isolation pen-test controls.
+	 *
+	 * @return array<int, array{key:string, description:string, evidence:string, status:string}>
+	 *
+	 * @spec openspec/specs/tenant-compliance/spec.md
+	 */
+	private function supplyChainControls(): array {
+		return [
 			[
 				'key' => 'composer_audit',
 				'description' => 'composer audit passes with zero high-severity CVEs',
@@ -310,10 +451,10 @@ class TenantAuditTrailService {
 			],
 			[
 				'key' => 'isolation_pen_test',
-				'description' => 'Cross-tenant pen-test asserts schema isolation under DDL + DQL',
+				'description' => 'Cross-tenant pen-test asserts that the organisation row filter returns no row of another organisation',
 				'evidence' => 'Deferred to a live-OR fixture; no automated pen-test executes today',
 				'status' => 'unverified',
 			],
 		];
-	}//end hardeningChecklist()
+	}//end supplyChainControls()
 }//end class

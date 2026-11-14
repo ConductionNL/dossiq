@@ -35,22 +35,28 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
-use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Support\ReassignmentBatch;
-use OCA\Dossiq\Service\Support\WritesReassignments;
+use OCA\Dossiq\BulkAction\ReassignCasesAction;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseReassignmentServiceInterface;
+use OCA\Dossiq\Service\Bulk\BulkJobHandoff;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\WritesReassignments;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
- * Previews and executes bulk reassignment of a handler's open workload.
+ * Builds the selection a caseload release acts on, and hands it to the job.
+ *
+ * The loop that used to live here is gone: OpenRegister's bulk job walks the
+ * cases, records what it did to each and reports it, and a coordinator reads
+ * the rehearsal before committing (D-1, D-6).
  *
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
-class CaseReassignmentService {
+class CaseReassignmentService implements CaseReassignmentServiceInterface {
 
 	use WritesReassignments;
 	use SearchesObjects;
@@ -59,6 +65,9 @@ class CaseReassignmentService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings/config + ObjectService bridge.
+	 * @param BulkJobHandoff $handoff The hand-off to OpenRegister's bulk job.
+	 * @param EngineTaskInbox $engineTasks The engine's task reader.
+	 * @param EngineTaskGateway $engineTask The engine's task verbs.
 	 * @param IManager $notificationManager The Nextcloud notification manager.
 	 * @param LoggerInterface $logger The logger.
 	 *
@@ -66,6 +75,9 @@ class CaseReassignmentService {
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly BulkJobHandoff $handoff,
+		private readonly EngineTaskInbox $engineTasks,
+		private readonly EngineTaskGateway $engineTask,
 		private readonly IManager $notificationManager,
 		private readonly LoggerInterface $logger,
 	) {
@@ -83,47 +95,98 @@ class CaseReassignmentService {
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	public function preview(string $fromUser, ?array $filter = null): array {
+		$fromUser = $this->requiredUser(fromUser: $fromUser);
+
+		[$objectService, $register] = $this->context();
+		$caseType = $this->caseTypeFilter(filter: $filter);
+
+		$finalIds = $this->finalStatusIds(objectService: $objectService, register: $register);
+
+		$caseResults = $this->assignedCases(objectService: $objectService, register: $register, fromUser: $fromUser);
+		$cases = $this->filterOpenCases(caseResults: $caseResults, finalIds: $finalIds, caseType: $caseType);
+
+		$tasks = $this->openTasksOf(fromUser: $fromUser, cases: $cases, caseType: $caseType);
+
+		return ['cases' => $cases, 'tasks' => $tasks];
+	}//end preview()
+
+	/**
+	 * The departing handler's user id, trimmed.
+	 *
+	 * @param string $fromUser The departing handler user id.
+	 *
+	 * @return string The trimmed user id.
+	 *
+	 * @throws InvalidArgumentException When the user id is blank.
+	 */
+	private function requiredUser(string $fromUser): string {
 		$fromUser = trim($fromUser);
 		if ($fromUser === '') {
 			throw new InvalidArgumentException('fromUser is required');
 		}
 
-		[$objectService, $register] = $this->context();
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		$taskSchema = (string)$this->settingsService->getConfigValue('task_schema');
+		return $fromUser;
+	}//end requiredUser()
+
+	/**
+	 * The case type the preview is narrowed to, or '' for all.
+	 *
+	 * @param array<string, mixed>|null $filter Optional filter, e.g. ['caseType' => 'uuid'].
+	 *
+	 * @return string The case type uuid, or ''.
+	 */
+	private function caseTypeFilter(?array $filter): string {
 		$caseType = '';
 		if (isset($filter['caseType']) === true) {
 			$caseType = (string)$filter['caseType'];
 		}
 
-		$finalIds = $this->finalStatusIds(objectService: $objectService, register: $register);
+		return $caseType;
+	}//end caseTypeFilter()
 
-		$cases = [];
-		if ($caseSchema !== '') {
-			$caseResults = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['assignee' => $fromUser]
-			);
-
-			$cases = $this->filterOpenCases(caseResults: $caseResults, finalIds: $finalIds, caseType: $caseType);
+	/**
+	 * The cases assigned to the departing handler, unfiltered; none when no case schema is configured.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register      The register id.
+	 * @param string $fromUser      The departing handler user id.
+	 *
+	 * @return array<int, array<string, mixed>> The raw case search results.
+	 */
+	private function assignedCases(object $objectService, string $register, string $fromUser): array {
+		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
+		if ($caseSchema === '') {
+			return [];
 		}
 
-		$tasks = [];
-		if ($taskSchema !== '') {
-			$taskResults = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $taskSchema,
-				filters: ['assignee' => $fromUser]
-			);
+		return $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $caseSchema,
+			filters: ['assignee' => $fromUser]
+		);
+	}//end assignedCases()
 
-			$tasks = $this->filterOpenTasks(taskResults: $taskResults, cases: $cases, caseType: $caseType);
-		}
-
-		return ['cases' => $cases, 'tasks' => $tasks];
-	}//end preview()
+	/**
+	 * The departing handler's open tasks, narrowed like the cases.
+	 *
+	 * @param string $fromUser The departing handler user id.
+	 * @param array<int, array<string, mixed>> $cases The open cases.
+	 * @param string $caseType Optional caseType uuid to narrow by ('' = all).
+	 *
+	 * @return array<int, array<string, mixed>> The open tasks.
+	 */
+	private function openTasksOf(string $fromUser, array $cases, string $caseType): array {
+		// The ENGINE holds the tasks, and it holds the open/closed split too:
+		// `openForAssignee` asks for `isTerminal: false` rather than reading
+		// a page and dropping the closed rows from it, which would have lost
+		// every open task past the page boundary.
+		return $this->filterOpenTasks(
+			taskResults: $this->engineTasks->openForAssignee(actor: $fromUser),
+			cases: $cases,
+			caseType: $caseType
+		);
+	}//end openTasksOf()
 
 	/**
 	 * Keep only the non-final cases, optionally narrowed to one case type.
@@ -169,11 +232,11 @@ class CaseReassignmentService {
 
 		$tasks = [];
 
+		// NO TERMINAL-STATUS FILTER HERE ANY MORE. The engine is asked for
+		// `isTerminal: false` and answers only open tasks, so a second copy
+		// of the same three state names would be one more thing to keep in
+		// step with `Task::STATES` and nothing else.
 		foreach ($taskResults as $task) {
-			if (in_array((string)($task['status'] ?? ''), ['completed', 'terminated', 'disabled'], true) === true) {
-				continue;
-			}
-
 			// When narrowed by caseType, only tasks belonging to a previewed
 			// case are in scope.
 			if ($caseType !== '' && isset($caseIds[(string)($task['case'] ?? '')]) === false) {
@@ -187,134 +250,276 @@ class CaseReassignmentService {
 	}//end filterOpenTasks()
 
 	/**
-	 * Execute a bulk reassignment from one handler to another.
+	 * Release a handler's caseload, as one bulk job.
 	 *
-	 * Reassigns every previewed open case/task to the receiving handler, writing
-	 * a per-item audit entry sharing a single batch id and recording the
-	 * previous handler, new handler, and acting coordinator. Closed/archived
-	 * cases are untouched. A single digest notification summarising the transfer
-	 * is sent to the receiving handler. Returns a per-item success/failure
-	 * report; failed items remain on the original handler and are re-runnable.
+	 * Builds the selection and hands it over. There is no loop here: the job
+	 * walks the cases, records what it did to each and reports it, and a
+	 * coordinator commits it after reading the rehearsal (D-6). What comes
+	 * back is the PREVIEWED job; nothing on a case has been written yet.
 	 *
-	 * @param string $fromUser The departing handler user id.
-	 * @param string $toUser The receiving handler user id.
-	 * @param array<string, mixed>|null $filter Optional filter, e.g. ['caseType' => 'uuid'].
-	 * @param string $actorId The acting coordinator user id.
+	 * ⚠️ The departing handler's open TASKS are moved straight away, in this
+	 * call, and are not part of the job. A flow task is the engine's own
+	 * record with its own audit row and its own `reassign` verb: it is not an
+	 * object in the case register, so the job cannot walk it. Leaving the
+	 * tasks behind until somebody commits is the failure this gesture exists
+	 * to prevent, so they move with the request that orders the release.
 	 *
-	 * @return array{batchId: string, results: array<int, array<string, mixed>>, succeeded: int, failed: int}
+	 * @param string                    $fromUser      The departing handler.
+	 * @param string                    $toUser        The receiving handler.
+	 * @param string                    $justification Why the caseload is being moved.
+	 * @param array<string, mixed>|null $filter        Optional filter, e.g. ['caseType' => 'uuid'].
+	 * @param string                    $actorId       The acting coordinator.
+	 * @param bool                      $commit        Whether to start the act, or leave it rehearsed.
 	 *
-	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 * @return array{job: array<string, mixed>, tasks: array<int, array<string, mixed>>, caseIds: array<int, string>}
+	 *         The job over the cases, what happened to the tasks, and which cases the act was ordered over.
+	 *
+	 * @throws InvalidArgumentException When a handler, the receiver or the reason is missing.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The two gestures differ in
+	 * exactly this: a coordinator RELEASING a caseload reads the rehearsal and
+	 * decides, an administrator handing over a leaver's work is executing an
+	 * act somebody already decided. Splitting them into two methods would
+	 * duplicate the selection build, which is the part that must not drift.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
 	 */
-	public function execute(string $fromUser, string $toUser, ?array $filter = null, string $actorId = ''): array {
-		$fromUser = trim($fromUser);
-		$toUser = trim($toUser);
-		if ($fromUser === '' || $toUser === '') {
+	public function releaseCaseload(
+		string $fromUser,
+		string $toUser,
+		string $justification,
+		?array $filter = null,
+		string $actorId = '',
+		bool $commit = false,
+	): array {
+		$run = new CaseloadReleaseRun(
+			fromUser: trim($fromUser), toUser: trim($toUser), justification: trim($justification),
+			filter: $filter, actorId: $actorId, commit: $commit
+		);
+		return $this->release(run: $run);
+	}//end releaseCaseload()
+
+	/**
+	 * Carry out one release, as releaseCaseload() describes.
+	 *
+	 * @param CaseloadReleaseRun $run The release, its values trimmed.
+	 *
+	 * @return array{job: array<string, mixed>, tasks: array<int, array<string, mixed>>, caseIds: array<int, string>}
+	 *         The job over the cases, what happened to the tasks, and which cases the act was ordered over.
+	 *
+	 * @throws InvalidArgumentException When a handler, the receiver or the reason is missing.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function release(CaseloadReleaseRun $run): array {
+		$this->assertReleasable(run: $run);
+
+		$preview = $this->preview(fromUser: $run->fromUser, filter: $run->filter);
+		$run->batchId = $this->generateBatchId();
+		$run->caseIds = $this->caseIdsOf(cases: $preview['cases']);
+
+		$job = $this->handOverCases(run: $run);
+		$tasks = $this->releaseTasks(tasks: $preview['tasks'], run: $run);
+		$this->reportRelease(run: $run, tasks: $tasks);
+
+		return ['job' => $job, 'tasks' => $tasks, 'caseIds' => $run->caseIds];
+	}//end release()
+
+	/**
+	 * Log the release, and send the receiver one digest when tasks moved.
+	 *
+	 * @param CaseloadReleaseRun               $run   The release being carried out.
+	 * @param array<int, array<string, mixed>> $tasks What happened to each task.
+	 *
+	 * @return void
+	 */
+	private function reportRelease(CaseloadReleaseRun $run, array $tasks): void {
+		$this->logRelease(run: $run, taskCount: count($tasks));
+
+		if ($tasks !== []) {
+			$this->notifyDigest(run: $run, count: count($tasks));
+		}
+	}//end reportRelease()
+
+	/**
+	 * Log that the release was handed to a bulk job.
+	 *
+	 * @param CaseloadReleaseRun $run       The release being carried out.
+	 * @param int                $taskCount How many tasks were handed over.
+	 *
+	 * @return void
+	 */
+	private function logRelease(CaseloadReleaseRun $run, int $taskCount): void {
+		$this->logger->info(
+			'Dossiq caseload release handed to a bulk job',
+			[
+				'batchId' => $run->batchId,
+				'from' => $run->fromUser,
+				'to' => $run->toUser,
+				'actor' => $run->actorId,
+				'cases' => count($run->caseIds),
+				'tasks' => $taskCount,
+			]
+		);
+	}//end logRelease()
+
+	/**
+	 * Refuse a release that names no handler, no receiver or no reason.
+	 *
+	 * @param CaseloadReleaseRun $run The release.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When any of the three is missing.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function assertReleasable(CaseloadReleaseRun $run): void {
+		if ($run->fromUser === '' || $run->toUser === '') {
 			throw new InvalidArgumentException('Both fromUser and toUser are required');
 		}
 
-		if ($fromUser === $toUser) {
+		if ($run->fromUser === $run->toUser) {
 			throw new InvalidArgumentException('Cannot reassign a handler to themselves');
 		}
 
-		[$objectService, $register] = $this->context();
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		$taskSchema = (string)$this->settingsService->getConfigValue('task_schema');
+		if ($run->justification === '') {
+			throw new InvalidArgumentException('A written justification is required');
+		}
+	}//end assertReleasable()
 
-		$preview = $this->preview(fromUser: $fromUser, filter: $filter);
-		$batchId = $this->generateBatchId();
-		$now = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
-
-		$batch = new ReassignmentBatch(
-			fromUser: $fromUser,
-			toUser: $toUser,
-			actorId: $actorId,
-			batchId: $batchId,
-			now: $now
-		);
-
-		$results = [];
-		$succeeded = 0;
-
-		foreach ($preview['cases'] as $case) {
+	/**
+	 * The uuids of the previewed cases, dropping any row that carries none.
+	 *
+	 * @param array<int, array<string, mixed>> $cases The previewed cases.
+	 *
+	 * @return array<int, string> The case uuids.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function caseIdsOf(array $cases): array {
+		$caseIds = [];
+		foreach ($cases as $case) {
 			$id = (string)($case['id'] ?? ($case['uuid'] ?? ''));
-			$success = $this->reassignItem(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				id: $id,
-				item: $case,
-				batch: $batch
-			);
-			$results[] = ['type' => 'case', 'id' => $id, 'title' => (string)($case['title'] ?? ''), 'success' => $success];
-			if ($success === true) {
-				$succeeded += 1;
+			if ($id !== '') {
+				$caseIds[] = $id;
 			}
 		}
 
-		foreach ($preview['tasks'] as $task) {
-			$id = (string)($task['id'] ?? ($task['uuid'] ?? ''));
-			$success = $this->reassignItem(
-				objectService: $objectService,
-				register: $register,
-				schema: $taskSchema,
-				id: $id,
-				item: $task,
-				batch: $batch
-			);
-			$results[] = ['type' => 'task', 'id' => $id, 'title' => (string)($task['title'] ?? ''), 'success' => $success];
-			if ($success === true) {
-				$succeeded += 1;
-			}
+		return $caseIds;
+	}//end caseIdsOf()
+
+	/**
+	 * Hand the selected cases to the bulk job, rehearsed or started.
+	 *
+	 * An empty selection is handed over to nothing. Creating a job with no
+	 * members would present an empty walk as a finished preview, which reads
+	 * exactly like a handler who had no open cases and exactly like a
+	 * selection that failed to resolve.
+	 *
+	 * @param CaseloadReleaseRun $run The release being carried out.
+	 *
+	 * @return array<string, mixed> The job, or an empty array when there was nothing to move.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function handOverCases(CaseloadReleaseRun $run): array {
+		if ($run->caseIds === []) {
+			return [];
 		}
 
-		$failed = (count($results) - $succeeded);
-
-		// Single digest notification to the receiving handler.
-		if ($succeeded > 0) {
-			$this->notifyDigest(toUser: $toUser, fromUser: $fromUser, count: $succeeded, batchId: $batchId);
+		$job = $this->createJob(run: $run);
+		if ($run->commit === false) {
+			return $job;
 		}
 
-		$this->logger->info(
-			'Dossiq bulk reassignment executed',
-			['batchId' => $batchId, 'from' => $fromUser, 'to' => $toUser, 'actor' => $actorId, 'succeeded' => $succeeded, 'failed' => $failed]
+		return $this->handoff->commit(job: $job, justification: $run->justification);
+	}//end handOverCases()
+
+	/**
+	 * Create the bulk job over the release's cases, rehearsed.
+	 *
+	 * @param CaseloadReleaseRun $run The release being carried out.
+	 *
+	 * @return array<string, mixed> The previewed job.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function createJob(CaseloadReleaseRun $run): array {
+		return $this->handoff->create(
+			actionId: ReassignCasesAction::ID,
+			parameters: ['toUser' => $run->toUser, 'reason' => $run->justification, 'batchId' => $run->batchId],
+			selection: ['ids' => $run->caseIds],
+			justification: $run->justification,
+			actorUid: $run->actorId,
 		);
+	}//end createJob()
 
-		return ['batchId' => $batchId, 'results' => $results, 'succeeded' => $succeeded, 'failed' => $failed];
-	}//end execute()
+	/**
+	 * Hand each open task to the engine's own reassign verb.
+	 *
+	 * A VERB, not a field write. The engine stamps the acting identity and
+	 * writes its own audit row, so the transfer does not depend on a
+	 * hand-rolled entry in a JSON `activity` blob that only this app reads.
+	 *
+	 * @param array<int, array<string, mixed>> $tasks The departing handler's open tasks.
+	 * @param CaseloadReleaseRun               $run   The release: who receives, who acts.
+	 *
+	 * @return array<int, array<string, mixed>> What happened to each task.
+	 */
+	private function releaseTasks(array $tasks, CaseloadReleaseRun $run): array {
+		$results = [];
+		foreach ($tasks as $task) {
+			$id = (string)($task['id'] ?? ($task['uuid'] ?? ''));
+			$results[] = [
+				'id' => $id,
+				'title' => (string)($task['title'] ?? ''),
+				'success' => $this->engineTask->reassign(taskId: $id, assignee: $run->toUser, actor: $run->actorId),
+			];
+		}
 
-
-
-
+		return $results;
+	}//end releaseTasks()
 
 	/**
 	 * Send a single digest notification to the receiving handler.
 	 *
-	 * @param string $toUser Receiving handler.
-	 * @param string $fromUser Departing handler.
-	 * @param int $count Number of items transferred.
-	 * @param string $batchId The batch id.
+	 * @param CaseloadReleaseRun $run   The release being carried out.
+	 * @param int                $count Number of items transferred.
 	 *
 	 * @return void
 	 */
-	private function notifyDigest(string $toUser, string $fromUser, int $count, string $batchId): void {
+	private function notifyDigest(CaseloadReleaseRun $run, int $count): void {
 		try {
-			$notification = $this->notificationManager->createNotification();
-			$notification->setApp(Application::APP_ID)
-				->setUser($toUser)
-				->setDateTime(new DateTime())
-				->setObject('reassignment', $batchId)
-				->setSubject(
-					'cases_reassigned',
-					['fromUser' => $fromUser, 'count' => $count]
-				);
-			$this->notificationManager->notify($notification);
+			$this->sendDigest(run: $run, count: $count);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Reassignment digest notification failed',
-				['toUser' => $toUser, 'batchId' => $batchId, 'error' => $e->getMessage()]
+				['toUser' => $run->toUser, 'batchId' => $run->batchId, 'error' => $e->getMessage()]
 			);
 		}
 	}//end notifyDigest()
+
+	/**
+	 * Build the digest notification for the receiving handler and send it.
+	 *
+	 * @param CaseloadReleaseRun $run   The release being carried out.
+	 * @param int                $count Number of items transferred.
+	 *
+	 * @return void
+	 */
+	private function sendDigest(CaseloadReleaseRun $run, int $count): void {
+		$notification = $this->notificationManager->createNotification();
+		$notification->setApp(AppIdentity::APP_ID)
+			->setUser($run->toUser)
+			->setDateTime(new DateTime())
+			->setObject('reassignment', $run->batchId)
+			->setSubject(
+				'cases_reassigned',
+				['fromUser' => $run->fromUser, 'count' => $count]
+			);
+		$this->notificationManager->notify($notification);
+	}//end sendDigest()
 
 	/**
 	 * Resolve the set of final statusType ids (closed/archived cases).
@@ -346,6 +551,5 @@ class CaseReassignmentService {
 
 		return array_values(array_filter($ids));
 	}//end finalStatusIds()
-
 
 }//end class

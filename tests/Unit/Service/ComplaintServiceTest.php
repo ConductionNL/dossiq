@@ -22,8 +22,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\ComplaintService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -83,8 +86,14 @@ interface ComplaintObjectServiceStub {
  * Unit tests for ComplaintService.
  *
  * @covers \OCA\Dossiq\Service\ComplaintService
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class ComplaintServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
@@ -102,6 +111,13 @@ class ComplaintServiceTest extends TestCase {
 	private ComplaintService $service;
 
 	/**
+	 * The one clock both the service and the fixtures below read.
+	 *
+	 * @var CaseDateNormaliser
+	 */
+	private CaseDateNormaliser $dates;
+
+	/**
 	 * Set up test fixtures.
 	 *
 	 * @return void
@@ -110,9 +126,13 @@ class ComplaintServiceTest extends TestCase {
 		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
+		$this->dates = $this->caseDatesFrozenAt();
+
 		$this->service = new ComplaintService(
 			settingsService: $this->settingsService,
 			logger: $this->logger,
+			workingDays: new WorkingDayCalculator(),
+			dates: $this->dates,
 		);
 	}//end setUp()
 
@@ -361,5 +381,244 @@ class ComplaintServiceTest extends TestCase {
 			'receiptDate' => '2026-03-01',
 		]);
 	}//end testCreateComplaintThrowsWhenOpenRegisterUnavailable()
+
+	/**
+	 * Build a fake object service that answers the slug search path with a
+	 * fixed list of complaint rows.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The rows to return.
+	 *
+	 * @return object The fake object service.
+	 */
+	private function fakeObjectService(array $rows): object {
+		return new class($rows) {
+			/**
+			 * @param array<int, array<string, mixed>> $rows The rows to return.
+			 */
+			public function __construct(private readonly array $rows) {
+			}//end __construct()
+
+			/**
+			 * @param string $register The register slug.
+			 * @param string $schema The schema slug.
+			 * @param array<string, mixed> $filters The query filters.
+			 *
+			 * @return array<int, array<string, mixed>> The scripted rows.
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+				return $this->rows;
+			}//end searchObjectsBySlug()
+		};
+	}//end fakeObjectService()
+
+	/**
+	 * Point the settings mock at a configured register and complaint schema.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The rows the store returns.
+	 *
+	 * @return void
+	 */
+	private function withComplaints(array $rows): void {
+		$this->settingsService->method('getObjectService')
+			->willReturn($this->fakeObjectService(rows: $rows));
+		$this->settingsService->method('getConfigValue')
+			->willReturnCallback(
+				static function (string $key): string {
+					return ($key === 'register' ? 'dossiq-register' : 'complaint');
+				}
+			);
+	}//end withComplaints()
+
+	/**
+	 * listComplaints returns nothing when OpenRegister is unavailable.
+	 *
+	 * @return void
+	 */
+	public function testListComplaintsReturnsEmptyWithoutObjectService(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
+
+		$this->assertSame([], $this->service->listComplaints());
+	}//end testListComplaintsReturnsEmptyWithoutObjectService()
+
+	/**
+	 * listComplaints returns nothing when the register or schema is unset.
+	 *
+	 * @return void
+	 */
+	public function testListComplaintsReturnsEmptyWhenNotConfigured(): void {
+		$this->settingsService->method('getObjectService')
+			->willReturn($this->fakeObjectService(rows: [['id' => 'a']]));
+		$this->settingsService->method('getConfigValue')->willReturn('');
+
+		$this->assertSame([], $this->service->listComplaints());
+	}//end testListComplaintsReturnsEmptyWhenNotConfigured()
+
+	/**
+	 * listComplaints hands the store rows back as arrays.
+	 *
+	 * @return void
+	 */
+	public function testListComplaintsReturnsTheStoreRows(): void {
+		$this->withComplaints(rows: [['id' => 'a'], ['id' => 'b']]);
+
+		$this->assertSame([['id' => 'a'], ['id' => 'b']], $this->service->listComplaints());
+	}//end testListComplaintsReturnsTheStoreRows()
+
+	/**
+	 * getDeadlineAlerts splits complaints into overdue and warning.
+	 *
+	 * Dates are built relative to today so the test does not rot. A deadline in
+	 * the past is overdue; one inside the warning window is a warning; one well
+	 * beyond it is neither; one with no deadline at all is skipped rather than
+	 * reported.
+	 *
+	 * @return void
+	 */
+	public function testGetDeadlineAlertsGroupsOverdueAndWarning(): void {
+		$today = $this->dates->today();
+		$this->withComplaints(
+			rows: [
+				['id' => 'overdue', 'afhandelDeadline' => $today->modify('-1 day')->format('Y-m-d')],
+				['id' => 'due-today', 'afhandelDeadline' => $today->format('Y-m-d')],
+				['id' => 'warning', 'afhandelDeadline' => $today->modify('+2 days')->format('Y-m-d')],
+				// Exactly on the default 3-day window: included, so a <= that
+				// slips to < is caught here.
+				['id' => 'on-the-boundary', 'afhandelDeadline' => $today->modify('+3 days')->format('Y-m-d')],
+				// One day past it: excluded, so a <= that slips to <= +1 is
+				// caught too.
+				['id' => 'just-outside', 'afhandelDeadline' => $today->modify('+4 days')->format('Y-m-d')],
+				['id' => 'comfortable', 'afhandelDeadline' => $today->modify('+30 days')->format('Y-m-d')],
+				['id' => 'no-deadline'],
+			]
+		);
+
+		$alerts = $this->service->getDeadlineAlerts();
+
+		$this->assertSame(['overdue'], array_column($alerts['overdue'], 'id'));
+		$this->assertSame(
+			['due-today', 'warning', 'on-the-boundary'],
+			array_column($alerts['warning'], 'id')
+		);
+	}//end testGetDeadlineAlertsGroupsOverdueAndWarning()
+
+	/**
+	 * getDeadlineAlerts honours a widened warning window.
+	 *
+	 * @return void
+	 */
+	public function testGetDeadlineAlertsHonoursTheWarningWindow(): void {
+		$today = $this->dates->today();
+		$this->withComplaints(
+			rows: [
+				['id' => 'in-ten-days', 'afhandelDeadline' => $today->modify('+10 days')->format('Y-m-d')],
+			]
+		);
+
+		$this->assertSame([], $this->service->getDeadlineAlerts()['warning']);
+		$this->assertSame(
+			['in-ten-days'],
+			array_column($this->service->getDeadlineAlerts(warningDays: 14)['warning'], 'id')
+		);
+	}//end testGetDeadlineAlertsHonoursTheWarningWindow()
+
+	/**
+	 * The overdue list for an assistant carries no complainant (REQ-MCP-203).
+	 *
+	 * The rows carry a fully populated complainant, so a projection that let
+	 * any of it through is caught here, and an unknown field added later stays
+	 * out because the row is rebuilt from an allowlist.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-203-overdue-complaints-via-redacted-projection
+	 */
+	public function testListOverdueComplaintsNeverCarriesTheComplainant(): void {
+		$today = $this->dates->today();
+		$this->withComplaints(
+			rows: [
+				[
+					'id' => 'k-1',
+					'complaintNumber' => 'KL-2026-0007',
+					'subject' => 'Lang wachten',
+					'status' => 'received',
+					'handler' => 'henk',
+					'acknowledgementOfReceiptDeadline' => $today->modify('-3 days')->format('Y-m-d'),
+					'afhandelDeadline' => $today->modify('-1 day')->format('Y-m-d'),
+					'complainant' => ['naam' => 'Fatima El-Amrani', 'email' => 'fatima@example.org', 'telefoon' => '0612345678'],
+					'description' => 'Ik wacht al zes weken.',
+					'someFutureField' => 'kept out',
+				],
+				['id' => 'k-2', 'afhandelDeadline' => $today->modify('+10 days')->format('Y-m-d'), 'complainant' => ['naam' => 'Henk']],
+			]
+		);
+
+		$result = $this->service->listOverdueComplaints();
+
+		$this->assertSame(1, $result['count']);
+		$row = $result['complaints'][0];
+		$this->assertSame('KL-2026-0007', $row['complaintNumber']);
+		$this->assertTrue($row['handlingOverdue']);
+		$this->assertTrue($row['acknowledgementOverdue']);
+		$this->assertArrayNotHasKey('complainant', $row);
+		$this->assertArrayNotHasKey('description', $row);
+		$this->assertArrayNotHasKey('someFutureField', $row);
+		$this->assertStringNotContainsString('Fatima', (string)json_encode($result));
+	}//end testListOverdueComplaintsNeverCarriesTheComplainant()
+
+	/**
+	 * createComplaint sends no klachtnummer, and reports the one it got back.
+	 *
+	 * The number is `complaintNumber`'s `x-openregister-generated` declaration
+	 * now, taken under a lock inside the create transaction. The retired
+	 * `generateComplaintNumber` counted rows and added one, which fails twice
+	 * over: a deletion hands a live complaint's number to the next one filed,
+	 * and its year filter named `ontvangstdatum`, a key the `complaint` schema
+	 * does not carry, so the count was never scoped to a year at all.
+	 *
+	 * The assertion is on what leaves the service, because that is the only
+	 * place a reintroduced generator could show itself: a number computed here
+	 * and posted would be KEPT by OpenRegister, which keeps a supplied value,
+	 * so the register would look correct and the counter would be wrong.
+	 *
+	 * @return void
+	 */
+	public function testCreateComplaintSendsNoNumberAndReportsTheIssuedOne(): void {
+		$sent = null;
+
+		$objectService = $this->createMock(ComplaintObjectServiceStub::class);
+		$objectService->method('saveObject')->willReturnCallback(
+			static function (array $object, string $register, string $schema, ?string $uuid = null) use (&$sent): array {
+				$sent = $object;
+
+				return array_merge($object, ['id' => 'uuid-1', 'complaintNumber' => 'KL-2026-0042']);
+			}
+		);
+
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
+
+		$this->logger->expects($this->once())
+			->method('info')
+			->with($this->stringContains('KL-2026-0042'), $this->anything());
+
+		$created = $this->service->createComplaint([
+			'subject'     => 'Test',
+			'description' => 'Description',
+			'receiptDate' => '2026-03-02',
+		]);
+
+		$this->assertIsArray($sent, 'a control: saveObject must actually have been called');
+		$this->assertArrayNotHasKey(
+			'complaintNumber',
+			$sent,
+			'dossiq must not compute a klachtnummer; the schema declares it and OpenRegister issues it'
+		);
+		$this->assertSame('KL-2026-0042', $created['complaintNumber']);
+
+		// The deadlines still travel, so the assertion above cannot pass merely
+		// because the service stopped writing anything at all.
+		$this->assertSame('2026-03-09', $sent['acknowledgementOfReceiptDeadline']);
+		$this->assertSame('received', $sent['status']);
+	}//end testCreateComplaintSendsNoNumberAndReportsTheIssuedOne()
 
 }//end class

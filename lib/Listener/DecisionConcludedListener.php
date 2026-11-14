@@ -13,8 +13,13 @@
  * the delegation service: the full outcome now arrives synchronously on the
  * event, so there is no decidesk poll.
  *
- * The listener filters strictly to `getSourceApp() === 'procest'`; events raised
- * by any other consuming app are ignored. Its own derivation failures are
+ * The listener takes two sources. `procest` is what dossiq's own delegation
+ * raises under. `decidiq-flow` is what Decidiq's `decidiq.request-decision`
+ * flow step raises under, which replaced dossiq's own decision step (change
+ * flow-nodes-to-their-owners); such a decision is projected only when its
+ * SUBJECT is a dossiq case, because that step raises decisions for any app's
+ * objects. For a flow decision Decidiq wakes the waiting run itself, so this
+ * listener does not. Events raised by any other app are ignored. Its own derivation failures are
  * swallowed + logged so a defective lookup never blocks event delivery — but it
  * NEVER materialises a besluit on an absent/non-terminal outcome.
  *
@@ -32,19 +37,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md
+ * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\BesluitMaterialisationService;
-use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Kernel\Contracts\AdvisoryCommitteeServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\BesluitMaterialisationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseOutcomeProductIssuerInterface;
+use OCA\Dossiq\Kernel\Contracts\FlowDecisionSubjectInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Service\DecisionDocument\ConcludedDecisionRecord;
+use OCA\Dossiq\Service\Flow\WaitingRunResumer;
 use OCA\OpenRegister\Db\FlowRunMapper;
-use OCA\OpenRegister\Service\Flow\FlowResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -56,10 +63,9 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+ * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
  */
 class DecisionConcludedListener implements IEventListener {
-	use SearchesObjects;
 
 	/**
 	 * This app's source-app marker on the decidesk event.
@@ -72,6 +78,7 @@ class DecisionConcludedListener implements IEventListener {
 	 */
 	private const SOURCE_APP = 'procest';
 
+
 	/**
 	 * Terminal decidesk statuses that materialise a Besluit. `pending` is
 	 * non-terminal and is ignored (no besluit yet).
@@ -79,11 +86,25 @@ class DecisionConcludedListener implements IEventListener {
 	private const TERMINAL_STATUSES = ['approved', 'rejected', 'withdrawn'];
 
 	/**
+	 * Resolves the record and case of the concluded decision, and records an advice deviation.
+	 *
+	 * @var ConcludedDecisionRecord
+	 */
+	private readonly ConcludedDecisionRecord $records;
+
+	/**
+	 * Wakes the flow run that waits on the concluded decision.
+	 *
+	 * @var WaitingRunResumer
+	 */
+	private readonly WaitingRunResumer $resumer;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Schema/register/ObjectService bridge.
-	 * @param BesluitMaterialisationService $decisionMaterialiser ZGW Besluit projection from the outcome.
-	 * @param AdvisoryCommitteeService $bacService BAC advice-request audit writer (Awb art. 7:13 lid 7).
+	 * @param SettingsServiceInterface $settingsService Schema/register/ObjectService bridge.
+	 * @param BesluitMaterialisationServiceInterface $decisionMaterialiser ZGW Besluit projection from the outcome.
+	 * @param AdvisoryCommitteeServiceInterface $bacService BAC advice-request audit writer (Awb art. 7:13 lid 7).
 	 * @param LoggerInterface $logger Logger.
 	 * @param FlowRunMapper|null $runs Finds the run suspended on this decision. Nullable
 	 *                                 so adding it breaks no existing construction site;
@@ -91,15 +112,24 @@ class DecisionConcludedListener implements IEventListener {
 	 *                                 waiting rather than advancing it wrongly.
 	 * @param FlowRunService|null $runner Delivers the resume signal. Nullable for the
 	 *                                    same reason and with the same safe direction.
+	 * @param FlowDecisionSubjectInterface|null $flowDecisions Recognises a flow decision about a dossiq case;
+	 *                                        subject. Nullable so no construction site breaks;
+	 *                                        absent, no flow decision is projected.
+	 * @param CaseOutcomeProductIssuerInterface|null $products Issues the product a case type declares for this outcome
+	 *                                                (decision 172); absent, no product is written.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly BesluitMaterialisationService $decisionMaterialiser,
-		private readonly AdvisoryCommitteeService $bacService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly BesluitMaterialisationServiceInterface $decisionMaterialiser,
+		AdvisoryCommitteeServiceInterface $bacService,
 		private readonly LoggerInterface $logger,
-		private readonly ?FlowRunMapper $runs = null,
-		private readonly ?FlowRunService $runner = null,
+		?FlowRunMapper $runs = null,
+		?FlowRunService $runner = null,
+		private readonly ?FlowDecisionSubjectInterface $flowDecisions = null,
+		private readonly ?CaseOutcomeProductIssuerInterface $products = null,
 	) {
+		$this->records = new ConcludedDecisionRecord(bacService: $bacService, logger: $logger);
+		$this->resumer = new WaitingRunResumer(logger: $logger, runs: $runs, runner: $runner);
 	}//end __construct()
 
 	/**
@@ -109,7 +139,7 @@ class DecisionConcludedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	public function handle(Event $event): void {
 		// Defensive duck-typing: the event class is decidesk's and is optional
@@ -119,75 +149,7 @@ class DecisionConcludedListener implements IEventListener {
 		}
 
 		try {
-			// REQ-PDCD-003: only project events this app raised.
-			if ((string)$event->getSourceApp() !== self::SOURCE_APP) {
-				return;
-			}
-
-			$status = strtolower($this->readString(event: $event, getter: 'getStatus'));
-			if (in_array($status, self::TERMINAL_STATUSES, true) === false) {
-				// Non-terminal (e.g. pending): nothing to materialise yet.
-				return;
-			}
-
-			$objectService = $this->settingsService->getObjectService();
-			if ($objectService === null) {
-				return;
-			}
-
-			$decisionId = $this->readString(event: $event, getter: 'getDecisionId');
-			$register = $this->readString(event: $event, getter: 'getSubjectRegister');
-			$schema = $this->readString(event: $event, getter: 'getSubjectSchema');
-			$subjectId = $this->readString(event: $event, getter: 'getSubjectId');
-			$externalRef = $this->readString(event: $event, getter: 'getExternalReference');
-
-			// Locate the dossiq domain record carrying this decisionRef so we
-			// can resolve the owning case and any existing besluitRef. Fall back
-			// to the externalReference / subjectId as the case identifier.
-			[$caseId, $besluitId, $decisionRecord] = $this->resolveCaseAndDecision(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				decisionId: $decisionId,
-				subjectId: $subjectId,
-				externalRef: $externalRef
-			);
-
-			if ($caseId === '') {
-				$this->logger->warning(
-					'Dossiq DecisionConcludedListener: could not resolve a case for the concluded decision',
-					['decisionId' => $decisionId, 'externalReference' => $externalRef]
-				);
-				return;
-			}
-
-			$this->decisionMaterialiser->materialiseFromConcludedEvent(
-				caseId: $caseId,
-				decisionId: $besluitId,
-				event: $this->projectOutcome(event: $event)
-			);
-
-			$this->logger->info(
-				'Dossiq DecisionConcludedListener: materialised ZGW Besluit from decidesk outcome',
-				['decisionId' => $decisionId, 'caseId' => $caseId, 'status' => $status]
-			);
-
-			// Awb art. 7:13 lid 7: a besluit op bezwaar that departs from the
-			// BAC advice must carry a documented motivation. The besluit is
-			// FINAL at this point, so this is where the deviation becomes a
-			// fact worth mirroring onto the advice request's own append-only
-			// audit trail.
-			$this->recordCouncilDeviation(
-				decision: $decisionRecord,
-				decisionId: $besluitId,
-				subjectId: $subjectId
-			);
-
-			// A case flow that ASKED for this decision is suspended on it.
-			// Deliberately last: the besluit is materialised before the run is
-			// woken, so the steps after the decision see a case that already
-			// carries its outcome rather than racing the projection.
-			$this->resumeWaitingRun(caseId: $caseId, decisionRef: $decisionId, status: $status);
+			$this->projectConcluded(event: $event);
 		} catch (Throwable $e) {
 			// Never block event delivery on our own derivation failure; never
 			// author a besluit on a failed outcome.
@@ -199,226 +161,181 @@ class DecisionConcludedListener implements IEventListener {
 	}//end handle()
 
 	/**
-	 * Wake the case flow that was waiting on this decision, if one was.
+	 * Project a terminal decision onto its case, then record what follows from it.
 	 *
-	 * 🔑 MATCHED ON THE decisionRef, NOT ON THE CASE. A case has several
-	 * decisions in its life, and a run suspended on the SECOND one must not be
-	 * advanced by the first concluding. Matching on the case would do exactly
-	 * that — and would look correct, because the run does belong to that case.
-	 *
-	 * So the run is only signalled when one of its awaiting node slots records
-	 * this very ref. A run waiting on a different decision is left suspended,
-	 * which is the spec'd behaviour and not an omission.
-	 *
-	 * Never throws into the caller: a decision concludes whether or not a flow
-	 * was listening, and a failure to resume must not undo the besluit that was
-	 * already materialised above.
-	 *
-	 * @param string $caseId      The case the decision belongs to.
-	 * @param string $decisionRef The concluded decision's id.
-	 * @param string $status      The terminal status decidiq reported.
+	 * @param Event $event The decidesk DecisionConcludedEvent.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
-	private function resumeWaitingRun(string $caseId, string $decisionRef, string $status): void {
-		if ($this->runs === null || $this->runner === null || trim($decisionRef) === '') {
+	private function projectConcluded(Event $event): void {
+		$run = $this->terminalRun(event: $event);
+		if ($run === null) {
 			return;
 		}
 
-		try {
-			$suspended = $this->runs->findSuspendedBySubject(subjectUuid: $caseId);
-		} catch (Throwable $e) {
+		$this->resolveCase(run: $run);
+		if ($run->caseId === '') {
 			$this->logger->warning(
-				'Dossiq: could not look up runs suspended on case ' . $caseId . ': ' . $e->getMessage()
+				'Dossiq DecisionConcludedListener: could not resolve a case for the concluded decision',
+				['decisionId' => $run->decisionId, 'externalReference' => $run->externalRef]
 			);
 			return;
 		}
 
-		foreach ($suspended as $run) {
-			if ($this->awaitsDecision(run: $run, decisionRef: $decisionRef) === false) {
-				continue;
-			}
-
-			try {
-				$this->runner->signal(
-					run: $run,
-					payload: [
-						// Without a `decision` key the resume is a nudge and the
-						// node suspends again — so the outcome is what makes
-						// this an answer, and it is decidiq's word, not ours.
-						'decision' => $status,
-						'decisionRef' => $decisionRef,
-						'caseId' => $caseId,
-					]
-				);
-
-				$this->logger->info(
-					'Dossiq: resumed flow run ' . (string)$run->getUuid() . ' on decision ' . $decisionRef
-				);
-			} catch (Throwable $e) {
-				$this->logger->error(
-					'Dossiq: could not resume flow run on a concluded decision: ' . $e->getMessage(),
-					['run' => $run->getUuid(), 'decisionRef' => $decisionRef]
-				);
-			}//end try
-
-			return;
-		}//end foreach
-	}//end resumeWaitingRun()
+		$this->materialise(run: $run);
+		$this->recordConsequences(run: $run);
+	}//end projectConcluded()
 
 	/**
-	 * Whether a suspended run is waiting on this particular decision.
+	 * The run for a terminal decision this app projects, or null when it projects none.
 	 *
-	 * Reads the per-node resume slots the requesting node wrote. A run holds one
-	 * slot per node across its life, so the question is whether ANY slot names
-	 * this ref — not whether the run belongs to the right case, which the
-	 * caller has already established and which is not sufficient.
+	 * @param Event $event The decidesk DecisionConcludedEvent.
 	 *
-	 * @param object $run         The suspended run.
-	 * @param string $decisionRef The concluded decision's id.
+	 * @return DecisionConcludedRun|null
 	 *
-	 * @return boolean True when a slot records this ref.
-	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
-	private function awaitsDecision(object $run, string $decisionRef): bool {
-		$context = ($run->getContext() ?? []);
-		if (is_array($context) === false) {
-			return false;
+	private function terminalRun(Event $event): ?DecisionConcludedRun {
+		// REQ-PDCD-003: only project events this app raised, or that
+		// Decidiq's flow step raised about one of this app's cases.
+		$flowCase = ($this->flowDecisions?->caseIdOf(event: $event) ?? '');
+		if ($flowCase === '' && $this->readString(event: $event, getter: 'getSourceApp') !== self::SOURCE_APP) {
+			return null;
 		}
 
-		$slots = ($context[FlowResumeState::CONTEXT_KEY] ?? []);
-		if (is_array($slots) === false) {
-			return false;
+		$status = strtolower($this->readString(event: $event, getter: 'getStatus'));
+		if (in_array($status, self::TERMINAL_STATUSES, true) === false) {
+			// Non-terminal (e.g. pending): nothing to materialise yet.
+			return null;
 		}
 
-		foreach ($slots as $slot) {
-			if (is_array($slot) === false) {
-				continue;
-			}
-
-			if (trim((string)($slot['decisionRef'] ?? '')) === trim($decisionRef)) {
-				return true;
-			}
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
 		}
 
-		return false;
-	}//end awaitsDecision()
+		$run = new DecisionConcludedRun();
+		$run->event = $event;
+		$run->flowCase = $flowCase;
+		$run->status = $status;
+		$run->objectService = $objectService;
+		return $run;
+	}//end terminalRun()
 
 	/**
-	 * Resolve the owning case UUID and any existing besluitRef for a decision.
+	 * Resolve the case and existing besluit of the run's decision.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register The subject register (numeric ID or slug, may be empty).
-	 * @param string $schema The subject schema (numeric ID or slug, may be empty).
-	 * @param string $decisionId The decidesk decisionId stored on the record as `decisionRef`.
-	 * @param string $subjectId The subject id from the event.
-	 * @param string $externalRef The external reference (often the case/subject UUID).
+	 * Locate the dossiq domain record carrying this decisionRef so we can
+	 * resolve the owning case and any existing besluitRef. Fall back to the
+	 * externalReference / subjectId as the case identifier.
 	 *
-	 * @return array{0:string,1:string,2:array<string,mixed>|null} [caseId, besluitId, decisionRecord].
-	 */
-	private function resolveCaseAndDecision(
-		object $objectService,
-		string $register,
-		string $schema,
-		string $decisionId,
-		string $subjectId,
-		string $externalRef,
-	): array {
-		$record = null;
-		if ($register !== '' && $schema !== '' && $decisionId !== '') {
-			try {
-				$matches = $this->searchObjectsAsArrays(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					filters: ['decisionRef' => $decisionId]
-				);
-				$record = ($matches[0] ?? null);
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'Dossiq DecisionConcludedListener: decisionRef lookup failed: ' . $e->getMessage()
-				);
-			}
-		}
-
-		if (is_array($record) === true) {
-			$caseId = (string)($record['case'] ?? $record['caseRef'] ?? $externalRef);
-			$besluitId = (string)($record['besluitRef'] ?? '');
-			return [$caseId, $besluitId, $record];
-		}
-
-		// No record matched: use the external reference (then subjectId) as the
-		// case identifier; no existing besluit is known.
-		$caseId = $subjectId;
-		if ($externalRef !== '') {
-			$caseId = $externalRef;
-		}
-
-		return [$caseId, '', null];
-	}//end resolveCaseAndBesluit()
-
-	/**
-	 * Mirror an Awb art. 7:13 lid 7 council deviation onto the linked BAC
-	 * advice request.
-	 *
-	 * `DecisionValidator::assertPublishable()` already REFUSES to raise a
-	 * bezwaarDecision that sets `advisoryOpinion`, clears `followsAdvice`
-	 * and leaves `deviationRationale` empty, so by the time decidesk
-	 * concludes, a deviating decision is guaranteed to carry its motivation.
-	 * This method only records that fact on the advice request's own
-	 * append-only audit trail so the beroep dossier export can demonstrate
-	 * compliance from either side of the referral.
-	 *
-	 * A decision that follows the advice, or that was never referred to a
-	 * committee, is a no-op. The write itself is swallow-and-log inside
-	 * {@see AdvisoryCommitteeService::recordCouncilDeviation()}, so a
-	 * failure here never blocks besluit materialisation.
-	 *
-	 * @param array<string,mixed>|null $decision The bezwaarDecision record, when one matched.
-	 * @param string $decisionId The materialised ZGW Besluit ref, when known.
-	 * @param string $subjectId The bezwaarDecision UUID from the event.
+	 * @param DecisionConcludedRun $run The run.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
-	private function recordCouncilDeviation(
-		?array $decision,
-		string $decisionId,
-		string $subjectId,
-	): void {
-		if ($decision === null) {
-			return;
-		}
+	private function resolveCase(DecisionConcludedRun $run): void {
+		$run->decisionId = $this->readString(event: $run->event, getter: 'getDecisionId');
+		$run->subjectId = $this->readString(event: $run->event, getter: 'getSubjectId');
+		$run->externalRef = $this->referenceOf(event: $run->event, flowCase: $run->flowCase);
 
-		$requestId = (string)($decision['advisoryOpinion'] ?? '');
-		if ($requestId === '') {
-			// Never referred to a committee — there is no advice to deviate from.
-			return;
-		}
-
-		if ((bool)($decision['followsAdvice'] ?? true) === true) {
-			return;
-		}
-
-		$rationale = (string)($decision['deviationRationale'] ?? '');
-
-		// Prefer the materialised ZGW Besluit; fall back to the bezwaarDecision
-		// itself, which IS the besluit op bezwaar when no ZGW ref is known yet.
-		$reference = $decisionId;
-		if ($reference === '') {
-			$reference = (string)($decision['@self']['id'] ?? ($decision['id'] ?? $subjectId));
-		}
-
-		$this->bacService->recordCouncilDeviation(
-			requestId: $requestId,
-			decisionId: $reference,
-			rationaleRef: $rationale
+		[$caseId, $besluitId, $decisionRecord] = $this->records->resolveCaseAndDecision(
+			objectService: $run->objectService,
+			register: $this->readString(event: $run->event, getter: 'getSubjectRegister'),
+			schema: $this->readString(event: $run->event, getter: 'getSubjectSchema'),
+			decisionId: $run->decisionId,
+			subjectId: $run->subjectId,
+			externalRef: $run->externalRef
 		);
-	}//end recordCouncilDeviation()
+		$run->caseId = $caseId;
+		$run->besluitId = $besluitId;
+		$run->decisionRecord = $decisionRecord;
+	}//end resolveCase()
+
+	/**
+	 * Materialise the ZGW Besluit on the run's case from the decided outcome.
+	 *
+	 * @param DecisionConcludedRun $run The run.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 */
+	private function materialise(DecisionConcludedRun $run): void {
+		$this->decisionMaterialiser->materialiseFromConcludedEvent(
+			caseId: $run->caseId,
+			decisionId: $run->besluitId,
+			event: $this->projectOutcome(event: $run->event)
+		);
+
+		$this->logger->info(
+			'Dossiq DecisionConcludedListener: materialised ZGW Besluit from decidesk outcome',
+			['decisionId' => $run->decisionId, 'caseId' => $run->caseId, 'status' => $run->status]
+		);
+	}//end materialise()
+
+	/**
+	 * Record what the materialised besluit sets off: the council deviation, the product, the waiting run.
+	 *
+	 * @param DecisionConcludedRun $run The run.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 */
+	private function recordConsequences(DecisionConcludedRun $run): void {
+		// Awb art. 7:13 lid 7: a besluit op bezwaar that departs from the
+		// BAC advice must carry a documented motivation. The besluit is
+		// FINAL at this point, so this is where the deviation becomes a
+		// fact worth recording on the advice request's OpenRegister audit
+		// trail.
+		$this->records->recordCouncilDeviation(
+			decision: $run->decisionRecord,
+			decisionId: $run->besluitId,
+			subjectId: $run->subjectId
+		);
+
+		// Decision 172: the product the case type declares; never throws.
+		$this->products?->onConcludedDecision(
+			caseId: $run->caseId,
+			decisionId: $run->decisionId,
+			status: $run->status,
+			decidedAt: $this->readString(event: $run->event, getter: 'getDecidedAt')
+		);
+
+		// A case flow that ASKED for this decision is suspended on it.
+		// Deliberately last: the besluit is materialised before the run is
+		// woken, so the steps after the decision see a case that already
+		// carries its outcome rather than racing the projection.
+		// A flow decision's run is woken by Decidiq, which raised it.
+		if ($run->flowCase === '') {
+			$this->resumer->resumeWaitingRun(caseId: $run->caseId, decisionRef: $run->decisionId, status: $run->status);
+		}
+	}//end recordConsequences()
+
+	/**
+	 * The reference the case is looked up by.
+	 *
+	 * A flow decision's external reference is `flow-run:<run>:<node>`, which
+	 * names the run, not the case: its subject is the case.
+	 *
+	 * @param Event  $event    The event.
+	 * @param string $flowCase The case a flow decision is about, or ''.
+	 *
+	 * @return string The reference.
+	 *
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	private function referenceOf(Event $event, string $flowCase): string {
+		if ($flowCase !== '') {
+			return $flowCase;
+		}
+
+		return $this->readString(event: $event, getter: 'getExternalReference');
+	}//end referenceOf()
 
 	/**
 	 * Read a duck-typed getter off the decidesk event as a string.
@@ -440,7 +357,7 @@ class DecisionConcludedListener implements IEventListener {
 		}
 
 		$value = $event->$getter();
-		if ($value === null || is_scalar($value) === false) {
+		if (is_scalar($value) === false) {
 			return '';
 		}
 
@@ -459,42 +376,74 @@ class DecisionConcludedListener implements IEventListener {
 	 * @return array<string,mixed> Normalised projection: status, outcome, decidedAt, signer, method, signers, signingReference.
 	 */
 	private function projectOutcome(Event $event): array {
-		$signers = [];
-		if (method_exists($event, 'getSigners') === true) {
-			$rawSigners = $event->getSigners();
-			if (is_array($rawSigners) === true) {
-				$signers = $rawSigners;
-			}
-		}
-
-		// First signer (if any) is recorded as the mandaathouder on the Besluit.
-		$signer = '';
-		if ($signers !== []) {
-			// A signer entry is either a record or a bare user id; normalise
-			// the bare form to the record shape so one read covers both.
-			$first = reset($signers);
-			if (is_array($first) === false) {
-				$first = ['id' => (string)$first];
-			}
-
-			$signer = (string)($first['id'] ?? $first['name'] ?? '');
-		}
-
-		// The decision method is recorded as "signature" when the outcome was
-		// signed, otherwise the decisionType carries the method provenance.
-		$method = $this->readString(event: $event, getter: 'getDecisionType');
-		if (method_exists($event, 'isSigned') === true && $event->isSigned() === true) {
-			$method = 'signature';
-		}
+		$signers = $this->signersOf(event: $event);
 
 		return [
 			'status' => $this->readString(event: $event, getter: 'getStatus'),
 			'outcome' => $this->readString(event: $event, getter: 'getOutcome'),
 			'decidedAt' => $this->readString(event: $event, getter: 'getDecidedAt'),
-			'signer' => $signer,
-			'method' => $method,
+			'signer' => $this->firstSigner(signers: $signers),
+			'method' => $this->methodOf(event: $event),
 			'signers' => $signers,
 			'signingReference' => $this->readString(event: $event, getter: 'getSigningReference'),
 		];
 	}//end projectOutcome()
+
+	/**
+	 * The event's signers, or [] when it carries none.
+	 *
+	 * @param Event $event The decidesk DecisionConcludedEvent.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function signersOf(Event $event): array {
+		if (method_exists($event, 'getSigners') === false) {
+			return [];
+		}
+
+		$rawSigners = $event->getSigners();
+		if (is_array($rawSigners) === false) {
+			return [];
+		}
+
+		return $rawSigners;
+	}//end signersOf()
+
+	/**
+	 * The first signer (if any), recorded as the mandaathouder on the Besluit.
+	 *
+	 * @param array<int|string, mixed> $signers The event's signers.
+	 *
+	 * @return string The signer's id or name, or ''.
+	 */
+	private function firstSigner(array $signers): string {
+		if ($signers === []) {
+			return '';
+		}
+
+		// A signer entry is either a record or a bare user id; normalise
+		// the bare form to the record shape so one read covers both.
+		$first = reset($signers);
+		if (is_array($first) === false) {
+			$first = ['id' => (string)$first];
+		}
+
+		return (string)($first['id'] ?? $first['name'] ?? '');
+	}//end firstSigner()
+
+	/**
+	 * The decision method: "signature" when the outcome was signed, otherwise
+	 * the decisionType, which carries the method provenance.
+	 *
+	 * @param Event $event The decidesk DecisionConcludedEvent.
+	 *
+	 * @return string
+	 */
+	private function methodOf(Event $event): string {
+		if (method_exists($event, 'isSigned') === true && $event->isSigned() === true) {
+			return 'signature';
+		}
+
+		return $this->readString(event: $event, getter: 'getDecisionType');
+	}//end methodOf()
 }//end class

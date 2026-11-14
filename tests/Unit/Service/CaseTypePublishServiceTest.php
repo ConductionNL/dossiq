@@ -1,0 +1,924 @@
+<?php
+
+/**
+ * Unit tests for CaseTypePublishService — validate first, then publish.
+ *
+ * 🔴 WHAT THESE GUARD IS A HALF-RUN PUBLISH. Publishing writes twice: the case
+ * type loses its draft flag and the active workflow template gains a published
+ * lifecycle status and the change note. Validating between the two writes
+ * would leave a case type published with a draft workflow, and nothing
+ * afterwards says which half ran. So the tests that matter are: findings stop
+ * EVERYTHING, and a failed first write does not attempt the second.
+ *
+ * The second thing they guard is the reason this class does not reuse
+ * `ZgwZtcRulesService::validatePublish()`: that method asks the store for
+ * `statusType where caseType = X`, which is a CHILD type's own rows. A child
+ * that inherits its lifecycle would be refused with "give it a status" while
+ * its own page showed four.
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @spec openspec/specs/zaaktype-versioning/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Unit\Service;
+
+use OCA\Dossiq\Service\CaseType\CaseTypeDeclarationChecks;
+use DateTime;
+use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
+use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
+use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Service\CaseType\CaseTypeReachability;
+use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
+use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
+use OCA\Dossiq\Service\CaseTypeAcknowledgement;
+use OCA\Dossiq\Service\CaseType\PublicationChecks;
+use OCA\Dossiq\Service\CaseTypePublishService;
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
+use OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration;
+use OCA\Dossiq\Service\UnreadTriggerService;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
+use OCP\AppFramework\Utility\ITimeFactory;
+use OCA\Dossiq\Service\Email\SenderIdentity;
+use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
+use Psr\Log\NullLogger;
+use RuntimeException;
+
+class CaseTypePublishServiceTest extends TestCase {
+
+	/**
+	 * The day the clock in these tests is stopped on.
+	 *
+	 * @var string
+	 */
+	private const TODAY = '2026-09-16';
+
+	/**
+	 * The fields publication requires, filled, so a fixture is refused only
+	 * for what the test is about.
+	 */
+	private const DESCRIBED = [
+		'purpose'            => 'Een besluit heroverwegen.',
+		'trigger'            => 'Een bezwaarschrift.',
+		'subject'            => 'Bezwaar',
+		'processingDeadline' => 'P6W',
+		'origin'             => 'external',
+		'confidentiality'    => 'openbaar',
+		'responsibleUnit'    => 'Juridische Zaken',
+	];
+
+	/**
+	 * A clock stopped on a day the assertions can name.
+	 *
+	 * The publish path writes `validFrom` on the new version and `validUntil`
+	 * on the one it replaces, so "today" is part of what these tests check. A
+	 * real clock would make the expected value the same expression as the code
+	 * under test, which is a test that cannot fail.
+	 *
+	 * @return ITimeFactory The clock.
+	 */
+	private function clock(): ITimeFactory {
+		$time = $this->createMock(ITimeFactory::class);
+		$time->method('getDateTime')->willReturn(new DateTime(self::TODAY));
+
+		return $time;
+	}//end clock()
+
+
+	/**
+	 * The object-service double the last built service wrote through.
+	 *
+	 * @var object|null
+	 */
+	private ?object $objectService = null;
+
+	/**
+	 * A publish service over a fixed store.
+	 *
+	 * @param array<string, array<string, mixed>>            $caseTypes Case types by id.
+	 * @param array<string, array<int, array<string, mixed>>> $rows      Rows per schema key.
+	 * @param boolean|integer                                $saveFails True for every write, or the 1-based write to start failing at.
+	 *
+	 * @return CaseTypePublishService The service.
+	 */
+	private function service(array $caseTypes, array $rows = [], bool|int $saveFails = false): CaseTypePublishService {
+		$caseTypes = array_map(static fn (array $row): array => ($row + self::DESCRIBED), $caseTypes);
+		$this->objectService = new class($caseTypes, $rows, $saveFails) {
+			/**
+			 * Everything saveObject() was handed, in order.
+			 *
+			 * @var array<int, array<string, mixed>>
+			 */
+			public array $saved = [];
+
+			/**
+			 * @param array<string, array<string, mixed>> $caseTypes Case types by id.
+			 * @param array<string, array<int, array<string, mixed>>> $rows Rows per schema.
+			 * @param boolean|integer $saveFails True for every write, or the write to start failing at.
+			 */
+			public function __construct(
+				private array $caseTypes,
+				private array $rows,
+				private bool|int $saveFails,
+			) {
+			}
+
+			/**
+			 * Read one object by id.
+			 *
+			 * @param string $id The id.
+			 * @param string $register The register.
+			 * @param string $schema The schema.
+			 *
+			 * @return array<string, mixed> The row.
+			 */
+			public function find(string $id, string $register, string $schema): array {
+				return ($this->caseTypes[$id] ?? []);
+			}
+
+			/**
+			 * Search one schema, filtered on the caseType back-reference.
+			 *
+			 * @param array<string, mixed> $query The query.
+			 *
+			 * @return array<int, array<string, mixed>> The rows.
+			 */
+			public function searchObjects(array $query): array {
+				$schema = (string)($query['@self']['schema'] ?? '');
+				$wanted = (string)($query['caseType'] ?? '');
+
+				return array_values(
+					array_filter(
+						($this->rows[$schema] ?? []),
+						static function (array $row) use ($wanted): bool {
+							$own = (string)($row['caseType'] ?? '');
+							if ($wanted === 'IS NULL') {
+								return ($own === '');
+							}
+
+							return ($own === $wanted);
+						}
+					)
+				);
+			}
+
+			/**
+			 * Record a write.
+			 *
+			 * @param array<string, mixed> $object The object.
+			 * @param string $register The register.
+			 * @param string $schema The schema.
+			 *
+			 * @return array<string, mixed> The object.
+			 */
+			public function saveObject(array $object, string $register, string $schema): array {
+				if ($this->saveFails === true) {
+					throw new RuntimeException('unwritable');
+				}
+
+				if (is_int($this->saveFails) === true && (count($this->saved) + 1) >= $this->saveFails) {
+					throw new RuntimeException('unwritable');
+				}
+
+				$this->saved[] = ['schema' => $schema, 'object' => $object];
+
+				return $object;
+			}
+		};
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => ($key === 'register' ? 'dossiq' : $key)
+		);
+
+		$store = new CaseTypeStore($settings);
+
+		return new CaseTypePublishService(
+			settingsService: $settings,
+			store: $store,
+			// A REAL checks object over the SAME store and resolver the
+			// assertions read through. Only the wiring lines moved when the
+			// findings and warnings were split out.
+			checks: new PublicationChecks(
+				caseTypeResolver: new CaseTypeResolver(store: $store),
+				store: $store,
+				declarations: new CaseTypeDeclarationChecks(
+					acknowledgement: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
+					admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
+					remedy: new RemedyClauseDeclaration(l10n: new SourceL10n()),
+					handling: new CaseTypeHandling(),
+				),
+				unreadTriggers: new UnreadTriggerService(l10n: new SourceL10n()),
+				reachability: new CaseTypeReachability(),
+				senders: $this->createMock(originalClassName: SenderIdentity::class),
+			),
+			fieldRules: new CaseStateFieldRuleProjector(
+				store: $store,
+				declaration: new StatusFieldRuleDeclaration(),
+				roles: new FieldRoleRuleDeclaration(),
+				slugs: $this->createMock(SchemaSlugResolver::class),
+				container: $this->createMock(ContainerInterface::class),
+				logger: new NullLogger(),
+			),
+			fieldRoles: $this->createMock(CaseFieldRoleProjector::class),
+			window: new CaseTypeVersionWindow(
+				settingsService: $settings,
+				store: $store,
+				time: $this->clock(),
+				logger: new NullLogger(),
+			),
+			logger: new NullLogger(),
+		);
+	}//end service()
+
+	/**
+	 * The version window over the same fake store `service()` just built.
+	 *
+	 * Deprecate moved out of the publish service when that class went past the
+	 * complexity threshold, and the tests moved with it rather than being
+	 * deleted: closing a superseded version is publishing's other half, and it
+	 * is asserted against the same recorded writes.
+	 *
+	 * @param array<string, array<string, mixed>> $caseTypes Case types by id.
+	 *
+	 * @return CaseTypeVersionWindow The window.
+	 */
+	private function window(array $caseTypes): CaseTypeVersionWindow {
+		$this->service($caseTypes);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => ($key === 'register' ? 'dossiq' : $key)
+		);
+
+		return new CaseTypeVersionWindow(
+			settingsService: $settings,
+			store: new CaseTypeStore($settings),
+			time: $this->clock(),
+			logger: new NullLogger(),
+		);
+	}//end window()
+
+	/**
+	 * A draft with a lifecycle a case can enter and leave.
+	 *
+	 * @param array<string, mixed> $overrides Fields to change on the case type.
+	 *
+	 * @return CaseTypePublishService The service.
+	 */
+	private function publishableService(array $overrides = []): CaseTypePublishService {
+		$caseType = array_merge(
+			['id' => 'ct', 'title' => 'Bezwaar', 'isDraft' => true, 'initialStatus' => 's1'],
+			$overrides
+		);
+
+		return $this->service(
+			['ct' => $caseType],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'order' => 1, 'caseType' => 'ct'],
+					['id' => 's2', 'name' => 'Afgehandeld', 'order' => 2, 'isFinal' => true, 'caseType' => 'ct'],
+				],
+				'workflow_template_schema' => [
+					['id' => 'wf', 'title' => 'Flow', 'version' => 3, 'isActive' => true, 'caseType' => 'ct'],
+				],
+			]
+		);
+	}//end publishableService()
+
+	/**
+	 * A draft that has everything answers no findings.
+	 */
+	public function testAReadyDraftHasNoFindings(): void {
+		self::assertSame([], $this->publishableService()->validate(caseTypeId: 'ct'));
+	}//end testAReadyDraftHasNoFindings()
+
+	/**
+	 * Every required field left empty is its own finding, in a fixed order.
+	 */
+	public function testEachEmptyRequiredFieldIsAFinding(): void {
+		$empty = array_fill_keys(array_keys(self::DESCRIBED), '');
+		$empty['title'] = '  ';
+
+		self::assertSame(
+			[
+				'Give the case type a title.',
+				'Give the case type a purpose.',
+				'Give the case type a trigger.',
+				'Give the case type a subject.',
+				'Give the case type a processing deadline.',
+				'Give the case type an origin.',
+				'Give the case type a confidentiality level.',
+				'Give the case type a responsible unit.',
+			],
+			$this->publishableService($empty)->validate(caseTypeId: 'ct')
+		);
+	}//end testEachEmptyRequiredFieldIsAFinding()
+
+	/**
+	 * A missing field reads the same as an empty one.
+	 */
+	public function testAMissingResponsibleUnitIsAFinding(): void {
+		$service = $this->service(
+			['ct' => ['id' => 'ct', 'title' => 'Bezwaar', 'initialStatus' => 's1', 'responsibleUnit' => null]],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'caseType' => 'ct'],
+					['id' => 's2', 'name' => 'Afgehandeld', 'isFinal' => true, 'caseType' => 'ct'],
+				],
+			]
+		);
+
+		self::assertSame(['Give the case type a responsible unit.'], $service->validate(caseTypeId: 'ct'));
+	}//end testAMissingResponsibleUnitIsAFinding()
+
+	/**
+	 * A translatable field counts as filled when one language holds text, and
+	 * as empty when no language does.
+	 */
+	public function testATranslatableFieldIsReadAcrossLanguages(): void {
+		$filled = $this->publishableService(['purpose' => ['nl' => '', 'en' => 'Reconsider a decision.']]);
+		self::assertSame([], $filled->validate(caseTypeId: 'ct'));
+
+		$blank = $this->publishableService(['subject' => ['nl' => ' ', 'en' => '']]);
+		self::assertSame(['Give the case type a subject.'], $blank->validate(caseTypeId: 'ct'));
+	}//end testATranslatableFieldIsReadAcrossLanguages()
+
+	/**
+	 * A draft with an empty required field is not published and nothing is written.
+	 */
+	public function testAnEmptyRequiredFieldStopsThePublish(): void {
+		$service = $this->publishableService(['responsibleUnit' => '']);
+
+		$result = $service->publish(caseTypeId: 'ct', changeNote: 'Eerste versie');
+
+		self::assertFalse($result['published']);
+		self::assertSame(['Give the case type a responsible unit.'], $result['findings']);
+		self::assertSame([], $this->objectService->saved);
+	}//end testAnEmptyRequiredFieldStopsThePublish()
+
+	/**
+	 * A case type with no statuses cannot be published.
+	 */
+	public function testATypeWithNoStatusesIsRefused(): void {
+		$service = $this->service(['ct' => ['id' => 'ct', 'title' => 'Bezwaar']]);
+
+		self::assertSame(['Give the case type at least one status.'], $service->validate(caseTypeId: 'ct'));
+	}//end testATypeWithNoStatusesIsRefused()
+
+	/**
+	 * A lifecycle a case cannot leave is refused.
+	 */
+	public function testALifecycleWithNoFinalStatusIsRefused(): void {
+		$service = $this->service(
+			['ct' => ['id' => 'ct', 'title' => 'Bezwaar', 'initialStatus' => 's1']],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'caseType' => 'ct'],
+				],
+			]
+		);
+
+		$findings = $service->validate(caseTypeId: 'ct');
+
+		self::assertCount(1, $findings);
+		self::assertStringContainsString('final', $findings[0]);
+	}//end testALifecycleWithNoFinalStatusIsRefused()
+
+	/**
+	 * A type with no initial status is refused: the spec's own scenario.
+	 */
+	public function testATypeWithNoInitialStatusIsRefused(): void {
+		$findings = $this->publishableService(['initialStatus' => ''])->validate(caseTypeId: 'ct');
+
+		self::assertSame(['Pick the status a new case of this type starts in.'], $findings);
+	}//end testATypeWithNoInitialStatusIsRefused()
+
+	/**
+	 * 🔴 AN INITIAL STATUS POINTING SOMEWHERE ELSE IS WORSE THAN NONE.
+	 *
+	 * A new case is filed into a status this type's own lifecycle cannot move
+	 * it out of, and every transition then refuses with a from-status mismatch
+	 * nobody can trace back to here.
+	 */
+	public function testAnInitialStatusFromAnotherTypeIsRefused(): void {
+		$findings = $this->publishableService(['initialStatus' => 'foreign'])->validate(caseTypeId: 'ct');
+
+		self::assertSame(['Pick the status a new case of this type starts in.'], $findings);
+	}//end testAnInitialStatusFromAnotherTypeIsRefused()
+
+	/**
+	 * 🔴 A CHILD TYPE VALIDATES ON WHAT IT INHERITS.
+	 *
+	 * The reason this validation is not ZgwZtcRulesService's: that one asks
+	 * for the child's OWN statuses, of which a child that inherits has none.
+	 */
+	public function testAChildValidatesOnItsParentsStatuses(): void {
+		$service = $this->service(
+			[
+				'parent' => ['id' => 'parent', 'title' => 'Bezwaar', 'initialStatus' => 's1'],
+				'child' => [
+					'id' => 'child',
+					'title' => 'Bezwaar (verkort)',
+					'parentCaseType' => 'parent',
+				],
+			],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'order' => 1, 'caseType' => 'parent'],
+					['id' => 's2', 'name' => 'Afgehandeld', 'order' => 2, 'isFinal' => true, 'caseType' => 'parent'],
+				],
+			]
+		);
+
+		// The child inherits its parent's initialStatus too, so it resolves.
+		self::assertSame([], $service->validate(caseTypeId: 'child'));
+	}//end testAChildValidatesOnItsParentsStatuses()
+
+	/**
+	 * 🔴 A CYCLE IS REFUSED AT PUBLISH, AND THE FINDING NAMES IT.
+	 *
+	 * Publishing is the only write dossiq owns: a case type is saved straight
+	 * to OpenRegister's object API by the page, with no dossiq code in
+	 * between, so "refused on save" can only be met here.
+	 */
+	public function testALoopingParentChainIsRefusedAtPublish(): void {
+		$service = $this->service(
+			[
+				'a' => ['id' => 'a', 'title' => 'Bezwaar', 'parentCaseType' => 'b', 'initialStatus' => 's1'],
+				'b' => ['id' => 'b', 'title' => 'Bezwaar (verkort)', 'parentCaseType' => 'a'],
+			],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'caseType' => 'a'],
+					['id' => 's2', 'name' => 'Klaar', 'isFinal' => true, 'caseType' => 'a'],
+				],
+			]
+		);
+
+		$findings = $service->validate(caseTypeId: 'a');
+
+		self::assertCount(1, $findings);
+		self::assertStringContainsString('Bezwaar (verkort)', $findings[0]);
+	}//end testALoopingParentChainIsRefusedAtPublish()
+
+	/**
+	 * An ordinary parent is not a cycle, and publishes.
+	 */
+	public function testAnOrdinaryParentIsNotRefused(): void {
+		$service = $this->service(
+			[
+				'parent' => ['id' => 'parent', 'title' => 'Bezwaar', 'initialStatus' => 's1'],
+				'child' => ['id' => 'child', 'title' => 'Kort', 'parentCaseType' => 'parent'],
+			],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'caseType' => 'parent'],
+					['id' => 's2', 'name' => 'Klaar', 'isFinal' => true, 'caseType' => 'parent'],
+				],
+			]
+		);
+
+		self::assertSame([], $service->validate(caseTypeId: 'child'));
+	}//end testAnOrdinaryParentIsNotRefused()
+
+	/**
+	 * An unreadable case type says so rather than listing four findings.
+	 */
+	public function testAnUnreadableTypeAnswersOneFinding(): void {
+		self::assertSame(
+			['This case type could not be read.'],
+			$this->service([])->validate(caseTypeId: 'gone')
+		);
+	}//end testAnUnreadableTypeAnswersOneFinding()
+
+	/**
+	 * 🔴 FINDINGS STOP EVERYTHING. Not one write, not a partial publish.
+	 */
+	public function testFindingsPreventEveryWrite(): void {
+		$service = $this->service(['ct' => ['id' => 'ct', 'title' => 'Bezwaar']]);
+
+		$result = $service->publish(caseTypeId: 'ct', changeNote: 'Eerste versie');
+
+		self::assertFalse($result['published']);
+		self::assertNotSame([], $result['findings']);
+		self::assertSame([], $this->objectService->saved);
+	}//end testFindingsPreventEveryWrite()
+
+	/**
+	 * Publishing clears the draft flag on the case type.
+	 */
+	public function testPublishingClearsTheDraftFlag(): void {
+		$result = $this->publishableService()->publish(caseTypeId: 'ct', changeNote: 'Eerste versie');
+
+		self::assertTrue($result['published']);
+		$caseType = $this->savedFor(schema: 'case_type_schema');
+		self::assertFalse($caseType['isDraft']);
+	}//end testPublishingClearsTheDraftFlag()
+
+	/**
+	 * Publishing marks the active workflow template published, with the note.
+	 */
+	public function testPublishingMarksTheTemplateAndWritesTheNote(): void {
+		$result = $this->publishableService()->publish(caseTypeId: 'ct', changeNote: 'Eerste versie');
+
+		$template = $this->savedFor(schema: 'workflow_template_schema');
+
+		self::assertSame('published', $template['lifecycleStatus']);
+		self::assertFalse($template['isDraft']);
+		self::assertSame('Eerste versie', $template['description']);
+		self::assertSame(3, $result['version']);
+	}//end testPublishingMarksTheTemplateAndWritesTheNote()
+
+	/**
+	 * An empty change note leaves the template's existing description alone.
+	 */
+	public function testAnEmptyNoteDoesNotEraseTheDescription(): void {
+		$service = $this->service(
+			['ct' => ['id' => 'ct', 'title' => 'Bezwaar', 'initialStatus' => 's1']],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'caseType' => 'ct'],
+					['id' => 's2', 'name' => 'Klaar', 'isFinal' => true, 'caseType' => 'ct'],
+				],
+				'workflow_template_schema' => [
+					[
+						'id' => 'wf',
+						'title' => 'Flow',
+						'description' => 'Wat er eerder veranderde',
+						'isActive' => true,
+						'caseType' => 'ct',
+					],
+				],
+			]
+		);
+
+		$service->publish(caseTypeId: 'ct', changeNote: '   ');
+
+		self::assertSame(
+			'Wat er eerder veranderde',
+			$this->savedFor(schema: 'workflow_template_schema')['description']
+		);
+	}//end testAnEmptyNoteDoesNotEraseTheDescription()
+
+	/**
+	 * A type with no workflow template publishes anyway, with no version.
+	 *
+	 * Refusing would block every case type that drives its lifecycle from
+	 * transitions alone, and those are the majority.
+	 */
+	public function testATypeWithNoTemplatePublishesWithoutAVersion(): void {
+		$service = $this->service(
+			['ct' => ['id' => 'ct', 'title' => 'Bezwaar', 'initialStatus' => 's1']],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'caseType' => 'ct'],
+					['id' => 's2', 'name' => 'Klaar', 'isFinal' => true, 'caseType' => 'ct'],
+				],
+			]
+		);
+
+		$result = $service->publish(caseTypeId: 'ct', changeNote: 'Eerste versie');
+
+		self::assertTrue($result['published']);
+		self::assertNull($result['version']);
+	}//end testATypeWithNoTemplatePublishesWithoutAVersion()
+
+	/**
+	 * A write that fails is reported as a refusal, not as a publish.
+	 */
+	public function testAFailedWriteIsNotReportedAsPublished(): void {
+		$caseType = ['id' => 'ct', 'title' => 'Bezwaar', 'initialStatus' => 's1'];
+		$service = $this->service(
+			['ct' => $caseType],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'caseType' => 'ct'],
+					['id' => 's2', 'name' => 'Klaar', 'isFinal' => true, 'caseType' => 'ct'],
+				],
+			],
+			true
+		);
+
+		$result = $service->publish(caseTypeId: 'ct', changeNote: 'Eerste versie');
+
+		self::assertFalse($result['published']);
+		self::assertSame(['The case type could not be saved.'], $result['findings']);
+	}//end testAFailedWriteIsNotReportedAsPublished()
+
+	/**
+	 * 🔴 Publishing a new version closes the version it replaces.
+	 *
+	 * This is the moment a case type version stops being offered, and the only
+	 * one. Miss it and two versions of one case type are both published, both
+	 * current, and both offered in the picker under the same title, with no
+	 * error anywhere: the person filing a case picks one at random.
+	 */
+	public function testPublishingClosesThePreviousVersion(): void {
+		$service = $this->service(
+			[
+				'ct' => ['id' => 'ct', 'title' => 'Bezwaar', 'isDraft' => true, 'initialStatus' => 's1', 'version' => 2, 'previousVersion' => 'ct-v1'],
+				'ct-v1' => ['id' => 'ct-v1', 'title' => 'Bezwaar', 'isDraft' => false, 'version' => 1],
+			],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'order' => 1, 'caseType' => 'ct'],
+					['id' => 's2', 'name' => 'Afgehandeld', 'order' => 2, 'isFinal' => true, 'caseType' => 'ct'],
+				],
+			]
+		);
+
+		$result = $service->publish(caseTypeId: 'ct', changeNote: 'Tweede versie');
+
+		self::assertTrue($result['published']);
+
+		$writes = array_values(
+			array_filter(
+				$this->objectService->saved,
+				static fn (array $write): bool => ($write['schema'] === 'case_type_schema')
+			)
+		);
+		self::assertCount(2, $writes, 'both the new version and the one it replaces are written');
+
+		// The version being replaced keeps isDraft false: its cases are still
+		// running on it and still resolve their statuses through it. It is
+		// closed to NEW cases, not retired.
+		$previous = $writes[1]['object'];
+		self::assertSame('ct-v1', $previous['id']);
+		self::assertSame('ct', $previous['supersededBy']);
+		self::assertFalse($previous['isDraft']);
+	}//end testPublishingClosesThePreviousVersion()
+
+	/**
+	 * 🔴 Closing a version means the DATE as well as the forward link.
+	 *
+	 * `supersededBy` is what the pickers and the index read; `validUntil` is
+	 * what a person reads. For as long as only the first was written the two
+	 * disagreed, and the Case types index showed a superseded version with an
+	 * open-ended validity beside its own successor. An auditor reading the
+	 * catalogue saw two versions of one zaaktype both valid indefinitely.
+	 */
+	public function testPublishingClosesThePreviousVersionsValidity(): void {
+		$service = $this->chainedService();
+
+		self::assertTrue($service->publish(caseTypeId: 'ct', changeNote: 'Tweede versie')['published']);
+
+		$writes = array_values(
+			array_filter(
+				$this->objectService->saved,
+				static fn (array $write): bool => ($write['schema'] === 'case_type_schema')
+			)
+		);
+
+		self::assertSame(self::TODAY, $writes[0]['object']['validFrom'], 'the new version takes effect today');
+		self::assertSame(self::TODAY, $writes[0]['object']['versionDate']);
+		self::assertSame(self::TODAY, $writes[1]['object']['validUntil'], 'the old version is closed the same day');
+	}//end testPublishingClosesThePreviousVersionsValidity()
+
+	/**
+	 * A version published ahead of time leaves no gap behind it.
+	 *
+	 * An author may publish a version whose `validFrom` is next month, because
+	 * the fee schedule changes then. Closing the running version TODAY would
+	 * leave the case type with no version in force for a month, so the old one
+	 * is closed on the day the new one takes effect.
+	 */
+	public function testAVersionPublishedAheadOfTimeClosesTheOldOneOnItsOwnStartDate(): void {
+		$service = $this->chainedService(['validFrom' => '2026-10-01']);
+
+		self::assertTrue($service->publish(caseTypeId: 'ct', changeNote: 'Nieuw tarief')['published']);
+
+		$writes = array_values(
+			array_filter(
+				$this->objectService->saved,
+				static fn (array $write): bool => ($write['schema'] === 'case_type_schema')
+			)
+		);
+
+		self::assertSame('2026-10-01', $writes[0]['object']['validFrom'], 'the typed date is not overwritten');
+		self::assertSame('2026-10-01', $writes[1]['object']['validUntil']);
+	}//end testAVersionPublishedAheadOfTimeClosesTheOldOneOnItsOwnStartDate()
+
+	/**
+	 * A version already closed on a chosen date is not re-closed.
+	 *
+	 * A date somebody chose is a decision, and publishing a successor is not
+	 * the moment to overrule it.
+	 */
+	public function testAnAlreadyClosedPreviousVersionKeepsItsDate(): void {
+		$service = $this->chainedService([], ['validUntil' => '2026-06-30']);
+
+		self::assertTrue($service->publish(caseTypeId: 'ct', changeNote: 'Tweede versie')['published']);
+
+		$writes = array_values(
+			array_filter(
+				$this->objectService->saved,
+				static fn (array $write): bool => ($write['schema'] === 'case_type_schema')
+			)
+		);
+
+		self::assertSame('2026-06-30', $writes[1]['object']['validUntil']);
+	}//end testAnAlreadyClosedPreviousVersionKeepsItsDate()
+
+	/**
+	 * Deprecate closes a superseded version on the server's own day.
+	 *
+	 * The design had the page patch `validUntil: @today` through the object
+	 * store. An `object-op` merges its values verbatim, so that token is not
+	 * resolved and the literal string would have been stored in a date field.
+	 */
+	public function testDeprecateClosesASupersededVersionToday(): void {
+		$window = $this->window(
+			['ct-v1' => ['id' => 'ct-v1', 'title' => 'Bezwaar', 'isDraft' => false, 'version' => 1, 'supersededBy' => 'ct']]
+		);
+
+		$result = $window->deprecate(caseTypeId: 'ct-v1');
+
+		self::assertTrue($result['deprecated']);
+		self::assertSame(self::TODAY, $result['validUntil']);
+		self::assertSame(self::TODAY, $this->savedFor('case_type_schema')['validUntil']);
+	}//end testDeprecateClosesASupersededVersionToday()
+
+	/**
+	 * 🔴 Deprecate refuses the version new cases are filed under.
+	 *
+	 * Closing it would leave the case type unusable with nothing saying why.
+	 * The page hides the button in this state, and a hidden button is not a
+	 * rule: `visibleWhen` is fail-safe, so a failed query hides it and a
+	 * succeeding one on stale data shows it.
+	 */
+	public function testDeprecateRefusesTheVersionInUse(): void {
+		$window = $this->window(
+			['ct' => ['id' => 'ct', 'title' => 'Bezwaar', 'isDraft' => false, 'version' => 2]]
+		);
+
+		$result = $window->deprecate(caseTypeId: 'ct');
+
+		self::assertFalse($result['deprecated']);
+		self::assertStringContainsString('successor', $result['findings'][0]);
+		self::assertSame([], $this->objectService->saved, 'nothing is written on a refusal');
+	}//end testDeprecateRefusesTheVersionInUse()
+
+	/**
+	 * Deprecate refuses a draft, which is not in use to begin with.
+	 */
+	public function testDeprecateRefusesADraft(): void {
+		$window = $this->window(
+			['ct' => ['id' => 'ct', 'title' => 'Bezwaar', 'isDraft' => true, 'supersededBy' => 'ct-v3']]
+		);
+
+		self::assertFalse($window->deprecate(caseTypeId: 'ct')['deprecated']);
+	}//end testDeprecateRefusesADraft()
+
+	/**
+	 * A draft version 2 over a published version 1, ready to publish.
+	 *
+	 * @param array<string, mixed> $draft    Fields to change on the new version.
+	 * @param array<string, mixed> $previous Fields to change on the one it replaces.
+	 *
+	 * @return CaseTypePublishService The service.
+	 */
+	private function chainedService(array $draft = [], array $previous = []): CaseTypePublishService {
+		return $this->service(
+			[
+				'ct' => array_merge(
+					['id' => 'ct', 'title' => 'Bezwaar', 'isDraft' => true, 'initialStatus' => 's1', 'version' => 2, 'previousVersion' => 'ct-v1'],
+					$draft
+				),
+				'ct-v1' => array_merge(
+					['id' => 'ct-v1', 'title' => 'Bezwaar', 'isDraft' => false, 'version' => 1],
+					$previous
+				),
+			],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'order' => 1, 'caseType' => 'ct'],
+					['id' => 's2', 'name' => 'Afgehandeld', 'order' => 2, 'isFinal' => true, 'caseType' => 'ct'],
+				],
+			]
+		);
+	}//end chainedService()
+
+	/**
+	 * The first version of a case type closes nothing.
+	 */
+	public function testPublishingAFirstVersionClosesNothing(): void {
+		$service = $this->publishableService();
+
+		self::assertTrue($service->publish(caseTypeId: 'ct', changeNote: 'Eerste versie')['published']);
+
+		$writes = array_filter(
+			$this->objectService->saved,
+			static fn (array $write): bool => ($write['schema'] === 'case_type_schema')
+		);
+		self::assertCount(1, $writes);
+	}//end testPublishingAFirstVersionClosesNothing()
+
+	/**
+	 * A case type published without a version number becomes version one.
+	 */
+	public function testPublishingStampsVersionOneWhenThereIsNone(): void {
+		$service = $this->publishableService();
+
+		$service->publish(caseTypeId: 'ct', changeNote: 'Eerste versie');
+
+		self::assertSame(1, $this->savedFor('case_type_schema')['version']);
+	}//end testPublishingStampsVersionOneWhenThereIsNone()
+
+	/**
+	 * A previous version that no longer resolves does not stop the publish.
+	 *
+	 * The new version is already written by then, and refusing after that write
+	 * would leave the two halves disagreeing with nothing to say which ran.
+	 */
+	public function testAnUnreadablePreviousVersionDoesNotStopThePublish(): void {
+		$caseType = ['id' => 'ct', 'title' => 'Bezwaar', 'isDraft' => true, 'initialStatus' => 's1', 'previousVersion' => 'gone'];
+		$service = $this->service(
+			['ct' => $caseType],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'caseType' => 'ct'],
+					['id' => 's2', 'name' => 'Klaar', 'isFinal' => true, 'caseType' => 'ct'],
+				],
+			]
+		);
+
+		self::assertTrue($service->publish(caseTypeId: 'ct', changeNote: 'Tweede versie')['published']);
+	}//end testAnUnreadablePreviousVersionDoesNotStopThePublish()
+
+	/**
+	 * A chain that points at itself closes nothing.
+	 *
+	 * Writing `supersededBy` onto the version being published would close the
+	 * version that was just opened, and every case type would be superseded the
+	 * moment it went live.
+	 */
+	public function testAVersionThatPointsAtItselfClosesNothing(): void {
+		$service = $this->publishableService(['previousVersion' => 'ct']);
+
+		$service->publish(caseTypeId: 'ct', changeNote: 'Eerste versie');
+
+		$writes = array_filter(
+			$this->objectService->saved,
+			static fn (array $write): bool => ($write['schema'] === 'case_type_schema')
+		);
+		self::assertCount(1, $writes);
+		self::assertArrayNotHasKey('supersededBy', $this->savedFor('case_type_schema'));
+	}//end testAVersionThatPointsAtItselfClosesNothing()
+
+	/**
+	 * A previous version that cannot be written stays open, and says so.
+	 *
+	 * The new version is already published by then. Refusing after that write
+	 * would leave the two halves disagreeing with nothing to say which ran, so
+	 * the publish stands and the log carries the fact that the old version is
+	 * still being offered.
+	 *
+	 * @return void
+	 */
+	public function testAnUnwritablePreviousVersionStillPublishes(): void {
+		$service = $this->service(
+			[
+				'ct' => ['id' => 'ct', 'title' => 'Bezwaar', 'isDraft' => true, 'initialStatus' => 's1', 'version' => 2, 'previousVersion' => 'ct-v1'],
+				'ct-v1' => ['id' => 'ct-v1', 'title' => 'Bezwaar', 'isDraft' => false, 'version' => 1],
+			],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'order' => 1, 'caseType' => 'ct'],
+					['id' => 's2', 'name' => 'Afgehandeld', 'order' => 2, 'isFinal' => true, 'caseType' => 'ct'],
+				],
+			],
+			2
+		);
+
+		self::assertTrue($service->publish(caseTypeId: 'ct', changeNote: 'Tweede versie')['published']);
+	}//end testAnUnwritablePreviousVersionStillPublishes()
+
+	/**
+	 * The object last written to one schema.
+	 *
+	 * @param string $schema The schema key.
+	 *
+	 * @return array<string, mixed> The object.
+	 */
+	private function savedFor(string $schema): array {
+		foreach (array_reverse($this->objectService->saved) as $write) {
+			if ($write['schema'] === $schema) {
+				return $write['object'];
+			}
+		}
+
+		self::fail('nothing was written to ' . $schema);
+	}//end savedFor()
+}//end class

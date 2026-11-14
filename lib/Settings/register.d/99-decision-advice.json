@@ -1,0 +1,104 @@
+{
+  "_note": "enforcement-intervention-from-the-case 2.1 (row 7.10, REQ-LHS-CASE-01). Advice a handler asked a case type's decision table for, on a case: the inputs the table declares, what it recommended, and the handler's choice (the recommendation accepted, or another outcome with a mandatory reason), naming who decided and when. Its own object linked to the case (decision 197). Nothing in it is named after a procedure (decision 182).",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "registers": {
+      "dossiq": {
+        "schemas": [
+          "decisionAdvice"
+        ]
+      }
+    },
+    "schemas": {
+      "decisionAdvice": {
+        "slug": "decisionAdvice",
+        "icon": "ScaleBalance",
+        "version": "1.0.0",
+        "searchable": false,
+        "title": "Decision advice",
+        "description": "Advice a decision table gave on a case, and what the handler chose.",
+        "type": "object",
+        "required": [
+          "case",
+          "decisionTable",
+          "recommendation",
+          "recommendedBy"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Case",
+            "description": "The case the advice was asked for."
+          },
+          "decisionTable": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Decision table",
+            "description": "The decision table the case type names, by id or key."
+          },
+          "inputs": {
+            "type": "object",
+            "title": "Inputs",
+            "description": "The values the handler entered, one per input the table declares."
+          },
+          "outputs": {
+            "type": "object",
+            "title": "Outputs",
+            "description": "Everything the decision table answered."
+          },
+          "recommendation": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Recommendation",
+            "description": "The outcome the decision table recommended."
+          },
+          "recommendedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Asked by",
+            "description": "Who asked for the advice."
+          },
+          "recommendedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Asked at",
+            "description": "When the advice was asked for."
+          },
+          "outcome": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Chosen outcome",
+            "description": "The outcome the handler chose. Empty until the handler decides."
+          },
+          "accepted": {
+            "type": "boolean",
+            "title": "Advice accepted",
+            "description": "Whether the chosen outcome is the recommendation."
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Reason for the deviation",
+            "description": "Why the handler chose another outcome than the recommendation. Required for a deviation."
+          },
+          "decidedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Decided by",
+            "description": "Who chose the outcome."
+          },
+          "decidedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Decided at",
+            "description": "When the outcome was chosen."
+          }
+        }
+      }
+    }
+  }
+}

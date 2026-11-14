@@ -10,11 +10,20 @@
  * address as either `email` or `emailadres`.
  *
  * Split out of CaseEmailService so that service states the *policy* ("the
- * recipient must be a registered contact") while the knowledge of where
- * contacts are stored lives here.
+ * recipient must be allowed") while the knowledge of where contacts are stored
+ * lives here.
  *
- * An empty result means the case registers no contacts at all, which callers
- * read as "no restriction applies" — not as "no contact matched".
+ * ⚠️ MEASURED 2026-09-10, not assumed: the `case` schema in
+ * `lib/Settings/dossiq_register.json` declares NONE of these four fields, and
+ * `git log -S` finds no commit that ever added one. The requester is a
+ * cross-register UUID reference (`requester`), not an address. So on today's
+ * data model this class returns [] for every case, and the allow-list carries
+ * the whole recipient policy. It is kept, and fed the raw case record, so that
+ * the day the schema grows a contact field the policy reads it — but nothing
+ * here may be read as evidence that a case supplies an address today.
+ *
+ * An empty result means "no contact matched". It is NOT a licence to send: the
+ * caller must reject a recipient that no source allows.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Email
@@ -46,11 +55,26 @@ namespace OCA\Dossiq\Service\Email;
  */
 class CaseContactDirectory {
 	/**
+	 * The applicant's addresses: the case's own address and its initiator's.
+	 *
+	 * @param array<string, mixed> $caseData The case.
+	 *
+	 * @return array<int, string> The lowercase addresses, without duplicates.
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 */
+	public function applicantAddresses(array $caseData): array {
+		return array_values(array_unique($this->collectPrimaryContactEmails(caseData: $caseData)));
+	}//end applicantAddresses()
+
+	/**
 	 * Collect the normalised (lowercased) email addresses of all contacts on a case.
 	 *
 	 * Inspects the following fields (all optional): `betrokkenen`, `contacts`,
-	 * `initiator`, and the top-level `email` field. Returns an empty array when
-	 * no contacts are registered; the caller treats an empty array as "no restriction".
+	 * `initiator`, and the top-level `email` field. None of the four is declared
+	 * on today's `case` schema, so this returns an empty array for every real
+	 * case; the caller MUST treat an empty array as "no contact matched", never
+	 * as "no restriction".
 	 *
 	 * @param array<string, mixed> $caseData The case data array
 	 *
@@ -109,6 +133,22 @@ class CaseContactDirectory {
 	 * @return array<string> Lowercase email addresses
 	 */
 	private function collectContactListEmails(array $caseData): array {
+		$emails = [];
+		foreach ($this->contactLists(caseData: $caseData) as $contacts) {
+			$emails = array_merge($emails, $this->contactEmails(contacts: $contacts));
+		}
+
+		return $emails;
+	}//end collectContactListEmails()
+
+	/**
+	 * The contact lists a case carries: its betrokkenen, then its contacts.
+	 *
+	 * @param array<string, mixed> $caseData The case.
+	 *
+	 * @return array<int, array<mixed>>
+	 */
+	private function contactLists(array $caseData): array {
 		$contactArrays = [];
 		if (is_array($caseData['betrokkenen'] ?? null) === true) {
 			$contactArrays[] = $caseData['betrokkenen'];
@@ -118,24 +158,33 @@ class CaseContactDirectory {
 			$contactArrays[] = $caseData['contacts'];
 		}
 
-		$emails = [];
-		foreach ($contactArrays as $contacts) {
-			foreach ($contacts as $contact) {
-				if (is_array($contact) === false) {
-					continue;
-				}
+		return $contactArrays;
+	}//end contactLists()
 
-				$addr = $this->normalizeContactEmail(
-					value: (string)($contact['email'] ?? ($contact['emailadres'] ?? ''))
-				);
-				if ($addr !== null) {
-					$emails[] = $addr;
-				}
+	/**
+	 * The usable email addresses in one contact list, in list order.
+	 *
+	 * @param array<mixed> $contacts The contacts.
+	 *
+	 * @return array<int, string>
+	 */
+	private function contactEmails(array $contacts): array {
+		$emails = [];
+		foreach ($contacts as $contact) {
+			if (is_array($contact) === false) {
+				continue;
+			}
+
+			$addr = $this->normalizeContactEmail(
+				value: (string)($contact['email'] ?? ($contact['emailadres'] ?? ''))
+			);
+			if ($addr !== null) {
+				$emails[] = $addr;
 			}
 		}
 
 		return $emails;
-	}//end collectContactListEmails()
+	}//end contactEmails()
 
 	/**
 	 * Normalise a raw contact value to a lowercase, validated email address.

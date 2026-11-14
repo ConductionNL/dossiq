@@ -27,6 +27,7 @@ use OCA\Dossiq\Controller\ComplaintCategoryController;
 use OCA\Dossiq\Controller\ComplaintController;
 use OCA\Dossiq\Controller\ComplaintDispositionController;
 use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
+use OCA\Dossiq\Service\Complaint\EmployeeAlertAudience;
 use OCA\Dossiq\Service\ComplaintAnalyticsService;
 use OCA\Dossiq\Service\ComplaintService;
 use OCA\Dossiq\Service\DispositionService;
@@ -48,6 +49,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Controller\ComplaintDispositionController
  *
  * @uses \OCA\Dossiq\Service\Complaint\ComplaintAccessGuard
+ * @uses \OCA\Dossiq\Controller\Support\ComplaintMutationGate
  */
 class ComplaintControllerTest extends TestCase {
 
@@ -156,6 +158,7 @@ class ComplaintControllerTest extends TestCase {
 			request: $this->request,
 			analyticsService: $this->analyticsService,
 			accessGuard: $accessGuard,
+			alertAudience: $this->createMock(EmployeeAlertAudience::class),
 		);
 
 		$this->categoryController = new ComplaintCategoryController(

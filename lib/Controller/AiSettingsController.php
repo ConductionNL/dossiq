@@ -31,8 +31,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\AiService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\AiServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -52,16 +52,16 @@ class AiSettingsController extends Controller {
 	 *
 	 * @param string $appName The application name
 	 * @param IRequest $request The request object
-	 * @param AiService $aiService The AI service
-	 * @param SettingsService $settingsService The settings service
+	 * @param AiServiceInterface $aiService The AI service
+	 * @param SettingsServiceInterface $settingsService The settings service
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private AiService $aiService,
-		private SettingsService $settingsService,
+		private AiServiceInterface $aiService,
+		private SettingsServiceInterface $settingsService,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -69,15 +69,25 @@ class AiSettingsController extends Controller {
 	/**
 	 * Get AI settings.
 	 *
+	 * Answers `{"settings": {...}}`. The settings used to be returned FLAT while
+	 * the admin tab read `response.settings`, so the tab always got `undefined`,
+	 * fell back to its hard-coded defaults, and drew all six feature switches
+	 * plus PII stripping as ON no matter what was stored. An administrator who
+	 * had turned PII stripping off — or had never turned it on — was shown a
+	 * switch saying it was on.
+	 *
+	 * Wrapped rather than unwrapped on the client, because an envelope leaves
+	 * room to say something ABOUT the settings later (who last changed them,
+	 * whether a value is locked by config) without another shape change, and
+	 * because a bare object cannot distinguish "no settings" from "no response".
+	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function getSettings(): JSONResponse {
-		$settings = $this->aiService->getAiSettings();
-
-		return new JSONResponse($settings);
+		return new JSONResponse(['settings' => $this->aiService->getAiSettings()]);
 	}//end getSettings()
 
 	/**
@@ -85,7 +95,7 @@ class AiSettingsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function updateSettings(): JSONResponse {
@@ -100,7 +110,7 @@ class AiSettingsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function healthCheck(): JSONResponse {

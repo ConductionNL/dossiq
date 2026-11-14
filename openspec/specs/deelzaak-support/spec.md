@@ -74,13 +74,15 @@ The case detail view SHALL display a "Sub-cases" section
 #### Scenario: Parent case with no sub-cases shows empty state
 
 - **WHEN** user views a case that has no sub-cases but whose case type has `subCaseTypes` configured
-- **THEN** the "Sub-cases" section MUST display an empty state message: "No sub-cases yet"
+- **THEN** the "Sub-cases" section MUST display an empty state message: "Nog geen deelzaken." (No sub-cases yet), as board DqZaakGerelateerd draws it
 - **AND** the "Create Sub-case" button MUST be visible
 
 #### Scenario: Case without sub-case type support hides section
 
 - **WHEN** user views a case whose case type has an empty `subCaseTypes` array
 - **THEN** the "Sub-cases" section MUST NOT be rendered
+
+@e2e exclude Not implemented, so nothing can observe it passing. A manifest widget has no conditional-visibility key, so `case-sub-cases` renders on every case detail; a case typed with an empty `subCaseTypes` shows the section's empty state instead of no section. `deelzaak-support.spec.ts` cited this scenario on an assertion reading `expect(hasTable || hasEmpty).toBeTruthy()`, which passes precisely when the requirement is violated. Restore the citation once the renderer supports conditional visibility (see the note below).
 
 > **NOT YET IMPLEMENTED, and recorded here rather than quietly dropped.** The
 > two scenarios above are satisfied by the `case-sub-cases` object-list widget
@@ -99,20 +101,20 @@ The case detail view SHALL display a "Sub-cases" section
 
 ### Requirement: Parent case breadcrumb navigation
 
-When viewing a sub-case (a case with a non-null `parentCase`), the system SHALL display a breadcrumb
+When viewing a sub-case (a case with a non-null `parentCase`), the system SHALL add the parent case's number to
 
-**Feature tier**: V1 above the case title linking back to the parent case. The breadcrumb MUST show the parent case's title.
+**Feature tier**: V1 the case page's trail under the title (case-dashboard-view REQ-CDV-15), between "Alle zaken" and the sub-case's own number, as a link back to the parent case. The trail follows board DqZaak's pattern; it never repeats a case title.
 
-#### Scenario: Sub-case shows parent breadcrumb
+#### Scenario: Sub-case shows its parent in the trail
 
-- **WHEN** user views sub-case "Bouwvergunning Keizersgracht 100" which has `parentCase` pointing to case "Omgevingsvergunning Keizersgracht 100"
-- **THEN** the case detail MUST display a breadcrumb: "Omgevingsvergunning Keizersgracht 100 > Bouwvergunning Keizersgracht 100"
-- **AND** the parent case name in the breadcrumb MUST be a clickable link navigating to the parent case detail
+- **WHEN** user views sub-case 2026-0091 "Bouwvergunning Keizersgracht 100" which has `parentCase` pointing to case 2026-0090 "Omgevingsvergunning Keizersgracht 100"
+- **THEN** the trail under the title MUST read "Alle zaken / 2026-0090 / 2026-0091"
+- **AND** the parent's number in the trail MUST be a clickable link navigating to the parent case detail
 
-#### Scenario: Top-level case has no breadcrumb
+#### Scenario: Top-level case has no parent in the trail
 
 - **WHEN** user views a case with `parentCase` equal to null
-- **THEN** no parent breadcrumb MUST be displayed
+- **THEN** the trail MUST read "Alle zaken / <case number>" with no parent between them
 
 ### Requirement: Sub-case progress roll-up on parent case
 
@@ -150,19 +152,59 @@ The case list view SHALL display a sub-case count badge for cases that have one 
 - **THEN** the sub-case counts MUST be fetched in a single `/api/deelzaken/counts` request, not one request per row
 - **AND** the badges MUST update once the batch query resolves
 
-### Requirement: Sub-case deletion protection
+### Requirement: A deelzaak inherits its parent's grants (REQ-DZ-20)
 
-When a user attempts to delete a parent case that has sub-cases, the system SHALL warn the user and require confirmation. The system MUST clear the `parentCase` field on all child cases before proceeding with deletion (orphan cleanup), so the former sub-cases remain accessible as standalone cases. A case with no sub-cases MUST take the standard deletion confirmation without a sub-case warning.
+The case schema SHALL declare `parentCase` as its hierarchy edge, so a
+grant on a case SHALL reach its deelzaken and their deelzaken without a
+second grant. `relatedCases` SHALL NOT be declared as a hierarchy edge.
+The inherited grant SHALL carry the parent's verbs and no others.
+`CaseAccessGuard` SHALL ask the platform for read and mutation access and
+SHALL NOT keep a resolution of its own.
 
-#### Scenario: Delete parent case with sub-cases shows warning
+#### Scenario: access to a case reaches its deelzaak
+@e2e tests/e2e/deelzaken-inherit-the-parent-grants.spec.ts
 
-- **WHEN** user attempts to delete case "Omgevingsvergunning Keizersgracht 100" which has 2 sub-cases
-- **THEN** the system MUST display a confirmation dialog warning that deleting will unlink the 2 sub-cases from their parent
-- **AND** if the user confirms, the system MUST set `parentCase` to null on all sub-cases before deleting the parent
-- **AND** each former sub-case MUST remain accessible as a standalone case
+- **GIVEN** a case with a deelzaak and a deelzaak of that deelzaak
+- **AND** a colleague granted read on the case only
+- **WHEN** the colleague opens the deepest deelzaak
+- **THEN** it SHALL be readable
 
-#### Scenario: Delete case without sub-cases proceeds normally
+#### Scenario: read does not become write
+@e2e tests/e2e/deelzaken-inherit-the-parent-grants.spec.ts
 
-- **WHEN** user attempts to delete a case that has no sub-cases
-- **THEN** the standard deletion confirmation MUST be shown without a sub-case warning
+- **GIVEN** the same colleague with read on the parent
+- **WHEN** they try to change a field on the deelzaak
+- **THEN** the write SHALL be refused
 
+#### Scenario: removing the grant on the parent removes it below
+@e2e tests/e2e/deelzaken-inherit-the-parent-grants.spec.ts
+
+- **GIVEN** the same colleague reading the deelzaak through the parent
+- **WHEN** the grant on the parent is removed
+- **THEN** the deelzaak SHALL no longer be readable by them
+
+#### Scenario: a related case is not a parent
+
+- **GIVEN** two cases linked through `relatedCases` and a grant on one
+- **WHEN** the holder opens the other
+- **THEN** access SHALL be refused
+
+### Requirement: The case says where access came from (REQ-DZ-21)
+
+A case opened through a grant inherited from an ancestor SHALL name the
+case that granted it. The Sharing tab of a case that has deelzaken SHALL
+state that a share reaches them, before the share is made.
+
+#### Scenario: the handler can see why a colleague is there
+@e2e tests/e2e/deelzaken-inherit-the-parent-grants.spec.ts
+
+- **GIVEN** a deelzaak a colleague reads through a grant on its parent
+- **WHEN** a handler opens the deelzaak's access information
+- **THEN** the colleague SHALL be listed with the parent case named as the source
+
+#### Scenario: sharing a parent warns first
+@e2e tests/e2e/deelzaken-inherit-the-parent-grants.spec.ts
+
+- **GIVEN** a case with two deelzaken
+- **WHEN** a handler opens the Sharing tab
+- **THEN** it SHALL state that a share reaches the deelzaken

@@ -14,13 +14,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
 	companyResult,
 	contactResult,
+	initiatorChoice,
 	initiatorProjection,
 	personDisplayName,
 	personResult,
-	searchContacts,
+	requesterPayload,
 } from '../../src/services/initiatorSearch.js'
 
 const axiosPost = vi.hoisted(() => vi.fn())
+const resolveParty = vi.hoisted(() => vi.fn())
+
+vi.mock('../../src/services/caseParties.js', () => ({
+	resolvePartyByAddress: (...args) => resolveParty(...args),
+}))
 
 vi.mock('@nextcloud/axios', () => ({
 	default: { post: (...args) => axiosPost(...args) },
@@ -97,32 +103,56 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 		expect(initiatorProjection(null)).toEqual({})
 	})
 
-	it('searches contacts via the core contactsmenu endpoint', async () => {
-		axiosPost.mockResolvedValue({
-			data: {
-				contacts: [
-					{
-						id: 'c1',
-						fullName: 'Anna de Wit',
-						emailAddresses: ['anna@example.org'],
-					},
-				],
-			},
-		})
-		const results = await searchContacts('anna')
-		expect(axiosPost).toHaveBeenCalledWith('/index.php/contactsmenu/contacts', {
-			filter: 'anna',
-		})
-		expect(results).toHaveLength(1)
-		expect(results[0]).toMatchObject({
-			type: 'contact',
-			displayName: 'Anna de Wit',
-		})
+	it('reads the schema key casing the seeded rows actually carry', () => {
+		// The seeds are camelCase; these helpers were written snake_case and
+		// the mismatch never showed, because the register search could not
+		// run at all until brpPerson/kvkCompany became registered types.
+		expect(personResult({ citizenServiceNumber: '999990792' }).sourceId).toBe(
+			'999990792',
+		)
+		expect(
+			companyResult({ kvkNumber: '69599084', tradeName: 'Test EMZ Dagobert' })
+				.displayName,
+		).toBe('Test EMZ Dagobert')
+		expect(
+			personDisplayName({
+				givenNames: 'Jan',
+				namePrefix: 'de',
+				surname: 'Cuykelaer',
+			}),
+		).toBe('Jan de Cuykelaer')
 	})
 
-	it('degrades to an empty list when the contacts source is unavailable', async () => {
-		axiosPost.mockRejectedValue(new Error('404 — Contacts absent'))
-		await expect(searchContacts('anna')).resolves.toEqual([])
+	it('carries the secrecy indication onto the result', () => {
+		expect(personResult({ indicatieGeheim: true }).protected).toBe(true)
+		expect(personResult({ citizenServiceNumber: '1' }).protected).toBe(false)
+	})
+
+	it('writes the uuid and the projection in one payload', () => {
+		expect(
+			requesterPayload({
+				type: 'person',
+				sourceId: '999990627',
+				displayName: 'Stephan Janssen',
+				objectId: 'uuid-1',
+			}),
+		).toEqual({
+			requester: 'uuid-1',
+			initiatorType: 'person',
+			initiatorSourceId: '999990627',
+			initiatorDisplayName: 'Stephan Janssen',
+		})
+		// A contact has no register row, so the canonical reference stays
+		// empty and only the projection is written.
+		expect(
+			requesterPayload({
+				type: 'contact',
+				sourceId: 'uid-9',
+				displayName: 'Anna de Wit',
+				objectId: null,
+			}).requester,
+		).toBe('')
+		expect(requesterPayload(null)).toEqual({})
 	})
 
 	it('shapes a contactsmenu entry into a unified contact result', () => {
@@ -139,3 +169,33 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 		})
 	})
 })
+
+describe('initiatorChoice: no second party for an address somebody holds', () => {
+	beforeEach(() => {
+		resolveParty.mockReset()
+	})
+
+	it('points a contact at the party that already holds its address', async () => {
+		resolveParty.mockResolvedValue({ id: 'uuid-party-1', name: 'Jan de Vries' })
+		const payload = await initiatorChoice('contact', { id: 'contact-uid-1', fullName: 'Jan de Vries', emailAddresses: ['jan@example.nl'] })
+		expect(resolveParty).toHaveBeenCalledWith('jan@example.nl')
+		expect(payload).toEqual({ requester: 'uuid-party-1', initiatorType: 'contact', initiatorSourceId: 'contact-uid-1', initiatorDisplayName: 'Jan de Vries' })
+	})
+
+	it('records a contact unchanged when no party holds the address', async () => {
+		resolveParty.mockResolvedValue(null)
+		const payload = await initiatorChoice('contact', { id: 'contact-uid-1', fullName: 'Jan de Vries', emailAddresses: ['jan@example.nl'] })
+		expect(payload.requester).toBe('')
+	})
+
+	it('takes a register row as it is, without asking', async () => {
+		const payload = await initiatorChoice('person', { id: 'uuid-person-1', citizenServiceNumber: '999990627', displayName: 'Stephan Janssen' })
+		expect(resolveParty).not.toHaveBeenCalled()
+		expect(payload).toEqual({ requester: 'uuid-person-1', initiatorType: 'person', initiatorSourceId: '999990627', initiatorDisplayName: 'Stephan Janssen' })
+	})
+
+	it('answers nothing for a kind it does not know', async () => {
+		expect(await initiatorChoice('robot', { id: 'x' })).toEqual({})
+	})
+})
+

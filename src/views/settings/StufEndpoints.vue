@@ -13,7 +13,7 @@
 -->
 <template>
 	<div class="stuf-endpoints">
-		<table class="stuf-endpoints__table" data-testid="stuf-endpoints-table">
+		<table v-if="endpoints.length" class="stuf-endpoints__table" data-testid="stuf-endpoints-table">
 			<thead>
 				<tr>
 					<th scope="col">{{ t('dossiq', 'Name') }}</th>
@@ -23,6 +23,7 @@
 					<th scope="col">{{ t('dossiq', 'Strategy') }}</th>
 					<th scope="col">{{ t('dossiq', 'Health') }}</th>
 					<th scope="col">{{ t('dossiq', 'Active') }}</th>
+					<th scope="col">{{ t('dossiq', 'Connection test') }}</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -46,14 +47,42 @@
 								: t('dossiq', 'Inactive')
 						}}
 					</td>
-				</tr>
-				<tr v-if="!endpoints.length">
-					<td colspan="7" class="stuf-endpoints__empty">
-						{{ t('dossiq', 'No StUF endpoints configured yet.') }}
+					<td class="stuf-endpoints__test">
+						<NcButton
+							:disabled="testing === row.id"
+							:data-testid="'stuf-test-' + row.id"
+							@click="test(row)">
+							{{ t('dossiq', 'Test connection') }}
+						</NcButton>
+						<span
+							class="stuf-endpoints__result"
+							:class="
+								'stuf-endpoints__result--' + resultFor(row).type
+							">
+							{{ resultFor(row).label }}
+						</span>
+						<span
+							v-if="resultFor(row).measuredAt"
+							class="stuf-endpoints__measured">
+							{{
+								t('dossiq', 'Measured {moment}', {
+									moment: resultFor(row).measuredAt,
+								})
+							}}
+						</span>
 					</td>
 				</tr>
 			</tbody>
 		</table>
+		<!-- Nothing configured: the board's empty state, not an empty table. -->
+		<NcEmptyContent
+			v-else
+			:name="t('dossiq', 'No StUF endpoints configured yet.')"
+			data-testid="stuf-endpoints-empty">
+			<template #icon>
+				<ServerNetworkOutline :size="48" />
+			</template>
+		</NcEmptyContent>
 		<p class="stuf-endpoints__note">
 			{{
 				t(
@@ -70,14 +99,25 @@
 
 <script>
 import { showError } from '@nextcloud/dialogs'
+import { NcButton, NcEmptyContent } from '@nextcloud/vue'
+import ServerNetworkOutline from 'vue-material-design-icons/ServerNetworkOutline.vue'
+import { testStufEndpoint } from '../../services/connectionTestApi.js'
 import { listEndpoints } from '../../services/stufApi.js'
+import { connectionLabel } from '../../utils/starterStates.js'
 
 export default {
 	name: 'StufEndpoints',
+	components: { NcButton, NcEmptyContent, ServerNetworkOutline },
 	data() {
 		return {
 			endpoints: [],
 			loadError: '',
+			testing: '',
+			// Keyed by endpoint id. An endpoint missing from here has not been
+			// probed, which reads as "Not tested" and deliberately not as a
+			// failure: a red cross on a connection nobody pressed the button
+			// for sends somebody debugging a working integration.
+			results: {},
 		}
 	},
 
@@ -103,6 +143,48 @@ export default {
 		},
 
 		/**
+		 * Probe one endpoint and keep what came back.
+		 *
+		 * @param {object} row The endpoint row.
+		 * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
+		 */
+		async test(row) {
+			this.testing = row.id
+			try {
+				this.results = {
+					...this.results,
+					[row.id]: await testStufEndpoint(row.id),
+				}
+			} catch (e) {
+				// A call that never completed is a failed test, not an absent
+				// one: the button was pressed and the endpoint did not answer.
+				this.results = {
+					...this.results,
+					[row.id]: {
+						state: 'failed',
+						reason:
+							e.response?.data?.error
+							|| t('dossiq', 'The endpoint did not answer'),
+
+						measuredAt: new Date().toISOString(),
+					},
+				}
+			} finally {
+				this.testing = ''
+			}
+		},
+
+		/**
+		 * What one endpoint's connection test reads as.
+		 *
+		 * @param {object} row The endpoint row.
+		 * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
+		 */
+		resultFor(row) {
+			return connectionLabel(this.results[row.id] || null)
+		},
+
+		/**
 		 * Map an endpoint's breaker health state to its CSS modifier class.
 		 *
 		 * @param {object} row The endpoint row.
@@ -111,6 +193,12 @@ export default {
 		healthClass(row) {
 			const state =
 				row && row.health && row.health.state ? row.health.state : 'ok'
+			if (state === 'unlinked') {
+				return 'stuf-endpoints__health--degraded'
+			}
+			if (state === 'integriq') {
+				return 'stuf-endpoints__health--ok'
+			}
 			return 'stuf-endpoints__health--' + state
 		},
 
@@ -123,6 +211,12 @@ export default {
 		healthLabel(row) {
 			const state =
 				row && row.health && row.health.state ? row.health.state : 'ok'
+			if (state === 'unlinked') {
+				return t('dossiq', 'No integriq source')
+			}
+			if (state === 'integriq') {
+				return t('dossiq', 'Sent through integriq')
+			}
 			if (state === 'circuit_open') {
 				return t('dossiq', 'Circuit open')
 			}
@@ -148,11 +242,6 @@ export default {
 	text-align: left;
 }
 
-.stuf-endpoints__empty {
-	color: var(--color-text-maxcontrast);
-	font-style: italic;
-}
-
 .stuf-endpoints__health {
 	display: inline-block;
 	padding: 2px 8px;
@@ -163,27 +252,55 @@ export default {
 
 .stuf-endpoints__health--ok {
 	background: var(--color-success);
-	color: white;
+	color: var(--color-success-text);
 }
 
 .stuf-endpoints__health--degraded {
 	background: var(--color-warning);
-	color: white;
+	color: var(--color-warning-text);
 }
 
 .stuf-endpoints__health--circuit_open {
 	background: var(--color-error);
-	color: white;
+	color: var(--color-error-text);
 }
 
 .stuf-endpoints__note {
 	color: var(--color-text-maxcontrast);
-	margin-top: 12px;
-	font-size: 13px;
+	margin-top: 16px;
+	font-size: 14px;
+	line-height: 1.5;
 }
 
 .stuf-endpoints__error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 	margin-top: 12px;
+}
+
+.stuf-endpoints__test {
+	white-space: nowrap;
+}
+
+.stuf-endpoints__result {
+	margin-inline-start: 8px;
+	font-size: 12px;
+}
+
+.stuf-endpoints__result--success {
+	color: var(--color-success-text);
+}
+
+.stuf-endpoints__result--warning {
+	color: var(--color-text-maxcontrast);
+}
+
+.stuf-endpoints__result--error {
+	color: var(--color-error-text);
+}
+
+.stuf-endpoints__measured {
+	display: block;
+	color: var(--color-text-maxcontrast);
+	font-size: 11px;
 }
 </style>

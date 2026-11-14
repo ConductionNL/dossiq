@@ -24,6 +24,7 @@ substitute is notified on registration and the resolution primitive exists), and
 endpoints exist and are tested).
 
 ## Requirements
+
 ### Requirement: Substitution records MUST be first-class OpenRegister objects
 
 The system SHALL store vervanging/waarneming registrations as objects of a dedicated `substitution` schema in OpenRegister (no app-local tables), capturing absentee, substitute, period, scope, reason, and status.
@@ -67,10 +68,12 @@ While a substitution is active (status `active` and today within the period), th
 
 #### Scenario: Waarnemer sees substituted work in My Work
 
+@e2e tests/e2e/spec-coverage/handler-vervanging-waarneming.spec.ts
+
 - **GIVEN** an active substitution where Marieke covers Jan with scope `all`
 - **WHEN** Marieke opens My Work
 - **THEN** she MUST see her own cases and tasks unchanged
-- **AND** additionally Jan's open cases and tasks, each marked "waargenomen voor Jan"
+- **AND** additionally Jan's open cases and tasks, each marked "Voor Jan, tot" and the last day of the substitution, as the board `DqAanMijToegewezen` draws "Voor Esra Demir, tot 2 nov"
 - **AND** the substituted items MUST be filterable (show/hide substituted work)
 
 #### Scenario: Scope-limited substitution only routes matching items
@@ -110,6 +113,8 @@ While a substitution is active (status `active` and today within the period), th
 Every mutation a substitute performs on a case or task that is in their werkvoorraad by virtue of an active substitution SHALL record the acting user, the absentee on whose behalf they acted, and the substitution id, and SHALL be rendered in the case timeline as acting "namens".
 
 #### Scenario: Timeline shows the substituted capacity
+
+@e2e exclude no call-site produces a capacity stamp yet — `SubstitutionAuditService::stampIfSubstituted()` has zero callers in `lib/`, which is the retrofit this spec's own status paragraph records as deferred, so a substitute completing a task writes no `actedOnBehalfOf` entry and no "namens" timeline line exists to read. The query side of the stamp is covered by `tests/e2e/spec-coverage/handler-vervanging-waarneming.spec.ts` against the `#all-actions-under-a-substitution-are-queryable` scenario. Restore a citation here when the stamp is wired into the case and task mutation paths.
 
 - **GIVEN** an active substitution where Marieke covers Jan
 - **WHEN** Marieke completes a task on one of Jan's substituted cases
@@ -191,3 +196,39 @@ A user with the dossiq coordinator role SHALL be able to permanently transfer al
 - **THEN** the response MUST report per-item success/failure
 - **AND** failed items MUST remain assigned to the original handler and be re-runnable
 
+### Requirement: Substituted work is on My work, marked and hideable
+
+My work SHALL call `fetchSubstitutedWork()` and list the returned cases and
+tasks among the signed-in user's own, each marked with the absent handler's
+name, and SHALL offer a toggle to hide them. The marker SHALL name the
+absentee and the substitution's end date.
+
+#### Scenario: A waarnemer sees the absentee's case
+@e2e tests/e2e/spec-coverage/handler-vervanging-waarneming.spec.ts
+
+- **GIVEN** an active substitution naming you as waarnemer for Anna
+- **AND** a case assigned to Anna inside the substitution's scope
+- **WHEN** you open My work
+- **THEN** the case SHALL be listed with the marker "for Anna"
+- **AND** hiding substituted work SHALL remove it from the list
+
+### Requirement: Leave in humaniq sets the substitution period
+
+When the absentee has an approved humaniq leave request covering today,
+the substitution SHALL be active for the leave's period. Without one, the
+substitution's own dates SHALL rule. humaniq being absent SHALL leave the
+typed dates in force.
+
+#### Scenario: Leave extends the period
+@e2e exclude cross-app fixture; covered by SubstitutionServiceTest::testLeaveOverridesTypedPeriod over a leave stub
+
+- **GIVEN** a substitution typed to end yesterday and an approved leave ending next week
+- **WHEN** the resolver runs today
+- **THEN** the substitution SHALL be active
+
+#### Scenario: No humaniq, no change
+@e2e exclude covered by SubstitutionServiceTest::testWithoutHumaniqTypedDatesRule
+
+- **GIVEN** humaniq is not installed
+- **WHEN** the resolver runs
+- **THEN** the typed dates SHALL rule and one info line SHALL be logged

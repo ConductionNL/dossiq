@@ -18,15 +18,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\Service\TenantQuotaService;
-use OCA\Dossiq\Service\TenantSaasService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TenantQuotaServiceInterface;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -37,7 +39,10 @@ use Throwable;
 /**
  * Resets monthly + hourly quotas after their window elapses.
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
+ * It runs as the background service account, because cron has no user and
+ * OpenRegister refuses a write from nobody.
+ *
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
 class ResetMonthlyQuotasJob extends TimedJob {
 	/**
@@ -46,80 +51,156 @@ class ResetMonthlyQuotasJob extends TimedJob {
 	private const INTERVAL_SECONDS = 86400;
 
 	/**
+	 * The query for every tenant quota row.
+	 *
+	 * ObjectService::findAll() takes a single $config array — the previous
+	 * named-argument form (register:/schema:/limit:/offset:) threw
+	 * "Unknown named parameter $register" and was swallowed by the catch in
+	 * the run, so this job never reset a single quota. Register/schema are
+	 * read from inside `filters`; limit/offset are top-level config keys.
+	 */
+	private const QUOTA_QUERY = [
+		'filters' => [
+			'register' => AppIdentity::REGISTER_SLUG,
+			'schema' => 'tenantQuota',
+		],
+		'limit' => 1000,
+		'offset' => 0,
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time Time factory.
-	 * @param TenantQuotaService $quotaService Tenant quota service.
+	 * @param TenantQuotaServiceInterface $quotaService Tenant quota service.
 	 * @param IAppManager $appManager App manager.
 	 * @param ContainerInterface $container Service container.
 	 * @param LoggerInterface $logger Logger.
+	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly TenantQuotaService $quotaService,
+		private readonly TenantQuotaServiceInterface $quotaService,
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: self::INTERVAL_SECONDS);
 	}//end __construct()
 
 	/**
-	 * Reset monthly quotas for all tenants when their period is due.
+	 * Run once as the background service account.
 	 *
-	 * @param mixed $argument Job argument (unused).
+	 * @param mixed $argument The job argument.
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $argument is fixed by
-	 * OCP\BackgroundJob\TimedJob::run(); this job takes no arguments.
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-monthly-quota-reset-req-005-d
 	 *
-	 * @spec exclude phpstan dead-code cleanup only — normalised the IAppManager return and
-	 *       dropped the resulting always-false `is_array()` guard; no behavioural change.
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The job list hands every job an argument; this one takes none.
 	 */
 	protected function run($argument): void {
+		try {
+			$this->serviceAccount->runAs(operation: fn () => $this->work());
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// read, sent or written; the next run tries again.
+			return;
+		}
+	}//end run()
+
+	/**
+	 * Reset monthly quotas for all tenants when their period is due.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-monthly-quota-reset-req-005-d
+	 */
+	private function work(): void {
+		$rows = $this->quotaRows();
+		if ($rows === null) {
+			return;
+		}
+
+		$resetCount = $this->resetDueQuotas(rows: $rows);
+		if ($resetCount > 0) {
+			$this->logger->info('Dossiq: ResetMonthlyQuotasJob reset ' . $resetCount . ' quotas');
+		}
+	}//end work()
+
+	/**
+	 * Every tenant quota row, or null when they cannot be read.
+	 *
+	 * @return array<mixed>|null
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-monthly-quota-reset-req-005-d
+	 */
+	private function quotaRows(): ?array {
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		try {
+			$rows = $objectService->findAll(self::QUOTA_QUERY);
+		} catch (Throwable $e) {
+			$this->logger->error('Dossiq: ResetMonthlyQuotasJob fetch failed', ['exception' => $e->getMessage()]);
+			return null;
+		}
+
+		if (is_array($rows) === false) {
+			return null;
+		}
+
+		return $rows;
+	}//end quotaRows()
+
+	/**
+	 * OpenRegister's ObjectService, or null when OpenRegister is not there.
+	 *
+	 * @return object|null
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-monthly-quota-reset-req-005-d
+	 */
+	private function objectService(): ?object {
 		// IAppManager::getInstalledApps() declares its array return in PHPDoc
 		// only, so normalise defensively before the membership test.
 		$installed = (array)$this->appManager->getInstalledApps();
 		if (in_array('openregister', $installed, true) === false) {
-			return;
+			return null;
 		}
 
 		try {
-			$objectService = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
+			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
 		} catch (Throwable $e) {
 			$this->logger->info('Dossiq: ResetMonthlyQuotasJob — OR ObjectService unavailable');
-			return;
+			return null;
 		}
+	}//end objectService()
 
-		try {
-			// ObjectService::findAll() takes a single $config array — the previous
-			// named-argument form (register:/schema:/limit:/offset:) threw
-			// "Unknown named parameter $register" and was swallowed by the catch
-			// below, so this job never reset a single quota. Register/schema are
-			// read from inside `filters`; limit/offset are top-level config keys.
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => TenantSaasService::REGISTER,
-						'schema' => 'tenantQuota',
-					],
-					'limit' => 1000,
-					'offset' => 0,
-				]
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: ResetMonthlyQuotasJob fetch failed', ['exception' => $e->getMessage()]);
-			return;
-		}
-
-		if (is_array($rows) === false) {
-			return;
-		}
-
+	/**
+	 * Reset every quota row whose window has passed.
+	 *
+	 * `findAll()` returns ObjectEntity objects. This loop used to index them as
+	 * arrays, outside any catch, so the job died on the first row of every run
+	 * and no quota was ever reset. Each row is read as an array first: once the
+	 * quota lookup reads rows too, a counter that is never reset keeps a `block`
+	 * quota refusing long after its window has passed.
+	 *
+	 * @param array<int, mixed> $rows The tenantQuota rows as findAll() returned them.
+	 *
+	 * @return int How many quotas went from some usage back to zero.
+	 */
+	private function resetDueQuotas(array $rows): int {
 		$resetCount = 0;
-		foreach ($rows as $row) {
+		foreach ($rows as $entity) {
+			$row = $this->quotaService->quotaRowAsArray(row: $entity);
+			if ($row === null) {
+				continue;
+			}
+
 			$before = (int)($row['currentUsage'] ?? 0);
 			$after = $this->quotaService->resetIfDue($row);
 			if ((int)($after['currentUsage'] ?? 0) === 0 && $before > 0) {
@@ -127,8 +208,6 @@ class ResetMonthlyQuotasJob extends TimedJob {
 			}
 		}
 
-		if ($resetCount > 0) {
-			$this->logger->info('Dossiq: ResetMonthlyQuotasJob reset ' . $resetCount . ' quotas');
-		}
-	}//end run()
+		return $resetCount;
+	}//end resetDueQuotas()
 }//end class

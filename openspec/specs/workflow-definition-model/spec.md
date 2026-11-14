@@ -182,7 +182,7 @@ The system SHALL provide a pre-seeded workflow template for the Beroep case type
 
 <!-- BEGIN retrofit-2026-05-24-workflow-definition-model -->
 
-### REQ-001: WorkflowDefinitionController SHALL expose lifecycle + lookup endpoints
+### Requirement: REQ-001 WorkflowDefinitionController SHALL expose lifecycle + lookup endpoints
 
 `OCA\Dossiq\Controller\WorkflowDefinitionController` SHALL provide HTTP endpoints for: `publish($id)` (move draft → active), `deprecate($id)` (active → deprecated), `cloneDefinition($id)` (create new draft from existing), `active($caseTypeId)` (lookup currently-active version for a case type), and `forCase($caseId)` (lookup version bound to a specific case). Each endpoint SHALL delegate to `WorkflowDefinitionService` and SHALL reject lifecycle transitions that violate the draft → active → deprecated state machine.
 
@@ -197,13 +197,15 @@ The system SHALL provide a pre-seeded workflow template for the Beroep case type
 - **WHEN** `POST /api/workflow-definitions/{id}/clone` is called on a definition of the `spoedeisend` route
 - **THEN** the resulting draft SHALL be on the `spoedeisend` route
 
-### REQ-002: WorkflowDefinitionService SHALL implement the full lifecycle + version selection
+### Requirement: REQ-002 WorkflowDefinitionService SHALL implement the full lifecycle + version selection
 
 `OCA\Dossiq\Service\WorkflowDefinitionService` SHALL provide the canonical version-selection logic (`getActiveDefinitionFor($caseTypeId, $variant)`, `getDefinitionForCase($caseId)`, `listVersions($caseTypeId)`) and the full lifecycle (`createDraft`, `publish`, `deprecate`, `cloneDefinition`, `getDefinition`).
 
-Version selection SHALL be deterministic: **at most one active version per (case type, route) at any time**; a case bound to a specific version SHALL continue to use that version even after a newer one is published (versions, not branches).
+Version selection SHALL be deterministic: **at most one active version per (case type, route) at any time**. A case bound to a specific version SHALL continue to use that version even after a newer one is published: versions, not branches.
 
-Several routes MAY be active on one case type at the same time. That is what a route is for, and it is the one thing this rule permits that the per-case-type rule did not. A case type with one route behaves exactly as it did before. `getActiveDefinitionFor($caseTypeId)` called without a route SHALL return the case type's default route, so every caller written before routes existed keeps reading what it read before. See `openspec/specs/workflow-variants/spec.md`.
+Several routes MAY be active on one case type at the same time. That is what a route is for, and it is the one thing this rule now permits that it did not before. A case type with one route behaves exactly as it did under the per-case-type rule.
+
+`getActiveDefinitionFor($caseTypeId)` called without a route SHALL return the case type's default route, so every existing caller keeps reading what it read before.
 
 #### Scenario: Existing case keeps its bound version after a new one is published
 - **GIVEN** case C bound to workflow version v1
@@ -222,7 +224,12 @@ Several routes MAY be active on one case type at the same time. That is what a r
 - **THEN** the previously active version SHALL be deprecated
 - **AND** the case type SHALL have exactly one active definition
 
-### REQ-003: MigrateWorkflowDefinitions SHALL be a one-shot repair step for legacy data
+#### Scenario: A case type may not be left without a route
+- **GIVEN** a case type with open cases and exactly one published definition
+- **WHEN** that definition is deprecated
+- **THEN** the deprecation SHALL be refused and the reason SHALL be logged
+
+### Requirement: REQ-003 MigrateWorkflowDefinitions SHALL be a one-shot repair step for legacy data
 
 `OCA\Dossiq\Repair\MigrateWorkflowDefinitions` SHALL run as a Nextcloud repair step that detects legacy inline workflow definitions on case-type records and lifts them into stand-alone workflow definition entities. The repair step SHALL be idempotent: on a fully-migrated dataset it SHALL be a no-op, and re-running it SHALL NOT duplicate definitions.
 

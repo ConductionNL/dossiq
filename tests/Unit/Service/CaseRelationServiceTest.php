@@ -4,8 +4,9 @@
  * CaseRelationService Unit Tests
  *
  * Covers the typed peer-relation contract: guards (invalid type, self,
- * duplicate, hierarchy-overlap, access), symmetric two-sided add/remove,
- * delete-cleanup of counterparts, and normalisation after direct writes.
+ * duplicate, hierarchy-overlap, access), the one-sided write and the far side
+ * read back from /used under the inverse label, delete-cleanup of counterparts
+ * on both sides, and the promotion of direct writes into typed links.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service
@@ -29,7 +30,11 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\Relation\CaseHierarchyOverlapGuard;
 use OCA\Dossiq\Service\Relation\CaseRelationCodec;
+use OCA\Dossiq\Service\Relation\CaseRelationLabels;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
+use OCA\Dossiq\Service\Relation\SubjectLinkRule;
+use OCA\Dossiq\Service\Notice\CaseActNotices;
+use OCP\IL10N;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -41,7 +46,14 @@ use Psr\Log\LoggerInterface;
  *
  * @uses \OCA\Dossiq\Service\Relation\CaseHierarchyOverlapGuard
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationCodec
+ * @uses \OCA\Dossiq\Service\Relation\CaseRelationLabels
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationStore
+ * @uses \OCA\Dossiq\Service\Notice\CaseActNotices
+ * @uses \OCA\Dossiq\Service\Relation\RelationLabelRun
+ * @uses \OCA\Dossiq\Service\Relation\SubjectLinkRule
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseRelationServiceTest extends TestCase {
 
@@ -99,6 +111,26 @@ class CaseRelationServiceTest extends TestCase {
 			}//end __construct()
 
 			/**
+			 * Mimic OR setRegister(); the fake keeps one table.
+			 *
+			 * @param mixed $register Register (ignored).
+			 *
+			 * @return void
+			 */
+			public function setRegister($register): void {
+			}//end setRegister()
+
+			/**
+			 * Mimic OR setSchema(); the fake keeps one table.
+			 *
+			 * @param mixed $schema Schema (ignored).
+			 *
+			 * @return void
+			 */
+			public function setSchema($schema): void {
+			}//end setSchema()
+
+			/**
 			 * Mimic OR find() — null when the id is unknown (RBAC fail-closed).
 			 *
 			 * @param string $id Object UUID.
@@ -128,6 +160,100 @@ class CaseRelationServiceTest extends TestCase {
 
 				return $object;
 			}//end saveObject()
+
+			/**
+			 * Mimic OR getObjectUses() — the cases this one references, read
+			 * out of the typed reference properties, each carrying the
+			 * relation block RelationHandler attaches.
+			 *
+			 * `displayLabel` is a SENTINEL that no dossiq-side table can
+			 * produce. A service that recomputed the label from the type, or
+			 * picked between label and inverseLabel itself, would not be able
+			 * to produce this string and the assertion would fail.
+			 *
+			 * @param string $objectId Object UUID.
+			 * @param array<string, mixed> $query Ignored.
+			 * @param bool $_rbac Ignored.
+			 * @param bool $_multitenancy Ignored.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function getObjectUses(
+				string $objectId,
+				array $query = [],
+				bool $_rbac = true,
+				bool $_multitenancy = true
+			): array {
+				$results = [];
+				$source  = ($this->store[$objectId] ?? []);
+				foreach (self::PROPERTIES as $type => $property) {
+					foreach ((array)($source[$property] ?? []) as $uuid) {
+						$target = ($this->store[(string)$uuid] ?? null);
+						if ($target === null) {
+							continue;
+						}
+
+						$results[] = ($target + [
+							'relation' => [
+								'property' => $property,
+								'type' => $type,
+								'direction' => 'outgoing',
+								'label' => 'near-'.$type,
+								'inverseLabel' => 'far-'.$type,
+								'displayLabel' => 'near-'.$type,
+							],
+						]);
+					}
+				}
+
+				return ['results' => $results, 'total' => count($results)];
+			}//end getObjectUses()
+
+			/**
+			 * Mimic OR getObjectUsedBy() — the cases that reference this one.
+			 *
+			 * @param string $objectId Object UUID.
+			 * @param array<string, mixed> $query Ignored.
+			 * @param bool $_rbac Ignored.
+			 * @param bool $_multitenancy Ignored.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function getObjectUsedBy(
+				string $objectId,
+				array $query = [],
+				bool $_rbac = true,
+				bool $_multitenancy = true
+			): array {
+				$results = [];
+				foreach ($this->store as $candidate) {
+					foreach (self::PROPERTIES as $type => $property) {
+						if (in_array($objectId, (array)($candidate[$property] ?? []), true) === false) {
+							continue;
+						}
+
+						$results[] = ($candidate + [
+							'relation' => [
+								'property' => $property,
+								'type' => $type,
+								'direction' => 'incoming',
+								'label' => 'near-'.$type,
+								'inverseLabel' => 'far-'.$type,
+								'displayLabel' => 'far-'.$type,
+							],
+						]);
+					}
+				}
+
+				return ['results' => $results, 'total' => count($results)];
+			}//end getObjectUsedBy()
+
+			/**
+			 * The typed reference properties, mirroring the case schema.
+			 *
+			 * @var array<string, string>
+			 */
+			public const PROPERTIES = CaseRelationCodec::TYPED_PROPERTIES;
 		};
 	}//end makeObjectService()
 
@@ -146,10 +272,15 @@ class CaseRelationServiceTest extends TestCase {
 		// mocks: every assertion below is about behaviour they inherited
 		// verbatim from CaseRelationService, and the store is still driven
 		// entirely by the mocked SettingsService above.
+		$relationStore = new CaseRelationStore($this->settingsService, $this->logger);
+		$codec         = new CaseRelationCodec();
+
 		return new CaseRelationService(
-			store: new CaseRelationStore($this->settingsService, $this->logger),
-			codec: new CaseRelationCodec(),
+			store: $relationStore,
+			codec: $codec,
 			hierarchyGuard: new CaseHierarchyOverlapGuard(),
+			labels: new CaseRelationLabels(store: $relationStore, codec: $codec),
+			subjectRule: new SubjectLinkRule(store: $relationStore, codec: $codec, notices: new CaseActNotices(l10n: self::untranslated())),
 		);
 	}//end makeService()
 
@@ -171,13 +302,14 @@ class CaseRelationServiceTest extends TestCase {
 	}//end relationsOf()
 
 	/**
-	 * Adding a relation writes a symmetric entry into BOTH cases.
+	 * Adding a relation writes it ONCE, on the case that declared it, into the
+	 * property that carries its type. The counterpart is left alone.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
-	public function testAddRelationIsTwoSided(): void {
+	public function testAddRelationIsWrittenOnceOnTheDeclaringCase(): void {
 		$store = [
 			'a' => ['id' => 'a', 'title' => 'Bezwaar'],
 			'b' => ['id' => 'b', 'title' => 'Besluit'],
@@ -188,15 +320,169 @@ class CaseRelationServiceTest extends TestCase {
 		$this->assertTrue($result['ok']);
 
 		$aRel = $this->relationsOf($store, 'a');
-		$bRel = $this->relationsOf($store, 'b');
 		$this->assertCount(1, $aRel);
 		$this->assertSame('b', $aRel[0]['caseId']);
 		$this->assertSame('subject', $aRel[0]['aardRelatie']);
 		$this->assertSame('Bezwaar over besluit', $aRel[0]['notes']);
-		$this->assertCount(1, $bRel);
-		$this->assertSame('a', $bRel[0]['caseId']);
-		$this->assertSame('subject', $bRel[0]['aardRelatie']);
-	}//end testAddRelationIsTwoSided()
+
+		// The link OpenRegister indexes.
+		$this->assertSame(['b'], $store['a']['subjectCases']);
+
+		// And nothing at all on the far side: it is read from /used.
+		$this->assertCount(0, $this->relationsOf($store, 'b'));
+		$this->assertSame([], ($store['b']['subjectCases'] ?? []));
+	}//end testAddRelationIsWrittenOnceOnTheDeclaringCase()
+
+	/**
+	 * Each side reads the relation under the name that belongs to that side,
+	 * taken from the row and not computed here.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function testEachSideReadsItsOwnHalfOfTheLabelPair(): void {
+		$store = [
+			'a' => ['id' => 'a', 'title' => 'Bezwaar'],
+			'b' => ['id' => 'b', 'title' => 'Besluit'],
+		];
+		$service = $this->makeService($store);
+		$service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'vervolg');
+
+		$near = $service->listRelations(caseId: 'a');
+		$this->assertCount(1, $near);
+		$this->assertSame('b', $near[0]['caseId']);
+		$this->assertSame('near-vervolg', $near[0]['displayLabel']);
+		$this->assertSame('outgoing', $near[0]['direction']);
+
+		$far = $service->listRelations(caseId: 'b');
+		$this->assertCount(1, $far);
+		$this->assertSame('a', $far[0]['caseId']);
+		$this->assertSame('far-vervolg', $far[0]['displayLabel']);
+		$this->assertSame('incoming', $far[0]['direction']);
+	}//end testEachSideReadsItsOwnHalfOfTheLabelPair()
+
+	/**
+	 * Scenario: Link a vergunning to the bezwaar it waits on.
+	 *
+	 * The pair is written once, on the case that declares it, and each side
+	 * reads its own half: the vergunning waits on the bezwaar, and the bezwaar
+	 * blocks the vergunning. That is what makes the moved-term offer possible,
+	 * because the offer is made from the blocking side.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-case-can-wait-on-another-case-req-rcl-10
+	 */
+	public function testACaseWaitsOnAnotherAndThatOtherBlocksIt(): void {
+		$store = [
+			'a' => ['id' => 'a', 'title' => 'Vergunning'],
+			'b' => ['id' => 'b', 'title' => 'Bezwaar'],
+		];
+		$service = $this->makeService($store);
+
+		$written = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'waitsOn');
+		$this->assertTrue($written['ok']);
+
+		$near = $service->listRelations(caseId: 'a');
+		$this->assertCount(1, $near);
+		$this->assertSame('b', $near[0]['caseId']);
+		$this->assertSame('waitsOn', $near[0]['aardRelatie']);
+		$this->assertSame('outgoing', $near[0]['direction']);
+
+		$far = $service->listRelations(caseId: 'b');
+		$this->assertCount(1, $far);
+		$this->assertSame('a', $far[0]['caseId']);
+		$this->assertSame('incoming', $far[0]['direction']);
+
+		// The link is stored in the property the pair declares, which is the
+		// one the offer reads back from the blocking side.
+		$this->assertSame(['b'], $store['a']['blockingCases'] ?? []);
+	}//end testACaseWaitsOnAnotherAndThatOtherBlocksIt()
+
+	/**
+	 * The waits-on pair lives on the relation primitive only.
+	 *
+	 * `relatedCases` is the ZGW `relevanteAndereZaken` list, and `waitsOn` is
+	 * not a ZGW `aardRelatie`. Writing it there as well kept a second copy that
+	 * nothing needs: the offer and the Related panel both read `blockingCases`
+	 * through OpenRegister's relation rows.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-case-can-wait-on-another-case-req-rcl-10
+	 */
+	public function testWaitsOnIsNotWrittenIntoRelatedCases(): void {
+		$store = [
+			'a' => ['id' => 'a', 'title' => 'Vergunning'],
+			'b' => ['id' => 'b', 'title' => 'Bezwaar'],
+		];
+		$service = $this->makeService($store);
+
+		$this->assertTrue($service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'waitsOn')['ok']);
+
+		$this->assertCount(0, $this->relationsOf($store, 'a'));
+		$this->assertSame(['b'], $store['a']['blockingCases'] ?? []);
+
+		// Declared twice from the same side is still a duplicate, now that the
+		// relation list no longer carries the pair to catch it.
+		$again = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'waitsOn');
+		$this->assertFalse($again['ok']);
+		$this->assertSame('duplicate', $again['reason']);
+		$this->assertSame(['b'], $store['a']['blockingCases'] ?? []);
+	}//end testWaitsOnIsNotWrittenIntoRelatedCases()
+
+	/**
+	 * A waits-on entry written into `relatedCases` before the move is promoted
+	 * onto the primitive and taken out of the relation list.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-case-can-wait-on-another-case-req-rcl-10
+	 */
+	public function testNormaliseMovesALegacyWaitsOnOntoThePrimitive(): void {
+		$store = [
+			'a' => [
+				'id' => 'a',
+				'relatedCases' => json_encode(
+					[
+						['caseId' => 'b', 'aardRelatie' => 'waitsOn'],
+						['caseId' => 'c', 'aardRelatie' => 'vervolg'],
+					]
+				),
+			],
+			'b' => ['id' => 'b'],
+			'c' => ['id' => 'c'],
+		];
+		$service = $this->makeService($store);
+
+		$service->normalise(caseId: 'a');
+
+		$this->assertSame(['b'], $store['a']['blockingCases'] ?? []);
+		$this->assertSame(['c'], $store['a']['followUpCases'] ?? []);
+		$left = $this->relationsOf($store, 'a');
+		$this->assertCount(1, $left);
+		$this->assertSame('vervolg', $left[0]['aardRelatie']);
+	}//end testNormaliseMovesALegacyWaitsOnOntoThePrimitive()
+
+	/**
+	 * The same type declared from both cases is two contradictory statements,
+	 * so the second one is refused.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function testTheSameTypeDeclaredFromBothSidesIsRefused(): void {
+		$store = ['a' => ['id' => 'a'], 'b' => ['id' => 'b']];
+		$service = $this->makeService($store);
+
+		$this->assertTrue($service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'vervolg')['ok']);
+
+		$mirrored = $service->addRelation(caseId: 'b', targetId: 'a', natureRelationship: 'vervolg');
+		$this->assertFalse($mirrored['ok']);
+		$this->assertSame('duplicate', $mirrored['reason']);
+	}//end testTheSameTypeDeclaredFromBothSidesIsRefused()
 
 	/**
 	 * Self-relations are rejected.
@@ -305,13 +591,14 @@ class CaseRelationServiceTest extends TestCase {
 
 		$service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'vervolg');
 		$this->assertCount(1, $this->relationsOf($store, 'a'));
-		$this->assertCount(1, $this->relationsOf($store, 'b'));
+		$this->assertSame(['b'], $store['a']['followUpCases']);
 
-		// Remove from b's side.
+		// Remove from b's side: b holds nothing, and the link on a still goes.
 		$result = $service->removeRelation(caseId: 'b', targetId: 'a', natureRelationship: 'vervolg');
 		$this->assertTrue($result['ok']);
 		$this->assertCount(0, $this->relationsOf($store, 'a'));
-		$this->assertCount(0, $this->relationsOf($store, 'b'));
+		$this->assertSame([], $store['a']['followUpCases']);
+		$this->assertCount(0, $service->listRelations(caseId: 'b'));
 	}//end testRemovalIsTwoSided()
 
 	/**
@@ -330,27 +617,32 @@ class CaseRelationServiceTest extends TestCase {
 		];
 		$service = $this->makeService($store);
 
-		$service->addRelation(caseId: 'x', targetId: 'p', natureRelationship: 'bijdrage');
-		$service->addRelation(caseId: 'x', targetId: 'q', natureRelationship: 'bijdrage');
-		$service->addRelation(caseId: 'x', targetId: 'r', natureRelationship: 'bijdrage');
+		// Declared from the OTHER side, which is the case the old mirror used
+		// to cover by accident: nothing on x names p, q or r, so only /used
+		// can find them.
+		$service->addRelation(caseId: 'p', targetId: 'x', natureRelationship: 'bijdrage');
+		$service->addRelation(caseId: 'q', targetId: 'x', natureRelationship: 'bijdrage');
+		$service->addRelation(caseId: 'r', targetId: 'x', natureRelationship: 'bijdrage');
 
 		$updated = $service->cleanupForDeletedCase(caseId: 'x');
 		$this->assertSame(3, $updated);
-		$this->assertCount(0, $this->relationsOf($store, 'p'));
-		$this->assertCount(0, $this->relationsOf($store, 'q'));
-		$this->assertCount(0, $this->relationsOf($store, 'r'));
+		foreach (['p', 'q', 'r'] as $counterpart) {
+			$this->assertCount(0, $this->relationsOf($store, $counterpart));
+			$this->assertSame([], $store[$counterpart]['contributingCases']);
+		}
 	}//end testCleanupForDeletedCaseRemovesCounterparts()
 
 	/**
-	 * normalise() restores the inverse entry after a direct (asymmetric) write
-	 * to relatedCases — the ZGW inbound path relies on this.
+	 * normalise() promotes a direct write to relatedCases into the typed
+	 * property, so a relation that arrived over ZGW is visible to OpenRegister
+	 * and reads from both ends. The ZGW inbound path relies on this.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
-	public function testNormaliseRestoresSymmetry(): void {
-		// a has a direct (one-sided) relation to b; b has none yet.
+	public function testNormalisePromotesDirectWritesIntoTypedLinks(): void {
+		// a has a relation written straight onto the field by the ZGW mapping.
 		$store = [
 			'a' => ['id' => 'a', 'relatedCases' => json_encode([['caseId' => 'b', 'aardRelatie' => 'subject']])],
 			'b' => ['id' => 'b'],
@@ -358,11 +650,15 @@ class CaseRelationServiceTest extends TestCase {
 		$service = $this->makeService($store);
 
 		$service->normalise(caseId: 'a');
-		$bRel = $this->relationsOf($store, 'b');
-		$this->assertCount(1, $bRel);
-		$this->assertSame('a', $bRel[0]['caseId']);
-		$this->assertSame('subject', $bRel[0]['aardRelatie']);
-	}//end testNormaliseRestoresSymmetry()
+		$this->assertSame(['b'], $store['a']['subjectCases']);
+
+		// And b now reads it, under the far half of the pair, without anything
+		// having been written onto b.
+		$this->assertSame([], ($store['b']['subjectCases'] ?? []));
+		$far = $service->listRelations(caseId: 'b');
+		$this->assertCount(1, $far);
+		$this->assertSame('far-subject', $far[0]['displayLabel']);
+	}//end testNormalisePromotesDirectWritesIntoTypedLinks()
 
 	/**
 	 * listRelations decodes the JSON-encoded field into entries.
@@ -383,4 +679,137 @@ class CaseRelationServiceTest extends TestCase {
 		$this->assertSame('vervolg', $rel[0]['aardRelatie']);
 		$this->assertSame('t', $rel[0]['notes']);
 	}//end testListRelationsDecodes()
+
+	/**
+	 * A legacy relation carries the far case's title, so the card never shows
+	 * its uuid; an unreadable far case answers an empty title.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function testALegacyRelationCarriesTheFarCaseTitle(): void {
+		$store = [
+			'a' => [
+				'id' => 'a',
+				'relatedCases' => json_encode(
+					[
+						['caseId' => 'b', 'aardRelatie' => 'vervolg'],
+						['caseId' => 'gone', 'aardRelatie' => 'subject'],
+					]
+				),
+			],
+			'b' => ['id' => 'b', 'title' => 'Bezwaar Dakkapel'],
+		];
+		$service = $this->makeService($store);
+
+		$rows = array_column($service->listRelations(caseId: 'a'), null, 'caseId');
+		$this->assertSame('Bezwaar Dakkapel', $rows['b']['title']);
+		$this->assertSame('', $rows['gone']['title']);
+	}//end testALegacyRelationCarriesTheFarCaseTitle()
+
+	/**
+	 * A case already hanging as the subject of another case cannot hang under a second one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
+	 */
+	public function testASubjectHangsUnderOneCaseOnly(): void {
+		$store = [
+			'a' => ['id' => 'a', 'identifier' => 'ZAAK-A'],
+			'b' => ['id' => 'b', 'identifier' => 'ZAAK-B'],
+			'c' => ['id' => 'c', 'identifier' => 'ZAAK-C'],
+		];
+		$service = $this->makeService($store);
+		$this->assertTrue($service->addRelation(caseId: 'c', targetId: 'b', natureRelationship: 'subject')['ok']);
+
+		$result = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'subject');
+
+		$this->assertSame('subject_taken', $result['reason']);
+		$this->assertSame('ZAAK-B', $result['target']);
+		$this->assertSame('ZAAK-C', $result['other']);
+		$this->assertSame(['variant' => 'error', 'role' => 'alert', 'title' => 'Not linked:', 'text' => 'ZAAK-B already hangs as the subject under ZAAK-C. A case can hang as the subject under one case only.'], $result['notice']);
+		$this->assertCount(0, $this->relationsOf($store, 'a'));
+		$this->assertTrue($service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'samenhang')['ok']);
+	}//end testASubjectHangsUnderOneCaseOnly()
+
+	/**
+	 * A subject chain may not loop back to the case that would hold it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
+	 */
+	public function testASubjectChainMayNotLoop(): void {
+		$store = [
+			'a' => ['id' => 'a', 'identifier' => 'ZAAK-A'],
+			'b' => ['id' => 'b', 'identifier' => 'ZAAK-B'],
+			'c' => ['id' => 'c', 'identifier' => 'ZAAK-C'],
+		];
+		$service = $this->makeService($store);
+		$this->assertTrue($service->addRelation(caseId: 'c', targetId: 'a', natureRelationship: 'subject')['ok']);
+		$this->assertTrue($service->addRelation(caseId: 'b', targetId: 'c', natureRelationship: 'subject')['ok']);
+
+		$result = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'subject');
+
+		$this->assertSame('subject_cycle', $result['reason']);
+		$this->assertCount(0, $this->relationsOf($store, 'a'));
+	}//end testASubjectChainMayNotLoop()
+
+	/**
+	 * An IL10N that fills the placeholders and translates nothing.
+	 *
+	 * @return IL10N
+	 */
+	private static function untranslated(): IL10N {
+		return new class implements IL10N {
+			/**
+			 * @param string                $text       The text.
+			 * @param array<int, mixed>|mixed $parameters The values.
+			 *
+			 * @return string
+			 */
+			public function t(string $text, $parameters = []): string {
+				return vsprintf($text, (array)$parameters);
+			}
+
+			/**
+			 * @param string            $textSingular The singular.
+			 * @param string            $textPlural   The plural.
+			 * @param int               $count        The count.
+			 * @param array<int, mixed> $parameters   The values.
+			 *
+			 * @return string
+			 */
+			public function n(string $textSingular, string $textPlural, int $count, array $parameters = []): string {
+				return $textPlural;
+			}
+
+			/**
+			 * @param string       $type    The type.
+			 * @param mixed        $data    The data.
+			 * @param array<mixed> $options The options.
+			 *
+			 * @return string|int|array<mixed>
+			 */
+			public function l(string $type, $data, array $options = []) {
+				return '';
+			}
+
+			/**
+			 * @return string
+			 */
+			public function getLanguageCode(): string {
+				return 'en';
+			}
+
+			/**
+			 * @return string
+			 */
+			public function getLocaleCode(): string {
+				return 'en';
+			}
+		};
+	}//end untranslated()
 }//end class

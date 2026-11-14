@@ -29,7 +29,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\People\PersonLinkReader;
+use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
+use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
+use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZgwDocumentService;
@@ -101,8 +108,16 @@ interface DossierObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Service\ZaakdossierService
  *
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
+ * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
+ * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentStatusMove
+ * @uses \OCA\Dossiq\Service\Zaakdossier\StoredDocument
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class ZaakdossierServiceTest extends TestCase {
 
@@ -135,6 +150,13 @@ class ZaakdossierServiceTest extends TestCase {
 	private ZaakdossierService $service;
 
 	/**
+	 * The file service stub: `addFile` on the case, answering a file id.
+	 *
+	 * @var object
+	 */
+	private object $files;
+
+	/**
 	 * Set up fixtures with all dossier config keys mapped.
 	 *
 	 * @return void
@@ -142,6 +164,54 @@ class ZaakdossierServiceTest extends TestCase {
 	protected function setUp(): void {
 		$this->settings = $this->createMock(SettingsService::class);
 		$this->documents = $this->createMock(ZgwDocumentService::class);
+		$this->files = new class {
+			/** @var int The file id the next addFile answers. */
+			public int $fileId = 4711;
+
+			/** @var array<int, array<string, mixed>> Every addFile asked. */
+			public array $added = [];
+
+			/**
+			 * @param mixed $objectEntity The object the file is attached to.
+			 * @param string $fileName The file name.
+			 * @param mixed $content The bytes.
+			 * @param bool $share Whether to share.
+			 * @param array<int, string> $tags Tags.
+			 * @param mixed $_schema Unused.
+			 * @param mixed $_register Unused.
+			 * @param mixed $registerId The register.
+			 *
+			 * @return object A file with getFileId().
+			 */
+			public function addFile(
+				mixed $objectEntity,
+				string $fileName,
+				mixed $content,
+				bool $share = false,
+				array $tags = [],
+				mixed $_schema = null,
+				mixed $_register = null,
+				mixed $registerId = null,
+			): object {
+				$this->added[] = ['object' => $objectEntity, 'fileName' => $fileName, 'content' => $content, 'register' => $registerId];
+				$fileId = $this->fileId;
+				return new class ($fileId) {
+					/**
+					 * @param int $fileId The file id.
+					 */
+					public function __construct(private readonly int $fileId) {
+					}
+
+					/**
+					 * @return int The file id.
+					 */
+					public function getFileId(): int {
+						return $this->fileId;
+					}
+				};
+			}
+		};
+		$this->settings->method('getFileService')->willReturn($this->files);
 		$this->settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = '') {
 				$map = [
@@ -158,17 +228,28 @@ class ZaakdossierServiceTest extends TestCase {
 			settingsService: $this->settings,
 			groupManager: $this->createMock(\OCP\IGroupManager::class),
 			logger: $this->createMock(LoggerInterface::class),
+			exceptions: $this->createConfiguredMock(DocumentAccessExceptionRule::class, ['admits' => true]),
 		);
 		// A REAL lifecycle collaborator over the same mocked settings, so the
 		// status-transition tests below still exercise the production state
 		// machine end to end rather than a mock's canned answers.
 		$this->service = new ZaakdossierService(
 			settingsService: $this->settings,
-			documentService: $this->documents,
 			accessGuard: $this->accessGuard,
 			statusLifecycle: new InformatieobjectStatusLifecycle(
 				settingsService: $this->settings,
 				logger: $this->createMock(LoggerInterface::class),
+			),
+			// A REAL normaliser, so the keyword/direction assertions below
+			// exercise the production coercion rather than a mock's answers.
+			normaliser: new InformatieobjectMetadataNormaliser(),
+			recordStore: new DocumentRecordStore(settingsService: $this->settings),
+			correspondents: new CorrespondentWriter(
+				rules: new DocumentCorrespondents(),
+				people: $this->createMock(originalClassName: PersonLinkReader::class),
+				settingsService: $this->settings,
+				store: new DocumentRecordStore(settingsService: $this->settings),
+				labels: new DocumentListingLabels(settingsService: $this->settings),
 			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
@@ -254,9 +335,7 @@ class ZaakdossierServiceTest extends TestCase {
 			}
 		);
 
-		$this->documents->expects($this->once())
-			->method('storeRaw')
-			->with($this->equalTo('inf-1'), $this->equalTo('a.pdf'), $this->equalTo($content));
+		$this->documents->expects($this->never())->method('storeRaw');
 
 		$result = $this->service->uploadDocument(
 			caseId: 'case-1',
@@ -264,6 +343,12 @@ class ZaakdossierServiceTest extends TestCase {
 			content: $content,
 			metadata: ['informatieobjecttype' => 'iot-1', 'vertrouwelijkheidaanduiding' => 'intern', 'title' => 'My doc'],
 		);
+
+		// documents-live-on-the-case: the file is attached to the CASE.
+		$this->assertCount(1, $this->files->added);
+		$this->assertSame('case-1', $this->files->added[0]['object']);
+		$this->assertSame('a.pdf', $this->files->added[0]['fileName']);
+		$this->assertSame($content, $this->files->added[0]['content']);
 
 		$this->assertSame('inf-1', $result['id']);
 		$this->assertSame('draft', $result['status']);
@@ -504,4 +589,238 @@ class ZaakdossierServiceTest extends TestCase {
 		$this->assertSame('zaakvertrouwelijk', $this->service->resolveDefaultClassification('iot-1'));
 
 	}//end testResolveDefaultClassification()
+
+	/**
+	 * Capture the informatieobject one upload writes.
+	 *
+	 * @param array<string, mixed> $metadata The upload metadata.
+	 *
+	 * @return array<string, mixed> The written informatieobject.
+	 */
+	private function uploadAndCapture(array $metadata): array {
+		$os = $this->createMock(DossierObjectServiceStub::class);
+		$this->settings->method('getObjectService')->willReturn($os);
+
+		$captured = [];
+		$os->method('saveObject')->willReturnCallback(
+			function (array $object, string $register, string $schema, string $uuid = '') use (&$captured) {
+				$captured[$schema] = $object;
+
+				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
+			}
+		);
+
+		$this->service->uploadDocument(
+			'case-1',
+			'a.pdf',
+			'PDF',
+			array_merge(['informatieobjecttype' => 'iot-1'], $metadata)
+		);
+
+		return $captured['informatieobject'];
+	}//end uploadAndCapture()
+
+	/**
+	 * REQ-ZAK-012: the keywords typed on upload reach the informatieobject.
+	 *
+	 * @return void
+	 */
+	public function testUploadStoresTheKeywords(): void {
+		$written = $this->uploadAndCapture(['keywords' => ['bezwaar', 'bouwtekening']]);
+
+		$this->assertSame(['bezwaar', 'bouwtekening'], $written['keywords']);
+
+	}//end testUploadStoresTheKeywords()
+
+	/**
+	 * A keyword list is trimmed, deduplicated and capped at the schema length.
+	 *
+	 * A single over-long keyword would otherwise fail the whole save, and the
+	 * person who typed it would see a failed upload rather than a short tag.
+	 *
+	 * @return void
+	 */
+	public function testUploadNormalisesTheKeywords(): void {
+		$long = str_repeat('a', 80);
+		$written = $this->uploadAndCapture([
+			'keywords' => [' bezwaar ', 'bezwaar', '', '   ', null, ['x'], $long],
+		]);
+
+		$this->assertSame(['bezwaar', str_repeat('a', 64)], $written['keywords']);
+
+	}//end testUploadNormalisesTheKeywords()
+
+	/**
+	 * REQ-ZAK-013: the chosen direction reaches the informatieobject.
+	 *
+	 * @return void
+	 */
+	public function testUploadStoresTheChosenDirection(): void {
+		$written = $this->uploadAndCapture(['direction' => 'incoming']);
+
+		$this->assertSame('incoming', $written['direction']);
+
+	}//end testUploadStoresTheChosenDirection()
+
+	/**
+	 * An upload naming no direction, or one outside the enum, reads as internal.
+	 *
+	 * @return void
+	 */
+	public function testUploadDefaultsTheDirectionToInternal(): void {
+		$written = $this->uploadAndCapture([]);
+
+		$this->assertSame('internal', $written['direction']);
+		$this->assertSame([], $written['keywords']);
+
+	}//end testUploadDefaultsTheDirectionToInternal()
+
+	/**
+	 * A direction outside the enum reads as internal rather than failing the
+	 * upload: the direction is a label, and refusing the save would throw the
+	 * uploaded file away with it.
+	 *
+	 * @return void
+	 */
+	public function testUploadCoercesAnUnknownDirection(): void {
+		$this->assertSame(
+			'internal',
+			$this->uploadAndCapture(['direction' => 'sideways'])['direction']
+		);
+
+	}//end testUploadCoercesAnUnknownDirection()
+
+	/**
+	 * updateMetadata carries the two new fields, normalised like an upload.
+	 *
+	 * The allowlist is the whole guard here: a field missing from it is
+	 * silently dropped, and the edit reads as a successful no-op.
+	 *
+	 * @return void
+	 */
+	public function testUpdateMetadataCarriesKeywordsAndDirection(): void {
+		$os = $this->createMock(DossierObjectServiceStub::class);
+		$this->settings->method('getObjectService')->willReturn($os);
+		$os->method('find')->willReturn(['id' => 'inf-1', 'status' => 'draft']);
+
+		$captured = [];
+		$os->method('saveObject')->willReturnCallback(
+			function (array $object, string $register, string $schema, string $uuid = '') use (&$captured) {
+				$captured = $object;
+
+				return $this->savedObject('inf-1');
+			}
+		);
+
+		$this->service->updateMetadata(
+			'inf-1',
+			['keywords' => [' bezwaar ', 'bezwaar'], 'direction' => 'outgoing']
+		);
+
+		$this->assertSame(['bezwaar'], $captured['keywords']);
+		$this->assertSame('outgoing', $captured['direction']);
+
+	}//end testUpdateMetadataCarriesKeywordsAndDirection()
+
+	/**
+	 * The upload stamps the Nextcloud file id onto the informatieobject.
+	 *
+	 * VersionHistoryPanel returns EARLY when `fileId` is absent and renders
+	 * "No previous versions", so a document with no id has a Versions action
+	 * that looks correct and asks the versions API nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheUploadStampsTheFileIdOntoTheDocument(): void {
+		$os = $this->createMock(DossierObjectServiceStub::class);
+		$this->settings->method('getObjectService')->willReturn($os);
+
+		$writes = [];
+		$os->method('saveObject')->willReturnCallback(
+			function (array $object, string $register, string $schema, string $uuid = '') use (&$writes) {
+				$writes[] = ['schema' => $schema, 'uuid' => $uuid, 'object' => $object];
+
+				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
+			}
+		);
+
+		$this->service->uploadDocument('case-1', 'a.pdf', 'PDF', ['informatieobjecttype' => 'iot-1']);
+
+		$stamp = array_values(
+			array_filter($writes, static fn (array $w): bool => $w['schema'] === 'informatieobject')
+		);
+		$this->assertCount(1, $stamp, 'one write carries the document, file id included');
+		$this->assertSame(4711, $stamp[0]['object']['fileId']);
+
+		// AND IT MUST STILL BE A WHOLE DOCUMENT. This assertion used to read
+		// `assertSame(['fileId' => 4711], ...)`, which pinned the defect
+		// instead of the behaviour: `saveObject()` REPLACES, so a one-key
+		// write threw the rest of the record away and OpenRegister refused it
+		// for the four properties its schema requires. The upload then
+		// reported failure per file behind a 201, and the Documents tab stayed
+		// empty with nothing said anywhere.
+		foreach (['title', 'fileName', 'vertrouwelijkheidaanduiding', 'informatieobjecttype'] as $required) {
+			$this->assertArrayHasKey(
+				$required,
+				$stamp[0]['object'],
+				sprintf('the file-id write must carry %s, or the schema refuses it', $required)
+			);
+			$this->assertNotSame('', (string)$stamp[0]['object'][$required]);
+		}
+
+	}//end testTheUploadStampsTheFileIdOntoTheDocument()
+
+	/**
+	 * A file id that cannot be read back does not lose the upload.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableFileIdStillLeavesTheDocumentFiled(): void {
+		$os = $this->createMock(DossierObjectServiceStub::class);
+		$this->settings->method('getObjectService')->willReturn($os);
+		$this->files->fileId = 0;
+
+		$schemas = [];
+		$os->method('saveObject')->willReturnCallback(
+			function (array $object, string $register, string $schema, string $uuid = '') use (&$schemas) {
+				$schemas[] = $schema;
+
+				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
+			}
+		);
+
+		$result = $this->service->uploadDocument(
+			'case-1',
+			'a.pdf',
+			'PDF',
+			['informatieobjecttype' => 'iot-1']
+		);
+
+		$this->assertSame('inf-1', $result['id']);
+		$this->assertContains('zaakinformatieobject', $schemas, 'the join is still written');
+
+	}//end testAnUnreadableFileIdStillLeavesTheDocumentFiled()
+
+	/**
+	 * The direction vocabulary matches the enum the register fragment ships.
+	 *
+	 * @return void
+	 */
+	public function testTheDirectionVocabularyMatchesTheRegisterFragment(): void {
+		$fragment = json_decode(
+			(string)file_get_contents(
+				__DIR__ . '/../../../lib/Settings/register.d/70-document-zaakdossier.json'
+			),
+			true
+		);
+		$declared = $fragment['components']['schemas']['informatieobject']['properties']['direction'];
+
+		$this->assertSame($declared['enum'], ZaakdossierService::DIRECTIONS);
+		$this->assertSame($declared['default'], ZaakdossierService::DEFAULT_DIRECTION);
+		$this->assertSame(
+			$fragment['components']['schemas']['informatieobject']['properties']['keywords']['items']['maxLength'],
+			ZaakdossierService::KEYWORD_MAX_LENGTH
+		);
+
+	}//end testTheDirectionVocabularyMatchesTheRegisterFragment()
 }//end class

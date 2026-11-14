@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Dossiq API Contract Suite",
-		"description": "Newman/Postman API-contract tests for the Dossiq Nextcloud app. Locks the HTTP contract of dossiq's controllers (appinfo/routes.php + lib/Controller/*): the status-transition engine, case (zaak) CRUD via the OpenRegister object API, complaints, and settings. Every endpoint family is exercised for a happy path, an error/validation case (4xx not 500), and an authorization case (no/invalid auth -> 401/403). The suite is self-contained and idempotent: it seeds prerequisite OpenRegister objects in setup requests and deletes everything it creates in teardown.\n\nAUTH MODEL: collection auth is noauth; every authenticated request carries an EXPLICIT basic-auth block (admin:admin via the adminUser/adminPass variables). This avoids any collection-inheritance/override ambiguity in Newman, so no-auth requests are deterministically unauthenticated.\n\nUsage: see run-newman.sh. Pass collection variables baseUrl, adminUser, adminPass.\n\nPhase-0 fixes locked here: (1) the transition engine returns real available-transitions/current/history data, (2) the controller body-parsing (getParams, not the protected getContent) no longer 500s, (3) an unavailable guarded transition is rejected with 409 (GuardFailedException) not 500.",
+		"description": "Newman/Postman API-contract tests for the Dossiq Nextcloud app. Locks the HTTP contract of dossiq's controllers (appinfo/routes.php + lib/Controller/*): the status-transition engine, case (zaak) CRUD via the OpenRegister object API, complaints, and settings. Every endpoint family is exercised for a happy path, an error/validation case (4xx not 500), and an authorization case (no/invalid auth -> 401/403). The suite is self-contained and idempotent: it seeds prerequisite OpenRegister objects in setup requests and deletes everything it creates in teardown.\n\nAUTH MODEL: collection auth is noauth; every authenticated request carries an EXPLICIT basic-auth block (admin:admin via the adminUser/adminPass variables). This avoids any collection-inheritance/override ambiguity in Newman, so no-auth requests are deterministically unauthenticated.\n\nUsage: see run-newman.sh. Pass collection variables baseUrl, adminUser, adminPass.\n\nPhase-0 fixes locked here: (1) the transition engine returns real available-transitions/current/history data, (2) the controller body-parsing (getParams, not the protected getContent) no longer 500s, (3) an unavailable guarded transition is rejected with 409 (GuardFailedException) not 500.\n\n@newman exclude Not dead: it runs locally through tests/integration/run-newman.sh, which tests/integration/README.md documents. It has never run in CI because it sits outside newman-collection-path 'data' and the caller sets enable-newman false. See the comment on enable-newman in .github/workflows/code-quality.yml.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -64,6 +64,14 @@
 		{
 			"key": "noAuthBase",
 			"value": "http://127.0.0.1:8080"
+		},
+		{
+			"key": "apiKeyValue",
+			"value": ""
+		},
+		{
+			"key": "apiKeyConsumerId",
+			"value": ""
 		}
 	],
 	"auth": {
@@ -553,7 +561,8 @@
 									"pm.test('409 Conflict (guard failed, NOT 500)', () => pm.response.to.have.status(409));",
 									"pm.test('not a 500', () => pm.expect(pm.response.code).to.not.eql(500));",
 									"const b = pm.response.json();",
-									"pm.test('static error message (no leaked exception text)', () => pm.expect(b.error).to.eql('Transition is not available'));",
+									"pm.test('names the rule in error (refusals-carry-a-status)', () => pm.expect(b.error).to.eql('transition-guard-failed'));",
+									"pm.test('static sentence, no leaked exception text', () => { pm.expect(b.message).to.eql('This move is blocked by a rule on the case.'); pm.expect(b.message).to.not.include('Exception'); });",
 									"pm.test('reports the failed guards', () => { pm.expect(b.failedGuards).to.be.an('array').that.is.not.empty; pm.expect(b.failedGuards[0]).to.have.property('passed', false); });"
 								],
 								"type": "text/javascript"
@@ -1485,6 +1494,311 @@
 								"dossiq",
 								"api",
 								"complaints"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Public API access with an API key",
+			"item": [
+				{
+					"name": "create API-key consumer (setup: 201, captures id)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// A fresh key per run, so a leftover consumer from an aborted run never matches.",
+									"pm.collectionVariables.set('apiKeyValue', 'newman-' + pm.variables.replaceIn('{{$guid}}'));"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('201 Created', () => pm.response.to.have.status(201));",
+									"const b = pm.response.json();",
+									"pm.test('consumer has an id', () => pm.expect(b.id).to.not.be.undefined);",
+									"pm.collectionVariables.set('apiKeyConsumerId', b.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{adminUser}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{adminPass}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"newman-api-key-consumer\",\n  \"description\": \"Newman: API-key caller scoped to zaken.lezen only.\",\n  \"authorizationType\": \"apiKey\",\n  \"authorizationConfiguration\": {\n    \"apiKey\": \"{{apiKeyValue}}\",\n    \"scopes\": [\n      {\n        \"component\": \"zrc\",\n        \"scopes\": [\n          \"zaken.lezen\"\n        ]\n      }\n    ]\n  },\n  \"userId\": \"{{adminUser}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/index.php/apps/openregister/api/consumers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"index.php",
+								"apps",
+								"openregister",
+								"api",
+								"consumers"
+							]
+						}
+					}
+				},
+				{
+					"name": "zaken list with API key (happy: 200, key in scope zaken.lezen)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Cookie isolation: run against {{noAuthBase}} with a cleared jar, so the only",
+									"// credential the request carries is the API key.",
+									"const jar = pm.cookies.jar();",
+									"jar.clear(pm.request.url.toString(), function () {});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('200 OK with an API key whose applicatie grants zaken.lezen', () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Api-Key",
+								"value": "{{apiKeyValue}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{noAuthBase}}/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+							"host": [
+								"{{noAuthBase}}"
+							],
+							"path": [
+								"index.php",
+								"apps",
+								"dossiq",
+								"api",
+								"zgw",
+								"zaken",
+								"v1",
+								"zaken"
+							]
+						}
+					}
+				},
+				{
+					"name": "zaaktypen list with API key (authz: 403, out of scope)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Cookie isolation: run against {{noAuthBase}} with a cleared jar, so the only",
+									"// credential the request carries is the API key.",
+									"const jar = pm.cookies.jar();",
+									"jar.clear(pm.request.url.toString(), function () {});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('403 Forbidden: the key is known but its applicatie does not grant catalogi.lezen', () => pm.response.to.have.status(403));",
+									"pm.test('the key is not echoed', () => pm.expect(pm.response.text()).to.not.include(pm.collectionVariables.get('apiKeyValue')));"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Api-Key",
+								"value": "{{apiKeyValue}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{noAuthBase}}/index.php/apps/dossiq/api/zgw/catalogi/v1/zaaktypen",
+							"host": [
+								"{{noAuthBase}}"
+							],
+							"path": [
+								"index.php",
+								"apps",
+								"dossiq",
+								"api",
+								"zgw",
+								"catalogi",
+								"v1",
+								"zaaktypen"
+							]
+						}
+					}
+				},
+				{
+					"name": "zaken list with unknown API key (authz: 401)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Cookie isolation: run against {{noAuthBase}} with a cleared jar, so the only",
+									"// credential the request carries is the API key.",
+									"const jar = pm.cookies.jar();",
+									"jar.clear(pm.request.url.toString(), function () {});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('401 Unauthorized for a key no consumer holds', () => pm.response.to.have.status(401));",
+									"pm.test('the key is not echoed', () => pm.expect(pm.response.text()).to.not.include('newman-unknown-key'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Api-Key",
+								"value": "newman-unknown-key"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{noAuthBase}}/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+							"host": [
+								"{{noAuthBase}}"
+							],
+							"path": [
+								"index.php",
+								"apps",
+								"dossiq",
+								"api",
+								"zgw",
+								"zaken",
+								"v1",
+								"zaken"
+							]
+						}
+					}
+				},
+				{
+					"name": "delete API-key consumer (cleanup: 200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('consumer removed', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{adminUser}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{adminPass}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/index.php/apps/openregister/api/consumers/{{apiKeyConsumerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"index.php",
+								"apps",
+								"openregister",
+								"api",
+								"consumers",
+								"{{apiKeyConsumerId}}"
 							]
 						}
 					}

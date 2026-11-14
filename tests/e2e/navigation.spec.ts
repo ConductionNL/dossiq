@@ -19,12 +19,17 @@ test.describe('Sidebar Navigation', () => {
 		// removed when the "Cases" GROUP IA was reverted, so it matched zero
 		// links and the assertion could only ever fail.
 		//
-		// "Dashboard" is now the ONLY top-level visible leaf. dossiq#1646
-		// gathered the work surfaces under a "My work" GROUP, and "Cases" moved
-		// into it as "All cases" — so it is rendered but `display:none` until
-		// the group is expanded, and is asserted with the other collapsed
-		// leaves below. The rest render inside collapsed groups too.
-		for (const label of ['Dashboard']) {
+		// "Dashboard" was the only top-level visible leaf after dossiq#1646
+		// gathered the work surfaces under a "My work" GROUP and "Cases" moved
+		// into it as "All cases" — rendered but `display:none` until the group
+		// is expanded, and asserted with the other collapsed leaves below.
+		//
+		// `contacts-domain` adds the second: Contacts is a top-level DOMAIN,
+		// not a work surface, so it is a leaf beside Dashboard rather than a
+		// sixth entry inside the group. It is asserted VISIBLE for that
+		// reason — an entry that ends up inside a collapsed group is hidden,
+		// and that failure is exactly the one this line exists to catch.
+		for (const label of ['Dashboard', 'Contacts']) {
 			await expect(
 				nav.getByRole('link', { name: label, exact: true }),
 			).toBeVisible()
@@ -41,7 +46,9 @@ test.describe('Sidebar Navigation', () => {
 		// page stays routable — every other spec still reaches it with a
 		// direct GET — but it no longer has a navigation entry of its own,
 		// and asserting one is asserting the IA we retired.
-		for (const href of ['/queue', '/my-work', '/workflow-board', '/cases']) {
+		// The workflow board is the Cases list in board view (dossiq#3989), so
+		// its entry ends in `/cases?_view=board`.
+		for (const href of ['/queue', '/my-work', '/cases?_view=board', '/cases']) {
 			await expect(nav.locator(`a[href$="${href}"]`)).toHaveCount(1)
 		}
 
@@ -94,13 +101,24 @@ test.describe('Sidebar Navigation', () => {
 		}
 		await byHref('/index.php/apps/dossiq/cases', 'All cases')
 		await byHref('/index.php/apps/dossiq/my-work', 'Assigned to me')
-		await byHref('/index.php/apps/dossiq/workflow-board', 'Workflow board')
+		await byHref('/index.php/apps/dossiq/cases?_view=board', 'Workflow board')
+	})
+
+	test('the retired workflow board address opens the Cases board', async ({
+		page,
+	}) => {
+		// A bookmark of the old page must not land on the dashboard.
+		await page.goto('/index.php/apps/dossiq/workflow-board')
+		await expect(page).toHaveURL(/\/apps\/dossiq\/cases\?_view=board$/)
+		await expect(page.locator('.cn-board-view')).toBeVisible({
+			timeout: 30_000,
+		})
 	})
 
 	test('settings button is visible', async ({ page }) => {
 		await page.goto('/index.php/apps/dossiq')
-		// Settings button at the bottom of the app sidebar — the platform gear
-		// foldout, which legitimately says "Settings".
+		// The foldout button at the bottom of the app sidebar, which the
+		// library labels "Advanced".
 		//
 		// The testid is still the right target, but the collision it was
 		// guarding against is gone: the SettingsMenu nav entry was relabelled
@@ -109,7 +127,7 @@ test.describe('Sidebar Navigation', () => {
 		await expect(
 			page
 				.getByTestId('cn-nav-settings')
-				.getByRole('button', { name: 'Settings' }),
+				.getByRole('button', { name: 'Advanced' }),
 		).toBeVisible()
 	})
 
@@ -134,7 +152,16 @@ test.describe('Sidebar Navigation', () => {
 		// Expanding first is what makes this a real click-path test. Navigating
 		// straight to the href would pass without the group ever opening, which
 		// is precisely the interaction a reader depends on.
-		await nav.getByRole('link', { name: 'My work', exact: true }).click()
+		//
+		// dashboard-my-work-split gave the group's own label a route (it now
+		// opens the My Work landing page), so clicking the LABEL navigates
+		// instead of expanding — the collapse CHEVRON is the only thing that
+		// still toggles. Scoped to this one entry: Contacts is also a
+		// collapsible group and carries the same "Open menu" accessible name.
+		const workGroupEntry = page.getByTestId('cn-nav-entry-WorkGroup')
+		await workGroupEntry
+			.getByRole('button', { name: /^(Open menu|Collapse menu)$/ })
+			.click()
 
 		const casesLink = nav.getByRole('link', {
 			name: /^(All cases|Alle zaken)$/,
@@ -142,5 +169,17 @@ test.describe('Sidebar Navigation', () => {
 		await expect(casesLink).toBeVisible({ timeout: 15_000 })
 		await casesLink.click()
 		await expect(page).toHaveURL(/.*cases/)
+	})
+
+	// @e2e openspec/specs/my-work-landing/spec.md#scenario-clicking-the-label-navigates-without-requiring-expansion
+	test('clicking the My work label opens My Work without requiring expansion', async ({
+		page,
+	}) => {
+		// Land somewhere other than "/" first, so a navigation actually has to
+		// happen for this assertion to mean anything.
+		await page.goto('/index.php/apps/dossiq/cases')
+		const nav = sidebarNav(page)
+		await nav.getByRole('link', { name: 'My work', exact: true }).click()
+		await expect(page).toHaveURL(/\/index\.php\/apps\/dossiq\/?$/)
 	})
 })

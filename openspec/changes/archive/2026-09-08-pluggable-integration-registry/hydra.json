@@ -1,0 +1,12 @@
+{
+  "schema_version": 2,
+  "spec_slug": "pluggable-integration-registry",
+  "app": "dossiq",
+  "repo": "https://github.com/ConductionNL/dossiq",
+  "issue": "https://github.com/ConductionNL/openregister/issues/1307",
+  "depends_on": [],
+  "cross_repo_stub": false,
+  "note": "Dossiq's side of the registry: the Integrations page under the gear. The OpenRegister registry itself is ConductionNL/openregister#1307 and stays there.",
+  "pipeline": {},
+  "cycles": []
+}

@@ -65,7 +65,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ShippedFlowAdoptionInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -77,7 +78,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class ShippedFlowAdoption {
+class ShippedFlowAdoption implements ShippedFlowAdoptionInterface {
 
 	/**
 	 * OpenRegister's flow service, resolved by name.
@@ -143,25 +144,32 @@ class ShippedFlowAdoption {
 		try {
 			$mapper = $this->container->get(self::FLOW_MAPPER);
 		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: no OpenRegister flow store to inspect: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
+			$this->logger->debug('Dossiq: no OpenRegister flow store to inspect: ' . $e->getMessage(), ['app' => AppIdentity::APP_ID]);
 
 			return ['available' => false, 'note' => 'OpenRegister exposes no flow store on this instance.', 'flows' => []];
 		}
 
 		try {
-			$flows = $mapper->findAllFlows(app: Application::APP_ID, limit: self::PAGE);
+			$flows = $mapper->findAllFlows(app: AppIdentity::APP_ID, limit: self::PAGE);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: could not read the shipped flows: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
+			$this->logger->warning('Dossiq: could not read the shipped flows: ' . $e->getMessage(), ['app' => AppIdentity::APP_ID]);
 
 			return ['available' => false, 'note' => 'The flow store could not be read: ' . $e->getMessage(), 'flows' => []];
 		}
 
+		return ['available' => true, 'note' => '', 'flows' => $this->rowsOf(flows: $flows)];
+	}//end census()
+
+	/**
+	 * One census row per flow.
+	 *
+	 * @param mixed $flows The flows the store answered.
+	 *
+	 * @return array<int, array{uuid: string, name: string, enabled: bool, owner: string}> The rows.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function rowsOf(mixed $flows): array {
 		$rows = [];
 		foreach ((array)$flows as $flow) {
 			$rows[] = [
@@ -172,8 +180,8 @@ class ShippedFlowAdoption {
 			];
 		}
 
-		return ['available' => true, 'note' => '', 'flows' => $rows];
-	}//end census()
+		return $rows;
+	}//end rowsOf()
 
 	/**
 	 * The shipped flows that still need an administrator.
@@ -223,23 +231,14 @@ class ShippedFlowAdoption {
 	 */
 	public function adoptAll(IUser $user, bool $enable, bool $dryRun): array {
 		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return ['note' => 'OpenRegister is not available.', 'rows' => []];
+		$note = self::unavailableNote(objectService: $objectService);
+		if ($note !== '') {
+			return ['note' => $note, 'rows' => []];
 		}
 
-		if (method_exists($objectService, 'runAs') === false) {
-			return ['note' => 'OpenRegister exposes no runAs(); adoption needs an acting identity.', 'rows' => []];
-		}
-
-		try {
-			$flowService = $this->container->get(self::FLOW_SERVICE);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: could not resolve FlowService for adoption: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-
-			return ['note' => 'OpenRegister exposes no FlowService on this instance.', 'rows' => []];
+		$flowService = $this->flowServiceOrNote();
+		if (is_string($flowService) === true) {
+			return ['note' => $flowService, 'rows' => []];
 		}
 
 		$census = $this->census();
@@ -250,44 +249,67 @@ class ShippedFlowAdoption {
 			];
 		}
 
+		$run = new AdoptionRun(flowService: $flowService, uid: $user->getUID());
+		$run->enable = $enable;
+		$run->dryRun = $dryRun;
+
 		return $objectService->runAs(
 			$user,
-			fn (): array => [
-				'note' => '',
-				'rows' => $this->adoptEach(
-					flowService: $flowService,
-					flows: $census['flows'],
-					uid: $user->getUID(),
-					enable: $enable,
-					dryRun: $dryRun
-				),
-			]
+			fn (): array => ['note' => '', 'rows' => $this->adoptEach(run: $run, flows: $census['flows'])]
 		);
 	}//end adoptAll()
 
 	/**
+	 * Why OpenRegister cannot run an adoption pass, or an empty string when it can.
+	 *
+	 * @param object|null $objectService OpenRegister's ObjectService, or null when absent.
+	 *
+	 * @return string The note, or an empty string.
+	 */
+	private static function unavailableNote(?object $objectService): string {
+		if ($objectService === null) {
+			return 'OpenRegister is not available.';
+		}
+
+		if (method_exists($objectService, 'runAs') === false) {
+			return 'OpenRegister exposes no runAs(); adoption needs an acting identity.';
+		}
+
+		return '';
+	}//end unavailableNote()
+
+	/**
+	 * OpenRegister's FlowService, or the note saying it cannot be resolved.
+	 *
+	 * @return object|string The FlowService, or the note.
+	 */
+	private function flowServiceOrNote(): object|string {
+		try {
+			return $this->container->get(self::FLOW_SERVICE);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not resolve FlowService for adoption: ' . $e->getMessage(),
+				['app' => AppIdentity::APP_ID]
+			);
+
+			return 'OpenRegister exposes no FlowService on this instance.';
+		}
+	}//end flowServiceOrNote()
+
+	/**
 	 * Adopt each flow in turn, never letting one failure end the pass.
 	 *
-	 * @param object $flowService OpenRegister's FlowService.
+	 * @param AdoptionRun                                                                  $run   The pass.
 	 * @param array<int, array{uuid: string, name: string, enabled: bool, owner: string}> $flows The census rows.
-	 * @param string $uid The adopting user.
-	 * @param bool $enable Enable after adopting.
-	 * @param bool $dryRun Write nothing.
 	 *
 	 * @return array<int, array{name: string, uuid: string, outcome: string, detail: string}>
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function adoptEach(object $flowService, array $flows, string $uid, bool $enable, bool $dryRun): array {
+	private function adoptEach(AdoptionRun $run, array $flows): array {
 		$rows = [];
 		foreach ($flows as $flow) {
-			$rows[] = $this->adoptOne(
-				flowService: $flowService,
-				row: $flow,
-				uid: $uid,
-				enable: $enable,
-				dryRun: $dryRun
-			);
+			$rows[] = $this->adoptOne(run: $run, row: $flow);
 		}
 
 		return $rows;
@@ -296,42 +318,51 @@ class ShippedFlowAdoption {
 	/**
 	 * Adopt one flow.
 	 *
-	 * @param object $flowService OpenRegister's FlowService.
+	 * @param AdoptionRun                                                     $run The pass.
 	 * @param array{uuid: string, name: string, enabled: bool, owner: string} $row The census row.
-	 * @param string $uid The adopting user.
-	 * @param bool $enable Enable after adopting.
-	 * @param bool $dryRun Write nothing.
 	 *
 	 * @return array{name: string, uuid: string, outcome: string, detail: string}
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function adoptOne(object $flowService, array $row, string $uid, bool $enable, bool $dryRun): array {
-		$skip = $this->skipReason(row: $row, uid: $uid, enable: $enable);
+	private function adoptOne(AdoptionRun $run, array $row): array {
+		$skip = $this->skipReason(row: $row, uid: $run->uid, enable: $run->enable);
 		if ($skip !== '') {
 			return ['name' => $row['name'], 'uuid' => $row['uuid'], 'outcome' => 'skipped', 'detail' => $skip];
 		}
 
-		if ($dryRun === true) {
+		if ($run->dryRun === true) {
 			return [
 				'name' => $row['name'],
 				'uuid' => $row['uuid'],
 				'outcome' => 'adopted',
-				'detail' => 'would be adopted by "' . $uid . '"' . $this->enabledClause(enable: $enable, dryRun: true),
+				'detail' => 'would be adopted by "' . $run->uid . '"' . $this->enabledClause(enable: $run->enable, dryRun: true),
 			];
 		}
 
-		try {
-			$flow = $flowService->find($row['uuid']);
-			$flowService->adopt($flow);
+		return $this->writeAdoption(run: $run, row: $row);
+	}//end adoptOne()
 
-			if ($enable === true) {
-				$flowService->save(['enabled' => true], $row['uuid']);
+	/**
+	 * Adopt one flow for real, and enable it when asked; a failure is logged and reported.
+	 *
+	 * @param AdoptionRun                                                     $run The pass.
+	 * @param array{uuid: string, name: string, enabled: bool, owner: string} $row The census row.
+	 *
+	 * @return array{name: string, uuid: string, outcome: string, detail: string}
+	 */
+	private function writeAdoption(AdoptionRun $run, array $row): array {
+		try {
+			$flow = $run->flowService->find($row['uuid']);
+			$run->flowService->adopt($flow);
+
+			if ($run->enable === true) {
+				$run->flowService->save(['enabled' => true], $row['uuid']);
 			}
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not adopt a shipped flow',
-				['app' => Application::APP_ID, 'flow' => $row['uuid'], 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'flow' => $row['uuid'], 'exception' => $e->getMessage()]
 			);
 
 			return ['name' => $row['name'], 'uuid' => $row['uuid'], 'outcome' => 'failed', 'detail' => $e->getMessage()];
@@ -341,9 +372,9 @@ class ShippedFlowAdoption {
 			'name' => $row['name'],
 			'uuid' => $row['uuid'],
 			'outcome' => 'adopted',
-			'detail' => 'owner "' . $uid . '"' . $this->enabledClause(enable: $enable, dryRun: false),
+			'detail' => 'owner "' . $run->uid . '"' . $this->enabledClause(enable: $run->enable, dryRun: false),
 		];
-	}//end adoptOne()
+	}//end writeAdoption()
 
 	/**
 	 * Why this flow needs nothing done to it, or an empty string when it does.

@@ -25,7 +25,7 @@
 import type { Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
 
 /**
  * Open the case-types index by ROUTE, not by sidebar label.
@@ -39,7 +39,7 @@ import { dismissSupportDialog } from './helpers/nav.ts'
  * @param page The page.
  */
 async function gotoCaseTypes(page: Page): Promise<void> {
-	await page.goto('/index.php/apps/dossiq')
+	await page.goto('/index.php/apps/dossiq', PAGE_LOAD)
 	await dismissSupportDialog(page)
 	const href = await page.evaluate(() => {
 		const nav = document.querySelector('[id^="app-navigation"]')
@@ -55,7 +55,7 @@ async function gotoCaseTypes(page: Page): Promise<void> {
 			'[dossiq e2e] no sidebar link routes to /settings/case-types — the Case types menu entry is missing from the manifest or the nav did not render.',
 		)
 	}
-	await page.goto(href)
+	await page.goto(href, PAGE_LOAD)
 }
 
 /**
@@ -136,10 +136,40 @@ async function mainBundleSource(page: Page): Promise<string> {
 	})
 }
 
+// 🔴 SIX CITATIONS WITHDRAWN 2026-09-12, AND THEY NAMED A TASK, NOT A
+// REQUIREMENT. Every test in this describe and the next carried
+// `openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13`.
+//
+// Three things are wrong with that, and the first is the one that matters.
+// TASK-CT-13 is a task, and a `tasks.md` entry declares no scenario, so no
+// gate can ever credit it and no reader can check a claim against it. Read
+// it and the citation gets worse rather than better: the task is
+// `[x] DEFERRED`, and what it defers is a smoke run over the SEVEN-TAB case
+// type detail integration. None of these six tests opens a tab. They are
+// about the row action menu and about Edit opening a page instead of a
+// dialog, which is a different defect entirely.
+//
+// So the citation claimed a deferred task's subject while proving something
+// else, and it read as coverage of the seven tabs for as long as it stood.
+//
+// WHERE THE REAL REQUIREMENTS ARE, AND THAT THEY ARE UNCOVERED. The seven
+// tabs are `case-types` REQ-CT-15, scenarios CT-15a through CT-15g.
+// Measured 2026-09-12: not one of them is cited by any test in this suite,
+// so the integration TASK-CT-13 deferred is still unverified in a browser.
+// That is worth more as a stated gap than as six citations pointing at the
+// task that deferred it.
+//
+// NO SCENARIO STATES WHAT THESE SIX DO PROVE. `case-types` has no scenario
+// for row-menu labels, and none anywhere in `openspec/specs` states the
+// modal-versus-page rule these tests guard (searched 2026-09-12). Writing
+// one is not this file's call: the rule comes from ADR-044 and applies to
+// every index in the fleet, so it belongs in a capability, not invented
+// here to give six tests a home. They stay uncited and keep guarding the
+// defect they were written for.
 test.describe('Case types — the row action menu', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// Uncited on purpose: see the note above this describe.
 	test('every entry in the row menu has a visible label', async ({ page }) => {
 		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
@@ -159,7 +189,7 @@ test.describe('Case types — the row action menu', () => {
 		expect(labels.filter((l) => l === '')).toEqual([])
 	})
 
-	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// Uncited on purpose: see the note above this describe.
 	test('the menu offers View and Edit exactly once each', async ({ page }) => {
 		// The manifest used to hand-roll a `view` action next to the built-in
 		// one; both now resolve to the same detail route, so only one should
@@ -176,7 +206,7 @@ test.describe('Case types — the row action menu', () => {
 test.describe('Case types — Edit goes to the detail page, not a modal', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// Uncited on purpose: see the note above this describe.
 	test('Edit navigates to the case type detail route', async ({ page }) => {
 		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
@@ -188,7 +218,7 @@ test.describe('Case types — Edit goes to the detail page, not a modal', () => 
 		})
 	})
 
-	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// Uncited on purpose: see the note above this describe.
 	test('Edit does not open a dialog over the index', async ({ page }) => {
 		// The decisive half. Navigating AND opening the modal would satisfy the
 		// test above while changing nothing about the defect.
@@ -210,7 +240,7 @@ test.describe('Case types — Edit goes to the detail page, not a modal', () => 
 test.describe('Case type detail — the record can be edited there', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// Uncited on purpose: see the note above this describe.
 	test('the detail page offers an Edit button', async ({ page }) => {
 		// Without this the change above would simply have made every case type
 		// read-only — which is what "0 of 233 detail pages declared an edit
@@ -227,7 +257,7 @@ test.describe('Case type detail — the record can be edited there', () => {
 		).toBeVisible({ timeout: 20000 })
 	})
 
-	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// Uncited on purpose: see the note above this describe.
 	test('the Edit button opens the record form', async ({ page }) => {
 		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
@@ -244,7 +274,19 @@ test.describe('Case type detail — the record can be edited there', () => {
 test.describe('Setup — every step it offers is one it can finish', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	// @e2e openspec/specs/first-time-setup/spec.md#no-step-is-offered-that-the-wizard-cannot-fulfil
+	//
+	// The scenario's SECOND clause, "it SHALL still report the steps the
+	// manifest does declare, `register-check` among them". The test below at
+	// "the wizard offers no step the seed action cannot fulfil" proves the
+	// other three, so this is the pair splitting one scenario rather than two
+	// tests claiming the same thing.
+	//
+	// ⚠️ IT CREDITS NO NEW SCENARIO, and that is worth saying rather than
+	// leaving to be rediscovered. Gate-19 counts distinct scenarios, and this
+	// one is already credited by that sibling, so the repair moves the
+	// citation from naming nothing to naming its requirement without moving
+	// coverage. The reader gains a checkable claim; the number does not move.
 	test('the server reports every actionable step, and reports the optional ones as outstanding', async ({
 		page,
 	}) => {
@@ -255,7 +297,10 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		const body = await readSetupStatus(page)
 
 		expect(body).not.toBeNull()
-		expect(body.steps).toHaveProperty('register-check')
+		// `register-check` is an admin settings action now, and the dataset
+		// cards load themselves (wizard-dataset-card-load).
+		expect(body.steps).not.toHaveProperty('register-check')
+		expect(body.steps).not.toHaveProperty('load-demo-data')
 		expect(body.steps).toHaveProperty('demo-data')
 		expect(body.steps).toHaveProperty('dwangsom-secret')
 		for (const id of Object.keys(body.steps)) {
@@ -263,7 +308,136 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		}
 	})
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	// 🔴 LEFT UNCITED 2026-09-12, BECAUSE THE TEST BRANCHES AND BOTH BRANCHES
+	// PASS. The body is `if (second.completed === true) { … } else { … }`, and
+	// on dossiq's CI instance the register is not provisioned, so the else
+	// branch is the only one that ever runs and it asserts
+	// `register-check.done === false`. That is the scenario's GIVEN, not a
+	// THEN: the claim in this test's own name, that a completed wizard settles
+	// the optional secret step, is never exercised where it runs.
+	//
+	// `#status-drives-gating-and-completion` is the nearest scenario and it
+	// asserts neither `completed === false` nor that the wizard gates, so
+	// naming it would claim two clauses this body never reaches.
+	//
+	// WHAT WOULD CLOSE IT: an instance with `register-check` done, which is a
+	// fixture question rather than a citation one. Not written here: I have no
+	// instance to watch it fail on, and a branch nobody has seen go red is
+	// what this programme removes.
+	test('a completed wizard does not keep the optional secret step outstanding', async ({
+		page,
+	}) => {
+		// The dwangsom callback secret is optional and lives under admin
+		// settings. While the step reported "not done" for as long as the
+		// secret was empty, CnAppRoot reopened the wizard at that step on every
+		// fresh browser profile, because dismissal is only a localStorage key.
+		// status() records completion as a side effect of the first read, so
+		// the SECOND read is the one that sees a completed wizard.
+		await page.goto('/index.php/apps/dossiq')
+		const first = await readSetupStatus(page)
+		expect(first).not.toBeNull()
+		const second = await readSetupStatus(page)
+		expect(second).not.toBeNull()
+
+		if (second.completed === true) {
+			expect(
+				second.steps['dwangsom-secret'].done,
+				'once the required steps are complete the optional secret step is settled',
+			).toBe(true)
+		} else {
+			// No wizard step is required any more, so this branch should not
+			// run. If it does, the register state is what to read.
+			expect(second.registerReady).toBe(false)
+		}
+	})
+
+	// 🔴 LEFT UNCITED 2026-09-12: IT SKIPS WHERE IT RUNS. The body calls
+	// `test.skip(status.completed !== true, …)`, and dossiq's CI instance has
+	// no provisioned register, so `completed` is false and this test skips on
+	// every run. A skip renders as a pass in every summary that counts
+	// failures, so a citation here would have reported the reopen defect as
+	// covered by a test that has never executed an assertion in CI.
+	//
+	// The skip itself is honest and well reasoned: a gating wizard genuinely
+	// is not the reopen defect. What is not honest is calling it coverage.
+	test('a completed wizard stays closed on a fresh browser profile', async ({
+		page,
+	}) => {
+		// The reopen defect, end to end: the wizard came back at step 5 (the
+		// optional dwangsom secret) on every new browser profile, because the
+		// server kept reporting that step outstanding and CnAppRoot's
+		// dismissal is only a localStorage key. A fresh profile is simulated
+		// by clearing that key and reloading, which is what every Playwright
+		// context and every new device does for real.
+		await page.goto('/index.php/apps/dossiq')
+		// status() writes the completion marker on its first read; the second
+		// read is the one that answers for a completed wizard.
+		await readSetupStatus(page)
+		const status = await readSetupStatus(page)
+		expect(status).not.toBeNull()
+		test.skip(
+			status.completed !== true,
+			'required steps outstanding on this instance: the wizard gates, which is not the reopen defect',
+		)
+
+		await page.evaluate(() => {
+			try {
+				for (let v = 0; v <= 20; v++) {
+					window.localStorage.removeItem(
+						`cn-setup-wizard-dismissed:dossiq:${v}`,
+					)
+				}
+			} catch {
+				/* blocked storage */
+			}
+		})
+		await page.reload()
+		await expect(page.locator('[data-testid="cn-app-root"]')).toBeAttached({
+			timeout: 30000,
+		})
+		await expect(page.locator('main')).toBeAttached()
+
+		// The server side of the fix: the optional secret step is settled.
+		expect(
+			status.steps['dwangsom-secret'].done,
+			'a completed wizard has settled the optional secret step',
+		).toBe(true)
+
+		// The client side: nothing reopens the wizard AT that step. Another
+		// optional step (demo data on a bare instance) may legitimately still
+		// open it, so the assertion is on the step it shows, not on the
+		// dialog alone. `dwangsom-secret` is the only `config-fields` step in
+		// the manifest, so its panel identifies the step without any label.
+		const wizard = page.locator('[data-testid-modal="cn-wizard-dialog"]')
+		const outstanding = Object.entries(status.steps)
+			.filter(([, s]) => (s as { done: boolean }).done === false)
+			.map(([id]) => id)
+		if (outstanding.length === 0) {
+			await expect(wizard).toHaveCount(0, { timeout: 10000 })
+		} else {
+			test.info().annotations.push({
+				type: 'optional-steps-outstanding',
+				description: outstanding.join(', '),
+			})
+			await expect(
+				wizard.locator('[data-step-type="config-fields"]'),
+			).toHaveCount(0, { timeout: 10000 })
+		}
+	})
+
+	// 🔴 LEFT UNCITED 2026-09-12: THE ONLY SCENARIO THIS MATCHES IS EXCLUDED.
+	// What it proves is that an optional step does not gate, the shell stays
+	// reachable, and the wizard is on screen exactly when the server reports
+	// optional work outstanding. That is `#optional-seed-does-not-gate`, and
+	// that scenario carries a reason-bearing `@e2e exclude`: its second clause
+	// is about an offered `seed` step, which was retired, and the exclusion
+	// says plainly that rewording it to mean some other optional step would
+	// quietly change what it requires.
+	//
+	// An excluded scenario needs no citation and gets no credit, so naming it
+	// would add nothing and naming a different one would claim clauses this
+	// body does not reach. The honest state is uncited until a scenario
+	// describes the wizard that ships.
 	test('the wizard opens exactly when an optional step is outstanding', async ({
 		page,
 	}) => {
@@ -319,16 +493,55 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		await expect(page.locator('main')).toBeAttached()
 	})
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	// THE ONE ANTI-COVERAGE IN THE AUDIT, SETTLED. This test asserts the
+	// wizard's step list does NOT contain `seed`, while REQ-SETUP-PRO-001 used
+	// to mandate a `seed` step and REQ-SETUP-PRO-003 a `seed.done` key:
+	// implementing the cited requirement would have turned this test red, and
+	// the anchorless citation made the contradiction invisible.
+	//
+	// The product is the current half. `SetupController::status()` carries the
+	// reasoning and `testEveryActionableManifestStepIsReported` compares the
+	// declared and reported step sets in both directions. So the spec moved:
+	// the step list it mandates is now the one the manifest ships, and the
+	// retirement of `seed` is stated rather than contradicted.
+	//
+	// MUTATION CHECKED 2026-09-11 against a live instance. `status()` was made
+	// to report `'seed' => ['done' => true]` again. Settled rather than
+	// outstanding on purpose, so the wizard never opened over anyone else's
+	// page loads while the mutation was live. This test reddened on its first
+	// assertion:
+	//
+	//   Error: a step the wizard cannot render is one it can never prompt for
+	//   Expected value: not "seed"
+	//   Received array: ["demo-data", "load-demo-data", "register-check",
+	//                    "seed", "dwangsom-secret"]
+	//
+	// 🔴 OPCACHE. The instance serves PHP with `opcache.revalidate_freq=60`, so
+	// an edit is on disk for up to a minute before it is served. The mutation
+	// was only run once the LIVE payload reported `seed`, and the restore was
+	// only trusted once the live payload stopped reporting it (24 seconds after
+	// the file was clean). A mutation check that trusts the file instead can
+	// run against the unmutated code and report a guard as unable to fail.
+	//
+	// 🔑 #2543 SETTLED THIS THE OTHER WAY AND THE MERGE KEPT BOTH HALVES. It
+	// took the citation DOWN and put a reason-bearing `@e2e exclude` on the two
+	// scenarios instead, on the grounds that the spec was the stale half and
+	// the test should stay uncited "until this requirement and REQ-SETUP-PRO-002
+	// are rewritten to describe the wizard that ships". That rewrite is what
+	// this branch does, so its own precondition is met: the anchor below now
+	// exists and says what the product does. #2543's exclusion survives on
+	// "Optional seed does not gate", which is a different scenario and is still
+	// about an offered `seed` step that no longer exists.
+	//
+	// It still proves a declared step (`demo-data`) is reported. `register-check`
+	// left the wizard for the admin settings page (wizard-dataset-card-load).
+	// @e2e openspec/specs/first-time-setup/spec.md#no-step-is-offered-that-the-wizard-cannot-fulfil
 	test('the wizard offers no step the seed action cannot fulfil', async ({
 		page,
 	}) => {
-		// The seeder returns success with every counter at zero when its payload
-		// is absent, which is the state it is in: the case types live under
-		// `_caseTypes_disabled` in bezwaar_seed_data.json. Reporting that as
-		// done made the affordance one-shot and silently useless, and reporting
-		// it honestly still left a step whose every click was a 422. So the
-		// step went. The action stays, for an operator who un-parks the data.
+		// The step went when the seed data was parked and every click was a
+		// 422. The action stays and now installs the on-request bezwaar-beroep
+		// package; offering it in the wizard again has not been decided.
 		await page.goto('/index.php/apps/dossiq')
 		const before = await readSetupStatus(page)
 		expect(
@@ -338,7 +551,7 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		expect(
 			Object.keys(before?.steps ?? {}),
 			'the payload must still carry the steps the wizard does declare',
-		).toContain('register-check')
+		).toContain('demo-data')
 
 		const token = await requestToken(page)
 		// `/api/setup/action/{id}` — NOT `/run/{id}`, which answers 405 and whose
@@ -362,16 +575,15 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 			`POST /api/setup/action/seed returned ${run.status} with no JSON body`,
 		).not.toBeNull()
 
-		if ((run.body?.detail?.caseTypes ?? 0) === 0) {
-			// Nothing was created, so the call must refuse rather than report a
-			// success-shaped zero. 422 is the answer the retired step would have
-			// shown a person on every single click.
+		// The action installs the on-request bezwaar-beroep package. Installed
+		// or already current is a success; a refusal answers 422 rather than a
+		// success-shaped zero.
+		if (['installed', 'current'].includes(run.body?.detail?.status)) {
+			expect(run.status).toBe(200)
+			expect(run.body.success).toBe(true)
+		} else {
 			expect(run.status).toBe(422)
 			expect(run.body.success).toBe(false)
-		} else {
-			// Somebody un-parked the dataset on this instance. The action still
-			// works, and the manifest step may come back with it.
-			expect(run.body.success).toBe(true)
 		}
 
 		// Either way the payload must not have grown a step back.
@@ -380,11 +592,39 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 	})
 })
 
+// 🔴 FOUR CITATIONS WITHDRAWN 2026-09-12: THE WALKTHROUGH IS NOT THE SETUP
+// WIZARD, AND HAS NO CAPABILITY AT ALL. All four tests below cited
+// `openspec/specs/first-time-setup/spec.md` with no requirement. That spec
+// describes the setup WIZARD: the manifest `setup` block, its six steps,
+// `setup_completed_version`, the status endpoint and the seed action. It says
+// nothing about the walkthrough tour, which is a different surface with a
+// different dismissal key (`cn-walkthrough-seen:dossiq`).
+//
+// So every assertion here survives any breakage of the manifest setup block,
+// the seed action or the status endpoint, and vice versa. Re-anchoring onto
+// one of first-time-setup's four live scenarios would attach these to
+// requirements they never touch, which reads as coverage and survives review.
+//
+// Searched 2026-09-12: no `openspec/specs/**` capability mentions the
+// walkthrough at all, so there is no scenario to move to. The honest outcome
+// is an uncited group and a named gap. These four are good tests, one of them
+// reading the SERVED bundle rather than the manifest on disk precisely so a
+// stale build cannot pass; what they lack is a requirement that says the tour
+// should exist.
+//
+// ⚠️ AND ONE OF THEM CANNOT FAIL THE WAY IT READS. "the tour opens for a user
+// who has not seen it" ends on
+// `expect(recorded, …).not.toBe('')`, where `recorded` is the first value of
+// the seen-version object. EVERY non-empty string satisfies that, including a
+// version from another app, a `"false"` or a stray character, so it proves a
+// key exists rather than that a recorded seen-version explains the tour's
+// absence. Not tightened here: the stored shape is not established, and a
+// pattern guessed rather than observed is the same defect one layer along.
 test.describe('Walkthrough — it points at the configuration surfaces', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-	test('the tour a user actually gets includes the Case types and Flows stops', async ({
+	// Uncited on purpose: see the note above this describe.
+	test('the tour a user actually gets has the six stops of board DqRondleiding', async ({
 		page,
 	}) => {
 		// Asserted against the SERVED BUNDLE, not the manifest on disk: the tour
@@ -396,7 +636,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		const bundle = await mainBundleSource(page)
 		expect(bundle.length, 'could not fetch the app bundle').toBeGreaterThan(1000)
 
-		for (const id of ['see-case-types', 'see-flows']) {
+		for (const id of ['welcome', 'go-dashboard', 'go-cases', 'go-tasks', 'see-case-types', 'done']) {
 			expect(
 				bundle,
 				`walkthrough step "${id}" missing from the built bundle`,
@@ -404,13 +644,12 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		}
 	})
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-	test('the tour opens for a user who has not seen it, and offers all seven steps', async ({
+	// Uncited on purpose: see the note above this describe.
+	test('the tour opens for a user who has not seen it, and offers all six steps', async ({
 		page,
 	}) => {
-		// The step COUNT is the user-visible consequence of adding the two
-		// stops: it cannot read 7 unless both are in the tour the shell
-		// composed.
+		// The step COUNT is the user-visible consequence of the board's six
+		// steps: it cannot read 6 unless the shell composed that tour.
 		//
 		// NOT `test.skip` on "the tour isn't showing": that reads "this user
 		// already finished it" off the tour's ABSENCE, which is the same
@@ -431,7 +670,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 			.getByRole('dialog')
 			.filter({ hasText: 'Welcome to Dossiq' })
 		if (await tour.isVisible({ timeout: 20000 }).catch(() => false)) {
-			await expect(tour).toContainText('/ 7')
+			await expect(tour).toContainText('/ 6')
 			return
 		}
 
@@ -445,7 +684,19 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 			const res = await fetch(
 				'/index.php/apps/dossiq/api/preferences/walkthrough_completed_version',
 				{
-					headers: { Accept: 'application/json' },
+					// A CSRF-guarded GET answers 412 without the request token, and
+					// 412 is not ok, so the fallback would read as "no seen-version".
+					headers: {
+						Accept: 'application/json',
+						requesttoken:
+							document.head?.dataset?.requesttoken
+							?? (
+								window as unknown as {
+									OC?: { requestToken?: string }
+								}
+							).OC?.requestToken
+							?? '',
+					},
 				},
 			).catch(() => null)
 			if (!res || !res.ok) return null
@@ -462,60 +713,20 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		).not.toBe('')
 	})
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-	test('neither new stop forces the user to create anything', async ({ page }) => {
-		// "Show where, do not force" is the whole point of both steps. A tour
-		// step that only advances on `object-created` would make looking at the
-		// case types a prerequisite for finishing the tour.
-		await page.goto('/index.php/apps/dossiq')
-		const bundle = await mainBundleSource(page)
-		expect(bundle.length, 'could not fetch the app bundle').toBeGreaterThan(1000)
-
-		for (const id of ['see-case-types', 'see-flows']) {
-			// The step object is emitted as one contiguous run in the bundle;
-			// take a window around its id and check what it advances on.
-			const at = bundle.indexOf(id)
-			expect(at).toBeGreaterThan(-1)
-			const window = bundle.slice(at, at + 1200)
-			expect(window, `${id} must offer a manual way past`).toContain(
-				'allowManualNext',
-			)
-			expect(window, `${id} must not require creating one`).not.toContain(
-				'object-created',
-			)
-		}
-	})
-
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-	test('both new stops can actually anchor to their nav item', async ({
+	// Uncited on purpose: see the note above this describe.
+	test('every menu stop can actually anchor to its nav item', async ({
 		page,
 	}) => {
-		// The three tests above prove the steps are DECLARED and reach the
-		// built bundle. None of them proves a user ever sees one, and the
-		// difference is not academic:
-		//
-		//   CnWalkthrough.armStep()
-		//     const el = this.resolveTarget(this.step)
-		//     if (!el) { if (this.step.optional) { this.wt.skip(); return } }
-		//
-		// An OPTIONAL step whose target is absent is skipped outright — no
-		// console error, no stall, nothing on screen. And `optional: true` is
-		// exactly what keeps these two stops from forcing authorship, so the
-		// friendly authoring choice is the one that fails silently. The step
-		// counter is no help either: skip() advances past the step and the
-		// total stays 7, so "/ 7" reads identical either way.
-		//
-		// So assert the thing resolveTarget() actually queries. Both stops
-		// target nav items in the SETTINGS section, and CnAppNav emitted
-		// `data-cn-route` on its main/child/footer loops but not the settings
-		// one until nextcloud-vue#811 — which is precisely how both steps
-		// could ship fleet-wide and reach nobody.
+		// The tests above prove the steps are DECLARED and reach the built
+		// bundle; this one proves each menu stop has the anchor
+		// CnWalkthrough.resolveTarget() queries. Case types sits in the
+		// SETTINGS section, which CnAppNav only anchors since nextcloud-vue#811.
 		await page.goto('/index.php/apps/dossiq')
 		await expect(page.locator('.app-navigation, #app-navigation')).toBeVisible({
 			timeout: 20000,
 		})
 
-		for (const route of ['CaseTypes', 'Flows']) {
+		for (const route of ['Dashboard', 'Cases', 'Tasks', 'CaseTypes']) {
 			// The exact selector from CnWalkthrough.resolveTarget(), keyed on
 			// the ROUTE (not the menu id — the attribute is set from
 			// `item.route`).

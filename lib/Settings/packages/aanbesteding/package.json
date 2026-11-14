@@ -1,0 +1,15 @@
+{
+  "id": "aanbesteding",
+  "title": "Aanbesteding",
+  "summary": "Case type from preparation through publication, bids and evaluation to the award decision.",
+  "version": "1.9.0",
+  "requires": [],
+  "parts": [
+    "case-type",
+    "flows",
+    "seed",
+    "examples"
+  ],
+  "install": "on-request",
+  "description": "The Aanbesteding case type: a tender from preparation through publication, bids and evaluation to the award decision, with its statuses, roles and flow: evaluation starts after the closing date and the award becomes final once the standstill term has ended (the case's opschortendeTermijnEinde). Category 'Inkoop en leveranciers', which is what the case page's bids card and tab gate on. Installed on request: POST /api/packages/aanbesteding/install, or occ dossiq:package:install aanbesteding. Seeds the award and refusal decision types and the 20-day standstill term (Aw 2012 art. 2.127, calendar days) (`seed/`). Ships an example case in flight (`examples/`), written with the package, its dates relative to the install day."
+}

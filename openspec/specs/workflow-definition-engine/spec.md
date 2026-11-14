@@ -6,7 +6,9 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 
 ## Purpose
 Provides a configurable workflow engine where functional administrators define case lifecycles as OpenRegister objects, with process steps, guarded status transitions (checklist, required field, required document, role), and automatic actions (email, task, sub-case, webhook, set-field, notify). It supports workflow versioning that pins running cases to their bound version, workflow inheritance, JSON export/import, REST endpoints for CRUD and transition execution, and visual editing without developer involvement.
+
 ## Requirements
+
 ### Requirement: Workflow Definition Model
 
 A workflow definition SHALL consist of:
@@ -382,3 +384,113 @@ Workflow definitions are user-configurable through a visual editor. Functional a
 - AND no code deployment, git commit, or developer intervention is required
 - AND the workflow is immediately usable for new cases
 
+### Requirement: You start an allowed flow from the case (REQ-WDE-01)
+
+You start an allowed sub-process for the case from its page. A case type SHALL
+list the flows a handler may start in `startableFlows`. The Actions menu of
+`CaseDetail` SHALL offer Start, listing those flows by title. Running one
+SHALL post the case as the flow's subject, and the run SHALL appear in the
+case's flow runs.
+
+**Feature tier**: V1
+
+#### Scenario: The Start list follows the case type
+@e2e tests/e2e/case-actions-menu.spec.ts
+
+- **GIVEN** a case type whose `startableFlows` names the flow Create sub-case
+- **AND** a case of that type
+- **WHEN** the handler opens Start on the case page
+- **THEN** the list SHALL show Create sub-case
+- **AND** SHALL NOT show flows the type does not list
+
+#### Scenario: A run appears on the case
+@e2e exclude running a flow needs an ADOPTED, published and enabled flow, and a fresh install deliberately has none: OpenRegister stores a shipped flow ownerless and disabled, and adoption is an administrator's separate act, so arranging one would make this a test of the adoption path instead
+
+- **GIVEN** the same case
+- **WHEN** the handler runs Create sub-case
+- **THEN** the Flow runs widget SHALL list one new run with this case as subject
+
+#### Scenario: A type without startable flows hides Start
+@e2e tests/e2e/case-actions-menu.spec.ts
+
+- **GIVEN** a case type with an empty `startableFlows`
+- **WHEN** the handler opens the Actions menu on a case of that type
+- **THEN** Start SHALL NOT be offered
+
+### Requirement: You plan a follow-up case (REQ-WDE-02)
+
+You plan a follow-up case for a later date. It appears when it is due. The
+Actions menu and the Related cases tab of `CaseDetail` SHALL offer Plan
+follow-up, asking for a case type, a date and a title. Confirming SHALL write
+one scheduled flow that creates the case on that date, related to this one,
+running as the person who planned it. Until it fires, the Related cases tab
+SHALL show the planned case with its date.
+
+**Feature tier**: V1
+
+#### Scenario: A planned case shows on the tab
+@e2e tests/e2e/case-actions-menu.spec.ts
+
+- **GIVEN** an open case
+- **WHEN** the handler plans a follow-up of type Controle for a date next month
+- **THEN** the Related cases tab SHALL show a planned row with that type and date
+- **AND** no case of type Controle SHALL exist yet
+
+#### Scenario: The follow-up is created when due
+@e2e exclude the schedule trigger fires from OpenRegister's timer; PHPUnit covers the flow the controller writes, including `runAs`
+
+- **GIVEN** a planned follow-up whose date has arrived
+- **WHEN** OpenRegister runs the scheduled flow
+- **THEN** a case of the planned type SHALL exist with this case under related cases
+- **AND** the planned row SHALL be gone from the Related cases tab
+
+### Requirement: A planned follow-up can repeat (REQ-WDE-PS-1)
+
+You plan a follow-up once and it comes back on schedule. The plan-follow-up
+form SHALL offer a recurrence of none, monthly, quarterly, half-yearly or
+yearly, and an end as a date or a count. The planned follow-up document SHALL
+express the recurrence as the scheduled flow's cron fields and SHALL keep
+`runAs` on every occurrence. A document with recurrence none SHALL behave as
+today.
+
+#### Scenario: A yearly inspection is planned once
+@e2e tests/e2e/planned-case-series.spec.ts
+
+- **GIVEN** an open case of a type that allows a follow-up
+- **WHEN** you plan a follow-up with recurrence yearly and an end after 3 occurrences
+- **THEN** one scheduled flow SHALL exist for the case with yearly cron fields
+- **AND** the Related tab SHALL show the series with its next occurrence
+
+#### Scenario: A single follow-up is unchanged
+@e2e tests/e2e/planned-case-series.spec.ts
+
+- **GIVEN** an open case
+- **WHEN** you plan a follow-up with recurrence none
+- **THEN** the flow SHALL carry the planned date as before
+- **AND** the sweep SHALL switch it off after it fires
+
+### Requirement: The sweep stops a series when it is spent (REQ-WDE-PS-2)
+
+The sweep SHALL keep a recurring series armed until its end date has passed
+or its count of occurrences is reached, and SHALL then switch the flow off
+with the reason recorded on the flow.
+
+#### Scenario: The third occurrence is the last
+@e2e exclude time-dependent; covered by a PlannedFollowUpDocument unit pair that steps the sweep clock through three fires
+
+- **GIVEN** a series with a count of 3 and two occurrences created
+- **WHEN** the third occurrence fires and the sweep runs
+- **THEN** the flow SHALL be switched off with reason "series complete"
+
+### Requirement: Occurrences are findable as a series (REQ-WDE-PS-3)
+
+Every case an occurrence creates SHALL carry `handoffSource` naming the
+series flow, and the Related tab SHALL list those cases under the series.
+
+#### Scenario: Two occurrences show under one series
+@e2e tests/e2e/planned-case-series.spec.ts
+
+- **GIVEN** a series that has created two cases
+- **WHEN** you open the Related tab of the source case
+- **THEN** both cases SHALL be listed under the series row
+- **AND** Stop series SHALL be offered on that row

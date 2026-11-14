@@ -13,7 +13,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 
 declare(strict_types=1);
@@ -21,8 +21,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Flow;
 
 use OCA\Dossiq\Flow\DossiqAskPersonNode;
+use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
 use OCA\OpenRegister\Service\Flow\FlowResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunContext;
@@ -75,58 +78,74 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 *
 	 * @return DossiqAskPersonNode The node under test.
 	 */
+	/**
+	 * A session with a user, because the engine is fail-closed and refuses a
+	 * verb with no acting identity.
+	 *
+	 * @return \OCP\IUserSession The session.
+	 */
+	private function userSession(): \OCP\IUserSession {
+		$user = $this->createMock(\OCP\IUser::class);
+		$user->method('getUID')->willReturn('admin');
+		$session = $this->createMock(\OCP\IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+
+		return $session;
+	}//end userSession()
+
 	private function node(): DossiqAskPersonNode {
-		$objectService = new class($this->written, $this->stored, $this->readsFail) {
+		// The engine gateway, over the SAME in-memory rows the object-service
+		// double held. `dossiq.askPerson` stores its task in the engine now, so
+		// this is where the storage seam is; what the tests are about — a
+		// heartbeat re-reading the task, terminality advancing the run, a
+		// failed read buying another heartbeat — is unchanged.
+		//
+		// A written task is READABLE afterwards, because a real one is. A fake
+		// that took writes and served no reads would have let the node's
+		// re-entry path be "tested" against nothing.
+		$engineTasks = new class($this->written, $this->stored, $this->readsFail) extends EngineTaskGateway {
+			/**
+			 * @param array   $sink      Every task written.
+			 * @param array   $store     The readable rows.
+			 * @param boolean $readsFail Whether a read raises.
+			 */
 			public function __construct(private array &$sink, private array &$store, private bool &$readsFail) {
 			}
 
-			public function saveObject(array $object, string $register, string $schema): ObjectEntity {
-				$this->sink[] = $object;
+			/**
+			 * @param array       $task   The task.
+			 * @param string      $caseId The case.
+			 * @param string|null $actor  The actor.
+			 *
+			 * @return string The new task id.
+			 */
+			public function mirrorImport(array $task, string $caseId, ?string $actor): string {
+				$this->sink[] = $task;
 				$uuid = 'task-' . count($this->sink);
+				$this->store[$uuid] = $task;
 
-				$entity = new ObjectEntity();
-				$entity->setUuid($uuid);
-				$entity->setObject($object);
-
-				// A written task is READABLE afterwards, because a real one is.
-				// A fake that took writes and served no reads would have let
-				// the node's re-entry path be "tested" against nothing.
-				$this->store[$uuid] = $object;
-
-				return $entity;
+				return $uuid;
 			}
 
 			/**
-			 * The real signature, so the node's named arguments bind the same
-			 * way they do against ObjectService — and so a MISS raises what a
-			 * miss really raises, rather than returning a tidy null the node
-			 * would read as "the row is gone" for every failure alike.
+			 * A failing read RAISES rather than answering null: the node treats
+			 * a miss and an unreadable store differently, and a tidy null would
+			 * make every failure look like "the row is gone".
+			 *
+			 * @param string $taskId The task id.
+			 *
+			 * @return array|null The task, or null when it is gone.
 			 */
-			public function find(
-				int|string $id,
-				?array $_extend = [],
-				bool $files = false,
-				mixed $register = null,
-				mixed $schema = null
-			): ?ObjectEntity {
+			public function find(string $taskId): ?array {
 				if ($this->readsFail === true) {
-					throw new \RuntimeException('the store is unreachable');
+					throw new \RuntimeException('the engine is unreachable');
 				}
 
-				if (isset($this->store[(string)$id]) === false) {
-					throw new DoesNotExistException(sprintf('No task %s', $id));
-				}
-
-				$entity = new ObjectEntity();
-				$entity->setUuid((string)$id);
-				$entity->setObject($this->store[(string)$id]);
-
-				return $entity;
+				return ($this->store[$taskId] ?? null);
 			}
 		};
 
 		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => ($key === 'register' ? 'dossiq' : 'caseTask')
 		);
@@ -134,7 +153,13 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new DossiqAskPersonNode($settings, $l10n, new NullLogger());
+		return new DossiqAskPersonNode(
+			new AssigneeResolver(new NullLogger()),
+			$l10n,
+			new NullLogger(),
+			$engineTasks,
+			$this->userSession()
+		);
 	}//end node()
 
 	/**
@@ -201,7 +226,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$resume = self::resumeSlot('ask-indiener');
 
 		try {
-			$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context($resume)));
 			self::fail('The node must suspend while the task is outstanding.');
 		} catch (FlowSuspension $suspension) {
 			self::assertStringContainsString('Vul uw aanvraag aan', $suspension->getMessage());
@@ -228,7 +253,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$resume = self::resumeSlot('ask-indiener');
 
 		try {
-			$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context($resume)));
 			self::fail('The node must suspend while the task is outstanding.');
 		} catch (FlowSuspension $suspension) {
 			// Suspended, not stopped: the save result was understood.
@@ -260,7 +285,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$config = array_merge($this->config(), ['assignee' => '{{ case.assignee }}']);
 
 		try {
-			$this->node()->execute($items, $config, $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $items, config: $config, context: $this->context($resume)));
 		} catch (FlowSuspension $e) {
 			// expected: the task is outstanding
 		}
@@ -284,7 +309,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 
 		try {
 			// The case names no assignee, so the placeholder resolves empty.
-			$this->node()->execute($this->items(), $config, $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $config, context: $this->context($resume)));
 		} finally {
 			self::assertSame([], $this->written, 'No task may be created for an assignee that resolved to nobody.');
 		}
@@ -315,7 +340,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 
 		try {
 			// The case names no assignee: exactly the New case dialog's shape.
-			$this->node()->execute($this->items(), $config, $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $config, context: $this->context($resume)));
 		} catch (FlowSuspension $e) {
 			// expected: the task is outstanding
 		}
@@ -347,7 +372,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		);
 
 		try {
-			$this->node()->execute($items, $config, $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $items, config: $config, context: $this->context($resume)));
 		} catch (FlowSuspension $e) {
 			// expected: the task is outstanding
 		}
@@ -375,7 +400,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 
 		try {
-			$this->node()->execute($this->items(), $config, $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $config, context: $this->context($resume)));
 		} finally {
 			self::assertSame([], $this->written, 'No task may be created when neither value names a principal.');
 		}
@@ -388,7 +413,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$resume = self::resumeSlot('ask-indiener');
 
 		try {
-			$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context($resume)));
 		} catch (FlowSuspension $e) {
 			// expected
 		}
@@ -406,7 +431,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 
 		foreach ([1, 2, 3] as $ignored) {
 			try {
-				$node->execute($this->items(), $this->config(), $this->context($resume));
+				$node->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context($resume)));
 			} catch (FlowSuspension $e) {
 				// expected on every pass while unanswered
 			}
@@ -427,7 +452,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 			['signal' => ['decision' => 'completed', 'completedBy' => 'alice']]
 		);
 
-		$out = $this->node()->execute($this->items(), array_merge($this->config(), ['signalKey' => 'aanvulling']), $context);
+		$out = $this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: array_merge($this->config(), ['signalKey' => 'aanvulling']), context: $context));
 
 		self::assertCount(1, $out);
 		self::assertSame('completed', $out[0]['json']['aanvulling']['decision']);
@@ -450,9 +475,11 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$this->stored['task-1'] = ['status' => 'completed', 'case' => 'case-1', 'completedDate' => '2026-09-03T10:00:00+00:00'];
 
 		$out = $this->node()->execute(
-			$this->items(),
-			array_merge($this->config(), ['signalKey' => 'aanvulling']),
-			$this->context($resume)
+			call: new FlowNodeCall(
+				items: $this->items(),
+				config: array_merge($this->config(), ['signalKey' => 'aanvulling']),
+				context: $this->context($resume)
+			)
 		);
 
 		self::assertSame('completed', $out[0]['json']['aanvulling']['decision']);
@@ -475,7 +502,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$context = array_merge($this->context($resume), ['signal' => ['decision' => 'completed']]);
 
 		$this->expectException(FlowSuspension::class);
-		$this->node()->execute($this->items(), $this->config(), $context);
+		$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $context));
 	}//end testASignalCannotAnswerForATaskThatIsStillOpen()
 
 	/**
@@ -490,7 +517,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessageMatches('/never be answered/');
-		$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+		$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context($resume)));
 	}//end testATerminatedTaskFailsTheStepRatherThanInventingAnAnswer()
 
 	/**
@@ -501,7 +528,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessageMatches('/no longer exists/');
-		$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+		$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context($resume)));
 	}//end testATaskThatNoLongerExistsFailsTheStep()
 
 	/**
@@ -515,7 +542,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$this->readsFail = true;
 
 		$this->expectException(FlowSuspension::class);
-		$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+		$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context($resume)));
 	}//end testAnUnreadableStoreParksAgainInsteadOfFailing()
 
 	/**
@@ -541,100 +568,76 @@ class DossiqAskPersonNodeTest extends TestCase {
 	public function testWithoutAResumeSlotItRefuses(): void {
 		$this->expectException(RuntimeException::class);
 
-		$this->node()->execute($this->items(), $this->config(), [FlowRunContext::CONTEXT_RUN => 'run-abc']);
+		$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: [FlowRunContext::CONTEXT_RUN => 'run-abc']));
 	}//end testWithoutAResumeSlotItRefuses()
 
 	public function testWithNoCaseItRefuses(): void {
 		$this->expectException(RuntimeException::class);
 
-		$this->node()->execute([['json' => []]], $this->config(), $this->context(self::resumeSlot('n')));
+		$this->node()->execute(call: new FlowNodeCall(items: [['json' => []]], config: $this->config(), context: $this->context(self::resumeSlot('n'))));
 	}//end testWithNoCaseItRefuses()
 
 	/**
-	 * A node over an object service whose saveObject returns whatever the
-	 * test says, so the OTHER result shapes createdTaskId() accepts stay
-	 * honest: each shape below is one a duck-typed service can legitimately
-	 * hand back, and each must still identify the task.
+	 * A task the engine could not identify is REFUSED, not returned empty.
 	 *
-	 * @param mixed $result What saveObject returns.
+	 * This replaces three tests that exercised `createdTaskId()`'s
+	 * duck-typed result shapes — a legacy array, an entity with no uuid, a
+	 * string. That method is gone: `EngineTaskGateway::mirrorImport()`
+	 * returns a uuid or an empty string, so there are no shapes left to
+	 * accept and only one failure left to guard.
 	 *
-	 * @return DossiqAskPersonNode The node under test.
+	 * It is the one that matters. A task that was written but cannot be
+	 * identified is worse than none: the resume slot stays empty, the next
+	 * heartbeat writes another, and the run accumulates duplicates nobody
+	 * asked for.
+	 *
+	 * @return void
 	 */
-	private function nodeReturning(mixed $result): DossiqAskPersonNode {
-		$objectService = new class($this->written, $result) {
-			public function __construct(private array &$sink, private mixed $result) {
+	public function testATaskTheEngineCannotIdentifyIsRefused(): void {
+		$engineTasks = new class ($this->written) extends EngineTaskGateway {
+			/**
+			 * @param array $sink Every task written.
+			 */
+			public function __construct(private array &$sink) {
 			}
 
-			public function saveObject(array $object, string $register, string $schema): mixed {
-				$this->sink[] = $object;
+			/**
+			 * @param array       $task   The task.
+			 * @param string      $caseId The case.
+			 * @param string|null $actor  The actor.
+			 *
+			 * @return string Always empty: the engine refused.
+			 */
+			public function mirrorImport(array $task, string $caseId, ?string $actor): string {
+				$this->sink[] = $task;
 
-				return $this->result;
+				return '';
 			}
 		};
 
 		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => ($key === 'register' ? 'dossiq' : 'caseTask')
 		);
-
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new DossiqAskPersonNode($settings, $l10n, new NullLogger());
-	}//end nodeReturning()
-
-	/**
-	 * A LEGACY ARRAY result still identifies the task. The service is
-	 * duck-typed, and refusing a shape that carries a perfectly good id
-	 * would recreate the orphaned-task bug for the other shape.
-	 */
-	public function testALegacyArraySaveResultStillIdentifiesTheTask(): void {
-		$resume = self::resumeSlot('ask-indiener');
-		$node = $this->nodeReturning(['id' => 'legacy-task-7']);
-
-		try {
-			$node->execute($this->items(), $this->config(), $this->context($resume));
-		} catch (FlowSuspension $e) {
-			// expected: the task is outstanding
-		}
-
-		self::assertSame('legacy-task-7', $resume->get('taskId'));
-	}//end testALegacyArraySaveResultStillIdentifiesTheTask()
-
-	/**
-	 * An entity with NO uuid falls back to its serialised form, which the
-	 * real ObjectEntity guarantees carries a top-level id.
-	 */
-	public function testAnEntityWithoutAUuidFallsBackToItsSerialisedId(): void {
-		$entity = new ObjectEntity();
-		$entity->setObject(['id' => 'serialised-task-9', 'title' => 'x']);
-
-		$resume = self::resumeSlot('ask-indiener');
-		$node = $this->nodeReturning($entity);
-
-		try {
-			$node->execute($this->items(), $this->config(), $this->context($resume));
-		} catch (FlowSuspension $e) {
-			// expected: the task is outstanding
-		}
-
-		self::assertSame('serialised-task-9', $resume->get('taskId'));
-	}//end testAnEntityWithoutAUuidFallsBackToItsSerialisedId()
-
-	/**
-	 * A result that names NOTHING refuses: an unidentifiable task means an
-	 * empty resume slot, so the next heartbeat would write a duplicate.
-	 */
-	public function testAResultNamingNoIdRefuses(): void {
-		$resume = self::resumeSlot('ask-indiener');
-		$node = $this->nodeReturning('not-a-result-shape');
+		$node = new DossiqAskPersonNode(
+			new AssigneeResolver(new NullLogger()),
+			$l10n,
+			new NullLogger(),
+			$engineTasks,
+			$this->userSession()
+		);
 
 		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage('could not identify');
-
-		$node->execute($this->items(), $this->config(), $this->context($resume));
-	}//end testAResultNamingNoIdRefuses()
+		// The MESSAGE, not just the type: any number of things throw a
+		// RuntimeException here, and asserting the type alone made this test
+		// pass with the guard disabled. Measured: mutating the guard to
+		// `if (false)` left it green.
+		$this->expectExceptionMessage('could not identify the task it created');
+		$node->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context(self::resumeSlot('ask-indiener'))));
+	}//end testATaskTheEngineCannotIdentifyIsRefused()
 
 	public function testItAnnouncesItsIdentity(): void {
 		$node = $this->node();

@@ -47,7 +47,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Settings;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -99,7 +99,7 @@ class SchemaSlugResolver {
 	 * and dropping the fallback would blank all three.
 	 *
 	 * @param object $schemaMapper The OpenRegister SchemaMapper.
-	 * @param string $slug The schema slug, e.g. 'caseTask'.
+	 * @param string $slug The schema slug, e.g. 'case'.
 	 *
 	 * @return object|null The live schema, or null when the slug does not resolve.
 	 *
@@ -149,8 +149,20 @@ class SchemaSlugResolver {
 		}
 
 		$this->registerSchemaIds = [];
+		$this->registerSchemaIds = $this->readRegisterSchemaIds();
 
-		$registerId = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
+		return $this->registerSchemaIds;
+	}//end registerSchemaIds()
+
+	/**
+	 * Read the schema ids of the configured register, leaving the empty list when it cannot be read.
+	 *
+	 * Called with {@see $registerSchemaIds} already set to the empty list.
+	 *
+	 * @return int[] The register's schema ids, or [] when unknown.
+	 */
+	private function readRegisterSchemaIds(): array {
+		$registerId = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
 		if ($registerId === '') {
 			return $this->registerSchemaIds;
 		}
@@ -159,13 +171,21 @@ class SchemaSlugResolver {
 			$registerMapper = $this->container->get('OCA\OpenRegister\Db\RegisterMapper');
 			$register = $registerMapper->find($registerId, false, false);
 		} catch (\Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: Could not read the register schema list for scoping',
-				['register' => $registerId, 'exception' => $e->getMessage()]
-			);
+			$this->logger->debug('Dossiq: Could not read the register schema list for scoping', ['register' => $registerId, 'exception' => $e->getMessage()]);
 			return $this->registerSchemaIds;
 		}
 
+		return $this->schemaIdsOf(register: $register);
+	}//end readRegisterSchemaIds()
+
+	/**
+	 * The positive numeric schema ids a register lists.
+	 *
+	 * @param object $register The register.
+	 *
+	 * @return int[] The schema ids.
+	 */
+	private function schemaIdsOf(object $register): array {
 		$ids = [];
 		foreach ($register->getSchemas() as $candidate) {
 			if (is_numeric($candidate) === true && (int)$candidate > 0) {
@@ -173,8 +193,6 @@ class SchemaSlugResolver {
 			}
 		}
 
-		$this->registerSchemaIds = $ids;
-
-		return $this->registerSchemaIds;
-	}//end registerSchemaIds()
+		return $ids;
+	}//end schemaIdsOf()
 }//end class

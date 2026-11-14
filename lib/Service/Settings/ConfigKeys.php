@@ -1,0 +1,472 @@
+<?php
+
+/**
+ * Dossiq appconfig key allowlist.
+ *
+ * The keys `SettingsService` reads on `getSettings()` and accepts on
+ * `updateSettings()`. Data, not behaviour, so it lives beside
+ * {@see SchemaSlugMap} rather than inside the service.
+ *
+ * It was extracted because `SettingsService` sat exactly on the phpmd
+ * ExcessiveClassLength ceiling with 200 array entries inside it, so adding a
+ * key for a new subsystem reddened the whole tree and the key was left out
+ * instead. A list that is expensive to append to stops being appended to.
+ *
+ * A key here is visible on the admin settings surface. A schema id also needs
+ * an entry in {@see SchemaSlugMap} for the reconciler to write it; the two
+ * lists answer different questions and neither implies the other.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service\Settings
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @spec openspec/specs/admin-settings/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\Settings;
+
+/**
+ * The appconfig keys dossiq owns.
+ *
+ * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/specs/admin-settings/spec.md
+ */
+class ConfigKeys {
+	/**
+	 * Every appconfig key `SettingsService` reads and writes.
+	 *
+	 * @var string[]
+	 */
+	public const ALL = [
+		'register',
+		'catalogus_schema',
+		'case_schema',
+		'task_schema',
+		'status_schema',
+		'status_record_schema',
+		'role_schema',
+		'result_schema',
+		'decision_schema',
+		'case_type_schema',
+		'status_type_schema',
+		'result_type_schema',
+		'role_type_schema',
+		'property_definition_schema',
+		'document_type_schema',
+		'decision_type_schema',
+		'zaaktype_informatieobjecttype_schema',
+		'case_property_schema',
+		'case_document_schema',
+		'case_object_schema',
+		'case_incident_schema',
+		'customer_contact_schema',
+		'decision_document_schema',
+		'dispatch_schema',
+		'document_schema',
+		'document_link_schema',
+		'usage_rights_schema',
+		'kanaal_schema',
+		'abonnement_schema',
+		'map_layer_schema',
+		// WMS/WFS overlay layers (wms-wfs-layers spec REQ-WMS-1).
+		'wms_layer_schema',
+		'workflow_template_schema',
+		// Stable alias for consumer specs (status-transition-engine,
+		// role-based-step-routing) that refer to the workflow definition
+		// independent of the legacy schema slug.
+		'workflow_definition_schema',
+		'objection_schema',
+		'hearing_session_schema',
+		'advisory_report_schema',
+		'appeal_decision_schema',
+		'portal_filing_case_types',
+		'inspectie_checklist_schema',
+		'inspectie_rapport_schema',
+		'handhavingsactie_schema',
+		'advies_aanvraag_schema',
+		'advice_reminder_days',
+		// The complaint targets the process analysis page holds a quarter against
+		// (ComplaintPatterns); empty reads the default.
+		'complaint_target_per_month',
+		'complaint_target_within_awb_percent',
+		'complaint_target_upheld_percent',
+		'tenant_schema',
+		'appointment_schema',
+		'appointment_product_schema',
+		'appointment_location_schema',
+		'appointment_backend',
+		'appointment_backend_url',
+		'appointment_backend_api_key',
+		'case_share_schema',
+		'partner_organization_schema',
+		'share_permission_level_schema',
+		'case_transfer_schema',
+		// The dated chain of holdings and the takeover request that asks for
+		// one (custody-and-handover-of-a-case).
+		'case_custody_schema',
+		'case_takeover_schema',
+		// The sociaal-domein consent a hand-off across organisations needs.
+		'consent_schema',
+		// Federated case collaboration (OCM, via OpenRegister's federation leaf).
+		'case_federated_share_schema',
+		'case_federated_activity_schema',
+		'automatic_action_schema',
+		'location_schema',
+		// Bezwaar (lifecycle) — Awb Hoofdstuk 7.
+		'bezwaar_schema',
+		// Bezwaar advisory committee (BAC) — Awb Art. 7:13.
+		'bezwaaradviescommissie_schema',
+		'bac_advice_request_schema',
+		'bac_default_committee',
+		// Beroep escalation (beroep-escalation spec) — Awb hoofdstuk 8.
+		'beroep_schema',
+		// Bezwaar decision (bezwaar-decision spec) — Awb art. 7:11/7:12.
+		'bezwaar_decision_schema',
+		// Beschikking lifecycle (beschikking-generatie spec) — Awb besluit.
+		'beschikking_schema',
+		'state_machine_log_schema',
+		'bezwaar_trigger_schema',
+		'mandaat_regeling_schema',
+		// KCC klantcontact-integratie (kcc-klantcontact-integratie spec).
+		// contactMoment reuses the existing customer_contact_schema; only the
+		// KCC-specific operational schemas get new config keys here.
+		'routing_rule_schema',
+		'kcc_agent_schema',
+		'callback_request_schema',
+		// DMN decision tables (dmn-decision-tables spec).
+		'decision_table_schema',
+		// Subsidieverlening-keten (subsidieverlening-keten spec) — AWB titel 4.2.
+		'subsidie_regeling_schema',
+		'subsidie_aanvraag_schema',
+		'subsidie_beoordeling_schema',
+		'subsidie_beschikking_schema',
+		'subsidie_uitvoering_schema',
+		'tussenrapportage_schema',
+		'subsidie_vaststelling_schema',
+		'terugvordering_schema',
+		'bewijsstuk_schema',
+		'lhsMatrix',
+		'lhs_matrix_schema',
+		'lhs_recommendation_schema',
+		'decision_advice_schema',
+		// AI-Assisted Processing settings.
+		'ai_audit_entry_schema',
+		'ai_enabled',
+		'ai_model_type',
+		'ai_model_url',
+		'ai_model_name',
+		'ai_api_key',
+		'ai_feature_classification',
+		'ai_feature_extraction',
+		'ai_feature_qa',
+		'ai_feature_summary',
+		'ai_feature_routing',
+		'ai_feature_decision_support',
+		'ai_dpia_acknowledged',
+		'ai_pii_stripping',
+		// PDOK integration settings (pdok-integration spec).
+		// Endpoint overrides — empty falls back to PDOK service defaults.
+		'pdok_locatieserver_endpoint',
+		'pdok_kadaster_endpoint',
+		// OpenConnector source slugs — empty = call PDOK directly.
+		'pdok_locatieserver_source',
+		'pdok_kadaster_source',
+		// Cache TTLs (seconds).
+		'pdok_cache_lookup_ttl_seconds',
+		'pdok_cache_suggest_ttl_seconds',
+		// Per-service rate ceiling (requests / second).
+		'pdok_rate_ceiling_rps',
+		// Outage banner copy (nl + en).
+		'pdok_outage_banner_nl',
+		'pdok_outage_banner_en',
+		// Kadaster (BRK) and WOZ bindings, read by IntegrationMode: the mode
+		// (log, test, live), the service address and its key.
+		'integration.brk.mode',
+		'integration.brk.baseUrl',
+		'integration.brk.apiKey',
+		'integration.woz.mode',
+		'integration.woz.baseUrl',
+		'integration.woz.apiKey',
+		// KCC-werkplek bridge schema config keys (kcc-werkplek-zaaksysteem-bridge).
+		'contactmoment_schema',
+		'kcc_quick_action_schema',
+		'belplan_schema',
+		'specialist_beschikbaarheid_schema',
+		'doorverbinding_schema',
+		'klant_sentiment_schema',
+		// KCC-werkplek bridge behaviour settings.
+		'identification_method',
+		'identification_score_threshold',
+		'sentiment_polling_interval',
+		'specialist_availability_polling_interval',
+		'max_zaken_voorblad',
+		'max_contactmomenten_history',
+		'quick_action_templates',
+		'belplan_overflow_threshold_wachttijd',
+		'belplan_overflow_threshold_wachtrij_lengte',
+		'sentiment_trigger_words',
+		// Complaint management (klachtafhandeling) — Awb chapter 9.
+		'complaint_schema',
+		'hearing_schema',
+		'complaint_disposition_schema',
+		'complaint_category_schema',
+		// Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente).
+		'portaal_bericht_schema',
+		'portaal_verzoek_schema',
+		'portaal_notificatie_voorkeur_schema',
+		// Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17).
+		'termijn_definitie_schema',
+		'termijn_instance_schema',
+		'termijn_gebeurtenis_schema',
+		'notice_of_default_schema',
+		'accruing_amount_schema',
+		'payout_schema',
+		// Shared secret validating the X-Procest-Signature HMAC-SHA256 header
+		// on the public dwangsom payment-confirmation callback (ADR-005;
+		// enforce-dwangsom-callback-signature spec). Empty = callback fails
+		// closed (401) rather than treated as an implicit pass.
+		'payout_callback_secret',
+		// Mandaat-matrix authorization engine.
+		'mandaterings_besluit_schema',
+		'mandaat_schema',
+		'organisatie_rol_schema',
+		'medewerker_rol_toewijzing_schema',
+		'mandaat_gebruik_schema',
+		'mandaat_escalatie_schema',
+		// Mandate-matrix behaviour knobs edited by MandaatMatrixSettingsTab.vue.
+		// ⚠️ Same measured caveat as the consultation_* block above: nothing
+		// reads these three yet. They are registered so the admin's save
+		// persists rather than being dropped by the CONFIG_KEYS allowlist.
+		'mandaat_decidesk_connection',
+		'mandaat_default_extension_days',
+		'mandaat_auto_finalize_approved',
+		// Handler vervanging/waarneming (handler-vervanging-waarneming spec).
+		'substitution_schema',
+		// Archief / e-Depot SIP handover engine.
+		'bewaar_termijn_regel_schema',
+		'overdracht_trigger_schema',
+		'sip_bundel_schema',
+		'overdracht_transactie_schema',
+		'archief_bewijs_schema',
+		'overdracht_audit_log_schema',
+		// Case-email integration (case-email-integration spec).
+		// emailTemplate is the only net-new schema; sending/threading live in NC Mail.
+		'email_template_schema',
+		// 🔴 THE IMAP CONNECTION KEYS ARE GONE, CREDENTIAL INCLUDED
+		// (inbound-mail-filters, decision D12). Nextcloud Mail owns the account,
+		// the password and the OAuth 2.0 flow; dossiq stores an account id and a
+		// folder name and nothing that is a secret in a database backup. An
+		// admin surface that still offered `email_imap_password` would keep
+		// writing one, which is why the key leaves this allow-list in the same
+		// change that deletes the stored value.
+		'email_mail_account_id',
+		'email_imap_folder',
+		// Who may open a case by mail, and the readable rules behind a junk
+		// verdict. The allow half is Nextcloud Mail's trusted-sender list.
+		'email_intake_blocklist',
+		'email_intake_junk_rules',
+		// The group that reads the intake log and releases a quarantined
+		// message. Empty means administrators only, never everybody: the log
+		// holds the original of every message the mailbox received.
+		'email_intake_role',
+		'mail_intake_entry_schema',
+		// The classification schemes a case type may classify against, as a
+		// JSON map of scheme name to allowed values. A case type marking its
+		// classification an access rule against a scheme absent from here
+		// refuses creation rather than creating a case nobody can reach.
+		'case_classification_schemes',
+		'email_transport',
+		'email_poll_interval',
+		'email_poll_batch_size',
+		'email_max_attachment_size',
+		// Outbound envelope + recipient policy (case-management REQ-103).
+		// ⚠️ email_from_address was read by CaseEmailService and settable by
+		// NOTHING: absent from this allow-list and from EmailSettings, so the
+		// error text telling the admin to set it via the admin settings named a
+		// field that did not exist. Registered here so it does.
+		'email_from_address',
+		'email_from_name',
+		// Which transport each kind of outbound mail leaves through, as a JSON
+		// map of kind to `mail-account` or `imailer` (decisions 165, 182).
+		// Empty means MailTransportPolicy::DEFAULTS.
+		'mail_transport_by_kind',
+		// Empty means "the from-address's own domain", never "no restriction".
+		'email_recipient_allowlist',
+		// Per-user mail matching (email-case-matching). Off unless an admin
+		// says yes; an empty pattern means CaseEmailMatchService::DEFAULT_PATTERN.
+		'email_case_matching_enabled',
+		'email_case_matching_pattern',
+		// Consultation management (consultation-management spec).
+		'consultation_schema',
+		'obligation_schema',
+		'advice_response_schema',
+		'advisory_body_schema',
+		// Consultation behaviour knobs edited by ConsultationSettingsTab.vue.
+		// ⚠️ Registered here because updateSettings() is an ALLOWLIST: a key
+		// absent from CONFIG_KEYS is silently dropped on save — the same
+		// silent-discard failure as the dead route these fields used to POST to
+		// (procest#794), just one layer deeper.
+		// Read by Consultation\ConsultationTerms: the default term of a new
+		// advice request, the due-soon list and the bottleneck report (which
+		// the n8n consultation workflows read), and the address an external
+		// advisory body is sent.
+		'consultation_default_deadline_days',
+		'consultation_warning_offset_days',
+		'consultation_external_response_url',
+		'consultation_bottleneck_threshold',
+		// Queue urgency (configurable-queue-urgency), edited by
+		// QueueUrgencySettingsTab.vue and read by QueueUrgencySettings.
+		'queue_critical_days',
+		'queue_warning_days',
+		'queue_priority_weight',
+		'queue_idle_weight',
+		'queue_in_sight_days',
+		'queue_resident_wait_weight',
+		// Besluitvorming workflow integration endpoints (besluitvorming-workflow spec).
+		// Official publication (DROP / LVBB) — empty disables dispatch.
+		'drop_lvbb_endpoint',
+		'drop_lvbb_token',
+		// ZGW DRC case dossier (document-zaakdossier spec).
+		'dossier_informatieobject_schema',
+		'dossier_zaakinformatieobject_schema',
+		'woo_assessment_schema',
+		'document_review_schema',
+		'triage_rule_schema',
+		'review_batch_schema',
+		'stopping_rule_schema',
+		'recall_sample_schema',
+		'bid_schema',
+		'tender_question_schema',
+		'evaluation_schema',
+		'scoring_formula_schema',
+		'dossier_besluitinformatieobject_schema',
+		'dossier_informatieobjecttype_schema',
+		// Maximum upload size in bytes (0 = no app-level limit, NC limit applies).
+		'dossier_max_file_size',
+		// Toggle: organise ZIP export into per-informatieobjecttype sub-folders.
+		'dossier_subfolder_per_type',
+		// Comma-separated map of NC group ids to clearance levels, e.g.
+		// "vertrouwelijk-cleared:vertrouwelijk,geheim-cleared:geheim". Empty
+		// means every authenticated user has the baseline clearance below.
+		'dossier_clearance_group_map',
+		// Baseline clearance for any authenticated user lacking a mapped group.
+		'dossier_default_clearance',
+		// GIS / geo viewer settings (gis-integration spec).
+		// Map library used by the frontend viewer ('leaflet' or 'openlayers').
+		'geo_map_library',
+		// Default map centre + zoom (Netherlands) for the cases-on-map view.
+		'geo_default_center_lat',
+		'geo_default_center_lon',
+		'geo_default_zoom',
+		// Pixel radius for client-side marker clustering.
+		'geo_max_cluster_radius',
+		// Toggle: expose the public /wfs/cases OGC WFS endpoint.
+		'geo_wfs_endpoint_enabled',
+		// PDOK Locatieserver cache TTL (seconds) + endpoint override.
+		'pdok_locatieserver_cache_ttl',
+		'pdok_locatieserver_url',
+		// The two adapter seams an integrator may substitute WITHOUT editing
+		// dossiq. Each names a class implementing the seam's interface; empty
+		// means the built-in mock, which the Integrations page then reports as
+		// Simulated rather than letting it pass for a working channel. Neither
+		// transport ships here: both are per-customer contracts and belong in
+		// integriq (ADR-041, and the dossiq-delivers-nothing ruling).
+		'berichtenbox_adapter',
+		'berichtenbox_message_schema',
+		'beschikking_template_adapter',
+		// What a new instance starts with (starter-content-and-templates).
+		'shipped_origin_schema',
+		'starter_set_adoption_schema',
+		'reusable_step_schema',
+		'content_template_schema',
+		'case_type_group_schema',
+		'field_inspection_schema',
+		'field_evidence_schema',
+		// Which structure the app shows: `simple` (the default) or `full`
+		// (simple-structure-profile). Read through MenuStructure::normalise().
+		'menu_structure',
+		// The name staff know the app by (board DqInstellingenAlgemeen, Huisstijl).
+		'staff_app_name',
+		// The city of the municipality, the default lens of the contacts and
+		// organisations lists (boards DqContacten, DqOrganisaties); handed to
+		// the bundle as `@config.municipalityCity`.
+		'municipality_city',
+		// The organisation's text above Mijn zaken in the portal (CitizenManifest).
+		'portal_intro_text',
+		// The document review reports (woo-review-reports, decision D9): both
+		// off until an administrator says yes. WooReportSwitches reads them and
+		// refuses the throughput switch without an existing reader group.
+		'reviewerThroughputReport',
+		'reviewerThroughputReaders',
+		'collectionPartiesReport',
+		// Their earlier names, still read where the current key was never
+		// written (WooReportSwitches::LEGACY_KEYS).
+		'wooReviewerThroughputReport',
+		'wooReviewerThroughputReaders',
+		'wooCollectionPartiesReport',
+		// General: the app's own time zone when no tenant is bound
+		// (CaseDateNormaliser), the date format and the beta switch the page
+		// reads as initial state (DisplaySettingsInitialStateListener).
+		'timezone',
+		'date_format',
+		'feature_new_case_page',
+		// VTH public notices: the template integriq composes the text from and
+		// the rule for the publication date (PublicationService).
+		'publication_template',
+		'publication_date_rule',
+		// Public ZGW API access: the header a trusted reverse proxy forwards
+		// the client certificate's SHA-256 fingerprint in. Empty switches
+		// certificate access off (ApiCredentialResolver, REQ-PAA-02).
+		'public_api_client_cert_header',
+		// The administrator's own text per notification kind (REQ-CRS-13);
+		// Notifier::customText() reads them.
+		...self::NOTIFICATION_TEXT_KEYS,
+	];
+
+	/**
+	 * One key per notification kind whose text an administrator may set
+	 * (REQ-CRS-13): `notification_text_` and the Notifier subject. Empty keeps
+	 * the shipped, translated wording.
+	 *
+	 * @var string[]
+	 *
+	 * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/admin-settings/spec.md#requirement-an-administrator-edits-the-text-of-each-notification-req-crs-13
+	 */
+	public const NOTIFICATION_TEXT_KEYS = [
+		'notification_text_note_mention',
+		'notification_text_case_status_changed',
+		'notification_text_case_role_notified',
+		'notification_text_milestone_bottleneck',
+		'notification_text_cases_reassigned',
+		'notification_text_advice_requested',
+		'notification_text_advies_ontvangen',
+		'notification_text_advies_herinnering',
+		'notification_text_woo_deadline_warning',
+		'notification_text_woo_deadline_overdue',
+		'notification_text_dso_deadline_warning',
+		'notification_text_dso_deadline_critical',
+		'notification_text_dso_deadline_overdue',
+		'notification_text_term_nearing',
+		'notification_text_term_exceeded',
+		'notification_text_applicant_responded',
+		'notification_text_applicant_withdrew',
+		'notification_text_stuf_circuit_open',
+		'notification_text_stuf_timeout',
+		'notification_text_stuf_permanent_error',
+		'notification_text_background_service_account_missing',
+		'notification_text_tenant_quota_soft_limit',
+	];
+}//end class

@@ -37,6 +37,10 @@ namespace OCA\Dossiq\Service\Doorlooptijd;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Term\DayCount;
+use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -49,11 +53,20 @@ class CaseEnricher {
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger Logger, for unparseable caseType durations.
+	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
+	 * @param LanguageMapText $text A translatable title or name as one string.
+	 * @param DayCount $days Counts the days between two moments.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliser $dates,
+		private readonly ?TermijnTimerService $timerService = null,
+		private readonly LanguageMapText $text = new LanguageMapText(),
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -121,17 +134,13 @@ class CaseEnricher {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	private function enrichCase(array $caseData, array $caseTypeByKey, DateTimeImmutable $today): array {
-		$endDate = $this->normaliseDate(value: $caseData['endDate'] ?? null);
-		$startDate = $this->normaliseDate(value: $caseData['startDate'] ?? null);
+		$endDate = $this->dates->toCalendarDateOrNull($caseData['endDate'] ?? null);
+		$startDate = $this->dates->toCalendarDateOrNull($caseData['startDate'] ?? null);
 		$isOpen = ($endDate === null);
 
-		$caseType = null;
-		$caseTypeTitle = '';
-		$caseTypeKey = (string)($caseData['caseType'] ?? '');
-		if ($caseTypeKey !== '' && isset($caseTypeByKey[$caseTypeKey]) === true) {
-			$caseType = $caseTypeByKey[$caseTypeKey];
-			$caseTypeTitle = (string)($caseType['title'] ?? '');
-		}
+		$typed = $this->caseTypeOf(caseData: $caseData, caseTypeByKey: $caseTypeByKey);
+		$caseType = $typed['caseType'];
+		$caseTypeTitle = $typed['title'];
 
 		$deadline = $this->resolveCaseDeadline(
 			rawDeadline: $caseData['deadline'] ?? null,
@@ -139,11 +148,7 @@ class CaseEnricher {
 			caseType: $caseType,
 		);
 
-		$daysRemaining = null;
-		if ($isOpen === true && $deadline !== null) {
-			$deadlineDate = new DateTimeImmutable($deadline);
-			$daysRemaining = (int)$today->diff($deadlineDate)->format('%R%a');
-		}
+		$daysRemaining = $this->daysRemaining(isOpen: $isOpen, deadline: $deadline, today: $today);
 
 		$throughputDays = $this->computeThroughputDays(
 			isOpen: $isOpen,
@@ -158,9 +163,73 @@ class CaseEnricher {
 		$caseData['_daysRemaining'] = $daysRemaining;
 		$caseData['_throughputDays'] = $throughputDays;
 		$caseData['_caseTypeTitle'] = $caseTypeTitle;
+		// The term the case had, start to deadline: the norm the
+		// processing-time chart draws.
+		$caseData['_normDays'] = $this->normDays(startDate: $startDate, deadline: $deadline);
 
 		return $caseData;
 	}//end enrichCase()
+
+	/**
+	 * The case's case type and its title, when the case names one that is known.
+	 *
+	 * @param array<string, mixed>                $caseData      Raw case.
+	 * @param array<string, array<string, mixed>> $caseTypeByKey Case-types by id and slug.
+	 *
+	 * @return array{caseType: array<string, mixed>|null, title: string} The case type, or null, and its title.
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function caseTypeOf(array $caseData, array $caseTypeByKey): array {
+		$caseType = null;
+		$caseTypeTitle = '';
+		$caseTypeKey = (string)($caseData['caseType'] ?? '');
+		if ($caseTypeKey !== '' && isset($caseTypeByKey[$caseTypeKey]) === true) {
+			$caseType = $caseTypeByKey[$caseTypeKey];
+			$caseTypeTitle = $this->text->textOf(value: ($caseType['title'] ?? null));
+		}
+
+		return ['caseType' => $caseType, 'title' => $caseTypeTitle];
+	}//end caseTypeOf()
+
+	/**
+	 * The days left until the deadline of an open case.
+	 *
+	 * @param bool              $isOpen   Whether the case is open.
+	 * @param string|null       $deadline The `Y-m-d` deadline, or null.
+	 * @param DateTimeImmutable $today    Reference date for the countdown.
+	 *
+	 * @return int|null The signed days, or null for a closed case or one without a deadline.
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function daysRemaining(bool $isOpen, ?string $deadline, DateTimeImmutable $today): ?int {
+		$daysRemaining = null;
+		if ($isOpen === true && $deadline !== null) {
+			$deadlineDate = new DateTimeImmutable($deadline);
+			$daysRemaining = $this->days->signed(from: $today, to: $deadlineDate);
+		}
+
+		return $daysRemaining;
+	}//end daysRemaining()
+
+	/**
+	 * The days from start to deadline.
+	 *
+	 * @param string|null $startDate The `Y-m-d` start date, or null.
+	 * @param string|null $deadline  The `Y-m-d` deadline, or null.
+	 *
+	 * @return int|null The days, or null when either date is missing.
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function normDays(?string $startDate, ?string $deadline): ?int {
+		if ($startDate !== null && $deadline !== null) {
+			return $this->days->between(from: new DateTimeImmutable($startDate), to: new DateTimeImmutable($deadline));
+		}
+
+		return null;
+	}//end normDays()
 
 	/**
 	 * Resolve a case deadline, deriving it from the case-type when the case
@@ -175,7 +244,7 @@ class CaseEnricher {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	private function resolveCaseDeadline(mixed $rawDeadline, ?string $startDate, ?array $caseType): ?string {
-		$deadline = $this->normaliseDate(value: $rawDeadline);
+		$deadline = $this->dates->toCalendarDateOrNull($rawDeadline);
 		if ($deadline === null && $startDate !== null && $caseType !== null) {
 			$deadline = $this->deriveDeadline(
 				startDate: $startDate,
@@ -202,8 +271,10 @@ class CaseEnricher {
 			return null;
 		}
 
-		$throughputDays = (int)(new DateTimeImmutable($startDate))
-			->diff(new DateTimeImmutable($endDate))->format('%R%a');
+		$throughputDays = $this->days->signed(
+			from: new DateTimeImmutable($startDate),
+			to: new DateTimeImmutable($endDate)
+		);
 		if ($throughputDays < 0) {
 			return 0;
 		}
@@ -230,7 +301,13 @@ class CaseEnricher {
 
 		try {
 			$start = new DateTimeImmutable($startDate);
-			return $start->add(new DateInterval($processingDeadline))->format('Y-m-d');
+
+			// The dashboard mirrors a term the citizen is answered by, so it
+			// rolls with it. A derived date that disagreed with the term on
+			// screen would be worse than no date at all.
+			$end = $start->add(new DateInterval($processingDeadline));
+
+			return ($this->timerService?->rollTermEndFor(date: $end) ?? $end)->format('Y-m-d');
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'Could not derive deadline from processingDeadline',
@@ -240,24 +317,4 @@ class CaseEnricher {
 		}
 	}//end deriveDeadline()
 
-	/**
-	 * Trim a date or datetime field to `Y-m-d`; return null for empty/invalid input.
-	 *
-	 * @param mixed $value Raw date value.
-	 *
-	 * @return string|null
-	 *
-	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
-	 */
-	private function normaliseDate(mixed $value): ?string {
-		if (is_string($value) === false || $value === '') {
-			return null;
-		}
-
-		try {
-			return (new DateTimeImmutable($value))->format('Y-m-d');
-		} catch (\Throwable) {
-			return null;
-		}
-	}//end normaliseDate()
 }//end class

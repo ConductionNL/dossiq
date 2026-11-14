@@ -6,7 +6,9 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 
 ## Purpose
 Provides the WMO (`wmo-melding`) zaaktype for municipal social-support casework, driving the onderzoek → indicatiestelling → beschikking assessment flow with statutory deadline tracking and auto-generated beschikking letters. It enforces mandatory AVG classification, wijkteam-only access control, wettelijke termijn monitoring, re-evaluation scheduling, anonymized exports to external providers, 15-year statutory retention, and comprehensive audit logging of access to medical data.
+
 ## Requirements
+
 ### Requirement: WMO zaaktype definition and status lifecycle
 The system MUST support a `wmo-melding` zaaktype backed entirely by OpenRegister with mandatory status transitions and wettelijke termijn tracking. The `WmoZaak` entity carries the fields `zaaktype` (fixed `wmo-melding`), `bsn`, `naam`, `aanvraagSoort` (`huishoudelijke-hulp`/`dagbesteding`/`begeleiding`/`hulpmiddelen`/`respijtzorg`/`other`), `aanvraagDatum`, `meldingKanaal`, `ondersteuningsvraag`, `wijkteam`, `behandelaarId`, `tweedeBehandelaarId` (optional), `status`, `avgClassificatie` (required), `doorlooptijdWettelijk`, `indicatiestellingId` (optional), and `huishoudensSamenstelling` (optional). The status lifecycle (`melding` → `onderzoek-loopt` → `beschikking-voorbereiding` → `beschikking-verleend` → `uitvoering` → `evaluatie` → `afgesloten`) MUST be declared as `x-openregister-lifecycle` in the register schema patch, not as a custom workflow engine.
 
@@ -44,12 +46,12 @@ Every WMO case concerns vulnerable adults; the zaak MUST declare its special-cat
 - **AND** `avgClassificatie.bijzonderePersoonsgegevens` is `true`
 
 ### Requirement: Wijkteam-only access control
-Only staff in the assigned wijkteam MAY read a zaak's content; other staff MAY read only metadata. Access MUST be enforced at query time by comparing `zaak.wijkteam` to the requesting user's wijkteam (data-driven, not role-driven alone), with a `tweedeBehandelaarId` override.
+Only staff in the assigned wijkteam MAY read a zaak's content; other staff MAY learn only that the zaak exists, as board DqSociaalDomein shows it. Access MUST be enforced at query time by comparing `zaak.wijkteam` to the requesting user's wijkteam (data-driven, not role-driven alone), with a `tweedeBehandelaarId` override.
 
-#### Scenario: Out-of-team staff see metadata only
+#### Scenario: Out-of-team staff see only that the case exists
 - **GIVEN** `WmoZaak` `zaak-2026-wmo-04832` has `wijkteam = wijkteam-zuid`
 - **WHEN** a staff member from `wijkteam-noord` queries the zaak
-- **THEN** the response contains only zaak number, status, and treatment dates
+- **THEN** the response says only that a case exists, with its domain and the contact person to ask ("Alleen dat hij bestaat"), and no zaak number, status or dates
 - **AND** it does NOT contain `ondersteuningsvraag`, the indicatiestelling, or any inhoud fields
 
 #### Scenario: Second handler gets full access regardless of team
@@ -137,3 +139,29 @@ The implementation chain MUST load three realistic WMO seed cases (OpenRegister-
 - **AND** a long-term dementia case (`zaak-2026-wmo-07415`, 65-74, dagbesteding + begeleiding, status `uitvoering`, ongoing, AVG medisch + gezinssituatie) is present
 - **AND** a young-parent post-childbirth case (`zaak-2026-wmo-05921`, 18-64, hulpverlening + hulpmiddelen, status `beschikking-voorbereiding`, wijkteam-oost, AVG medisch + gezinssituatie) is present
 
+### Requirement: A Wmo report is a case of the Wmo-melding case type (REQ-WMO-CT-001)
+
+dossiq SHALL complete the shipped `wmo-melding` case type through an automatically installed
+package that adopts it by identifier (no second case type): category Wmo, handled by
+`dossiq-sociaal-domein`, confidential, a status for every status of the old `wmoZaak` lifecycle,
+roles, results, fields and a flow. The support question, the household composition and the needs
+assessment reference SHALL be fields flagged `sensitive`; the move to Besluit in voorbereiding SHALL
+require the support question, checked as the system.
+
+#### Scenario: Restricted data stays restricted
+- **GIVEN** the old record restricted `bsn`, `supportRequest`, `householdsComposition` and `needsAssessmentId` to dossiq-sensitive
+- **THEN** on the case they SHALL be `subjectBsn` and `sensitiveProperties`
+
+### Requirement: Stored Wmo reports move onto cases without loss or duplicates (REQ-WMO-CT-002)
+
+On upgrade every stored `wmoZaak` SHALL become one case per case number on its mapped status, with
+the BSN as `subjectBsn`, the applicant's name as the initiator, the consulent as assignee and every
+other field answered on the case. Needs assessments (`indicatiestelling.caseId`), consents
+(`toestemming.caseId`) and case meetings (`mdoOverleg.caseIds`, a list) pointing at the record SHALL
+point at the case. The record SHALL be left as it was apart from `migratedTo` and `migratedAt`
+(`wmoZaak` 1.3.0), and SHALL answer the cross-domain lookup only through its case.
+
+#### Scenario: A case meeting about two reports keeps both
+- **GIVEN** a case meeting listing a moved Wmo report and another case
+- **WHEN** the report moves
+- **THEN** the meeting SHALL list the new case in its place and the other case unchanged

@@ -1,26 +1,23 @@
 <?php
 
 /**
- * Dossiq Schema Annotation Reconciler Test
+ * SchemaAnnotationReconciler Unit Tests
  *
- * Proves that the declarative `x-openregister-*` blocks of the shipped
- * register (base JSON plus register.d fragments) are merged onto the live
- * schema configuration additively and idempotently, and that a missing mapper
- * or a failing write never escapes.
+ * Pins the reconcile of the declarative annotation blocks onto the live
+ * schemas: written once when the live configuration differs, kept when it
+ * already matches, skipped for a slug the instance does not hold, and a failed
+ * write or an unavailable SchemaMapper answering zero with an error logged.
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests
+ * @package  OCA\Dossiq\Tests\Unit\Service\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * SPDX-License-Identifier: EUPL-1.2
- * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * @version GIT: <git-id>
  *
  * @link https://conduction.nl
- *
- * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -29,260 +26,168 @@ namespace OCA\Dossiq\Tests\Unit\Service\Settings;
 
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler;
-use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
-use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
- * Declarative annotation blocks onto live OpenRegister schemas.
- *
- * @covers \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler
- * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
- * @uses   \OCA\Dossiq\Service\Settings\SchemaSlugResolver
+ * Tests for SchemaAnnotationReconciler.
  */
-final class SchemaAnnotationReconcilerTest extends TestCase {
+class SchemaAnnotationReconcilerTest extends TestCase {
 	/**
-	 * The declared annotation blocks per slug, from the shipped register.
+	 * Error messages logged.
 	 *
-	 * @return array<string, array<string, mixed>>
+	 * @var array<int, string>
 	 */
-	private static function declaredBlocks(): array {
-		$settings = dirname(__DIR__, 4) . '/lib/Settings';
-		$base = json_decode((string)file_get_contents($settings . '/dossiq_register.json'), true);
-		[$merged] = (new RegisterFragmentMerger())->merge(base: $base, fragmentDir: $settings . '/register.d');
-
-		$blocks = [];
-		foreach ($merged['components']['schemas'] as $key => $schema) {
-			$configuration = ($schema['configuration'] ?? []);
-			$own = array_intersect_key($configuration, array_flip(SchemaSlugMap::SCHEMA_ANNOTATION_KEYS));
-			if ($own !== []) {
-				$blocks[(string)($schema['slug'] ?? $key)] = $own;
-			}
-		}
-
-		return $blocks;
-	}
+	private array $errors = [];
 
 	/**
-	 * A live schema holding a configuration.
+	 * A live schema double holding a configuration.
 	 *
-	 * @param mixed $configuration The live configuration.
+	 * @param array<string, mixed> $configuration The live configuration.
 	 *
-	 * @return object The schema-like object.
+	 * @return object The schema.
 	 */
-	private static function liveSchema(mixed $configuration): object {
-		return new class($configuration) {
+	private function schema(array $configuration): object {
+		return new class ($configuration) {
 			/**
-			 * @param mixed $configuration The live configuration.
+			 * Constructor.
+			 *
+			 * @param array<string, mixed> $configuration The live configuration.
 			 */
-			public function __construct(public mixed $configuration) {
-			}
+			public function __construct(public array $configuration) {
+			}//end __construct()
 
 			/**
-			 * @return mixed The configuration.
+			 * @return array<string, mixed> The configuration.
 			 */
-			public function getConfiguration(): mixed {
+			public function getConfiguration(): array {
 				return $this->configuration;
-			}
+			}//end getConfiguration()
 
 			/**
-			 * @param array $configuration The new configuration.
+			 * @param array<string, mixed> $configuration The configuration.
 			 *
 			 * @return void
 			 */
 			public function setConfiguration(array $configuration): void {
 				$this->configuration = $configuration;
-			}
+			}//end setConfiguration()
 		};
-	}
+	}//end schema()
 
 	/**
-	 * A schema mapper that knows the given live schemas by slug and records updates.
+	 * A SchemaMapper double counting updates, failing them when told to.
 	 *
-	 * @param array<string, object> $schemas Live schemas by slug.
-	 * @param bool $failUpdates Whether update() throws.
+	 * @param boolean $fails Whether update() throws.
 	 *
 	 * @return object The mapper.
 	 */
-	private static function mapper(array $schemas, bool $failUpdates = false): object {
-		return new class($schemas, $failUpdates) {
-			/**
-			 * The slugs update() was called for, in order.
-			 *
-			 * @var list<object>
-			 */
-			public array $updated = [];
+	private function mapper(bool $fails = false): object {
+		return new class ($fails) {
+			/** @var integer */
+			public int $updates = 0;
 
 			/**
-			 * @param array<string, object> $schemas Live schemas by slug.
-			 * @param bool $failUpdates Whether update() throws.
+			 * Constructor.
+			 *
+			 * @param boolean $fails Whether update() throws.
 			 */
-			public function __construct(private array $schemas, private bool $failUpdates) {
-			}
+			public function __construct(private bool $fails) {
+			}//end __construct()
 
 			/**
-			 * Unscoped slug lookup, mirroring SchemaMapper::find().
-			 *
-			 * @param string $id The slug.
-			 * @param array $extend Unused.
-			 * @param bool $rbac Unused.
-			 * @param bool $multitenancy Unused.
+			 * @param object $schema The schema.
 			 *
 			 * @return object The schema.
-			 *
-			 * @throws \RuntimeException When the slug is unknown.
-			 */
-			public function find(string $id, array $extend = [], bool $rbac = true, bool $multitenancy = true): object {
-				if (isset($this->schemas[$id]) === false) {
-					throw new \RuntimeException('no such schema: ' . $id);
-				}
-
-				return $this->schemas[$id];
-			}
-
-			/**
-			 * @param object $schema The schema to store.
-			 *
-			 * @return object The stored schema.
-			 *
-			 * @throws \RuntimeException When updates fail.
 			 */
 			public function update(object $schema): object {
-				if ($this->failUpdates === true) {
-					throw new \RuntimeException('database is read-only');
+				if ($this->fails === true) {
+					throw new RuntimeException('write refused');
 				}
 
-				$this->updated[] = $schema;
+				$this->updates++;
 				return $schema;
-			}
+			}//end update()
 		};
-	}
+	}//end mapper()
 
 	/**
-	 * The reconciler over a container that serves `$mapper` (or fails), with no register configured.
+	 * The reconciler, resolving only the `case` slug to the given schema.
 	 *
-	 * @param object|null $mapper The SchemaMapper, or null for a container that cannot serve it.
-	 * @param LoggerInterface|null $logger The logger.
+	 * @param object|null $mapper The SchemaMapper, or null when the container cannot build it.
+	 * @param object      $schema The live `case` schema.
 	 *
-	 * @return SchemaAnnotationReconciler The reconciler under test.
+	 * @return SchemaAnnotationReconciler
 	 */
-	private function reconciler(?object $mapper, ?LoggerInterface $logger = null): SchemaAnnotationReconciler {
+	private function reconciler(?object $mapper, object $schema): SchemaAnnotationReconciler {
 		$container = $this->createMock(ContainerInterface::class);
 		if ($mapper === null) {
-			$container->method('get')->willThrowException(new \RuntimeException('OpenRegister is not installed'));
+			$container->method('get')->willThrowException(new RuntimeException('no mapper'));
 		} else {
-			$container->method('get')->with('OCA\OpenRegister\Db\SchemaMapper')->willReturn($mapper);
+			$container->method('get')->willReturn($mapper);
 		}
 
-		$appConfig = $this->createMock(IAppConfig::class);
-		$appConfig->method('getValueString')->willReturn('');
-		$logger = $logger ?? $this->createMock(LoggerInterface::class);
+		$fragments = $this->createMock(RegisterFragmentMerger::class);
+		$fragments->method('merge')->willReturnCallback(static fn (array $base, string $fragmentDir): array => [$base, []]);
 
-		return new SchemaAnnotationReconciler(
-			container: $container,
-			fragments: new RegisterFragmentMerger(),
-			logger: $logger,
-			slugResolver: new SchemaSlugResolver(appConfig: $appConfig, container: $container, logger: $logger),
+		$slugResolver = $this->createMock(SchemaSlugResolver::class);
+		$slugResolver->method('resolve')->willReturnCallback(
+			static fn (object $schemaMapper, string $slug): ?object => ($slug === 'case' ? $schema : null)
 		);
-	}
 
-	/**
-	 * The shipped register declares annotation blocks for case and caseTask.
-	 *
-	 * @return void
-	 */
-	public function testTheShippedRegisterDeclaresTheBlocksTheEnginesRead(): void {
-		$blocks = self::declaredBlocks();
-
-		$this->assertArrayHasKey('x-openregister-calculations', $blocks['case']);
-		$this->assertArrayHasKey('x-openregister-lifecycle', $blocks['caseTask']);
-	}
-
-	/**
-	 * Missing blocks are merged onto the live configuration, keeping its own keys.
-	 *
-	 * @return void
-	 */
-	public function testMissingBlocksAreMergedAndExistingKeysKept(): void {
-		$case = self::liveSchema(['objectNameField' => 'title']);
-		$task = self::liveSchema(null);
-		$mapper = self::mapper(['case' => $case, 'caseTask' => $task]);
-
-		$written = $this->reconciler($mapper)->reconcile();
-
-		$blocks = self::declaredBlocks();
-		$this->assertSame(2, $written);
-		$this->assertEquals(['objectNameField' => 'title'] + $blocks['case'], $case->configuration);
-		$this->assertEquals($blocks['caseTask'], $task->configuration);
-		$this->assertSame([$case, $task], $mapper->updated);
-	}
-
-	/**
-	 * A live configuration that already carries the declared blocks is not written again.
-	 *
-	 * @return void
-	 */
-	public function testAnAlreadyReconciledSchemaIsLeftUntouched(): void {
-		$blocks = self::declaredBlocks();
-		$case = self::liveSchema(['objectNameField' => 'title'] + $blocks['case']);
-		$mapper = self::mapper(['case' => $case]);
-
-		$this->assertSame(0, $this->reconciler($mapper)->reconcile());
-		$this->assertSame([], $mapper->updated);
-	}
-
-	/**
-	 * A changed declared block replaces the live one; other live blocks stay.
-	 *
-	 * @return void
-	 */
-	public function testAStaleBlockIsReplaced(): void {
-		$blocks = self::declaredBlocks();
-		$stale = $blocks['caseTask'];
-		$stale['x-openregister-lifecycle'] = ['initial' => 'outdated'];
-		$task = self::liveSchema($stale + ['x-openregister-aggregations' => ['kept' => true]]);
-		$mapper = self::mapper(['caseTask' => $task]);
-
-		$this->assertSame(1, $this->reconciler($mapper)->reconcile());
-		$this->assertSame($blocks['caseTask']['x-openregister-lifecycle'], $task->configuration['x-openregister-lifecycle']);
-		$this->assertSame(['kept' => true], $task->configuration['x-openregister-aggregations']);
-	}
-
-	/**
-	 * Without OpenRegister's SchemaMapper nothing is reconciled and the failure is logged.
-	 *
-	 * @return void
-	 */
-	public function testAnUnavailableMapperReconcilesNothing(): void {
 		$logger = $this->createMock(LoggerInterface::class);
-		$logger->expects($this->once())->method('error')->with(
-			'Dossiq: Could not access OpenRegister SchemaMapper for declarative reconcile',
-			['exception' => 'OpenRegister is not installed']
+		$logger->method('error')->willReturnCallback(
+			function (string $message): void {
+				$this->errors[] = $message;
+			}
 		);
 
-		$this->assertSame(0, $this->reconciler(null, $logger)->reconcile());
-	}
+		return new SchemaAnnotationReconciler($container, $fragments, $logger, $slugResolver);
+	}//end reconciler()
 
 	/**
-	 * A write that fails is logged per schema and not counted.
+	 * A live schema missing its blocks is written once and keeps its other keys; a second run writes nothing.
 	 *
 	 * @return void
 	 */
-	public function testAFailingWriteIsLoggedAndNotCounted(): void {
-		$logger = $this->createMock(LoggerInterface::class);
-		$logger->expects($this->once())->method('error')->with(
-			'Dossiq: Failed to reconcile declarative configuration for schema case',
-			['exception' => 'database is read-only']
-		);
-		$logger->expects($this->once())->method('info')->with(
-			'Dossiq: Reconciled declarative schema configuration from register JSON',
-			['written' => 0]
-		);
-		$mapper = self::mapper(['case' => self::liveSchema([])], failUpdates: true);
+	public function testWritesTheDeclaredBlocksOnceAndKeepsTheRest(): void {
+		$schema = $this->schema(['own' => 'kept']);
+		$mapper = $this->mapper();
+		$reconciler = $this->reconciler($mapper, $schema);
 
-		$this->assertSame(0, $this->reconciler($mapper, $logger)->reconcile());
-	}
-}
+		self::assertSame(1, $reconciler->reconcile());
+		self::assertSame(1, $mapper->updates);
+		self::assertSame('kept', $schema->configuration['own']);
+		self::assertGreaterThan(1, count($schema->configuration));
+		self::assertSame('own', array_key_first($schema->configuration));
+
+		self::assertSame(0, $reconciler->reconcile());
+		self::assertSame(1, $mapper->updates);
+		self::assertSame([], $this->errors);
+	}//end testWritesTheDeclaredBlocksOnceAndKeepsTheRest()
+
+	/**
+	 * A failed write answers zero and logs the schema it failed for.
+	 *
+	 * @return void
+	 */
+	public function testAFailedWriteAnswersZeroAndIsLogged(): void {
+		$schema = $this->schema([]);
+
+		self::assertSame(0, $this->reconciler($this->mapper(fails: true), $schema)->reconcile());
+		self::assertSame(['Dossiq: Failed to reconcile declarative configuration for schema case'], $this->errors);
+	}//end testAFailedWriteAnswersZeroAndIsLogged()
+
+	/**
+	 * Without a SchemaMapper nothing is reconciled.
+	 *
+	 * @return void
+	 */
+	public function testNoSchemaMapperAnswersZero(): void {
+		self::assertSame(0, $this->reconciler(null, $this->schema([]))->reconcile());
+		self::assertSame(['Dossiq: Could not access OpenRegister SchemaMapper for declarative reconcile'], $this->errors);
+	}//end testNoSchemaMapperAnswersZero()
+}//end class

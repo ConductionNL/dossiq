@@ -15,7 +15,60 @@
  * click the sidebar nav entry (client-side) to reach the target view.
  */
 
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
+
+import { expect } from '@playwright/test'
+
+/**
+ * The budget ONE full page load gets, in milliseconds.
+ *
+ * Measured, not guessed. A dossiq page load fetches and parses about 39 MB of
+ * JavaScript (dossiq's own 17.1 MB in three bundles, decidiq's 12.0 MB
+ * integration bundle, core's 5.6 MB and openregister's 4.4 MB, byte counts
+ * from the network log of a CI trace), and on CI several Chromes do that at
+ * once against one `php -S` on a four-vCPU runner. In the HTML report of run
+ * 34585313834, a slow runner at four workers, all 354 page loads finished
+ * within 27.4s, p99 25.6s, median 17.6s; on the green run 34581297676 the
+ * median was 13.1s. Not one of the 87 four-worker jobs on 2026-09-10 and 11
+ * logged a `page.goto` timeout — but #2517 later measured two of six SHARDED
+ * runs failing on exactly that at the 30s this constant used to hold, and
+ * #2513's own verification run hit an unrelated one that passed clean on
+ * re-run. So this stays at 45s, the margin #2517 measured, until a run on
+ * the current config (four workers, sharded) shows 30s holds again.
+ *
+ * It equals the config's `navigationTimeout` on purpose. Passing it at a call
+ * site says that the budget of that load was sized, and keeps it sized if the
+ * config default ever moves.
+ */
+export const PAGE_LOAD_MS = 45_000
+
+/** `page.goto(url, PAGE_LOAD)`: one page load, at its measured budget. */
+export const PAGE_LOAD = { timeout: PAGE_LOAD_MS } as const
+
+/**
+ * The test budget a journey of `loads` full page loads needs.
+ *
+ * 🔴 THE BUDGET HAS TO HOLD EVERY STEP'S OWN BUDGET, OR A FAILURE NAMES
+ * NOTHING. The default test budget is 60s. A test that loads two pages gives
+ * each load 45s, so two loads alone can spend more than it, and then the test
+ * budget runs out before any load's does. Playwright then reports
+ * `Test timeout of 60000ms exceeded.` and nothing else: the trace of
+ * case-flow-human-steps.spec.ts:205 on run 34578124024 shows loads of 21.8s
+ * and 21.0s and a third one 15s in when the budget ran out, with a message
+ * that named none of them. Sized as below, a slow load fails as a slow load,
+ * `page.goto: Timeout 45000ms exceeded`, naming its URL.
+ *
+ * `restMs` is everything that is not a page load. 30s covers the most any
+ * two-load test spent outside its loads in the slow run's report (25.6s).
+ *
+ * @param loads  Full page loads the test makes, including those inside
+ *               helpers such as `navTo`, which makes two.
+ * @param restMs Budget for everything else the test does.
+ * @return Milliseconds, for `test.setTimeout`.
+ */
+export function journeyBudget(loads: number, restMs = 30_000): number {
+	return loads * PAGE_LOAD_MS + restMs
+}
 
 /**
  * The app's sidebar navigation container.
@@ -131,7 +184,10 @@ async function readNavLinks(
  *              or `/^(All cases|Alle zaken)$/`
  */
 export async function navTo(page: Page, label: string | RegExp): Promise<void> {
-	await page.goto('/index.php/apps/dossiq')
+	// TWO page loads, not one: this one to read the sidebar's links, the one
+	// below to open the target. A test that calls this needs
+	// `journeyBudget(2)` for this call alone.
+	await page.goto('/index.php/apps/dossiq', PAGE_LOAD)
 	await dismissSupportDialog(page)
 
 	const matches = (l: string) =>
@@ -155,7 +211,7 @@ export async function navTo(page: Page, label: string | RegExp): Promise<void> {
 		)
 	}
 
-	await page.goto(target.href)
+	await page.goto(target.href, PAGE_LOAD)
 	await dismissSupportDialog(page)
 }
 
@@ -192,7 +248,7 @@ export async function navToRoute(page: Page, route: string): Promise<void> {
 	// helper correct under either configuration rather than under the one the
 	// CI runner happened to have.
 	for (const url of [`/apps/dossiq${route}`, `/index.php/apps/dossiq${route}`]) {
-		await page.goto(url)
+		await page.goto(url, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		// The catch-all redirect drops the requested path entirely, so a URL
 		// that still carries it is the tell that the route resolved.
@@ -204,8 +260,31 @@ export async function navToRoute(page: Page, route: string): Promise<void> {
 }
 
 /**
+ * Open one case type on the Case types page and switch to one of its tabs.
+ *
+ * The case type is found on the list by its title and opened by clicking the
+ * title, which is how an administrator reaches it; the tab is the page's own
+ * tab strip (`role="tab"`).
+ *
+ * @param page  The page.
+ * @param title The case type's title.
+ * @param tab   The tab's label, English or Dutch.
+ * @return Resolves once the tab is selected.
+ */
+export async function openCaseTypeTab(page: Page, title: string, tab: RegExp): Promise<void> {
+	await navToRoute(page, '/settings/case-types')
+	const row = page.getByRole('row').filter({ hasText: title })
+	await expect(row.first(), `the case type list should offer ${title}`).toBeVisible({ timeout: 120_000 })
+	await row.first().getByText(title, { exact: true }).first().click()
+	await expect(page).toHaveURL(/\/settings\/case-types\/[^/]+$/, { timeout: 60_000 })
+	const strip = page.getByRole('tab', { name: tab })
+	await expect(strip.first()).toBeVisible({ timeout: 60_000 })
+	await strip.first().click()
+}
+
+/**
  * The dossiq admin settings page (`/settings/admin/dossiq`) renders its many
- * sections progressively — the lower ones (Case Email — Shared Mailbox,
+ * sections progressively — the lower ones (Case Email: Shared Mailbox,
  * KCC-werkplek Integration, …) only mount once scrolled near. Scroll to the
  * bottom in steps so every section's heading + fields are in the DOM before a
  * test asserts on them, then return to the top.
@@ -282,12 +361,92 @@ const NON_DOSSIQ_URL_NOISE = [
  */
 export function trackDossiqErrors(page: Page): string[] {
 	const errors: string[] = []
+	// A single-object read that answers 404 is a DANGLING REFERENCE, not a
+	// defect in the page that followed it. The browser logs "Failed to load
+	// resource" for it with no url on the console message, so it has to be
+	// recognised from the response instead.
+	//
+	// ⚠️ SCOPED TO 404, AND ONLY ON THE OBJECT ROUTE. A 5xx on the same path
+	// still fails, and so does a 404 anywhere else, because either would be
+	// this app's problem. What this admits is exactly one thing: a row whose
+	// reference points at something that has been deleted.
+	//
+	// ⚠️ IT IS A RACE, NOT RESIDUE, and the difference decides whether
+	// filtering is the right treatment. Four things were checked before this
+	// was written this way:
+	//
+	//   - `FIXTURE_SCHEMAS` is already child-first — `case` 19th, `statusType`
+	//     25th, `caseType` 27th — so one spec's own teardown never leaves its
+	//     case pointing at a type it removed.
+	//   - an archival case IS removed: `purgeObject` falls back through the
+	//     trash DELETE to `occPurge`, and the 403 is what that fallback is for.
+	//   - the run that produced these 404s left nothing behind: no
+	//     "e2e teardown left objects behind" anywhere in its log.
+	//   - the CI instance is installed fresh per run, so nothing carries over
+	//     to accumulate.
+	//
+	// So the dashboard listed cases at one moment and resolved their types at
+	// a later one, by which time a SIBLING spec's teardown had removed both.
+	// Transient by construction, and invisible on one worker.
+	let dangling = 0
+	//
+	// TWO PATHS ANSWER 404 AS DATA. `/api/objects/` is the dangling reference
+	// described above. `/api/cases/` is OpenRegister's case layer, which
+	// dossiq began reading in #2551, and `CasePlanPanel.readOpenRegisterPlan()`
+	// catches its 404 on purpose: "a 404 is an answer: OpenRegister has no rows
+	// for this case, which is what a BPMN case, an undrained case and a
+	// caseType without a caseModel all look like". So every case without a plan
+	// logs a console 404 the app has already handled and rendered around. The
+	// allowlist did not learn that when the client shipped, and
+	// `case-actions-menu.spec.ts` failed on it the first time the suite ran
+	// again after decidiq#1300 revived it.
+	page.on('response', (r) => {
+		if (r.status() !== 404) {
+			return
+		}
+
+		const url = r.url()
+		if (
+			url.includes('/apps/openregister/api/objects/')
+			|| url.includes('/apps/openregister/api/cases/')
+		) {
+			dangling += 1
+		}
+	})
+
 	page.on('console', (m) => {
 		if (m.type() !== 'error') return
 		const text = m.text()
 		if (NON_DOSSIQ_NOISE.some((n) => text.includes(n))) return
+
+		// 🔴 URL NOISE IS FILTERED BEFORE THE PAIRING, NOT AFTER IT.
+		//
+		// The order is not cosmetic. `dangling` is a budget of 404s this app
+		// asked for and handled, and a message that some OTHER app produced
+		// must never be allowed to spend it. It used to be: a hermiq 404
+		// (`/apps/hermiq/` is listed as environment noise below, and no hermiq
+		// ships on this instance) reached the pairing first, decremented the
+		// counter, and returned. A genuine handled 404 arriving afterwards
+		// then found the budget at zero and was reported as an app error.
+		//
+		// Whether that happened on any given run depends on whether Chrome put
+		// a url on the message, so this is a latent misattribution rather than
+		// a proven cause of one. It is still the wrong order: a filter that
+		// runs after the step it should have prevented does not filter, it
+		// relabels. Same shape as the precondition-ordering defect in
+		// `case-types-tabs.spec.ts`.
 		const url = m.location()?.url ?? ''
 		if (url && NON_DOSSIQ_URL_NOISE.some((n) => url.includes(n))) return
+
+		if (dangling > 0 && text.includes('404 (Not Found)')) {
+			// Paired one for one, and only downwards, so a second 404 with
+			// nothing to answer for it still fails. The pairing relies on the
+			// response event arriving before the console message it causes,
+			// which is the order the browser reports them in; if that ever
+			// inverts, this admits one error too few and the test says so.
+			dangling -= 1
+			return
+		}
 		errors.push(text)
 	})
 	page.on('response', (r) => {
@@ -296,4 +455,180 @@ export function trackDossiqErrors(page: Page): string[] {
 		}
 	})
 	return errors
+}
+
+/**
+ * What a route query may carry for a manifest date token.
+ *
+ * A widget's `viewAllRoute` or a tile's `route` declares its window as a token
+ * — `@today`, `@today+3d` — and the host resolves that token to a date before
+ * it navigates. Both forms name the same day, so a test that pins the literal
+ * fails on an implementation that resolved it and vice versa, while neither
+ * outcome says anything about the filter the reader lands on.
+ *
+ * The KEY is what these assertions are about: a table that counts one set of
+ * cases and a View all that lands on another is the dropped filter they exist
+ * to catch. So match either spelling of the value, and keep the key exact.
+ *
+ * @param token The token as the manifest writes it, e.g. `@today+3d`.
+ *
+ * @return A pattern matching the token itself or the date it resolves to.
+ */
+export function dateTokenPattern(token: string): RegExp {
+	const offset = /^@today(?:\+(\d+)d)?$/.exec(token)
+	if (offset === null) {
+		throw new Error(`dateTokenPattern: ${token} is not a @today token.`)
+	}
+
+	const day = new Date()
+	day.setDate(day.getDate() + Number(offset[1] ?? 0))
+	const resolved = day.toISOString().slice(0, 10)
+
+	return new RegExp(`^(${token.replace('+', '\\+')}|${resolved})$`)
+}
+
+/**
+ * Tick an `NcCheckboxRadioSwitch`, by clicking the control a person clicks.
+ *
+ * 🔴 `.check()` ON THE INPUT CANNOT WORK HERE, and it fails in a way that reads
+ * as a hung page rather than as a wrong locator. The component renders a real
+ * `<input type="checkbox">` underneath a `<span class="checkbox-content …">`
+ * that carries the visible box and the label text. Playwright finds the input,
+ * confirms it is "visible, enabled and stable", then retries the click for the
+ * whole budget against:
+ *
+ *     <span … class="checkbox-content …"> intercepts pointer events
+ *
+ * So every actionability check passes and the click still never lands. That is
+ * not an overlay to wait out; it is the component's own label, by design.
+ *
+ * The span carries `id="<input id>-label"`, which is the component's contract
+ * and is what this uses. Clicking it is also what a user does, so the test
+ * exercises the real path rather than forcing an event onto a hidden input.
+ * `force: true` would also pass, and is rejected on purpose: it would silence a
+ * genuine overlay later, which is the failure this suite can least afford.
+ *
+ * @param checkbox The `getByRole('checkbox')` locator for the input itself.
+ *
+ * @return Resolves once the box is ticked.
+ */
+export async function tickCheckbox(checkbox: Locator): Promise<void> {
+	const id = await checkbox.getAttribute('id')
+	if (id === null || id === '') {
+		throw new Error(
+			'tickCheckbox: the checkbox has no id, so its label cannot be '
+				+ 'addressed. NcCheckboxRadioSwitch always sets one; if this '
+				+ 'fires, the control is not that component.',
+		)
+	}
+
+	await checkbox.page().locator(`#${id}-label`).click()
+	await expect(checkbox).toBeChecked({ timeout: 10_000 })
+}
+
+/**
+ * Click one of a detail page's manifest header actions.
+ *
+ * These used to be buttons in the page header, so a test clicked them
+ * directly. They are entries in the header's Actions menu now: CnDetailPage
+ * feeds `headerActions` into CnActionsMenu instead of rendering a row of
+ * buttons, which on a case with twelve of them squeezed the title to a stub.
+ * The `data-testid` on each entry is unchanged, so the only new step is
+ * opening the menu.
+ *
+ * The menu is `force-menu`, so nothing is inline and every entry is absent from
+ * the DOM until it opens: a bare `getByTestId(...).click()` now fails with
+ * `element(s) not found` after the full timeout, which reads as a missing
+ * feature rather than as a closed menu. Hence this helper rather than an
+ * open-the-menu line copied into each test.
+ *
+ * @param page The page showing the detail view.
+ * @param testId The action entry's `data-testid`, e.g. `cn-action-copy-case`.
+ *
+ * @return Resolves once the entry has been clicked.
+ */
+export async function clickHeaderAction(page: Page, testId: string): Promise<void> {
+	await openHeaderActionsMenu(page)
+	const entry = page.getByTestId(testId)
+	await expect(entry).toBeVisible({ timeout: 10_000 })
+	await entry.click()
+}
+
+/**
+ * Open a detail page's header Actions menu and wait for it to render.
+ *
+ * Split out from {@link clickHeaderAction} for the tests that assert on what
+ * the menu holds — that Copy case is offered and Start is not, say — rather
+ * than pressing one entry.
+ *
+ * Opening an already-open menu would close it, so this is a no-op when the
+ * root already carries `action-item--open`.
+ *
+ * @param page The page showing the detail view.
+ *
+ * @return Resolves once the menu is open.
+ */
+export async function openHeaderActionsMenu(page: Page): Promise<void> {
+	// `cn-detail-page-actions` lands on NcActions' ROOT div, not on the toggle:
+	// NcActions renders its root with a class list and no attribute spread, so
+	// Vue's fallthrough puts the testid there. That root is also what carries
+	// `action-item--open`, which is the only open-state signal this version
+	// publishes — the toggle button gets no `aria-expanded` of its own, so an
+	// assertion on one would wait out its timeout on a menu that did open.
+	const menu = page.getByTestId('cn-detail-page-actions')
+	await expect(menu).toBeVisible({ timeout: 20_000 })
+
+	const open = await menu.evaluate((el) =>
+		el.classList.contains('action-item--open'),
+	)
+	if (!open) {
+		await menu.locator('.action-item__menutoggle').click()
+	}
+
+	await expect(menu).toHaveClass(/action-item--open/, { timeout: 10_000 })
+}
+
+/**
+ * The Sort section of an index page's sidebar, opened if it is closed.
+ *
+ * The sidebar draws the section in the card, list and map views (the table
+ * sorts by its headers): a "Sort by" select with one option per entry of the
+ * page's sort options, and a line naming the current order.
+ *
+ * @param page The Playwright page.
+ * @return The Sort section.
+ */
+export async function openSortSection(page: Page): Promise<Locator> {
+	const section = page.getByTestId('cn-index-sidebar-sort')
+	if (!(await section.isVisible())) {
+		await page.getByTestId('cn-actions-bar-filter-button').click()
+	}
+	await expect(section).toBeVisible({ timeout: 30_000 })
+	return section
+}
+
+/**
+ * Choose an order in the index sidebar's Sort section.
+ *
+ * @param page The Playwright page.
+ * @param label The option's label, e.g. "Newest".
+ */
+export async function chooseSort(page: Page, label: string): Promise<void> {
+	const section = await openSortSection(page)
+	await section.getByRole('combobox').click()
+	await page.getByRole('option', { name: label, exact: true }).click()
+}
+
+/**
+ * Assert the order the index sidebar's Sort section names as current.
+ *
+ * An endpoint-ranked order (Urgency) is a fixed entry, which the section
+ * names as "Current order: <label>".
+ *
+ * @param page The Playwright page.
+ * @param label The option's label.
+ */
+export async function expectSort(page: Page, label: string): Promise<void> {
+	const section = await openSortSection(page)
+	await expect(section.getByTestId('cn-index-sidebar-sort-current')).toContainText(label, { timeout: 30_000 })
 }

@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "d9a4d2e2-3f4e-4d5b-aa1f-procesttermijn1",
 		"name": "Dossiq Termijnbewaking + Dwangsom REST API",
-		"description": "API/contract coverage for the termijnbewaking-dwangsom-engine chain (member 10 — bezwaar REST API). Exercises the full REST surface that the `TermijnController`, `NoticeOfDefaultController`, `DwangsomController`, and `DeadlineReportingController` expose against a live dossiq instance.\n\nCovers validation and error cases per task 3 of `openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md`:\n  - each endpoint with happy + validation paths,\n  - unauthorized case access rejected with 401/403 (no state change),\n  - 400 on missing/invalid bodies,\n  - 404 on unknown ids.\n\nAuth is HTTP Basic + OCS-APIRequest. Defaults to admin:admin against http://localhost:8080. Unauthorized-access tests connect WITHOUT credentials by overriding auth at the request level.",
+		"description": "API/contract coverage for the termijnbewaking-dwangsom-engine chain (member 10 — bezwaar REST API). Exercises the full REST surface that the `TermijnController`, `AccrualNoticeController`, `DwangsomController`, and `DeadlineReportingController` expose against a live dossiq instance.\n\nCovers validation and error cases per task 3 of `openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md`:\n  - each endpoint with happy + validation paths,\n  - unauthorized case access rejected with 401/403 (no state change),\n  - 400 on missing/invalid bodies,\n  - 404 on unknown ids.\n\nAuth is HTTP Basic + OCS-APIRequest. Defaults to admin:admin against http://localhost:8080. Unauthorized-access tests connect WITHOUT credentials by overriding auth at the request level.\n\n@newman exclude Not dead: the /api/termijn routes are live in appinfo/routes.php, and the collection runs locally through tests/newman/run-all.sh. It has never run in CI because it sits outside newman-collection-path 'data' and the caller sets enable-newman false. See the comment on enable-newman in .github/workflows/code-quality.yml.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
@@ -27,7 +27,7 @@
 	],
 	"item": [
 		{
-			"name": "TermijnController — POST /termijn/instances missing fields returns 400",
+			"name": "TermijnController — POST /deadlines/instances missing fields returns 400",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -36,9 +36,9 @@
 				],
 				"body": {"mode": "raw", "raw": "{}"},
 				"url": {
-					"raw": "{{base_url}}/api/termijn/instances",
+					"raw": "{{base_url}}/api/deadlines/instances",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "instances"]
+					"path": ["api", "deadlines", "instances"]
 				}
 			},
 			"event": [
@@ -49,7 +49,7 @@
 			]
 		},
 		{
-			"name": "TermijnController — POST /termijn/instances creates a TermijnInstance",
+			"name": "TermijnController — POST /deadlines/instances creates a TermijnInstance",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -61,9 +61,9 @@
 					"raw": "{\n  \"zaakId\": \"newman-zaak-{{run_id}}\",\n  \"zaaktype\": \"besluitbeschikking\"\n}"
 				},
 				"url": {
-					"raw": "{{base_url}}/api/termijn/instances",
+					"raw": "{{base_url}}/api/deadlines/instances",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "instances"]
+					"path": ["api", "deadlines", "instances"]
 				}
 			},
 			"event": [
@@ -79,14 +79,14 @@
 			]
 		},
 		{
-			"name": "TermijnController — GET /termijn/instances/{id} on unknown id returns 404",
+			"name": "TermijnController — GET /deadlines/instances/{id} on unknown id returns 404",
 			"request": {
 				"method": "GET",
 				"header": [{"key": "OCS-APIRequest", "value": "true"}],
 				"url": {
-					"raw": "{{base_url}}/api/termijn/instances/00000000-0000-0000-0000-000000000000",
+					"raw": "{{base_url}}/api/deadlines/instances/00000000-0000-0000-0000-000000000000",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "instances", "00000000-0000-0000-0000-000000000000"]
+					"path": ["api", "deadlines", "instances", "00000000-0000-0000-0000-000000000000"]
 				}
 			},
 			"event": [
@@ -105,9 +105,9 @@
 				],
 				"body": {"mode": "raw", "raw": "{\"duurDagen\": 0, \"motivering\": \"\"}"},
 				"url": {
-					"raw": "{{base_url}}/api/termijn/instances/00000000-0000-0000-0000-000000000000/pauze",
+					"raw": "{{base_url}}/api/deadlines/instances/00000000-0000-0000-0000-000000000000/pause",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "instances", "00000000-0000-0000-0000-000000000000", "pauze"]
+					"path": ["api", "deadlines", "instances", "00000000-0000-0000-0000-000000000000", "pause"]
 				}
 			},
 			"event": [
@@ -127,9 +127,9 @@
 				],
 				"body": {"mode": "raw", "raw": "{}"},
 				"url": {
-					"raw": "{{base_url}}/api/termijn/instances/00000000-0000-0000-0000-000000000000/verleng",
+					"raw": "{{base_url}}/api/deadlines/instances/00000000-0000-0000-0000-000000000000/extend",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "instances", "00000000-0000-0000-0000-000000000000", "verleng"]
+					"path": ["api", "deadlines", "instances", "00000000-0000-0000-0000-000000000000", "extend"]
 				}
 			},
 			"event": [
@@ -139,7 +139,7 @@
 			]
 		},
 		{
-			"name": "NoticeOfDefaultController — POST register missing fields returns 400",
+			"name": "AccrualNoticeController — POST register missing fields returns 400",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -161,7 +161,7 @@
 			]
 		},
 		{
-			"name": "NoticeOfDefaultController — GET unknown id returns 404",
+			"name": "AccrualNoticeController — GET unknown id returns 404",
 			"request": {
 				"method": "GET",
 				"header": [{"key": "OCS-APIRequest", "value": "true"}],
@@ -243,9 +243,9 @@
 				"method": "GET",
 				"header": [{"key": "OCS-APIRequest", "value": "true"}],
 				"url": {
-					"raw": "{{base_url}}/api/termijn/dashboard/kpi",
+					"raw": "{{base_url}}/api/deadlines/dashboard/kpi",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "dashboard", "kpi"]
+					"path": ["api", "deadlines", "dashboard", "kpi"]
 				}
 			},
 			"event": [
@@ -268,9 +268,9 @@
 				],
 				"body": {"mode": "raw", "raw": "{\"zaakId\":\"newman-unauth-{{run_id}}\",\"zaaktype\":\"besluitbeschikking\"}"},
 				"url": {
-					"raw": "{{base_url}}/api/termijn/instances",
+					"raw": "{{base_url}}/api/deadlines/instances",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "instances"]
+					"path": ["api", "deadlines", "instances"]
 				}
 			},
 			"event": [
@@ -286,9 +286,9 @@
 				"method": "GET",
 				"header": [{"key": "OCS-APIRequest", "value": "true"}],
 				"url": {
-					"raw": "{{base_url}}/api/termijn/instances/00000000-0000-0000-0000-000000000000",
+					"raw": "{{base_url}}/api/deadlines/instances/00000000-0000-0000-0000-000000000000",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "instances", "00000000-0000-0000-0000-000000000000"]
+					"path": ["api", "deadlines", "instances", "00000000-0000-0000-0000-000000000000"]
 				}
 			},
 			"event": [

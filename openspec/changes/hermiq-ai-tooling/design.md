@@ -52,7 +52,7 @@ The D6 rule, operationalised: the tool *is* the service call, so every guard, cl
 | `dossiq.cancelAppointment` | `AppointmentService` (cf. `AppointmentController::cancel`) | update | **external** | **Always gated** | Citizen-visible cancellation. |
 | `dossiq.draftBeschikking` | `BeschikkingGenerationService` | create | user | **Always gated** | Produces a **draft only**, visible to the caseworker; the beschikking lifecycle beyond draft is refused (§D3). |
 
-The approval column is Dossiq's declared posture; Hermiq enforces it (an operator can only tighten, never loosen, from the tool's declaration). "Gated" means the invocation returns Hermiq's pending-approval envelope and the side effect happens only after a human approves — asynchronously, attributable, audited.
+The approval column is what hermiq's default produces, not a dossiq declaration (decision 176, Q-dossiq-L6-2): approval stays hermiq policy and apps declare no approval floor. Every write declares `readOnlyHint: false` and its scope, so hermiq holds every invocation an agent was not explicitly granted; an operator un-gates a tool by granting it, or waives the confirmation with `#noapproval`. "Ungated" in the table means the operator is expected to grant it, not that dossiq lifts the gate. "Gated" means the invocation returns Hermiq's pending-approval envelope and the side effect happens only after a human approves — asynchronously, attributable, audited.
 
 ### D3 — Standing refusals (D6 extended)
 

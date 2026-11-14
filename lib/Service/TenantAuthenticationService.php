@@ -22,13 +22,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TenantAuthenticationServiceInterface;
+use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -37,9 +42,18 @@ use Throwable;
 /**
  * Mandate-matrix authorisation guard for tenant actions.
  *
+ * Every lookup here reads `ObjectService::findAll()` rows, and `findAll()`
+ * returns `ObjectEntity` objects, not arrays. Indexing one as an array throws,
+ * and keeping only the rows that are arrays keeps none. So each row goes
+ * through {@see OpenRegisterRowNormaliser} before a property is read off it.
+ * Until that was done, no membership ever resolved, and the role and matrix
+ * lookups threw on the first row they read.
+ *
  * @spec openspec/specs/multi-tenancy/spec.md#req-005-tenant-membership-and-status-helpers-for-middleware
  */
-class TenantAuthenticationService {
+class TenantAuthenticationService implements TenantAuthenticationServiceInterface {
+	use RefusesWhenIndeterminate;
+
 	/**
 	 * Default deny-everything matrix (fail-closed fallback).
 	 *
@@ -64,11 +78,13 @@ class TenantAuthenticationService {
 	 * @param IAppManager $appManager App manager (for OR availability check).
 	 * @param ContainerInterface $container DI container.
 	 * @param LoggerInterface $logger Logger.
+	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 	) {
 	}//end __construct()
 
@@ -81,26 +97,19 @@ class TenantAuthenticationService {
 	 *
 	 * @return array{allowed: bool, reason: string} Decision payload.
 	 *
+	 * @throws RefusedException When the matrix could not be read, so the answer is neither yes nor no.
+	 *
 	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function validateMandateMatrix(string $tenantId, string $userId, string $action): array {
 		try {
-			$matrix = $this->loadActiveMatrix(tenantId: $tenantId);
-			if ($matrix === null) {
-				return ['allowed' => false, 'reason' => 'No active mandate matrix for tenant'];
-			}
-
-			$role = $this->resolveUserRole(tenantId: $tenantId, userId: $userId);
-			if ($role === null) {
-				return ['allowed' => false, 'reason' => 'User has no role inside tenant'];
-			}
-
-			$allowed = $this->isAllowed(matrix: $matrix, role: $role, action: $action);
-			if ($allowed === true) {
-				return ['allowed' => true, 'reason' => 'Authorised by mandate matrix'];
-			}
-
-			return ['allowed' => false, 'reason' => 'Role ' . $role . ' is not authorised for action ' . $action];
+			return $this->matrixDecision(tenantId: $tenantId, userId: $userId, action: $action);
+		} catch (RefusedException $e) {
+			// A refusal already says what happened and with which status.
+			// Folding it into the fail-closed branch below is what made an
+			// unreadable matrix indistinguishable from a role that may not act.
+			throw $e;
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: mandate matrix validation failed (fail-closed)',
@@ -109,6 +118,38 @@ class TenantAuthenticationService {
 			return ['allowed' => false, 'reason' => 'Mandate validation error'];
 		}//end try
 	}//end validateMandateMatrix()
+
+	/**
+	 * Decide one action from the active matrix and the user's role inside the tenant.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param string $userId   NC user ID.
+	 * @param string $action   Requested action.
+	 *
+	 * @return array{allowed: bool, reason: string} Decision payload.
+	 *
+	 * @throws Throwable When the matrix or the role cannot be read.
+	 *
+	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
+	 */
+	private function matrixDecision(string $tenantId, string $userId, string $action): array {
+		$matrix = $this->loadActiveMatrix(tenantId: $tenantId);
+		if ($matrix === null) {
+			return ['allowed' => false, 'reason' => 'No active mandate matrix for tenant'];
+		}
+
+		$role = $this->resolveUserRole(tenantId: $tenantId, userId: $userId);
+		if ($role === null) {
+			return ['allowed' => false, 'reason' => 'User has no role inside tenant'];
+		}
+
+		$allowed = $this->isAllowed(matrix: $matrix, role: $role, action: $action);
+		if ($allowed === true) {
+			return ['allowed' => true, 'reason' => 'Authorised by mandate matrix'];
+		}
+
+		return ['allowed' => false, 'reason' => 'Role ' . $role . ' is not authorised for action ' . $action];
+	}//end matrixDecision()
 
 	/**
 	 * Check whether the matrix authorises (role, action).
@@ -155,9 +196,12 @@ class TenantAuthenticationService {
 	 *
 	 * @param string $tenantId Tenant UUID.
 	 *
-	 * @return array<string, array<string, bool>>|null Active matrix or null.
+	 * @return array<string, array<string, bool>>|null Active matrix, or null when the tenant has none.
+	 *
+	 * @throws RefusedException When the matrix store could not be read at all.
 	 *
 	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function loadActiveMatrix(string $tenantId): ?array {
 		$objectService = $this->getObjectService();
@@ -165,31 +209,7 @@ class TenantAuthenticationService {
 			return null;
 		}
 
-		try {
-			// ObjectService::findAll() takes a single $config array — the previous
-			// named-argument form threw "Unknown named parameter $register" and
-			// was swallowed by the catch below. Register/schema live inside
-			// `filters`; limit/offset are top-level config keys.
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => TenantSaasService::REGISTER,
-						'schema' => 'tenantMandate',
-						'tenantRef' => $tenantId,
-					],
-					'limit' => 50,
-					'offset' => 0,
-				]
-			);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_array($rows) === false || count($rows) === 0) {
-			return null;
-		}
-
-		$active = $this->findActiveMandateRow(rows: $rows);
+		$active = $this->activeMandateRowOf(rows: $this->readMandateRows(objectService: $objectService, tenantId: $tenantId));
 		if ($active === null) {
 			return null;
 		}
@@ -198,24 +218,97 @@ class TenantAuthenticationService {
 	}//end loadActiveMatrix()
 
 	/**
+	 * The mandate row in force now, among the rows read.
+	 *
+	 * @param mixed $rows The rows as findAll() answers them.
+	 *
+	 * @return array<string, mixed>|null The active row, or null when there are no rows or none applies.
+	 */
+	private function activeMandateRowOf(mixed $rows): ?array {
+		if (is_array($rows) === false || count($rows) === 0) {
+			return null;
+		}
+
+		return $this->findActiveMandateRow(rows: $this->rowsAsArrays(rows: $rows));
+	}//end activeMandateRowOf()
+
+	/**
+	 * Read the tenant's mandate rows, refusing when the store cannot be read.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $tenantId      Tenant UUID.
+	 *
+	 * @return mixed The rows as findAll() answers them.
+	 *
+	 * @throws RefusedException When the matrix store could not be read at all.
+	 */
+	private function readMandateRows(object $objectService, string $tenantId): mixed {
+		return $this->readOrRefuse(
+			read: fn (): mixed => $objectService->findAll($this->mandateQuery(tenantId: $tenantId)),
+			what: 'the mandate matrix for tenant ' . $tenantId,
+			rule: 'tenant-mandate-matrix-unreadable',
+			sentence: 'The mandate matrix could not be read, so this action cannot be checked right now.',
+		);
+	}//end readMandateRows()
+
+	/**
+	 * The findAll() config for a tenant's mandate rows.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 *
+	 * @return array<string, mixed> The config.
+	 */
+	private function mandateQuery(string $tenantId): array {
+		// ObjectService::findAll() takes a single $config array — the previous
+		// named-argument form threw "Unknown named parameter $register" and was
+		// swallowed by the catch that stood here, which is how an unreadable
+		// matrix became "not authorised". Register/schema live inside
+		// `filters`; limit/offset are top-level config keys.
+		return [
+			'filters' => [
+				'register' => AppIdentity::REGISTER_SLUG,
+				'schema' => 'tenantMandate',
+				'tenantRef' => $tenantId,
+			],
+			'limit' => 50,
+			'offset' => 0,
+		];
+	}//end mandateQuery()
+
+	/**
 	 * Pick the mandate row whose effective window contains "now".
 	 *
-	 * @param array<int, mixed> $rows The tenantMandate rows.
+	 * @param array<int, array<string, mixed>> $rows The tenantMandate rows, read as arrays.
 	 *
-	 * @return mixed The active row, or null when none applies.
+	 * @return array<string, mixed>|null The active row, or null when none applies.
 	 */
-	private function findActiveMandateRow(array $rows): mixed {
+	private function findActiveMandateRow(array $rows): ?array {
 		$now = time();
 		foreach ($rows as $row) {
-			$from = strtotime((string)($row['effectiveFrom'] ?? '1970-01-01'));
-			$to = strtotime((string)($row['effectiveTo'] ?? '2099-12-31'));
-			if ($from !== false && $to !== false && $from <= $now && $now <= $to) {
+			if ($this->isEffectiveAt(row: $row, moment: $now) === true) {
 				return $row;
 			}
 		}
 
 		return null;
 	}//end findActiveMandateRow()
+
+	/**
+	 * Whether a mandate row's effective window holds the moment.
+	 *
+	 * A missing bound is open-ended; a bound that does not parse makes the row apply never.
+	 *
+	 * @param array<string, mixed> $row    The tenantMandate row.
+	 * @param int                  $moment The moment, a Unix timestamp.
+	 *
+	 * @return bool True when the row is in force at the moment.
+	 */
+	private function isEffectiveAt(array $row, int $moment): bool {
+		$from = strtotime((string)($row['effectiveFrom'] ?? '1970-01-01'));
+		$to = strtotime((string)($row['effectiveTo'] ?? '2099-12-31'));
+
+		return ($from !== false && $to !== false && $from <= $moment && $moment <= $to);
+	}//end isEffectiveAt()
 
 	/**
 	 * Normalise the `matrix` field of an active mandate row.
@@ -264,29 +357,7 @@ class TenantAuthenticationService {
 		}
 
 		try {
-			// ObjectService::findAll() takes a single $config array — see the note
-			// above; register/schema live inside `filters`.
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => TenantSaasService::REGISTER,
-						'schema' => 'tenantUser',
-						'tenantRef' => $tenantId,
-						'userRef' => $userId,
-					],
-					'limit' => 1,
-					'offset' => 0,
-				]
-			);
-			if (is_array($rows) === true && count($rows) > 0) {
-				$row = $rows[0];
-				$role = (string)($row['role'] ?? '');
-				if ($role !== '') {
-					return $role;
-				}
-
-				return null;
-			}
+			return $this->firstRoleOf(rows: $objectService->findAll($this->tenantUserQuery(tenantId: $tenantId, userId: $userId)));
 		} catch (Throwable $e) {
 			// Fail CLOSED: a backend error is NOT "no role". Surfacing it as a
 			// null role would let the mandate-matrix caller treat the lookup as
@@ -297,10 +368,52 @@ class TenantAuthenticationService {
 				['tenantId' => $tenantId, 'userId' => $userId, 'exception' => $e->getMessage()]
 			);
 			throw $e;
-		}//end try
+		}
+	}//end resolveUserRole()
+
+	/**
+	 * The findAll() config for one user's membership row inside one tenant.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param string $userId   NC user ID.
+	 *
+	 * @return array<string, mixed> The config.
+	 */
+	private function tenantUserQuery(string $tenantId, string $userId): array {
+		// ObjectService::findAll() takes a single $config array — see the note
+		// above; register/schema live inside `filters`.
+		return [
+			'filters' => [
+				'register' => AppIdentity::REGISTER_SLUG,
+				'schema' => 'tenantUser',
+				'tenantRef' => $tenantId,
+				'userRef' => $userId,
+			],
+			'limit' => 1,
+			'offset' => 0,
+		];
+	}//end tenantUserQuery()
+
+	/**
+	 * The role on the first membership row.
+	 *
+	 * @param mixed $rows The rows as findAll() answers them.
+	 *
+	 * @return string|null The role, or null when there is no row or it names none.
+	 */
+	private function firstRoleOf(mixed $rows): ?string {
+		if (is_array($rows) === false || count($rows) === 0) {
+			return null;
+		}
+
+		$row = $this->rowNormaliser->normalise(row: $rows[0])['data'];
+		$role = (string)($row['role'] ?? '');
+		if ($role !== '') {
+			return $role;
+		}
 
 		return null;
-	}//end resolveUserRole()
+	}//end firstRoleOf()
 
 	/**
 	 * The tenant ids the given user is a member of.
@@ -333,18 +446,27 @@ class TenantAuthenticationService {
 			return [];
 		}
 
+		$rows = $this->readMemberships(objectService: $objectService, userId: $userId);
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		return $this->distinctTenantRefs(rows: $rows);
+	}//end listTenantsForUser()
+
+	/**
+	 * Read a user's membership rows; a failed read is logged and thrown (fail-closed).
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $userId        The Nextcloud uid.
+	 *
+	 * @return mixed The rows as findAll() answers them.
+	 *
+	 * @throws Throwable When the membership lookup fails.
+	 */
+	private function readMemberships(object $objectService, string $userId): mixed {
 		try {
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => TenantSaasService::REGISTER,
-						'schema' => 'tenantUser',
-						'userRef' => $userId,
-					],
-					'limit' => self::MAX_MEMBERSHIPS,
-					'offset' => 0,
-				]
-			);
+			return $objectService->findAll($this->membershipQuery(userId: $userId));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: listTenantsForUser lookup failed (fail-closed)',
@@ -352,17 +474,37 @@ class TenantAuthenticationService {
 			);
 			throw $e;
 		}
+	}//end readMemberships()
 
-		if (is_array($rows) === false) {
-			return [];
-		}
+	/**
+	 * The findAll() config for a user's membership rows.
+	 *
+	 * @param string $userId The Nextcloud uid.
+	 *
+	 * @return array<string, mixed> The config.
+	 */
+	private function membershipQuery(string $userId): array {
+		return [
+			'filters' => [
+				'register' => AppIdentity::REGISTER_SLUG,
+				'schema' => 'tenantUser',
+				'userRef' => $userId,
+			],
+			'limit' => self::MAX_MEMBERSHIPS,
+			'offset' => 0,
+		];
+	}//end membershipQuery()
 
+	/**
+	 * The tenant refs on the membership rows, trimmed, empty ones skipped, each once.
+	 *
+	 * @param array<int, mixed> $rows The membership rows.
+	 *
+	 * @return array<int, string> Tenant ids, in row order.
+	 */
+	private function distinctTenantRefs(array $rows): array {
 		$tenantIds = [];
-		foreach ($rows as $row) {
-			if (is_array($row) === false) {
-				continue;
-			}
-
+		foreach ($this->rowsAsArrays(rows: $rows) as $row) {
 			$tenantId = trim((string)($row['tenantRef'] ?? ''));
 			if ($tenantId === '' || in_array($tenantId, $tenantIds, true) === true) {
 				continue;
@@ -372,7 +514,7 @@ class TenantAuthenticationService {
 		}
 
 		return $tenantIds;
-	}//end listTenantsForUser()
+	}//end distinctTenantRefs()
 
 	/**
 	 * Whether the user is a member of the tenant.
@@ -399,6 +541,26 @@ class TenantAuthenticationService {
 		return in_array($tenantId, $this->listTenantsForUser(userId: $userId), true);
 	}//end isMemberOf()
 
+	/**
+	 * Read each findAll() row as an array, whatever shape it arrives in.
+	 *
+	 * A row that carries nothing readable is dropped rather than kept as an
+	 * empty array. Kept, it would read as a mandate with no window, and a
+	 * mandate with no window counts as active: dropping it can only remove a
+	 * membership or a mandate, never add one.
+	 *
+	 * @param array<int, mixed> $rows The raw findAll() rows.
+	 *
+	 * @return array<int, array<string, mixed>> The readable rows as arrays, in order.
+	 */
+	private function rowsAsArrays(array $rows): array {
+		$arrays = array_map(
+			fn (mixed $row): array => $this->rowNormaliser->normalise(row: $row)['data'],
+			$rows
+		);
+
+		return array_values(array_filter($arrays, static fn (array $data): bool => $data !== []));
+	}//end rowsAsArrays()
 
 	/**
 	 * Resolve OR's ObjectService when installed.

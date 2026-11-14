@@ -102,7 +102,7 @@ async function readAllTolerant(request, schema) {
 }
 
 test.describe('the grant schemes became case types', () => {
-	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	// @e2e case-types::a-migrated-scheme-carries-its-fields-not-just-its-name
 	test('both schemes exist as case types, with their fields carried', async ({
 		request,
 	}) => {
@@ -137,7 +137,7 @@ test.describe('the grant schemes became case types', () => {
 		}
 	})
 
-	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	// @e2e case-types::the-decision-term-becomes-a-duration-not-an-integer
 	test('requestTermWeeks became an ISO-8601 duration, not a bare integer', async ({
 		request,
 	}) => {
@@ -158,7 +158,7 @@ test.describe('the grant schemes became case types', () => {
 		}
 	})
 
-	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	// @e2e case-types::an-enum-property-keeps-its-allowed-values
 	test('the enum property kept its allowed values instead of flattening', async ({
 		request,
 	}) => {
@@ -192,7 +192,7 @@ test.describe('the grant schemes became case types', () => {
 		}
 	})
 
-	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	// @e2e case-types::the-grant-specific-properties-survive-as-property-definitions
 	test('the grant-specific properties came across as property definitions', async ({
 		request,
 	}) => {
@@ -213,14 +213,14 @@ test.describe('the grant schemes became case types', () => {
 })
 
 test.describe('the retired scheme surface', () => {
-	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	// @e2e case-types::the-menu-offers-case-types-and-not-subsidy-schemes
 	test('the Subsidy schemes menu entry is gone', async ({ page }) => {
 		await page.goto('/index.php/apps/dossiq')
 		await dismissSupportDialog(page)
 		await expect(sidebarNav(page)).toBeVisible({ timeout: 15000 })
 
 		const toggle = sidebarNav(page)
-			.getByRole('button', { name: 'Settings', exact: true })
+			.getByRole('button', { name: 'Advanced', exact: true })
 			.first()
 		if (await toggle.isVisible().catch(() => false)) {
 			await toggle.click().catch(() => {})
@@ -243,7 +243,7 @@ test.describe('the retired scheme surface', () => {
 		expect(labels).toContain('Case types')
 	})
 
-	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	// @e2e case-types::the-retired-route-falls-through-rather-than-erroring
 	test('the retired route no longer renders a scheme index', async ({ page }) => {
 		await navToRoute(page, '/subsidieregelingen')
 

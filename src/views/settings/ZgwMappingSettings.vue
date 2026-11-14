@@ -11,27 +11,29 @@
 				</thead>
 				<tbody>
 					<tr v-for="key in resourceKeys" :key="key">
-						<td>{{ key }}</td>
+						<td>{{ resourceName(key) }}</td>
 						<td>
 							<span
 								v-if="mappings[key] && mappings[key].enabled"
-								class="status-enabled">
+								class="cn-status-badge cn-status-badge--success">
 								{{ t('dossiq', 'Enabled') }}
 							</span>
-							<span v-else-if="mappings[key]" class="status-disabled">
+							<span v-else-if="mappings[key]" class="cn-status-badge cn-status-badge--warning">
 								{{ t('dossiq', 'Disabled') }}
 							</span>
-							<span v-else class="status-unconfigured">
+							<span v-else class="cn-status-badge cn-status-badge--default">
 								{{ t('dossiq', 'Not configured') }}
 							</span>
 						</td>
 						<td>
-							<NcButton type="secondary" @click="editMapping(key)">
-								{{ t('dossiq', 'Edit') }}
-							</NcButton>
-							<NcButton type="tertiary" @click="resetMapping(key)">
-								{{ t('dossiq', 'Reset') }}
-							</NcButton>
+							<div class="zgw-mapping-settings__actions">
+								<NcButton type="secondary" @click="editMapping(key)">
+									{{ t('dossiq', 'Edit') }}
+								</NcButton>
+								<NcButton type="tertiary" @click="resetMapping(key)">
+									{{ t('dossiq', 'Reset') }}
+								</NcButton>
+							</div>
 						</td>
 					</tr>
 				</tbody>
@@ -52,9 +54,11 @@
 </template>
 
 <script>
+import { translate } from '@nextcloud/l10n'
 import { NcButton } from '@nextcloud/vue'
 import ZgwMappingDialog from '../../dialogs/ZgwMappingDialog.vue'
 import { useZgwMappingStore } from '../../store/modules/zgwMapping.js'
+import { zgwResourceName } from './zgwResourceNames.js'
 
 export default {
 	name: 'ZgwMappingSettings',
@@ -71,32 +75,31 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		store() {
 			return useZgwMappingStore()
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		mappings() {
 			return this.store.mappings
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
+		/**
+		 * The resource keys the server actually holds mappings for.
+		 *
+		 * This used to be a hardcoded list of twelve, and it was a third copy
+		 * of an inventory the backend already owns. It named `case` and
+		 * `case_type` for mappings stored as `zaak` and `caseType`, so those
+		 * two rows read "Not configured" against a configured mapping and both
+		 * buttons addressed a resource key that does not exist. The other
+		 * fourteen mappings had no row at all. Reading the API's own keys is
+		 * what stops the list drifting again.
+		 *
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 */
 		resourceKeys() {
-			return [
-				'case',
-				'case_type',
-				'status',
-				'statustype',
-				'result',
-				'resultaattype',
-				'role',
-				'roltype',
-				'eigenschap',
-				'decision',
-				'besluittype',
-				'informatieobjecttype',
-			]
+			return Object.keys(this.mappings)
 		},
 	},
 
@@ -106,8 +109,19 @@ export default {
 
 	methods: {
 		/**
+		 * A resource key as a person reads it ("Zaaktype", not "caseType").
+		 *
+		 * @param {string} key The stored resource key.
+		 * @return {string} The name.
+		 * @spec openspec/specs/admin-settings/spec.md#requirement-a-zgw-mapping-row-names-its-resource
+		 */
+		resourceName(key) {
+			return zgwResourceName(key, translate)
+		},
+
+		/**
 		 * @param {string} key The key.
-		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		editMapping(key) {
 			this.editingKey = key
@@ -115,7 +129,7 @@ export default {
 
 		/**
 		 * @param {object} config The config.
-		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		async saveMapping(config) {
 			const result = await this.store.saveMapping(this.editingKey, config)
@@ -130,7 +144,7 @@ export default {
 
 		/**
 		 * @param {string} key The key.
-		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		async resetMapping(key) {
 			await this.store.resetMapping(key)
@@ -160,20 +174,21 @@ export default {
 	font-weight: bold;
 }
 
-.status-enabled {
-	color: var(--color-success);
+.zgw-mapping-settings__actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
 }
 
-.status-disabled {
-	color: var(--color-warning);
-}
-
-.status-unconfigured {
-	color: var(--color-text-maxcontrast);
+/* The state reads as a pill and the row's buttons are 34px, as board
+   DqBeheerGeavanceerd "ZGW-API-koppeling" draws them. */
+.zgw-mapping-settings__actions :deep(.button-vue) {
+	min-height: 34px;
+	height: 34px;
 }
 
 .success-message {
-	color: var(--color-success);
+	color: var(--color-success-text);
 	margin-top: 12px;
 }
 </style>

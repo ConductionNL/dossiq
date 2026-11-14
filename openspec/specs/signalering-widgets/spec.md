@@ -1,5 +1,7 @@
 ---
-status: done
+status: in-progress
+openspec_changes:
+  - dashboard-tiles
 retrofit_extensions:
   - REQ-001
   - REQ-002
@@ -46,7 +48,7 @@ The dashboard SHALL display a Deadline Alerts widget that lists cases approachin
 #### Scenario: No deadline alerts
 @e2e exclude The "No deadline alerts" empty message lives inside DeadlineAlertsWidget.vue, which only mounts on the Nextcloud SYSTEM dashboard (OCA.Dashboard.register) after the user adds it via the widget picker; the in-app dashboard grid renders only the titled placeholder card (covered by default-layout-includes-signalering-row), so the widget-internal empty-state is not reachable as an in-app browser surface.
 - **WHEN** all open cases have deadlines more than 3 days away (or no deadline)
-- **THEN** the widget MUST display a positive message such as "No deadline alerts"
+- **THEN** the widget MUST display "Geen termijnsignalen" (en "No deadline alerts"), as board DqNextcloudDashboard draws it
 - **THEN** the widget MUST NOT show an error or empty broken state
 
 #### Scenario: Clicking a deadline alert row navigates to case detail
@@ -74,7 +76,7 @@ The dashboard SHALL display a Task Due Reminders widget showing the current user
 @e2e exclude Requires seeded overdue tasks and ordering/severity assertions; data-dependent, not testable without pre-seeded tasks.
 - **WHEN** the current user has 2 tasks past their due date (2 days overdue, 1 day overdue)
 - **THEN** the widget MUST display overdue tasks above upcoming tasks
-- **THEN** overdue tasks MUST show "N days overdue" with a red/error visual indicator
+- **THEN** overdue tasks MUST show "N dagen te laat" (en "N days overdue") with a red/error visual indicator, as the board `DqNextcloudDashboard` draws "2 dagen te laat"
 - **THEN** overdue tasks MUST be sorted by days overdue descending
 
 #### Scenario: No task reminders
@@ -133,19 +135,19 @@ The system SHALL register Nextcloud-native dashboard widgets (IWidget) for the s
 
 #### Scenario: Deadline Alerts Nextcloud widget available
 - **WHEN** the user views the main Nextcloud dashboard widget picker
-- **THEN** a "Deadline Alerts" widget MUST be available for selection
+- **THEN** a "Termijnsignalen" (en "Deadline Alerts") widget MUST be available for selection
 - **THEN** the widget MUST show the top 5 at-risk and overdue cases with title, days remaining/overdue, and severity indicator
 - **THEN** clicking the widget header MUST navigate to the Dossiq dashboard
 
 #### Scenario: Task Reminders Nextcloud widget available
 - **WHEN** the user views the main Nextcloud dashboard widget picker
-- **THEN** a "Task Reminders" widget MUST be available for selection
+- **THEN** a "Taakherinneringen" (en "Task Reminders") widget MUST be available for selection
 - **THEN** the widget MUST show the top 5 urgent tasks with title, due date info, and parent case
 - **THEN** clicking a task MUST navigate to the task detail in Dossiq
 
 #### Scenario: Stalled Cases Nextcloud widget available
 - **WHEN** the user views the main Nextcloud dashboard widget picker
-- **THEN** a "Stalled Cases" widget MUST be available for selection
+- **THEN** a "Stilstaande zaken" (en "Stalled Cases") widget MUST be available for selection
 - **THEN** the widget MUST show the top 5 most stalled cases with title, days inactive, and handler
 
 ### Requirement: Signalering Helper Functions [V1]
@@ -229,6 +231,92 @@ All four signalering widgets SHALL be registered at app boot via `Application`.
 - **AND** each widget's icon + title SHALL match its `getIconClass()` + `getTitle()` return values
 
 <!-- END retrofit-2026-05-24-signalering-widgets -->
+
+### Requirement: One deadlines table replaces the overdue and deadline alert tiles (REQ-SIG-004)
+The Dashboard SHALL show, in one table titled "Termijnsignalen" (English source "Deadline signals") under the line "Te laat, en minder dan een kwart van de termijn over", the open cases that are past their deadline or have less than a quarter of their term left, as board DqDashboard draws it. The term runs from the case's start date to its deadline; a case without a start date signals only once it is late. The table SHALL be ordered by deadline, so the latest case comes first, and show the days left on every row. A row past its deadline SHALL read in the error text colour. You see each case once. With nothing to show, the table SHALL read "Geen termijnsignalen", and its footer link SHALL read "Alle termijnen" and open the cases list on the same filter.
+
+#### Scenario: Overdue and near-deadline cases share one table
+- **GIVEN** a case two days past its deadline and a case with two days of a seven-day term left
+- **WHEN** you open the Dashboard
+- **THEN** the Termijnsignalen table lists both, the overdue one first and in red, and no second tile repeats either row
+- @e2e covered by `tests/e2e/dashboard-tiles.spec.ts`
+
+#### Scenario: A long term with days to spare stays out
+- **GIVEN** an open case with five days of a 56-day term left
+- **WHEN** you open the Dashboard
+- **THEN** the Termijnsignalen table does not list it
+- @e2e exclude the window is one server-side filter on the materialised `termSignalFrom`, held by `tests/vitest/dashboardWorkTables.spec.js`; the e2e seeds one case type with a seven-day term
+
+#### Scenario: Closed cases stay out
+- **GIVEN** a case in a final status whose deadline is past
+- **WHEN** you open the Dashboard
+- **THEN** the Termijnsignalen table does not list it
+- @e2e covered by `tests/e2e/dashboard-tiles.spec.ts`
+
+### Requirement: Countdown Deadline Column [V1]
+
+You see the days left on each row and filter the list on overdue cases. The
+Deadline column on the `Cases` page SHALL render through the countdown cell:
+the number of days left until `deadline`, and once the deadline is past the
+cell SHALL read as overdue in the signalering red the dashboard tiles use,
+with the count of days past. A case without a deadline SHALL show an empty
+cell, not zero. The `quickFilters` chip Overdue (`deadline lt @today`,
+`isFinalStatus = false`) SHALL show the same cases the `kpi-overdue`
+dashboard tile counts, and that tile's link SHALL lead to the Cases page
+carrying that same filter, so it no longer drops on the way (triage item 4).
+The `deadlines` table `dashboard-tiles` merged from `overdue-cases` and
+`deadline-alerts` carries a WIDER window — past due AND due within three
+days — so its View all SHALL carry its OWN filter rather than the chip's: a
+table that counts one set of cases and a View all that lands on another is
+the same dropped filter in the other direction. The column SHALL sort on
+`deadline`, not on the rendered text.
+
+**The chip cannot be activated FROM the query** in `@conduction/nextcloud-vue`
+2.41: `resolveInitialQuickFilterIndex` reads only the `default` flag, so a
+reader arriving from the tile lands on the All chip with the tile's filter
+applied through the route query. The list is right and the filter is in the
+URL; what is missing is the chip lighting up to say which lens is on. The
+requirement therefore asks for the filter to survive the trip, which is the
+defect triage item 4 named, and naming a chip from a query is left to a
+nextcloud-vue change.
+
+#### Scenario: Days left on each row
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open case assigned to the signed-in user due in 3 days
+- **WHEN** you open the Cases page
+- **THEN** the Deadline cell of that case SHALL read 3 days left
+
+#### Scenario: Past due reads red
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open case assigned to the signed-in user whose deadline was 2 days ago
+- **WHEN** you open the Cases page
+- **THEN** the Deadline cell SHALL read 2 days overdue
+- **AND** the cell SHALL carry the overdue styling class
+
+#### Scenario: Overdue shows only open cases past their deadline
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open case past its deadline, a closed case past its deadline and an open case due in 3 days
+- **WHEN** you choose the chip Overdue
+- **THEN** the list SHALL show the open overdue case only
+
+#### Scenario: The Overdue tile keeps its filter
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** the dashboard with the Overdue stat tile counting 1 case
+- **WHEN** you follow that tile
+- **THEN** the Cases page SHALL open carrying `deadline lt @today` and `isFinalStatus false`
+- **AND** the list SHALL show the open overdue case and not the closed overdue one
+
+#### Scenario: The Deadlines table keeps its own, wider filter
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** the dashboard's Deadlines table, which lists what is past due and what is due within three days
+- **WHEN** you follow its View all
+- **THEN** the Cases page SHALL open carrying `deadline lte @today+3d` and `isFinalStatus false`, this table's own filter
+- **AND** it SHALL NOT carry the Overdue chip's narrower filter, which would show fewer cases than the table just listed
 
 ## Work Queue Page Render (UI surface)
 

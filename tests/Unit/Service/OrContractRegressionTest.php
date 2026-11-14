@@ -51,6 +51,8 @@ use TypeError;
  * @covers \OCA\Dossiq\Service\TermijnService
  *
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  */
 class OrContractRegressionTest extends TestCase {
 

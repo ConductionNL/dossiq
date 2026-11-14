@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -38,8 +38,6 @@ use RuntimeException;
 
 /**
  * OpenRegister access for the demo caseload.
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — needs OpenRegister service access
  *
  * @spec openspec/specs/dossiq-app-scaffold/spec.md
  */
@@ -65,7 +63,12 @@ class DemoCaseloadGateway {
 	/**
 	 * The register and schema ids the demo caseload reads and writes.
 	 *
-	 * @return array{register: string, case: string, caseTask: string, caseType: string, statusType: string} The ids.
+	 * 🔴 `caseTask` IS DELIBERATELY ABSENT. It was required here, and this
+	 * method THROWS on a missing id, so retiring the task schema would have
+	 * taken the whole demo caseload down with it. Demo tasks are engine
+	 * tasks now and need no schema.
+	 *
+	 * @return array{register: string, case: string, caseType: string, statusType: string} The ids.
 	 *
 	 * @throws RuntimeException When the app is not configured against a register yet.
 	 *
@@ -75,7 +78,6 @@ class DemoCaseloadGateway {
 		$ids = [
 			'register' => $this->config(key: 'register'),
 			'case' => $this->config(key: 'case_schema'),
-			'caseTask' => $this->config(key: 'task_schema'),
 			'caseType' => $this->config(key: 'case_type_schema'),
 			'statusType' => $this->config(key: 'status_type_schema'),
 		];
@@ -168,6 +170,29 @@ class DemoCaseloadGateway {
 
 		return $this->idOf(object: $created);
 	}//end create()
+
+	/**
+	 * Run an operation inside OpenRegister's system-operation scope.
+	 *
+	 * Refuses rather than running the operation as the signed-in user, so a
+	 * seed never reports success for writes that were not the system's.
+	 *
+	 * @param object   $objectService The OpenRegister ObjectService.
+	 * @param callable $operation     The operation.
+	 *
+	 * @return mixed Whatever the operation returns.
+	 *
+	 * @throws RuntimeException When this OpenRegister cannot run an operation as the system.
+	 *
+	 * @spec openspec/specs/dossiq-app-scaffold/spec.md
+	 */
+	public function asSystem(object $objectService, callable $operation): mixed {
+		if (method_exists($objectService, 'runAsSystem') === false) {
+			throw new RuntimeException('The demo caseload needs an OpenRegister that can write as the system, and this one cannot.');
+		}
+
+		return $objectService->runAsSystem(operation: $operation);
+	}//end asSystem()
 
 	/**
 	 * Whether an object matching the filters already exists.
@@ -309,6 +334,6 @@ class DemoCaseloadGateway {
 	 * @return string The value, or '' when unset.
 	 */
 	private function config(string $key): string {
-		return $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 	}//end config()
 }//end class

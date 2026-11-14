@@ -72,6 +72,8 @@ class MapCspRegistrar {
 			$policy->addAllowedImageDomain('https://*.tile.openstreetmap.org');
 			$policy->addAllowedImageDomain('https://*.tile.openstreetmap.fr');
 			$policy->addAllowedImageDomain('https://*.tile.opentopomap.org');
+			// PDOK WMS map layers (aerial photo, land-use plans): one image per tile.
+			$policy->addAllowedImageDomain('https://service.pdok.nl');
 			// Address search (forward geocoding) in the location widget.
 			$policy->addAllowedConnectDomain('https://nominatim.openstreetmap.org');
 			$cspManager->addDefaultPolicy($policy);

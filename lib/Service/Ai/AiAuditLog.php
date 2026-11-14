@@ -27,14 +27,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Ai;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -45,7 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
  */
 class AiAuditLog {
 
@@ -84,7 +84,7 @@ class AiAuditLog {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
 	 */
 	public function record(array $entry): void {
 		try {
@@ -119,18 +119,14 @@ class AiAuditLog {
 	 *
 	 * @return array{entries: array<int, array<string, mixed>>, total: int|null, limit: int, offset: int}
 	 *
-	 * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
 	 */
 	public function list(array $filters = [], int $limit = self::DEFAULT_LIMIT, int $offset = 0): array {
 		$limit = $this->clampLimit(limit: $limit);
 		$offset = max(0, $offset);
 
-		$empty = [
-			'entries' => [],
-			'total' => null,
-			'limit' => $limit,
-			'offset' => $offset,
-		];
+		$window = new AuditPageWindow(limit: $limit, offset: $offset);
+		$empty = $this->page(entries: [], window: $window);
 
 		try {
 			$storage = $this->storage();
@@ -138,32 +134,58 @@ class AiAuditLog {
 				return $empty;
 			}
 
-			$entries = $this->searchObjectsAsArrays(
-				objectService: $this->container->get('OCA\OpenRegister\Service\ObjectService'),
-				register: $storage['register'],
-				schema: $storage['schema'],
-				filters: $this->query(filters: $filters, limit: $limit, offset: $offset)
-			);
-
-			return [
-				'entries' => $entries,
-				// The array-normalising search bridge (searchObjectsAsArrays)
-				// does not expose a cheap row count for slug-resolved
-				// register/schema — a real total would require a second,
-				// uncapped fetch. Left null rather than faked; callers page
-				// by whether a full page of `limit` rows came back.
-				'total' => null,
-				'limit' => $limit,
-				'offset' => $offset,
-			];
+			return $this->pageFrom(storage: $storage, filters: $filters, window: $window);
 		} catch (\Exception $e) {
-			$this->logger->error(
-				'Failed to list AI audit entries',
-				['error' => $e->getMessage()]
-			);
+			$this->logger->error('Failed to list AI audit entries', ['error' => $e->getMessage()]);
 			return $empty;
 		}//end try
 	}//end list()
+
+	/**
+	 * Read one page of audit entries from the storage, as the list answer.
+	 *
+	 * @param array{register: string, schema: string} $storage The storage config.
+	 * @param array<string, mixed>                    $filters Optional filters: 'caseId', 'type'.
+	 * @param AuditPageWindow                         $window  Page size and paging offset, already clamped.
+	 *
+	 * @return array{entries: array<int, array<string, mixed>>, total: int|null, limit: int, offset: int}
+	 *
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
+	 */
+	private function pageFrom(array $storage, array $filters, AuditPageWindow $window): array {
+		$entries = $this->searchObjectsAsArrays(
+			objectService: $this->container->get('OCA\OpenRegister\Service\ObjectService'),
+			register: $storage['register'],
+			schema: $storage['schema'],
+			filters: $this->query(filters: $filters, window: $window)
+		);
+
+		return $this->page(entries: $entries, window: $window);
+	}//end pageFrom()
+
+	/**
+	 * One page of the list answer.
+	 *
+	 * @param array<int, array<string, mixed>> $entries The entries.
+	 * @param AuditPageWindow                  $window  Page size and paging offset.
+	 *
+	 * @return array{entries: array<int, array<string, mixed>>, total: int|null, limit: int, offset: int}
+	 *
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
+	 */
+	private function page(array $entries, AuditPageWindow $window): array {
+		return [
+			'entries' => $entries,
+			// The array-normalising search bridge (searchObjectsAsArrays)
+			// does not expose a cheap row count for slug-resolved
+			// register/schema — a real total would require a second,
+			// uncapped fetch. Left null rather than faked; callers page
+			// by whether a full page of `limit` rows came back.
+			'total' => null,
+			'limit' => $window->limit,
+			'offset' => $window->offset,
+		];
+	}//end page()
 
 	/**
 	 * Resolve the register + `ai_audit_entry_schema` the audit trail lives in.
@@ -172,8 +194,8 @@ class AiAuditLog {
 	 *                                                      or null when not configured.
 	 */
 	private function storage(): ?array {
-		$registerId = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		$schemaId = $this->appConfig->getValueString(Application::APP_ID, 'ai_audit_entry_schema', '');
+		$registerId = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
+		$schemaId = $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_audit_entry_schema', '');
 
 		if ($registerId === '' || $schemaId === '') {
 			$this->logger->warning('AI audit: register or schema ID not configured');
@@ -187,15 +209,14 @@ class AiAuditLog {
 	 * Build the OpenRegister query for an audit listing.
 	 *
 	 * @param array<string, mixed> $filters Optional filters: 'caseId', 'type'.
-	 * @param int $limit The clamped page size.
-	 * @param int $offset The clamped offset.
+	 * @param AuditPageWindow      $window  The clamped page size and offset.
 	 *
 	 * @return array<string, mixed> The query.
 	 */
-	private function query(array $filters, int $limit, int $offset): array {
+	private function query(array $filters, AuditPageWindow $window): array {
 		$query = [
-			'_limit' => $limit,
-			'_offset' => $offset,
+			'_limit' => $window->limit,
+			'_offset' => $window->offset,
 			// Newest first — the schema's business timestamp, not OR's
 			// system @self.created, is the ordering key the oversight
 			// page needs (matches when the AI call actually happened).

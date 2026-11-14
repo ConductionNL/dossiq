@@ -1,7 +1,7 @@
 # apphost-adoption Specification
 
 ## Purpose
-TBD - created by archiving change adopt-apphost. Update Purpose after archive.
+Run dossiq on the shared AppHost, so health, metrics and date-token filters come from declarations instead of app code.
 ## Requirements
 ### Requirement: Declarative Health Endpoint
 
@@ -34,7 +34,7 @@ Dossiq SHALL serve `GET /apps/dossiq/api/metrics` (admin-only, Prometheus text 0
 
 #### Scenario: Corrected schema resolution
 
-- **GIVEN** a seeded instance with objects in schema `case` (title "Case"), schema `task` (title "Task"), and schema `wmoZaak` (title "WMO Zaak")
+- **GIVEN** a seeded instance with objects in schema `case` (title "Case"), schema `task` (title "Task"), and schema `wmoZaak` (title "Social support act case")
 - **WHEN** `GET /apps/dossiq/api/metrics` is called by an admin
 - **THEN** `dossiq_cases_total` MUST count only schema `case` objects and `dossiq_tasks_total` only schema `task` objects — the pre-adoption `title LIKE '%aak%'`/`'%taak%'` miscount (which matched `wmoZaak` and matched no task schema at all) MUST NOT be reproduced
 - @e2e exclude API-only endpoint — covered by the OR AppHost Newman contract collection

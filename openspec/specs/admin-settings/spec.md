@@ -11,7 +11,7 @@ retrofit_extensions:
 
 The admin settings page provides a Nextcloud admin panel for configuring Dossiq. Administrators manage case types and all their related type definitions: statuses, results, roles, properties, documents, and decisions. The case type system is the behavioral engine of Dossiq -- every aspect of how a case behaves (allowed statuses, deadlines, required fields, archival rules) is defined here. The admin settings UI follows a list-detail pattern: a case type list on the main page, and a tabbed detail/edit view per case type.
 
-**Feature tiers**: MVP (admin page registration, access control, case type list, case type CRUD, status type CRUD with reorder, default case type, publish action, general tab); V1 (results tab, roles tab, properties tab, documents tab, decisions tab, case type versioning, import/export)
+**Feature tiers**: MVP (admin page registration, access control, case type list, case type CRUD, status type CRUD with reorder, publish action, general tab); V1 (results tab, roles tab, properties tab, documents tab, decisions tab, case type versioning, import/export)
 
 **Competitive context**: Dimpact ZAC provides per-zaaktype configuration with parameters, mail templates, reference tables, and an inrichtingscheck validation system. xxllnc Zaken supports case type versioning with draft/active states and template-based folder hierarchies. Flowable provides visual CMMN/BPMN modelers for case type design. Dossiq takes a simpler, form-based approach that is more accessible to non-technical administrators while maintaining ZGW-compliant data structures.
 
@@ -74,6 +74,9 @@ can configure the app from within the SPA. This is a browser-verifiable UI surfa
 distinct from the Nextcloud admin-settings panel (REQ-ADMIN-001).
 
 #### Scenario: In-app settings page renders configuration sections
+
+@e2e exclude Two of this scenario's clauses are false against the product and cannot be made true by a test. The in-app `/settings` page it names was retired by page-topology-cleanup (B1), because reaching an administration component through the in-app router bypasses the settings framework's server-side checks (ADR-004); administration lives at `/settings/admin/dossiq`. And the "Version Information" section was removed, so the string exists nowhere in `src/`. The surviving headings, Configuration, Case Type Management and ZGW API Mapping, plus the Save control, are asserted against the real surface by `tests/e2e/pages.spec.ts` "renders the configuration section and its save control", which cites REQ-ADMIN-001's accessible scenario instead, until this scenario is rewritten to describe the page that exists.
+
 - **GIVEN** an authenticated admin user on the Dossiq app
 - **WHEN** they navigate to the in-app Settings page
 - **THEN** the page MUST render a "Version Information" section heading
@@ -98,14 +101,11 @@ The admin settings MUST display a list of all case types with key metadata, foll
   | Bezwaarschrift       | true    | P84D              | 2           | 0               | (not set)  | (none)     | false     |
 - WHEN the admin views the case type list
 - THEN all 4 case types MUST be displayed
-- AND each case type entry MUST show:
-  - Title
-  - Processing deadline in human-readable form (e.g., "56 days")
-  - Count of linked status types (e.g., "4 statuses")
-  - Count of linked result types (e.g., "3 result types")
-  - Published/Draft badge
-  - Validity period (e.g., "Jan 2026 -- Dec 2027" or "Jan 2026 -- (no end)")
-- AND the default case type MUST be marked with a star icon or "(default)" label
+- AND the list MUST show the columns of the board `DqZaaktypen`: Zaaktype, Domein, Doorlooptijd, Versie, Status and Acties
+- AND the Zaaktype cell MUST name the origin ("Meegeleverd" or "Eigen") and the number of running cases (e.g., "19 lopende zaken")
+- AND the Doorlooptijd cell MUST read the processing deadline with its extension (e.g., "8 weken, +6")
+- AND the Status cell MUST read "Gepubliceerd" or "Concept"
+- AND the list MUST offer the lenses "Alles", "Gepubliceerd", "Concept" and "Meegeleverd", each with its count
 
 #### Scenario: Draft types visually distinguished
 
@@ -113,8 +113,7 @@ The admin settings MUST display a list of all case types with key metadata, foll
 
 - GIVEN case type "Bezwaarschrift" has `isDraft = true`
 - WHEN the admin views the case type list
-- THEN the draft type MUST display a warning badge (e.g., "DRAFT" in amber/yellow)
-- AND the draft type SHOULD have a visually different background or border to distinguish it from published types
+- THEN the draft type MUST show the status "Concept" where a published type shows "Gepubliceerd", as the board `DqZaaktypen` draws it
 - AND the validity period MUST show "(not set)" when `validFrom` is not configured
 
 #### Scenario: Click to edit case type
@@ -128,9 +127,8 @@ The admin settings MUST display a list of all case types with key metadata, foll
 #### Scenario: Empty case type list
 - GIVEN no case types have been created
 - WHEN the admin views the case type list
-- THEN the system MUST display an empty state message (e.g., "No case types configured yet")
-- AND the "+ Add Case Type" button MUST be prominently displayed
-- AND the system SHOULD provide guidance (e.g., "Create your first case type to start managing cases")
+- THEN the system MUST display the empty state of the board `DqZaaktypen`: "Maak het eerste zaaktype aan, of importeer er een uit een JSON-bestand. Een nieuw zaaktype begint als concept."
+- AND the actions "Nieuw zaaktype" and "Importeren" MUST be offered
 
 ### Requirement: Create Case Type [MVP]
 
@@ -138,7 +136,7 @@ The admin MUST be able to create new case types that start in draft status, foll
 
 #### Scenario: Add a new case type
 - GIVEN the admin is on the case type list
-- WHEN they click "+ Add Case Type"
+- WHEN they choose "Nieuw zaaktype" under Acties
 - THEN the system MUST present a case type creation form or navigate to a new case type detail view
 - AND the new case type MUST have `isDraft = true` by default
 - AND the admin MUST be able to fill in at minimum: title, purpose, trigger, subject, processingDeadline, origin, confidentiality, and responsibleUnit (all required fields per ARCHITECTURE.md)
@@ -179,16 +177,8 @@ The case type detail view MUST use a tabbed interface for organizing the various
 
 #### Scenario: Tab layout
 - GIVEN the admin opens the detail view for case type "Omgevingsvergunning"
-- THEN the view MUST display the following tabs:
-  - **General** (MVP) -- case type core fields
-  - **Statuses** (MVP) -- status type management
-  - **Results** (V1) -- result type management
-  - **Roles** (V1) -- role type management
-  - **Properties** (V1) -- property definition management
-  - **Documents** (V1) -- document type management
-  - **Decisions** (V1) -- decision type management
-- AND the "General" tab MUST be selected by default
-- AND V1 tabs (Results, Roles, Properties, Documents, Decisions) MAY be hidden or disabled until V1 is implemented
+- THEN the view MUST display the tabs of the board `DqZaaktypeOverzicht`: Overzicht, Velden, Statussen, Fasen en taken, Regels, Rechten, Privacy, Vertalingen, Versies and Historie
+- AND the "Overzicht" tab MUST be selected by default
 
 #### Scenario: Save button placement
 - GIVEN the admin is editing a case type
@@ -198,16 +188,15 @@ The case type detail view MUST use a tabbed interface for organizing the various
 #### Scenario: Tab switching preserves unsaved changes
 - GIVEN the admin has made unsaved changes on the General tab
 - WHEN they switch to the Statuses tab
-- THEN the unsaved changes on the General tab MUST be preserved in memory
-- AND switching back to the General tab MUST show the unsaved changes
-- AND clicking Save on any tab MUST save all pending changes across all tabs
+- THEN the system MUST ask "U heeft niet-opgeslagen wijzigingen. Weggooien?" with the choices "Weggooien" and "Terug naar bewerken", as the board `DqZaaktypeOverzicht` draws it
+- AND "Terug naar bewerken" MUST keep the admin on the General tab with the changes in the form
 
 #### Scenario: Back navigation with unsaved changes
 - GIVEN the admin is on the case type detail view with unsaved changes
 - WHEN they click the breadcrumb link "Dossiq" to return to the case type list
-- THEN the system SHOULD prompt: "You have unsaved changes. Discard?"
-- AND confirming MUST navigate back without saving
-- AND canceling MUST keep the admin on the detail view
+- THEN the system SHOULD ask: "U heeft niet-opgeslagen wijzigingen. Weggooien?"
+- AND "Weggooien" MUST navigate back without saving
+- AND "Terug naar bewerken" MUST keep the admin on the detail view
 
 ### Requirement: General Tab [MVP]
 
@@ -217,26 +206,9 @@ The General tab MUST allow editing all core case type fields, as implemented in 
 
 #### Scenario: Display and edit general fields
 - GIVEN the admin is on the General tab for "Omgevingsvergunning"
-- THEN the following fields MUST be editable:
-  | Field               | Value                              | Type          |
-  |---------------------|------------------------------------|---------------|
-  | Title               | Omgevingsvergunning                | text input    |
-  | Description         | Vergunning voor bouwactiviteiten   | textarea      |
-  | Purpose             | Beoordelen bouwplannen             | text input    |
-  | Trigger             | Aanvraag van burger/bedrijf        | text input    |
-  | Subject             | Bouw- en verbouwactiviteiten       | text input    |
-  | Processing deadline | 56 (displayed as "P56D")           | number + unit |
-  | Service target      | 42 (displayed as "P42D")           | number + unit |
-  | Extension allowed   | checked                            | checkbox      |
-  | Extension period    | 28 (displayed as "P28D")           | number + unit |
-  | Suspension allowed  | checked                            | checkbox      |
-  | Origin              | External                           | radio buttons |
-  | Confidentiality     | Internal                           | select        |
-  | Publication req.    | checked                            | checkbox      |
-  | Publication text    | Bouwvergunning verleend...         | text input    |
-  | Valid from          | 2026-01-01                         | date picker   |
-  | Valid until         | 2027-12-31                         | date picker   |
-  | Status              | Published / Draft                  | radio buttons |
+- THEN the Overzicht tab MUST show the cards of the board `DqZaaktypeOverzicht`: Statussen, Regels, Rechten, Privacy, Vertalingen, Versies and Gegevens
+- AND the Gegevens card MUST show Domein, Herkomst, Behandelende teams, Lopende zaken, Iv3-taakveld, Kleur en pictogram and Wachtrij
+- AND "Bewerken" MUST open the core fields for editing, among them Behandeltermijn, Geldig vanaf, Geldig tot, Verlenging toegestaan and Verlengingstermijn
 
 #### Scenario: Processing deadline format validation
 - GIVEN the admin enters "abc" in the processing deadline field
@@ -248,7 +220,7 @@ The General tab MUST allow editing all core case type fields, as implemented in 
 #### Scenario: Extension period required when extension allowed
 - GIVEN the admin checks "Extension allowed"
 - WHEN they leave the "Extension period" field empty and try to save
-- THEN the system MUST display a validation error: "Extension period is required when extension is allowed"
+- THEN the system MUST display the validation error "Verlengingstermijn is verplicht als verlenging aan staat"
 
 #### Scenario: Extension period hidden when extension not allowed
 - GIVEN the admin unchecks "Extension allowed"
@@ -306,27 +278,20 @@ The Statuses tab MUST allow managing the ordered list of status types for a case
 - AND the admin MUST be able to enter text such as "Uw zaak is in behandeling genomen"
 - AND when the toggle is OFF, the notification text field MUST be hidden
 
-### Requirement: Default Case Type Selection [MVP]
+### Requirement: A new case starts with no case type chosen [MVP]
 
-The admin MUST be able to designate one case type as the default, persisted via the `SettingsService` config key `default_case_type`.
+The admin pages MUST NOT offer a default case type, as boards DqZaaktypen and DqNieuweZaak draw it. A person creating a case MUST choose its case type.
 
-@e2e exclude Default case type selection requires published case types to exist; data-dependent interaction not testable without pre-seeded case types.
+@e2e exclude The list needs published case types to exist; data-dependent interaction not testable without pre-seeded case types.
 
-#### Scenario: Set default case type
-- GIVEN case types "Omgevingsvergunning" (default), "Subsidieaanvraag", "Klacht behandeling" exist
-- WHEN the admin clicks the default indicator (star/checkbox) on "Subsidieaanvraag"
-- THEN "Subsidieaanvraag" MUST become the default case type
-- AND "Omgevingsvergunning" MUST lose its default status (only one default at a time)
-- AND the star/indicator MUST move to "Subsidieaanvraag"
+#### Scenario: The case type list marks no default
+- GIVEN published case types "Omgevingsvergunning", "Subsidieaanvraag" and "Klacht behandeling"
+- WHEN the admin opens the case type list
+- THEN no row MUST carry a default marker
+- AND no row action MUST set a default
 
-#### Scenario: Default case type must be published
-- GIVEN a draft case type "Bezwaarschrift"
-- WHEN the admin tries to set it as default
-- THEN the system MUST display an error: "Only published case types can be set as default"
-- AND the default MUST NOT change
-
-#### Scenario: No default set
-- GIVEN no case type is marked as default
+#### Scenario: New case asks for a case type
+- GIVEN published case types exist
 - WHEN a user creates a new case
 - THEN the case creation form MUST require explicit case type selection (no pre-selection)
 
@@ -349,13 +314,13 @@ The admin MUST be able to publish a draft case type after validating its complet
 #### Scenario: Publish incomplete case type -- no statuses
 - GIVEN draft case type "Bezwaarschrift" with no status types defined
 - WHEN the admin tries to publish it
-- THEN the system MUST display a validation error: "At least one status type is required before publishing"
+- THEN the system MUST refuse with the message of the board `DqZaaktypeStatussen`: "Publiceren geweigerd, versie 5 blijft concept. Minstens één status is nodig voor het publiceren."
 - AND the case type MUST remain as draft
 
 #### Scenario: Publish incomplete case type -- no validFrom
 - GIVEN draft case type "Bezwaarschrift" with status types but no `validFrom` date
 - WHEN the admin tries to publish it
-- THEN the system MUST display a validation error: "Valid from date is required before publishing"
+- THEN the system MUST refuse with "Publiceren geweigerd" and the line "Geldig vanaf is nodig voor het publiceren.", each missing condition on its own line
 - AND the case type MUST remain as draft
 
 #### Scenario: Publish incomplete case type -- missing required general fields
@@ -452,7 +417,7 @@ The Roles tab SHALL allow managing role types with generic role mapping per case
 #### Scenario: Delete a role type with active assignments
 - GIVEN role type "Technisch adviseur" has 2 active role assignments on cases
 - WHEN the admin tries to delete it
-- THEN the system MUST display a warning: "This role type is in use by 2 case role assignments"
+- THEN the system MUST display the refusal "Verwijderen van Technisch adviseur: dit roltype is in gebruik bij 2 betrokkenen op zaken."
 - AND the system SHOULD either block deletion or offer to remove the assignments first
 
 #### Scenario: Multiple role types with the same generic role
@@ -621,9 +586,8 @@ The admin settings MUST handle error conditions gracefully, preserving user data
 #### Scenario: Delete published case type with only completed cases
 - GIVEN published case type "Klacht behandeling" has 5 cases, all with final status
 - WHEN the admin tries to delete the case type
-- THEN the system MUST display a warning: "This case type has 5 completed cases. Deleting it will make those cases reference a missing type. Proceed?"
-- AND upon confirmation, the case type MUST be deleted
-- AND the system SHOULD set `isDraft = true` or mark it as archived rather than hard-deleting
+- THEN the system MUST offer Intrekken in place of a delete, as board DqZaaktypen draws it: "Een ingetrokken zaaktype staat niet meer bij Nieuwe zaak"
+- AND the 5 cases MUST stay readable, and Herstellen MUST put the case type back under Nieuwe zaak
 
 #### Scenario: Save fails due to network error
 - GIVEN the admin edits a case type and clicks Save
@@ -640,6 +604,824 @@ The admin settings MUST handle error conditions gracefully, preserving user data
 - THEN the system SHOULD detect the conflict (e.g., via version/timestamp comparison)
 - AND display a warning: "This case type was modified by another user. Reload to see the latest version."
 - OR the system MAY use last-write-wins if conflict detection is not implemented in MVP
+
+### Requirement: SettingsController SHALL expose `index`, `create`, and `load` JSON endpoints for the admin UI runtime
+
+@e2e exclude Backend PHP controller spec; covered by PHPUnit controller tests.
+
+`OCA\Dossiq\Controller\SettingsController` SHALL expose three action endpoints:
+- `index()` — `#[NoAdminRequired]`. SHALL return `{success: true, openRegisters: <bool>, isAdmin: <bool>, config: <SettingsService::getSettings()>}` so the admin Vue app can render itself for both admins and non-admins (read-only view).
+- `create()` — admin-only (no `#[NoAdminRequired]`). SHALL take the raw request params, delegate to `SettingsService::updateSettings($data)`, and return `{success: true, config: <updated>}`.
+- `load()` — admin-only. SHALL force a fresh re-import of the dossiq register from `dossiq_register.json` via `SettingsService::loadConfiguration(force: true)` and return the raw result envelope from that service.
+
+#### Scenario: index reports admin status correctly
+- **GIVEN** a logged-in user `alice` who is a member of the `admin` group
+- **WHEN** `GET /apps/dossiq/api/settings` (index) is invoked
+- **THEN** the response SHALL contain `"isAdmin": true`
+- **AND** SHALL contain `"openRegisters": true` if the `openregister` app is installed
+
+#### Scenario: index works for non-admins
+- **GIVEN** a logged-in user `bob` who is NOT in the `admin` group
+- **WHEN** `index()` is invoked
+- **THEN** the response SHALL contain `"isAdmin": false`
+- **AND** SHALL still return the current `config` so the Vue app renders in read-only mode
+
+#### Scenario: load forces a fresh register re-import
+- **WHEN** an admin invokes `load()`
+- **THEN** the controller SHALL call `SettingsService::loadConfiguration(force: true)`
+- **AND** SHALL return the result envelope unchanged (no `success: true` wrapper)
+
+### Requirement: SettingsService SHALL be the single resolver for OpenRegister wiring and SHALL persist all Dossiq config as IAppConfig key/value pairs
+
+@e2e exclude Backend PHP service spec; covered by PHPUnit service tests.
+
+`OCA\Dossiq\Service\SettingsService` SHALL provide the central OpenRegister resolver and IAppConfig persistence layer for Dossiq. The service SHALL expose:
+- `isOpenRegisterAvailable(): bool` — returns true iff the `openregister` app is installed AND the `OCA\OpenRegister\Service\ObjectService` class can be resolved from the DI container.
+- `getObjectService(): ?object` — returns the resolved `ObjectService`, or `null` (NOT throw) when OpenRegister is unavailable. Per ADR-022, every Dossiq data-access call SHALL obtain its `ObjectService` through this single resolver.
+- `loadConfiguration(bool $force = false): array` — idempotent register import. SHALL read `dossiq_register.json`, import it via the OpenRegister `ConfigurationService`, auto-configure every schema and register ID returned, and persist them via `setConfigValue()`. When `$force` is true, SHALL re-import unconditionally; otherwise SHALL skip when the persisted version matches the manifest version.
+- `getSettings(): array` / `updateSettings(array $data): array` — bulk read/write of the Dossiq config namespace.
+- `getConfigValue(string $key, string $default = ''): string` / `setConfigValue(string $key, string $value): void` — single-key accessors backed by `IAppConfig` under the `dossiq` app namespace.
+
+#### Scenario: getObjectService returns null when OpenRegister is uninstalled
+- **GIVEN** the `openregister` app is not installed
+- **WHEN** `getObjectService()` is called
+- **THEN** the method SHALL return `null` (NOT throw)
+- **AND** `isOpenRegisterAvailable()` SHALL return `false`
+
+#### Scenario: loadConfiguration is idempotent without --force
+- **GIVEN** the persisted `dossiq_register_version` equals the version in `dossiq_register.json`
+- **WHEN** `loadConfiguration()` is called with default `$force = false`
+- **THEN** the service SHALL skip the re-import and return the cached configuration envelope
+
+#### Scenario: loadConfiguration(force: true) re-imports unconditionally
+- **GIVEN** the persisted version equals the manifest version (no diff)
+- **WHEN** `loadConfiguration(force: true)` is called
+- **THEN** the service SHALL still call `ConfigurationService::importFromApp(...)`
+- **AND** SHALL refresh every persisted schema/register ID from the import result
+
+#### Scenario: config keys survive process restart
+- **WHEN** `setConfigValue('register', 'dossiq')` is called
+- **AND** a new request hits the process pool
+- **THEN** `getConfigValue('register')` SHALL return `'dossiq'`
+
+#### Notes
+- Both `getObjectService()` and `getConfigurationService()` look up services from the DI container at call time (NOT injection-time) — this is deliberate so Dossiq can boot even when `openregister` is not yet installed.
+- ADR-022 calls out that every register-aware service in Dossiq MUST go through `SettingsService::getObjectService()` rather than wiring its own ObjectService injection.
+
+### Requirement: An Integrations page under the gear (REQ-ADMIN-018)
+
+You see every external connection on one page. The app SHALL offer a page
+Integrations of type `settings` under the gear foldout, admin only, that
+lists one card per `dossiqIntegration` object in `order`, with the
+connection's title, its status, its status message and when it was last
+checked. The page SHALL carry no configuration fields of its own: each card
+SHALL offer an Open settings action that opens the section of the Nextcloud
+admin page that configures the connection. A user who is not an admin SHALL
+NOT see the menu entry and SHALL NOT reach the route.
+
+The rows SHALL be admin only as well as the page. A menu filter and a router
+guard stop the page rendering; they cannot narrow a list the browser fetches
+from OpenRegister. The `dossiqIntegration` schema SHALL therefore declare an
+`authorization` block restricting `read` to admins, and SHALL name `create`,
+`update` and `delete` in the same block, because OpenRegister treats an absent
+block as open and fails an unnamed action closed once the block exists.
+
+**Feature tier**: MVP
+
+#### Scenario: The page lists the ten connections
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** an admin on a fresh instance with the seed loaded
+- **WHEN** they open the gear and choose Integrations
+- **THEN** the page SHALL show ten cards in the seeded order, ZGW first and PDOK last
+- **AND** each card SHALL show a title and a status
+
+#### Scenario: Open settings lands on the section
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the Integrations page
+- **WHEN** the admin chooses Open settings on the StUF card
+- **THEN** the browser SHALL be at `/settings/admin/dossiq#section-stuf`
+- **AND** the StUF-ZKN Endpoints section SHALL be in view
+
+#### Scenario: A regular user does not reach the page
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** a user who is signed in and is not an admin
+- **WHEN** they open the gear
+- **THEN** Integrations SHALL NOT be listed
+- **AND** opening `/settings/integrations` directly SHALL NOT render the cards
+- **AND** the router SHALL send them to the dashboard rather than leave them on the route
+
+#### Scenario: A regular user is not answered the rows either
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** a user who is signed in, is not an admin, and holds no group
+- **AND** an admin who reads the same endpoint and is answered the seeded rows
+- **WHEN** they request `GET /apps/openregister/api/objects/dossiq/dossiqIntegration`
+- **THEN** the response SHALL be `200` with an empty result set and a total of zero
+- **AND** the admin's non-empty result SHALL be what proves the endpoint and the register are working
+
+### Requirement: A card tells the truth about its connection (REQ-ADMIN-019)
+
+A status is a claim the app can back. A card SHALL show one of five states:
+Configured, Not configured, Not available, Simulated and Error. A connection
+that no code path calls SHALL be seeded Not available, and its message SHALL say
+why in words the reader can act on. No card SHALL claim a connection is not
+built when the adapter, its DI binding and its tests ship. A card SHALL NOT
+offer Open settings for a section that does not exist. A seed SHALL NOT claim
+Configured: only a save or a probe may set it.
+
+A connection that IS built and IS called, and that reaches nothing until a tier
+key is set, SHALL read Not configured and its message SHALL name the key.
+
+A connection served by a MOCK adapter SHALL read Simulated, and its message
+SHALL say so in words a reader understands without opening the code. Simulated
+is not a softer Not configured. The seam works: it accepts, it succeeds and it
+returns an id, and nothing leaves the instance. Not configured understates
+that, and Configured is exactly the claim this page exists to stop the app from
+making.
+
+**Feature tier**: MVP
+
+#### Scenario: KvK reads Not available because nothing calls it
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the seeded Integrations page
+- **WHEN** the admin reads the KvK card
+- **THEN** it SHALL show Not available
+- **AND** its message SHALL say dossiq ships no KvK client and that integriq holds the KvK source
+- **AND** its message SHALL NOT say the connection is not built
+- **AND** it SHALL NOT offer Open settings
+
+#### Scenario: BRP reads Not configured and names the key that wakes it
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the seeded Integrations page
+- **AND** `integration.brp.mode` at its `log` default
+- **WHEN** the admin reads the BRP card
+- **THEN** it SHALL show Not configured
+- **AND** its message SHALL name `integration.brp.mode`
+- **AND** its message SHALL NOT say the connection is not built
+- **AND** it SHALL NOT offer Open settings, because no admin section writes that key
+
+#### Scenario: A fresh instance claims nothing
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** a fresh instance with the seed loaded and no section saved
+- **WHEN** the admin opens the Integrations page
+- **THEN** no card SHALL read Configured
+- **AND** every card that is neither Not available, Simulated nor BRP SHALL read Not configured with the message "Not checked yet"
+
+#### Scenario: A mock adapter reads Simulated, and says the word
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** an instance with no `berichtenbox_adapter` and no `beschikking_template_adapter` configured
+- **WHEN** the admin opens the Integrations page
+- **THEN** the Berichtenbox and Document templates cards SHALL read Simulated
+- **AND** each message SHALL name the mock, on the row itself, without the reader opening a settings page
+- **AND** neither SHALL read Configured or Not available
+
+#### Scenario: Naming a real adapter class flips the card
+@e2e exclude Substituting an adapter means installing a class this repo does not ship, which no browser flow can do; AdapterHonestyTest asserts the resolution and IntegrationProbesRecordTest the save-to-card seam.
+
+- **GIVEN** an integrator who has installed a real Berichtenbox adapter class
+- **WHEN** they name it in the `berichtenbox_adapter` admin setting and save
+- **THEN** the Berichtenbox card SHALL read Configured
+- **AND** clearing the setting SHALL return the card to Simulated, never to Not configured
+
+### Requirement: A probe or a save updates the card (REQ-ADMIN-020)
+
+What the admin did last is what the card shows. When the StUF health check
+or the mailbox Test connection runs, the matching `dossiqIntegration`
+object SHALL be updated with the outcome as `status` (Configured on
+success, Error on failure), the outcome text as `statusMessage` and the
+time as `checkedAt`. When a section without a probe is saved, its object
+SHALL become Configured when the section's required fields are filled and
+Not configured when they are cleared. The page SHALL show the new state on
+its next load.
+
+**Feature tier**: MVP
+
+#### Scenario: A failed mailbox test shows Error
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the mailbox section saved with an IMAP host that does not answer
+- **WHEN** the admin chooses Test connection and then opens the Integrations page
+- **THEN** the Mailbox card SHALL read Error
+- **AND** its message SHALL name the failure the test reported
+- **AND** its checked-at SHALL be within the last minute
+
+#### Scenario: Saving the KCC section marks it Configured
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the KCC card reading Not configured
+- **WHEN** the admin fills the KCC section's required fields, saves, and opens the Integrations page
+- **THEN** the KCC card SHALL read Configured
+
+#### Scenario: A StUF endpoint's health reaches the card
+@e2e exclude The StUF health check needs a SOAP endpoint that answers; CI has none, so the write is covered by a unit test on IntegrationStatusService and the controller.
+
+- **GIVEN** a StUF endpoint whose health check answers healthy
+- **WHEN** the endpoint list is loaded
+- **THEN** the StUF card SHALL read Configured with the endpoint's name in its message
+
+### Requirement: The page shows which apps the connections need (REQ-ADMIN-021)
+
+A connection that needs another app should say so where the admin looks.
+The Integrations page SHALL show a Required apps section that lists the
+app's declared dependencies with whether each is installed, rendered by the
+shared dependency component, so a missing app is visible beside the
+connections that need it.
+
+**Feature tier**: MVP
+
+#### Scenario: A missing dependency is listed
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** an instance where one declared dependency is not installed
+- **WHEN** the admin opens the Integrations page
+- **THEN** the Required apps section SHALL list that app as not installed
+- **AND** SHALL NOT list the apps that are installed
+
+### Requirement: A Data model entry opens the register's schemas (REQ-ADMIN-022)
+
+The manifest SHALL declare a menu entry Data model in `section:
+"integrations"` whose href is OpenRegister's schema page for the dossiq
+register, visible to admins only.
+
+#### Scenario: An admin reaches the data model
+@e2e tests/e2e/data-model-link.spec.ts
+
+- **GIVEN** you are an admin
+- **WHEN** you open the Integrations section of the settings modal
+- **THEN** Data model SHALL be listed
+- **AND** it SHALL open OpenRegister's schema list for the dossiq register
+
+#### Scenario: A handler does not see it
+@e2e tests/e2e/data-model-link.spec.ts
+
+- **GIVEN** you are not an admin
+- **WHEN** you open the settings modal
+- **THEN** Data model SHALL NOT be listed
+
+### Requirement: Manage object types is one click from the objects (REQ-ADMIN-023)
+
+The Objects section of `#CaseDetail` and the `#CaseObjects` index SHALL
+carry a Manage object types link to the same page, visible to admins only.
+
+#### Scenario: From the objects index
+@e2e tests/e2e/data-model-link.spec.ts
+
+- **GIVEN** you are an admin on the Objects index
+- **WHEN** you press Manage object types
+- **THEN** OpenRegister's schema list for the dossiq register SHALL open
+
+### Requirement: The prerequisites are declared once and shown (REQ-ADMIN-024)
+
+dossiq SHALL declare its PHP version, PHP extensions, Nextcloud range,
+required app and optional apps in one place, and the admin settings section
+SHALL show each with present or missing, read live. `composer.json`,
+`appinfo/info.xml` and the README Requirements table SHALL agree with the
+declaration, proven by a unit test.
+
+#### Scenario: A missing extension is named
+@e2e exclude the check reads `extension_loaded()`; covered by PrerequisitesTest over an injected checker with `zip` reported absent
+
+- **GIVEN** `ext-zip` is absent
+- **WHEN** the admin opens the dossiq settings section
+- **THEN** the Prerequisites block SHALL list zip as missing
+
+#### Scenario: Optional apps say what they unlock
+@e2e tests/e2e/admin-prerequisites.spec.ts
+
+- **GIVEN** humaniq is not installed
+- **WHEN** the admin opens the section
+- **THEN** humaniq SHALL be listed as optional, missing, with what it unlocks
+
+#### Scenario: The four sources agree
+@e2e exclude structural; PrerequisitesTest::testSourcesAgree
+
+- **GIVEN** the declaration
+- **WHEN** `composer.json`, `info.xml` and the README table are parsed
+- **THEN** each SHALL match the declaration
+
+### Requirement: The Credentials text follows the Conduction voice
+
+The Credentials section of the settings dialog SHALL contain no em-dashes, in
+English and in Dutch.
+
+#### Scenario: Reading the Credentials section
+
+- **GIVEN** a person opens the dossiq settings dialog
+- **WHEN** they open the Credentials section
+- **THEN** none of its text contains an em-dash
+
+### Requirement: The Integrations page lists dossiq's rows from integriq's registry (REQ-ADMIN-025)
+
+This requirement replaces the data source of REQ-ADMIN-018. The page, its
+route, its columns and its admin gate stay as REQ-ADMIN-018 describes them.
+The rows are no longer `dossiqIntegration` objects: the page SHALL be an
+`index` page over integriq's `app_connection` schema, preset to `app` equal to
+`dossiq` through its menu entry's `query`, and SHALL declare Integriq as the
+app it requires (hydra REQ-CONN-006). The menu entry SHALL only render when
+integriq is installed. The status column SHALL name all six statuses of hydra contract D3,
+`limited` included, and SHALL never show a raw enum value for one of them.
+The page SHALL NOT offer the generic Add button. Its
+Add integration action SHALL open integriq's Connections overview with
+`app=dossiq&link=1`, where a source is linked to a declared connection.
+
+**Feature tier**: MVP
+
+#### Scenario: The menu opens the page on dossiq's own rows
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** dossiq and integriq are installed and integriq has synced dossiq's declaration
+- **WHEN** an admin opens the gear and chooses Integrations
+- **THEN** the page SHALL list the twelve declared connections in declared order
+- **AND** every listed row SHALL have `app` equal to `dossiq`
+
+#### Scenario: A connection that works in part reads Limited
+@e2e exclude No dossiq declaration or report produces limited, so no browser flow reaches it; tests/vitest/formatters.spec.js asserts the label and that it differs from Configured, Not available and Error.
+
+- **GIVEN** a dossiq row whose status is `limited`
+- **WHEN** the admin reads the Integrations page
+- **THEN** the status column SHALL read Limited, or Beperkt on a Dutch instance
+
+#### Scenario: Without integriq the page says what is missing
+@e2e exclude The CI instance installs integriq, so no browser flow can reach a dossiq without it; the manifest declaration is asserted in tests/vitest/integrationsPage.spec.js and the screen is nextcloud-vue's CnPageRenderer.
+
+- **GIVEN** integriq is not installed
+- **WHEN** an admin opens `/settings/integrations` by URL
+- **THEN** the missing-dependency screen SHALL name Integriq
+- **AND** the menu SHALL NOT list Integrations
+
+#### Scenario: Add integration goes to integriq, not to a form
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the Integrations page
+- **WHEN** the admin looks for a way to add a connection
+- **THEN** no generic Add button SHALL be offered
+- **AND** the Add integration action SHALL open integriq's Connections overview with `app=dossiq` and `link=1`
+
+### Requirement: Dossiq declares its connections in one static file (REQ-ADMIN-026)
+
+This requirement replaces the seed of REQ-ADMIN-018 and REQ-ADMIN-019. Dossiq
+SHALL declare its connections in `lib/Settings/connections.json` with the
+twelve keys the page already used: zgw, stuf, kcc, dmn, mailbox, store,
+financial, brp, kvk, pdok, berichtenbox and templates (hydra REQ-CONN-001 and
+REQ-CONN-008). A `settingsUrl` SHALL only point at a section that exists on
+the admin page. KvK SHALL be declared not available with a message saying
+dossiq ships no KvK client and integriq holds the KvK source. Berichtenbox and Document
+templates SHALL name their adapter config key and a message that says a mock
+adapter answers. Their `simulatedValues` SHALL list the empty string and the
+mock class the registrar falls back to, so naming the mock class still reads
+Simulated (hydra#673, contract D4 rule 3). The connections dossiq probes itself, StUF, the mailbox and
+the store, SHALL declare no config keys.
+
+BRP SHALL be declared with an `unconfiguredMessage` that names
+`integration.brp.mode`, so REQ-ADMIN-019's BRP promise holds on the registry.
+
+**Feature tier**: MVP
+
+#### Scenario: The declaration keeps the page's keys and links
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the declaration integriq synced
+- **WHEN** the admin reads the Integrations page
+- **THEN** the twelve rows SHALL carry the titles and order the seed carried
+- **AND** the StUF row's settings link SHALL open `/settings/admin/dossiq#section-stuf`
+- **AND** BRP, KvK, PDOK, Berichtenbox and Document templates SHALL offer no settings link
+
+#### Scenario: A mock adapter still reads Simulated
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** no `berichtenbox_adapter` and no `beschikking_template_adapter` configured
+- **WHEN** the admin opens the Integrations page
+- **THEN** the Berichtenbox and Document templates rows SHALL read Simulated
+- **AND** each message SHALL say a mock adapter answers
+
+#### Scenario: Naming the mock class still reads Simulated
+@e2e exclude Rule 3 runs in integriq, and the CI instance cannot set berichtenbox_adapter without occ; tests/Unit/Settings/ConnectionsDeclarationTest.php::testMockBackedSeamsNameTheirMockAsSimulated asserts both lists and that each class implements its seam.
+
+- **GIVEN** `berichtenbox_adapter` set to `OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter`
+- **WHEN** integriq resolves the Berichtenbox row
+- **THEN** the row SHALL read Simulated, not Configured
+
+#### Scenario: BRP reads Not configured and names the key that wakes it
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the declaration integriq synced
+- **AND** `integration.brp.mode` at its `log` default
+- **WHEN** the admin reads the BRP row
+- **THEN** it SHALL read Not configured
+- **AND** its message SHALL name `integration.brp.mode`
+- **AND** it SHALL NOT offer Open settings
+
+#### Scenario: KvK reads Not available and says why
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the declaration integriq synced
+- **WHEN** the admin reads the KvK row
+- **THEN** it SHALL read Not available
+- **AND** its message SHALL say dossiq ships no KvK client
+- **AND** its message SHALL NOT say the connection is not built
+
+### Requirement: A probe reports and a save asks integriq to look again (REQ-ADMIN-027)
+
+This requirement replaces the write path of REQ-ADMIN-020. Dossiq SHALL NOT
+write `status`, `statusMessage` or `checkedAt` on any row. When the StUF
+endpoint list, the mailbox Test connection or the store save learns a
+connection's state, dossiq SHALL send `ConnectionStatusReportedEvent` with
+app `dossiq`, the connection key, the status and the message. When a settings
+save carries a config key a connection declares, dossiq SHALL send
+`ConnectionRefreshRequestedEvent` with app `dossiq` and that key, and integriq
+SHALL decide the status (hydra REQ-CONN-004). Both events SHALL be named by
+string and sent only when the class exists. Neither SHALL change the response
+of the request that sent it, whether integriq is absent or its listener fails.
+
+**Feature tier**: MVP
+
+#### Scenario: A failed mailbox test reaches the row
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the mailbox section saved with an IMAP host that does not answer
+- **WHEN** the admin chooses Test connection
+- **THEN** dossiq SHALL send a report for `mailbox` with status `error` and the failure text
+- **AND** the Mailbox row SHALL read Error on the next page load
+
+#### Scenario: Saving the KCC section asks for a refresh
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the KCC row reading Not configured
+- **WHEN** the admin fills the KCC section's required field and saves
+- **THEN** dossiq SHALL send a refresh request for `kcc` and no status of its own
+- **AND** the KCC row SHALL read Configured on the next page load
+
+#### Scenario: Without integriq nothing is sent and nothing breaks
+@e2e exclude The CI instance installs integriq; tests/Unit/Service/IntegrationStatusServiceTest.php asserts that nothing is dispatched or logged when the event class is absent.
+
+- **GIVEN** integriq is not installed
+- **WHEN** the admin runs the mailbox Test connection
+- **THEN** no event SHALL be sent and no warning SHALL be logged
+- **AND** the test's own response SHALL be unchanged
+
+#### Scenario: A failing listener never reaches the probe
+@e2e exclude A listener that throws cannot be installed from a browser; tests/Unit/Service/IntegrationStatusServiceTest.php asserts the exception is caught and logged.
+
+- **GIVEN** integriq's report listener throws
+- **WHEN** the StUF endpoint list loads
+- **THEN** the endpoint list SHALL answer as it would without the report
+- **AND** the failure SHALL be logged as a warning naming the connection
+
+### Requirement: The old integration schema stays one release and is no longer fed (REQ-ADMIN-028)
+
+Dossiq SHALL stop seeding `dossiqIntegration` rows and SHALL keep the schema in
+its register for one release, with a note naming this change. Its removal SHALL
+be a tracked follow-up (hydra REQ-CONN-008, contract D10 step 4).
+
+**Feature tier**: MVP
+
+#### Scenario: A fresh install seeds no dossiqIntegration rows
+@e2e exclude Asserted on the shipped files: tests/vitest/integrationsPage.spec.js checks that no register.d fragment seeds the schema and that the schema carries the note.
+
+- **GIVEN** a fresh install of this version
+- **WHEN** the register import runs
+- **THEN** the `dossiqIntegration` schema SHALL exist
+- **AND** it SHALL hold no rows
+
+### Requirement: The admin settings carry the queue urgency section
+
+The dossiq admin settings page MUST carry a section "Queue urgency" ("Urgentie
+in de werkvoorraad") with four fields: "Critical from, working days left"
+(default 3), "Almost due from, working days left" (default 7), "Weight of the
+priority" (default 10) and "Weight of the time lying still" (default 0.5). The
+section MUST say in one line that a case type can override the two
+thresholds. It MUST save through the app's own admin-guarded settings write
+(`POST /api/settings`) to the IAppConfig keys `queue_critical_days`,
+`queue_warning_days`, `queue_priority_weight` and `queue_idle_weight`, and MUST
+read its values from initial state. A value out of bounds MUST be refused in
+the form with a message naming the bounds, before anything is sent. The
+section is part of the Nextcloud admin settings page, not a route of the app.
+
+#### Scenario: The section shows the defaults
+- GIVEN no queue setting was ever saved
+- WHEN an administrator opens the dossiq admin settings
+- THEN the Queue urgency section MUST show 3, 7, 10 and 0.5
+
+#### Scenario: A saved threshold comes back after a reload
+- GIVEN an administrator sets "Critical from, working days left" to 5 and saves
+- WHEN the page is reloaded
+- THEN the field MUST show 5
+
+#### Scenario: An out-of-bounds weight is refused in the form
+@e2e exclude Asserted by tests/vitest/queueUrgencySettings.spec.js over the form validator; the browser path adds nothing the validator does not decide.
+
+- GIVEN an administrator enters 80 as the priority weight
+- WHEN they save
+- THEN the form MUST say the weight runs from 0 to 50
+- AND nothing MUST be sent
+
+### Requirement: The search index panel shows when maintenance last ran, readably
+
+The search index section SHALL show each figure with its label above its
+value, and a label SHALL wrap rather than run under the value. "Last run"
+SHALL show the time OpenRegister's last stored run finished (or started, when
+it has no finish time) as a date and time, and "Never" when OpenRegister
+reports no run.
+
+#### Scenario: Maintenance never ran
+<!-- @e2e exclude Read-model normalisation; proven by tests/vitest/searchIndexApi.spec.js (fails on the old String() of the report) and live on :8099. -->
+- **GIVEN** OpenRegister answers `lastRun: []`
+- **WHEN** the admin opens the search index section
+- **THEN** "Last run" reads "Never"
+
+#### Scenario: Maintenance ran
+<!-- @e2e exclude Read-model normalisation; proven by tests/vitest/searchIndexApi.spec.js. -->
+- **GIVEN** OpenRegister answers `lastRun: {startedAt: "2026-10-01T02:00:00+00:00", finishedAt: "2026-10-01T02:03:00+00:00", state: "done"}`
+- **WHEN** the admin opens the search index section
+- **THEN** "Last run" shows 1 October 2026 at the finish time, and never "[object Object]" or an empty value
+
+### Requirement: Status badges are readable in light and dark
+
+A status badge or mark on the admin settings page SHALL take its colours from
+Nextcloud's status variables in matching pairs: `--color-success`,
+`--color-error` or `--color-warning` as fill with `--color-success-text`,
+`--color-error-text` or `--color-warning-text` as ink, or the `-text`
+variable alone on the page background. A badge SHALL NOT use a status fill
+variable as ink, and SHALL NOT put white or `--color-main-background` ink on a
+status fill.
+
+#### Scenario: A present mark
+<!-- @e2e exclude Style contract; proven by tests/vitest/adminSettingsTruth.spec.js, which scans the settings styles, and the live contrast read on :8099. -->
+- **GIVEN** PHP is present
+- **WHEN** the prerequisites section draws its row
+- **THEN** the word "present" is drawn in `--color-success-text`
+
+### Requirement: The Nextcloud prerequisite says whether this instance is in range
+
+`Prerequisites::check()` SHALL report, beside the supported range, the major
+version this instance runs and `present: true` only when it lies within the
+range. The prerequisites section SHALL draw that row with a present or missing
+mark like every other row.
+
+#### Scenario: An instance inside the range
+<!-- @e2e exclude Server read; proven by tests/Unit/PrerequisitesTest.php::testTheNextcloudRowSaysWhetherThisInstanceIsInRange and tests/vitest/prerequisitesBlock.spec.js. -->
+- **GIVEN** the range 32 to 35 and an instance on 34
+- **WHEN** the admin opens the prerequisites section
+- **THEN** the Nextcloud row reads "present", and names 34
+
+### Requirement: An optional app shows its current product name and keeps its lookup id
+
+Every app row SHALL carry a display `name` beside its `id`. The `id` SHALL
+stay the key passed to `IAppManager::isInstalled()` until that app's own
+`<id>` moves. The section SHALL show the `name`.
+
+#### Scenario: A renamed app whose id has not moved
+<!-- @e2e exclude Server read; proven by tests/Unit/PrerequisitesTest.php::testARenamedAppShowsItsNewNameAndKeepsItsLookupId. -->
+- **GIVEN** the optional app with id `docudesk`
+- **WHEN** the admin opens the prerequisites section
+- **THEN** the row reads "filinq"
+- **AND** the instance is asked whether `docudesk` is installed
+
+### Requirement: Case type management shows a small set of columns, title first
+
+The case type list in the admin settings SHALL show title, identifier,
+published or draft, processing deadline and valid from, in that order.
+
+#### Scenario: A schema with 96 properties
+<!-- @e2e exclude Column derivation; proven by tests/vitest/caseTypeColumns.spec.js. -->
+- **GIVEN** the case type schema declares 96 properties
+- **WHEN** the admin opens case type management
+- **THEN** the table has those five columns and the first is the title
+
+### Requirement: A section does not repeat its own name
+
+A tab rendered inside a settings section SHALL NOT start with a heading that
+repeats the section's name. The admin settings page SHALL show one "Case
+email: shared mailbox" section.
+
+#### Scenario: The checklists section
+<!-- @e2e exclude Template contract; proven by tests/vitest/adminSettingsTruth.spec.js and live on :8099. -->
+- **GIVEN** the admin opens the VTH inspection checklists section
+- **THEN** the section name appears once
+
+#### Scenario: The delegated email form
+<!-- @e2e exclude Template contract; proven by tests/Unit/Settings/EmailSettingsTest.php and live on :8099. -->
+- **GIVEN** the `EmailSettings` registration stays for delegated administration
+- **WHEN** the settings page renders its form
+- **THEN** the form draws nothing, and the mailbox settings appear once, in the main page
+
+### Requirement: Headings are in sentence case
+
+Every section name and heading on the admin settings page SHALL be in
+sentence case in English and in Dutch: only the first word, acronyms and
+proper names start with a capital.
+
+#### Scenario: A Title Case heading
+<!-- @e2e exclude Copy contract; proven by tests/vitest/adminSettingsTruth.spec.js. -->
+- **GIVEN** a section named "Case Type Management"
+- **THEN** `tests/vitest/adminSettingsTruth.spec.js` fails
+
+### Requirement: Empty states carry text
+
+An empty state on the admin settings page SHALL say what is empty.
+
+#### Scenario: Tenant onboarding without a tenant
+<!-- @e2e exclude Template contract; proven by tests/vitest/adminSettingsTruth.spec.js and live on :8099. -->
+- **GIVEN** no tenant is selected
+- **THEN** tenant onboarding reads "Select a tenant to view onboarding progress."
+
+### Requirement: What shipped reports objects that did not come from a starter set
+
+When the shipped ledger holds no rows for the chosen kind, "What shipped with
+dossiq" SHALL count the objects of that kind in the register. When there are
+any, it SHALL say how many there are and that none came from a starter set.
+It SHALL say nothing has been seeded only when there are none.
+
+#### Scenario: 24 case types from the register import
+<!-- @e2e exclude Copy and count; proven by tests/vitest/shippedConfiguration.spec.js and live on :8099. -->
+- **GIVEN** the ledger is empty and the register holds 24 case types
+- **WHEN** the admin opens "What shipped with dossiq"
+- **THEN** it says 24 are here and none came from a starter set
+
+### Requirement: The case type list heads itself under its section
+
+The case type list on the admin settings page SHALL carry its heading as an
+`<h3>` under the `<h2>` of the "Case type management" section, and SHALL NOT
+render an `<h1>`. Its Add button SHALL read "Add case type".
+
+#### Scenario: Reading the heading outline
+<!-- @e2e exclude Heading level; proven by tests/vitest/caseTypeListHeading.spec.js (fails on the old h1) and live on :8099. -->
+- **GIVEN** an admin opens the dossiq admin settings
+- **WHEN** a screen reader lists the headings
+- **THEN** "Case types" is a level 3 heading under "Case type management", and the page has no second level 1 heading
+
+### Requirement: Sibling apps are named by product, looked up by id
+
+Each row under "Apps dossiq needs" and "Apps dossiq works with" SHALL show the
+app's product name (OpenRegister, Integriq, Filinq, Humaniq, Decidiq,
+Portaliq, Pipelinq, Hermiq, Thematiq). The id the row is looked up by SHALL
+stay the declared key, until that app's own `<id>` moves.
+
+#### Scenario: Integriq installed under its old id
+<!-- @e2e exclude Server-side declaration; proven by PrerequisitesTest::testEveryAppRowShowsAProductNameAndKeepsItsLookupId. -->
+- **GIVEN** the instance has `openconnector` installed
+- **WHEN** the admin opens the prerequisites block
+- **THEN** the row reads "Integriq", is marked present, and was looked up as `openconnector`
+
+### Requirement: The page-view preference key is accepted
+
+The preferences endpoint SHALL read and write a key of the form
+`cn_page_view:<pageId>`, where the page id uses letters, digits, `.`, `_` and
+`-`, and the whole key is at most 59 characters. A colon anywhere else SHALL
+still be refused with 400.
+
+#### Scenario: Opening the landing page
+<!-- @e2e exclude Controller validation; proven by PreferencesControllerTest::testThePageViewKeyIsAccepted (fails on the old charset) and live on :8099. -->
+- **GIVEN** a signed-in user
+- **WHEN** the landing page reads `GET /apps/dossiq/api/preferences/cn_page_view:MyWorkHome`
+- **THEN** the answer is 200
+
+#### Scenario: Any other colon
+<!-- @e2e exclude Controller validation; proven by PreferencesControllerTest::testAColonOutsideThePageViewPrefixIsRefused. -->
+- **WHEN** a caller reads `other:key` or `cn_page_view:a:b`
+- **THEN** the answer is 400 and nothing is read
+
+### Requirement: Every shipped schema uses only what OpenRegister's import accepts (REQ-ADMIN-041)
+
+Every schema dossiq ships SHALL use only property keys, closed-list modifier
+values and extending-form roles that OpenRegister's schema import accepts, as
+published by OpenRegister's property vocabulary and extending-forms reads. A
+build SHALL fail when a shipped schema uses anything else, because the import
+rejects the whole schema and keeps the one the instance already had.
+
+#### Scenario: a property uses an inputControl OpenRegister refuses
+
+- **GIVEN** a shipped property declaring `inputControl: textarea`
+- **WHEN** the unit suite runs
+- **THEN** the shipped-declarations test fails naming the property and the value
+- @e2e exclude {build-time guard on shipped JSON, covered by a unit test and the live register import}
+
+#### Scenario: the case form maps a role OpenRegister accepts
+
+- **GIVEN** the case form declaration mapping `hideOnCreate`
+- **WHEN** the unit suite runs against the accepted-vocabulary snapshot
+- **THEN** the role is accepted and the test pins that the declaration still maps it
+- @e2e exclude {build-time guard on shipped JSON, covered by a unit test and the live register import}
+
+### Requirement: The Systeem cards read as the board
+
+The Systeem tab SHALL describe each card in one plain line and label its fields as board DqBeheerinstellingen does. A
+field the board does not draw SHALL stay available behind the card's Geavanceerd disclosure, never be removed.
+
+#### Scenario: Zaak-e-mail
+
+- **GIVEN** the Systeem tab
+- **THEN** the card reads "Mail aan de gedeelde mailbox komt binnen als zaak of bij een bestaande zaak."
+- **AND** its fields are Mailaccount voor intake, Map, Ophalen elke (seconden), Berichten per keer, Zaaktype voor mail die niemand oppakt and "Mail op zaaknummer aan zaken koppelen", the rest under Geavanceerd
+
+### Requirement: A connection row opens its settings card
+
+The integrations tab SHALL list Kadaster (BRK) en WOZ as a connection, switched off while its source is None, and each
+connection row SHALL link to its settings card on the same page. The Kadaster card SHALL show only once its row was
+followed, saying it was opened from that row.
+
+#### Scenario: DqInstellingen
+
+- **GIVEN** the integrations tab with the Kadaster source on None
+- **THEN** the Kadaster row reads Uit
+- **WHEN** the row is followed
+- **THEN** "Kadaster (BRK) en WOZ instellen" shows with "Geopend vanuit de rij Kadaster (BRK) en WOZ"
+
+### Requirement: The DSO activity table shows what each activity becomes and when it last arrived
+
+The VTH tab's "Activities from the Omgevingsloket" table SHALL read integriq's DSO activity overview and SHALL show the columns DSO activity, Becomes case type, Variant and Last received. A row integriq marks `unmapped` SHALL read "Not linked yet: %n request(s) waiting" in its case type cell, drawn as an error. A row's note SHALL stay as the activity's second line, and a row that is not active SHALL carry an "Inactive" pill.
+
+#### Scenario: A linked activity and an unlinked one
+- GIVEN integriq maps "Kappen van een houtopstand" to Omgevingsvergunning regulier, variant Regulier, last received 5 October, and one request waits with an activity no row maps
+- WHEN an administrator opens the VTH tab
+- THEN the first row reads Kappen van een houtopstand / Omgevingsvergunning regulier / Regulier / 5 okt
+- AND the last row's case type cell reads "Nog niet gekoppeld: 1 aanvraag wacht" in red
+
+### Requirement: A connection row has a menu with what the row offers
+
+Each row of the Integraties tab's connections table that has a settings card (`settingsUrl`) SHALL end with a row actions menu holding "Open settings", a same-tab link to that card. A row without `settingsUrl` SHALL have no menu.
+
+#### Scenario: Kadaster
+- GIVEN the Kadaster (BRK) en WOZ connection row with settingsUrl `/settings/admin/dossiq?tab=integrations#section-kadaster`
+- WHEN the administrator opens the row's menu and chooses "Instellingen openen"
+- THEN the Kadaster settings card opens on this page, in the same tab
+
+### Requirement: An admin field label reads the same after the library translates it
+
+An admin settings field label SHALL show its intended text after CnSettingsFieldsSection translates it. A label whose translation is itself a catalogue key with another translation SHALL be handed over as its key.
+
+#### Scenario: The shared mailbox folder
+- GIVEN the Dutch locale
+- WHEN the Zaak-e-mail section renders the folder field
+- THEN its label reads "Map", not "Kaart"
+
+### Requirement: The fee table names each rule and its calculation
+
+The VTH settings' fee table SHALL show each shillinq fee rule by its name (its type value when it has none), its
+regulation and article, and its calculation in words.
+
+#### Scenario: Building costs
+
+- **GIVEN** a rule "Bouwen, per euro bouwkosten", percentage 2.35 of `bouwkosten`, minimum 125, Legesverordening 2026 2.3.1
+- **THEN** the row reads "Bouwen, per euro bouwkosten", "Legesverordening 2026, 2.3.1", "2,35 % van de bouwkosten, minimaal € 125,00"
+
+### Requirement: The specialist settings sit on their own tab
+
+The admin page SHALL end its tab strip with "Geavanceerd" (`advanced`), holding the specialist sections listed in the proposal. The System tab SHALL hold Configuratie, Menustructuur, Serviceaccount, Zaak-e-mail, AI-ondersteunde verwerking, Adviseringsbeheer and Zoekindex; the Integrations tab Koppelingen and the Kadaster card. A connection row whose settings card moved SHALL link to that card on the Geavanceerd tab.
+
+#### Scenario: StUF-ZKN from its connection row
+- GIVEN the Integraties tab
+- WHEN the administrator opens the StUF-ZKN row
+- THEN the StUF-ZKN endpoints card opens on the Geavanceerd tab
+
+### Requirement: The decision tables card reads its text as body
+
+The "Decision tables (DMN)" card on the Geavanceerd tab SHALL carry its text as the card's body (15px at 1.5, main
+ink, under the title), not as the card description.
+
+#### Scenario: DqBeheerGeavanceerd
+
+- **GIVEN** the Geavanceerd tab in the board look
+- **THEN** "Beslistabellen staan in het register decision-tables" reads 15px in the main ink under "Beslistabellen (DMN)"
+
+### Requirement: A ZGW mapping row names its resource
+
+Each row of the ZGW API mapping table SHALL show its resource's name in the reader's language, for every resource the default mappings store; a stored key without a name SHALL show as the key.
+
+#### Scenario: Case type
+- GIVEN the mapping stored under `caseType`
+- THEN its row reads "Zaaktype"
+
+### Requirement: The advanced tab's rows read as the board
+
+Tenant onboarding SHALL draw its tenant field and Refresh stacked at the content edge; the shipped configuration picker SHALL be a labelled field at most 560px wide with no second intro; a present prerequisite SHALL keep its success badge.
+
+#### Scenario: Tenant-onboarding
+- THEN the Tenant label starts at the card's content edge
+
+### Requirement: Integrations shows the newest term definitions
+
+The Integrations tab SHALL show the three newest term definitions, latest validity first, with a link to the full table on the Advanced tab; Ruben, 6 Nov.
+
+#### Scenario: More than three definitions
+
+- **WHEN** an administrator opens Integrations on an instance with more than three term definitions
+- **THEN** the card SHALL draw the three newest rows and a link "All term definitions"
+- **AND** the link SHALL open the Advanced tab at the full table
+
+### Requirement: The AWB term definitions are one table
+
+The term definitions SHALL be listed as a table with the columns basis, duration, version, counting, closed day, validity and state, and a New version button per row; a case type column SHALL show when any definition names a case type.
+
+#### Scenario: Two definitions
+- THEN two table rows read Awb 4:13, 8 weken, v1, Kalenderdagen, Verschuift van een gesloten dag, 2026-01-01 → ∞, Actief
 
 ## Non-Functional Requirements
 
@@ -659,7 +1441,6 @@ The admin settings MUST handle error conditions gracefully, preserving user data
 - General tab (`src/views/settings/tabs/GeneralTab.vue`) with fields: title, description, purpose, trigger, subject, processing deadline, service target, extension allowed/period, suspension allowed, origin, confidentiality, publication required/text, valid from/until, draft/published status.
 - Statuses tab (`src/views/settings/tabs/StatusesTab.vue`) with ordered list, drag-and-drop reorder, inline editing, add/delete, isFinal checkbox, notifyInitiator toggle with notification text field.
 - Case type CRUD via OpenRegister object store (`src/store/modules/object.js` using `createObjectStore` from `@conduction/nextcloud-vue`).
-- Default case type selection persisted via `SettingsService` (`lib/Service/SettingsService.php`, config key `default_case_type`).
 - Settings controller (`lib/Controller/SettingsController.php`) with index/create/load endpoints.
 - Register configuration auto-import from `dossiq_register.json` (`lib/Service/SettingsService.php::loadConfiguration`).
 - Case type admin orchestrator component (`src/views/settings/CaseTypeAdmin.vue`) managing list/detail view switching.
@@ -706,129 +1487,3 @@ This spec is highly specific and implementation-ready. Requirements are well-str
 1. Should the admin settings enforce backend validation (server-side) or is frontend validation sufficient for MVP?
 2. How should the system handle case type versioning -- can a published case type be edited, or must it be unpublished first?
 3. Should delete of status types cascade to status records on existing cases?
-
-### Requirement: SettingsController SHALL expose `index`, `create`, and `load` JSON endpoints for the admin UI runtime
-
-@e2e exclude Backend PHP controller spec; covered by PHPUnit controller tests.
-
-`OCA\Dossiq\Controller\SettingsController` SHALL expose three action endpoints:
-- `index()` — `#[NoAdminRequired]`. SHALL return `{success: true, openRegisters: <bool>, isAdmin: <bool>, config: <SettingsService::getSettings()>}` so the admin Vue app can render itself for both admins and non-admins (read-only view).
-- `create()` — admin-only (no `#[NoAdminRequired]`). SHALL take the raw request params, delegate to `SettingsService::updateSettings($data)`, and return `{success: true, config: <updated>}`.
-- `load()` — admin-only. SHALL force a fresh re-import of the dossiq register from `dossiq_register.json` via `SettingsService::loadConfiguration(force: true)` and return the raw result envelope from that service.
-
-#### Scenario: index reports admin status correctly
-- **GIVEN** a logged-in user `alice` who is a member of the `admin` group
-- **WHEN** `GET /apps/dossiq/api/settings` (index) is invoked
-- **THEN** the response SHALL contain `"isAdmin": true`
-- **AND** SHALL contain `"openRegisters": true` if the `openregister` app is installed
-
-#### Scenario: index works for non-admins
-- **GIVEN** a logged-in user `bob` who is NOT in the `admin` group
-- **WHEN** `index()` is invoked
-- **THEN** the response SHALL contain `"isAdmin": false`
-- **AND** SHALL still return the current `config` so the Vue app renders in read-only mode
-
-#### Scenario: load forces a fresh register re-import
-- **WHEN** an admin invokes `load()`
-- **THEN** the controller SHALL call `SettingsService::loadConfiguration(force: true)`
-- **AND** SHALL return the result envelope unchanged (no `success: true` wrapper)
-
-### Requirement: SettingsService SHALL be the single resolver for OpenRegister wiring and SHALL persist all Dossiq config as IAppConfig key/value pairs
-
-@e2e exclude Backend PHP service spec; covered by PHPUnit service tests.
-
-`OCA\Dossiq\Service\SettingsService` SHALL provide the central OpenRegister resolver and IAppConfig persistence layer for Dossiq. The service SHALL expose:
-- `isOpenRegisterAvailable(): bool` — returns true iff the `openregister` app is installed AND the `OCA\OpenRegister\Service\ObjectService` class can be resolved from the DI container.
-- `getObjectService(): ?object` — returns the resolved `ObjectService`, or `null` (NOT throw) when OpenRegister is unavailable. Per ADR-022, every Dossiq data-access call SHALL obtain its `ObjectService` through this single resolver.
-- `loadConfiguration(bool $force = false): array` — idempotent register import. SHALL read `dossiq_register.json`, import it via the OpenRegister `ConfigurationService`, auto-configure every schema and register ID returned, and persist them via `setConfigValue()`. When `$force` is true, SHALL re-import unconditionally; otherwise SHALL skip when the persisted version matches the manifest version.
-- `getSettings(): array` / `updateSettings(array $data): array` — bulk read/write of the Dossiq config namespace.
-- `getConfigValue(string $key, string $default = ''): string` / `setConfigValue(string $key, string $value): void` — single-key accessors backed by `IAppConfig` under the `dossiq` app namespace.
-
-#### Scenario: getObjectService returns null when OpenRegister is uninstalled
-- **GIVEN** the `openregister` app is not installed
-- **WHEN** `getObjectService()` is called
-- **THEN** the method SHALL return `null` (NOT throw)
-- **AND** `isOpenRegisterAvailable()` SHALL return `false`
-
-#### Scenario: loadConfiguration is idempotent without --force
-- **GIVEN** the persisted `dossiq_register_version` equals the version in `dossiq_register.json`
-- **WHEN** `loadConfiguration()` is called with default `$force = false`
-- **THEN** the service SHALL skip the re-import and return the cached configuration envelope
-
-#### Scenario: loadConfiguration(force: true) re-imports unconditionally
-- **GIVEN** the persisted version equals the manifest version (no diff)
-- **WHEN** `loadConfiguration(force: true)` is called
-- **THEN** the service SHALL still call `ConfigurationService::importFromApp(...)`
-- **AND** SHALL refresh every persisted schema/register ID from the import result
-
-#### Scenario: config keys survive process restart
-- **WHEN** `setConfigValue('register', 'dossiq')` is called
-- **AND** a new request hits the process pool
-- **THEN** `getConfigValue('register')` SHALL return `'dossiq'`
-
-#### Notes
-- Both `getObjectService()` and `getConfigurationService()` look up services from the DI container at call time (NOT injection-time) — this is deliberate so Dossiq can boot even when `openregister` is not yet installed.
-- ADR-022 calls out that every register-aware service in Dossiq MUST go through `SettingsService::getObjectService()` rather than wiring its own ObjectService injection.
-
-### Requirement: SettingsController SHALL expose `index`, `create`, and `load` JSON endpoints for the admin UI runtime
-
-@e2e exclude Backend PHP controller spec; covered by PHPUnit controller tests.
-
-`OCA\Dossiq\Controller\SettingsController` SHALL expose three action endpoints:
-- `index()` — `#[NoAdminRequired]`. SHALL return `{success: true, openRegisters: <bool>, isAdmin: <bool>, config: <SettingsService::getSettings()>}` so the admin Vue app can render itself for both admins and non-admins (read-only view).
-- `create()` — admin-only (no `#[NoAdminRequired]`). SHALL take the raw request params, delegate to `SettingsService::updateSettings($data)`, and return `{success: true, config: <updated>}`.
-- `load()` — admin-only. SHALL force a fresh re-import of the dossiq register from `dossiq_register.json` via `SettingsService::loadConfiguration(force: true)` and return the raw result envelope from that service.
-
-#### Scenario: index reports admin status correctly
-- **GIVEN** a logged-in user `alice` who is a member of the `admin` group
-- **WHEN** `GET /apps/dossiq/api/settings` (index) is invoked
-- **THEN** the response SHALL contain `"isAdmin": true`
-- **AND** SHALL contain `"openRegisters": true` if the `openregister` app is installed
-
-#### Scenario: index works for non-admins
-- **GIVEN** a logged-in user `bob` who is NOT in the `admin` group
-- **WHEN** `index()` is invoked
-- **THEN** the response SHALL contain `"isAdmin": false`
-- **AND** SHALL still return the current `config` so the Vue app renders in read-only mode
-
-#### Scenario: load forces a fresh register re-import
-- **WHEN** an admin invokes `load()`
-- **THEN** the controller SHALL call `SettingsService::loadConfiguration(force: true)`
-- **AND** SHALL return the result envelope unchanged (no `success: true` wrapper)
-
-### Requirement: SettingsService SHALL be the single resolver for OpenRegister wiring and SHALL persist all Dossiq config as IAppConfig key/value pairs
-
-@e2e exclude Backend PHP service spec; covered by PHPUnit service tests.
-
-`OCA\Dossiq\Service\SettingsService` SHALL provide the central OpenRegister resolver and IAppConfig persistence layer for Dossiq. The service SHALL expose:
-- `isOpenRegisterAvailable(): bool` — returns true iff the `openregister` app is installed AND the `OCA\OpenRegister\Service\ObjectService` class can be resolved from the DI container.
-- `getObjectService(): ?object` — returns the resolved `ObjectService`, or `null` (NOT throw) when OpenRegister is unavailable. Per ADR-022, every Dossiq data-access call SHALL obtain its `ObjectService` through this single resolver.
-- `loadConfiguration(bool $force = false): array` — idempotent register import. SHALL read `dossiq_register.json`, import it via the OpenRegister `ConfigurationService`, auto-configure every schema and register ID returned, and persist them via `setConfigValue()`. When `$force` is true, SHALL re-import unconditionally; otherwise SHALL skip when the persisted version matches the manifest version.
-- `getSettings(): array` / `updateSettings(array $data): array` — bulk read/write of the Dossiq config namespace.
-- `getConfigValue(string $key, string $default = ''): string` / `setConfigValue(string $key, string $value): void` — single-key accessors backed by `IAppConfig` under the `dossiq` app namespace.
-
-#### Scenario: getObjectService returns null when OpenRegister is uninstalled
-- **GIVEN** the `openregister` app is not installed
-- **WHEN** `getObjectService()` is called
-- **THEN** the method SHALL return `null` (NOT throw)
-- **AND** `isOpenRegisterAvailable()` SHALL return `false`
-
-#### Scenario: loadConfiguration is idempotent without --force
-- **GIVEN** the persisted `dossiq_register_version` equals the version in `dossiq_register.json`
-- **WHEN** `loadConfiguration()` is called with default `$force = false`
-- **THEN** the service SHALL skip the re-import and return the cached configuration envelope
-
-#### Scenario: loadConfiguration(force: true) re-imports unconditionally
-- **GIVEN** the persisted version equals the manifest version (no diff)
-- **WHEN** `loadConfiguration(force: true)` is called
-- **THEN** the service SHALL still call `ConfigurationService::importFromApp(...)`
-- **AND** SHALL refresh every persisted schema/register ID from the import result
-
-#### Scenario: config keys survive process restart
-- **WHEN** `setConfigValue('register', 'dossiq')` is called
-- **AND** a new request hits the process pool
-- **THEN** `getConfigValue('register')` SHALL return `'dossiq'`
-
-#### Notes
-- Both `getObjectService()` and `getConfigurationService()` look up services from the DI container at call time (NOT injection-time) — this is deliberate so Dossiq can boot even when `openregister` is not yet installed.
-- ADR-022 calls out that every register-aware service in Dossiq MUST go through `SettingsService::getObjectService()` rather than wiring its own ObjectService injection.

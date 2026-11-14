@@ -55,41 +55,18 @@ if (is_link($ocpVendorDir) === true && file_exists($ocpVendorDir) === false) {
 
 unset($ocpVendorDir);
 
-// Polyfill easter_date() when the PHP `calendar` extension is not loaded
-// (it is absent from the slim PHP-CLI image used in the dev container).
-// Production Nextcloud images ship the calendar extension, so this guard is a
-// no-op there. The algorithm is the standard Gauss/Meeus computation returning
-// a Unix timestamp for noon (matching the extension's CAL_EASTER_DEFAULT).
-if (function_exists('easter_date') === false) {
-	/**
-	 * Compute the Unix timestamp of Easter Sunday for a Gregorian year.
-	 *
-	 * @param int|null $year The year (defaults to the current year).
-	 *
-	 * @return int Unix timestamp (UTC noon) of Easter Sunday.
-	 */
-	function easter_date(?int $year = null): int {
-		$year = ($year ?? (int)date('Y'));
-
-		$a = ($year % 19);
-		$b = intdiv($year, 100);
-		$c = ($year % 100);
-		$d = intdiv($b, 4);
-		$e = ($b % 4);
-		$f = intdiv(($b + 8), 25);
-		$g = intdiv((($b - $f) + 1), 3);
-		$h = (((19 * $a) + $b - $d - $g + 15) % 30);
-		$i = intdiv($c, 4);
-		$k = ($c % 4);
-		$l = ((32 + (2 * $e) + (2 * $i) - $h - $k) % 7);
-		$m = intdiv(($a + (11 * $h) + (22 * $l)), 451);
-
-		$month = intdiv(($h + $l - (7 * $m) + 114), 31);
-		$day = ((($h + $l - (7 * $m) + 114) % 31) + 1);
-
-		return gmmktime(0, 0, 0, $month, $day, $year);
-	}//end easter_date()
-}//end if
+// NOTE: there used to be an easter_date() polyfill here, defining the function
+// when ext-calendar was absent. It is gone on purpose. lib/ crashed in
+// production on any ordinary weekday because two services called
+// easter_date() and no Nextcloud image we run ships ext-calendar — and the
+// test suite could never see it, because this bootstrap handed the tests a
+// function production did not have. It also papered over a second bug: the
+// real easter_date() returns a fixed CEST-midnight timestamp, so
+// date('Y-m-d', easter_date($y)) reads one day early under date.timezone=UTC,
+// while the polyfill's gmmktime() read correctly. Nothing in lib/ calls it
+// now; WorkingDayCalculator owns the computus, and
+// Unit/Service/WorkingDayCalculatorTest::testLibDoesNotDependOnExtCalendar
+// fails if that changes. Do not reinstate this.
 
 // Load the OC-internal and Doctrine stubs FIRST — before the OCP pre-load and
 // before any OCP autoloader is registered.
@@ -199,17 +176,107 @@ if ($ncLibPublicDir !== false && is_dir($ncLibPublicDir) === true) {
 	}//end if
 }//end if
 
+/**
+ * Tell whether a Nextcloud root is an INSTALLED instance, not just a source tree.
+ *
+ * `lib/base.php` from a source tree that was never installed still declares
+ * `OC` and builds `\OC::$server` before it throws "Not installed". That server
+ * cannot be undone (`OC::$server` is a typed static), so from then on every
+ * `\OC::$server->get()` in the code under test hits a container that knows
+ * none of this app's registrations and autowires from scratch; constructor
+ * cycles then recurse until memory runs out (19 GB and 6 GB of swap in one
+ * openregister run on 2026-09-08). So the decision has to be made BEFORE
+ * base.php is loaded, and the only cheap signal is the `installed` flag in
+ * config/config.php.
+ *
+ * @param string $ncRoot Candidate Nextcloud root.
+ *
+ * @return bool True when config/config.php declares `installed => true`.
+ */
+function dossiq_nc_root_is_installed(string $ncRoot): bool {
+	$configFile = $ncRoot . '/config/config.php';
+	if (is_file($configFile) === false || filesize($configFile) === 0) {
+		return false;
+	}
+
+	// The config file is a plain `$CONFIG = [...]` script; including it in a
+	// closure keeps `$CONFIG` out of the global scope.
+	$config = (static function () use ($configFile): array {
+		$CONFIG = [];
+		try {
+			include $configFile;
+		} catch (\Throwable) {
+			return [];
+		}
+
+		if (is_array($CONFIG) === false) {
+			return [];
+		}
+
+		return $CONFIG;
+	})();
+
+	return ($config['installed'] ?? false) === true;
+}//end dossiq_nc_root_is_installed()
+
 // Load a real Nextcloud server when one is present (CI/dev container). This
 // must happen BEFORE the stub OCP PSR-4 registration below so that NC's
 // classmap autoloader takes priority for any remaining OCP classes.
+//
+// Only an INSTALLED root is booted. A bare source tree (the workspace checkout
+// above apps-extra/ has a 0-byte config/config.php) would declare `OC`, build
+// `\OC::$server` and then throw "Not installed", and there is no way back to
+// pure-unit mode from that state: see dossiq_nc_root_is_installed(). NC's
+// tests/autoload.php requires lib/base.php itself, so it sits behind the same
+// guard.
 if (defined('OC_CONSOLE') === false) {
-	if (file_exists(__DIR__ . '/../../../lib/base.php') === true) {
-		include_once __DIR__ . '/../../../lib/base.php';
+	$dossiqNcRoot = realpath(__DIR__ . '/../../..');
+	if ($dossiqNcRoot !== false && file_exists($dossiqNcRoot . '/lib/base.php') === true) {
+		if (dossiq_nc_root_is_installed($dossiqNcRoot) === true) {
+			try {
+				include_once $dossiqNcRoot . '/lib/base.php';
+
+				if (file_exists($dossiqNcRoot . '/tests/autoload.php') === true) {
+					include_once $dossiqNcRoot . '/tests/autoload.php';
+				}
+			} catch (\Throwable $e) {
+				// The tree IS installed, so the dangerous case this guard exists for
+				// (loading a bare source tree) did not happen. base.php still failed
+				// part-way.
+				//
+				// This does NOT abort. `OC::$server` is a typed static, so a half-built
+				// container cannot be unset, and aborting was tried: it turned all six
+				// PHPUnit legs red on a suite that passes (humaniq, 2026-09-08). The
+				// runaway this guard exists for needs an autowiring lookup to reach the
+				// poisoned container, this app has none in lib, and phpunit.xml's 2G cap
+				// bounds one anyway.
+				//
+				// So: say plainly that the container is unreliable, and let the pure unit
+				// tests run. A container-bound test failing loudly is the intended outcome.
+				fwrite(
+					STDERR,
+					sprintf(
+						"[dossiq/tests/bootstrap] Nextcloud at %s could not finish booting (%s).\n"
+						. "  \\OC::\$server now holds a HALF-BUILT container and cannot be unset. Pure unit tests\n"
+						. "  continue; anything resolving a service from that container is UNVERIFIED by this run.\n",
+						$dossiqNcRoot,
+						$e->getMessage()
+					)
+				);
+			}
+		} else {
+			fwrite(
+				STDERR,
+				sprintf(
+					"[dossiq/tests/bootstrap] Nextcloud root at %s is not an installed instance (config/config.php lacks installed => true); "
+					. "skipping lib/base.php and running with composer autoload only (pure-unit mode).\n",
+					$dossiqNcRoot
+				)
+			);
+		}
 	}
 
-	if (file_exists(__DIR__ . '/../../../tests/autoload.php') === true) {
-		include_once __DIR__ . '/../../../tests/autoload.php';
-	}
+	unset($dossiqNcRoot);
 }
 
 // Register OCP and NCU namespaces from the nextcloud/ocp stub package so that
@@ -254,6 +321,12 @@ require_once __DIR__ . '/Unit/Fixtures/FakeTermijnStore.php';
 // load order relative to the stub block below does not matter.
 require_once __DIR__ . '/Unit/Fixtures/FlowTimerEngineFake.php';
 
+// Shared engine-calendar fake for the Algemene termijnenwet roll. Mirrors the
+// REAL WorkingCalendarService::resolve() and SlaCalculator::add() signatures,
+// so a term site that drifts off the engine's contract fails here instead of
+// agreeing with itself.
+require_once __DIR__ . '/Unit/Fixtures/WorkingCalendarEngineFake.php';
+
 // Schema-aware stand-in for StufRegisterAccess. Reproduces the two live object
 // store behaviours a hand-written mock hides — a save drops what the schema
 // does not declare, and a filter on an undeclared property matches zero rows —
@@ -262,7 +335,7 @@ require_once __DIR__ . '/Unit/Fixtures/SchemaAwareStufRegister.php';
 
 // OCP\Http\Client interface stubs — the vendored nextcloud/ocp does not ship
 // the OCP\Http\Client namespace, so services depending on IClientService
-// (PublicationService, MandaatValidationService) cannot be mocked without these.
+// (PublicationService and others) cannot be mocked without these.
 // Guarded by interface_exists() so they no-op under a real Nextcloud runtime.
 require_once __DIR__ . '/Stubs/HttpClientStubs.php';
 
@@ -350,15 +423,6 @@ if (getenv('DOSSIQ_REAL_FLOW_ENGINE') === '1'
 
 unset($dossiqOpenRegisterLib, $dossiqOpenRegisterVendor);
 
-// IMcpToolProvider stub — loaded when the openregister runtime (PR #1466,
-// ai-chat-companion-orchestrator) is absent. DossiqToolProvider implements
-// OCA\OpenRegister\Mcp\IMcpToolProvider; the stub no-ops when the real
-// interface is present (e.g. when the openregister app is installed). Must be
-// in place before \OC_App::loadApp('dossiq') below tries to load that class.
-if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
-	include_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
-}
-
 // Decision-event stubs — loaded when the decision app is absent so the dossiq
 // delegation services + DecisionConcludedListener can be unit-tested against its
 // event contract. These stubs no-op when the real classes are present.
@@ -388,16 +452,71 @@ if (class_exists('\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent') === false
 	include_once __DIR__ . '/Stubs/Decidiq/Event/DecisionStateRequestedEvent.php';
 }
 
+// The read half of the governance-body contract (decidiq#1694), which
+// GovernanceBodyReader dispatches. One spelling only, for the same reason.
+if (class_exists('\\OCA\\Decidiq\\Event\\GovernanceBodyStateRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Decidiq/Event/GovernanceBodyStateRequestedEvent.php';
+}
+
 // Integriq's ADR-041 delivery-seam contract (absorb-dossiq-deliveries).
+// The connection-registry events (adopt-connection-registry) ride the same loop:
+// IntegrationStatusService sends them by name, exactly like the delivery seam.
 // PublicationService dispatches DeliveryRequestedEvent and
 // DeliveryConcludedListener consumes DeliveryConcludedEvent; both resolve the
 // classes by name so dossiq stays installable without integriq. The stubs
 // mirror integriq's real constructor signatures verbatim and no-op when the
 // real classes are present.
-foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent'] as $stubEvent) {
+// IntakeMessageRoutedEvent rides the same loop (an-intake-message-opens-a-case):
+// integriq's channel intake asks whoever owns the target to open one, and
+// IntakeMessageRoutedListener answers it by name for the same reason.
+// The two digital post events ride the same loop (digital-post-reaches-integriq):
+// IntegriqAdapter dispatches DigitalPostSendRequestedEvent and reads its result
+// slot, and DigitalPostDeliveredListener consumes DigitalPostDeliveredEvent,
+// both resolved by name so dossiq stays installable without integriq. Without
+// these stubs the adapter's resolve would only ever answer null, every test
+// would exercise the absent branch alone, and the branch that turns a handled
+// event with no tracked message into a refusal could never be reached.
+// OutboundSendDecisionRequestedEvent rides it too (opt-out-before-send):
+// OptOutGate asks integriq by name before a case mail goes out.
+// SourceRequestedEvent rides it too (webhook-steps-through-integriq): the
+// retired webhook translation asks integriq for a Source by name.
+// DocumentSearchRequestedEvent and DocumentFetchRequestedEvent ride it too
+// (woo-requests-gather-documents-from-sources): WooSources searches and fetches
+// integriq's Microsoft 365 connection by name.
+// The three StUF-ZDS events ride it too (stuf onto integriq, decision 193):
+// StufIntegriqBridge sends outbound StUF and forwards confirmations by name.
+foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'IntakeMessageRoutedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent', 'MessageReceivedEvent', 'SourceRequestedEvent', 'OutboundSendDecisionRequestedEvent', 'DocumentSearchRequestedEvent', 'DocumentFetchRequestedEvent', 'StufZdsCaseRequestedEvent', 'StufZdsCaseConcludedEvent', 'StufZdsConfirmationReceivedEvent', 'StufProviderQueryEvent', 'StufCaseQueryEvent', 'StufPersonQueryEvent', 'StufCaseMutationEvent', 'StufDocumentMutationEvent', 'StufProviderRequestReceivedEvent'] as $stubEvent) {
 	if (class_exists('\\OCA\\Integriq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Integriq/Event/' . $stubEvent . '.php';
 	}
+}
+
+// Portaliq's citizen write and withdrawal facts (dossiq#3142). portaliq raises
+// one typed event per act a resident takes on their own case, and dossiq's two
+// listeners tell the case handler. Both are bound by FQN string behind a
+// class_exists guard so dossiq stays installable without portaliq; without
+// these stubs the guard could only ever answer false and the listeners could
+// never be exercised against the real getter names.
+foreach (['PortalClientWriteEvent', 'PortalClientWithdrawalEvent'] as $stubEvent) {
+	if (class_exists('\\OCA\\Portaliq\\Event\\' . $stubEvent) === false) {
+		include_once __DIR__ . '/Stubs/Portaliq/Event/' . $stubEvent . '.php';
+	}
+}
+
+// Shillinq's payment-request leaf (fees-and-payments-on-the-case). dossiq reads
+// a case's payment state through it and resolves the class by name, so the app
+// stays installable without the money app. Without this stub the lookup can
+// only ever answer false, every test of the reader would exercise the absent
+// branch alone, and static analysis would report the resolution as dead code.
+if (class_exists('\\OCA\\Shillinq\\Integration\\PaymentRequestLeafProvider') === false) {
+	include_once __DIR__ . '/Stubs/Shillinq/Integration/PaymentRequestLeafProvider.php';
+}
+
+// Shillinq's invoice command (dossiq-delivers-nothing phase 5, decision 174).
+// ShillinqIntegrationService raises it by name so dossiq installs without
+// shillinq; without this stub only the absent branch could ever run.
+if (class_exists('\\OCA\\Shillinq\\Event\\BillablePeriodClosedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Shillinq/Event/BillablePeriodClosedEvent.php';
 }
 
 // Hermiq's oversight contract. procest resolves it by name so it stays
@@ -405,6 +524,26 @@ foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent'] as $stubEvent) {
 // tests if something supplies the class.
 if (class_exists('\\OCA\\Hermiq\\Event\\AiOversightRecordedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Hermiq/Event/AiOversightRecordedEvent.php';
+}
+
+// OpenRegister's bulk-action contract. dossiq's four case actions IMPLEMENT the
+// interface and RETURN the result type, so without these stubs they cannot even
+// be loaded in a unit test on a host where OpenRegister is absent. BulkJobMember
+// is here for its four outcome constants, which is all BulkActionResult names.
+if (class_exists('\\OCA\\OpenRegister\\Db\\BulkJobMember') === false) {
+	include_once __DIR__ . '/Stubs/Db/BulkJobMember.php';
+}
+
+if (interface_exists('\\OCA\\OpenRegister\\BulkAction\\BulkActionInterface') === false) {
+	include_once __DIR__ . '/Stubs/BulkAction/BulkActionInterface.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\BulkAction\\BulkActionResult') === false) {
+	include_once __DIR__ . '/Stubs/BulkAction/BulkActionResult.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Event\\BulkActionRegistrationEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/BulkActionRegistrationEvent.php';
 }
 
 // OpenRegister's flow-node contract. procest's six action nodes implement it,
@@ -496,14 +635,127 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatingEvent') === false) {
 // BezwaarDecisionListenerTest can exercise the guard's real decision through
 // handle() — including the probe's call shape, which is what silently broke.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Db/Task.php';
+	include_once __DIR__ . '/Stubs/Event/TaskTerminalEventStub.php';
 	include_once __DIR__ . '/Stubs/Event/ObjectUpdatedEventStub.php';
 	include_once __DIR__ . '/Stubs/Event/ObjectCreatedEventStub.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/ObjectDeletedEventStub.php';
+}
+
+// people-on-the-case: OpenRegister's three person-link events, so
+// PersonLinkListenerTest can exercise handle() against the real getLink()
+// shape on a bare container. Declaration-only stubs, shared with psalm and
+// phpstan (see psalm.xml <stubs> and phpstan.neon scanFiles).
+if (class_exists('\\OCA\\OpenRegister\\Event\\PersonLinkedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonLinkedEvent.php';
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonLinkUpdatedEvent.php';
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonUnlinkedEvent.php';
+}
+
+// flow-nodes-to-their-owners: the events that hand a sent mail and a generated
+// document back to dossiq. OpenRegister's FlowEmailSentEvent (from
+// feat/flow-send-email-external-recipients) and Filinq's two document events.
+// Verbatim copies, loaded only when the real classes are absent, shared with
+// psalm and phpstan.
+if (class_exists('\\OCA\\OpenRegister\\Event\\FlowEmailSentEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/FlowEmailSentEvent.php';
+}
+
+foreach (['DocumentGeneratedEvent', 'DocumentGenerationRequestedEvent'] as $stubEvent) {
+	if (class_exists('\\OCA\\Filinq\\Event\\' . $stubEvent) === false) {
+		include_once __DIR__ . '/Stubs/Filinq/Event/' . $stubEvent . '.php';
+	}
+}
+
+// Shillinq's payout commands (inbound-payable-from-another-app, REQ-IPY-001 and
+// REQ-IPY-005): Money\PayoutRequester raises and withdraws a payout through them.
+// Verbatim copies, loaded only when the real classes are absent, shared with
+// psalm and phpstan.
+foreach (['PayableRaisedEvent', 'PayableCancelRequestedEvent', 'PayablesRequestedEvent'] as $stubEvent) {
+	if (class_exists('\\OCA\\Shillinq\\Event\\' . $stubEvent) === false) {
+		include_once __DIR__ . '/Stubs/Shillinq/Event/' . $stubEvent . '.php';
+	}
+}
+
+// Filinq's detector refusal (dossiq#3191): FilinqRedactionClient recognises it
+// by name, so only the tests need the class.
+if (class_exists('\\OCA\\Filinq\\Exception\\DetectionUnavailableException') === false) {
+	include_once __DIR__ . '/Stubs/Filinq/Exception/DetectionUnavailableException.php';
+}
+
+// Filinq's review gate (partly-public-documents-get-a-redacted-copy): the
+// redaction step is tested against filinq's own guard, gate and run identity,
+// with the marks kept in memory.
+if (class_exists('\\OCA\\Filinq\\Exception\\RedactionNotReviewedException') === false) {
+	include_once __DIR__ . '/Stubs/Filinq/Exception/RedactionNotReviewedException.php';
+}
+
+// Filinq's anonymise options (redaction-four-eyes-setting): the redaction
+// client passes the acting user, the output format and whether the run is a
+// Woo case through them.
+if (class_exists('\\OCA\\Filinq\\Service\\AnonymizeOptions') === false) {
+	include_once __DIR__ . '/Stubs/Filinq/Service/AnonymizeOptions.php';
+}
+
+foreach (['DetectionRunIdentity', 'RedactionReviewGate', 'RedactionReviewMarkRepository', 'RedactionOutputGuard'] as $stubRedaction) {
+	if (class_exists('\\OCA\\Filinq\\Service\\Redaction\\' . $stubRedaction) === false) {
+		include_once __DIR__ . '/Stubs/Filinq/Service/Redaction/' . $stubRedaction . '.php';
+	}
+}
+
+// case-merge: OpenRegister's merge event. CaseMergeRegistrar names it by
+// `::class`, which does not autoload, so the registration is silent at runtime
+// without openregister and reads to the analysers as a class that does not
+// exist. Declaration-only, shared with psalm and phpstan.
+// a-request-form-opens-the-case-at-once: the event OpenRegister sends when a
+// draft leaves draft (openregister#4566), so the receipt listeners' tests can
+// drive it.
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectActivatedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/ObjectActivatedEvent.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectsMergedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/ObjectsMergedEvent.php';
+}
+
+// tenancy-onto-openregister-organisation 6.9: the organisation update event,
+// so OrganisationStatusChangeListenerTest can drive handle() with the real shape.
+if (class_exists('\\OCA\\OpenRegister\\Event\\OrganisationUpdatedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/OrganisationUpdatedEvent.php';
+}
+
+// woo-request-scoped-access 5.2: OpenRegister's vetoable decision event
+// (openregister#4583), so CaseDecisionAccessListenerTest drives handle() with
+// the real getter names. Declaration-only, shared with psalm and phpstan.
+// The two types those events carry. Declaration-only, so the stubs stay as
+// typed as OpenRegister's own and StubApiDriftTest has nothing to report.
+if (class_exists('\\OCA\\OpenRegister\\Db\\Decision') === false) {
+	include_once __DIR__ . '/Stubs/Db/Decision.php';
+}
+if (class_exists('\\OCA\\OpenRegister\\Service\\Decision\\ReviewPolicy') === false) {
+	include_once __DIR__ . '/Stubs/Service/Decision/ReviewPolicy.php';
+}
+if (class_exists('\\OCA\\OpenRegister\\Event\\DecisionChangeRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/DecisionChangeRequestedEvent.php';
+}
+// reviewer-owns-their-decisions REQ-DEC-003 (openregister#4592): the visibility
+// question CaseDecisionAccessListener answers for a case-type supervisor.
+if (class_exists('\\OCA\\OpenRegister\\Event\\DecisionVisibilityRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/DecisionVisibilityRequestedEvent.php';
 }
 
 // REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so
 // BewijsstukImmutabilityListenerTest can exercise the reject path on delete.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectDeletingEventStub.php';
+}
+
+// identity-survives-a-move: a move out of the register is a deleting event to a guard.
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectLeavingEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/ObjectLeavingEventStub.php';
 }
 
 // termijnbewaking-op-engine-timers: the business-timer surface the termijn
@@ -513,6 +765,8 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
 if (class_exists('\\OCA\\OpenRegister\\Db\\FlowTimer') === false) {
 	include_once __DIR__ . '/Stubs/Db/FlowTimer.php';
 }
+
+include_once __DIR__ . '/Stubs/Service/Flow/Timer/TimerFiringStubs.php';
 
 if (class_exists('\\OCA\\OpenRegister\\Event\\FlowTimerFiredEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/FlowTimerFiredEventStub.php';
@@ -529,6 +783,16 @@ if (class_exists('\\OCA\\OpenRegister\\AppHost\\Bootstrap') === false) {
 
 if (class_exists('\\OCA\\OpenRegister\\AppHost\\Controller\\GenericDashboardController') === false) {
 	include_once __DIR__ . '/Stubs/AppHost/Controller/GenericDashboardController.php';
+}
+
+// Observability plane (ADR-006): HealthController and MetricsController extend
+// these, so a reflection over either controller loads the parent or dies.
+if (class_exists('\\OCA\\OpenRegister\\AppHost\\Controller\\GenericHealthController') === false) {
+	include_once __DIR__ . '/Stubs/AppHost/Controller/GenericHealthController.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\AppHost\\Controller\\GenericMetricsController') === false) {
+	include_once __DIR__ . '/Stubs/AppHost/Controller/GenericMetricsController.php';
 }
 
 // Store plane (ADR-080): OpenRegister owns discovery, dossiq owns install.

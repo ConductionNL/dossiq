@@ -56,6 +56,38 @@ const DEFAULT_PLURAL_FORM = 'nplurals=2; plural=(n != 1);'
 const L10N_DIR = path.join(REPO_ROOT, 'l10n')
 
 /**
+ * The one order every catalogue writer agrees on.
+ *
+ * Case-insensitive so a reader scanning for "Add a case" is not sent to a
+ * separate upper-case block, and tie-broken by code point so two keys that
+ * differ only in case still have ONE defined order. `localeCompare` is
+ * deliberately avoided: its result depends on the machine's ICU data, so two
+ * developers running the same writer could produce two different files and
+ * each would see the other's as a diff.
+ *
+ * Deterministic order is what makes the catalogues mergeable. Appended keys
+ * all landed on the same last line, so every branch that added a string
+ * conflicted with every other one; sorted, "Add a case" and "Zoom to fit" are
+ * thousands of lines apart and the two edits never meet.
+ *
+ * @param {string[]} keys - the keys to order
+ * @return {string[]} a new array in canonical order
+ */
+function sortKeys(keys) {
+	return [...keys].sort((a, b) => {
+		const la = a.toLowerCase()
+		const lb = b.toLowerCase()
+		if (la !== lb) {
+			return la < lb ? -1 : 1
+		}
+		if (a === b) {
+			return 0
+		}
+		return a < b ? -1 : 1
+	})
+}
+
+/**
  * The app id the browser catalogue must register under. Read from
  * appinfo/info.xml rather than hard-coded: this app has already been renamed
  * once (hrmq -> humaniq), and a catalogue registered under the old id is
@@ -172,4 +204,11 @@ function main() {
 	}
 }
 
-main()
+// `renderJs` is shared with tools/merge-l10n.js so a merged l10n/<locale>.js is
+// byte-identical to a rebuilt one; without the guard, requiring this file would
+// run the whole build as a side effect.
+if (require.main === module) {
+	main()
+}
+
+module.exports = { renderJs, sortKeys, DEFAULT_PLURAL_FORM }

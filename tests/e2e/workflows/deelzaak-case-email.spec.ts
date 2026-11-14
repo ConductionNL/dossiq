@@ -16,12 +16,12 @@ import type { APIRequestContext, Page } from '@playwright/test'
  *      exact endpoint DeelzaakList.vue consumes, and the parent-of lookup
  *      resolves back. The sub-case COUNT endpoint (used by the case list badge)
  *      reflects the new child. Cleanup removes both cases.
- *   3. CASE-EMAIL: the case-email backend that CaseEmailTab.vue drives is
+ *   3. CASE-EMAIL: the case-email backend that the Email tab drives is
  *      reachable and degrades correctly when Nextcloud Mail is not installed
  *      (leaf-first per ADR-022 — dossiq ships no email engine of its own).
  *
  * RESOLVED (nc-vue slot-render gap — fixed in @conduction/nextcloud-vue):
- *   The DeelzaakList / CaseEmailTab components are registered in
+ *   The DeelzaakList component is registered in
  *   src/registry.js (kind:'page', component:…) and bundled. The manifest shell
  *   now renders a kind:'page' registry component when referenced as a sidebar
  *   tab (`component: …`, via CnObjectSidebar.resolveTabComponent) and as a
@@ -96,15 +96,14 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		}
 	})
 
-	// FIXME(#719): same gap as cases-crud — the case detail page does not
-	// display the assigned zaaknummer anywhere in its rendered text.
+	// UNPARKED for the same reason as its cases-crud twin, which carries the
+	// long version: the zaaknummer now renders in the `case-core` info panel.
+	// Scoped to that panel because unscoped it was satisfied by the copy the
+	// identity row prints at the top of the page, and stayed green on CI run
+	// 34592678724 with the number removed from the panel.
 	test('CaseDetail page renders the case the sub-case + email tabs hang off', async ({
 		page,
 	}) => {
-		test.fixme(
-			true,
-			'FIXME(#719): same gap as cases-crud — the case detail page does not display the assigned zaaknummer anywhere in its rendered text.',
-		)
 		const title = `${RUN_PREFIX} Deelzaak parent`
 		const identifier = `${RUN_PREFIX}-DZP`
 		const parent = await seedCase(api, token, {
@@ -114,14 +113,15 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 			description: 'Parent of a sub-case.',
 		})
 		const parentId = objectId(parent)
-		// dossiq assigns the zaaknummer itself and ignores the supplied identifier,
-		// so assert the ASSIGNED value the create returned, not the seed input.
+		// The number the create RETURNED: the `case` schema keeps a supplied
+		// number and calculates one otherwise, so the response is the authority.
 		const assignedIdentifier = String(
 			(parent as Record<string, unknown>).identifier ?? identifier,
 		)
 
 		await page.goto(`/index.php/apps/dossiq/cases/${parentId}`, {
 			waitUntil: 'domcontentloaded',
+			timeout: 60_000,
 		})
 		await dismissSupportDialog(page)
 
@@ -129,14 +129,21 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		await expect(page).toHaveURL(new RegExp(`/cases/${parentId}`), {
 			timeout: 10_000,
 		})
+		const infoPanel = page
+			.locator('.cn-tabs-widget')
+			.locator('.cn-tabs__content > [role="tabpanel"]:not([hidden])')
 		await expect(
-			page.getByText(assignedIdentifier, { exact: false }).first(),
-		).toBeVisible({ timeout: 15_000 })
-		await expect(page.getByText(title, { exact: false }).first()).toBeVisible()
+			infoPanel,
+			'the case info panel carries the title',
+		).toContainText(title, { timeout: 30_000 })
+		await expect(
+			infoPanel,
+			'the case info panel carries the zaaknummer',
+		).toContainText(assignedIdentifier, { timeout: 15_000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
-	test('a deelzaak (sub-case) persists and round-trips through the DeelzaakList API', async () => {
+	test('a deelzaak (sub-case) persists and round-trips through the deelzaken API', async () => {
 		// Seed a parent + a child linked via `parentCase` — exactly the shape
 		// DeelzaakCreateModal.vue persists through the OpenRegister object store.
 		const parent = await seedCase(api, token, {
@@ -153,7 +160,7 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		})
 		const childId = objectId(child)
 
-		// DeelzaakList.vue fetches GET /deelzaken/{parent}/children — the child
+		// GET /deelzaken/{parent}/children — the child
 		// must be returned, proving the parent-child link persisted.
 		const children = await deelzaken(`/${encodeURIComponent(parentId)}/children`)
 		expect(children.status, 'children endpoint reachable').toBe(200)
@@ -201,7 +208,7 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 	})
 
 	test('the case-email backend (email templates) the tab consumes is sound', async () => {
-		// CaseEmailTab.vue loads the case object + the case-type's email
+		// The Email tab loads the case-type's email
 		// templates via GET /api/email/templates/{caseTypeId}; the compose path
 		// degrades to an "unavailable" state when NC Mail (the leaf) is absent
 		// (this dev instance has no Mail) — leaf-first per ADR-022. Assert the
@@ -217,14 +224,10 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		)
 	})
 
-	// ----- Rendered tab UI (nc-vue slot-render gap now FIXED) -----------------
-	// These drive the actual rendered DeelzaakList / CaseEmailTab tabs. The
-	// @conduction/nextcloud-vue manifest shell now renders a kind:'page'
-	// registry component referenced from a sidebar tab `component:` and from a
-	// custom page's `slots.main` (CnObjectSidebar.resolveTabComponent +
-	// CnPageRenderer.resolvedComponent — ADR-036 / nextcloud-vue#459 family),
-	// so these are un-fixmed.
-	test('Sub-cases tab renders DeelzaakList with the seeded child row', async ({
+	// ----- Rendered tab UI ------------------------------------------------------
+	// The old sub-case list address redirects to the parent case, on the
+	// Related tab that lists its sub-cases.
+	test('the old sub-case list address opens the parent on its Related tab', async ({
 		page,
 	}: {
 		page: Page
@@ -237,21 +240,16 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		const parentId = objectId(parent)
 		await page.goto(`/index.php/apps/dossiq/cases/${parentId}/deelzaken`)
 		await dismissSupportDialog(page)
-		await expect(page.locator('.deelzaak-list')).toBeVisible({ timeout: 15_000 })
-		await expect(page.getByRole('heading', { name: 'Sub-cases' })).toBeVisible()
+		await expect(page).toHaveURL(new RegExp(`/cases/${parentId}(\\?[^#]*)?#case-related-panel$`), { timeout: 15_000 })
+		const detail = page.locator('.cn-detail-page')
+		await expect(detail).toBeVisible({ timeout: 15_000 })
+		await expect(detail.getByText('Sub-cases', { exact: true }).first()).toBeVisible({ timeout: 15_000 })
 	})
 
-	// CaseDetail sidebar tab-strip (config.sidebarTabs: Tasks/Decisions/
-	// Documents/Advies/Sub-cases/Email) now renders. The gap (2026-06-12)
-	// was two-fold in @conduction/nextcloud-vue: CnDetailPage.resolvedSidebar()
-	// treated the default Boolean-false `sidebar` prop as "off" even when
-	// `config.sidebarTabs` was present (so syncSidebarState never published
-	// the strip), AND CnAppRoot shadowed the host App's objectSidebarState
-	// holder with its own, so the deep CnDetailPage wrote into a holder the
-	// host #sidebar slot never read. Both fixed in the lib; dossiq's App.vue
-	// now mounts the host CnObjectSidebar in CnAppRoot's #sidebar slot
-	// (decidesk pattern). The Email tab → CaseEmailTab render is asserted here.
-	test('Email tab renders CaseEmailTab in the sidebar strip', async ({
+	// The Email tab of the case panels renders the library mail widget
+	// (`type: "mail"`): the template row that opens a Nextcloud Mail draft,
+	// above the mail linked to the case.
+	test('Email tab renders the mail widget', async ({
 		page,
 	}: {
 		page: Page
@@ -264,45 +262,16 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		const parentId = objectId(parent)
 		await page.goto(`/index.php/apps/dossiq/cases/${parentId}`)
 		await dismissSupportDialog(page)
-		await expect(
-			page.getByText(`${RUN_PREFIX} Email parent`, { exact: false }).first(),
-		).toBeVisible({ timeout: 15_000 })
-		// The object sidebar (NcAppSidebar) is collapsed by default on CaseDetail —
-		// a toolbar "Open sidebar" toggle reveals it. Open it before asserting the
-		// hosted tab strip mounts (it is not rendered while the aside is closed).
-		const openSidebar = page.getByRole('button', { name: 'Open sidebar' })
-		// ⚠️ `isVisible()` IS AN INSTANT PROBE, NOT A WAIT. Under full-suite load
-		// the detail toolbar had not painted when this line ran, the `if` read
-		// false, the toggle was never clicked, and the assertion below then failed
-		// on an aside that was present but collapsed ("Received: hidden"). Wait
-		// for whichever arrives first: the toggle, or an already-open sidebar on a
-		// build that ships it expanded.
-		await Promise.race([
-			openSidebar.waitFor({ state: 'visible', timeout: 15_000 }),
-			page
-				.locator('aside.app-sidebar')
-				.waitFor({ state: 'visible', timeout: 15_000 }),
-		]).catch(() => undefined)
-		if (await openSidebar.isVisible().catch(() => false)) {
-			await openSidebar.click()
-		}
-		// The hosted object sidebar with the manifest tab strip must mount.
-		await expect(page.locator('aside.app-sidebar')).toBeVisible({
-			timeout: 15_000,
-		})
-		const emailTab = page
-			.locator('[data-testid="cn-object-sidebar-tab-email"]')
-			.or(page.getByRole('tab', { name: 'Email' }))
-			.or(page.getByRole('button', { name: 'Email' }))
-			.first()
+		const detail = page.locator('.cn-detail-page')
+		await expect(detail).toBeVisible({ timeout: 15_000 })
+		await expect(detail.locator('.cn-detail-page__title')).toContainText(
+			`${RUN_PREFIX} Email parent`,
+			{ timeout: 15_000 },
+		)
+		const emailTab = detail.getByRole('tab', { name: 'Email', exact: true })
 		await expect(emailTab).toBeVisible({ timeout: 15_000 })
-		await emailTab.click().catch(() => {})
-		// CaseEmailTab itself renders inside the tab. On an instance without
-		// NC Mail it surfaces the "Email integration unavailable" empty state;
-		// otherwise it renders the compose surface. Either proves the manifest
-		// `component: CaseEmailTab` tab resolved and mounted — assert the tab
-		// root, then accept whichever leaf-dependent state applies.
-		await expect(page.locator('.case-email-tab')).toBeVisible({
+		await emailTab.click()
+		await expect(detail.locator('.cn-mail-tab')).toBeVisible({
 			timeout: 15_000,
 		})
 	})

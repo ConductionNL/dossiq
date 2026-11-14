@@ -28,9 +28,35 @@ migration needs a repair step mapping one onto the other, and secrets cannot be 
 NOT blocked on wave-3: integriq's StufZkn bridge is seam-based (`StufZknProviderInterface`), not the
 legacy runner.
 
-- [ ] Retire the four zero-caller outbound verbs on `StufAdapterService` (`creeerZaak`,
-      `actualiseerZaak`, `geefZaakDetails`, `genereerZaakIdentificatie`) — dead capability, no
-      caller anywhere in lib/ or src/ (gate-57 shape).
+### Ruling 2026-09-12: re-point through integriq, do not retire
+
+These four verbs were listed for retirement as dead capability. Measured against integriq before
+acting, and the premise does not hold in the direction that matters. Under `openconnector/lib/`,
+`creeerZaak`, `actualiseerZaak`, `geefZaakDetails` and `vrijBericht` appear in **zero** files, and
+`genereerZaakIdentificatie` only in a spec scenario. The outbound ZKN translator emits a bare
+`zakLk01` kennisgeving and writes no `<stuf:functie>` element at all, so it cannot distinguish
+`creeerZaak` from `actualiseerZaak`, which this app's own spec requires as an explicit SHALL. Its
+`Lv01` code is StUF-BG person and address lookups, unrelated to `geefZaakDetails`. Retiring here and
+citing integriq would have moved four requirements onto an app that implements roughly one of them.
+
+The ruling is that **the specs stay in dossiq, and dossiq configures integriq as the leaf providing
+the capability instead of carrying its own transport.** dossiq keeps stating what it needs of a
+StUF-ZKN zaaksysteem; it stops owning the SOAP client, the circuit breaker, the vault and the retry
+job. The gap that exposes is integriq's to close, and it is named below rather than left for
+whoever deletes the code to discover.
+
+- [ ] Re-point `creeerZaak` and `actualiseerZaak` through the ADR-041 delivery seam, the same
+      `DeliveryRequestedEvent` path phase 1 already uses for publication. These are the two integriq
+      can carry today, as a `zakLk01` kennisgeving.
+- [ ] **integriq-side prerequisite:** teach the outbound ZKN translator to write `<stuf:functie>`,
+      so a create and an update are distinguishable on the wire. Until this lands, re-pointing the
+      two verbs above silently collapses them into one message.
+- [ ] **integriq-side prerequisite:** a synchronous Lv01 `geefZaakDetails` round-trip and a Du01
+      `genereerZaakIdentificatie` round-trip. Both are request and response rather than
+      fire-and-forget, so they do not fit `DeliveryRequestedEvent` as it stands and need their own
+      seam.
+- [ ] Re-point `geefZaakDetails` and `genereerZaakIdentificatie` once that seam exists. Do NOT
+      delete dossiq's implementations before then: they are the only implementations the fleet has.
 - [ ] Re-point `StufController::outbound()` (`vrijBericht`) at integriq's `stuf_message` intake via
       the delivery seam or `StufZknSyncService`, keeping the admin surface read-only views.
 - [ ] Repair step: migrate `stufEndpoint` objects to integriq `source` objects
@@ -39,9 +65,10 @@ legacy runner.
 - [ ] Delete the outbound half of `lib/Service/Stuf/` (`StufOutboundTransport`, `StufHttpClient`,
       `CircuitBreakerService`, `StufVaultService`, `NeedsInputDispatcher`, `StufRetryJob`) once
       nothing references it; the inbound responder half stays until its own extraction is ruled on.
-- [ ] Update `openspec/specs/stuf-zkn-outbound/spec.md`: outbound orchestration, circuit breaker,
-      retry and credential requirements move to integriq's `stuf-zkn-bridge` spec (reference, do
-      not duplicate).
+- [ ] Keep `openspec/specs/stuf-zkn-outbound/spec.md` in dossiq, and record in it which party now
+      performs each requirement. The orchestration, circuit breaker, retry and credential clauses
+      describe behaviour dossiq still depends on, so they change owner rather than cease to exist,
+      and integriq's `stuf-zkn-bridge` spec should reference them rather than restate them.
 
 ## Phase 3: Notificaties + webhooks re-point — staged
 
@@ -65,23 +92,74 @@ Blocked on: **no production transport exists to move** (Berichtenbox has only `M
 `LogZgwExternalAdapter` returns synthetic `PUSH_DEFERRED`; DSO-LV production needs OAuth2 + OIN
 PKIoverheid mTLS that was never built). These are integriq build-out items, not extractions.
 
+Re-verified 2026-09-09 against `development`. The Berichtenbox half is not waiting on
+anyone's code. A MijnOverheid transport needs a Logius aansluiting — credentials issued to
+the municipality — and a PKIoverheid certificate on the OIN behind it. Both are procurement
+with a lead time, so this phase stays open on a purchase order rather than on a branch, and
+should not be read as unfinished engineering. `BerichtenboxReadStatusJob` was removed on
+2026-10-08: Logius Berichtenbox has no read status (integriq spec `berichtenbox-client`), so
+there is nothing for a cron to poll.
+
 - [ ] When a real MijnOverheid transport is commissioned: build it as an integriq provider quintet
       (controller + provider seam + sync service + `*_message` schema + retry job, the
       IwmoIjw/StufZkn pattern); dossiq keeps `BerichtenboxRoutingService` (channel choice is
       domain) and calls through the delivery seam.
-- [ ] Also fix en route: `BerichtenboxReadStatusJob` is not registered in `appinfo/info.xml`
-      (dead cron today — register it or delete it with the re-point).
+- [x] Also fix en route: `BerichtenboxReadStatusJob` is not registered in `appinfo/info.xml`.
+      Resolved 2026-10-08 by removing it: the Berichtenbox has no read status to poll.
+      Re-verified 2026-09-10: still unregistered, and DELIBERATELY so rather than by oversight.
+      The class docblock at `lib/BackgroundJob/BerichtenboxReadStatusJob.php:9-28` now says why,
+      in the words the audit needed: integriq ships only `BerichtenboxClientMock`, so scheduling
+      it today would poll a mock daily and write back a read status the mock invents, and a cron
+      that appears to confirm citizens are reading post no instance has sent is worse than no
+      cron. The open item is therefore "register it in the same change that binds a real
+      transport", not "fix a dead cron".
 - [ ] When cross-municipality ZGW push activates: bind `ZgwExternalAdapterInterface` to an
       integriq source (`zgw-external`) instead of a local HTTP client.
 - [ ] DSO-LV: land production auth (OAuth2 + PKIoverheid mTLS) on integriq's `dso-omgevingsloket`
       source config; `DsoLvAuthService` retires.
 
-## Phase 5: Shillinq billing export — staged
+## Phase 5: Shillinq billing export
 
-Blocked on: **shillinq must define its event contract first** (per ADR-041 the target app defines
-the typed event; shillinq is an NC sibling, so integriq HTTP is the wrong seam — this is a
-cross-app command to shillinq, mirroring the decidiq `DecisionRequestedEvent` precedent).
+Decision 174 (10 Oct 2026, Q-dossiq-L11-1): a shillinq `CustomerMaster` carries the dossiq tenant
+id as its external reference. Shillinq defines the command (ADR-041), and its listener drafts the
+invoice through the path its time intake already uses, or refuses in a way dossiq records.
 
-- [ ] shillinq defines `InvoiceIngestRequestedEvent` (its repo, its openspec).
-- [ ] `ShillinqIntegrationService::exportInvoice()` dispatches it (class-guarded, fail-closed);
-      the blocking `sleep()` retry loop and the bearer-token HTTP client retire.
+- [x] shillinq defines `BillablePeriodClosedEvent` (its repo, its openspec: change
+      `billable-period-becomes-an-invoice`, REQ-UMB-005; paired shillinq PR). Its listener drafts a
+      usage `BillableInvoice` for the one customer whose `externalReference` is the tenant id, and
+      refuses when none or more than one carries it.
+- [x] `ShillinqIntegrationService::exportInvoice()` dispatches it (class-guarded by name, fail-closed:
+      absent shillinq, no listener, a throwing dispatch and a refusal all answer `success: false`);
+      the blocking `sleep()` retry loop and the bearer-token HTTP client retire, and so does the
+      `SaasServiceRegistrar` factory that read `shillinq_base_url` / `shillinq_api_key`. A refusal
+      is recorded on the tenant's audit trail (`procest.tenant.invoice.refused`, the reason in
+      `resource`) and returned as the month's `error`, so the events stay unbilled.
+      Tests: `tests/Unit/Service/ShillinqIntegrationServiceTest.php` against
+      `tests/Stubs/Shillinq/Event/BillablePeriodClosedEvent.php`, a verbatim copy of shillinq's class.
+- [ ] Live pass (decision 139): with both apps on one instance and a shillinq customer carrying a
+      tenant id, run the tenant's monthly invoicing; see one draft invoice in shillinq and the
+      events stamped with its id; run it again and see the same invoice; clear the reference and
+      see the refusal on the tenant's audit trail.
+
+## Re-verified 2026-10-10 against integriq `development` (lane L11, decision 156)
+
+Decision 156 says a dependency in another repo is built there, not parked. So each blocker
+above was measured again against integriq before anyone builds it, and one of them is already
+gone:
+
+- **The `<stuf:functie>` prerequisite is met another way.** integriq's
+  `OutboundNotificationTranslator` writes `StUF:verwerkingssoort` `T` (create), `W` (update) or
+  `V` (vervallen) on the object and `mutatiesoort` in the parameters. StUF 3.01 tells a
+  `creeerZaak` from an `actualiseerZaak` kennisgeving by exactly that. `<stuf:functie>` belongs
+  to vrije berichten (Di/Du). The 2026-09-12 reading looked at the older translator.
+- **A request/response StUF call exists.** `StufZknClient::exchange()` posts with an explicit
+  SOAPAction and returns the answer, and `StufZdsDocumentDelivery` already uses it for the ZDS
+  identificatie round-trip. A `genereerZaakIdentificatie` Du01 call can use the same path, so
+  this needs a caller, not a new seam.
+- **What is really missing is the route.** `DeliveryRequestedEvent` fans out to CloudEvents
+  subscriptions. No subscription target sends a StUF-ZKN kennisgeving, so a `creeerZaak`
+  dispatched through the seam would reach no zaaksysteem. That target (a subscription that
+  calls `StufZknSyncService::sendNotification()`) is the integriq piece to build. And since
+  `creeerZaak`/`actualiseerZaak` have zero production callers in dossiq, it is worth building
+  only once a municipality's zaaksysteem actually needs them.
+

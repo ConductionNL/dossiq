@@ -40,7 +40,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Kernel\Contracts\CaseEmailRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -50,9 +52,16 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseEmailRepository {
+class CaseEmailRepository implements CaseEmailRepositoryInterface {
 
 	use SearchesObjects;
+
+	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
 
 	/**
 	 * Constructor.
@@ -62,6 +71,7 @@ class CaseEmailRepository {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -104,40 +114,32 @@ class CaseEmailRepository {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function findTemplatesForCaseType(string $caseTypeId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('email_template_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['caseType' => $caseTypeId, '_limit' => 100],
+		return $this->rows->search(
+			schemaKey: 'email_template_schema',
+			filters: ['caseType' => $caseTypeId, '_limit' => 100]
 		);
 	}//end findTemplatesForCaseType()
 
 	/**
-	 * Load case data for template variable resolution.
+	 * Load the raw case object as OpenRegister serialises it.
 	 *
 	 * The case is loaded through OpenRegister with RBAC enabled, so a case the
 	 * caller may not read comes back as an empty array — which the caller
 	 * treats as 403.
 	 *
+	 * Callers that need the whole record — the recipient policy, which reads
+	 * whichever contact fields the case carries — MUST use this rather than
+	 * `loadCaseVariables()`, whose six-key projection drops every other field.
+	 * Feeding that projection to a contact reader is exactly how the recipient
+	 * allow-list came to be permanently empty (see `CaseContactDirectory`).
+	 *
 	 * @param string $caseId The case UUID
 	 *
-	 * @return array<string, mixed> Case data flattened for variable resolution
+	 * @return array<string, mixed> The raw case object, or [] when unreadable
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	public function loadCaseVariables(string $caseId): array {
+	public function loadCaseRecord(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return [];
@@ -159,15 +161,97 @@ class CaseEmailRepository {
 			return [];
 		}
 
-		// Flatten for variable resolution.
-		return [
+		return $caseObj;
+	}//end loadCaseRecord()
+
+	/**
+	 * Project a raw case object onto the template variable names.
+	 *
+	 * Pure: it reads the record it is handed and performs no OpenRegister call,
+	 * so a caller that already holds the record projects it without a second
+	 * read.
+	 *
+	 * @param array<string, mixed> $caseObj The raw case object
+	 *
+	 * @return array<string, mixed> Case data flattened for variable resolution
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	/**
+	 * Spellings this projection answered before it was aligned.
+	 *
+	 * `title` and `startdatum` are in templates authored against the old
+	 * six-key projection, so the map still fills them. They are NOT what the
+	 * editor offers and NOT what a new template should use.
+	 *
+	 * @var array<string, string> Old spelling to the canonical one.
+	 */
+	public const DEPRECATED_ALIASES = [
+		'title' => 'titel',
+		'startdatum' => 'startDate',
+	];
+
+	/**
+	 * The case, flattened to the variable names a template author writes.
+	 *
+	 * @param array<string, mixed> $caseObj The case as OpenRegister stored it.
+	 *
+	 * @return array<string, string> The variables, by the name the editor offers.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	public function flattenCaseVariables(array $caseObj): array {
+		if ($caseObj === []) {
+			return [];
+		}
+
+		// 🔴 THE SAME NAMES THE TEMPLATE EDITOR OFFERS, because these render
+		// templates out of the SAME store. `EmailTemplateService` owns the
+		// catalogue an administrator authors against — `titel`, `contactNaam`,
+		// `startDate` — and this projection answered `title`, `startdatum` and
+		// nothing about a contact. A template written in that editor and sent
+		// through `CaseEmailService::sendFromTemplate()` therefore reached the
+		// recipient with `{{titel}}` and `{{contactNaam}}` still in it, which
+		// is the same defect dossiq#2950 fixed in the other renderer.
+		//
+		// The old spellings stay as aliases for the same reason the other
+		// renderer keeps its own: templates written against this projection are
+		// stored on instances and are not ours to rewrite.
+		$map = [
 			'zaakNummer' => $caseObj['identifier'] ?? '',
-			'title' => $caseObj['title'] ?? '',
-			'startdatum' => $caseObj['startDate'] ?? '',
+			'titel' => $caseObj['title'] ?? '',
+			'startDate' => $caseObj['startDate'] ?? '',
+			'endDate' => $caseObj['endDate'] ?? '',
 			'deadline' => $caseObj['deadline'] ?? '',
 			'status' => $caseObj['status'] ?? '',
 			'handler' => $caseObj['assignee'] ?? '',
+			'contactNaam' => ($caseObj['contactName'] ?? ($caseObj['contact']['name'] ?? '')),
+			'contactEmail' => ($caseObj['contactEmail'] ?? ($caseObj['contact']['email'] ?? '')),
+			'contactTelefoon' => ($caseObj['contactPhone'] ?? ($caseObj['contact']['phone'] ?? '')),
+			'zaaktypeNaam' => $caseObj['caseTypeTitle'] ?? '',
+			'zaaktypeOmschrijving' => $caseObj['caseTypeDescription'] ?? '',
 		];
+
+		foreach (self::DEPRECATED_ALIASES as $was => $now) {
+			$map[$was] = $map[$now];
+		}
+
+		return $map;
+	}//end flattenCaseVariables()
+
+	/**
+	 * Load case data for template variable resolution.
+	 *
+	 * @param string $caseId The case UUID
+	 *
+	 * @return array<string, mixed> Case data flattened for variable resolution
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function loadCaseVariables(string $caseId): array {
+		return $this->flattenCaseVariables(
+			caseObj: $this->loadCaseRecord(caseId: $caseId)
+		);
 	}//end loadCaseVariables()
 
 	/**

@@ -27,17 +27,28 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Dossiq\Service\BerichtenboxRoutingService;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\BerichtenboxService;
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
+use OCA\Dossiq\Service\Beschikking\BeschikkingDelivery;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
 use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
+use OCA\Dossiq\Service\Beschikking\CaseRemedy;
+use OCA\Dossiq\Service\People\CoordinatorRequirement;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
 use OCA\Dossiq\Service\Beschikking\MockSigningAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter;
 use OCA\Dossiq\Service\BeschikkingService;
+use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
+use OCA\Dossiq\Service\Termijn\TermNoticeSender;
+use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\DocumentSeries\DocumentSeriesNumberer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StateMachineService;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -96,6 +107,12 @@ class FakeObjectService {
 				$rows,
 				static function (array $row) use ($filters): bool {
 					foreach ($filters as $key => $value) {
+						// `_limit`, `_page` and friends are query parameters on the
+						// real service, not object fields.
+						if (str_starts_with((string)$key, '_') === true) {
+							continue;
+						}
+
 						if (($row[$key] ?? null) !== $value) {
 							return false;
 						}
@@ -133,8 +150,11 @@ class FakeObjectService {
  *
  * @covers \OCA\Dossiq\Service\BeschikkingService
  *
- * @uses \OCA\Dossiq\Service\BerichtenboxRoutingService
+ * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingDelivery
+ * @uses \OCA\Dossiq\Service\Notification\RequesterNoticeSender
  * @uses \OCA\Dossiq\Service\Beschikking\AuditPacketBuilder
+ * @uses \OCA\Dossiq\Service\DocumentSeries\DocumentSeriesNumberer
+ * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingRepository
  * @uses \OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler
  * @uses \OCA\Dossiq\Service\Beschikking\MandaatVerifier
@@ -143,6 +163,13 @@ class FakeObjectService {
  * @uses \OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter
  * @uses \OCA\Dossiq\Service\StateMachineService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingSendRecorder
+ * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingSendRun
+ * @uses \OCA\Dossiq\Service\Beschikking\SuccessorRequest
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class BeschikkingServiceTest extends TestCase {
 
@@ -154,6 +181,20 @@ class BeschikkingServiceTest extends TestCase {
 	private FakeObjectService $objects;
 
 	/**
+	 * The mocked timeline seam, and what it was handed.
+	 *
+	 * @var CaseTimeline|MockObject
+	 */
+	private CaseTimeline $timeline;
+
+	/**
+	 * Every payload the seam was handed.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $entries = [];
+
+	/**
 	 * The service under test.
 	 *
 	 * @var BeschikkingService
@@ -161,14 +202,72 @@ class BeschikkingServiceTest extends TestCase {
 	private BeschikkingService $service;
 
 	/**
+	 * The settings double the graph reads its keys from.
+	 *
+	 * @var SettingsService&MockObject
+	 */
+	private SettingsService $settings;
+
+	/**
+	 * The repository over the in-memory store.
+	 *
+	 * @var BeschikkingRepository
+	 */
+	private BeschikkingRepository $repository;
+
+	/**
+	 * The remedy the case's decisions carry, driven per test.
+	 *
+	 * A double answers '' and 0 unless told otherwise, which is exactly a case
+	 * type that declares no remedy, so every test written before the
+	 * declaration existed keeps its six weeks.
+	 *
+	 * @var CaseRemedy&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private CaseRemedy $remedy;
+
+	/**
+	 * What digital post answers, driven per test. A tracked message by default.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $postAnswer = [];
+
+	/**
+	 * Every digital-post send, as handed to the transport.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $posted = [];
+
+	/**
 	 * Set up fixtures with a wired-up service graph.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
+		$this->entries = [];
+		$this->timeline = $this->createMock(CaseTimeline::class);
+		$this->timeline->method('record')->willReturnCallback(
+			function (
+				string $caseId,
+				string $kind,
+				string $message,
+				array $fields = [],
+				string $visibility = 'internal',
+				array $relatedCaseIds = [],
+			): string {
+				$this->entries[] = compact('caseId', 'kind', 'message', 'fields', 'visibility');
+
+				return 'entry-' . count($this->entries);
+			}
+		);
+
 		$this->objects = new FakeObjectService();
+		$this->remedy = $this->createMock(originalClassName: CaseRemedy::class);
 
 		$settings = $this->createMock(SettingsService::class);
+		$this->settings = $settings;
 		$settings->method('getObjectService')->willReturn($this->objects);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
@@ -185,20 +284,48 @@ class BeschikkingServiceTest extends TestCase {
 
 		$logger = $this->createMock(LoggerInterface::class);
 		$stateMachine = new StateMachineService($settings, $logger);
-		$routing = new BerichtenboxRoutingService($logger);
+
+		// The real sender over a digital-post double: the transport is the
+		// one thing a unit test may not call, and what it answers is exactly
+		// what verzend() must act on.
+		$this->posted = [];
+		$this->postAnswer = ['externalMessageId' => 'mijnoverheid-msg-1', 'sentAt' => '2026-10-10T09:00:00+02:00'];
+		$post = $this->createMock(BerichtenboxService::class);
+		$post->method('sendMessage')->willReturnCallback(
+			function (string $caseId, string $bsn, string $subject, string $body, string $typeCode, ?string $attachmentFileId = null, string $category = 'case-update'): array {
+				$this->posted[] = compact('caseId', 'bsn', 'subject', 'body', 'typeCode', 'category');
+
+				return $this->postAnswer;
+			}
+		);
+		$cases = $this->createMock(CaseStatusStore::class);
+		$cases->method('loadCase')->willReturn(['id' => 'zaak-2026-wmo-1', 'identifier' => 'ZAAK-2026-1']);
+		$delivery = new BeschikkingDelivery(
+			new RequesterNoticeSender(email: $this->createMock(TermNoticeSender::class), digitalPost: $post),
+			$cases,
+		);
 
 		$signingAdapter = new MockSigningAdapter();
 
 		$this->service = new BeschikkingService(
 			$stateMachine,
-			$routing,
+			$delivery,
 			new MockTemplateEngineAdapter(),
 			$signingAdapter,
 			new OpenRegisterArchivalAdapter($this->createMock(ContainerInterface::class), $logger),
-			new BeschikkingRepository($settings, $logger),
+			$this->repository = new BeschikkingRepository($settings, $logger),
 			new MandaatVerifier($settings, $logger),
 			new AuditPacketBuilder($settings, $signingAdapter, $logger),
 			new BezwaarTermijnScheduler($settings, $logger),
+			$this->createMock(CoordinatorRequirement::class),
+			$this->timeline,
+			$this->remedy,
+			new DocumentSeriesNumberer(
+				$this->createMock(CaseStatusStore::class),
+				$this->createMock(CaseTypeResolver::class),
+				$this->sequencesContainer(),
+				$logger,
+			),
 		);
 
 		// Seed a WMO mandaatregeling covering the afdelingsmanager level.
@@ -217,17 +344,150 @@ class BeschikkingServiceTest extends TestCase {
 	}//end setUp()
 
 	/**
+	 * A container answering OpenRegister's SequenceService with an in-memory counter.
+	 *
+	 * @return ContainerInterface
+	 */
+	private function sequencesContainer(): ContainerInterface {
+		$sequences = new class {
+			/**
+			 * Next value per scope key.
+			 *
+			 * @var array<string, int>
+			 */
+			private array $next = [];
+
+			/**
+			 * Reserve the next value for a scope.
+			 *
+			 * @param int    $registerId The register.
+			 * @param int    $schemaId   The schema.
+			 * @param string $scopeKey   The scope key.
+			 *
+			 * @return int The reserved value.
+			 */
+			public function reserveNext(int $registerId, int $schemaId, string $scopeKey): int {
+				$value = ($this->next[$scopeKey] ?? 1);
+				$this->next[$scopeKey] = ($value + 1);
+
+				return $value;
+			}//end reserveNext()
+		};
+
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($sequences);
+
+		return $container;
+	}//end sequencesContainer()
+
+	/**
+	 * Compose writes the beschikking's own running number, and the next one takes the next (decision 167).
+	 *
+	 * @return void
+	 */
+	public function testComposeWritesTheNextRunningNumber(): void {
+		$year = (new \DateTimeImmutable())->format('Y');
+
+		$first = $this->service->compose('zaak-2026-wmo-1', 'tpl-wmo-v1', []);
+		$second = $this->service->compose('zaak-2026-wmo-2', 'tpl-wmo-v1', []);
+
+		self::assertSame('B-' . $year . '-000001', $first['reference']);
+		self::assertSame('B-' . $year . '-000002', $second['reference']);
+		self::assertSame('B-' . $year . '-000001', $this->objects->store['beschikking'][$first['id']]['reference'], 'The number is stored, not only answered.');
+		self::assertArrayNotHasKey('supersedes', $first, 'A first beschikking points at nothing.');
+	}//end testComposeWritesTheNextRunningNumber()
+
+	/**
+	 * What compose() and a successor write fits the real `beschikking` schema, pointer included.
+	 *
+	 * @return void
+	 */
+	public function testTheNumberedSuccessorFitsTheRealSchema(): void {
+		$validator = new \OCA\Dossiq\Tests\Support\RealSchemaValidator();
+		$original = $this->composeWmo();
+		$this->objects->store['beschikking'][$original['id']]['currentStatus'] = 'sent';
+		$successor = $this->service->issueSuccessor($original['id'], 'amendment', ['rationale' => 'Herzien na bezwaar.']);
+
+		$strip = static fn (array $row): array => array_diff_key($row, array_flip(['id', 'motivering_required', 'geadresseerde_required']));
+		self::assertSame([], $validator->errors('beschikking', $strip($successor)), 'The successor as composed.');
+		self::assertSame([], $validator->errors('beschikking', $strip($this->objects->store['beschikking'][$original['id']]), false), 'The original with its pointer.');
+		self::assertSame($successor['id'], $this->objects->store['beschikking'][$original['id']]['supersededBy']);
+		self::assertNotSame($original['reference'], $successor['reference'], 'The correction has its own number.');
+	}//end testTheNumberedSuccessorFitsTheRealSchema()
+
+	/**
+	 * A successor is a new numbered draft pointing back; only the pointer changes on the original.
+	 *
+	 * @return void
+	 */
+	public function testACorrectionIsANewNumberedSuccessor(): void {
+		$original = $this->composeWmo();
+		$this->objects->store['beschikking'][$original['id']]['currentStatus'] = 'sent';
+		$before = $this->objects->store['beschikking'][$original['id']];
+
+		$successor = $this->service->issueSuccessor($original['id'], 'withdrawal');
+
+		self::assertSame('withdrawal', $successor['decisionType']);
+		self::assertSame($original['id'], $successor['supersedes']);
+		self::assertSame('draft', $successor['currentStatus']);
+		self::assertSame($original['addressee'], $successor['addressee'], 'The addressee carries over.');
+		$after = $this->objects->store['beschikking'][$original['id']];
+		self::assertSame($successor['id'], $after['supersededBy']);
+		unset($after['supersededBy']);
+		unset($after['id'], $before['id']);
+		self::assertSame($before, $after, 'Nothing but the pointer changed on the original.');
+	}//end testACorrectionIsANewNumberedSuccessor()
+
+	/**
+	 * A replaced beschikking refuses a second successor and names the one to correct; a draft and an unknown kind are refused.
+	 *
+	 * @return void
+	 */
+	public function testSuccessorRefusals(): void {
+		$original = $this->composeWmo();
+		$draftId = $original['id'];
+
+		$cases = [
+			'successor-kind-unknown' => fn () => $this->service->issueSuccessor($draftId, 'toekenning'),
+			'successor-of-a-draft' => fn () => $this->service->issueSuccessor($draftId, 'amendment'),
+		];
+		foreach ($cases as $rule => $attempt) {
+			try {
+				$attempt();
+				self::fail($rule.' must be refused.');
+			} catch (RefusedException $refusal) {
+				self::assertSame($rule, $refusal->getRule());
+			}
+		}
+
+		$this->objects->store['beschikking'][$draftId]['currentStatus'] = 'signed';
+		$first = $this->service->issueSuccessor($draftId, 'amendment');
+		$count = count($this->objects->store['beschikking']);
+		try {
+			$this->service->issueSuccessor($draftId, 'amendment');
+			self::fail('A second successor must be refused.');
+		} catch (RefusedException $refusal) {
+			self::assertSame('already-superseded', $refusal->getRule());
+			self::assertStringContainsString((string)$first['reference'], $refusal->getSentence());
+		}
+
+		self::assertCount($count, $this->objects->store['beschikking'], 'Nothing was composed for the refused attempt.');
+	}//end testSuccessorRefusals()
+
+	/**
 	 * Compose a beschikking in the ontwerp status with a rendered PDF.
+	 *
+	 * @param array<string, mixed> $addressee Who the beschikking is addressed to.
 	 *
 	 * @return array<string, mixed> The composed beschikking (for chaining).
 	 */
-	private function composeWmo(): array {
+	private function composeWmo(array $addressee = ['type' => 'burger', 'bsn' => '123456789', 'name' => 'M. Jansen', 'messageBoxConfirmed' => true]): array {
 		$decision = $this->service->compose(
 			'zaak-2026-wmo-1',
 			'tpl-wmo-v1',
 			[
 				'decisionType' => 'toekenning',
-				'addressee' => ['type' => 'burger', 'bsn' => '123456789', 'name' => 'M. Jansen', 'messageBoxConfirmed' => true],
+				'addressee' => $addressee,
 				'rationale' => 'Toegekend op basis van onderzoek.',
 			],
 		);
@@ -249,6 +509,92 @@ class BeschikkingServiceTest extends TestCase {
 		$this->assertSame('pdf-a3', $decision['compositeContent']['format']);
 		$this->assertNotEmpty($decision['compositeContent']['fileId']);
 	}//end testComposeCreatesDraft()
+
+	/**
+	 * The resolved template version is stored on the beschikking.
+	 *
+	 * 🔴 IT WAS RESOLVED AND DROPPED. `compose()` called the adapter's
+	 * `resolveVersion()` and then used only its `templateId`, so every
+	 * beschikking recorded which template made it and never which version of
+	 * it. Editing a template after a decision issued left the appeal against
+	 * that decision reading text nobody ever sent. This asserts the effect —
+	 * the value on the STORED object — and not the adapter's return value,
+	 * which was already correct and already going nowhere.
+	 *
+	 * @return void
+	 */
+	public function testComposeStoresTheResolvedTemplateVersion(): void {
+		$decision = $this->composeWmo();
+
+		$this->assertArrayHasKey('templateVersion', $decision, 'the version must be on the object');
+		$this->assertSame('v1', $decision['templateVersion']);
+
+		$stored = $this->service->find($decision['id']);
+		$this->assertSame('v1', ($stored['templateVersion'] ?? null), 'and must survive the round trip');
+	}//end testComposeStoresTheResolvedTemplateVersion()
+
+	/**
+	 * A besluit prints the clause its case type declares (REQ-DEC-03).
+	 *
+	 * The clause is read from the case, not from the template, which is the
+	 * whole point: the same template on two case types prints two terms.
+	 *
+	 * @return void
+	 */
+	public function testComposePrintsTheClauseTheCaseTypeDeclares(): void {
+		$this->remedy->method('clauseFor')->willReturnMap(
+			[['zaak-2026-wmo-1', 'U kunt bezwaar maken tegen dit besluit. Doe dat binnen 42 dagen bij het college.']]
+		);
+
+		$decision = $this->composeWmo();
+
+		$this->assertSame(
+			expected: 'U kunt bezwaar maken tegen dit besluit. Doe dat binnen 42 dagen bij het college.',
+			actual: ($this->service->find($decision['id'])['legalRemediesClause'] ?? null),
+		);
+	}//end testComposePrintsTheClauseTheCaseTypeDeclares()
+
+	/**
+	 * Sending the besluit binds the remedy clock on the declared term (REQ-DEC-04).
+	 *
+	 * @return void
+	 */
+	public function testSendingBindsTheRemedyTermOnTheDeclaredDays(): void {
+		$this->remedy->method('termDaysFor')->willReturn(28);
+		$this->remedy->expects($this->once())->method('bindTerm')->with(
+			'zaak-2026-wmo-1',
+			$this->isType(type: 'string'),
+			$this->isInstanceOf(className: \DateTimeImmutable::class),
+		);
+
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$sent = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
+
+		// The stored end is the declared 28 days, not the scheduler's six
+		// weeks: the printed clause and the stored date come from one read.
+		$expected = (new \DateTimeImmutable((string)$sent['announcementDate']))
+			->modify('+28 days')->format('Y-m-d');
+		$this->assertSame(expected: $expected, actual: $sent['objectionTermEndDate']);
+	}//end testSendingBindsTheRemedyTermOnTheDeclaredDays()
+
+	/**
+	 * Sending the besluit writes the day it went out on its case (REQ-CAP-001).
+	 *
+	 * @return void
+	 */
+	public function testSendingRecordsTheDaySentOnTheCase(): void {
+		$this->remedy->expects($this->once())->method('recordSent')->with(
+			'zaak-2026-wmo-1',
+			$this->callback(static fn (\DateTimeImmutable $sentOn): bool => $sentOn->format('Y-m-d') === (new \DateTimeImmutable())->format('Y-m-d')),
+		);
+
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->service->verzend($id, 'afdelingsmanager-wmo-15');
+	}//end testSendingRecordsTheDaySentOnTheCase()
 
 	/**
 	 * The full lifecycle reaches gearchiveerd with all evidence recorded. [V01]
@@ -287,6 +633,138 @@ class BeschikkingServiceTest extends TestCase {
 		$logs = $this->objects->searchObjectsBySlug('dossiq', 'stateMachineLog', ['decisionId' => $id]);
 		$this->assertGreaterThanOrEqual(4, count($logs));
 	}//end testFullLifecycle()
+
+	/**
+	 * A delivered beschikking lands on the case timeline, and it lands public.
+	 *
+	 * The applicant is holding the letter and the six weeks to object started
+	 * the day it went, so this is the one entry the public timeline may not be
+	 * missing. The entry carries the channel and the day, and the assertion
+	 * says so field by field rather than counting entries: an entry written
+	 * internal looks exactly like one written public until someone reads the
+	 * flag.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testADeliveredBeschikkingIsOnThePublicTimeline(): void {
+		$decision = $this->composeWmo();
+		$id = $decision['id'];
+
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->service->verzend($id, 'afdelingsmanager-wmo-15');
+
+		$delivered = array_values(
+			array_filter(
+				$this->entries,
+				static fn (array $entry): bool => $entry['kind'] === 'beschikking-verzonden'
+			)
+		);
+
+		$this->assertCount(1, $delivered);
+		$this->assertSame('zaak-2026-wmo-1', $delivered[0]['caseId']);
+		$this->assertSame('public', $delivered[0]['visibility']);
+		$this->assertSame('digital-post', $delivered[0]['fields']['channel']);
+		$this->assertNotSame('', $delivered[0]['fields']['sentOn']);
+		$this->assertSame($id, $delivered[0]['fields']['beschikkingId']);
+		$this->assertSame('toekenning', $delivered[0]['fields']['decisionType']);
+	}//end testADeliveredBeschikkingIsOnThePublicTimeline()
+
+	/**
+	 * A beschikking no transport took is not marked sent (decision 148).
+	 *
+	 * 🔴 IT WAS. verzend() asked the routing service for a channel name, which
+	 * calls nothing, then set the status to `sent`, started the six weeks to
+	 * object and wrote a PUBLIC "Beschikking verzonden" line, for a letter
+	 * nobody received. Here the requester has no address anywhere, so nothing
+	 * can take it: the decision stays signed, no clock starts, and the line
+	 * that says why is internal.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	public function testABeschikkingNoTransportTookIsNotMarkedSent(): void {
+		// Addressed to a burger with no BSN, on a case with no address.
+		$id = $this->composeWmo(['type' => 'burger', 'name' => 'M. Jansen'])['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+
+		$refused = null;
+		try {
+			$this->service->verzend($id, 'afdelingsmanager-wmo-15');
+		} catch (RefusedException $e) {
+			$refused = $e;
+		}
+
+		$this->assertNotNull($refused, 'verzend() must refuse when no transport took the beschikking');
+		$this->assertSame('beschikking-no-address', $refused->getRule());
+		$this->assertSame('signed', ($this->service->find($id)['currentStatus'] ?? null), 'it stays not-sent');
+		$this->assertSame([], $this->objects->searchObjectsBySlug('dossiq', 'bezwaarTrigger', ['decisionId' => $id]), 'no objection clock starts');
+
+		$public = array_filter($this->entries, static fn (array $entry): bool => $entry['visibility'] === 'public');
+		$this->assertSame([], array_values($public), 'nothing public says it was sent');
+
+		$internal = array_values(array_filter($this->entries, static fn (array $entry): bool => $entry['kind'] === 'beschikking-verzonden'));
+		$this->assertCount(1, $internal);
+		$this->assertSame('internal', $internal[0]['visibility']);
+		$this->assertSame('Beschikking niet verzonden', $internal[0]['message']);
+		$this->assertSame('no-channel', $internal[0]['fields']['reasonCode']);
+	}//end testABeschikkingNoTransportTookIsNotMarkedSent()
+
+	/**
+	 * A transport that refuses leaves the beschikking signed, with its sentence (decision 148).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	public function testABeschikkingDigitalPostRefusedStaysSigned(): void {
+		$this->postAnswer = ['refused' => true, 'code' => 'no-message-box', 'error' => 'This person has no MijnOverheid message box.'];
+
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+
+		try {
+			$this->service->verzend($id, 'afdelingsmanager-wmo-15');
+			$this->fail('verzend() must refuse when digital post refused and no other channel exists');
+		} catch (RefusedException $e) {
+			$this->assertSame('beschikking-not-sent', $e->getRule());
+			$this->assertSame('This person has no MijnOverheid message box.', $e->getSentence());
+			$this->assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
+		}
+
+		$this->assertCount(1, $this->posted, 'digital post was asked, on the addressee BSN');
+		$this->assertSame('123456789', $this->posted[0]['bsn']);
+		$this->assertSame('signed', ($this->service->find($id)['currentStatus'] ?? null));
+		$this->assertSame('no-message-box', ($this->entries[0]['fields']['reasonCode'] ?? null));
+		$this->assertSame('internal', ($this->entries[0]['visibility'] ?? null));
+	}//end testABeschikkingDigitalPostRefusedStaysSigned()
+
+	/**
+	 * A sent beschikking stores the channel and message id the transport answered.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	public function testASentBeschikkingCarriesTheTransportsMessageId(): void {
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$sent = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
+
+		$this->assertSame('sent', $sent['currentStatus']);
+		$this->assertSame('digital-post', $sent['dispatch']['notificationChannel']);
+		$this->assertSame('mijnoverheid-msg-1', $sent['dispatch']['messageId']);
+		$this->assertSame('besluit', $this->posted[0]['category']);
+		$this->assertSame('beschikking', $this->posted[0]['typeCode']);
+		$this->assertStringStartsWith('Besluit over uw zaak', $this->posted[0]['subject']);
+		$this->assertStringContainsString('Toegekend op basis van onderzoek.', $this->posted[0]['body']);
+	}//end testASentBeschikkingCarriesTheTransportsMessageId()
 
 	/**
 	 * Mandaat is rejected when the approver level cannot cover the bedrag. [V03]
@@ -356,4 +834,117 @@ class BeschikkingServiceTest extends TestCase {
 		$this->assertSame("PK\x03\x04", substr($zip, 0, 4));
 		$this->assertGreaterThan(100, strlen($zip));
 	}//end testAuditPacketIsZip()
+	/**
+	 * Sending writes the delivered line, the trigger and the transition with
+	 * exactly these fields, after the dispatch the transport answered.
+	 *
+	 * @return void
+	 */
+	public function testTheSentLineTriggerAndTransitionCarryTheseFields(): void {
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->entries = [];
+
+		$sent = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
+
+		$this->assertCount(1, $this->entries);
+		$this->assertSame(
+			[
+				'caseId' => 'zaak-2026-wmo-1',
+				'kind' => 'beschikking-verzonden',
+				'message' => 'Beschikking verzonden',
+				'fields' => [
+					'channel' => 'digital-post',
+					'sentOn' => $sent['announcementDate'],
+					'decisionType' => 'toekenning',
+					'reference' => (string)($sent['reference'] ?? ''),
+					'beschikkingId' => $id,
+				],
+				'visibility' => 'public',
+			],
+			$this->entries[0]
+		);
+		$this->assertSame(['notificationChannel', 'messageId', 'sentAt'], array_keys($sent['dispatch']));
+		$this->assertCount(1, $this->objects->searchObjectsBySlug('dossiq', 'bezwaarTrigger', ['decisionId' => $id]));
+
+		$transitions = array_column($this->objects->searchObjectsBySlug('dossiq', 'stateMachineLog', ['decisionId' => $id]), 'overgang');
+		$last = end($transitions);
+		$this->assertSame(['signed', 'sent', 'afdelingsmanager-wmo-15', 'employee', 'manual'], [$last['van'], $last['to'], $last['actor'], $last['actorType'], $last['trigger']]);
+	}//end testTheSentLineTriggerAndTransitionCarryTheseFields()
+
+	/**
+	 * The not-sent line carries the reason, the channels tried and the reference,
+	 * and the no-address refusal its sentence and status.
+	 *
+	 * @return void
+	 */
+	public function testTheNotSentLineAndTheNoAddressRefusal(): void {
+		$id = $this->composeWmo(['type' => 'burger', 'name' => 'M. Jansen'])['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->entries = [];
+		$decision = $this->service->find($id);
+
+		try {
+			$this->service->verzend($id, 'afdelingsmanager-wmo-15');
+			$this->fail('verzend() must refuse');
+		} catch (RefusedException $e) {
+			$this->assertSame(
+				'This case has no address for the requester, so the beschikking was not sent. Add an address, then send it again.',
+				$e->getSentence()
+			);
+			$this->assertSame(RefusedException::STATUS_UNPROCESSABLE, $e->getStatus());
+		}
+
+		$this->assertCount(1, $this->entries);
+		$fields = $this->entries[0]['fields'];
+		$this->assertSame(['reasonCode', 'reason', 'channelsTried', 'reference', 'beschikkingId'], array_keys($fields));
+		$this->assertSame('no-channel', $fields['reasonCode']);
+		$this->assertIsString($fields['reason']);
+		$this->assertNotSame('', $fields['reason']);
+		$this->assertIsInt($fields['channelsTried']);
+		$this->assertSame((string)($decision['reference'] ?? ''), $fields['reference']);
+		$this->assertSame($id, $fields['beschikkingId']);
+		$this->assertSame('zaak-2026-wmo-1', $this->entries[0]['caseId']);
+	}//end testTheNotSentLineAndTheNoAddressRefusal()
+	/**
+	 * A successor takes the addressee, rationale and decision the handler wrote,
+	 * and the refusals carry their sentences and statuses.
+	 *
+	 * @return void
+	 */
+	public function testASuccessorTakesTheWrittenFieldsAndTheRefusalsTheirSentences(): void {
+		$original = $this->composeWmo();
+		try {
+			$this->service->issueSuccessor($original['id'], 'toekenning');
+			self::fail('An unknown kind must be refused.');
+		} catch (RefusedException $refusal) {
+			self::assertSame('A correction is either a wijzigingsbeschikking or an intrekkingsbeschikking.', $refusal->getSentence());
+			self::assertSame(RefusedException::STATUS_UNPROCESSABLE, $refusal->getStatus());
+		}
+
+		try {
+			$this->service->issueSuccessor($original['id'], 'amendment');
+			self::fail('A draft must be refused.');
+		} catch (RefusedException $refusal) {
+			self::assertSame('This beschikking has not been signed yet. Change the draft instead of issuing a correction.', $refusal->getSentence());
+		}
+
+		$this->objects->store['beschikking'][$original['id']]['currentStatus'] = 'sent';
+		$addressee = ['type' => 'burger', 'bsn' => '987654321', 'name' => 'P. de Vries', 'messageBoxConfirmed' => true];
+		$successor = $this->service->issueSuccessor(
+			$original['id'],
+			'amendment',
+			['addressee' => $addressee, 'rationale' => 'Herzien na bezwaar.', 'decision' => 'Gedeeltelijk toegekend.'],
+			'tpl-wmo-v1'
+		);
+
+		self::assertSame('amendment', $successor['decisionType']);
+		self::assertSame($original['id'], $successor['supersedes']);
+		self::assertSame($addressee, $successor['addressee']);
+		self::assertSame('Herzien na bezwaar.', $successor['rationale']);
+		self::assertSame(['Gedeeltelijk toegekend.'], $successor['decision']);
+		self::assertSame($original['caseId'], $successor['caseId']);
+	}//end testASuccessorTakesTheWrittenFieldsAndTheRefusalsTheirSentences()
 }//end class

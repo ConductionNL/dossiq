@@ -3,39 +3,28 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for kanban-board-keyboard-status-transition
- * (WCAG 2.1.1 Keyboard fix on the Workflow Board's status-move control).
+ * (WCAG 2.1.1 Keyboard on the board's status move).
  *
- * ⚠️ WHY THIS FILE SEEDS ITS OWN DATA
- * -----------------------------------
- * Both tests here used to open the board, look for a `.case-card`, find none,
- * and `test.skip(true, 'No cases on the Workflow Board …')`. That reason was
- * TRUE — and that is exactly the problem. The board is a data-dependent
- * surface: `WorkflowBoard.fetchData()` builds one column per NON-FINAL
- * statusType and then groups cases into a column by resolving `case.status`
- * to that statusType's NAME. With no statusTypes and no cases in the target
- * register there is nothing to render, so the assertions below never ran —
- * on CI they had never run at all.
+ * The board is the Cases list in board view (`/cases?_view=board`, the
+ * library's CnBoardView). The old `/workflow-board` page redirects there.
  *
- * A skip that is permanently true is an invisible pass under L8: the tests report
- * "not applicable" rather than "untested", and the skip count hides them.
- * The fix is therefore a FIXTURE change, not a timing change: seed the same
- * shape `workflows/case-lifecycle.spec.ts` seeds — `seedStateMachine()` for a
- * caseType + three ordered statusTypes + an active workflowTemplate, then
- * `seedCase()` for the cards — and then ASSERT, with no escape hatch. If the
- * board does not render the seeded card, that is a failure, and it should be.
+ * WHY THIS FILE SEEDS ITS OWN DATA. The board is data-dependent: with no
+ * statusTypes and no cases there is nothing to render, and the tests used to
+ * skip on exactly that. `seedStateMachine()` gives a caseType, ordered
+ * statusTypes and an active workflowTemplate whose `t1` runs Ontvangen to In
+ * behandeling with no guard; `seedCase()` gives each test its own card. Every
+ * seeded object carries `RUN_PREFIX`, so the assertions target this run's
+ * card and `afterAll` deletes exactly what this run created.
  *
- * `case-lifecycle.spec.ts:185` ("the workflow board renders a column per
- * status type with real case rows") passes in CI using precisely this fixture,
- * so the shape is known-good; it is the one this file adopts rather than a
- * new one.
+ * BOTH TESTS MOVE A CARD AND READ THE MOVE BACK FROM STORAGE. A card in the
+ * right column proves the optimistic half only, so each test asserts the
+ * case's STORED `status` is the target statusType id.
  *
- * Every seeded object carries `RUN_PREFIX` in a human-visible field, so the
- * assertions target THIS run's card (never another run's or an instance's
- * demo data) and `afterAll` deletes exactly what this run created.
- *
- * Note: navigation is `page.goto('/index.php/apps/dossiq/workflow-board')` —
- * the identical path `spec-coverage/workflow-operations.spec.ts:18` uses to
- * reach the same board, and that test passes.
+ * THE KEYBOARD PATH IS M ON THE FOCUSED CARD. It opens the card's menu with
+ * the first target focused; the targets are what
+ * `/api/case/{id}/available-transitions` offers for THAT case
+ * (`caseStatusTargets`), and Enter on one runs the same move a drop runs
+ * (`moveCaseStatus`). Enter on the card's title still opens the case.
  */
 
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
@@ -46,20 +35,38 @@ import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
 	cleanupRunObjects,
 	getRequestToken,
+	objectId,
 	RUN_PREFIX,
 	seedCase,
 	seedStateMachine,
+	showObject,
 } from '../helpers/fixtures.ts'
 import { dismissSupportDialog } from '../helpers/nav.ts'
 
-/** Title of the card both tests drive. Carries RUN_PREFIX for isolation. */
-const CARD_TITLE = `${RUN_PREFIX} Kanban card`
+/** The card the keyboard test moves. Carries RUN_PREFIX for isolation. */
+const KEYBOARD_TITLE = `${RUN_PREFIX} Kanban keyboard card`
+/** The card the drag test moves. Its own card, so the tests stay independent. */
+const DRAG_TITLE = `${RUN_PREFIX} Kanban drag card`
+
+/** Column names as `seedStateMachine` writes them. */
+const RECEIVED = `${RUN_PREFIX} Ontvangen`
+const IN_PROGRESS = `${RUN_PREFIX} In behandeling`
 
 let api: APIRequestContext
 let token: string
 let sm: StateMachine
+let keyboardCaseId: string
+let dragCaseId: string
 
-test.describe('Workflow Board keyboard status transition', () => {
+test.describe('Cases board keyboard status transition', () => {
+	// A budget sized from what these tests DO, not from slow page loads: each
+	// one loads the board, completes a status move through the engine (two
+	// requests plus a board re-read) and then polls OpenRegister until the
+	// case's stored status changes. The keyboard test opens the case detail
+	// after that. The 30s default covered the old pair, which asserted a menu
+	// item and an attribute and moved nothing.
+	test.setTimeout(240_000)
+
 	// ⚠️ DELIBERATELY NOT `test.describe.configure({ mode: 'serial' })`.
 	// These two tests share only the beforeAll fixture; neither depends on the
 	// other's side effects, so serial mode buys nothing — and it costs the one
@@ -73,20 +80,32 @@ test.describe('Workflow Board keyboard status transition', () => {
 		api = await request.newContext({ baseURL, storageState: STORAGE_STATE })
 		token = await getRequestToken(api)
 		// caseType + Ontvangen/In behandeling (non-final) + Afgehandeld (final)
-		// + an active workflowTemplate. Two non-final statusTypes is the
-		// minimum the move control needs: CaseCard renders its NcActions only
-		// when `otherColumns.length > 0`, i.e. when a card has somewhere to go.
+		// + an active workflowTemplate whose `t1` runs Ontvangen -> In
+		// behandeling with no guard. That unguarded transition is what the
+		// move dialog has to offer: it lists what the ENGINE offers, so a
+		// fixture with statuses but no workflow template would render an
+		// empty dialog and the test would fail for the wrong reason.
 		sm = await seedStateMachine(api, token)
-		await seedCase(api, token, {
-			title: CARD_TITLE,
-			caseType: sm.caseTypeId,
-			status: sm.statusReceived,
-		})
+		keyboardCaseId = objectId(
+			await seedCase(api, token, {
+				title: KEYBOARD_TITLE,
+				caseType: sm.caseTypeId,
+				status: sm.statusReceived,
+			}),
+		)
+		dragCaseId = objectId(
+			await seedCase(api, token, {
+				title: DRAG_TITLE,
+				caseType: sm.caseTypeId,
+				status: sm.statusReceived,
+			}),
+		)
 	})
 
 	test.afterAll(async () => {
 		// Everything this run produced goes, child-first: the statusRecords the
-		// transition engine wrote, then the case, then the machine it belongs to.
+		// transition engine wrote, then the cases, then the machine they belong
+		// to.
 		//
 		// This afterAll used to leave the whole machine standing, and the note
 		// it carried was right about the cause. The `case` schema is archival
@@ -111,69 +130,207 @@ test.describe('Workflow Board keyboard status transition', () => {
 	})
 
 	/**
-	 * Open the Workflow Board and return the seeded case's card.
-	 *
-	 * Scoped by `hasText: CARD_TITLE` rather than `.case-card` first(): on an
-	 * instance that already holds cases, `.first()` would drive somebody
-	 * else's card and the test would be asserting about data it did not
-	 * create.
+	 * The board column carrying a seeded status name.
 	 *
 	 * @param page The page.
-	 * @return The `.case-card` element rendering the seeded case.
+	 * @param name The column's status name.
+	 * @return The column whose header names that status.
 	 */
-	async function openBoardAndFindSeededCard(page: Page): Promise<Locator> {
-		await page.goto('/index.php/apps/dossiq/workflow-board')
+	function column(page: Page, name: string): Locator {
+		return page.locator('[data-testid="cn-board-column"]').filter({
+			has: page.locator('.cn-board-view__column-title', { hasText: name }),
+		})
+	}
+
+	/**
+	 * One seeded case's card inside a column.
+	 *
+	 * @param page The page.
+	 * @param name The column's status name.
+	 * @param title The seeded card's title.
+	 * @return The card.
+	 */
+	function cardIn(page: Page, name: string, title: string): Locator {
+		return column(page, name).locator('[data-testid="cn-board-card"]', {
+			hasText: title,
+		})
+	}
+
+	/**
+	 * Wait until a seeded card is drawn in a column, opening the column's
+	 * hidden cards as they arrive. A column draws its first cards and the
+	 * rest behind "Show N more", and the rows load in batches, so a seeded
+	 * card can sit behind the button on an instance that already holds cases.
+	 *
+	 * @param page The page.
+	 * @param name The column's status name.
+	 * @param title The seeded card's title.
+	 * @param message What the failure says.
+	 */
+	async function expectCardIn(
+		page: Page,
+		name: string,
+		title: string,
+		message: string,
+	): Promise<void> {
+		await expect
+			.poll(
+				async () => {
+					const more = column(page, name).locator(
+						'[data-testid="cn-board-show-more"]',
+					)
+					if ((await more.count()) > 0) {
+						await more.first().click()
+					}
+					return cardIn(page, name, title).count()
+				},
+				{ message, timeout: 30_000 },
+			)
+			.toBe(1)
+	}
+
+	/**
+	 * Open the Cases board and return one seeded case's card, asserting it
+	 * starts in the Ontvangen column.
+	 *
+	 * Scoped by the card's own title, so on an instance that already holds
+	 * cases the test never drives somebody else's card.
+	 *
+	 * @param page The page.
+	 * @param title The seeded card's title.
+	 * @return The card rendering the seeded case.
+	 */
+	async function openBoardAndFindSeededCard(
+		page: Page,
+		title: string,
+	): Promise<Locator> {
+		await page.goto('/index.php/apps/dossiq/cases?_view=board')
 		await dismissSupportDialog(page)
-
-		// The board renders its heading unconditionally; the columns and cards
-		// arrive after fetchData() resolves three collections.
-		await expect(
-			page.getByRole('heading', { name: /Workflow Board/ }).first(),
-		).toBeVisible({ timeout: 15000 })
+		await expect(page.locator('[data-testid="cn-board-view"]')).toBeVisible({
+			timeout: 30_000,
+		})
 		// The seeded non-final column must exist, or there is nowhere for a
-		// card to be grouped — assert it separately so a missing column does
-		// not present as "the card is missing".
-		await expect(
-			page.getByText(`${RUN_PREFIX} Ontvangen`, { exact: false }).first(),
-		).toBeVisible({ timeout: 15000 })
-
-		const card = page.locator('.case-card', { hasText: CARD_TITLE }).first()
-		await expect(card).toBeVisible({ timeout: 15000 })
+		// card to be grouped; asserted separately so a missing column does not
+		// present as "the card is missing".
+		await expect(column(page, RECEIVED)).toBeVisible({ timeout: 30_000 })
+		await expectCardIn(
+			page,
+			RECEIVED,
+			title,
+			'the seeded card must start in Ontvangen',
+		)
+		const card = cardIn(page, RECEIVED, title)
+		await expect(card).toBeVisible()
 		return card
 	}
 
-	// @e2e openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#scenario-dash-v1-006d-keyboard-only-status-transition-new
-	test('a case card exposes a keyboard-operable "Move to…" menu', async ({
+	/**
+	 * Poll the case's STORED status until it equals `statusId`.
+	 *
+	 * The move is optimistic on screen and asynchronous underneath: the board
+	 * asks the engine for the offered transitions, posts one, then re-reads.
+	 * A card sitting in the right column proves the optimistic half only, so
+	 * the claim that the status changed is read from OpenRegister.
+	 *
+	 * @param caseId The case.
+	 * @param statusId The statusType id it must now carry.
+	 * @param how Which gesture made the move, for the failure message.
+	 */
+	async function expectStoredStatus(
+		caseId: string,
+		statusId: string,
+		how: string,
+	): Promise<void> {
+		await expect
+			.poll(
+				async () => String((await showObject(api, 'case', caseId)).status),
+				{
+					message: `${how} must write the "In behandeling" statusType id to the stored case`,
+					timeout: 30_000,
+				},
+			)
+			.toBe(statusId)
+	}
+
+	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006f-keyboard-only-status-transition-new
+	test('a card moves to another status with the keyboard alone, and Enter on the card still opens it', async ({
 		page,
 	}) => {
-		const card = await openBoardAndFindSeededCard(page)
+		const card = await openBoardAndFindSeededCard(page, KEYBOARD_TITLE)
 
-		// The move-target menu trigger is reachable independent of the card's
-		// own click-to-open handler (a separate focusable NcActions control).
-		const moveTrigger = card.locator('.case-card__move-actions button').first()
-		await expect(moveTrigger).toBeVisible()
+		// M on the focused card opens its menu with a target focused. The
+		// menu lists what the engine offers this case, so the seeded target
+		// is there and allowed.
+		await card.locator('[data-testid="cn-board-card-open"]').focus()
+		await page.keyboard.press('m')
+		const menu = card.locator('[data-testid="cn-board-card-menu-list"]')
+		await expect(menu).toBeVisible({ timeout: 15000 })
+		const target = menu.locator('[data-testid="cn-board-menu-move"]', {
+			hasText: IN_PROGRESS,
+		})
+		await expect(target).toBeVisible({ timeout: 15000 })
+		await expect(target).not.toHaveAttribute('aria-disabled', 'true')
 
-		await moveTrigger.focus()
+		// Reached and chosen with the keyboard alone.
+		for (let step = 0; step < 100; step++) {
+			if (await target.evaluate((el) => el === document.activeElement)) {
+				break
+			}
+			await page.keyboard.press('ArrowDown')
+		}
+		await expect(target).toBeFocused()
 		await page.keyboard.press('Enter')
-		const firstOption = page.getByRole('menuitem').first()
-		await expect(firstOption).toBeVisible({ timeout: 5000 })
-		// The offer is the OTHER seeded non-final column — proving the menu is
-		// populated from the board's real column model, not an empty shell.
-		await expect(
-			page.getByRole('menuitem', {
-				name: new RegExp(`${RUN_PREFIX} In behandeling`),
-			}),
-		).toBeVisible({ timeout: 5000 })
 
-		// Do not actually commit a status change against a live board's data —
-		// close the menu without selecting, proving the control opens via
-		// keyboard alone without ever dispatching a drag/mouse event.
-		await page.keyboard.press('Escape')
+		// Opening the menu must not also open the case.
+		await expect(page).toHaveURL(/\/cases\?_view=board/)
+
+		await expectStoredStatus(
+			keyboardCaseId,
+			sm.statusInProgress,
+			'selecting "In behandeling" with Enter',
+		)
+		await expectCardIn(
+			page,
+			IN_PROGRESS,
+			KEYBOARD_TITLE,
+			'the card must move to the "In behandeling" column',
+		)
+		const moved = cardIn(page, IN_PROGRESS, KEYBOARD_TITLE)
+		await expect(cardIn(page, RECEIVED, KEYBOARD_TITLE)).toHaveCount(0)
+
+		// Enter on the card's title still opens the case.
+		await moved.locator('[data-testid="cn-board-card-open"]').focus()
+		await page.keyboard.press('Enter')
+		await expect(
+			page,
+			'Enter on the card title must still open the case detail',
+		).toHaveURL(new RegExp(`/cases/(split/)?${keyboardCaseId}`), {
+			timeout: 30_000,
+		})
 	})
 
-	// @e2e openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#scenario-dash-v1-006e-drag-path-unchanged-new
-	test('case cards remain draggable for mouse/touch users', async ({ page }) => {
-		const card = await openBoardAndFindSeededCard(page)
-		await expect(card).toHaveAttribute('draggable', 'true')
+	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006g-drag-path-shares-the-move-new
+	test('dragging a card onto another column still moves the case', async ({
+		page,
+	}) => {
+		const card = await openBoardAndFindSeededCard(page, DRAG_TITLE)
+
+		// The card's drag is the browser's own (HTML5 draggable), so
+		// Playwright's dragTo drives it.
+		const target = column(page, IN_PROGRESS)
+		await target.scrollIntoViewIfNeeded()
+		await card.dragTo(target)
+
+		await expectStoredStatus(
+			dragCaseId,
+			sm.statusInProgress,
+			'dropping the card on "In behandeling"',
+		)
+		await expectCardIn(
+			page,
+			IN_PROGRESS,
+			DRAG_TITLE,
+			'the dragged card must land in the "In behandeling" column',
+		)
 	})
 })

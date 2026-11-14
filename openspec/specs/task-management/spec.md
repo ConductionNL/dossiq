@@ -20,7 +20,7 @@ Tasks represent work items within a case. They follow CMMN 1.1 HumanTask concept
 **Primary feature tier**: MVP
 **Extended features**: V1 (kanban, checklists, dependencies, templates), Enterprise (automation)
 
-**Competitive context**: Flowable provides the most comprehensive task management with a unified task service across BPMN and CMMN engines, supporting a 5-state lifecycle (created/claimed/in-progress/suspended/completed) with delegation and sub-tasks. Dimpact ZAC uses Flowable-backed tasks with WebSocket-based real-time updates and configurable worklists. xxllnc Zaken implements phase-bound tasks that become read-only when the case progresses past their phase. ArkCase uses Activiti-backed tasks with queue-based routing via Drools rules. Dossiq takes an OpenRegister-first approach where tasks are JSON objects with CMMN-compliant lifecycle states, avoiding the complexity of an embedded workflow engine.
+**Competitive context**: Flowable provides the most comprehensive task management with a unified task service across BPMN and CMMN engines, supporting a 5-state lifecycle (created/claimed/in-progress/suspended/completed) with delegation and sub-tasks. Dimpact ZAC uses Flowable-backed tasks with WebSocket-based real-time updates and configurable worklists. xxllnc Zaken implements phase-bound tasks that become read-only when the case progresses past their phase. ArkCase uses Activiti-backed tasks with queue-based routing via Drools rules. Dossiq keeps no task table of its own: a task is a row of OpenRegister's flow engine, so the inbox, the due list and the close event are the engine's, and dossiq adds the case context around them.
 
 ---
 
@@ -82,6 +82,7 @@ Stored as an OpenRegister object in the `dossiq` register under the `task` schem
 | `low` | 4 (lowest) | Grey badge |
 
 ---
+
 ## Requirements
 
 ### REQ-TASK-001: Task CRUD
@@ -195,7 +196,7 @@ The system MUST enforce the CMMN PlanItem lifecycle for task status transitions,
 
 ---
 
-### REQ-TASK-003: Task Assignment
+### Requirement: REQ-TASK-003: Task Assignment
 
 The system MUST support assigning tasks to Nextcloud users.
 
@@ -251,12 +252,21 @@ The system MUST provide a list view for tasks with search, sorting, and filterin
 
 **Tier**: MVP
 
+AMENDED 2026-09-11, for the row's own fields. The list is the ENGINE's inbox
+(dossiq#2408, #2457), and its columns are Task, Subject, State, Priority, Due
+and Assignee. Two clauses below were written for the deleted `caseTask` schema
+and are corrected rather than left for a test to assert around: the case
+reference is the case TITLE, because the Subject column resolves
+`subject.title` for the object the task hangs off and no case identifier is
+rendered; and the due date is a relative label, "Due in {days} days", built by
+`taskDueLabel` in @conduction/nextcloud-vue.
+
 #### Scenario: View the global task list
 
 - GIVEN 23 tasks exist across 8 cases
 - WHEN the user navigates to the Tasks section (via Mijn werk → Alle taken)
 - THEN the system MUST display a paginated list of tasks
-- AND each task row MUST show: title, parent case reference (ID + title), status, assignee, due date, and priority
+- AND each task row MUST show: title, the case it hangs off (by title), state, assignee, due date, and priority
 
 #### Scenario: View tasks for a specific case
 
@@ -691,6 +701,619 @@ plate" entries.
   in the implementation (tasks 1.x) and the `/tasks` page route is preserved
   for deep links.
 -->
+
+### Requirement: REQ-TASK-014 A task MUST be finished on the case page
+
+You finish a task on the case page and see a confirmation without leaving
+the case. Widget `case-tasks` on `CaseDetail` SHALL show the first open task
+of the case with its title, assignee, due date and its lifecycle buttons.
+
+The tasks come from the engine, not from a schema. `CaseTaskPane` SHALL ask
+`useEngineTaskStore().list()` with `objectUuid` set to the case, `scope: all`
+and `sort: dueAt`, the query `openTasksQuery()` builds. Three points are
+deliberate. The case is the engine's `objectUuid`, because the engine has no
+typed case reference. The scope is `all` and not the reader's own set, because
+the case page shows the case's work, and a reader-scoped list hides a
+colleague's task and makes the case look finished. The open and closed split
+is made by the engine, because filtering a paged window here drops every open
+task past the page boundary and empties a pane on a case that has work left.
+
+The buttons SHALL be the engine's verbs, invoked through
+`useEngineTaskStore().invoke(uuid, verb)`: Complete and Cancel. They SHALL NOT
+come from OpenRegister's `available-actions` route, which answers for an
+object and 404s for an engine task. Whether the caller may invoke a verb is
+the engine's judgement, and it refuses with a message naming the verb and the
+reason. The pane SHALL NOT pre-judge that: a client-side copy of the rule is
+the duplicated authorization this migration removed.
+
+A transition SHALL NOT navigate away. On a transition to a terminal state the
+widget SHALL show a success toast naming the task and SHALL replace the pane
+with the next open task. When no open task remains the pane SHALL show the
+text "No open tasks on this case". The other open tasks SHALL stay listed
+under the pane, each routing to `TaskDetail`, and View all SHALL keep leading
+to the `Tasks` page with the case in `viewAllQuery`.
+
+The widget SHALL be type `case-task-pane`, a key in `cnRegistry`, resolved to
+the dossiq component `CaseTaskPane`. Not `custom` through the page slot
+`widget-case-tasks`, which the change design asked for: `CnDetailPage` renders
+a `widget-<id>` slot per grid item, and `case-tasks` is a child of the
+`case-panels` tabs widget. `CnTabsWidget` resolves a tab child through
+`cnRegistry[widget.type]`, so a `custom` child resolves to nothing and renders
+nothing, silently. The widget id and the page SHALL NOT change, so no page is
+added.
+
+`register` and `schema` are gone from the widget's `content`. Its `filter`,
+`sort` and `columns` keys are kept as written, and the component reads none of
+them: they are what the widget goes back to the day nextcloud-vue's
+`CnObjectListWidget` grows a lifecycle column and this component is deleted.
+
+Four scenarios below press Mark task as completed, and the first of them also
+names Terminate the task and Disable the task. Those labels went with the
+schema. The pane shows Complete and Cancel, which is what
+`case-task-pane.spec.ts` already asserts, so the four are false as written.
+They are left byte-identical on purpose: gate 19 asks every modified scenario
+for a Playwright citation and this change ships no test, so correcting them
+belongs to the change that can cite one.
+
+#### Scenario: The open task shows its buttons on the case
+@e2e tests/e2e/case-task-pane.spec.ts
+
+- **GIVEN** a case with an open task in status active and a second open task with a later due date
+- **WHEN** you open the case page
+- **THEN** the widget `case-tasks` SHALL show the first task's title with the buttons Mark task as completed, Terminate the task and Disable the task
+- **AND** the second task SHALL be listed under the pane
+
+#### Scenario: Completing the task confirms and shows the next one
+@e2e tests/e2e/case-task-pane.spec.ts
+
+- **GIVEN** the case page with an open task in status active and a second open task
+- **WHEN** you press Mark task as completed
+- **THEN** a success toast SHALL name the completed task
+- **AND** the route SHALL still be the case page
+- **AND** the pane SHALL show the second task with its own buttons
+
+#### Scenario: The last task leaves an empty pane
+@e2e tests/e2e/case-task-pane.spec.ts
+
+- **GIVEN** a case with exactly one open task in status active
+- **WHEN** you press Mark task as completed
+- **THEN** the pane SHALL show "No open tasks on this case"
+- **AND** the Tasks list reached through View all SHALL show the task as completed
+
+#### Scenario: A transition the server refuses is reported, not swallowed
+@e2e exclude The refusal needs a task whose assignee is another user; the e2e user is admin, so the assignee rule is exercised by the PHPUnit test on TaskCompletionResumeListener in case-flow-human-steps, and the pane's error path by the vitest unit test on CaseTaskPane.
+
+- **GIVEN** a task assigned to another user
+- **WHEN** you press Mark task as completed
+- **THEN** the pane SHALL show an error toast with the server's message
+- **AND** the task SHALL stay in the pane in its current status
+
+#### Scenario: The pane adds no page
+@e2e exclude Manifest shape is checked by the unit test on src/manifest.json in tests/vitest/manifestCaseTaskPane.spec.js; a page count is not a browser observation.
+
+- **GIVEN** the manifest before and after this change
+- **WHEN** the pages are counted
+- **THEN** the count SHALL be equal
+- **AND** the widget `case-tasks` SHALL still sit on the page `CaseDetail`
+
+### Requirement: REQ-TASK-015 A task MUST link back to its case
+
+You find your way back from a task to the case it belongs to. The
+`TaskDetail` page SHALL show the case the task belongs to by its case title,
+as a link that routes to `CaseDetail` for that case. The link SHALL render for
+every task with a case, independent of whether the task holds a flow run, and
+SHALL sit above the task's data rows. A task without a case SHALL show no link
+and no empty box.
+
+The case is read off `objectUuid`, the engine's own anchor. An engine task is
+not an OpenRegister object and carries no `case` reference, so `taskCaseRef()`
+reads `objectUuid` first and falls back to `case` only for a row written
+before the cutover. `TaskDetailView` SHALL render `TaskCaseCard` for it, which
+resolves the case, its type and its status itself, because each is a `$ref`
+and the platform renders a `$ref` as its uuid.
+
+#### Scenario: The task names its case and leads back to it
+@e2e tests/e2e/case-task-pane.spec.ts
+
+- **GIVEN** a task that belongs to a case
+- **WHEN** you open the task page
+- **THEN** the page SHALL show the case title as a link
+- **AND** following it SHALL open the case page for that case
+
+#### Scenario: A task without a case shows no link
+@e2e exclude Every task the seed creates belongs to a case; the null render is covered by the vitest unit test on TaskCaseLink.
+
+- **GIVEN** a task whose `case` is empty
+- **WHEN** you open the task page
+- **THEN** no case link and no empty box SHALL render
+
+### Requirement: A completed task resumes its run through the guarded seam
+
+When a flow task transitions to completed, the system SHALL resume the run it
+names via `FlowRunSignalService::signalAs()`, handing the seam the session
+user as the actor and the task's node as the addressed node. The system SHALL
+NOT consult the assignee rule itself and SHALL NOT call the unguarded
+`FlowRunService::signal()` primitive.
+
+A `FlowSignalRefused` SHALL be obeyed: the task stays completed, the run is
+not advanced, nothing is retried. A NOT_ASSIGNEE refusal is recorded as a
+warning tying the engine's audit to the task; RUN_NOT_FOUND and NOT_SUSPENDED
+are recorded quietly, because a task naming a vanished or already-advanced
+run is completable and its completer did nothing wrong.
+
+The engine announces terminality for `completed`, `terminated` and `disabled`
+alike. Only a completion is an answer, so the system SHALL resume nothing on
+the other two: they are the question being withdrawn, and a run carried past a
+withdrawn ask would proceed as though somebody had answered it.
+
+#### Scenario: Completing a flow task resumes its run
+
+- **GIVEN** a suspended run awaiting a task
+- **WHEN** the task transitions to completed
+- **THEN** the run is signalled through `signalAs` with the completer as actor and the task's node addressed
+
+`@e2e task-completion-resumes-the-run.spec.ts` pins that a completed ask makes
+its run due ahead of the heartbeat and advances it to the end. It does NOT
+attribute the wake to this listener: OpenRegister's `UserTaskTerminalListener`
+signals the same run on the same event, so no assertion on a run can separate
+them. `@e2e case-flow-live-journeys.spec.ts` drives the same resume inside the
+shipped journey. The seam call shape is pinned by
+TaskCompletionResumeListenerTest.
+
+#### Scenario: A withdrawn ask advances nothing
+
+- **GIVEN** a suspended run awaiting a task
+- **WHEN** the task is cancelled rather than completed, so it reaches a terminal state that is not a completion
+- **THEN** the listener delivers no answer, the step does not advance, and the run fails rather than reaching its end
+
+⚠️ The run is still WOKEN, and that is correct: OpenRegister's own
+`UserTaskTerminalListener` signals on every terminal state so the run can
+re-enter the step and fail it promptly. A test that asserts a cancelled task
+leaves the run parked is measuring that listener, not this guard, and can
+never pass.
+
+`@e2e task-completion-resumes-the-run.spec.ts` cancels the task of a second
+run and asserts the ask never advances and the run fails. The listener's own
+refusal has no signature of its own in the run, because two listeners share
+the event, so it is unit-pinned in TaskCompletionResumeListenerTest.
+
+#### Scenario: A refusal from the seam withholds the resume
+
+- **GIVEN** a completed task whose completer is not the awaiting step's assignee
+- **WHEN** the seam refuses with NOT_ASSIGNEE
+- **THEN** the run is not advanced and the refusal is recorded as a warning
+
+`@e2e exclude` the guard itself is OpenRegister's, mutation-tested there; the
+listener's obedience is unit-pinned (TaskCompletionResumeListenerTest).
+
+#### Scenario: A task whose run has gone is still completable
+
+- **GIVEN** a completed task naming a run uuid the engine cannot resolve
+- **WHEN** the seam refuses with RUN_NOT_FOUND
+- **THEN** the completion stands and the refusal is recorded as information, not an error
+
+`@e2e exclude` requires deleting a run out from under a task mid-journey;
+unit-pinned (TaskCompletionResumeListenerTest).
+
+#### Scenario: A task without a run resumes nothing
+
+- **WHEN** a task recording no run is completed
+- **THEN** the task is completed normally
+- **AND** no run is resumed and no error is raised
+
+#### Scenario: Completing a task twice resumes once
+
+- **WHEN** an already-completed task is completed again
+- **THEN** the run is not resumed a second time
+- **AND** the run does not advance past the step twice
+
+### Requirement: A person can see what their task is holding up @e2e exclude read surface; covered by the case-flow e2e journey
+
+A task belonging to a flow run SHALL show the case it belongs to and that something is waiting on it. A person answering a question is entitled to know that work is blocked on their answer, and which work.
+
+#### Scenario: A flow task names its case
+- **WHEN** a person views a task created by a case flow
+- **THEN** the task names the case it belongs to
+- **AND** indicates that the case is waiting on this task
+
+### Requirement: REQ-TASK-017 The Tasks index MUST carry the same six lenses as Cases
+
+You narrow the task list to closed, late or this week's work without leaving
+it. The `Tasks` page (`src/manifest.json`, type `index` with
+`entitySource: "tasks"` and `rowRoute: "TaskDetail"`) SHALL carry
+`quickFilters` Closed (`isTerminal: true`), Overdue (`overdue: true`) and Due
+this week (`isTerminal: false`, `dueAfter: "@today"`,
+`dueBefore: "@today+7d"`), so both index pages declare the same six labels in
+the same order and only what sits underneath differs.
+
+The page binds no register and no schema. `entitySource: "tasks"` is the
+engine's own task inbox, which is what let the `caseTask` schema go, and the
+lenses are engine predicates rather than comparisons against a column.
+`isTerminalStatus` was the schema's materialised boolean and `isTerminal` is
+the engine's own. Overdue is a predicate the engine answers rather than a
+string comparison, so dossiq no longer derives lateness. The two due-window
+bounds are `dueAfter` and `dueBefore` (openregister#3581).
+
+🔴 Every lens SHALL name its `scope`, and four of the six SHALL name `all`.
+The task endpoint defaults to `scope: assigned`, so a lens that left it off
+would quietly answer "my closed tasks" where this list has always meant
+"closed tasks". The table renders, the count is plausible, and only somebody
+who knows what their colleagues are working on would see the rows missing.
+
+The far edge SHALL be `dueBefore` rather than an inclusive bound, so a task
+due on day seven belongs to next week's window and not to two windows at once.
+
+The `@today` sentinels resolve because nextcloud-vue#1071 taught a named
+source's filters the sentinel grammar self-fetch already had. Before that they
+went over the wire as literal strings and the window was silently wrong. The
+flat bracket keys the schema-backed list needed are gone with the schema:
+the engine's predicates are plain keys.
+
+#### Scenario: Closed shows the completed task
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** a completed task and an open task assigned to the signed-in user
+- **WHEN** you choose the chip Closed
+- **THEN** the list SHALL show the completed task and SHALL NOT show the open one
+
+#### Scenario: A task due later today is not overdue
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open task due two days ago, an open task due at nine this morning and an open task due in thirty days
+- **WHEN** you choose the chip Overdue
+- **THEN** the list SHALL show the task due two days ago
+- **AND** the list SHALL NOT show the task due this morning, because a task due later today is not late yet
+- **AND** the list SHALL NOT show the task due in thirty days
+
+#### Scenario: Due this week holds both edges of the window
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open task due two days ago, an open task due at nine this morning, an open task due in two days and an open task due in thirty days
+- **WHEN** you choose the chip Due this week
+- **THEN** the list SHALL show the task due this morning and the task due in two days
+- **AND** the list SHALL NOT show the task due two days ago or the task due in thirty days
+
+### Requirement: REQ-TASK-018 The task row MUST show its priority
+
+You see which task jumps the queue without opening it. The task row SHALL show
+`priority`, beside the due date, because the two answer the same question in
+order: when is this due, and does it come first anyway. REQ-TASK-004's first
+scenario has always required the row to show it.
+
+The page SHALL NOT declare `columns`. The named source supplies six, and it
+renders state and priority as badges whose colour maps are built from the same
+`t()` calls as their labels, so the lookup holds in every locale. Restating
+them here to rename one header would be a divergent copy of the binding this
+migration removed. A wording change belongs upstream, as a label override.
+
+The priority facet is gone, and that is a loss rather than a tidy-up. It stood
+on `caseTask.priority` being `facetable`. The sidebar's facets are computed by
+OpenRegister for a register and a schema, and the page now declares neither,
+so there is nothing left to compute one over. The row is the whole claim
+today, which is why the column matters more than it did.
+
+#### Scenario: The task list shows a priority column
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **WHEN** you open the Tasks page
+- **THEN** the table SHALL carry a Priority column header
+
+### Requirement: REQ-TASK-016 Task lenses MUST sit on the Tasks index
+
+You switch between your tasks, unclaimed tasks and all tasks on one list.
+The `Tasks` page (`src/manifest.json`, type `index` with
+`entitySource: "tasks"`) SHALL carry `quickFilters` chips All
+(`scope: all`), Mine (`scope: assigned`, `isTerminal: false`) and Unclaimed
+(`scope: pooled`, `isTerminal: false`), in that order, with All as the
+default (decision D-default, revised, see `my-work`). The chips SHALL use the
+same shape and the same behaviour as the chips on `Cases`, so a person who
+learned one list has learned the other.
+
+Mine and Unclaimed are the two person-scoped lenses, and they now say so
+rather than inheriting it from the endpoint's default.
+
+Unclaimed is the engine's `pooled`, and that is two facts rather than one: the
+task has no assignee, and the reader is in its candidate pool. The engine
+answers it as an EXISTS over the candidate index, so a task left merely
+unassigned is in nobody's pool and Unclaimed correctly does not show it. The
+old spelling `assignee = "IS NULL"` asked one of the two facts, of a column
+this page no longer reads. The scenario below still asks the old question, and
+is left byte-identical for the reason given under REQ-TASK-014.
+
+Saved views are on (`allowSavedViews: true`), as on every index page, and
+scoped to the inbox by `savedViewsScope: "source:tasks"` because the page has
+no register and schema to scope them by. A view keeps the sidebar's fields and
+the search term. The schema facets are gone with the schema. The sidebar
+itself stays, with `showMetadata: true`. What a
+reader lost is the Team facet: it stood on `caseTask.assigneeGroup` being
+`facetable`, and the engine models the same idea as `candidateGroups`, a list,
+with no single value for a facet or a column to read.
+
+#### Scenario: All is the default lens on tasks, Mine is one click away
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open task assigned to the signed-in user and an open task assigned to another user
+- **WHEN** you open the Tasks page
+- **THEN** the chip All SHALL be active and the list SHALL show both tasks
+- **AND** choosing the chip Mine SHALL show your task and SHALL NOT show the other user's task
+
+#### Scenario: Unclaimed shows tasks nobody holds
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open task with no assignee and a completed task with no assignee
+- **WHEN** you choose the chip Unclaimed
+- **THEN** the list SHALL show the open task and SHALL NOT show the completed one
+
+#### Scenario: All shows every task
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open task assigned to another user and a completed task
+- **WHEN** you choose the chip All
+- **THEN** the list SHALL show both tasks
+
+### Requirement: REQ-TASK-020 You set a reminder for a colleague from the case
+
+`#CaseDetail` SHALL offer Remind, a form asking who, when and what, that
+creates an engine task on the case with that assignee, due date and title
+and `kind: reminder`. The task SHALL appear on Tasks, on My work of the
+assignee and on the case's Work tab, and the assignee SHALL receive the
+platform's assignment notification.
+
+#### Scenario: A reminder reaches a colleague
+@e2e tests/e2e/case-reminder.spec.ts
+
+- **GIVEN** an open case and a colleague Anna
+- **WHEN** you press Remind, pick Anna, the 3rd and "Call the applicant", and save
+- **THEN** a task "Call the applicant" due the 3rd assigned to Anna SHALL exist on the case
+- **AND** Anna SHALL see it under Mine on Tasks
+
+#### Scenario: A reminder is closed like a task
+@e2e tests/e2e/case-reminder.spec.ts
+
+- **GIVEN** a reminder task on a case
+- **WHEN** you complete it on the Work tab
+- **THEN** it SHALL leave the open tasks of the case
+
+### Requirement: REQ-TASK-019 A task on a case defaults to the case handler
+
+When a transition or a flow step creates a task and its authored assignee
+and fallback both name nobody, the task SHALL be assigned to the case's
+`assignee`; when the case has none, to the case's `assignedGroup`; only
+when both are empty SHALL the task be unassigned. An action with
+`assignee: "none"` SHALL create an unassigned task regardless.
+
+#### Scenario: The handler gets the task
+@e2e tests/e2e/task-defaults-to-case-handler.spec.ts
+
+- **GIVEN** a case assigned to you and a transition whose action names no assignee
+- **WHEN** the transition runs
+- **THEN** the created task SHALL be assigned to you
+- **AND** it SHALL appear under Mine on Tasks
+
+#### Scenario: The team gets the task when there is no handler
+@e2e exclude covered by AssigneeResolverTest::testFallsBackToAssignedGroup over a case fixture
+
+- **GIVEN** a case with no assignee and team Permits
+- **WHEN** a task is created without an authored assignee
+- **THEN** the task SHALL carry team Permits as its assignee group
+
+#### Scenario: An action opts out
+@e2e exclude covered by AssigneeResolverTest::testNoneStaysUnassigned
+
+- **GIVEN** an action with `assignee: "none"` on an assigned case
+- **WHEN** the task is created
+- **THEN** it SHALL have no assignee
+
+### Requirement: REQ-TASK-021 The Tasks index has five search fields
+
+The `#Tasks` sidebar SHALL offer filters on case, assignee, due date range,
+state and priority. Each SHALL be answered by the engine inbox server-side;
+no filter SHALL be applied over a fetched page. A lens and a field SHALL
+compose, and both SHALL be carried in the URL.
+
+#### Scenario: Narrow to one case
+@e2e tests/e2e/task-search-fields.spec.ts
+
+- **GIVEN** tasks on two cases
+- **WHEN** you pick one case in the sidebar
+- **THEN** only that case's tasks SHALL remain
+- **AND** the URL SHALL carry the case filter
+
+#### Scenario: Due window inside a lens
+@e2e tests/e2e/task-search-fields.spec.ts
+
+- **GIVEN** the Mine lens is active
+- **WHEN** you set due between next Monday and Friday
+- **THEN** only your tasks due in that week SHALL remain
+
+#### Scenario: A filter the engine lacks is not faked
+@e2e exclude structural; covered by a vitest asserting every declared sidebar field has a store mapping to an inbox argument
+
+- **GIVEN** the sidebar declaration
+- **WHEN** the store mapping is read
+- **THEN** every declared field SHALL map to an inbox argument
+
+### Requirement: A task reaches a team before it reaches a person (REQ-TASK-042)
+
+A case type SHALL declare candidate groups and candidate users per task. A
+task with candidates and no assignee SHALL be offered to every candidate
+and SHALL be claimable by one of them, with the claim recorded. Whether the
+task engine answers a claim act SHALL be asked of the engine rather than
+assumed: where it answers one, the claim affordance SHALL be rendered on
+every task waiting for a candidate; where it does not, no affordance SHALL
+be rendered and the surface showing the task SHALL say that nobody can pick
+it up there yet. dossiq SHALL NOT silently assign a task it presented as
+claimable.
+
+#### Scenario: a task sits with a team until somebody takes it
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** a task declaring the candidate group Juridische Zaken
+- **WHEN** the task is created
+- **THEN** it SHALL have no assignee
+- **AND** it SHALL be listed for every member of that group
+
+#### Scenario: claiming is recorded
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** an unclaimed task with candidates
+- **WHEN** a member claims it
+- **THEN** they SHALL be its assignee
+- **AND** the claim SHALL record who and when
+
+#### Scenario: an unhonoured declaration is stated, not faked
+@e2e exclude The engine on the e2e instance answers a claim act, so the unhonoured branch cannot be produced there. Asserted in tests/Unit/Service/Task/TaskCandidatesTest.php::testAnEngineWithoutAClaimActSaysSoRatherThanAssigning.
+
+- **GIVEN** a task engine that answers no claim act
+- **WHEN** a handler opens a case carrying a task with a candidate group
+- **THEN** the task SHALL name the group it is meant for
+- **AND** it SHALL say that nobody can pick it up there yet
+- **AND** no claim affordance SHALL be rendered
+
+### Requirement: A task type declares what completing it does (REQ-TASK-043)
+
+A task SHALL declare its effects as named handlers from the action
+registry. Completing the task SHALL run them. Publishing SHALL refuse a
+task naming a handler the registry does not have. Completing SHALL be
+refused when a declared handler cannot be resolved, rather than completing
+without the effect. Resuming a suspended term SHALL be one of the
+available effects.
+
+#### Scenario: finishing the task sends the letter
+@e2e exclude Sending needs a mail server the e2e instance does not have, so a green assertion here would prove the handler ran and not that a letter left. Asserted in tests/Unit/Service/Task/TaskEffectsTest.php::testCompletingRunsTheDeclaredEffects.
+
+- **GIVEN** a task declaring a send effect
+- **WHEN** a handler completes it
+- **THEN** the letter SHALL be sent
+
+#### Scenario: finishing the aanvulling task resumes the term
+@e2e exclude Needs a paused statutory term, which takes the whole aanvulling flow to produce. Asserted in tests/Unit/Service/Task/TaskEffectsTest.php and lib/Service/Transitions/ResumeTermHandler.php's own path in tests/Unit/Service/DeadlinePauseExtensionServiceTest.php.
+
+- **GIVEN** a suspended term and a task declaring the resume effect
+- **WHEN** the task is completed
+- **THEN** the term SHALL resume
+
+#### Scenario: an unresolvable effect refuses the completion
+@e2e exclude A handler cannot be unregistered on a running instance. Asserted in tests/Unit/Service/Task/TaskEffectsTest.php::testAnUnresolvableEffectIsNamed.
+
+- **GIVEN** a task whose declared handler cannot be resolved
+- **WHEN** a handler completes it
+- **THEN** the completion SHALL be refused
+- **AND** the refusal SHALL name the handler, in the pattern the board `DqZaakTaken` draws for a refused cancel: "Annuleren geweigerd voor Documenten beoordelen: de engine staat annuleren niet toe zolang de stap Beoordeling loopt."
+
+#### Scenario: an unknown handler refuses publication
+@e2e exclude Publishing a workflow is an admin API call with no surface of its own yet. Asserted in tests/Unit/Service/Task/PerTaskConfigurationTest.php::testAnUnknownEffectRefusesPublication.
+
+- **GIVEN** a case type declaring an effect the registry does not have
+- **WHEN** it is published
+- **THEN** publication SHALL refuse, naming the handler
+
+### Requirement: A task is completed where you already are (REQ-TASK-044)
+
+Every open task on a case SHALL be completable on the case page without a
+route change, not only the first one. A task carrying a form SHALL show
+that form in place. A required field left empty SHALL refuse the
+completion with a 4xx carrying `{message, error}` naming the field. The
+same completion SHALL be offered from the task list once the component
+library provides a row action.
+
+#### Scenario: the second open task is completed on the case
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** a case with three open tasks
+- **WHEN** a handler completes the second
+- **THEN** it SHALL complete without leaving the case page
+
+#### Scenario: the form is filled in place
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** a hoorzitting task carrying a verslag form
+- **WHEN** a handler opens it on the case
+- **THEN** the form SHALL be shown there
+- **AND** completing it SHALL store the verslag on the task
+
+#### Scenario: a blank required field refuses
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** a task form with a required field left empty
+- **WHEN** a handler completes the task
+- **THEN** it SHALL be refused
+- **AND** the refusal SHALL name the field
+
+### Requirement: A file uploaded in a task form binds to the task (REQ-TASK-045)
+
+A file uploaded inside a task form SHALL be held against the task while the
+task is open, SHALL be removable while it is open, and SHALL become a
+document on the case when the task completes, recording which task
+produced it. A file SHALL NOT remain reachable only from a closed task.
+
+#### Scenario: the upload waits with the task
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** an open task with a file uploaded in its form
+- **WHEN** the case documents are read
+- **THEN** the file SHALL NOT yet be among them
+
+#### Scenario: completing the task publishes the file to the case
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** the same task
+- **WHEN** it is completed
+- **THEN** the file SHALL be a document on the case
+- **AND** it SHALL record the task it came from
+
+#### Scenario: a file is removed while the task is open
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** an open task with an uploaded file
+- **WHEN** a handler removes it
+- **THEN** it SHALL be gone from the task
+
+### Requirement: A task shows its own number, due date and lock (REQ-TASK-046)
+
+Wherever a task is shown, it SHALL carry its own number, its own due date
+and its own lock state. Where the task engine provides no number or no
+lock, dossiq SHALL show the engine's identifier and SHALL state that a
+number and a lock are not available, and SHALL NOT invent either.
+
+#### Scenario: a task is referred to by its own number
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** a task carrying a number from the engine
+- **WHEN** it is shown on the case and in the list
+- **THEN** both SHALL show that number
+
+#### Scenario: a missing number is stated, not invented
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** a task engine answering no number
+- **WHEN** the task is shown
+- **THEN** the engine identifier SHALL be shown
+- **AND** dossiq SHALL NOT generate a number of its own
+
+#### Scenario: the due date is the task's own
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** a task with a lead time shorter than the case term
+- **WHEN** the task is shown
+- **THEN** its due date SHALL be its own, not the case deadline
+
+### Requirement: The task page is a manifest detail page
+
+The task page SHALL be a `type: "detail"` manifest page with `entitySource: "tasks"`, on the route `/tasks/:id` with the
+page id `TaskDetail`. Its header SHALL show the task's state and, for a high or urgent task, its priority as pills, a
+breadcrumb back to Tasks, and the engine's verbs read off the task, Finish posted to dossiq's own completion route. Its
+body SHALL have an Overview tab (description, checklist, appointments, notes) and a History tab (the engine's audit
+trail), and its side column the task facts, the case card, the waiting-case card and the task history. A task that is
+missing or may not be read SHALL show one not-found state. The notes, appointments and history leaves and the
+waiting-case section SHALL be detail widgets that read the task the page hands them as `objectId`.
+
+#### Scenario: A notification link opens the task on the manifest page
+@e2e exclude the e2e rig seeds no engine task with a checklist and a waiting run; the unit specs `tests/vitest/taskDetailManifestPage.spec.js` and `tests/vitest/taskLeavesAsDetailWidgets.spec.js` assert the page config and the widgets, and `tests/e2e/case-task-pane.spec.ts` opens `/tasks/:id`
+
+- **GIVEN** a notification that links to `/apps/dossiq/tasks/<uuid>`
+- **WHEN** the handler opens it
+- **THEN** the `TaskDetail` page reads that task from the engine and shows its state, its verbs and its leaves
 
 ## Accessibility
 

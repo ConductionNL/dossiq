@@ -1,0 +1,280 @@
+<?php
+
+/**
+ * What completing a task does, read off the task and run through the registry.
+ *
+ * The effect belongs to the task definition rather than to the handler
+ * remembering. A case type declares that finishing "verstuur de beschikking"
+ * sends the letter, and finishing "verwerk de aanvulling" resumes the term
+ * that was paused to ask for it, and neither depends on somebody doing the
+ * next thing by hand.
+ *
+ * 🔴 AN EFFECT THAT DID NOT RUN AND SAID NOTHING IS THE FAILURE THIS AVOIDS.
+ * So there are two moments and both are loud. At publish,
+ * {@see TaskDeclarationValidator} refuses a task naming a handler the registry
+ * does not have. At completion, {@see unresolved()} is asked BEFORE the task
+ * is completed, and a declaration that has stopped resolving since it was
+ * published refuses the completion rather than completing without the effect,
+ * per ADR-102.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service\Task
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\Task;
+
+use OCA\Dossiq\Kernel\Contracts\TaskEffectsInterface;
+use OCA\Dossiq\Service\Flow\RetiredActionRunner;
+use OCA\Dossiq\Service\Transitions\ActionHandlerInterface;
+use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * Reads, checks and runs the effects a task declared.
+ *
+ * @spec openspec/specs/task-management/spec.md
+ */
+class TaskEffects implements TaskEffectsInterface {
+
+	/**
+	 * Where a task carries the effects dossiq declared on it.
+	 *
+	 * `metadata` is the engine's own room for an owning app's data, and
+	 * `dossiq` is dossiq's corner of it. Writing effects into a top-level
+	 * column would need a column the engine does not have and dossiq does not
+	 * own.
+	 *
+	 * @var string
+	 */
+	public const METADATA_KEY = 'dossiq';
+
+	/**
+	 * Constructor.
+	 *
+	 * @param ActionHandlerRegistry    $handlers The handlers an effect names.
+	 * @param LoggerInterface          $logger   The logger.
+	 * @param RetiredActionRunner|null $retired  Runs an effect whose handler left dossiq as
+	 *                                           the node that replaced it. Optional so an
+	 *                                           existing construction site keeps working;
+	 *                                           absent, such an effect is unresolved.
+	 */
+	public function __construct(
+		private readonly ActionHandlerRegistry $handlers,
+		private readonly LoggerInterface $logger,
+		private readonly ?RetiredActionRunner $retired = null,
+	) {
+	}//end __construct()
+
+	/**
+	 * The effects one task declares, in declared order.
+	 *
+	 * @param array<string, mixed> $task The task, as the engine answers it.
+	 *
+	 * @return array<int, array<string, mixed>> The effects; empty when it declares none.
+	 *
+	 * @spec openspec/specs/task-management/spec.md
+	 */
+	public function declaredOn(array $task): array {
+		return $this->typedEffects(effects: $this->rawEffects(task: $task));
+	}//end declaredOn()
+
+	/**
+	 * The effects list under the task's metadata, as stored.
+	 *
+	 * @param array<string, mixed> $task The task, as the engine answers it.
+	 *
+	 * @return array<mixed> The raw effects; empty when the metadata holds none.
+	 */
+	private function rawEffects(array $task): array {
+		$metadata = ($task['metadata'] ?? []);
+		if (is_array($metadata) === false) {
+			return [];
+		}
+
+		$mine = ($metadata[self::METADATA_KEY] ?? []);
+		if (is_array($mine) === false) {
+			return [];
+		}
+
+		$effects = ($mine['effects'] ?? []);
+		if (is_array($effects) === false) {
+			return [];
+		}
+
+		return $effects;
+	}//end rawEffects()
+
+	/**
+	 * The effects that are arrays with a type, in declared order.
+	 *
+	 * @param array<mixed> $effects The raw effects.
+	 *
+	 * @return array<int, array<string, mixed>> The effects, each with a trimmed type.
+	 */
+	private function typedEffects(array $effects): array {
+		$declared = [];
+		foreach ($effects as $effect) {
+			if (is_array($effect) === false) {
+				continue;
+			}
+
+			$type = trim((string)($effect['type'] ?? ''));
+			if ($type === '') {
+				continue;
+			}
+
+			$effect['type'] = $type;
+			$declared[] = $effect;
+		}
+
+		return $declared;
+	}//end typedEffects()
+
+	/**
+	 * The declared effects no handler answers to, by name.
+	 *
+	 * Asked before a completion, never after: after it there is nothing left
+	 * to refuse, and a task completed without its effect looks exactly like
+	 * one completed with it.
+	 *
+	 * @param array<int, array<string, mixed>> $effects The declared effects.
+	 *
+	 * @return array<int, string> The unresolvable types, in declared order.
+	 *
+	 * @spec openspec/specs/task-management/spec.md
+	 */
+	public function unresolved(array $effects): array {
+		$missing = [];
+		foreach ($effects as $effect) {
+			$type = trim((string)($effect['type'] ?? ''));
+			if ($type === '' || $this->handlers->getHandler(type: $type) !== null || $this->runsRetired(type: $type) === true) {
+				continue;
+			}
+
+			if (in_array($type, $missing, true) === false) {
+				$missing[] = $type;
+			}
+		}
+
+		return $missing;
+	}//end unresolved()
+
+	/**
+	 * Run the effects of a completed task, in declared order.
+	 *
+	 * Per EFFECT, not per task: one effect that fails does not stop the
+	 * others, because a declaration that sends a letter and resumes a term
+	 * should still resume the term when the mail server is down. Each outcome
+	 * is returned and the failures are logged with the task that declared
+	 * them.
+	 *
+	 * @param array<int, array<string, mixed>> $effects The declared effects.
+	 * @param array<string, mixed>             $case    The case the task is on.
+	 * @param array<string, mixed>             $context What ran them, for the handlers.
+	 *
+	 * @return array<int, array{type: string, ran: bool, error: string}> One result per effect.
+	 *
+	 * @spec openspec/specs/task-management/spec.md
+	 */
+	public function run(array $effects, array $case, array $context): array {
+		$results = [];
+		foreach ($effects as $effect) {
+			$results[] = $this->runOne(run: new EffectRun(effect: $effect, case: $case, context: $context));
+		}
+
+		return $results;
+	}//end run()
+
+	/**
+	 * Run one effect and say what happened.
+	 *
+	 * @param EffectRun $run The effect, its case and the dispatch context.
+	 *
+	 * @return array{type: string, ran: bool, error: string} The outcome.
+	 */
+	private function runOne(EffectRun $run): array {
+		$handler = $this->handlers->getHandler(type: $run->type);
+		if ($handler === null) {
+			return $this->withoutHandler(run: $run);
+		}
+
+		return $this->handled(handler: $handler, run: $run);
+	}//end runOne()
+
+	/**
+	 * An effect no handler answers to: run as its replacement when it is retired, named otherwise.
+	 *
+	 * @param EffectRun $run The effect, its case and the dispatch context.
+	 *
+	 * @return array{type: string, ran: bool, error: string} The outcome.
+	 */
+	private function withoutHandler(EffectRun $run): array {
+		if ($this->retired !== null && $this->runsRetired(type: $run->type) === true) {
+			$row = $this->retired->run(type: $run->type, action: $run->effect, case: $run->case, context: $run->context);
+
+			return ['type' => $run->type, 'ran' => $row['ok'], 'error' => (string)($row['error'] ?? '')];
+		}
+
+		// Reached only when a handler disappeared between the pre-check
+		// and the run, which is a deployment changing under a request.
+		// Loud, because the completion is already written.
+		$this->logger->error(
+			'Dossiq: a completed task declared an effect no handler answers to',
+			['effect' => $run->type, 'case' => ($run->context['caseId'] ?? ''), 'task' => ($run->context['taskId'] ?? '')]
+		);
+
+		return ['type' => $run->type, 'ran' => false, 'error' => 'unresolvable_effect'];
+	}//end withoutHandler()
+
+	/**
+	 * Hand the effect to its handler, and say whether it ran, refused or failed.
+	 *
+	 * @param ActionHandlerInterface $handler The handler of the effect's type.
+	 * @param EffectRun              $run     The effect, its case and the dispatch context.
+	 *
+	 * @return array{type: string, ran: bool, error: string} The outcome.
+	 */
+	private function handled(ActionHandlerInterface $handler, EffectRun $run): array {
+		$task = ($run->context['taskId'] ?? '');
+		try {
+			$result = $handler->handle($run->effect, $run->case, $run->context);
+			if ($result->succeeded === true) {
+				return ['type' => $run->type, 'ran' => true, 'error' => ''];
+			}
+
+			$this->logger->warning('Dossiq: a task effect refused', ['effect' => $run->type, 'error' => $result->error, 'task' => $task]);
+
+			return ['type' => $run->type, 'ran' => false, 'error' => (string)$result->error];
+		} catch (Throwable $e) {
+			$this->logger->error('Dossiq: a task effect failed', ['effect' => $run->type, 'exception' => $e->getMessage(), 'task' => $task]);
+
+			return ['type' => $run->type, 'ran' => false, 'error' => $e->getMessage()];
+		}//end try
+	}//end handled()
+	/**
+	 * Whether an effect names a retired type that its replacement still runs.
+	 *
+	 * @param string $type The effect type.
+	 *
+	 * @return bool True when the retired runner can run it.
+	 *
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	private function runsRetired(string $type): bool {
+		return $this->retired !== null && in_array($type, $this->retired->runnableTypes(), true) === true;
+	}//end runsRetired()
+}//end class

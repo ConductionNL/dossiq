@@ -1,0 +1,86 @@
+# Design: what-a-transition-declares
+
+## D-1. Withholding beats refusing
+
+A transition that is offered and then refused teaches the handler that the
+list is unreliable. A transition that is not offered, with the reason
+readable in its place, teaches them what to do next. The information is the
+same; only one of the two is usable.
+
+## D-2. A dependency is a declaration, not a service
+
+`ConsultationService::getBlockingConsultations` is the right behaviour
+written in the wrong place: inside the one thing that happens to need it.
+Declaring the dependency on the transition means the second and the third
+one cost a line of configuration rather than a class.
+
+## D-3. An obligation has exactly three parts
+
+It is placed, it blocks, and meeting it releases. Writing those three parts
+once, and naming what settles the obligation, is what makes advice requests,
+fee payments, inspections and external approvals the same thing. A new
+obligation then declares what settles it and nothing else.
+
+## D-4. The advice request is the first obligation, not a special case
+
+Rewriting consultations as an obligation is what keeps the count at one
+mechanism. Leaving them beside it would leave two, which is the state the
+row already describes.
+
+## D-5. Guidance belongs where the choice is made
+
+A description on a status is read when the case is already there. The
+sentence a handler needs is at the moment of choosing, which is the
+transition. So the transition carries its own text and the status keeps
+its own, and both are rendered.
+
+## D-6. Four eyes is a negative rule about an act, not a role
+
+"An approver may not be the author" cannot be expressed as a role, because
+the same person legitimately holds both roles on other cases. It is a
+statement about who performed a named earlier act on this case. So the
+transition names the act, and the engine reads who performed it.
+
+## D-7. The refusal says who, so the handler knows what to do
+
+"You may not do this" sends the handler to a colleague to ask why. "You
+prepared this decision on 3 March, so somebody else approves it" sends them
+to the right colleague. The case type may name who that is.
+
+## D-8. Four eyes is declared on the transition, not in the rights matrix
+
+Task 4.3 asked for the rule as an ADR-023 action mapping. It is not one, and
+the reason is D-6 restated at the level of where a declaration lives.
+
+`caseType.rightsMatrix` is a positive grant: this department, in this role, at
+this confidentiality, may do these verbs. Four eyes grants nothing. It removes
+one person from one move on one case, on the strength of something they did
+earlier on that same case. There is no row that expresses it, because the row
+would have to name a role, and the person it refuses holds exactly the same
+role as the colleague it permits.
+
+Writing it as a matrix row anyway would mean minting a synthetic role per case,
+"the author of case Z/2026/41", which is the combinatorial explosion the
+matrix's own description warns about two properties higher up.
+
+So it is declared on the transition, which is where the case type author is
+already writing what that move means, and where an administrator reading the
+workflow finds it beside the guards it sits with. What is still missing is a
+place to read every such rule at once, and that belongs in the effective
+blueprint alongside `obligationKinds` rather than in a matrix that answers a
+different question.
+
+## D-9. The obligation blocks before it is placed anywhere
+
+An obligation has three parts and this change ships two and a half: it is
+declared, it blocks, and meeting it releases. What it does not yet do is reach
+the person it is placed on, because that means an engine task, and an engine
+task means an acting identity and an assignee resolution that
+`CreateTaskHandler` already owns.
+
+Shipping the blocking half first is deliberate rather than partial. The failure
+the row describes is a case that closes with an advice request still open, and
+that failure is closed the moment the declaration is read. A case whose
+obligation nobody was told about still cannot be closed, and the handler can
+see why on the case. The reverse order, telling somebody and not blocking,
+would have left the hole open while looking finished.

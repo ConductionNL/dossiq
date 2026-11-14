@@ -16,7 +16,9 @@ The doorlooptijd (processing time) dashboard provides SLA adherence analytics fo
 - **Cases**: OpenRegister schema `case` — fields: `startDate`, `endDate`, `deadline`, `plannedEndDate`, `status`, `caseType`
 - **Case Types**: OpenRegister schema `caseType` — field: `processingDeadline` (ISO 8601 duration, e.g., `P30D`)
 - **Status Types**: OpenRegister schema `statusType` — field: `isFinal` (boolean)
+
 ## Requirements
+
 ### Requirement: SLA compliance rate widget [V1]
 
 The doorlooptijd dashboard SHALL display an overall SLA compliance rate as a prominent KPI, showing the percentage of completed cases that finished within their case type's `processingDeadline`.
@@ -47,7 +49,7 @@ The doorlooptijd dashboard SHALL display a breakdown of SLA compliance per case 
 
 @e2e exclude Compliance breakdown by case type requires completed cases with specific case types and processingDeadline; V1 data-dependent chart/table scenarios not testable without pre-seeded data.
 
-#### Scenario: Compliance by case type with donut chart
+#### Scenario: Compliance by case type as a list of percentages
 - **WHEN** the user views the doorlooptijd dashboard
 - **AND** case type "Vergunning" has 40 completed cases, 35 within SLA
 - **AND** case type "Bezwaar" has 30 completed cases, 20 within SLA
@@ -57,12 +59,12 @@ The doorlooptijd dashboard SHALL display a breakdown of SLA compliance per case 
   - Within-SLA count and percentage
   - Average actual processing days
   - Target processing days (from `processingDeadline`)
-- **AND** the system MUST display a donut chart showing the proportion of within-SLA vs overdue cases per case type
+- **AND** the system MUST display "Naleving per zaaktype" as board DqDoorlooptijd draws it: a list with one row per case type, its name and its within-SLA percentage ("Omgevingsvergunning 50 %"), not a donut chart
 
 #### Scenario: Case type with zero completed cases
 - **WHEN** a case type has zero completed cases in the selected date range
 - **THEN** the system MUST show that case type in the table with "—" for compliance metrics
-- **AND** the system MUST NOT include it in the donut chart
+- **AND** the system MUST NOT include it in the Naleving per zaaktype list
 
 ### Requirement: Processing time distribution chart [V1]
 
@@ -186,7 +188,7 @@ The doorlooptijd page SHALL mount and render its page shell on navigation
 (`DoorlooptijdDashboard.vue`, route `/doorlooptijd`), independently of whether
 case data is present. The dashboard SHALL be composed of focused sub-components
 under `src/views/doorlooptijd/components/` — a KPI strip (`DeadlineKpiRow`), the
-chart cluster (`ComplianceCharts`: SLA-by-case-type donut, processing-time
+chart cluster (`ComplianceCharts`: the SLA-by-case-type list, processing-time
 histogram, monthly compliance trend, weekly throughput), the at-risk deadline
 list (`DeadlineCaseTable`), and the per-case-type breakdown table
 (`CaseTypeBreakdown`) — each receiving already-aggregated data as props from the
@@ -194,11 +196,25 @@ page-level container, with the chart/table data-shaping logic extracted to a
 pure helper module (`chartShaping.js`). Decomposition MUST NOT change the
 rendered behaviour, the data fetched, or the displayed strings.
 
+RETITLED 2026-09-11. The heading is the manifest page title, "Processing time",
+and has been since page-topology-cleanup (A3) made this a real `type: dashboard`
+page whose header comes from the manifest. The scenario below asked for
+"Processing Time Analytics", a string no component renders any more: it survives
+only as an l10n key. Three tests cited this scenario and all three asserted the
+title the page carries, so the requirement was the stale half, not the tests.
+
 #### Scenario: Doorlooptijd page renders heading
 - **GIVEN** an authenticated user on the Dossiq app
 - **WHEN** they navigate to the doorlooptijd page
-- **THEN** the main content MUST render a "Processing Time Analytics" page heading
+- **THEN** the main content MUST render a "Processing time" page heading, as `src/manifest.json` declares the page's title
 - **AND** the page MUST NOT show an Internal Server Error
+- **AND** the dashboard body MUST render its widgets, not page chrome alone
+
+> **Corrected 2026-09-12.** This said "Processing Time Analytics", a heading the
+> page has not rendered for some time, so the citation on it measured as smoke:
+> the test could only prove the page loaded. The manifest's `title` is the
+> authority and reads `Processing time`. The widget clause is new, for the same
+> reason: a heading and the absence of a 500 is what a shell renders too.
 
 #### Scenario: Dashboard is composed of focused sub-components
 
@@ -229,3 +245,86 @@ The doorlooptijd dashboard SHALL handle the case when no data is available grace
 - **WHEN** all case types have no `processingDeadline` configured
 - **THEN** the system MUST display a message: "No SLA targets configured. Set processing deadlines on case types in Settings to enable compliance tracking."
 
+### Requirement: Dwell and processing time count working hours, and say so [V1]
+
+`DwellTimeAnalyzer` SHALL report each interval as working hours on the
+organisation calendar and as wall-clock hours. The Process mining and
+Processing time pages SHALL show working hours as the headline column,
+wall-clock hours beside it, and SHALL name the clock in each column header.
+Dwell SHALL be reported per phase and per assignee.
+
+#### Scenario: A weekend is not working time
+@e2e exclude covered by ElapsedBusinessHoursTest (openregister) and DwellOnTheWorkingCalendarTest: Friday 16:00 to Monday 09:00 on the seeded nl-national calendar
+
+- **GIVEN** a phase entered Friday 16:00 and left Monday 09:00
+- **WHEN** dwell is computed on the organisation calendar
+- **THEN** working hours SHALL be 1 and wall-clock hours SHALL be 65
+
+#### Scenario: The page says which clock it counted on
+@e2e tests/e2e/dwell-time-clock.spec.ts
+
+- **GIVEN** an instance without the engine calendar
+- **WHEN** the report is drawn
+- **THEN** the working-hours column SHALL be titled so that it names the
+  approximation, and SHALL NOT be titled Working hours
+
+#### Scenario: The page names the clock
+@e2e tests/e2e/dwell-time-clock.spec.ts
+
+- **GIVEN** the Process mining page
+- **WHEN** you read the dwell table
+- **THEN** the headline column SHALL be titled "Werkuren" (en "Working hours")
+- **AND** a second column SHALL be titled "Klokuren" (en "Wall-clock hours"), as board DqProcesanalyse draws them
+
+#### Scenario: Per assignee
+@e2e tests/e2e/dwell-time-clock.spec.ts
+
+- **GIVEN** status records by two handlers
+- **WHEN** you read the dwell table by handler
+- **THEN** both handlers SHALL be listed with their working hours
+- **AND** time no status record attributed SHALL be listed under its own row
+  rather than dropped
+
+### Requirement: Time in a status is held on the case, sortable and filterable (REQ-SDW-01)
+
+The case SHALL hold the time spent in its current status and the total time
+spent in each status it has visited, written as the status changes and
+counted on the organisation's working calendar. The work list SHALL sort and
+filter on those numbers. The process mining page SHALL read the same numbers
+rather than computing a second set.
+
+#### Scenario: A handler sorts the work list by time in status
+@e2e tests/e2e/what-a-status-declares.spec.ts
+
+- **GIVEN** a queue of cases in the same status for different lengths of time
+- **WHEN** the handler sorts by time in the current status
+- **THEN** the longest-standing case SHALL be first
+
+#### Scenario: The filter finds cases over a threshold
+@e2e tests/e2e/what-a-status-declares.spec.ts
+
+- **GIVEN** four cases more than twenty working days in their current status
+- **WHEN** the work list is filtered on that threshold
+- **THEN** exactly those four SHALL be returned
+
+#### Scenario: The page and the list agree
+@e2e exclude unit; DwellTimeAnalyzerTest
+
+- **GIVEN** a case with three status visits
+- **WHEN** the process mining page and the case are read
+- **THEN** the per-status totals SHALL be identical
+- **AND** both SHALL be counted on the working calendar
+
+### Requirement: The processing-time averages can be grouped per week, month, quarter or year
+
+The metrics endpoint SHALL accept `granularity` of `week`, `month`, `quarter` or `year` (default `month`) and SHALL
+group the averages in `summary.monthlyAvgDays` by it over the period window, oldest group first and today's group last,
+labelled `YYYY-Www`, `YYYY-MM`, `YYYY-Qn` or `YYYY`, naming the grouping in `summary.granularity`. Any other value SHALL
+be refused with 400. The processing-time page SHALL offer Maand, Kwartaal and Jaar as the grouping, open on Maand, and
+keep the one-year window.
+
+#### Scenario: A year per quarter
+
+- **GIVEN** cases closed in February, July and September 2026, read on 16 October 2026
+- **WHEN** the metrics are read with `granularity=quarter`
+- **THEN** the groups are 2025-Q4 to 2026-Q4, with the averages in Q1 and Q3

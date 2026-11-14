@@ -15,9 +15,9 @@
  * caseType constraint are proven by PHPUnit (DeelzaakServiceTest /
  * CreateSubCaseHandlerTest) and Newman (deelzaken-api collection).
  *
- * The deelzaak surfaces live behind the manifest "Sub-cases" tab on a case
- * detail (DeelzaakList) and the full-page DeelzaakDetail. The helpers below
- * navigate there and skip cleanly when the surface is not present.
+ * The deelzaak surfaces are the Sub-cases section on a case's Related tab
+ * (list, roll-up and the Create sub-case action) and the related-cases section
+ * of a sub-case, which names its parent. The helpers below navigate there.
  */
 
 import type { APIRequestContext } from '@playwright/test'
@@ -25,12 +25,16 @@ import type { APIRequestContext } from '@playwright/test'
 import { expect, request, test } from '@playwright/test'
 import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
+	createObject,
 	ensureCaseType,
 	getRequestToken,
+	listObjects,
 	objectId,
+	RUN_PREFIX,
 	seedCase,
+	showObject,
 } from '../helpers/fixtures.ts'
-import { dismissSupportDialog, navTo } from '../helpers/nav.ts'
+import { dismissSupportDialog } from '../helpers/nav.ts'
 
 /** OpenRegister's object API for this app's own register. */
 const CASES_API = '/index.php/apps/openregister/api/objects/dossiq/case'
@@ -86,18 +90,215 @@ async function ensureCaseId(page): Promise<string | null> {
 	}
 }
 
-/** Open the Cases list, or skip when it does not render. */
-async function openCasesListOrSkip(page) {
-	// NOT wrapped in `.catch(() => {})`. A missing sidebar label is a rename
-	// this suite has to notice, and swallowing it here would run every test
-	// below against whatever the Dashboard happens to render — green, and
-	// asserting nothing. The skip below is for absent DATA, not a broken menu.
-	await navTo(page, /^(All cases|Alle zaken)$/)
-	await dismissSupportDialog(page).catch(() => {})
-	const caseId = await ensureCaseId(page)
-	if (!caseId) return false
-	await expect(page.locator('body')).not.toContainText('Internal Server Error')
-	return true
+/**
+ * Seed a parent case, and by default one sub-case hanging off it.
+ *
+ * The orphan-deletion branch is decided by how many sub-cases the parent has
+ * (`requiresOrphanWarning` in src/utils/deelzaakHelpers.js), so a test that
+ * reads whatever the register happens to hold asserts whichever branch it
+ * lands on. Each side seeds its own shape instead.
+ *
+ * @param  options            Seeding options.
+ * @param  options.withChild  Seed a sub-case referencing the parent.
+ * @param  options.title      Title for the parent, when the caller has to find
+ *                            its row in a list.
+ * @return The seeded ids.
+ */
+async function seedParentWithSubCase(
+	options: { withChild?: boolean; title?: string } = {},
+): Promise<{ parentId: string; childId: string | null }> {
+	const withChild = options.withChild !== false
+	const api = await request.newContext({ storageState: STORAGE_STATE })
+	try {
+		const token = await getRequestToken(api)
+		const caseType = await ensureCaseType(api, token)
+		const parent = await seedCase(api, token, {
+			title:
+				options.title
+				?? `E2E deelzaak parent ${withChild ? 'with' : 'without'} sub-case`,
+			caseType: caseType.id,
+			description:
+				'Seeded by deelzaak-support.spec.ts (orphan-deletion legs).',
+		})
+		const parentId = objectId(parent)
+		let childId: string | null = null
+		if (withChild) {
+			const child = await seedCase(api, token, {
+				title: 'E2E deelzaak child',
+				caseType: caseType.id,
+				parentCase: parentId,
+				description:
+					'Seeded by deelzaak-support.spec.ts (orphan-deletion legs).',
+			})
+			childId = objectId(child)
+		}
+		return { parentId, childId }
+	} finally {
+		await api.dispose()
+	}
+}
+
+/**
+ * Seed a parent and an exact set of sub-cases, and read the children BACK.
+ *
+ * Separate from `seedParentWithSubCase` above, which the orphan-deletion legs
+ * own and which only needs "a child or no child". The section, roll-up and
+ * breadcrumb scenarios each name a specific shape (one child with known
+ * fields, two children with one completed, none at all), and a fixture that
+ * cannot express the shape is what left those citations asserting existence.
+ *
+ * 🔴 THE CHILDREN ARE READ BACK RATHER THAN ASSUMED, and that is not caution,
+ * it is required: `case.deadline` IS READ-ONLY. It is materialised from
+ * `startDate` plus the case type's `processingDeadline`, so a test that
+ * asserts the deadline it "seeded" asserts a value it never wrote. Measured
+ * 2026-09-12: a child seeded with `startDate: 2026-09-01` stored
+ * `deadline: 2026-10-27`. The caller gets the STORED row and asserts that.
+ *
+ * @param  options           Seeding options.
+ * @param  options.children  One entry per sub-case; the fields are merged over
+ *                           the defaults, so a `{}` entry is a plain child.
+ * @param  options.title     Title for the parent.
+ * @return The parent id and the stored child rows, in seeding order.
+ */
+async function seedParentWithChildren(options: {
+	children: Array<Record<string, unknown>>
+	title?: string
+}): Promise<{ parentId: string; children: any[]; statusName: string }> {
+	const api = await request.newContext({ storageState: STORAGE_STATE })
+	try {
+		const token = await getRequestToken(api)
+		const caseType = await ensureCaseType(api, token)
+
+		// A status of this run's own, so the Status column can be asserted
+		// against a value nothing else on the instance holds. `case.status` is
+		// a `$ref` to a statusType, so the column cannot be checked without
+		// one, and picking whatever status the demo data happens to use would
+		// make the assertion pass on another case's row.
+		//
+		// ONE PER RUN, cached, and not one per call. Six calls would leave six
+		// statusType rows on an instance whose teardown deliberately sweeps no
+		// cases (see `afterAll`), and every seeded case REFERENCES this row, so
+		// a teardown that removed it would leave dangling references behind
+		// rather than clean up — the failure mode `sweepPrefix`'s child-first
+		// ordering exists to avoid. One row is the smallest residue that still
+		// makes the column assertable.
+		const { id: statusId, name: statusName } = await ensureSubCaseStatus(
+			api,
+			token,
+			caseType.id,
+		)
+
+		const parent = await seedCase(api, token, {
+			title: options.title ?? `${RUN_PREFIX} deelzaak parent`,
+			caseType: caseType.id,
+			description: 'Seeded by deelzaak-support.spec.ts (section legs).',
+		})
+		const parentId = objectId(parent)
+
+		const children: any[] = []
+		for (const [index, fields] of options.children.entries()) {
+			const created = await seedCase(api, token, {
+				title: `${RUN_PREFIX} deelzaak child ${index + 1}`,
+				caseType: caseType.id,
+				parentCase: parentId,
+				status: statusId,
+				description: 'Seeded by deelzaak-support.spec.ts (section legs).',
+				...fields,
+			})
+			children.push(await showObject(api, 'case', objectId(created)))
+		}
+		return { parentId, children, statusName }
+	} finally {
+		await api.dispose()
+	}
+}
+
+/**
+ * The sub-cases SECTION inside the open Related panel.
+ *
+ * Scoped exactly as `openSubCasesSectionOrSkip` scopes its wait, and for the
+ * reason its comment records: since the strip was folded the
+ * Related panel holds the related-cases list ABOVE this one, so a page-wide
+ * `table` locator is satisfied by the neighbouring table and every assertion
+ * below would pass with the sub-cases list missing entirely.
+ *
+ * @param  page The page, with the Related tab already open.
+ * @return The section locator.
+ */
+function subCasesSection(page) {
+	return page.locator(
+		'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="case-section-case-sub-cases"]',
+	)
+}
+
+/** The uid the sub-case fixtures assign, so the Assignee column has a value. */
+const SUB_CASE_ASSIGNEE = 'admin'
+
+/** The one statusType this run's sub-cases share, created on first use. */
+let subCaseStatus: { id: string; name: string } | null = null
+
+/**
+ * The statusType every seeded sub-case in this file points at.
+ *
+ * Created once per run and memoised. See the call site for why one shared row
+ * rather than one per fixture: the seeded cases reference it, and this file
+ * deliberately sweeps no cases, so each extra statusType would be residue that
+ * cannot safely be removed while a case still names it.
+ *
+ * @param  api        Authenticated request context.
+ * @param  token      CSRF request-token.
+ * @param  caseTypeId The case type the status belongs to.
+ * @return The status id and its name.
+ */
+async function ensureSubCaseStatus(
+	api: APIRequestContext,
+	token: string,
+	caseTypeId: string,
+): Promise<{ id: string; name: string }> {
+	if (subCaseStatus !== null) return subCaseStatus
+	const name = `${RUN_PREFIX} Deelzaak status`
+	const created = await createObject(api, token, 'statusType', {
+		name,
+		caseType: caseTypeId,
+		order: 1,
+		isFinal: false,
+	})
+	subCaseStatus = { id: objectId(created), name }
+	return subCaseStatus
+}
+
+/**
+ * Quote a value for use inside a `RegExp`.
+ *
+ * @param  value The literal text.
+ * @return The escaped text.
+ */
+function escapeForRegExp(value: string): string {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * The spellings a stored ISO date may be printed in.
+ *
+ * The cell may carry the ISO string the server stored or the localised form
+ * the renderer chose, and which of the two is a rendering decision rather than
+ * something this requirement has an opinion about. What it does have an
+ * opinion about is that the deadline is SHOWN, so both spellings pass and an
+ * empty cell, or another date, fails.
+ *
+ * @param  iso The stored date, `YYYY-MM-DD`.
+ * @return A pattern matching either spelling.
+ */
+function deadlineSpellings(iso: string): RegExp {
+	const [year, month, day] = iso.slice(0, 10).split('-')
+	return new RegExp(
+		[
+			escapeForRegExp(`${year}-${month}-${day}`),
+			escapeForRegExp(`${day}-${month}-${year}`),
+			escapeForRegExp(`${Number(day)}-${Number(month)}-${year}`),
+			escapeForRegExp(`${day}/${month}/${year}`),
+		].join('|'),
+	)
 }
 
 /**
@@ -106,10 +307,14 @@ async function openCasesListOrSkip(page) {
  * There is no Sub-cases TAB, and there never was. This helper used to look for
  * `getByRole('tab', { name: /Sub-cases|Deelzaken/i })` and, on finding none,
  * skip every test in this file with "Sub-cases tab not present in the deployed
- * build (deploy mismatch)" — a deployment excuse for a surface no build has
- * ever shipped. The manifest declares `DeelzaakList` as a `type: "custom"`
- * PAGE at `/cases/:id/deelzaken`, and `CaseDetail` carried only the
- * `case-kpis-sub-cases` COUNT.
+ * build (deploy mismatch)" — a deployment excuse for a surface no build had
+ * shipped then: the list was a separate page and `CaseDetail` carried only
+ * the `case-kpis-sub-cases` COUNT.
+ *
+ * It is a section in the literal sense now: the sub-cases list is the second
+ * SECTION of the Related tab, reached by opening that tab. There was briefly a
+ * Sub-cases tab, between the widget landing and the strip coming down from
+ * fourteen tabs to six.
  *
  * The spec is the authority and it says section, not tab:
  *
@@ -121,8 +326,16 @@ async function openCasesListOrSkip(page) {
  * `case-sub-cases` object-list widget on `CaseDetail`, and this helper asserts
  * that section on the detail page rather than clicking a tab.
  */
-async function openSubCasesSectionOrSkip(page) {
-	const caseId = await ensureCaseId(page)
+async function openSubCasesSectionOrSkip(page, onCase?: string) {
+	// 🔴 THE CASE IS NOW THE CALLER'S TO NAME. It used to be whatever
+	// `ensureCaseId` found first, so every assertion below was made against an
+	// arbitrary row of the register: a parent with children, a childless case
+	// or a demo case, whichever the listing happened to return. That is why the
+	// two tests this helper served could only ever assert "a table OR an empty
+	// state", and why neither could tell the two scenarios apart. Passing the
+	// seeded id makes the precondition the scenario names an established fact
+	// rather than a coincidence.
+	const caseId = onCase ?? (await ensureCaseId(page))
 	if (!caseId) return false
 
 	// Navigate by URL. dossiq is history-mode
@@ -143,7 +356,7 @@ async function openSubCasesSectionOrSkip(page) {
 	// Asserting the container alone would pass while the list below never renders.
 	const tab = page
 		.locator('.cn-tabs-widget')
-		.getByRole('tab', { name: /Sub-cases|Deelzaken/i })
+		.getByRole('tab', { name: 'Related', exact: true })
 		.first()
 	if ((await tab.count()) > 0) {
 		await expect(
@@ -158,7 +371,14 @@ async function openSubCasesSectionOrSkip(page) {
 		// cannot retry — it fired against an empty panel and reported the
 		// section missing. Same trap the comment above guards for the tab
 		// itself; making the panel lazy moved it one step later.
-		const panel = page.locator('.cn-tabs-widget [role="tabpanel"]:not([hidden])')
+		// Scoped to the sub-cases SECTION and not to the whole panel. Since the
+		// strip came down from fourteen tabs to six, the Related tab holds the
+		// related-cases list ABOVE this one, so an unscoped `table` count is
+		// satisfied by the neighbouring table and this test would pass with the
+		// sub-cases list missing entirely.
+		const panel = page.locator(
+			'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="case-section-case-sub-cases"]',
+		)
 		await expect
 			.poll(
 				async () =>
@@ -192,173 +412,238 @@ async function openSubCasesSectionOrSkip(page) {
 	return true
 }
 
+/**
+ * Open the Cases list narrowed to one seeded title.
+ *
+ * @param page  The page.
+ * @param title The exact seeded title to narrow to.
+ */
+async function visitCases(page, title: string): Promise<void> {
+	await page.goto(
+		`/index.php/apps/dossiq/cases?title=${encodeURIComponent(title)}`,
+		{ timeout: 90_000 },
+	)
+	await dismissSupportDialog(page).catch(() => {})
+	await expect(
+		page.locator('table, .viewTable, [role="table"]').first(),
+	).toBeVisible({ timeout: 60_000 })
+}
+
 test.describe('Sub-case count badge (deelzaak-support REQ — case list)', () => {
 	// @e2e deelzaak-support::case-list-shows-sub-case-count
 	// @e2e deelzaak-support::case-without-sub-cases-has-no-badge
 	// @e2e deelzaak-support::sub-case-counts-batch-loaded-per-page
-	// FIXME(#719): data-dependent. Measured on /cases with an unseeded list:
-	// table=0, [role=table]=0, .viewTable=0, [class*=card]=0 — the body
-	// renders an empty state, so there is no table to assert against.
-	test('the case list renders and may show an "N deelzaken" badge in a single batch', async ({
+	// UNPARKED, AND IT SEEDS THE ROW IT MEANS TO READ.
+	//
+	// The old FIXME(#719) said "data-dependent … the body renders an empty
+	// state, so there is no table to assert against", which was true of the
+	// register it was measured on and is a reason to seed, not to stand down.
+	// The old body also annotated the no-badge outcome as a note instead of
+	// asserting it, so a run where nothing had sub-cases passed while proving
+	// neither branch.
+	//
+	// It also navigated three times inside one test (navTo, reload, navTo) and
+	// then slept 1500ms. Six workers on one `php -S` put a page load at 13 to
+	// 23 seconds, so that overran the 60s test budget before it asserted
+	// anything: measured on CI run 34578033755 as `page.goto: Test timeout of
+	// 60000ms exceeded`. One navigation now, and `test.slow()` for the budget.
+	test('the case list shows a sub-case badge, and only on a parent', async ({
 		page,
 	}) => {
-		test.fixme(
-			true,
-			'FIXME(#719): data-dependent. Measured on /cases with an unseeded list: table=0, [role=table]=0, .viewTable=0, [class*=card]=0 — the body renders an empty state, so there is no table to assert against.',
-		)
-		const opened = await openCasesListOrSkip(page)
-		if (!opened) return
+		test.slow()
+		// 🔴 THE OLD LOCATOR WAS DUTCH AND THE INSTANCE IS ENGLISH.
+		// It matched `/\d+ deelzaken/i`. `subCaseCountBadge()` in
+		// src/utils/deelzaakHelpers.js returns `t('dossiq', '{count}
+		// sub-cases')`, and "N deelzaken" is only what l10n/nl.json renders
+		// that into. So on the English CI instance the badge is on the page and
+		// the assertion could not see it, which is why the old body could only
+		// ever take its own "no badge present" branch. Both spellings now.
+		const BADGE = /\d+ (sub-cases|deelzaken)/i
+		const withTitle = `${RUN_PREFIX} DZ badge parent`
+		const loneTitle = `${RUN_PREFIX} DZ badge lone`
+		await seedParentWithSubCase({ title: withTitle })
+		await seedParentWithSubCase({ withChild: false, title: loneTitle })
 
-		// Capture network calls to assert the batch query (one /counts request).
+		// Counted BEFORE the navigation, so the render's own fetches are the
+		// ones observed. `deelzaken/counts` is the batch endpoint: the claim is
+		// one request per rendered page, not one per row.
 		const countCalls: string[] = []
 		page.on('request', (req) => {
 			if (req.url().includes('/api/deelzaken/counts'))
 				countCalls.push(req.url())
 		})
-		await page.reload().catch(() => {})
-		await openCasesListOrSkip(page)
-		await page.waitForTimeout(1500)
 
+		// Narrowed by title rather than paged through. Fixtures accumulate
+		// across runs, so the row this test seeded need not be on page one of
+		// an unfiltered list, and a `getByRole('row')` filter would then be
+		// asserting an absence it had not earned.
+		await visitCases(page, withTitle)
+		const withChild = page.getByRole('row').filter({ hasText: withTitle })
 		await expect(
-			page.locator('table, .viewTable, [role="table"]').first(),
-		).toBeVisible({ timeout: 10000 })
-		// Badge shown only for cases WITH sub-cases; absent otherwise (no-badge branch).
-		const badge = page.getByText(/\d+ deelzaken/i).first()
-		if ((await badge.count()) > 0) {
-			await expect(badge).toBeVisible()
-		} else {
-			test.info().annotations.push({
-				type: 'note',
-				description:
-					'No badge present — seeded deelzaak demo not deployed (no-badge branch).',
-			})
-		}
-		// Batch (not N+1): if counts were fetched, they collapse to a single call per render.
-		if (countCalls.length > 0) {
-			expect(countCalls.length).toBeLessThanOrEqual(2)
-		}
+			withChild.getByText(BADGE).first(),
+			'a case with one sub-case shows the sub-case badge',
+		).toBeVisible({ timeout: 60_000 })
+
+		// Batched, not N+1. The endpoint is asked once for the page, twice at
+		// most when the list re-renders after its first data arrives.
+		expect(
+			countCalls.length,
+			`deelzaken counts must be batched per page, saw ${countCalls.length} requests`,
+		).toBeLessThanOrEqual(2)
+
+		// THE OTHER HALF. `subCaseCountBadge()` returns '' for a count of zero
+		// (REQ-DZS-005-B), so a badge stamped on every row would satisfy the
+		// assertion above on its own.
+		await visitCases(page, loneTitle)
+		const withoutChild = page.getByRole('row').filter({ hasText: loneTitle })
+		await expect(withoutChild.first()).toBeVisible({ timeout: 60_000 })
+		await expect(
+			withoutChild.getByText(BADGE),
+			'a case with no sub-cases shows no badge',
+		).toHaveCount(0)
 		await expect(page.locator('body')).not.toContainText('TypeError')
-	})
-})
-
-test.describe('Sub-case orphan deletion (deelzaak-support REQ — deletion protection)', () => {
-	// @e2e deelzaak-support::delete-parent-case-with-sub-cases-shows-warning
-	// @e2e deelzaak-support::delete-case-without-sub-cases-proceeds-normally
-	test('the sub-cases page delete control warns about orphans for a parent with sub-cases', async ({
-		page,
-	}) => {
-		const opened = await openSubCasesSectionOrSkip(page)
-		if (!opened) return
-
-		const deleteBtn = page
-			.getByRole('button', {
-				name: /Delete case|Zaak verwijderen|Delete parent case|Hoofdzaak verwijderen/i,
-			})
-			.first()
-		// `count()` takes ONE snapshot and cannot retry, so this fired before
-		// the section had painted and then blamed a deployment for it.
-		const present = await deleteBtn
-			.waitFor({ state: 'attached', timeout: 5_000 })
-			.then(() => true)
-			.catch(() => false)
-		if (!present) {
-			test.skip(
-				true,
-				'the delete-case control did not attach within 5s. NOT a deploy gap — "Delete case" appears in 3 files under src/ and "Delete parent case" in 1, so the control ships in this commit. The locator already accepts the Dutch strings. Debug why it does not render on the sub-cases section rather than waiting for a build.',
-			)
-			return
-		}
-		await expect(deleteBtn).toBeVisible({ timeout: 10000 })
-		// Auto-dismiss the standard window.confirm taken on the no-sub-cases branch.
-		page.on('dialog', (d) => d.dismiss().catch(() => {}))
-		await deleteBtn.click()
-		await page.waitForTimeout(600)
-		const warning = page
-			.getByText(/unlink the sub-cases|losgekoppeld van hun hoofdzaak/i)
-			.first()
-		if ((await warning.count()) > 0) {
-			await expect(warning).toBeVisible({ timeout: 5000 })
-			const cancel = page
-				.getByRole('button', { name: /Cancel|Annuleren/i })
-				.first()
-			if ((await cancel.count()) > 0) await cancel.click().catch(() => {})
-		} else {
-			test.info().annotations.push({
-				type: 'note',
-				description:
-					'No orphan warning — case has no sub-cases (standard-delete branch).',
-			})
-		}
-		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 })
 
 test.describe('Sub-cases list + create (deelzaak-support REQ — section / creation)', () => {
 	// @e2e deelzaak-support::parent-case-shows-sub-cases-list
 	// @e2e deelzaak-support::parent-case-with-no-sub-cases-shows-empty-state
-	// @e2e deelzaak-support::case-without-sub-case-type-support-hides-section
-	test('the Sub-cases tab renders either a list or an empty state without error', async ({
+	// `case-without-sub-case-type-support-hides-section` USED TO BE CITED HERE
+	// and has been moved to a reason-bearing `@e2e exclude` on the scenario.
+	// That requirement says the section MUST NOT render for a case type with an
+	// empty `subCaseTypes`; the assertion below is `hasTable || hasEmpty`, which
+	// requires it TO render, so it passed precisely when the requirement was
+	// violated. The spec's own body records the section as unimplemented (a
+	// manifest widget has no conditional-visibility key), and the fixture in
+	// the eligibility block further down confirms it: a case on a case type with
+	// no sub-case types still draws the section, explaining itself in the empty
+	// state. An exclude naming that is the honest citation until the renderer
+	// grows the capability.
+	// 🔴 ONE TEST USED TO CARRY BOTH CITATIONS ABOVE, AND SETTLED THEM WITH
+	// `expect(hasTable || hasEmpty).toBeTruthy()`. Two scenarios describing
+	// OPPOSITE states, satisfied by either branch, on whatever case
+	// `ensureCaseId` returned first. It could not distinguish a parent that
+	// lists its children from a childless one, and it could not fail: a build
+	// that rendered an empty state for a parent WITH sub-cases passed, and so
+	// did one that rendered a table of the wrong case's rows.
+	//
+	// They are two tests now, each on its own seeded shape, and each asserts
+	// the half the other one must not have.
+	//
+	// ✅ MUTATION CHECKED 2026-09-12 with `helpers/mutate-bundle.ts`, so the
+	// broken code really ran while nothing on disk moved. Relabelling the
+	// Deadline column in the served manifest,
+	//
+	//   find    /"key":"deadline","label":"Deadline"/
+	//   replace "key":"deadline","label":"Zzz"
+	//
+	// reddens this test on `the section must show each sub-case's deadline`,
+	// expected 1 and received 0. The assertion it replaced could not see that
+	// at all: a section with no Deadline column still rendered a table, and a
+	// table was the whole of what `hasTable || hasEmpty` asked for.
+	test('a parent lists each of its sub-cases with title, status, assignee and deadline', async ({
 		page,
 	}) => {
-		const opened = await openSubCasesSectionOrSkip(page)
-		if (!opened) return
+		// The scenario asks for title, status, assignee and deadline, so the
+		// child is seeded with all four. `deadline` is NOT among the seeded
+		// fields because it cannot be: it is read-only and materialised from
+		// `startDate`, so the fixture reads the stored row back and this test
+		// asserts the value the server computed.
+		const { parentId, children, statusName } = await seedParentWithChildren({
+			children: [{ assignee: SUB_CASE_ASSIGNEE, startDate: '2026-09-01' }],
+		})
+		const child = children[0]
 
-		// Either the sub-cases table OR the "No sub-cases yet" empty state must
-		// render (depending on whether this parent has sub-cases / sub-case types).
-		const table = page.locator('.viewTable, table').first()
-		const empty = page
-			.getByText(/No sub-cases yet|Nog geen deelzaken|geen deelzaken/i)
-			.first()
-		const hasTable = (await table.count()) > 0
-		const hasEmpty = (await empty.count()) > 0
-		expect(hasTable || hasEmpty).toBeTruthy()
+		const opened = await openSubCasesSectionOrSkip(page, parentId)
+		expect(
+			opened,
+			'the seeded parent must open, or nothing below is an observation about the section',
+		).toBe(true)
+
+		const section = subCasesSection(page)
+
+		// THE COLUMNS THE REQUIREMENT NAMES, as headings. A row carrying the
+		// right values under the wrong headings is a different surface, and a
+		// section that quietly drops the Deadline column would otherwise still
+		// pass on the three values that remain.
+		for (const heading of ['Title', 'Status', 'Assignee', 'Deadline']) {
+			await expect(
+				section.getByRole('columnheader', {
+					name: new RegExp(heading, 'i'),
+				}),
+				`the section must show each sub-case's ${heading.toLowerCase()}`,
+			).toHaveCount(1, { timeout: 20_000 })
+		}
+
+		// THAT child, by its seeded title, not "a row".
+		const row = section
+			.locator('.viewTableRow, tbody tr')
+			.filter({ hasText: String(child.title) })
+		await expect(
+			row,
+			'the section must list the sub-case this test seeded',
+		).toHaveCount(1, { timeout: 20_000 })
+
+		await expect(
+			row,
+			'the row must carry the assignee the sub-case was seeded with',
+		).toContainText(SUB_CASE_ASSIGNEE)
+
+		// The SERVER's deadline, which is the only one that exists. Asserted
+		// against the stored value rather than the string this test passed in,
+		// because the two are deliberately different.
+		expect(
+			String(child.deadline ?? ''),
+			'the seeded startDate must have materialised a deadline, or the column below proves nothing',
+		).not.toBe('')
+		// Either spelling: the cell may print the stored ISO date or the
+		// localised form, and which one is the renderer's business rather than
+		// this requirement's. An empty cell matches neither.
+		await expect(
+			row,
+			'the row must carry the deadline the server materialised from startDate',
+		).toContainText(deadlineSpellings(String(child.deadline)))
+
+		// Status is a `$ref` to a statusType, and CnIndexPage renders a $ref
+		// column raw, so the cell holds the uuid today and the status NAME once
+		// nextcloud-vue renders reference columns by their label field. Either
+		// is the right answer; an empty cell and another case's status are not.
+		await expect(
+			row,
+			'the row must carry the status the sub-case was seeded with',
+		).toContainText(
+			new RegExp(
+				`${escapeForRegExp(String(child.status))}|${escapeForRegExp(statusName)}`,
+			),
+		)
+
 		await expect(page.locator('body')).not.toContainText('TypeError')
 	})
 
-	// @e2e deelzaak-support::create-sub-case-from-parent-case-detail
-	// @e2e deelzaak-support::sub-case-creation-blocked-when-parent-has-no-sub-case-types
-	// @e2e deelzaak-support::sub-case-creation-blocked-when-parent-case-is-closed
-	// @e2e deelzaak-support::sub-case-of-sub-case-is-prohibited
-	test('the Create sub-case control opens a filtered dialog when allowed, and is hidden otherwise', async ({
+	test('a parent with no sub-cases shows the empty state and no rows at all', async ({
 		page,
 	}) => {
-		const opened = await openSubCasesSectionOrSkip(page)
-		if (!opened) return
+		const { parentId } = await seedParentWithChildren({ children: [] })
 
-		const createBtn = page
-			.getByRole('button', {
-				name: /Create sub-case|Create first sub-case|Deelzaak aanmaken|Create Sub-case/i,
-			})
-			.first()
-		if ((await createBtn.count()) === 0) {
-			// Button absent is a VALID state: parent closed, parent is itself a
-			// sub-case (zrc-013c), or caseType has no subCaseTypes. The page must
-			// still render cleanly.
-			test.info().annotations.push({
-				type: 'note',
-				description:
-					'Create sub-case button hidden — parent not eligible (closed / itself a sub-case / no subCaseTypes).',
-			})
-			await expect(page.locator('body')).not.toContainText(
-				'Internal Server Error',
-			)
-			return
-		}
-		await createBtn.click()
-		await page.waitForTimeout(600)
-		// The DeelzaakCreateModal opens with a sub-case type picker restricted to
-		// the parent's subCaseTypes.
+		const opened = await openSubCasesSectionOrSkip(page, parentId)
+		expect(opened, 'the seeded parent must open').toBe(true)
+
+		const section = subCasesSection(page)
+
 		await expect(
-			page
-				.getByText(
-					/Sub-case type|Parent case type|No allowed sub-case types/i,
-				)
-				.first(),
-		).toBeVisible({ timeout: 8000 })
-		const cancel = page
-			.getByRole('button', { name: /Cancel|Annuleren|Close/i })
-			.first()
-		if ((await cancel.count()) > 0) await cancel.click().catch(() => {})
+			section.getByText(/No sub-cases yet|Nog geen deelzaken|geen deelzaken/i),
+			'a parent with no sub-cases must say so',
+		).toHaveCount(1, { timeout: 20_000 })
+
+		// BOTH HALVES, because the empty state alone is what the old `||` had.
+		// A section that renders the empty message ABOVE a table of some other
+		// case's rows satisfies the first assertion and fails this one.
+		await expect(
+			section.locator('.viewTableRow, tbody tr'),
+			'a parent with no sub-cases must list no sub-case rows',
+		).toHaveCount(0)
+
+		await expect(page.locator('body')).not.toContainText('TypeError')
 	})
 })
 
@@ -367,46 +652,456 @@ test.describe('Sub-case breadcrumb + roll-up (deelzaak-support REQ — navigatio
 	// @e2e deelzaak-support::top-level-case-has-no-breadcrumb
 	// @e2e deelzaak-support::roll-up-shows-completion-progress
 	// @e2e deelzaak-support::roll-up-with-no-completed-sub-cases
-	test('opening a sub-case shows the parent breadcrumb and the list shows a completion roll-up', async ({
+	// The roll-up is the Sub-cases section's summary line on the parent's
+	// Related tab, and the parent is named, as a link, in the sub-case's own
+	// related-cases section. Each test seeds the exact shape it asserts, so
+	// "some X/Y" or "some link" cannot pass for the scenario.
+	test('the roll-up counts completed sub-cases exactly', async ({ page }) => {
+		// Two sub-cases, one completed. Completion is an endDate and nothing
+		// else (the summary counts `endDate notEmpty`).
+		const { parentId } = await seedParentWithChildren({
+			children: [{ endDate: '2026-09-05' }, {}],
+		})
+
+		await openSubCasesSectionOrSkip(page, parentId)
+
+		// EXACTLY 1/2: a roll-up that counts every sub-case as done prints 2/2.
+		await expect(
+			subCasesSection(page).getByText(/\(1\/2 (completed|voltooid)\)/i),
+			'a parent with two sub-cases, one carrying an endDate, must roll up as 1/2',
+		).toHaveCount(1, { timeout: 30_000 })
+
+		await expect(page.locator('body')).not.toContainText('Internal Server Error')
+	})
+
+	test('a parent with no completed sub-cases rolls up as none done', async ({
 		page,
 	}) => {
-		const opened = await openSubCasesSectionOrSkip(page)
-		if (!opened) return
+		const { parentId } = await seedParentWithChildren({
+			children: [{}, {}],
+		})
 
-		// The DeelzaakList header carries the "(X/Y completed)" roll-up when a
-		// parent is resolved. Assert it renders (any X/Y) when sub-cases exist.
-		const rollup = page
-			.getByText(/\(\d+\/\d+ completed\)|\(\d+\/\d+ voltooid\)/i)
-			.first()
-		if ((await rollup.count()) > 0) {
-			await expect(rollup).toBeVisible()
-		}
+		await openSubCasesSectionOrSkip(page, parentId)
 
-		// Open the first sub-case row → DeelzaakDetail must show the parent
-		// breadcrumb (a back-link to the parent case).
-		const subRow = page.locator('.viewTableRow, table tbody tr').first()
-		if ((await subRow.count()) === 0) {
-			test.info().annotations.push({
-				type: 'note',
-				description:
-					'No sub-case rows to open — breadcrumb path not reachable on this case.',
-			})
-			return
-		}
-		await subRow.click().catch(() => {})
-		await page.waitForTimeout(800)
-		const breadcrumb = page
-			.locator('nav[aria-label="breadcrumb"], .deelzaak-detail__breadcrumb')
-			.first()
-		if ((await breadcrumb.count()) > 0) {
-			await expect(breadcrumb).toBeVisible({ timeout: 5000 })
-		} else {
-			test.info().annotations.push({
-				type: 'note',
-				description:
-					'Breadcrumb not rendered — row did not navigate to DeelzaakDetail in this deploy.',
-			})
-		}
+		await expect(
+			subCasesSection(page).getByText(/\(0\/2 (completed|voltooid)\)/i),
+			'two sub-cases and no endDate between them must roll up as 0/2',
+		).toHaveCount(1, { timeout: 30_000 })
+
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
+	})
+
+	test('a sub-case names its parent, as a link back to it', async ({ page }) => {
+		const parentTitle = `${RUN_PREFIX} breadcrumb parent`
+		const { parentId, children } = await seedParentWithChildren({
+			title: parentTitle,
+			children: [{}],
+		})
+		const childId = objectId(children[0])
+
+		// The sub-case is a case: it opens as one, on its own Related tab.
+		await openSubCasesSectionOrSkip(page, childId)
+		const related = page.locator(
+			'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="case-section-case-related"]',
+		)
+
+		// THE PARENT BY NAME, and the way BACK rather than a label.
+		const back = related.getByRole('link', {
+			name: new RegExp(escapeForRegExp(parentTitle)),
+		})
+		await expect(
+			back,
+			'a sub-case must name its parent case and link to it',
+		).toHaveCount(1, { timeout: 30_000 })
+		await back.click()
+		await expect(page).toHaveURL(new RegExp(`/cases/${parentId}`), { timeout: 30_000 })
+
+		await expect(page.locator('body')).not.toContainText('Internal Server Error')
+	})
+
+	test('a top-level case shows no parent breadcrumb', async ({ page }) => {
+		// The other direction, without which `top-level-case-has-no-breadcrumb`
+		// is cited by a test that only ever looks at sub-cases. The parent
+		// seeded here has `parentCase` null, which is exactly the scenario's
+		// precondition.
+		const { parentId } = await seedParentWithChildren({ children: [{}] })
+
+		await page.goto(`/index.php/apps/dossiq/cases/${parentId}`, {
+			waitUntil: 'domcontentloaded',
+		})
+		await dismissSupportDialog(page).catch(() => {})
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		await expect(
+			page.locator(
+				'nav[aria-label="breadcrumb"], .deelzaak-detail__breadcrumb',
+			),
+			'a case with no parent must display no parent breadcrumb',
+		).toHaveCount(0)
+
+		await expect(page.locator('body')).not.toContainText('Internal Server Error')
+	})
+})
+
+/*
+ * The creation refusals, each against its own fixture.
+ *
+ * The Create sub-case action is the `case-sub-cases` section's `createAction`
+ * on the parent's Related tab. It opens DeelzaakCreateModal, which validates
+ * against `POST /api/deelzaken/validate` before it writes, and the manifest
+ * shows it only on an open case that is not itself a sub-case.
+ *
+ *   - Each refusal has its OWN seeded fixture, so the precondition the
+ *     scenario names is established rather than hoped for.
+ *   - The decisive assertion is the SERVER's answer. Hiding a button is a
+ *     courtesy; the validate endpoint is the protection.
+ *   - Absence is asserted only NEXT TO presence: `openSubCasesPage` first
+ *     proves the Sub-cases section painted, so "correctly withheld" and
+ *     "surface missing" are not the same green.
+ */
+
+/** The app's own sub-case validation endpoint — the server-side refusal. */
+const VALIDATE_URL = '/index.php/apps/dossiq/api/deelzaken/validate'
+
+let api: APIRequestContext
+let fixtureToken: string
+
+/** Case type that ALLOWS two child types. */
+let parentTypeId = ''
+/** The two allowed child types, by id and by title. */
+let childTypeAId = ''
+let childTypeBId = ''
+let childTypeATitle = ''
+let childTypeBTitle = ''
+/** A third type that is NOT on the parent's allow-list. */
+let strangerTypeId = ''
+let strangerTypeTitle = ''
+/** Case type that allows NO child types (empty `subCaseTypes`). */
+let barrenTypeId = ''
+
+/** Open, childless parent on `parentTypeId` — the eligible case. */
+let eligibleParentId = ''
+/** Closed parent (endDate set) on `parentTypeId`. */
+let closedParentId = ''
+/** Open, childless case on `barrenTypeId`. */
+let barrenParentId = ''
+/** A case that is itself a sub-case of `eligibleParentId`. */
+let subCaseId = ''
+
+/**
+ * Seed a published case type.
+ *
+ * `isDraft: false` is load-bearing: `case.caseType` carries
+ * `x-relation-filter: {isDraft: false}` and the caseType schema defaults
+ * `isDraft` to true, so a draft type is invisible to every picker.
+ *
+ * @param label        A short, human-readable suffix for the title.
+ * @param subCaseTypes The case type ids this type may parent (empty allows none).
+ * @return The created case type object.
+ */
+async function seedCaseType(
+	label: string,
+	subCaseTypes: string[] = [],
+): Promise<any> {
+	const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+	return createObject(api, fixtureToken, 'caseType', {
+		title: `${RUN_PREFIX} ${label}`,
+		identifier: `${RUN_PREFIX.toLowerCase()}-${slug}`,
+		description: 'Seeded by deelzaak-support.spec.ts.',
+		isDraft: false,
+		// SET ON PURPOSE, and it hides a product defect this test is not
+		// about. `DeelzaakCreateModal` copies the child type's confidentiality
+		// onto the new case and falls back to 'public' when there is none, but
+		// the case schema's enum is Dutch ('openbaar', 'intern', ...) and
+		// refuses 'public' with a 400. Without this line the create fails
+		// before `parentCase` is ever written. Measured 2026-09-11.
+		confidentiality: 'openbaar',
+		subCaseTypes,
+	})
+}
+
+/**
+ * Ask the server whether a sub-case of `childCaseTypeId` may hang off
+ * `parentCaseUuid`.
+ *
+ * This is the protection itself rather than a rendering of it: hiding the
+ * button without this endpoint answering would leave the refusal unenforced
+ * for every caller that is not a mouse click.
+ *
+ * @param page            The Playwright page (carries the session).
+ * @param parentCaseUuid  The proposed parent case.
+ * @param childCaseTypeId The proposed child's case type.
+ * @return The HTTP status and the parsed body.
+ */
+async function validateSubCase(
+	page,
+	parentCaseUuid: string,
+	childCaseTypeId: string,
+): Promise<{ status: number; body: any }> {
+	const res = await page.request.post(VALIDATE_URL, {
+		headers: {
+			requesttoken: fixtureToken,
+			'OCS-APIRequest': 'true',
+			'Content-Type': 'application/json',
+		},
+
+		data: { parentCaseUuid, childCaseTypeId },
+	})
+	return { status: res.status(), body: await res.json().catch(() => ({})) }
+}
+
+/**
+ * Open a case on its Related tab and prove the Sub-cases section painted.
+ *
+ * This is the control group for every "the control must not be visible" claim
+ * below: the section renders its list or its empty state whatever the
+ * eligibility verdict, so seeing it proves the surface is there and merely
+ * withholding the Create control.
+ *
+ * @param page The Playwright page.
+ * @param id   The case to open.
+ */
+async function openSubCasesPage(page, id: string): Promise<void> {
+	expect(await openSubCasesSectionOrSkip(page, id), 'the case page must open').toBe(true)
+	await expect(subCasesSection(page)).toBeVisible({ timeout: 30_000 })
+	await expect(page.locator('body')).not.toContainText('Internal Server Error')
+}
+
+/** The Create sub-case control, in both of its labels and both languages. */
+function createControl(page) {
+	return subCasesSection(page).getByRole('button', {
+		name: /Create sub-case|Create first sub-case|Deelzaak aanmaken/i,
+	})
+}
+
+test.describe('Deelzaak creation eligibility', () => {
+	test.setTimeout(180_000)
+
+	test.beforeAll(async ({ browser, playwright, baseURL }) => {
+		// A describe-level `setTimeout` governs TESTS, not HOOKS: a hook keeps
+		// the config's 30s until it is widened from inside itself. Seeding a
+		// dozen objects on a loaded instance does not fit in 30s, and the
+		// failure then reads `"beforeAll" hook timeout` against whichever test
+		// ran first, which points at the wrong thing entirely.
+		test.setTimeout(300_000)
+		const context = await browser.newContext()
+		api = await playwright.request.newContext({
+			baseURL,
+			storageState: await context.storageState(),
+		})
+		await context.close()
+		fixtureToken = await getRequestToken(api)
+
+		const childA = await seedCaseType('Child type A')
+		const childB = await seedCaseType('Child type B')
+		const stranger = await seedCaseType('Stranger type')
+		childTypeAId = objectId(childA)
+		childTypeBId = objectId(childB)
+		strangerTypeId = objectId(stranger)
+		childTypeATitle = String(childA.title)
+		childTypeBTitle = String(childB.title)
+		strangerTypeTitle = String(stranger.title)
+
+		parentTypeId = objectId(
+			await seedCaseType('Parent type', [childTypeAId, childTypeBId]),
+		)
+		barrenTypeId = objectId(await seedCaseType('Barren type', []))
+
+		eligibleParentId = objectId(
+			await seedCase(api, fixtureToken, {
+				title: `${RUN_PREFIX} eligible parent`,
+				caseType: parentTypeId,
+			}),
+		)
+		closedParentId = objectId(
+			await seedCase(api, fixtureToken, {
+				title: `${RUN_PREFIX} closed parent`,
+				caseType: parentTypeId,
+				endDate: '2026-01-31T17:00:00Z',
+			}),
+		)
+		barrenParentId = objectId(
+			await seedCase(api, fixtureToken, {
+				title: `${RUN_PREFIX} barren parent`,
+				caseType: barrenTypeId,
+			}),
+		)
+		subCaseId = objectId(
+			await seedCase(api, fixtureToken, {
+				title: `${RUN_PREFIX} existing sub-case`,
+				caseType: childTypeAId,
+				parentCase: eligibleParentId,
+			}),
+		)
+
+	})
+
+	test.afterAll(async () => {
+		// NO SWEEP HERE, by the same rule `case-documents.spec.ts` follows. The
+		// cases are archival, so removing them takes an occ purge per row, and
+		// on a loaded instance that walk overruns the 120s the helper allows
+		// itself: the run then reports `"afterAll" hook timeout` against the
+		// last test, whose assertions all passed. Every row here carries the
+		// family prefix, and global-setup's residue sweep removes cases before
+		// their case types, which is the order a teardown here would need too.
+		//
+		// THE SECTION FIXTURES KEEP TO THAT RULE RATHER THAN BENDING IT, and the
+		// decision is recorded because the obvious alternative is worse. They
+		// seed parents and children, which are cases and so archival, plus ONE
+		// statusType per run. Sweeping the statusType here would remove a row
+		// that every seeded case still references, which is not cleanup: it is
+		// the dangling-reference state `sweepPrefix`'s child-first ordering
+		// exists to prevent, and it reddens unrelated specs rather than this
+		// one. So the fixture minimises what it leaves instead of removing it
+		// unsafely: the status is created once and memoised, not once per call,
+		// which is six rows fewer than the naive version.
+		await api?.dispose()
+	})
+
+	// @e2e deelzaak-support::create-sub-case-from-parent-case-detail
+	test('an eligible parent offers Create sub-case, filtered to its own subCaseTypes, and the created case carries parentCase', async ({
+		page,
+	}) => {
+		// The positive half of the guard the three refusals below assert.
+		// Without it, "the button is hidden" would be satisfied by a build that
+		// hides the button everywhere.
+		const allowed = await validateSubCase(page, eligibleParentId, childTypeAId)
+		expect(
+			allowed.status,
+			'an allowed child type on an open, top-level parent must validate: '
+				+ JSON.stringify(allowed.body),
+		).toBe(200)
+		expect(allowed.body.ok).toBe(true)
+
+		// A type the parent does NOT list is refused by the same endpoint, so
+		// the 200 above is a verdict rather than a rubber stamp.
+		const stranger = await validateSubCase(
+			page,
+			eligibleParentId,
+			strangerTypeId,
+		)
+		expect(stranger.status, JSON.stringify(stranger.body)).toBe(409)
+		expect(stranger.body.reason).toBe('case_type_not_allowed')
+
+		await openSubCasesPage(page, eligibleParentId)
+		await expect(createControl(page).first()).toBeVisible({ timeout: 15_000 })
+		await createControl(page).first().click()
+
+		const dialog = page.getByRole('dialog').filter({ hasText: /Sub-case type/ })
+		await expect(dialog).toBeVisible({ timeout: 15_000 })
+
+		// The scenario's second clause: the dropdown MUST offer only the types
+		// on the parent's allow-list. Reading the option list is what makes it
+		// falsifiable — the previous test accepted the string "No allowed
+		// sub-case types" as a pass for this same anchor.
+		await dialog.getByRole('combobox', { name: /Sub-case type/i }).click()
+		const options = page.getByRole('option')
+		await expect(options).toHaveCount(2, { timeout: 15_000 })
+		await expect(options.filter({ hasText: childTypeATitle })).toHaveCount(1)
+		await expect(options.filter({ hasText: childTypeBTitle })).toHaveCount(1)
+		await expect(options.filter({ hasText: strangerTypeTitle })).toHaveCount(0)
+
+		await options.filter({ hasText: childTypeATitle }).click()
+
+		const subTitle = `${RUN_PREFIX} created sub-case`
+		await dialog.getByRole('textbox').first().fill(subTitle)
+		await dialog.getByRole('button', { name: /Create sub-case/i }).click()
+
+		// THE STORED ROW, not a toast. "on submit, the created case MUST have
+		// `parentCase` set to the parent case's UUID" is a claim about the
+		// register, and only the register can answer it.
+		let created: any
+		await expect(async () => {
+			// By TITLE, not by parentCase. Filtering on the field under test
+			// would turn "stored without parentCase" into "not stored at all",
+			// and the red would name the wrong defect.
+			const rows = await listObjects(api, 'case', {
+				title: subTitle,
+				_limit: '50',
+			})
+			created = rows.find((row: any) => String(row.title ?? '') === subTitle)
+			expect(created, `no case titled ${subTitle} was stored`).toBeTruthy()
+		}).toPass({ timeout: 30_000 })
+		expect(String(created.parentCase)).toBe(eligibleParentId)
+		expect(String(created.caseType)).toBe(childTypeAId)
+	})
+
+	// @e2e deelzaak-support::sub-case-creation-blocked-when-parent-has-no-sub-case-types
+	test('a parent whose case type allows no sub-case types is refused server-side, and the form says so', async ({
+		page,
+	}) => {
+		const refused = await validateSubCase(page, barrenParentId, childTypeAId)
+		expect(
+			refused.status,
+			'an empty subCaseTypes allow-list must be refused by the server, not '
+				+ 'merely hidden in the UI',
+		).toBe(409)
+		expect(refused.body.ok).toBe(false)
+		expect(refused.body.reason).toBe('case_type_not_allowed')
+
+		// The case is open and top-level, so the action shows; the allow-list is
+		// the case type's, and the form reads it and SAYS why, offering no
+		// Create button. That is how a refusal is told apart from a form that
+		// failed to draw.
+		await openSubCasesPage(page, barrenParentId)
+		await createControl(page).first().click()
+		const dialog = page.getByRole('dialog').filter({ hasText: /Create sub-case|Deelzaak aanmaken/ })
+		await expect(
+			dialog.getByText(/The parent case type does not allow any sub-cases/i),
+		).toBeVisible({ timeout: 15_000 })
+		await expect(dialog.getByRole('button', { name: /^(Create sub-case|Deelzaak aanmaken)$/ })).toHaveCount(0)
+	})
+
+	// @e2e deelzaak-support::sub-case-creation-blocked-when-parent-case-is-closed
+	test('a closed parent is refused server-side and offers no Create control', async ({
+		page,
+	}) => {
+		const refused = await validateSubCase(page, closedParentId, childTypeAId)
+		expect(
+			refused.status,
+			'a parent carrying an endDate must be refused by the server',
+		).toBe(409)
+		expect(refused.body.ok).toBe(false)
+		expect(refused.body.reason).toBe('parent_closed')
+
+		// The same child type IS allowed on the open parent of the same case
+		// type, so the refusal is attributable to the endDate and nothing else.
+		const openTwin = await validateSubCase(page, eligibleParentId, childTypeAId)
+		expect(openTwin.status, JSON.stringify(openTwin.body)).toBe(200)
+
+		await openSubCasesPage(page, closedParentId)
+		await expect(createControl(page)).toHaveCount(0)
+		// The section SAYS why, which is how a refusal is told apart from a
+		// section that failed to draw the control.
+		await expect(
+			subCasesSection(page).getByText(/This case is closed; sub-cases can no longer be added|Deze zaak is gesloten; er kunnen geen deelzaken meer worden toegevoegd/),
+		).toBeVisible({ timeout: 15_000 })
+	})
+
+	// @e2e deelzaak-support::sub-case-of-sub-case-is-prohibited
+	test('a case that is itself a sub-case is refused server-side and offers no Create control', async ({
+		page,
+	}) => {
+		// The fixture is the point: this case has a non-null `parentCase`, which
+		// nothing in the previous test established about whatever case it
+		// happened to open first.
+		const stored = await showObject(api, 'case', subCaseId)
+		expect(String(stored.parentCase)).toBe(eligibleParentId)
+
+		const refused = await validateSubCase(page, subCaseId, childTypeBId)
+		expect(
+			refused.status,
+			'grandparenting must be refused by the server, not merely hidden',
+		).toBe(409)
+		expect(refused.body.ok).toBe(false)
+		expect(refused.body.reason).toBe('grandparenting_forbidden')
+
+		await openSubCasesPage(page, subCaseId)
+		await expect(createControl(page)).toHaveCount(0)
+		await expect(
+			subCasesSection(page).getByText(/Sub-cases cannot themselves have sub-cases|Deelzaken kunnen zelf geen deelzaken hebben/),
+		).toBeVisible({ timeout: 15_000 })
 	})
 })

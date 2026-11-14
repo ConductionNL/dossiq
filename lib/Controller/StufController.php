@@ -7,15 +7,25 @@
  *   - INBOUND server reception: raw XML POST at /api/stuf/{zaken,personen},
  *     parses SOAP envelopes, dispatches per message type (zakLk01/zakLv01/
  *     npsLv01/edcLk01) and returns SOAP XML responses (Bv01/La01/Fo01).
- *   - OUTBOUND gateway (admin REST): vrijBericht send, endpoint listing with
- *     health, audit-log query — JSON. Plus an async confirmation receiver
- *     (`inbound`) that matches a Bv01 crossRefnummer back to the outbound
- *     StufMessage row and transitions it to "bevestigd".
+ *   - OUTBOUND (admin REST): vrijBericht send, endpoint listing, audit-log
+ *     query — JSON. Since decision 193 integriq sends the message: the
+ *     endpoint names an integriq StUF-ZKN source in `integriqSource`, and
+ *     {@see \OCA\Dossiq\Service\Stuf\StufIntegriqBridge} asks integriq's
+ *     ZDS case client for it.
+ *   - The async confirmation URL (`/api/stuf/inbound`, `/api/stuf/inkomend`)
+ *     is a wire contract in the zaaksysteem's configuration, so for one
+ *     release it forwards the raw envelope to integriq, which authenticates
+ *     and records it. Point the zaaksysteem at integriq's
+ *     `/api/stuf-zkn/confirmations` before the next release removes it.
  *
- * The controller owns only the HTTP surface. Envelope parsing and per-message
- * dispatch live in {@see \OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher};
- * the raw-envelope reads the async webhook needs live in
- * {@see \OCA\Dossiq\Service\Stuf\StufEnvelopeInspector}.
+ *   - The provider URLs (`/api/stuf/cases`, `/persons`, `/zaken`, `/personen`)
+ *     forward the raw envelope to integriq for one release too (decision 199).
+ *     Integriq authenticates it, asks dossiq through a typed event
+ *     ({@see \OCA\Dossiq\Listener\StufProviderQueryListener}) and answers in
+ *     StUF. Point the zaaksysteem at integriq's
+ *     `/api/stuf-zkn/provider/{sourceId}/cases` and `/persons`.
+ *
+ * The controller owns only the HTTP surface.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller
@@ -39,12 +49,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Stuf\CircuitOpenException;
-use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\IntegrationStatusServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StufIntegriqBridgeInterface;
+use OCA\Dossiq\Kernel\Contracts\StufRegisterAccessInterface;
 use OCA\Dossiq\Service\Stuf\StufException;
-use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
-use OCA\Dossiq\Service\Stuf\StufServices;
-use OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -53,7 +62,6 @@ use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\DataDisplayResponse;
-use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
@@ -66,30 +74,49 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class StufController extends Controller {
+
+	/**
+	 * The case service (zakLv01, zakLk01, edcLk01): integriq's name for it.
+	 *
+	 * @var string
+	 */
+	public const SERVICE_CASES = 'cases';
+
+	/**
+	 * The person service (npsLv01).
+	 *
+	 * @var string
+	 */
+	public const SERVICE_PERSONS = 'persons';
+
+	/**
+	 * Finds the sending application in an envelope's stuurgegevens, whatever the prefix.
+	 *
+	 * @var string
+	 */
+	private const ZENDER_APPLICATION = '#<(?:\w+:)?zender>.*?<(?:\w+:)?applicatie>([^<]+)</(?:\w+:)?applicatie>.*?</(?:\w+:)?zender>#s';
 	/**
 	 * Constructor.
 	 *
-	 * @param string $appName The app name.
 	 * @param IRequest $request The request object.
-	 * @param StufServices $stuf The bundled StUF collaborators.
-	 * @param StufSoapRequestDispatcher $dispatcher The inbound SOAP dispatcher.
-	 * @param StufEnvelopeInspector $inspector The raw-envelope inspector.
+	 * @param StufRegisterAccessInterface $register The StUF endpoint and message rows.
+	 * @param StufIntegriqBridgeInterface $bridge Asks integriq to send and to record confirmations.
 	 * @param IL10N $l10n The localization service.
 	 * @param LoggerInterface $logger The logger.
+	 * @param IntegrationStatusServiceInterface $integrationStatus Records the StUF card's health.
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
-		private readonly StufServices $stuf,
-		private readonly StufSoapRequestDispatcher $dispatcher,
-		private readonly StufEnvelopeInspector $inspector,
+		private readonly StufRegisterAccessInterface $register,
+		private readonly StufIntegriqBridgeInterface $bridge,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
+		private readonly IntegrationStatusServiceInterface $integrationStatus,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -101,18 +128,13 @@ class StufController extends Controller {
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 300, period: 60)]
 	public function cases(): DataDisplayResponse {
-		return $this->dispatcher->dispatch(
-			rawBody: $this->readRawBody(),
-			service: StufSoapRequestDispatcher::SERVICE_CASES
-		);
+		return $this->forwardProviderRequest(service: self::SERVICE_CASES);
 
 	}//end cases()
 
@@ -129,9 +151,7 @@ class StufController extends Controller {
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for cases(); behaviour covered by the cases() tests.
 	 */
@@ -147,18 +167,13 @@ class StufController extends Controller {
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 300, period: 60)]
 	public function persons(): DataDisplayResponse {
-		return $this->dispatcher->dispatch(
-			rawBody: $this->readRawBody(),
-			service: StufSoapRequestDispatcher::SERVICE_PERSONS
-		);
+		return $this->forwardProviderRequest(service: self::SERVICE_PERSONS);
 
 	}//end persons()
 
@@ -170,9 +185,7 @@ class StufController extends Controller {
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for persons(); behaviour covered by the persons() tests.
 	 */
@@ -184,9 +197,12 @@ class StufController extends Controller {
 	}//end personsLegacyPath()
 
 	/**
-	 * Send a vrijBericht to the named endpoint (outbound).
+	 * Send a vrijBericht to the named endpoint (outbound), through integriq.
 	 *
 	 * Admin-only via #[AuthorizedAdminSetting]. Body: { endpointId, berichtNaam, payload }.
+	 * Integriq sends it on the endpoint's `integriqSource` and answers with its
+	 * result; an endpoint without one, or integriq refusing, is a 400, and
+	 * integriq not answering is a 503.
 	 *
 	 * @return JSONResponse
 	 *
@@ -204,91 +220,86 @@ class StufController extends Controller {
 			return new JSONResponse(['error' => $this->l10n->t('endpointId and berichtNaam are required')], Http::STATUS_BAD_REQUEST);
 		}
 
-		$endpoint = $this->stuf->register->findById(
-			schema: StufRegisterAccess::SCHEMA_ENDPOINT,
-			id: $endpointId
-		);
+		$endpoint = $this->register->findById(schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT, id: $endpointId);
 		if ($endpoint === null) {
 			return new JSONResponse(['error' => $this->l10n->t('Endpoint not found')], Http::STATUS_NOT_FOUND);
 		}
 
-		try {
-			$result = $this->stuf->adapter->vrijBericht(name: $messageName, payload: $payload, endpoint: $endpoint);
-			return new JSONResponse($result);
-		} catch (CircuitOpenException $e) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('Circuit breaker open for this endpoint'), 'errorCode' => 'CIRCUIT_OPEN'],
-				Http::STATUS_SERVICE_UNAVAILABLE
-			);
-		} catch (StufException $e) {
-			return new JSONResponse(
-				['error' => $e->getMessage(), 'errorCode' => 'STUF_VALIDATION'],
-				Http::STATUS_BAD_REQUEST
-			);
-		} catch (\Throwable $e) {
-			$this->logger->error(message: 'StUF outbound failed: {error}', context: ['error' => $e->getMessage()]);
-			return new JSONResponse(['error' => $this->l10n->t('Internal error')], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}//end try
+		return $this->sendOutbound(endpoint: $endpoint, messageName: $messageName, payload: $payload);
 	}//end outbound()
 
 	/**
-	 * Receive an inbound async confirmation/notification from the zaaksysteem.
+	 * Send a vrij bericht through Integriq and answer its result, or the failure.
 	 *
-	 * Public (no user session) but authenticates the caller via WSSE
-	 * UsernameToken matched against the StufEndpoint vault reference.
-	 * Persists the inbound envelope as a StufMessage row and, when the
-	 * envelope is a Bv01 bevestiging, transitions the matching outbound row
-	 * from "verzonden" → "bevestigd".
+	 * @param array $endpoint The StUF endpoint.
+	 * @param string $messageName The bericht name.
+	 * @param array $payload The bericht payload.
 	 *
-	 * @return DataResponse
+	 * @return JSONResponse
+	 */
+	private function sendOutbound(array $endpoint, string $messageName, array $payload): JSONResponse {
+		try {
+			return new JSONResponse($this->bridge->vrijBericht(endpoint: $endpoint, name: $messageName, payload: $payload));
+		} catch (StufException $e) {
+			return $this->outboundFailure(e: $e);
+		}
+	}//end sendOutbound()
+
+	/**
+	 * Answer a failed outbound message: 503 when Integriq is unavailable, else 400.
 	 *
-	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-async-confirmation
+	 * @param StufException $e The failure.
 	 *
-	 * @contract exclude WSSE SOAP webhook needs a signed XML body + seeded endpoint/vault; covered by PHPUnit + env-gated live-e2e/Newman.
+	 * @return JSONResponse
+	 */
+	private function outboundFailure(StufException $e): JSONResponse {
+		$status = Http::STATUS_BAD_REQUEST;
+		$code   = 'STUF_VALIDATION';
+		if ($e->getCode() === Http::STATUS_SERVICE_UNAVAILABLE) {
+			$status = Http::STATUS_SERVICE_UNAVAILABLE;
+			$code   = 'INTEGRIQ_UNAVAILABLE';
+		}
+
+		return new JSONResponse(['error' => $e->getMessage(), 'errorCode' => $code], $status);
+	}//end outboundFailure()
+
+	/**
+	 * Receive an async confirmation from the zaaksysteem and hand it to integriq.
+	 *
+	 * Public (no user session): integriq authenticates the caller with the
+	 * WS-Security UsernameToken of the integriq source the confirmed message
+	 * went out on, records it, and answers with a Bv03 or Fo03. Dossiq only
+	 * forwards the raw bytes, for one release, because this URL is a wire
+	 * contract; with integriq unavailable the answer is 503 so the zaaksysteem
+	 * retries.
+	 *
+	 * @return DataDisplayResponse Integriq's Bv03/Fo03 with its status, or 503.
+	 *
+	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-confirmations-on-the-old-url-reach-integriq
+	 *
+	 * @contract exclude Forwards a WSSE SOAP webhook to integriq in process; covered by StufControllerInboundTest and integriq's receiver tests.
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 300, period: 60)]
-	public function inbound(): DataResponse {
-		$rawXml = $this->readRawBody();
-		if ($rawXml === '') {
-			return new DataResponse(data: 'empty body', statusCode: Http::STATUS_BAD_REQUEST);
+	public function inbound(): DataDisplayResponse {
+		$answer = $this->bridge->forwardConfirmation(rawXml: $this->readRawBody());
+		if ($answer === null) {
+			$this->logger->warning(message: 'StUF inbound: integriq did not answer; the zaaksysteem is told to retry');
+			return new DataDisplayResponse('integriq unavailable', Http::STATUS_SERVICE_UNAVAILABLE, ['Content-Type' => 'text/plain; charset=utf-8']);
 		}
 
-		$endpoint = $this->inspector->resolveEndpoint(
-			envelopeXml: $rawXml,
-			headerEndpointId: (string)$this->request->getHeader(name: 'x-dossiq-endpoint-id')
-		);
-		if ($endpoint === null) {
-			$this->logger->warning(message: 'StUF inbound: could not resolve endpoint from envelope');
-			return new DataResponse(data: 'unknown endpoint', statusCode: Http::STATUS_BAD_REQUEST);
-		}
+		// Integriq answers 200, 400, 422 or 503; anything else is not a status
+		// this URL ever gave, so it reads as a bad gateway.
+		$status = match ($answer['statusCode']) {
+			Http::STATUS_OK => Http::STATUS_OK,
+			Http::STATUS_BAD_REQUEST => Http::STATUS_BAD_REQUEST,
+			Http::STATUS_UNPROCESSABLE_ENTITY => Http::STATUS_UNPROCESSABLE_ENTITY,
+			Http::STATUS_SERVICE_UNAVAILABLE => Http::STATUS_SERVICE_UNAVAILABLE,
+			default => Http::STATUS_BAD_GATEWAY,
+		};
 
-		if ($this->inspector->verifyWsse(envelopeXml: $rawXml, endpoint: $endpoint) === false) {
-			$this->logger->warning(message: 'StUF inbound: WSSE signature mismatch for endpoint {id}', context: ['id' => ($endpoint['id'] ?? '')]);
-			// 422 (Unprocessable Entity) signals "invalid signature" without
-			// surfacing an NC session-auth status to the upstream zaaksysteem.
-			// This is WSSE signature verification of a PublicPage webhook, not
-			// NC session auth — so the semantic-auth gate stays unambiguous.
-			return new DataResponse(data: 'invalid signature', statusCode: Http::STATUS_UNPROCESSABLE_ENTITY);
-		}
-
-		$messageKind = $this->inspector->detectBerichtSoort(envelopeXml: $rawXml);
-		$crossRef = $this->inspector->extractCrossRefnummer(envelopeXml: $rawXml);
-		$caseId = ($this->stuf->parser->parseBevestiging(responseXml: $rawXml)['caseIdentification'] ?? null);
-
-		$this->stuf->messageHandler->logInbound(
-			endpoint: $endpoint,
-			responseXml: $rawXml,
-			messageKind: $messageKind,
-			crossRefnummer: $crossRef,
-			caseId: $caseId,
-			role: $this->inspector->extractFunctie(envelopeXml: $rawXml)
-		);
-
-		$this->confirmOutbound(messageKind: $messageKind, crossRef: $crossRef, rawXml: $rawXml, caseId: $caseId);
-
-		return new DataResponse(data: 'ack', statusCode: Http::STATUS_OK);
+		return new DataDisplayResponse($answer['body'], $status, ['Content-Type' => 'text/xml; charset=utf-8']);
 	}//end inbound()
 
 	/**
@@ -307,18 +318,60 @@ class StufController extends Controller {
 	 *
 	 * Remove once every configured sender posts to /api/stuf/inbound.
 	 *
-	 * @return DataResponse
+	 * @return DataDisplayResponse
 	 *
-	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-async-confirmation
+	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-confirmations-on-the-old-url-reach-integriq
 	 *
 	 * @contract exclude Deprecated path alias for inbound(); the behaviour is covered by StufControllerInboundTest.
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 300, period: 60)]
-	public function inboundLegacyPath(): DataResponse {
+	public function inboundLegacyPath(): DataDisplayResponse {
 		return $this->inbound();
 	}//end inboundLegacyPath()
+
+	/**
+	 * Forward a StUF provider request to integriq (decision 199, one release).
+	 *
+	 * The sender's `zender.applicatie` names the stufEndpoint, as it did for the
+	 * retired dispatcher; that endpoint's `integriqSource` is the integriq source
+	 * whose WS-Security integriq checks. An unknown sender is forwarded with no
+	 * source, so integriq refuses it with the same fault as a wrong password.
+	 *
+	 * @param string $service SERVICE_CASES or SERVICE_PERSONS.
+	 *
+	 * @return DataDisplayResponse Integriq's SOAP answer, or a 503 when integriq does not answer.
+	 */
+	private function forwardProviderRequest(string $service): DataDisplayResponse {
+		$rawXml   = $this->readRawBody();
+		$sourceId = '';
+		if (preg_match(self::ZENDER_APPLICATION, $rawXml, $match) === 1) {
+			$endpoint = $this->register->findOne(
+				schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT,
+				filters: ['recipientApplication' => trim($match[1])]
+			);
+			$sourceId = (string)($endpoint['integriqSource'] ?? '');
+		}
+
+		$answer = $this->bridge->forwardProviderRequest(rawXml: $rawXml, sourceId: $sourceId, service: $service);
+		if ($answer === null) {
+			$this->logger->warning(message: 'StUF provider request: integriq did not answer; the zaaksysteem is told to retry');
+			return new DataDisplayResponse('integriq unavailable', Http::STATUS_SERVICE_UNAVAILABLE, ['Content-Type' => 'text/plain; charset=utf-8']);
+		}
+
+		// Integriq answers 200, 400, 401, 413 or 500; anything else reads as a bad gateway.
+		$status = match ($answer['statusCode']) {
+			Http::STATUS_OK => Http::STATUS_OK,
+			Http::STATUS_BAD_REQUEST => Http::STATUS_BAD_REQUEST,
+			Http::STATUS_UNAUTHORIZED => Http::STATUS_UNAUTHORIZED,
+			Http::STATUS_REQUEST_ENTITY_TOO_LARGE => Http::STATUS_REQUEST_ENTITY_TOO_LARGE,
+			Http::STATUS_INTERNAL_SERVER_ERROR => Http::STATUS_INTERNAL_SERVER_ERROR,
+			default => Http::STATUS_BAD_GATEWAY,
+		};
+
+		return new DataDisplayResponse($answer['body'], $status, ['Content-Type' => 'text/xml; charset=utf-8']);
+	}//end forwardProviderRequest()
 
 	/**
 	 * Read the raw request body.
@@ -350,15 +403,98 @@ class StufController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function endpoints(): JSONResponse {
-		$items = $this->stuf->register->findAll(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: [], limit: 500);
+		$items = $this->register->findAll(schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT, filters: [], limit: 500);
 		$items = array_map(
 			callback: function (array $endpoint): array {
 				return $this->enrichEndpointWithHealth(endpoint: $endpoint);
 			},
 			array: $items
 		);
+
+		$this->recordStufHealth(endpoints: $items);
+
 		return new JSONResponse(['items' => $items, 'total' => count(value: $items)]);
 	}//end endpoints()
+
+	/**
+	 * Write what the endpoint list learned onto the StUF integration card.
+	 *
+	 * Integriq sends and owns the circuit breaker, so the health dossiq can
+	 * still tell is whether every endpoint names an integriq source. One that
+	 * does not cannot send at all, and that is an error for the connection as
+	 * a whole: the thing an admin needs to see, not an average.
+	 *
+	 * @param array<int, array<string, mixed>> $endpoints The enriched endpoint rows.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function recordStufHealth(array $endpoints): void {
+		if ($endpoints === []) {
+			$this->recordStuf(status: 'unconfigured', message: 'Not checked yet');
+			return;
+		}
+
+		$unlinked = $this->unlinkedNames(endpoints: $endpoints);
+		if ($unlinked !== []) {
+			$this->recordStuf(status: 'error', message: 'No integriq source on ' . implode(', ', $unlinked));
+			return;
+		}
+
+		$this->recordStuf(status: 'configured', message: 'Healthy: ' . $this->endpointName(endpoint: $endpoints[0]));
+	}//end recordStufHealth()
+
+	/**
+	 * Record the StUF card's status.
+	 *
+	 * @param string $status  The card status.
+	 * @param string $message What the card says.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function recordStuf(string $status, string $message): void {
+		$this->integrationStatus->record(
+			key: 'stuf',
+			status: $status,
+			message: $message
+		);
+	}//end recordStuf()
+
+	/**
+	 * The names of the endpoints that have no integriq source.
+	 *
+	 * @param array<int, array<string, mixed>> $endpoints The endpoints with their health.
+	 *
+	 * @return list<string>
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function unlinkedNames(array $endpoints): array {
+		$unlinked = [];
+		foreach ($endpoints as $endpoint) {
+			if ((string)($endpoint['health']['state'] ?? '') === 'unlinked') {
+				$unlinked[] = $this->endpointName(endpoint: $endpoint);
+			}
+		}
+
+		return $unlinked;
+	}//end unlinkedNames()
+
+	/**
+	 * An endpoint's name, or its id, or "endpoint".
+	 *
+	 * @param array<string, mixed> $endpoint The endpoint.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function endpointName(array $endpoint): string {
+		return (string)($endpoint['name'] ?? ($endpoint['id'] ?? 'endpoint'));
+	}//end endpointName()
 
 	/**
 	 * Query the StufMessage audit log (admin REST).
@@ -372,7 +508,7 @@ class StufController extends Controller {
 		$limit = max(1, min(500, (int)$this->request->getParam(key: 'limit', default: 50)));
 		$filters = $this->messageFilters();
 
-		$items = $this->stuf->register->findAll(schema: StufRegisterAccess::SCHEMA_MESSAGE, filters: $filters, limit: $limit);
+		$items = $this->register->findAll(schema: StufRegisterAccessInterface::SCHEMA_MESSAGE, filters: $filters, limit: $limit);
 		return new JSONResponse(['items' => $items, 'total' => count(value: $items), 'limit' => $limit]);
 	}//end messages()
 
@@ -394,55 +530,28 @@ class StufController extends Controller {
 	}//end messageFilters()
 
 	/**
-	 * Transition the matching outbound message to "bevestigd" on a Bv01.
+	 * Enrich an endpoint with its health: linked to an integriq source or not, and its recent messages.
 	 *
-	 * @param string $messageKind The detected bericht-soort.
-	 * @param string $crossRef The cross-reference to the outbound row.
-	 * @param string $rawXml The raw inbound envelope.
-	 * @param string|null $caseId The zaak identificatie from the bevestiging.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-async-confirmation
-	 */
-	private function confirmOutbound(string $messageKind, string $crossRef, string $rawXml, ?string $caseId): void {
-		if ($messageKind !== 'Bv01' || $crossRef === '') {
-			return;
-		}
-
-		$outbound = $this->stuf->messageHandler->findOutboundByReferentienummer(referentienummer: $crossRef);
-		if ($outbound === null) {
-			return;
-		}
-
-		$this->stuf->messageHandler->transitionStatus(
-			msg: $outbound,
-			newStatus: 'bevestigd',
-			extras: [
-				'responseEnvelopeXml' => $rawXml,
-				'caseIdentification' => ($caseId ?? ($outbound['caseIdentification'] ?? '')),
-			]
-		);
-	}//end confirmOutbound()
-
-	/**
-	 * Enrich an endpoint with its health snapshot (status badge + last 5 messages).
+	 * Integriq owns the circuit breaker now; what dossiq can still tell is
+	 * whether the endpoint can send at all.
 	 *
 	 * @param array $endpoint The raw endpoint row.
 	 *
 	 * @return array
 	 */
 	private function enrichEndpointWithHealth(array $endpoint): array {
-		$snapshot = $this->stuf->circuitBreaker->snapshot(endpointId: (string)($endpoint['id'] ?? ''));
-		$recent = $this->stuf->register->findAll(
-			schema: StufRegisterAccess::SCHEMA_MESSAGE,
+		$state = 'unlinked';
+		if (trim((string)($endpoint['integriqSource'] ?? '')) !== '') {
+			$state = 'integriq';
+		}
+
+		$recent = $this->register->findAll(
+			schema: StufRegisterAccessInterface::SCHEMA_MESSAGE,
 			filters: ['endpointId' => (string)($endpoint['id'] ?? '')],
 			limit: 5
 		);
 		$endpoint['health'] = [
-			'state' => $snapshot['state'],
-			'failureCount' => $snapshot['failureCount'],
-			'openedAt' => $snapshot['openedAt'],
+			'state' => $state,
 			'recentCount' => count(value: $recent),
 		];
 		return $endpoint;

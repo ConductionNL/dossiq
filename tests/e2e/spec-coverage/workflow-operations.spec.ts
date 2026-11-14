@@ -3,91 +3,88 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Behavioural UI coverage for the operational views that sit alongside the
- * case lists: the Workflow Board (kanban of statuses), the Case Map, the
+ * case lists: the workflow board (the Cases list in board view), the case map
+ * (the Cases list in map view), the
  * Transfers index, the Subsidies / Grant-schemes intake lists and the
  * Features & roadmap page. Each is reached via its sidebar nav entry and
  * asserted on its distinct rendered surface (heading / empty-state /
  * primary control) independently of seeded data.
  */
 
-import { expect, test } from '@playwright/test'
-import { navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
-// Routes named after the component that renders them, so this spec states
-// WHICH screen it covers in executable code rather than in a comment.
-import { CasesOnMapView, WorkflowBoard } from '../helpers/page-components.ts'
+import type { Page } from '@playwright/test'
 
-test.describe('Workflow Board page', () => {
-	// @e2e openspec/specs/workflow-board/spec.md#workflow-board-renders-kanban-shell
-	test('workflow board renders its heading and a status/empty surface', async ({
+import { expect, test } from '@playwright/test'
+import {
+	dismissSupportDialog,
+	navToRoute,
+	trackDossiqErrors,
+} from '../helpers/nav.ts'
+
+test.describe('Workflow board', () => {
+	/**
+	 * Open the workflow board: the Cases list in board view.
+	 *
+	 * @param page The page.
+	 */
+	async function openBoard(page: Page): Promise<void> {
+		await page.goto('/index.php/apps/dossiq/cases?_view=board')
+		await dismissSupportDialog(page)
+	}
+
+	// @e2e exclude DASH-V1-006a (columns in status order, with counts) is
+	// proven by `tests/e2e/workflows/case-lifecycle.spec.ts`, which seeds its
+	// own status types. This is the board's shell, on its route, without a
+	// 500: a status column or the library's "cannot back a board" notice.
+	test('workflow board renders a status column or its notice', async ({
 		page,
 	}) => {
-		// The nav label is "Workflow board" (lower-case b) and it sits inside
-		// the collapsed "Work queue" group — navigate by route instead.
-		await navToRoute(page, WorkflowBoard)
-		// The board view renders its own header h2 inside `.workflow-board__header`
-		// (the page also has a dashboard-wrapper title + widget title with the
-		// same text, so scope to the board's own header).
-		await expect(page.locator('.workflow-board__header h2')).toBeVisible({
-			timeout: 15000,
+		await openBoard(page)
+		await expect(page.locator('[data-testid="cn-board-view"]')).toBeVisible({
+			timeout: 30000,
 		})
-		// With no status types configured the board shows its guidance
-		// empty-state; with statuses it renders one `.board-column` per status
-		// type (the seeded register uses the Dutch ZGW status names —
-		// "Received", … — each with a per-column "No cases" surface). Assert
-		// the data- and locale-independent kanban surface: a status column or
-		// the no-statuses guidance, never an error render.
 		await expect(
-			page.locator('.board-column, .workflow-board__empty').first(),
-		).toBeVisible({ timeout: 10000 })
+			page
+				.locator(
+					'[data-testid="cn-board-column"], [data-testid="cn-board-unusable"]',
+				)
+				.first(),
+		).toBeVisible({ timeout: 30000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
-	// FIXED: WorkflowBoard.load() calls objectStore.fetchCollection('statusType')
-	// / ('caseType'). Those types are registered in initializeStores()
-	// (src/store/store.js), but the registration used to be skipped when the
-	// app-config schema id (case_type_schema / status_type_schema) was blank —
-	// which it is on a fresh OR register — leaving the types unregistered and
-	// logging two dossiq-origin "Object type is not registered" console errors
-	// per load while the kanban columns stayed empty. The same defect hit the
-	// Doorlooptijd analytics view (caseType). store.js now falls back to the
-	// canonical schema slug ('caseType' / 'statusType') when the config id is
-	// empty, so the types are always registered and this contract holds.
-	// @e2e openspec/specs/workflow-board/spec.md#workflow-board-loads-without-console-errors
+	// @e2e exclude A console-error check cannot prove the columns, their
+	// order or their counts; case-lifecycle.spec.ts does. The board reads
+	// the statusType and caseType collections, and an unregistered object
+	// type used to log dossiq console errors on every load.
 	test('workflow board loads without dossiq console errors', async ({ page }) => {
 		const errors = trackDossiqErrors(page)
-		// The nav label is "Workflow board" (lower-case b) and it sits inside
-		// the collapsed "Work queue" group — navigate by route instead.
-		await navToRoute(page, WorkflowBoard)
-		await expect(page.locator('.workflow-board__header h2')).toBeVisible({
-			timeout: 15000,
+		await openBoard(page)
+		await expect(page.locator('[data-testid="cn-board-view"]')).toBeVisible({
+			timeout: 30000,
 		})
 		await page.waitForTimeout(1500)
 		expect(errors, errors.join('\n')).toEqual([])
 	})
 })
 
-test.describe('Case Map page', () => {
-	// @e2e openspec/specs/case-map/spec.md#case-map-renders-map-surface
-	test('case map renders its heading and an interactive map surface', async ({
-		page,
-	}) => {
-		const errors = trackDossiqErrors(page)
-		// Case Map has no top-level sidebar leaf after the nav-dedup pass; its
-		// /map page route stays reachable, so navigate to it client-side.
-		await navToRoute(page, CasesOnMapView)
-		// The rendered heading is "Cases on map" — measured on a CI runner
-		// (2026-08-04). "Case map" is the manifest page TITLE, not the heading
-		// the view renders.
-		await expect(
-			page.getByRole('heading', { name: 'Cases on map' }),
-		).toBeVisible({ timeout: 15000 })
-		// Leaflet renders a tile/zoom container — assert the map pane exists
-		// rather than any specific marker (data-independent).
-		await expect(
-			page.locator('.leaflet-container, [class*="map"]').first(),
-		).toBeVisible({ timeout: 10000 })
+test.describe('Case map', () => {
+	/**
+	 * The map is the Cases index in its map view. This proves the navigation
+	 * half of OVERVIEW-01a: the map address renders a Leaflet map rather than
+	 * falling through to the dashboard. Which cases it plots is asserted
+	 * against fixed rows in gis-integration.spec.ts. The index map plots the
+	 * current page of rows, not every located case, so "showing all case
+	 * locations" over a large register is not claimed here.
+	 */
+	// @e2e openspec/specs/case-map-overview/spec.md#scenario-overview-01a-display-all-cases-on-map
+	test('the case map renders the Cases index in map view', async ({ page }) => {
+		await navToRoute(page, '/cases')
+		await page.goto(new URL('?_view=map', page.url()).href)
+		await dismissSupportDialog(page)
+		await expect(page.locator('.leaflet-container').first()).toBeVisible({
+			timeout: 30_000,
+		})
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
-		expect(errors, errors.join('\n')).toEqual([])
 	})
 })
 
@@ -95,33 +92,31 @@ test.describe('Case Map page', () => {
 // (the TransferDetail route is kept for deep links). See
 // feat(nav): streamline work queue.
 
-test.describe('Subsidies intake page', () => {
-	// FIXME(#719): /subsidies falls back to the GENERIC case index — measured
-	// buttons are [Settings, Cards, Table, Add Case, Actions], i.e. "Add Case"
-	// rather than any subsidy-specific create control, so there is no subsidy
-	// intake shell to assert. (/subsidieregelingen renders "Add
-	// Subsidieregeling" correctly and its test passes.)
-	// @e2e openspec/specs/subsidy-intake/spec.md#subsidies-index-renders-list-shell
-	test('subsidies index renders the subsidy intake list shell', async ({
+test.describe('Subsidies are a view of the case list', () => {
+	// There are no case-type-specific pages (Ruben, 20 October 2026): the
+	// Subsidies list is the Cases page's default view `subsidies`, narrowed to
+	// the subsidie case type, and the old /subsidies address redirects there.
+	// @e2e exclude No canonical spec covers the subsidies list. The subsidie
+	// specs describe the keten (voorschot, termijnen, verplichting,
+	// vaststelling) and the settlement of case costs, none of them the list
+	// of aanvragen. This test pins the redirect and the view until one is
+	// written.
+	test('/subsidies opens the subsidies view of the case list', async ({
 		page,
 	}) => {
-		test.fixme(
-			true,
-			'FIXME(#719): /subsidies falls back to the GENERIC case index — measured buttons are [Settings, Cards, Table, Add Case, Actions], i.e. "Add Case" rather than any subsidy-specific create control, so there is no subsidy intake shell to assert. (/subsidieregelingen renders "Add Subsidieregeling" correctly and its test passes.)',
-		)
 		const errors = trackDossiqErrors(page)
-		// "Subsidies" is a group header with no label in the subsidie manifest
-		// fragment, so it renders no clickable nav entry — navigate by route.
 		await navToRoute(page, '/subsidies')
-		// View switcher renders as buttons, not radios.
-		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({
-			timeout: 15000,
+		await expect(page).toHaveURL(/\/cases\?savedView=default(:|%3A)subsidies/, {
+			timeout: 30_000,
 		})
-		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
-		// Subsidy-specific create control distinguishes this from other lists.
+		// The view titles the page, so the reader still sees which list this is.
 		await expect(
-			page.getByRole('button', { name: /^Add Subsidie/ }),
-		).toBeVisible()
+			page.getByRole('heading', { name: /^Subsidies$/i }).first(),
+		).toBeVisible({ timeout: 30_000 })
+		// A subsidie-aanvraag IS a case, so the create control is the case one.
+		await expect(
+			page.getByRole('button', { name: /^(Add (Item|Case)|New case)$/ }).first(),
+		).toBeVisible({ timeout: 30_000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 		expect(errors, errors.join('\n')).toEqual([])
 	})
@@ -137,7 +132,7 @@ test.describe('Grant schemes are administered as case types', () => {
 	// on a build where the capability vanished entirely, which is what ADR-044
 	// Decision 5 forbids.
 	//
-	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	// @e2e openspec/specs/case-types/spec.md#the-retired-route-falls-through-rather-than-erroring
 	test('the retired scheme index is gone and Case types took it over', async ({
 		page,
 	}) => {

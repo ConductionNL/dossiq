@@ -51,7 +51,16 @@ class NextcloudFloorMatrixTest extends TestCase {
 	 * @return int The declared major version.
 	 */
 	private function declaredFloor(): int {
-		$xml = simplexml_load_file(__DIR__ . '/../../../appinfo/info.xml');
+		// Read the file ourselves rather than letting libxml do it. Nextcloud's
+		// `lib/base.php` nulls libxml's external entity loader, and that same
+		// resolver is what fetches the PRIMARY document, so under the Nextcloud
+		// bootstrap — which is every CI cell — `simplexml_load_file()` returns
+		// false for a perfectly valid file. `simplexml_load_string()` never
+		// reaches the loader.
+		$source = file_get_contents(__DIR__ . '/../../../appinfo/info.xml');
+		$this->assertNotFalse(condition: $source, message: 'appinfo/info.xml must be readable');
+
+		$xml = simplexml_load_string((string)$source);
 		$this->assertNotFalse($xml, 'appinfo/info.xml must parse as XML');
 
 		$nodes = $xml->xpath('//dependencies/nextcloud');
@@ -68,7 +77,36 @@ class NextcloudFloorMatrixTest extends TestCase {
 	}//end declaredFloor()
 
 	/**
-	 * Read the `nextcloud-test-refs` legs from the quality workflow.
+	 * Read the declared `<nextcloud max-version>` from appinfo/info.xml.
+	 *
+	 * @return int The declared major version.
+	 */
+	private function declaredCeiling(): int {
+		$source = file_get_contents(__DIR__ . '/../../../appinfo/info.xml');
+		$this->assertNotFalse(condition: $source, message: 'appinfo/info.xml must be readable');
+
+		$xml = simplexml_load_string((string)$source);
+		$this->assertNotFalse($xml, 'appinfo/info.xml must parse as XML');
+
+		$nodes = $xml->xpath('//dependencies/nextcloud');
+		$this->assertNotEmpty($nodes, 'appinfo/info.xml declares no <nextcloud> dependency');
+
+		$max = (string)$nodes[0]['max-version'];
+		$this->assertMatchesRegularExpression(
+			'/^\d+$/',
+			$max,
+			'nextcloud max-version must be a bare major version'
+		);
+
+		return (int)$max;
+	}//end declaredCeiling()
+
+	/**
+	 * Resolve the Nextcloud legs CI runs.
+	 *
+	 * With a `nextcloud-test-refs` override in the quality workflow, those are
+	 * the legs. Without one, the shared quality.yml DERIVES the matrix from
+	 * appinfo/info.xml as stable<min>..stable<max>, mirrored here.
 	 *
 	 * @return array<int, int> The major version of every tested leg.
 	 */
@@ -81,13 +119,18 @@ class NextcloudFloorMatrixTest extends TestCase {
 			$workflow,
 			$matches
 		);
-		$this->assertSame(
-			1,
-			$matched,
-			'Could not find a `nextcloud-test-refs:` line in code-quality.yml. '
-			. 'If the key was renamed, this test is scanning for something that no '
-			. 'longer exists and its green would be meaningless.'
-		);
+
+		if ($matched !== 1) {
+			// No override: the shared workflow derives the matrix from info.xml.
+			$this->assertDoesNotMatchRegularExpression(
+				'/^\s*nextcloud-test-refs:/m',
+				$workflow,
+				'A `nextcloud-test-refs:` line exists but is not a quoted JSON array; '
+				. 'this test cannot read it, so its green would be meaningless.'
+			);
+
+			return range($this->declaredFloor(), $this->declaredCeiling());
+		}
 
 		$refs = json_decode($matches['json'], true);
 		$this->assertIsArray($refs, 'nextcloud-test-refs must be a JSON array');

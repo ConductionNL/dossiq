@@ -16,6 +16,10 @@
     </projectFiles>
     <stubs>
         <file name="vendor/nextcloud/ocp/OCP/Capabilities/ICapability.php" preloadClasses="true" />
+        <!-- OpenRegister's ADR-063 MCP contracts (hermiq-ai-tooling): the
+             #[McpTool] attribute and IMcpScannableServices, declaration-only. -->
+        <file name="tests/Stubs/Mcp/Attribute/McpTool.php" />
+        <file name="tests/Stubs/Mcp/IMcpScannableServices.php" />
         <!-- Integriq's ADR-041 delivery-seam contract (optional app, resolved
              by FQN string at runtime). Declaration-only stubs mirroring the
              real constructors verbatim, same discipline as the Decidiq event
@@ -24,6 +28,48 @@
              lookup as dead code. -->
         <file name="tests/Stubs/Integriq/Event/DeliveryRequestedEvent.php" />
         <file name="tests/Stubs/Integriq/Event/DeliveryConcludedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/ConnectionStatusReportedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/ConnectionRefreshRequestedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufZdsCaseRequestedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufZdsCaseConcludedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufZdsConfirmationReceivedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufProviderQueryEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufCaseQueryEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufPersonQueryEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufCaseMutationEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufDocumentMutationEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufProviderRequestReceivedEvent.php" />
+        <!-- OpenRegister's people-on-objects event contract. Same
+             declaration-only discipline as the Integriq stubs above:
+             PersonLinkListener is registered against these classes and
+             analysed without the openregister runtime present. -->
+        <file name="tests/Stubs/OpenRegister/Event/PersonLinkedEvent.php" />
+        <file name="tests/Stubs/OpenRegister/Event/PersonLinkUpdatedEvent.php" />
+        <file name="tests/Stubs/OpenRegister/Event/PersonUnlinkedEvent.php" />
+        <!-- case-merge: OpenRegister's merge event, which CaseMergeRegistrar
+             registers the follower against by `::class`. -->
+        <file name="tests/Stubs/OpenRegister/Event/ObjectsMergedEvent.php" />
+        <file name="tests/Stubs/OpenRegister/Event/OrganisationUpdatedEvent.php" />
+        <file name="tests/Stubs/OpenRegister/Event/DecisionChangeRequestedEvent.php" />
+        <file name="tests/Stubs/OpenRegister/Event/DecisionVisibilityRequestedEvent.php" />
+        <!-- flow-nodes-to-their-owners: the sent-mail and generated-document
+             events dossiq files on the case. Verbatim copies of the real classes. -->
+        <file name="tests/Stubs/OpenRegister/Event/FlowEmailSentEvent.php" />
+        <file name="tests/Stubs/Filinq/Event/DocumentGeneratedEvent.php" />
+        <file name="tests/Stubs/Filinq/Event/DocumentGenerationRequestedEvent.php" />
+        <!-- Shillinq's payout commands, raised and withdrawn by Money\PayoutRequester.
+             Verbatim copies of the real classes. -->
+        <file name="tests/Stubs/Shillinq/Event/PayableRaisedEvent.php" />
+        <file name="tests/Stubs/Shillinq/Event/PayableCancelRequestedEvent.php" />
+        <file name="tests/Stubs/Shillinq/Event/PayablesRequestedEvent.php" />
+        <!-- The AppHost observability plane (ADR-006/ADR-040). Health and
+             Metrics EXTEND these generics, so a suppression would only hide
+             the parent rather than resolve it. -->
+        <file name="tests/Stubs/AppHost/Controller/GenericHealthController.php" />
+        <file name="tests/Stubs/AppHost/Controller/GenericMetricsController.php" />
+        <file name="tests/Stubs/AppHost/Observability/ManifestLoader.php" />
+        <file name="tests/Stubs/AppHost/Observability/HealthCheckExecutor.php" />
+        <file name="tests/Stubs/AppHost/Observability/MetricsEngine.php" />
     </stubs>
     <issueHandlers>
         <UndefinedDocblockClass errorLevel="suppress"/>
@@ -85,16 +131,29 @@
                 <referencedClass name="OCA\OpenRegister\Event\ObjectUpdatedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\ObjectDeletedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\ObjectDeletingEvent"/>
+                <!-- remove-casetask: nothing writes a caseTask object any
+                     more, so the flow reads the engine's own task entity.
+                     Its terminal event is listed with the human-step seam
+                     below. -->
+                <referencedClass name="OCA\OpenRegister\Db\Task"/>
                 <!-- flow-business-timers (termijnbewaking-op-engine-timers) -->
                 <referencedClass name="OCA\OpenRegister\Event\FlowTimerFiredEvent"/>
                 <referencedClass name="OCA\OpenRegister\Db\FlowTimer"/>
                 <referencedClass name="OCA\OpenRegister\Exception\LockedException"/>
+                <!-- OpenRegister's two validation exceptions. Caught BY TYPE in
+                     TaskChecklistController, ChecklistTemplateController and BelplanController so a payload
+                     the schema refuses answers 400 instead of falling through to the
+                     500 arm. Same runtime-resolved, optional-app situation as
+                     LockedException above: PHP matches a catch type without
+                     autoloading, so an absent OpenRegister makes the arm inert rather
+                     than fatal. -->
+                <referencedClass name="OCA\OpenRegister\Exception\ValidationException"/>
+                <referencedClass name="OCA\OpenRegister\Exception\CustomValidationException"/>
                 <referencedClass name="OCA\OpenRegister\Service\ObjectService"/>
                 <referencedClass name="OCA\OpenRegister\Service\ConfigurationService"/>
                 <referencedClass name="OCA\OpenRegister\Service\RegisterService"/>
                 <referencedClass name="OCA\OpenRegister\Service\FileService"/>
                 <referencedClass name="OCA\OpenRegister\Service\CalendarEventService"/>
-                <referencedClass name="OCA\OpenRegister\Mcp\IMcpToolProvider"/>
                 <!-- OpenRegister's Flow node contract (ADR-065: OR is the only
                      flow engine). Same dynamic-load situation as the entries
                      above: dossiq contributes nodes into OR's registry and
@@ -105,6 +164,31 @@
                 <referencedClass name="OCA\OpenRegister\Service\Flow\IFlowNode"/>
                 <referencedClass name="OCA\OpenRegister\Service\Flow\FlowNodeRegistry"/>
                 <referencedClass name="OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent"/>
+                <!-- The flow engine's human-step seam, consumed by
+                     TaskCompletionResumeListener (case-flow-human-steps /
+                     adopt-flow-engine-consumer-seams).
+
+                     MEASURED, not assumed. All three exist in openregister on
+                     both `development` and `main`: TaskTerminalEvent since
+                     openregister#3269 (v2.0.13), dispatched from
+                     TaskService::transactional() after commit, with
+                     FlowRunSignalService::signalAs() and
+                     the typed FlowSignalRefused from openregister#3332. They
+                     are listed here for the same reason as every entry above:
+                     dossiq never has OpenRegister on its analysis path, so a
+                     class it references legitimately is still undefined to
+                     psalm. Adding the code without adding these three is what
+                     turned this list red on `development`.
+
+                     Do NOT add an entry here without checking the class
+                     against ConductionNL/openregister first. A name that is
+                     wrong resolves to nothing at runtime, the listener is
+                     never dispatched, and the feature is inert rather than
+                     broken — which is precisely what this suppression would
+                     then hide. -->
+                <referencedClass name="OCA\OpenRegister\Event\TaskTerminalEvent"/>
+                <referencedClass name="OCA\OpenRegister\Service\Flow\FlowRunSignalService"/>
+                <referencedClass name="OCA\OpenRegister\Exception\FlowSignalRefused"/>
                 <!-- Nextcloud internals loaded at runtime (not in OCP stubs) -->
                 <referencedClass name="OC_Util"/>
                 <!-- Dossiq ZGW controller referenced in middleware (not yet implemented) -->
@@ -124,36 +208,22 @@
                 <referencedClass name="GuzzleHttp\Exception\GuzzleException"/>
             </errorLevel>
         </UndefinedClass>
-        <UndefinedMagicMethod errorLevel="suppress"/>
         <UnusedClass errorLevel="suppress"/>
         <PossiblyUnusedMethod errorLevel="suppress"/>
         <UnusedMethod errorLevel="suppress"/>
         <UnusedProperty errorLevel="suppress"/>
         <PossiblyUnusedParam errorLevel="suppress"/>
-        <UnusedDocblockParam errorLevel="suppress"/>
         <UnusedVariable errorLevel="suppress"/>
         <PossiblyUnusedReturnValue errorLevel="suppress"/>
         <RedundantCondition errorLevel="suppress"/>
-        <RedundantFunctionCall errorLevel="suppress"/>
         <RedundantCast errorLevel="suppress"/>
-        <InvalidDocblock errorLevel="suppress"/>
         <MoreSpecificImplementedParamType errorLevel="suppress"/>
         <MissingDependency errorLevel="suppress"/>
-        <UnevaluatedCode errorLevel="suppress"/>
-        <NoValue errorLevel="suppress"/>
-        <TypeDoesNotContainNull errorLevel="suppress"/>
         <TypeDoesNotContainType errorLevel="suppress"/>
-        <InvalidArrayOffset errorLevel="suppress"/>
-        <InvalidCast errorLevel="suppress"/>
         <InvalidArgument errorLevel="suppress"/>
         <InvalidReturnType errorLevel="suppress"/>
         <InvalidReturnStatement errorLevel="suppress"/>
-        <MismatchingDocblockReturnType errorLevel="suppress"/>
-        <EmptyArrayAccess errorLevel="suppress"/>
-        <ImplementedReturnTypeMismatch errorLevel="suppress"/>
-        <InvalidMethodCall errorLevel="suppress"/>
         <UndefinedInterfaceMethod errorLevel="suppress"/>
-        <MissingTemplateParam errorLevel="suppress"/>
     </issueHandlers>
     <extraFiles>
         <directory name="vendor/nextcloud/ocp" />

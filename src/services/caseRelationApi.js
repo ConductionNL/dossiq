@@ -7,8 +7,9 @@
  *   POST   /apps/dossiq/api/cases/{caseId}/relations
  *   DELETE /apps/dossiq/api/cases/{caseId}/relations/{targetId}/{natureRelationship}
  *
- * Relations are typed (`vervolg` | `onderwerp` | `bijdrage`), bidirectionally
- * consistent (written symmetrically server-side), and guarded.
+ * Relations are typed (`vervolg` | `subject` | `bijdrage` | `samenhang`). A
+ * link is stored once, on the case that declares it, and each row carries the
+ * `displayLabel` it reads as from the side you asked from.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
@@ -21,7 +22,9 @@ import { generateUrl } from '@nextcloud/router'
 // Re-export the pure presentation helpers (kept NC-network-free for testing).
 export {
 	AARD_RELATIE_TYPES,
+	relationDisplayLabel,
 	relationErrorMessage,
+	relationSections,
 	relationTypeLabel,
 } from '../utils/caseRelationHelpers.js'
 
@@ -65,7 +68,9 @@ export async function addRelation(caseId, { targetId, aardRelatie, toelichting }
 		const { data } = await axios.post(base(caseId), {
 			targetId,
 			aardRelatie,
-			toelichting,
+			// The controller reads `notes`. Posting only `toelichting` meant
+			// the clarification never reached the server and no error said so.
+			notes: toelichting,
 		})
 		return data
 	} catch (err) {

@@ -1,0 +1,766 @@
+<?php
+
+/**
+ * Suspending, resuming, extending and reopening a case.
+ *
+ * The four gestures that move a case without moving it to another status.
+ * Each one is statutory: opschorting (Awb 4:5), hervatting, verlenging
+ * (Awb 4:14) and heropening. They are collected here because they share one
+ * shape — read the case, ask its case type whether the gesture is allowed,
+ * move the statutory clock, and journal what happened on the case.
+ *
+ * THE CLOCK LIVES IN TWO PLACES, AND BOTH ARE WRITTEN. A case that has a
+ * TermijnInstance keeps its statutory bookkeeping there (that is what the
+ * daily scan, the dwangsom engine and the reports read); a case without one
+ * — the ordinary state of a case type nobody has configured a TermijnDefinitie
+ * for — still records the gesture on itself, so the case page can say the case
+ * is suspended. Writing only the instance would leave every unconfigured case
+ * with a Suspend button that does nothing visible.
+ *
+ * THE JOURNAL IS `case.activity`. The case schema has no `suspended` flag and
+ * this change adds none: `activity` is the declared, writable activity log,
+ * and suspension is exactly an activity. The current state is the last entry
+ * of the journal, which makes "suspended" a derived fact rather than a second
+ * field that can disagree with the events that produced it.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service;
+
+use DateInterval;
+use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseLifecycleServiceInterface;
+use OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices;
+use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
+use OCA\Dossiq\Service\Lifecycle\TermExtensionRule;
+use OCA\Dossiq\Service\Support\RowList;
+use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Service\Transitions\CaseTypeReader;
+use Psr\Log\LoggerInterface;
+use RuntimeException;
+
+/**
+ * The case lifecycle gestures the Actions menu offers.
+ *
+ * @spec openspec/specs/status-transition-engine/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ */
+class CaseLifecycleService implements CaseLifecycleServiceInterface {
+
+	use TermExtensionRule;
+
+	/**
+	 * The journal key on the case that carries the lifecycle events.
+	 */
+	private const JOURNAL_FIELD = 'activity';
+
+	/**
+	 * Constructor.
+	 *
+	 * @param CaseStatusStore $store OpenRegister reads/writes for the case
+	 * @param CaseTypeReader $caseTypes The case type's own rules
+	 * @param CaseDeadlineServices $deadlines The term, pause and extension services and the engine calendar bridge.
+	 * @param LoggerInterface $logger Logger
+	 * @param CaseEndingActs $endings Reads which act ended the case, so a reopen keeps it
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly CaseStatusStore $store,
+		private readonly CaseTypeReader $caseTypes,
+		private readonly CaseDeadlineServices $deadlines,
+		private readonly LoggerInterface $logger,
+		private readonly CaseEndingActs $endings,
+	) {
+	}//end __construct()
+
+	/**
+	 * What the case allows right now.
+	 *
+	 * The case page reads this to decide which lifecycle affordances are
+	 * honest to offer, and to show the suspended marker.
+	 *
+	 * @param string $caseId Case UUID
+	 *
+	 * @return array{suspended: bool, canSuspend: bool, canResume: bool,
+	 *               canExtend: bool, canReopen: bool, isFinalStatus: bool,
+	 *               extensionCount: int, maxExtensions: int|null, deadline: string,
+	 *               statusName: string, caseType: string}
+	 *
+	 * @throws RuntimeException When the case cannot be read
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/template-library/spec.md
+	 */
+	public function state(string $caseId): array {
+		$case = $this->requireCase(caseId: $caseId);
+		$caseType = $this->caseTypes->read(caseTypeId: (string)($case['caseType'] ?? ''));
+
+		$suspended = $this->isSuspended(case: $case);
+		$isFinal = $this->caseTypes->isFinalStatus(statusTypeId: (string)($case['status'] ?? ''));
+
+		return [
+			'suspended' => $suspended,
+			'canSuspend' => ($caseType['suspensionAllowed'] === true && $suspended === false && $isFinal === false),
+			'canResume' => $suspended,
+			'canExtend' => ($caseType['extensionAllowed'] === true && $isFinal === false
+				&& $this->extensionsUsedUp(case: $case, caseType: $caseType) === false),
+			'canReopen' => $isFinal,
+			'isFinalStatus' => $isFinal,
+			'extensionCount' => (int)($case['extensionCount'] ?? 0),
+			'maxExtensions' => ($caseType['maxExtensions'] ?? null),
+			'deadline' => (string)($case['plannedEndDate'] ?? ($case['deadline'] ?? '')),
+			'statusName' => $this->store->lookupStatusName(statusTypeId: (string)($case['status'] ?? '')),
+			'caseType' => (string)($case['caseType'] ?? ''),
+			'pauseReasons' => $this->deadlines->pauseService->offeredReasons(caseId: $caseId),
+		];
+	}//end state()
+
+	/**
+	 * Suspend the case (opschorting, Awb 4:5).
+	 *
+	 * A pause reason the case type declares may stand in for the free text:
+	 * its key is stored on the pause, and its name is the rationale when no
+	 * text was given. A key the case type does not declare is refused.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string $reason Why the case is suspended, in the handler's words
+	 * @param int $days How long the applicant is given, in days
+	 * @param string $pauseReason The key of one of the case type's pause reasons, or ''
+	 *
+	 * @return array<string, mixed> The lifecycle state after the write
+	 *
+	 * @throws RuntimeException When the case type forbids suspension, the case
+	 *                          is already suspended, the reason is empty, or the
+	 *                          pause reason is not one the case type declares
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	public function suspend(string $caseId, string $reason, int $days, string $pauseReason = ''): array {
+		$case = $this->requireCase(caseId: $caseId);
+		$key = trim($pauseReason);
+		$rationale = $this->suspendRationale(caseId: $caseId, reason: $reason, key: $key);
+
+		$this->requireSuspendable(case: $case);
+
+		$duration = $this->pauseDays(days: $days);
+
+		$this->onTermInstance(
+			caseId: $caseId,
+			gesture: 'suspend',
+			apply: fn (string $instanceId): array => $this->deadlines->pauseService->registerPauze(
+				termInstanceId: $instanceId,
+				durationDays: $duration,
+				rationale: $rationale,
+				pauseReason: $key,
+			),
+		);
+
+		$this->journal(
+			caseId: $caseId,
+			changes: [],
+			entry: ['type' => 'suspend', 'reason' => $rationale, 'days' => $duration, 'pauseReason' => $key],
+		);
+
+		return $this->state(caseId: $caseId);
+	}//end suspend()
+
+	/**
+	 * The rationale of a suspension: the handler's words, or the declared pause reason's.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string $reason Why the case is suspended, in the handler's words
+	 * @param string $key    The key of one of the case type's pause reasons, or ''
+	 *
+	 * @return string The rationale
+	 *
+	 * @throws RuntimeException When the reason is empty, or the pause reason is not one the case type declares
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function suspendRationale(string $caseId, string $reason, string $key): string {
+		$rationale = $reason;
+		if ($key === '') {
+			$this->requireReason(reason: $reason);
+		}
+
+		if ($key !== '') {
+			$rationale = $this->deadlines->pauseService->suspendRationale(caseId: $caseId, reason: $reason, pauseReason: $key);
+		}
+
+		return $rationale;
+	}//end suspendRationale()
+
+	/**
+	 * Refuse a suspension the case type forbids, or of a case already suspended.
+	 *
+	 * @param array<string, mixed> $case The case
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the case type forbids suspension or the case is already suspended
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function requireSuspendable(array $case): void {
+		$caseType = $this->caseTypes->read(caseTypeId: (string)($case['caseType'] ?? ''));
+		if ($caseType['suspensionAllowed'] !== true) {
+			throw new RuntimeException('suspension_not_allowed');
+		}
+
+		if ($this->isSuspended(case: $case) === true) {
+			throw new RuntimeException('already_suspended');
+		}
+	}//end requireSuspendable()
+
+	/**
+	 * The pause length in days, 14 when none was given.
+	 *
+	 * @param int $days How long the applicant is given, in days
+	 *
+	 * @return int The pause length
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function pauseDays(int $days): int {
+		$duration = $days;
+		if ($duration <= 0) {
+			$duration = 14;
+		}
+
+		return $duration;
+	}//end pauseDays()
+
+	/**
+	 * Resume a suspended case (hervatting).
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string $reason Why the case resumes
+	 *
+	 * @return array<string, mixed> The lifecycle state after the write
+	 *
+	 * @throws RuntimeException When the case is not suspended or the reason is empty
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function resume(string $caseId, string $reason): array {
+		$case = $this->requireCase(caseId: $caseId);
+		$this->requireReason(reason: $reason);
+
+		if ($this->isSuspended(case: $case) === false) {
+			throw new RuntimeException('not_suspended');
+		}
+
+		$this->onTermInstance(
+			caseId: $caseId,
+			gesture: 'resume',
+			apply: fn (string $instanceId): array => $this->deadlines->pauseService->resumeAfterPauze(
+				termInstanceId: $instanceId,
+			),
+		);
+
+		$this->journal(caseId: $caseId, changes: [], entry: ['type' => 'resume', 'reason' => $reason]);
+
+		return $this->state(caseId: $caseId);
+	}//end resume()
+
+	/**
+	 * Extend the processing term (verlenging, Awb 4:14).
+	 *
+	 * The new end date is the current one plus the case type's
+	 * `extensionPeriod`, which the case type states as an ISO 8601 duration —
+	 * unless the caller names an explicit `$newEndDate`, which the bulk
+	 * Extend term action does. An explicit date still has to be LATER than
+	 * the current end: an "extension" that shortens the term is a mistake,
+	 * and refusing it per case is cheaper than explaining it afterwards.
+	 * `extensionAllowed` and the reason are required either way, so naming a
+	 * date buys the caller no authority the case type has not granted.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string $reason Why the term is extended
+	 * @param string $newEndDate Explicit new end date (Y-m-d); the case type's
+	 *                           period is used when this is empty
+	 *
+	 * @return array<string, mixed> The lifecycle state after the write
+	 *
+	 * @throws RuntimeException When the case type forbids extension, states no
+	 *                          period, the reason is empty, or the named date is
+	 *                          unreadable or not after the current end date
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/case-bulk-status-transition/spec.md
+	 */
+	public function extend(string $caseId, string $reason, string $newEndDate = ''): array {
+		$case = $this->requireCase(caseId: $caseId);
+		$this->requireReason(reason: $reason);
+
+		$caseType = $this->extendableCaseType(case: $case);
+
+		$current = (string)($case['plannedEndDate'] ?? ($case['deadline'] ?? ''));
+		$newEnd = $this->resolveNewEndDate(
+			current: $current,
+			named: $newEndDate,
+			period: (string)$caseType['extensionPeriod'],
+		);
+
+		$extension = new TermExtension(caseId: $caseId, reason: $reason, newEnd: $newEnd);
+		$extended = $this->requestExtension(extension: $extension);
+
+		$this->journalExtension(extension: $extension, case: $case);
+
+		return $this->state(caseId: $caseId) + ['notice' => $this->extensionNoticeOf(extended: $extended)];
+	}//end extend()
+
+	/**
+	 * The case's type, refused when it does not allow another extension.
+	 *
+	 * @param array<string, mixed> $case The loaded case
+	 *
+	 * @return array<string, mixed> The case type
+	 *
+	 * @throws RuntimeException When the case type forbids extension or its limit is reached
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function extendableCaseType(array $case): array {
+		$caseType = $this->caseTypes->read(caseTypeId: (string)($case['caseType'] ?? ''));
+		if ($caseType['extensionAllowed'] !== true) {
+			throw new RuntimeException('extension_not_allowed');
+		}
+
+		if ($this->extensionsUsedUp(case: $case, caseType: $caseType) === true) {
+			throw new RuntimeException('extension_limit_reached');
+		}
+
+		return $caseType;
+	}//end extendableCaseType()
+
+	/**
+	 * Request the extension on the case's term instance.
+	 *
+	 * @param TermExtension $extension The case, why its term is extended and the new end date
+	 *
+	 * @return array<string, mixed>|null The engine's answer, null when there is no term instance
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function requestExtension(TermExtension $extension): ?array {
+		return $this->onTermInstance(
+			caseId: $extension->caseId,
+			gesture: 'extend',
+			apply: fn (string $instanceId): array => $this->deadlines->extensionService->requestExtension(
+				termInstanceId: $instanceId,
+				rationale: $extension->reason,
+				newEndDate: $extension->newEnd,
+			),
+		);
+	}//end requestExtension()
+
+	/**
+	 * Journal the extension on the case.
+	 *
+	 * @param TermExtension        $extension The case, why its term is extended and the new end date
+	 * @param array<string, mixed> $case      The case as loaded before the extension
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function journalExtension(TermExtension $extension, array $case): void {
+		$this->journal(
+			caseId: $extension->caseId,
+			changes: [
+				'plannedEndDate' => $extension->newEnd,
+				'extensionCount' => ((int)($case['extensionCount'] ?? 0) + 1),
+			],
+			entry: ['type' => 'extend', 'reason' => $extension->reason, 'newEndDate' => $extension->newEnd]
+		);
+	}//end journalExtension()
+
+	/**
+	 * Reopen a closed case.
+	 *
+	 * The case goes back to its type's initial status and an audit row is
+	 * written, so the reopening reads in the history like any other move.
+	 * Whether the caller MAY reopen is the controller's question; this method
+	 * refuses only what the case itself forbids.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string $reason Why the case is reopened
+	 *
+	 * @return array<string, mixed> The lifecycle state after the write
+	 *
+	 * @throws RuntimeException When the case is not closed, the case type has no
+	 *                          initial status, or the reason is empty
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function reopen(string $caseId, string $reason): array {
+		$case = $this->requireCase(caseId: $caseId);
+		$this->requireReason(reason: $reason);
+
+		$currentId = (string)($case['status'] ?? '');
+		if ($this->caseTypes->isFinalStatus(statusTypeId: $currentId) === false) {
+			throw new RuntimeException('case_not_closed');
+		}
+
+		$initial = $this->reopenStatusOf(case: $case);
+		$reopening = new CaseReopening(caseId: $caseId, initial: $initial, fromStatus: $currentId, reason: $reason);
+
+		// REQ-LIFE-11: reopening keeps the ending in the record. The case is
+		// open again, and the fact that it was ended, by whom and when, is not
+		// undone by that; an archivist or a rechter asking what happened to
+		// this zaak has to be able to read it afterwards. So the ending is
+		// read off the journal BEFORE the fields it derives from are cleared,
+		// and written into the reopen entry rather than left to be inferred.
+		$ending = $this->endings->endingOf(case: $case);
+
+		$this->journalReopen(reopening: $reopening, ending: $ending);
+
+		$this->writeReopenRecord(reopening: $reopening);
+
+		return $this->state(caseId: $caseId);
+	}//end reopen()
+
+	/**
+	 * Write the status record of the reopening.
+	 *
+	 * @param CaseReopening $reopening The case, the status it goes back to, the final status it leaves and why
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function writeReopenRecord(CaseReopening $reopening): void {
+		$this->store->writeStatusRecord(
+			caseId: $reopening->caseId,
+			toStatus: $reopening->initial,
+			fromStatus: $reopening->fromStatus,
+			label: 'Reopened',
+			comment: $reopening->reason,
+			evaluatedGuards: [],
+			noWorkflowTemplate: true,
+		);
+	}//end writeReopenRecord()
+
+	/**
+	 * The initial status of the case's type, which a reopened case goes back to.
+	 *
+	 * @param array<string, mixed> $case The loaded case
+	 *
+	 * @return string The initial status type id
+	 *
+	 * @throws RuntimeException When the case type has no initial status, or one of another case type
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function reopenStatusOf(array $case): string {
+		$caseTypeId = (string)($case['caseType'] ?? '');
+		$caseType = $this->caseTypes->read(caseTypeId: $caseTypeId);
+		$initial = (string)$caseType['initialStatus'];
+		if ($initial === '') {
+			throw new RuntimeException('initial_status_not_configured');
+		}
+
+		// The status must belong to THIS case type. The check reads the
+		// statusType's own `caseType` field: the relation lives on the child,
+		// which is the only side that can be filtered or trusted.
+		if ($this->caseTypes->statusBelongsTo(statusTypeId: $initial, caseTypeId: $caseTypeId) === false) {
+			throw new RuntimeException('initial_status_not_of_case_type');
+		}
+
+		return $initial;
+	}//end reopenStatusOf()
+
+	/**
+	 * Journal the reopening, clearing the end date and the archival claim.
+	 *
+	 * @param CaseReopening        $reopening The case, the status it goes back to and why
+	 * @param array<string, mixed> $ending    The ending read off the journal
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function journalReopen(CaseReopening $reopening, array $ending): void {
+		// The ending is kept as a nested record rather than flattened, so a
+		// reader cannot mistake the reopening's own actor for the ending's.
+		$this->journal(
+			caseId: $reopening->caseId,
+			// Zrc-008: reopening withdraws the archival claim as well as the end
+			// date. A case that is open again is not nominated for anything and has
+			// no destruction date; leaving either standing would hand an archivist a
+			// due date for a case still being worked, which is the shape of mistake
+			// that gets a record destroyed early.
+			changes: [
+				'status' => $reopening->initial,
+				'endDate' => '',
+				'archiveNomination' => null,
+				'archiveActionDate' => null,
+			],
+			entry: ['type' => 'reopen', 'reason' => $reopening->reason, 'reopenedFrom' => $ending]
+		);
+	}//end journalReopen()
+
+	/**
+	 * Whether the case's journal says it is suspended.
+	 *
+	 * @param array<string, mixed> $case The loaded case
+	 *
+	 * @return bool True when the last suspend/resume entry is a suspend
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function isSuspended(array $case): bool {
+		$entries = $this->readJournal(case: $case);
+		for ($i = (count($entries) - 1); $i >= 0; $i--) {
+			$type = (string)($entries[$i]['type'] ?? '');
+			if ($type === 'suspend') {
+				return true;
+			}
+
+			if ($type === 'resume') {
+				return false;
+			}
+		}
+
+		return false;
+	}//end isSuspended()
+
+	/**
+	 * Read the case's lifecycle journal.
+	 *
+	 * The field is declared as a string holding a JSON array; anything that
+	 * does not parse is treated as an empty journal rather than an error, so
+	 * a case whose activity log was written by something else still works.
+	 *
+	 * @param array<string, mixed> $case The loaded case
+	 *
+	 * @return array<int, array<string, mixed>> The journal entries, oldest first
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function readJournal(array $case): array {
+		$raw = ($case[self::JOURNAL_FIELD] ?? '');
+		if (is_array($raw) === false) {
+			$raw = (string)$raw;
+		}
+
+		return RowList::from(value: $raw);
+	}//end readJournal()
+
+	/**
+	 * Apply the gesture's own changes, append one entry to the journal and save the case.
+	 *
+	 * THE CASE IS READ AGAIN HERE, NOT PASSED IN. The term gesture that ran
+	 * before this (registerPauze, requestExtension, resumeAfterPauze) saves
+	 * the TermijnInstance, and the deadline mirror then writes the new end
+	 * date onto the case: `statutoryDeadline`, and `deadline` inside that
+	 * save. A case array read before the gesture still carries the OLD
+	 * values. Saving it sent a `deadline` that differs from the stored one,
+	 * and OpenRegister refuses any change to a readOnly property, so the
+	 * gesture answered 500 while the pause or extension had already been
+	 * applied (and a stale `statutoryDeadline` would have been written back
+	 * silently). Reading the case after the term moved, and applying only
+	 * the fields this gesture owns, saves exactly what the store holds plus
+	 * the gesture.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param array<string, mixed> $changes The case fields this gesture sets
+	 * @param array<string, mixed> $entry The entry to append
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the case can no longer be read
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function journal(string $caseId, array $changes, array $entry): void {
+		$case = array_merge($this->requireCase(caseId: $caseId), $changes);
+
+		$entries = $this->readJournal(case: $case);
+		$entry['at'] = (new DateTimeImmutable())->format('c');
+		$entries[] = $entry;
+
+		$case[self::JOURNAL_FIELD] = json_encode($entries);
+		$this->store->saveCase(case: $case);
+	}//end journal()
+
+	/**
+	 * Run a term-instance gesture, when the case has an instance to run it on.
+	 *
+	 * A case with no TermijnInstance is the ordinary case of a case type
+	 * nobody configured a TermijnDefinitie for. The gesture still happens on
+	 * the case; only the statutory bookkeeping is skipped, and it is logged
+	 * rather than swallowed silently.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string $gesture The gesture name, for the log line
+	 * @param callable(string): array<string, mixed> $apply What to do with the instance id
+	 *
+	 * @return array<string, mixed>|null What the gesture answered, or null when the case has no instance.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function onTermInstance(string $caseId, string $gesture, callable $apply): ?array {
+		$instance = $this->deadlines->termService->getTermijnInstanceForZaak(caseId: $caseId);
+		$instanceId = (string)($instance['id'] ?? ($instance['@self']['id'] ?? ''));
+		if ($instanceId === '') {
+			$this->logger->info(
+				'CaseLifecycleService: no TermijnInstance for case, statutory clock untouched',
+				['caseId' => $caseId, 'gesture' => $gesture],
+			);
+			return null;
+		}
+
+		return $apply($instanceId);
+	}//end onTermInstance()
+
+	/**
+	 * The new end date an extension lands on: the one the caller named, or
+	 * the current one plus the case type's statutory period.
+	 *
+	 * @param string $current The current end date (Y-m-d), possibly empty
+	 * @param string $named An explicit new end date, or '' for the period
+	 * @param string $period The case type's ISO 8601 extension period
+	 *
+	 * @return string The new end date as Y-m-d
+	 *
+	 * @throws RuntimeException When the named date is unreadable or not later,
+	 *                          or when no period is configured and none was named
+	 *
+	 * @spec openspec/specs/case-bulk-status-transition/spec.md
+	 */
+	private function resolveNewEndDate(string $current, string $named, string $period): string {
+		if ($named !== '') {
+			return $this->requireLaterDate(current: $current, candidate: $named);
+		}
+
+		if ($period === '') {
+			throw new RuntimeException('extension_period_not_configured');
+		}
+
+		return $this->addPeriod(date: $current, period: $period);
+	}//end resolveNewEndDate()
+
+	/**
+	 * An explicit new end date, normalised, having checked it is later than
+	 * the current one.
+	 *
+	 * @param string $current The current end date (Y-m-d), possibly empty
+	 * @param string $candidate The date the caller named
+	 *
+	 * @return string The new end date as Y-m-d
+	 *
+	 * @throws RuntimeException When the date is unreadable or not later
+	 *
+	 * @spec openspec/specs/case-bulk-status-transition/spec.md
+	 */
+	private function requireLaterDate(string $current, string $candidate): string {
+		try {
+			$next = new DateTimeImmutable($candidate);
+		} catch (\Throwable $e) {
+			throw new RuntimeException('new_end_date_unreadable');
+		}
+
+		if ($current !== '') {
+			try {
+				$now = new DateTimeImmutable($current);
+			} catch (\Throwable $e) {
+				$now = null;
+			}
+
+			if ($now !== null && $next <= $now) {
+				throw new RuntimeException('new_end_date_not_later');
+			}
+		}
+
+		return $next->format('Y-m-d');
+	}//end requireLaterDate()
+
+	/**
+	 * Add an ISO 8601 duration to a date.
+	 *
+	 * @param string $date The current end date (Y-m-d); today when empty
+	 * @param string $period An ISO 8601 duration such as P14D
+	 *
+	 * @return string The new end date as Y-m-d
+	 *
+	 * @throws RuntimeException When the period is not a duration this can read
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function addPeriod(string $date, string $period): string {
+		try {
+			$start = new DateTimeImmutable($date);
+		} catch (\Throwable $e) {
+			$start = new DateTimeImmutable();
+		}
+
+		try {
+			$interval = new DateInterval($period);
+		} catch (\Throwable $e) {
+			throw new RuntimeException('extension_period_unreadable');
+		}
+
+		// The extended end date is the one a handler is judged on, so the
+		// organisation's calendar decides the day it lands on (Awt art. 1).
+		$end = $start->add($interval);
+
+		return ($this->deadlines->timerService?->rollTermEndFor(date: $end) ?? $end)->format('Y-m-d');
+	}//end addPeriod()
+
+	/**
+	 * Load the case, or refuse.
+	 *
+	 * @param string $caseId Case UUID
+	 *
+	 * @return array<string, mixed> The case
+	 *
+	 * @throws RuntimeException When the case cannot be read
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function requireCase(string $caseId): array {
+		$case = $this->store->loadCase(caseId: $caseId);
+		if ($case === null) {
+			throw new RuntimeException('case_not_found');
+		}
+
+		return $case;
+	}//end requireCase()
+
+	/**
+	 * Every gesture asks for a reason, and an empty one is not a reason.
+	 *
+	 * @param string $reason The reason the caller gave
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the reason is empty
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function requireReason(string $reason): void {
+		if (trim($reason) === '') {
+			throw new RuntimeException('reason_required');
+		}
+	}//end requireReason()
+}//end class

@@ -24,6 +24,7 @@ use OCA\Dossiq\Service\BesluitMigrationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -62,6 +63,8 @@ interface BesluitMigrationObjectServiceStub {
  * duplicating on a re-run, losing the case link, and detaching too early.
  */
 final class BesluitMigrationServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * Objects written by the ObjectService stub during a run.
@@ -144,7 +147,8 @@ final class BesluitMigrationServiceTest extends TestCase {
 			$appManager,
 			$this->container(),
 			$settings,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(originalClassName: LoggerInterface::class),
+			$this->caseDates()
 		);
 
 	}//end service()
@@ -252,6 +256,27 @@ final class BesluitMigrationServiceTest extends TestCase {
 	}//end besluit()
 
 	/**
+	 * The whole summary of a blocked run, and of a dry run that meets a row
+	 * without an id.
+	 *
+	 * @return void
+	 */
+	public function testTheSummaryKeepsItsWholeShape(): void {
+		$blocked = $this->service('', [$this->besluit('a')])->migrate(commit: true);
+		$this->assertSame(['status', 'total', 'migrated', 'skipped', 'failed', 'detached', 'message'], array_keys($blocked));
+		$this->assertSame(['blocked', 0, 0, 0, 0, false], array_slice(array_values($blocked), 0, 6));
+		$this->assertNotSame('', $blocked['message']);
+
+		$noId = $this->besluit('a');
+		unset($noId['id']);
+		$dry = $this->service('166', [$noId, $this->besluit('b')])->migrate(commit: false);
+		$this->assertSame(
+			['status' => 'ok', 'total' => 2, 'migrated' => 1, 'skipped' => 0, 'failed' => 1, 'detached' => false, 'message' => ''],
+			$dry
+		);
+	}//end testTheSummaryKeepsItsWholeShape()
+
+	/**
 	 * Without decidiq there is nothing to migrate onto, and the run must say so
 	 * rather than report a successful migration of zero rows.
 	 *
@@ -340,8 +365,10 @@ final class BesluitMigrationServiceTest extends TestCase {
 
 		// decidiq declares `decisionDate` as `date-time` where this app declares
 		// `date`. OpenRegister validates on write, so an unwidened value does not
-		// move the besluit at all.
-		$this->assertSame('2026-09-01T00:00:00+00:00', $written['decisionDate']);
+		// move the besluit at all. The widening is midnight in the administered
+		// zone since openspec/changes/one-date-write-path; it used to be midnight
+		// UTC, which reads as the previous evening for every Dutch reader.
+		$this->assertSame(expected: '2026-09-01T00:00:00+02:00', actual: $written['decisionDate']);
 		$this->assertSame('2026-09-02', $written['deliveryDate'], 'a `date` target stays a date');
 		$this->assertSame('2026-09-02', $written['deliveryDate']);
 		$this->assertSame('2026-09-03', $written['publicationDate']);

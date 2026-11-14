@@ -40,12 +40,21 @@ open → ontvangen → in_behandeling → advies_uitgebracht → afgesloten
 | GET | `/api/advisory-bodies` | List advisory bodies |
 | GET | `/api/advisory-bodies/search?q={q}` | Search by specialization |
 
-### Public (BIO-audited, token-based)
+### Asking a body outside the organisation
 
 | Method | URL | Description |
 |---|---|---|
-| GET | `/api/public/consultations/{token}` | External body: view |
-| POST | `/api/public/consultations/{token}` | External body: submit advice |
+| POST | `/api/consultations/{id}/external-link` | Invite the advisory body over a case access link |
+| POST | `/api/consultations/{id}/advice` | Collect the comment they wrote, as the response |
+
+The body has no account. It receives an OpenRegister access link over the case
+(openregister#3817) declaring reading and commenting, expiring on the
+consultation deadline. Its advice is a comment written as the link, recorded on
+the audit trail as `link:<uuid>`. The handler collects that comment and names
+which of the four codified outcomes it carries.
+
+The token page this replaced could never be entered: nothing minted the token
+it read. It was deleted by `case-sharing-mints-access-links`.
 
 ## n8n Workflows
 
@@ -64,16 +73,17 @@ Webhook contract for the email fanout (called by Dossiq on consultation create f
   "onderwerp": "Brandveiligheidsadvies",
   "vraagstelling": "Is het gebouw brandveilig?",
   "uiterlijkeReactiedatum": "2026-07-01",
-  "secureResponseUrl": "https://gemeente.nl/apps/dossiq/api/public/consultations/{token}",
+  "secureResponseUrl": "https://gemeente.nl/index.php/apps/openregister/link/{anchor}",
   "advisoryBodyEmail": "ggd@regioutrecht.nl"
 }
 ```
 
 ## Security
 
-- Secure tokens: 256-bit (32 random bytes), hex-encoded to 64 characters
-- Token expires when consultation is closed or withdrawn
-- All external access via `/api/public/consultations/{token}` is logged (BIO compliance)
+- The link is OpenRegister's, not dossiq's: OpenRegister owns the address, the expiry, the optional password and the revoke
+- Reading is always granted. Commenting is granted only when the link says so, and an undeclared capability answers 403
+- Unknown, revoked, switched off and expired all answer the same 404, so a holder learns nothing from the answer
+- Every use is written to the audit trail with the link as the actor, so four uses of one link are four entries naming it
 - Document-scope isolation: consulted parties only see documents explicitly linked to their consultation
 
 ## Mandatory Gates

@@ -4,7 +4,7 @@
  * Dossiq Hearing Service
  *
  * Service for managing hoorgesprekken (hearings) linked to complaints.
- * Handles scheduling, Calendar invitations via OCP\Calendar\IManager,
+ * Handles scheduling, calendar events via OCP\Calendar\IManager,
  * and Talk room creation via OCP\Talk\IBroker for videogesprek hearings.
  *
  * @category Service
@@ -16,14 +16,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
+use OCA\Dossiq\Service\Support\CallerIdentity;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -31,22 +34,34 @@ use RuntimeException;
 /**
  * Service for hearing (hoorgesprek) management within the complaint workflow.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
  */
 class HearingService {
 
 	use SearchesObjects;
 
 	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service
 	 * @param LoggerInterface $logger Logger
+	 * @param HearingCalendarService $calendarService Writes the hearing onto participants' calendars
+	 * @param TalkConversationBroker $talkBroker Opens the Talk room a video hearing runs in
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly HearingCalendarService $calendarService,
+		private readonly TalkConversationBroker $talkBroker,
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -59,16 +74,11 @@ class HearingService {
 	 *
 	 * @throws \RuntimeException If required fields missing or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function scheduleHearing(string $complaintId, array $data): array {
-		if (empty($data['date']) === true) {
-			throw new RuntimeException('Hearing datum is required');
-		}
-
-		if (empty($data['type']) === true) {
-			throw new RuntimeException('Hearing type is required');
-		}
+		$data = array_diff_key($data, CallerIdentity::KEYS);
+		$this->requireHearingFields(data: $data);
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -84,6 +94,54 @@ class HearingService {
 
 		$data['complaint'] = $complaintId;
 
+		$data = $this->withTalkRoom(complaintId: $complaintId, data: $data);
+
+		// Put the hearing on every participant's calendar before it is stored,
+		// so the id the schema reserves is written with the hearing itself.
+		$data['calendarEventId'] = $this->calendarService->createEvent(data: $data);
+
+		$hearing = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+
+		$this->logger->info(
+			'Hearing scheduled for complaint ' . $complaintId . ' on ' . $data['date'],
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return $this->hearingAnswer(hearing: $hearing, data: $data);
+	}//end scheduleHearing()
+
+	/**
+	 * Refuse a hearing without a date or a type.
+	 *
+	 * @param array<string, mixed> $data Hearing data (datum, locatie, type, deelnemers)
+	 *
+	 * @return void
+	 *
+	 * @throws \RuntimeException If required fields missing
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function requireHearingFields(array $data): void {
+		if (empty($data['date']) === true) {
+			throw new RuntimeException('Hearing datum is required');
+		}
+
+		if (empty($data['type']) === true) {
+			throw new RuntimeException('Hearing type is required');
+		}
+	}//end requireHearingFields()
+
+	/**
+	 * The hearing data with a Talk room for a video hearing.
+	 *
+	 * @param string               $complaintId Complaint UUID
+	 * @param array<string, mixed> $data        Hearing data
+	 *
+	 * @return array<string, mixed> The hearing data.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function withTalkRoom(string $complaintId, array $data): array {
 		// Create Talk room for video hearings.
 		if ($data['type'] === 'videogesprek') {
 			$talkUrl = $this->createTalkRoom(complaintId: $complaintId);
@@ -93,22 +151,26 @@ class HearingService {
 			}
 		}
 
-		$hearing = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+		return $data;
+	}//end withTalkRoom()
 
-		// Send calendar invitations to all participants.
-		$this->sendCalendarInvitations(hearing: $hearing, data: $data);
-
-		$this->logger->info(
-			'Hearing scheduled for complaint ' . $complaintId . ' on ' . $data['date'],
-			['app' => Application::APP_ID],
-		);
-
+	/**
+	 * The created hearing as an array.
+	 *
+	 * @param mixed                $hearing The saveObject() result.
+	 * @param array<string, mixed> $data    The hearing data that was saved.
+	 *
+	 * @return array<string, mixed> Created hearing
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function hearingAnswer(mixed $hearing, array $data): array {
 		if (is_array($hearing) === true) {
 			return $hearing;
 		}
 
 		return array_merge($data, ['id' => $hearing->getUuid()]);
-	}//end scheduleHearing()
+	}//end hearingAnswer()
 
 	/**
 	 * Get a hearing by ID.
@@ -117,7 +179,7 @@ class HearingService {
 	 *
 	 * @return array<string, mixed>|null Hearing data or null
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function getHearing(string $id): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -147,25 +209,11 @@ class HearingService {
 	 *
 	 * @return array<int, array<string, mixed>> List of hearings
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function getHearingsForComplaint(string $complaintId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('hearing_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+		return $this->rows->search(
+			schemaKey: 'hearing_schema',
 			filters: ['complaint' => $complaintId]
 		);
 	}//end getHearingsForComplaint()
@@ -180,7 +228,7 @@ class HearingService {
 	 *
 	 * @throws \RuntimeException If verslag is missing or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function recordOutcome(string $id, array $outcome): array {
 		if (empty($outcome['minutes']) === true) {
@@ -202,11 +250,11 @@ class HearingService {
 			'dateCompleted' => $outcome['dateCompleted'] ?? date('Y-m-d'),
 		];
 
-		$result = $objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string)$id);
+		$result = $this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$id, changes: $updateData);
 
 		$this->logger->info(
 			'Hearing outcome recorded for hearing ' . $id,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		if (is_array($result) === true) {
@@ -219,84 +267,32 @@ class HearingService {
 	/**
 	 * Create a Nextcloud Talk room for a video hearing.
 	 *
+	 * The hoorzitting is now one configured use of the case-level conversation
+	 * mechanism rather than the only place in dossiq that can open a room:
+	 * the broker lookup moved to {@see TalkConversationBroker}, which every
+	 * conversation on any case goes through. Behaviour here is unchanged, an
+	 * instance without Talk still degrades to an empty string.
+	 *
 	 * @param string $complaintId Complaint UUID (used as room name)
 	 *
 	 * @return string Talk room URL or empty string if Talk not available
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function createTalkRoom(string $complaintId): string {
-		// Talk integration via OCP\Talk\IBroker — interface may not be available
-		// on all NC installations; gracefully degrade to empty string.
 		$roomName = 'Hoorgesprek klacht ' . $complaintId;
 
 		$this->logger->debug(
 			'Creating Talk room for complaint hearing',
-			['complaintId' => $complaintId, 'roomName' => $roomName, 'app' => Application::APP_ID],
+			['complaintId' => $complaintId, 'roomName' => $roomName, 'app' => AppIdentity::APP_ID],
 		);
 
-		try {
-			$container = \OC::$server;
-			if ($container->has(\OCP\Talk\IBroker::class) === false) {
-				return '';
-			}
-
-			$broker = $container->get(\OCP\Talk\IBroker::class);
-			if (($broker instanceof \OCP\Talk\IBroker) === false) {
-				return '';
-			}
-
-			$config = $broker->newConversationOptions();
-			$room = $broker->createConversation(
-				name: $roomName,
-				moderators: [],
-				options: $config,
-			);
-
-			return $room->getAbsoluteUrl();
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Failed to create Talk room for complaint ' . $complaintId . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID],
-			);
+		$room = $this->talkBroker->createRoom(name: $roomName);
+		if ($room === null) {
 			return '';
-		}//end try
+		}
+
+		return $room['url'];
 	}//end createTalkRoom()
 
-	/**
-	 * Send calendar invitations to all hearing participants.
-	 *
-	 * @param mixed $hearing Saved hearing object
-	 * @param array<string, mixed> $data Original hearing data with participants
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
-	 */
-	private function sendCalendarInvitations(mixed $hearing, array $data): void {
-		$participants = $data['participants'] ?? [];
-		if (empty($participants) === true) {
-			return;
-		}
-
-		$date = $data['date'] ?? '';
-		$location = $data['location'] ?? '';
-
-		// `is_callable()` rather than `method_exists()`: ObjectEntity exposes
-		// getUuid() through OCP\AppFramework\Db\Entity::__call(), which
-		// method_exists() cannot see, so it reports false for every live
-		// object and would leave this log field permanently empty.
-		$hearingId = '';
-		if (is_object($hearing) === true && is_callable([$hearing, 'getUuid']) === true) {
-			$hearingId = (string)call_user_func([$hearing, 'getUuid']);
-		}
-
-		// Calendar integration — log attempt; actual calendar write is
-		// delegated to NC Calendar IManager search/find calendars per participant.
-		$this->logger->info(
-			'Calendar invitations queued for hearing on ' . $date . ' at ' . $location
-			. ' for ' . count($participants) . ' participants',
-			['app' => Application::APP_ID, 'hearingId' => $hearingId],
-		);
-	}//end sendCalendarInvitations()
 }//end class

@@ -30,8 +30,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use Exception;
-use OCA\Dossiq\Service\Assistant\CaseAssistantService;
-use OCA\Dossiq\Service\Assistant\HermiqAssistantClient;
+use OCA\Dossiq\Kernel\Contracts\CaseAssistantServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeAiFeaturesInterface;
+use OCA\Dossiq\Kernel\Contracts\HermiqAiFeatureClientInterface;
+use OCA\Dossiq\Kernel\Contracts\HermiqAssistantClientInterface;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -48,24 +50,37 @@ use Psr\Log\LoggerInterface;
  */
 class AssistantController extends Controller {
 	/**
+	 * The usage scope dossiq's case prompts carry in hermiq's library.
+	 *
+	 * @var string
+	 */
+	public const CASE_PROMPT_SCOPE = 'dossiq-case';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $appName The application name.
 	 * @param IRequest $request The request object.
-	 * @param CaseAssistantService $caseAssistantService Turn orchestration.
-	 * @param HermiqAssistantClient $hermiqClient Availability check for the UI gate.
+	 * @param CaseAssistantServiceInterface $caseAssistantService Turn orchestration.
+	 * @param HermiqAssistantClientInterface $hermiqClient Availability check for the UI gate.
 	 * @param IUserSession $userSession Resolves the requesting user.
 	 * @param IL10N $l10n Localization service for translations.
 	 * @param LoggerInterface $logger Structured logger.
+	 * @param CaseTypeAiFeaturesInterface|null $aiFeatures Reads what a case type declared.
+	 * @param HermiqAiFeatureClientInterface|null $aiFeatureClient Reads where each declared feature runs.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseAssistantService $caseAssistantService,
-		private readonly HermiqAssistantClient $hermiqClient,
+		private readonly CaseAssistantServiceInterface $caseAssistantService,
+		private readonly HermiqAssistantClientInterface $hermiqClient,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
+		// Nullable and last, so every existing construction of this controller
+		// keeps working; the container supplies both.
+		private readonly ?CaseTypeAiFeaturesInterface $aiFeatures = null,
+		private readonly ?HermiqAiFeatureClientInterface $aiFeatureClient = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -87,14 +102,147 @@ class AssistantController extends Controller {
 	public function availability(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('Authentication required')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->unauthenticated();
 		}
 
 		return new JSONResponse(['available' => $this->hermiqClient->isAvailable()]);
 	}//end availability()
+
+	/**
+	 * Which AI features a case type offers on a surface, and where each runs.
+	 *
+	 * 🔴 AN UNDECLARED CASE TYPE MAKES NO CALL. The declaration is read first
+	 * and locally, and hermiq is only asked when something was declared, which
+	 * is the difference between a feature that is off and a case that is sent
+	 * somewhere to find out. That is REQ-AIC-01 and it is a privacy rule
+	 * before it is a feature flag.
+	 *
+	 * 🔴 THE PROVIDER AND THE PLACE COME FROM HERMIQ, never from here
+	 * (REQ-AIC-02). dossiq holds no provider, model or residency setting and
+	 * offers no way to set one. A feature hermiq does not answer for is
+	 * reported unavailable, never as local — an unknown residency shown as
+	 * "here" is the one wrong answer this endpoint could give.
+	 *
+	 * @return JSONResponse `{features: [{slug, surface, available, provider, residency}]}`.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @no-admin-idor-exempt There is no object to scope to. This method fetches
+	 * nothing by id: the case TYPE declaration arrives in the request body and
+	 * is read locally, and what comes back from hermiq is a global residency
+	 * map that is the same for every caller. No stored case, document or party
+	 * is read, so there is no per-object owner to check and a guard here would
+	 * be checking a permission on nothing.
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-the-provider-and-the-place-are-read-from-hermiq-never-set-in-dossiq-req-aic-02
+	 */
+	public function aiFeatures(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->unauthenticated();
+		}
+
+		if ($this->aiFeatures === null || $this->aiFeatureClient === null) {
+			return new JSONResponse(['features' => []]);
+		}
+
+		$caseType = (array)$this->request->getParam('caseType', []);
+		$surface = (string)$this->request->getParam('surface', CaseTypeAiFeaturesInterface::SURFACE_CASE);
+
+		$declared = $this->aiFeatures->onSurface(caseType: $caseType, surface: $surface);
+		if ($declared === []) {
+			// Nothing declared for this surface: answer locally and send
+			// nothing anywhere.
+			return new JSONResponse(['features' => []]);
+		}
+
+		return new JSONResponse(['features' => $this->featureRows(declared: $declared, surface: $surface)]);
+	}//end aiFeatures()
+
+	/**
+	 * Each declared feature with where hermiq runs it.
+	 *
+	 * @param array<int, string> $declared The features the case type declares here.
+	 * @param string             $surface  The surface.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-the-provider-and-the-place-are-read-from-hermiq-never-set-in-dossiq-req-aic-02
+	 */
+	private function featureRows(array $declared, string $surface): array {
+		$residency = $this->aiFeatureClient?->featureResidency() ?? [];
+
+		$features = [];
+		foreach ($declared as $slug) {
+			$features[] = ['slug' => $slug, 'surface' => $surface] + $this->residencyOf(row: ($residency[$slug] ?? null));
+		}
+
+		return $features;
+	}//end featureRows()
+
+	/**
+	 * Whether hermiq offers the feature, and its provider and residency.
+	 *
+	 * Declared here, unknown to hermiq: unavailable, and said so rather than
+	 * shown with an empty provider that reads as local.
+	 *
+	 * @param mixed $row Hermiq's residency row for the feature.
+	 *
+	 * @return array{available: bool, provider: mixed, residency: mixed}
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-the-provider-and-the-place-are-read-from-hermiq-never-set-in-dossiq-req-aic-02
+	 */
+	private function residencyOf(mixed $row): array {
+		if (is_array($row) === false) {
+			return ['available' => false, 'provider' => null, 'residency' => null];
+		}
+
+		return ['available' => true, 'provider' => ($row['provider'] ?? null), 'residency' => ($row['residency'] ?? null)];
+	}//end residencyOf()
+
+	/**
+	 * The prompts the assistant offers on a case, as hermiq holds them.
+	 *
+	 * 🔴 DOSSIQ HOLDS NO PROMPT TEXT FOR THE CASE SURFACE (REQ-AIC-06). The
+	 * prompts are hermiq's administered objects, read in the administrator's
+	 * order; dossiq only ships an initial library into hermiq on upgrade
+	 * (ShipAssistantPrompts). An absent hermiq answers an empty list.
+	 *
+	 * @return JSONResponse `{prompts: [{id, label, prompt}]}`.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @no-admin-idor-exempt There is no object to scope to: the prompt library
+	 * is one global list per record type, the same for every caller, and no
+	 * case, document or party is read.
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-prompts-offered-on-a-case-come-from-hermiq
+	 */
+	public function prompts(): JSONResponse {
+		if ($this->userSession->getUser() === null) {
+			return $this->unauthenticated();
+		}
+
+		if ($this->aiFeatureClient === null) {
+			return new JSONResponse(['prompts' => []]);
+		}
+
+		$prompts = [];
+		foreach ($this->aiFeatureClient->prompts(scope: self::CASE_PROMPT_SCOPE) as $row) {
+			$text = trim((string)($row['prompt'] ?? ''));
+			if ($text === '') {
+				continue;
+			}
+
+			$prompts[] = [
+				'id' => (string)($row['id'] ?? ''),
+				'label' => (string)($row['label'] ?? $text),
+				'prompt' => $text,
+			];
+		}
+
+		return new JSONResponse(['prompts' => $prompts]);
+	}//end prompts()
 
 	/**
 	 * Run one conversational turn against a case.
@@ -109,10 +257,7 @@ class AssistantController extends Controller {
 	public function converse(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('Authentication required')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->unauthenticated();
 		}
 
 		$caseId = (string)$this->request->getParam('caseId', '');
@@ -136,14 +281,37 @@ class AssistantController extends Controller {
 		} catch (HermiqAssistantException $e) {
 			return $this->mapFailure(statusCode: $e->getStatusCode(), message: $e->getMessage(), errorCode: $e->getErrorCode());
 		} catch (Exception $e) {
-			$statusCode = (int)$e->getCode();
-			if ($statusCode < 400 || $statusCode >= 600) {
-				$statusCode = 500;
-			}
-
-			return $this->mapFailure(statusCode: $statusCode, message: $e->getMessage(), errorCode: null);
+			return $this->mapFailure(statusCode: $this->errorStatusOf(exception: $e), message: $e->getMessage(), errorCode: null);
 		}//end try
 	}//end converse()
+
+	/**
+	 * The exception's code when it is an HTTP error status, else 500.
+	 *
+	 * @param Exception $exception The failure.
+	 *
+	 * @return int
+	 */
+	private function errorStatusOf(Exception $exception): int {
+		$statusCode = (int)$exception->getCode();
+		if ($statusCode < 400 || $statusCode >= 600) {
+			return 500;
+		}
+
+		return $statusCode;
+	}//end errorStatusOf()
+
+	/**
+	 * The 401 for a caller without a session.
+	 *
+	 * @return JSONResponse
+	 */
+	private function unauthenticated(): JSONResponse {
+		return new JSONResponse(
+			['error' => $this->l10n->t('Authentication required')],
+			Http::STATUS_UNAUTHORIZED
+		);
+	}//end unauthenticated()
 
 	/**
 	 * Map a coded failure to a translated `JSONResponse`, logging at the

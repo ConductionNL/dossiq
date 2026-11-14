@@ -22,15 +22,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Kcc\CallbackService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CallbackServiceInterface;
 use OCA\Dossiq\Service\Kcc\ContactMomentService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -45,7 +45,7 @@ use OCP\IUserSession;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
  */
 class KccContactController extends Controller {
 	/**
@@ -53,18 +53,18 @@ class KccContactController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param ContactMomentService $contactMomentService The contact-moment service.
-	 * @param CallbackService $callbackService The callback service.
+	 * @param CallbackServiceInterface $callbackService The callback service.
 	 * @param IUserSession $userSession The user session.
 	 * @param IGroupManager $groupManager The group manager.
 	 */
 	public function __construct(
 		IRequest $request,
 		private ContactMomentService $contactMomentService,
-		private CallbackService $callbackService,
+		private CallbackServiceInterface $callbackService,
 		private IUserSession $userSession,
 		private IGroupManager $groupManager,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -74,9 +74,7 @@ class KccContactController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function index(): JSONResponse {
 		$agentId = $this->requireAgentId();
@@ -110,9 +108,7 @@ class KccContactController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function create(): JSONResponse {
 		$agentId = $this->requireAgentId();
@@ -138,9 +134,7 @@ class KccContactController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function show(string $id): JSONResponse {
 		$agentId = $this->requireAgentId();
@@ -170,9 +164,7 @@ class KccContactController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function update(string $id): JSONResponse {
 		$agentId = $this->requireAgentId();
@@ -203,9 +195,7 @@ class KccContactController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function related(string $id): JSONResponse {
 		$agentId = $this->requireAgentId();
@@ -233,9 +223,7 @@ class KccContactController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function scheduleCallback(): JSONResponse {
 		$agentId = $this->requireAgentId();
@@ -259,9 +247,7 @@ class KccContactController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function indexCallbacks(): JSONResponse {
 		$agentId = $this->requireAgentId();
@@ -293,9 +279,7 @@ class KccContactController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function cancelCallback(string $id): JSONResponse {
 		$agentId = $this->requireAgentId();

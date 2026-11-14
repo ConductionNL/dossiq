@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use OCP\App\IAppManager;
 use OCP\Files\IRootFolder;
@@ -102,6 +102,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 	 * @param ZgwDocumentService $documentService The EXISTING binary document storage service.
 	 * @param LoggerInterface $logger Structured logger.
 	 * @param callable|null $sleeper Optional injectable `function(int $s): void` (tests pass a no-op).
+	 * @param callable|null $signedVersionOf Gives a signed version its original's access exception.
 	 */
 	public function __construct(
 		private readonly LibresignApiClient $apiClient,
@@ -112,10 +113,12 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 		ZgwDocumentService $documentService,
 		private readonly LoggerInterface $logger,
 		?callable $sleeper = null,
+		?callable $signedVersionOf = null,
 	) {
 		$this->assembler = new LibresignResultAssembler(
 			rootFolder: $rootFolder,
 			documentService: $documentService,
+			signedVersionOf: $signedVersionOf,
 		);
 
 		$this->sleeper = ($sleeper ?? static function (int $seconds): void {
@@ -143,8 +146,41 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 	public function sign(string $fileId, string $signatory, string $tspProvider): array {
 		$this->assertAvailable();
 
-		$signer = $this->resolveSigner(signatory: $signatory);
+		$uuid = $this->requestSignature(fileId: $fileId, signer: $this->resolveSigner(signatory: $signatory));
 
+		$attempts = $this->pollAttempts();
+		$intervalSeconds = $this->pollIntervalSeconds();
+
+		for ($attempt = 0; $attempt < $attempts; $attempt++) {
+			$status = $this->signedStatus(uuid: $uuid);
+			if ($status !== null) {
+				return $this->assembler->assembleSignedResult(
+					fileId: $fileId,
+					signatory: $signatory,
+					uuid: $uuid,
+					status: $status,
+				);
+			}
+
+			if (($attempt + 1) < $attempts) {
+				($this->sleeper)($intervalSeconds);
+			}
+		}
+
+		throw new RuntimeException('libresign_signing_pending');
+	}//end sign()
+
+	/**
+	 * Ask LibreSign to have the file signed; its request uuid.
+	 *
+	 * @param string               $fileId The PDF file id.
+	 * @param array<string, mixed> $signer The resolved LibreSign signer.
+	 *
+	 * @return string The request uuid.
+	 *
+	 * @throws RuntimeException 'libresign_api_error' when LibreSign answers without a uuid.
+	 */
+	private function requestSignature(string $fileId, array $signer): string {
 		$request = $this->apiClient->requestSignature(
 			fileId: (int)$fileId,
 			documentName: 'beschikking-' . $fileId,
@@ -156,51 +192,82 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 			throw new RuntimeException('libresign_api_error');
 		}
 
-		$attempts = max(
+		return $uuid;
+	}//end requestSignature()
+
+	/**
+	 * How many times the request is polled, at least once.
+	 *
+	 * @return int The attempts.
+	 */
+	private function pollAttempts(): int {
+		return max(
 			1,
-			$this->appConfig->getValueInt(Application::APP_ID, 'libresign_poll_attempts', self::DEFAULT_POLL_ATTEMPTS)
+			$this->appConfig->getValueInt(AppIdentity::APP_ID, 'libresign_poll_attempts', self::DEFAULT_POLL_ATTEMPTS)
 		);
-		$intervalSeconds = max(
+	}//end pollAttempts()
+
+	/**
+	 * The seconds between two polls.
+	 *
+	 * @return int The interval, never negative.
+	 */
+	private function pollIntervalSeconds(): int {
+		return max(
 			0,
 			$this->appConfig->getValueInt(
-				Application::APP_ID,
+				AppIdentity::APP_ID,
 				'libresign_poll_interval_seconds',
 				self::DEFAULT_POLL_INTERVAL_SECONDS
 			)
 		);
+	}//end pollIntervalSeconds()
 
-		for ($attempt = 0; $attempt < $attempts; $attempt++) {
-			$status = $this->apiClient->getStatus($uuid);
-			$mapped = $this->assembler->mapStatus(status: $status);
+	/**
+	 * Ask once: LibreSign's status when the request is signed, null while it is still pending.
+	 *
+	 * An unrecognised status is logged and treated as pending.
+	 *
+	 * @param string $uuid The request uuid.
+	 *
+	 * @return array<string, mixed>|null The signed status, or null.
+	 *
+	 * @throws RuntimeException 'libresign_signing_declined'.
+	 */
+	private function signedStatus(string $uuid): ?array {
+		$status = $this->apiClient->getStatus($uuid);
+		$mapped = $this->assembler->mapStatus(status: $status);
 
-			if ($mapped === LibresignResultAssembler::UNKNOWN) {
-				$raw = (string)($status['statusText'] ?? ($status['status'] ?? ''));
-				$this->logger->warning(
-					'LibresignSigningAdapter: unrecognised LibreSign status value',
-					['app' => Application::APP_ID, 'uuid' => $uuid, 'raw' => $raw],
-				);
-			}
+		if ($mapped === LibresignResultAssembler::UNKNOWN) {
+			$this->warnUnrecognised(uuid: $uuid, status: $status);
+		}
 
-			if ($mapped === LibresignResultAssembler::SIGNED) {
-				return $this->assembler->assembleSignedResult(
-					fileId: $fileId,
-					signatory: $signatory,
-					uuid: $uuid,
-					status: $status,
-				);
-			}
+		if ($mapped === LibresignResultAssembler::SIGNED) {
+			return $status;
+		}
 
-			if ($mapped === LibresignResultAssembler::DECLINED) {
-				throw new RuntimeException('libresign_signing_declined');
-			}
+		if ($mapped === LibresignResultAssembler::DECLINED) {
+			throw new RuntimeException('libresign_signing_declined');
+		}
 
-			if (($attempt + 1) < $attempts) {
-				($this->sleeper)($intervalSeconds);
-			}
-		}//end for
+		return null;
+	}//end signedStatus()
 
-		throw new RuntimeException('libresign_signing_pending');
-	}//end sign()
+	/**
+	 * Log a status value this adapter does not recognise.
+	 *
+	 * @param string               $uuid   The request uuid.
+	 * @param array<string, mixed> $status LibreSign's status answer.
+	 *
+	 * @return void
+	 */
+	private function warnUnrecognised(string $uuid, array $status): void {
+		$raw = (string)($status['statusText'] ?? ($status['status'] ?? ''));
+		$this->logger->warning(
+			'LibresignSigningAdapter: unrecognised LibreSign status value',
+			['app' => AppIdentity::APP_ID, 'uuid' => $uuid, 'raw' => $raw],
+		);
+	}//end warnUnrecognised()
 
 	/**
 	 * {@inheritDoc}
@@ -223,7 +290,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'LibresignSigningAdapter: fetchValidationReport degraded to an invalid report',
-				['app' => Application::APP_ID, 'validationRapportId' => $validationRapportId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'validationRapportId' => $validationRapportId, 'error' => $e->getMessage()],
 			);
 
 			return $this->assembler->assembleFailedValidationReport(validationRapportId: $validationRapportId);

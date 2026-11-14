@@ -16,25 +16,31 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ComplaintServiceInterface;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Term\DayCount;
+use OCA\Dossiq\Service\Term\TermResolution;
+use OCA\OpenRegister\Mcp\Attribute\McpTool;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
  * Service for complaint (klacht) management per Awb chapter 9.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ *
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
-class ComplaintService {
+class ComplaintService implements ComplaintServiceInterface {
 
 	use SearchesObjects;
 
@@ -65,21 +71,21 @@ class ComplaintService {
 	];
 
 	/**
-	 * Dutch public holidays (fixed dates) for working-day calculation.
-	 * Format: 'MM-DD'.
-	 */
-	private const FIXED_HOLIDAYS_NL = [
-		'01-01',
-		'04-27',
-		'05-05',
-		'12-25',
-		'12-26',
-	];
-
-	/**
 	 * Awb chapter 9 acknowledgment deadline in working days.
+	 *
+	 * 🔴 THIS IS NOW THE FALLBACK, NOT THE RULE. The first-response term is
+	 * declared like any other term, on the case type, so an instance that
+	 * agreed a different norm can say so and a service manager can see whether
+	 * it was met. The constant stays as the value an instance that declares
+	 * nothing gets, which is what every complaint got before it was
+	 * declarable: five working days, the same dates as today.
 	 */
 	private const AWB_ACK_WORKING_DAYS = 5;
+
+	/**
+	 * The case type a complaint is, for resolving its first-response term.
+	 */
+	private const COMPLAINT_CASE_TYPE = 'klacht';
 
 	/**
 	 * Awb chapter 9 resolution deadline in calendar weeks.
@@ -96,12 +102,51 @@ class ComplaintService {
 	 *
 	 * @param SettingsService $settingsService Settings service
 	 * @param LoggerInterface $logger Logger
+	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday
+	 *                                          arithmetic for the Awb deadlines
+	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param TermResolution|null $resolution The case type's own first-response
+	 *                                        term, which wins over the Awb
+	 *                                        default when one is declared.
+	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly WorkingDayCalculator $workingDays,
+		private readonly CaseDateNormaliser $dates,
+		private readonly ?TermResolution $resolution = null,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
+
+	/**
+	 * How many working days the acknowledgement is promised within.
+	 *
+	 * The declaration wins when a case type carries a `firstResponse` term;
+	 * otherwise the Awb chapter 9 constant, which is the value every complaint
+	 * had before this was declarable. Behaviour parity is the point: an
+	 * instance that declares nothing keeps exactly the dates it has today.
+	 *
+	 * @return int The working days.
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 */
+	private function acknowledgementDays(): int {
+		$resolved = $this->resolution?->resolve(
+			caseType: self::COMPLAINT_CASE_TYPE,
+			context: [],
+			kind: TermKind::FIRST_RESPONSE
+		);
+
+		$declared = (int)($resolved['definition']['standardDurationDays'] ?? 0);
+
+		if ($declared > 0) {
+			return $declared;
+		}
+
+		return self::AWB_ACK_WORKING_DAYS;
+	}//end acknowledgementDays()
 
 	/**
 	 * Create a new complaint.
@@ -112,11 +157,41 @@ class ComplaintService {
 	 *
 	 * @throws \RuntimeException If validation fails or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function createComplaint(array $data): array {
+		$data = array_diff_key($data, CallerIdentity::KEYS);
 		$this->validateRequired(data: $data, required: ['subject', 'description', 'receiptDate']);
 
+		[$objectService, $register, $schema] = $this->complaintStore();
+
+		$data = $this->received(data: $data);
+
+		$complaint = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+
+		$saved = $this->savedComplaint(data: $data, complaint: $complaint);
+
+		// The number is read off the SAVED complaint, never off `$data`: `$data`
+		// never held one, and a log line that invented its own would name a
+		// number no complaint carries.
+		$this->logger->info(
+			'Complaint created: ' . (string)($saved['complaintNumber'] ?? 'number pending'),
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return $saved;
+	}//end createComplaint()
+
+	/**
+	 * The object service, register and complaint schema a complaint is written to.
+	 *
+	 * @return array{0: object, 1: string, 2: string} The object service, register and schema.
+	 *
+	 * @throws \RuntimeException If OpenRegister is unavailable or the schema is not configured
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
+	 */
+	private function complaintStore(): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -129,31 +204,58 @@ class ComplaintService {
 			throw new RuntimeException('Complaint schema not configured');
 		}
 
+		return [$objectService, $register, $schema];
+	}//end complaintStore()
+
+	/**
+	 * The complaint data as received: its status and its Awb deadlines set.
+	 *
+	 * @param array<string, mixed> $data Complaint data
+	 *
+	 * @return array<string, mixed> The complaint data to save.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
+	 */
+	private function received(array $data): array {
 		$receiptDate = $data['receiptDate'];
 
-		// Generate klachtnummer.
-		$data['complaintNumber'] = $this->generateComplaintNumber();
+		// The klachtnummer is NOT set here. `complaintNumber` declares
+		// `x-openregister-generated` (sequence `complaint`, KL-{year}-{seq:4}),
+		// so OpenRegister issues it under a lock inside the create transaction
+		// and refuses any later change to it.
 		$data['status'] = 'received';
-		$data['priority'] = $data['priority'] ?? 'normal';
 		$data['postponementPossible'] = true;
 
-		// Compute Awb deadlines.
-		$data['acknowledgementOfReceiptDeadline'] = $this->addWorkingDays(startDate: $receiptDate, days: self::AWB_ACK_WORKING_DAYS);
+		// Compute Awb deadlines. The acknowledgement is the complaint's
+		// first-response term, so it comes from the declaration when there is
+		// one and from the Awb constant when there is not.
+		$data['acknowledgementOfReceiptDeadline'] = $this->addWorkingDays(
+			startDate: $receiptDate,
+			days: $this->acknowledgementDays()
+		);
 		$data['afhandelDeadline'] = $this->addCalendarWeeks(startDate: $receiptDate, weeks: self::AWB_RESOLUTION_WEEKS);
 
-		$complaint = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+		return $data;
+	}//end received()
 
-		$this->logger->info(
-			'Complaint created: ' . $data['complaintNumber'],
-			['app' => Application::APP_ID],
-		);
-
-		if (is_array($complaint) === true) {
-			return $complaint;
+	/**
+	 * The saved complaint as an array, whatever shape the save answered.
+	 *
+	 * @param array<string, mixed> $data The complaint data that was saved.
+	 * @param mixed $complaint What the save answered.
+	 *
+	 * @return array<string, mixed> The saved complaint.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
+	 */
+	private function savedComplaint(array $data, mixed $complaint): array {
+		$saved = $complaint;
+		if (is_array($complaint) === false) {
+			$saved = array_merge($data, (array)$complaint->getObject(), ['id' => $complaint->getUuid()]);
 		}
 
-		return array_merge($data, ['id' => $complaint->getUuid()]);
-	}//end createComplaint()
+		return $saved;
+	}//end savedComplaint()
 
 	/**
 	 * Get a single complaint by ID.
@@ -162,7 +264,7 @@ class ComplaintService {
 	 *
 	 * @return array<string, mixed>|null Complaint or null if not found
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function getComplaint(string $id): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -192,7 +294,7 @@ class ComplaintService {
 	 *
 	 * @return array<int, array<string, mixed>> List of complaints
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function listComplaints(array $filters = []): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -227,7 +329,7 @@ class ComplaintService {
 	 *
 	 * @throws \RuntimeException If OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function updateComplaint(string $id, array $data): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -257,7 +359,7 @@ class ComplaintService {
 	 *
 	 * @throws \RuntimeException If transition not allowed
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function transitionStatus(string $id, string $newStatus): array {
 		$complaint = $this->getComplaint(id: $id);
@@ -291,7 +393,7 @@ class ComplaintService {
 	 *
 	 * @throws \RuntimeException If extension not available or invalid
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function requestVerdaging(string $id, string $justification): array {
 		$complaint = $this->getComplaint(id: $id);
@@ -307,7 +409,8 @@ class ComplaintService {
 			throw new RuntimeException('Justificatie is required for verdaging per Awb chapter 9');
 		}
 
-		$currentDeadline = $complaint['afhandelDeadline'] ?? date('Y-m-d');
+		$currentDeadline = ($this->dates->toCalendarDateOrNull($complaint['afhandelDeadline'] ?? null)
+			?? $this->dates->todayAsCalendarDate());
 		$newDeadline = $this->addCalendarWeeks(startDate: $currentDeadline, weeks: self::AWB_VERDAGING_WEEKS);
 
 		$updateData = [
@@ -318,7 +421,7 @@ class ComplaintService {
 
 		$this->logger->info(
 			'Verdaging requested for complaint ' . $id . '; new deadline: ' . $newDeadline,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return $this->updateComplaint(id: $id, data: $updateData);
@@ -334,7 +437,7 @@ class ComplaintService {
 	 *
 	 * @throws \RuntimeException If complaint not found
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function linkEscalatedCase(string $complaintId, string $caseId): array {
 		$complaint = $this->getComplaint(id: $complaintId);
@@ -348,27 +451,32 @@ class ComplaintService {
 	/**
 	 * Get complaints approaching or past their deadlines.
 	 *
-	 * @param int $warningDays Warn when deadline is within this many working days
+	 * The window is counted in CALENDAR days, which is what the body does. The
+	 * docblock used to say working days and the code never did; this corrects
+	 * the comment rather than the behaviour, because an advisory alert window
+	 * is not a statutory term.
+	 *
+	 * @param int $warningDays Warn when the deadline is within this many
+	 *                         calendar days
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> Grouped overdue/warning complaints
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function getDeadlineAlerts(int $warningDays = 3): array {
 		$activeStatuses = ['received', 'receipt_confirmed', 'in_handling', 'hoorgesprek_planned', 'hoorgesprek_completed'];
 		$all = $this->listComplaints(filters: ['status' => $activeStatuses]);
-		$today = new DateTimeImmutable('today');
+		$today = $this->dates->today();
 		$overdue = [];
 		$warning = [];
 
 		foreach ($all as $complaint) {
-			$deadline = $complaint['afhandelDeadline'] ?? null;
-			if ($deadline === null) {
+			$deadlineDate = $this->dates->tryParse($complaint['afhandelDeadline'] ?? null);
+			if ($deadlineDate === null) {
 				continue;
 			}
 
-			$deadlineDate = new DateTimeImmutable($deadline);
-			$diff = (int)$today->diff($deadlineDate)->days;
+			$diff = $this->days->between(from: $today, to: $deadlineDate);
 			$isPast = $today > $deadlineDate;
 
 			if ($isPast === true) {
@@ -382,6 +490,68 @@ class ComplaintService {
 	}//end getDeadlineAlerts()
 
 	/**
+	 * Fields of a complaint an assistant may see in a list (REQ-MCP-203).
+	 *
+	 * `complainant` is the citizen and is never one of them.
+	 *
+	 * @var array<string>
+	 */
+	private const OVERDUE_PROJECTION = [
+		'id',
+		'complaintNumber',
+		'subject',
+		'category',
+		'status',
+		'handler',
+		'acknowledgementOfReceiptDeadline',
+		'afhandelDeadline',
+	];
+
+	/**
+	 * The complaints past their handling deadline, without the complainant.
+	 *
+	 * The projection is applied HERE, on the way out, because the dialect has
+	 * no field projection and `complaint` stays get-only there. A row is
+	 * rebuilt from an allowlist rather than stripped of a denylist, so a field
+	 * added to the schema later stays out until someone names it.
+	 *
+	 * @return array{complaints: list<array<string, mixed>>, count: int}
+	 *
+	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-203-overdue-complaints-via-redacted-projection
+	 */
+	#[McpTool(
+		name: 'listOverdueComplaints',
+		description: 'Complaints (klachten) past their handling deadline: number, subject, category, status, handler and deadlines. Never the complainant.',
+		readOnlyHint: true,
+		scope: 'read',
+		reach: 'user',
+		subject: 'complaint',
+		action: 'listOverdue',
+		annotations: ['outsideAgent' => true]
+	)]
+	public function listOverdueComplaints(): array {
+		$today = $this->dates->today();
+		$rows = [];
+		foreach ($this->getDeadlineAlerts()['overdue'] as $complaint) {
+			$row = [];
+			foreach (self::OVERDUE_PROJECTION as $field) {
+				if (array_key_exists($field, $complaint) === true) {
+					$row[$field] = $complaint[$field];
+				}
+			}
+
+			$ackDeadline = $this->dates->tryParse($complaint['acknowledgementOfReceiptDeadline'] ?? null);
+			$row['handlingOverdue'] = true;
+			$row['acknowledgementOverdue'] = $ackDeadline !== null
+				&& $today > $ackDeadline
+				&& ($complaint['status'] ?? null) === 'received';
+			$rows[] = $row;
+		}
+
+		return ['complaints' => $rows, 'count' => count($rows)];
+	}//end listOverdueComplaints()
+
+	/**
 	 * Add working days to a date, skipping weekends and Dutch public holidays.
 	 *
 	 * @param string $startDate ISO date string (Y-m-d)
@@ -389,20 +559,11 @@ class ComplaintService {
 	 *
 	 * @return string Resulting ISO date string (Y-m-d)
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function addWorkingDays(string $startDate, int $days): string {
-		$date = new DateTimeImmutable($startDate);
-		$added = 0;
-
-		while ($added < $days) {
-			$date = $date->modify('+1 day');
-			if ($this->isWorkingDay(date: $date) === true) {
-				$added++;
-			}
-		}
-
-		return $date->format('Y-m-d');
+		$start = $this->dates->parse($startDate, 'receiptDate');
+		return $this->dates->formatCalendarDate($this->workingDays->addWorkingDays(start: $start, days: $days));
 	}//end addWorkingDays()
 
 	/**
@@ -413,12 +574,11 @@ class ComplaintService {
 	 *
 	 * @return string Resulting ISO date string (Y-m-d)
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function addCalendarWeeks(string $startDate, int $weeks): string {
-		$date = new DateTimeImmutable($startDate);
-		$date = $date->modify('+' . $weeks . ' weeks');
-		return $date->format('Y-m-d');
+		$date = $this->dates->parse($startDate, 'receiptDate')->modify('+' . $weeks . ' weeks');
+		return $this->dates->formatCalendarDate($date);
 	}//end addCalendarWeeks()
 
 	/**
@@ -428,76 +588,11 @@ class ComplaintService {
 	 *
 	 * @return bool True if the date is a working day
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function isWorkingDay(\DateTimeImmutable $date): bool {
-		$dayOfWeek = (int)$date->format('N');
-
-		// Skip weekends (Saturday=6, Sunday=7).
-		if ($dayOfWeek >= 6) {
-			return false;
-		}
-
-		// Skip fixed Dutch public holidays.
-		$monthDay = $date->format('m-d');
-		if (in_array($monthDay, self::FIXED_HOLIDAYS_NL, true) === true) {
-			return false;
-		}
-
-		// Skip Easter-derived holidays (Good Friday, Easter Monday, Ascension, Whit Monday).
-		$year = (int)$date->format('Y');
-		$easter = new DateTimeImmutable(date('Y-m-d', easter_date($year)));
-		$easterDerived = [
-			$easter->modify('-2 days')->format('Y-m-d'),
-			$easter->modify('+1 day')->format('Y-m-d'),
-			$easter->modify('+39 days')->format('Y-m-d'),
-			$easter->modify('+50 days')->format('Y-m-d'),
-		];
-
-		if (in_array($date->format('Y-m-d'), $easterDerived, true) === true) {
-			return false;
-		}
-
-		return true;
+		return $this->workingDays->isWorkingDay(date: $date);
 	}//end isWorkingDay()
-
-	/**
-	 * Generate the next sequential klachtnummer for the current year.
-	 *
-	 * @return string Klachtnummer in format KL-{year}-{sequence}
-	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
-	 */
-	private function generateComplaintNumber(): string {
-		$year = date('Y');
-		$objectService = $this->settingsService->getObjectService();
-
-		if ($objectService === null) {
-			return 'KL-' . $year . '-' . str_pad((string)rand(1, 9999), 4, '0', STR_PAD_LEFT);
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('complaint_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return 'KL-' . $year . '-0001';
-		}
-
-		// Count existing complaints this year.
-		$yearStart = $year . '-01-01';
-		$yearEnd = $year . '-12-31';
-
-		$existing = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['ontvangstdatum>=' => $yearStart, 'ontvangstdatum<=' => $yearEnd, '_limit' => 10000]
-		);
-
-		$count = count($existing);
-
-		return 'KL-' . $year . '-' . str_pad((string)($count + 1), 4, '0', STR_PAD_LEFT);
-	}//end generateKlachtnummer()
 
 	/**
 	 * Validate that required fields are present and non-empty.
@@ -509,7 +604,7 @@ class ComplaintService {
 	 *
 	 * @throws \RuntimeException If any required field is missing
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	private function validateRequired(array $data, array $required): void {
 		$missing = [];

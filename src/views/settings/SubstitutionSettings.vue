@@ -23,8 +23,8 @@
 		<p class="substitution-settings__intro">
 			{{
 				t(
-					'procest',
-					'Register a colleague to handle your cases and tasks while you are away. They will see your work in their My Work and receive your deadline signals for the period. Substitution does not grant any extra permissions — your colleague only sees what they are already allowed to access.',
+					'dossiq',
+					'Register a colleague to handle your cases and tasks while you are away. They will see your work in their My Work and receive your deadline signals for the period. Substitution does not grant any extra permissions. Your colleague only sees what they are already allowed to access.',
 				)
 			}}
 		</p>
@@ -58,7 +58,7 @@
 					<td>{{ sub.scope }}</td>
 					<td>{{ sub.reason }}</td>
 					<td>
-						<span :class="`status status--${sub.status}`">{{
+						<span :class="`status cn-status-badge cn-status-badge--default status--${sub.status}`">{{
 							sub.status
 						}}</span>
 					</td>
@@ -188,25 +188,22 @@ export default {
 
 .substitution-settings__table th,
 .substitution-settings__table td {
-	text-align: left;
+	text-align: start;
 	padding: 8px 10px;
 	border-bottom: 1px solid var(--color-border);
 }
 
-.status {
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 0.8rem;
-}
 
 .status--active {
 	background: var(--color-success);
-	color: var(--color-primary-element-text);
+	--cn-status-badge-ink: var(--color-success-text);
+	color: var(--cn-status-badge-ink);
 }
 
 .status--ended,
 .status--revoked {
 	background: var(--color-background-dark);
-	color: var(--color-text-maxcontrast);
+	--cn-status-badge-ink: var(--color-text-maxcontrast);
+	color: var(--cn-status-badge-ink);
 }
 </style>

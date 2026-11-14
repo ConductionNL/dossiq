@@ -47,7 +47,7 @@ test.describe('Semantic case intake — handoff provenance UI', () => {
 			// ["manual","balie","phone","email","post","website","other",
 			// "zgw-api"], so 'handoff' is rejected by OpenRegister with a 400
 			// and the fixture never got created. The provenance UI keys off
-			// `handoffSource` alone (InitiatorSection#hasHandoff), so the
+			// `handoffSource` alone (the retired InitiatorSection#hasHandoff), so the
 			// channel value is incidental to what this test proves.
 			intakeChannel: 'other',
 			handoffSource: 'urn:openregister:pipelinq:request:demo-123',

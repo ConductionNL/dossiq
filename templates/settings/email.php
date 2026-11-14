@@ -1,12 +1,12 @@
 <?php
-
-use OCP\Util;
-
-$appId = OCA\Dossiq\AppInfo\Application::APP_ID;
-// Shared splitChunks bundles (Vue / @nextcloud/vue / @conduction/nextcloud-vue);
-// the -email-settings entry depends on them, so they must load first.
-Util::addScript($appId, $appId . '-shared-vendor');
-Util::addScript($appId, $appId . '-shared-nc-vue');
-Util::addScript($appId, $appId . '-email-settings');
-?>
-<div id="dossiq-email-settings"></div>
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * Intentionally empty. The shared mailbox settings are the "Case email: shared
+ * mailbox" section of the main settings page (AdminRoot). This form exists
+ * only so EmailSettings can delegate its config keys; drawing anything here
+ * repeated that section at the bottom of the page.
+ *
+ * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+ */

@@ -22,6 +22,22 @@
  *
  * Asserting only the first half would pass just as happily on a build where the
  * links vanished entirely, which is exactly what ADR-044 Decision 5 forbids.
+ *
+ * WHY THE ANCHORS BELOW POINT AT FILES THAT DO NOT EXIST YET
+ * ---------------------------------------------------------
+ * avg-processing-surface, ai-oversight-surface, admin-settings-surface and
+ * automatic-actions-surface are declared only in the open change
+ * page-topology-cleanup. spec-anchor-convention requires an anchor to name the
+ * capability in its canonical spelling even then: the anchor is early, not
+ * wrong, and archiving is what brings the content to the path it already names.
+ * Rewriting these to openspec/changes/... would break on the next archive and
+ * would be the one spelling the convention forbids outright.
+ *
+ * The cost of being early is that gate-19 reads openspec/specs only, so these
+ * seven citations credit nothing until page-topology-cleanup is archived. The
+ * e2e citation audit reports them as dangling for the same reason: it resolves
+ * a path rather than a capability. Neither is a defect in the citations. The
+ * fix is to archive the change, not to move the anchors.
  */
 
 import { expect, test } from '@playwright/test'
@@ -71,7 +87,7 @@ async function navLinks(page) {
 	// accessible name — the foldout's `data-testid` sits on the wrapper and
 	// does not always contain a directly-matchable button element.
 	const settingsToggle = sidebarNav(page)
-		.getByRole('button', { name: 'Settings', exact: true })
+		.getByRole('button', { name: 'Advanced', exact: true })
 		.first()
 	if (await settingsToggle.isVisible().catch(() => false)) {
 		await settingsToggle.click().catch(() => {})
@@ -126,7 +142,7 @@ test.describe('ADR-110: a link that leaves the app leaves the navigation', () =>
 		expect(labels).not.toContain('AI oversight')
 	})
 
-	// @e2e openspec/changes/page-topology-cleanup/specs/admin-settings-surface/spec.md#scenario-exactly-one-entry-links-to-the-administration-surface
+	// @e2e openspec/changes/page-topology-cleanup/specs/admin-settings-surface/spec.md#scenario-no-duplicate-configuration-entries
 	test('exactly one entry links to the administration surface', async ({
 		page,
 	}) => {

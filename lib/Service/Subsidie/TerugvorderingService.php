@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Term\DayCount;
+use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
@@ -41,7 +43,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/specs.md
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
 class TerugvorderingService {
 
@@ -68,10 +70,15 @@ class TerugvorderingService {
 	 *
 	 * @param SettingsService $settingsService Schema/register bridge.
 	 * @param LoggerInterface $logger Logger.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
+	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -80,12 +87,14 @@ class TerugvorderingService {
 	 *
 	 * @param DateTimeImmutable $publication The publication date.
 	 *
-	 * @return DateTimeImmutable The bezwaartermijn end.
+	 * @return DateTimeImmutable The bezwaartermijn end, on a working day.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function computeBezwaartermijn(DateTimeImmutable $publication): DateTimeImmutable {
-		return $publication->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
+		$end = $publication->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
+
+		return ($this->timerService?->rollTermEndFor(date: $end) ?? $end);
 	}//end computeBezwaartermijn()
 
 	/**
@@ -93,12 +102,14 @@ class TerugvorderingService {
 	 *
 	 * @param DateTimeImmutable $publication The publication date.
 	 *
-	 * @return DateTimeImmutable The betaaltermijn end.
+	 * @return DateTimeImmutable The betaaltermijn end, on a working day.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function computeBetaaltermijn(DateTimeImmutable $publication): DateTimeImmutable {
-		return $publication->add(new DateInterval('P' . (self::BETAALTERMIJN_WEKEN * 7) . 'D'));
+		$end = $publication->add(new DateInterval('P' . (self::BETAALTERMIJN_WEKEN * 7) . 'D'));
+
+		return ($this->timerService?->rollTermEndFor(date: $end) ?? $end);
 	}//end computeBetaaltermijn()
 
 	/**
@@ -113,7 +124,7 @@ class TerugvorderingService {
 	 *
 	 * @return float The accrued rente in EUR.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function computeInvorderingsrente(
 		float $openstaandBedrag,
@@ -126,7 +137,7 @@ class TerugvorderingService {
 		}
 
 		$yearFaction = ($yearFaction ?? self::WETTELIJKE_RENTE_FRACTIE);
-		$days = (int)$from->diff($tot)->days;
+		$days = $this->days->between(from: $from, to: $tot);
 		$rente = ($openstaandBedrag * $yearFaction * ($days / 365));
 
 		return round($rente, 2);
@@ -140,7 +151,7 @@ class TerugvorderingService {
 	 *
 	 * @return string The resulting status.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function statusAfterPayment(float $amount, float $paid): string {
 		if ($paid <= 0.0) {
@@ -204,17 +215,7 @@ class TerugvorderingService {
 	 * @throws OCSBadRequestException When OpenRegister is unavailable or unconfigured.
 	 */
 	private function resolve(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new OCSBadRequestException('OpenRegister is niet beschikbaar');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('terugvordering_schema');
-		if ($register === '' || $schema === '') {
-			throw new OCSBadRequestException('Terugvordering-schema is niet geconfigureerd');
-		}
-
-		return [$objectService, $register, $schema];
+		$lookup = new SubsidieSchemaLookup(settingsService: $this->settingsService);
+		return $lookup->resolve(schemaConfigKey: 'terugvordering_schema', unconfiguredMessage: 'Terugvordering-schema is niet geconfigureerd');
 	}//end resolve()
 }//end class

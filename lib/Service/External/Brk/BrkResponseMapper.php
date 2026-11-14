@@ -29,7 +29,7 @@
  * @link https://conduction.nl
  * @link https://kadaster.github.io/BRK-bevragen/
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -39,14 +39,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\External\Brk;
 
+use OCA\Dossiq\Service\External\RegisterValues;
+
 /**
  * Normalizes Kadaster BRK Bevragen v2 kadastraalOnroerendeZaak fragments
  * into the Dossiq-internal DTO shape.
  *
- * @SuppressWarnings(PHPMD.LongVariable) — kadastrale-aanduiding local names
- * are the canonical BRK domain terms (see interface).
- *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 final class BrkResponseMapper {
 	/**
@@ -72,29 +71,30 @@ final class BrkResponseMapper {
 	 *     geo: array{lat: float, lng: float}|null,
 	 * }
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function map(array $raw): array {
-		$kadastraleAanduidingRaw = ($raw['kadastraleAanduiding'] ?? []);
-		if (is_array($kadastraleAanduidingRaw) === false) {
-			$kadastraleAanduidingRaw = [];
+		$values = new RegisterValues();
+		$aanduidingRaw = ($raw['kadastraleAanduiding'] ?? []);
+		if (is_array($aanduidingRaw) === false) {
+			$aanduidingRaw = [];
 		}
 
-		$municipalityNameRaw = ($kadastraleAanduidingRaw['kadastraleGemeente']['value'] ?? $raw['kadastraleGemeenteNaam'] ?? null);
-		$municipalityCodeRaw = ($kadastraleAanduidingRaw['kadastraleGemeentecode']['value'] ?? $raw['kadastraleGemeenteCode'] ?? null);
-		$sequenceNumberRaw = ($kadastraleAanduidingRaw['appartementsrechtvolgnummer'] ?? $raw['appartementsrechtVolgnummer'] ?? null);
+		$municipalityNameRaw = ($aanduidingRaw['kadastraleGemeente']['value'] ?? $raw['kadastraleGemeenteNaam'] ?? null);
+		$municipalityCodeRaw = ($aanduidingRaw['kadastraleGemeentecode']['value'] ?? $raw['kadastraleGemeenteCode'] ?? null);
+		$sequenceNumberRaw = ($aanduidingRaw['appartementsrechtvolgnummer'] ?? $raw['appartementsrechtVolgnummer'] ?? null);
 		$grootteRaw = ($raw['kadastraleGrootte']['value'] ?? $raw['kadastraleGrootte'] ?? null);
 		$gerechtigdenRaw = ($raw['zakelijkGerechtigdheid'] ?? $raw['zakelijkGerechtigden'] ?? []);
 
 		return [
-			'kadastraleGemeente' => $this->stringOrNull(value: $municipalityNameRaw),
-			'kadastraleGemeenteCode' => $this->stringOrNull(value: $municipalityCodeRaw),
-			'sectie' => $this->stringOrNull(value: $kadastraleAanduidingRaw['sectie'] ?? $raw['sectie'] ?? null),
-			'perceelnummer' => $this->intOrNull(value: $kadastraleAanduidingRaw['perceelnummer'] ?? $raw['perceelnummer'] ?? null),
-			'appartementsrechtVolgnummer' => $this->stringOrNull(value: $sequenceNumberRaw),
-			'kadastraleAanduiding' => $this->stringOrNull(value: $raw['kadastraleAanduidingVolledig'] ?? $raw['aanduiding'] ?? null),
-			'oppervlakte' => $this->intOrNull(value: $grootteRaw),
-			'soortCultuurBebouwd' => $this->toStringArray(value: $raw['soortCultuurBebouwd'] ?? []),
+			'kadastraleGemeente' => $values->stringOrNull(value: $municipalityNameRaw),
+			'kadastraleGemeenteCode' => $values->stringOrNull(value: $municipalityCodeRaw),
+			'sectie' => $values->stringOrNull(value: $aanduidingRaw['sectie'] ?? $raw['sectie'] ?? null),
+			'perceelnummer' => $values->intOrNull(value: $aanduidingRaw['perceelnummer'] ?? $raw['perceelnummer'] ?? null),
+			'appartementsrechtVolgnummer' => $values->stringOrNull(value: $sequenceNumberRaw),
+			'kadastraleAanduiding' => $values->stringOrNull(value: $raw['kadastraleAanduidingVolledig'] ?? $raw['aanduiding'] ?? null),
+			'oppervlakte' => $values->intOrNull(value: $grootteRaw),
+			'soortCultuurBebouwd' => $values->toStringArray(value: $raw['soortCultuurBebouwd'] ?? []),
 			'zakelijkGerechtigden' => $this->mapBusinessGerechtigden(raw: $gerechtigdenRaw),
 			'geo' => $this->extractGeo(raw: $raw),
 		];
@@ -109,17 +109,10 @@ final class BrkResponseMapper {
 	 *
 	 * @return array<int,array<string,mixed>> Normalized DTOs, same order.
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function mapMany(array $rawList): array {
-		$out = [];
-		foreach ($rawList as $item) {
-			if (is_array($item) === true) {
-				$out[] = $this->map(raw: $item);
-			}
-		}
-
-		return $out;
+		return (new RegisterValues())->mapFragments(rawList: $rawList, map: fn (array $item): array => $this->map(raw: $item));
 	}//end mapMany()
 
 	/**
@@ -140,6 +133,7 @@ final class BrkResponseMapper {
 			$raw = [$raw];
 		}
 
+		$values = new RegisterValues();
 		$out = [];
 		foreach ($raw as $entry) {
 			if (is_array($entry) === false) {
@@ -147,8 +141,8 @@ final class BrkResponseMapper {
 			}
 
 			$out[] = [
-				'identificatie' => $this->stringOrNull(value: $entry['identificatie'] ?? null),
-				'aardZakelijkRecht' => $this->stringOrNull(value: $entry['aardZakelijkRecht']['value'] ?? $entry['aardZakelijkRecht'] ?? null),
+				'identificatie' => $values->stringOrNull(value: $entry['identificatie'] ?? null),
+				'aardZakelijkRecht' => $values->stringOrNull(value: $entry['aardZakelijkRecht']['value'] ?? $entry['aardZakelijkRecht'] ?? null),
 			];
 		}
 
@@ -181,74 +175,4 @@ final class BrkResponseMapper {
 			'lat' => (float)$coordinates[1],
 		];
 	}//end extractGeo()
-
-	/**
-	 * Coerce a value to a non-empty string, or null.
-	 *
-	 * @param mixed $value Raw value.
-	 *
-	 * @return string|null
-	 */
-	private function stringOrNull(mixed $value): ?string {
-		if (is_string($value) === true && $value !== '') {
-			return $value;
-		}
-
-		if (is_int($value) === true || is_float($value) === true) {
-			return (string)$value;
-		}
-
-		return null;
-	}//end stringOrNull()
-
-	/**
-	 * Coerce a value to an int, or null when absent/non-numeric.
-	 *
-	 * @param mixed $value Raw value.
-	 *
-	 * @return int|null
-	 */
-	private function intOrNull(mixed $value): ?int {
-		if (is_int($value) === true) {
-			return $value;
-		}
-
-		if (is_float($value) === true) {
-			return (int)$value;
-		}
-
-		if (is_string($value) === true && $value !== '' && is_numeric($value) === true) {
-			return (int)$value;
-		}
-
-		return null;
-	}//end intOrNull()
-
-	/**
-	 * Coerce a value into a string array — a single string becomes a
-	 * one-element array, an array is filtered to strings, anything else
-	 * becomes an empty array.
-	 *
-	 * @param mixed $value Raw value.
-	 *
-	 * @return array<int,string>
-	 */
-	private function toStringArray(mixed $value): array {
-		if (is_string($value) === true && $value !== '') {
-			return [$value];
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$out = [];
-		foreach ($value as $item) {
-			if (is_string($item) === true && $item !== '') {
-				$out[] = $item;
-			}
-		}
-
-		return $out;
-	}//end toStringArray()
 }//end class

@@ -21,13 +21,15 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use PHPUnit\Framework\TestCase;
@@ -79,6 +81,16 @@ class StatusTypeLookupTest extends TestCase {
 					throw new RuntimeException('unreadable');
 				}
 
+				// The lookup now reads its statuses through CaseTypeResolver,
+				// which first reads the CASE TYPE to walk its parent chain. A
+				// case type these fixtures do not describe is a real case type
+				// with no parent — modelling it as unreadable instead would
+				// make every one of these tests pass for the wrong reason (an
+				// empty chain answers an empty status list).
+				if ($schema === 'case_type_schema') {
+					return ($this->byId[$id] ?? ['id' => $id]);
+				}
+
 				return ($this->byId[$id] ?? []);
 			}
 		};
@@ -89,7 +101,7 @@ class StatusTypeLookupTest extends TestCase {
 			static fn (string $key): string => ($key === 'register' ? 'dossiq' : $key)
 		);
 
-		return new StatusTypeLookup($settings);
+		return new StatusTypeLookup($settings, new CaseTypeResolver(new CaseTypeStore($settings)));
 	}//end lookup()
 
 	/**
@@ -166,11 +178,22 @@ class StatusTypeLookupTest extends TestCase {
 		self::assertSame('', $lookup->nameFor(statusTypeId: ''));
 	}//end testTheIdToNameDirectionAlsoWorks()
 
+	/**
+	 * The map covers this case type and no other, IN LIFECYCLE ORDER.
+	 *
+	 * The order is new: reading through CaseTypeResolver sorts by `order` and
+	 * then by name, where the store's own answer had whatever order it felt
+	 * like. It is asserted rather than tolerated because a caller that renders
+	 * this map renders a lifecycle, and a lifecycle out of order is wrong in a
+	 * way nobody reports as a bug. `order` is spelled out on the fixtures for
+	 * the same reason: two rows without one sort by name, which would have
+	 * read as Afgehandeld before Ontvangen.
+	 */
 	public function testStatusesOfReturnsTheWholeMapForThatCaseType(): void {
 		$lookup = $this->lookup([
-			['id' => 's-1', 'name' => 'Ontvangen', 'caseType' => 'ct-1'],
-			['id' => 's-2', 'name' => 'Afgehandeld', 'caseType' => 'ct-1'],
-			['id' => 's-9', 'name' => 'Elders', 'caseType' => 'ct-2'],
+			['id' => 's-1', 'name' => 'Ontvangen', 'order' => 1, 'caseType' => 'ct-1'],
+			['id' => 's-2', 'name' => 'Afgehandeld', 'order' => 2, 'caseType' => 'ct-1'],
+			['id' => 's-9', 'name' => 'Elders', 'order' => 1, 'caseType' => 'ct-2'],
 		]);
 
 		self::assertSame(

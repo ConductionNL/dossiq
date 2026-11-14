@@ -5,7 +5,7 @@
  * Gate-19 spec-coverage tests for the case-email-integration spec.
  *
  * Scope here is strictly the dossiq-authored UI surfaces this change ships:
- * the shared-mailbox admin settings panel (EmailSettings.vue, rendered inside
+ * the shared-mailbox admin settings panel (the section-mailbox fields, rendered inside
  * Nextcloud's admin settings at /settings/admin/dossiq) and the absence of
  * any per-user SMTP-send credential fields on it. Leaf display/linking,
  * IMAP ingest, Docudesk PDF archival and NC Mail draft-open are backend /
@@ -49,8 +49,8 @@ test.describe('case-email-integration spec coverage', () => {
 			.catch(() => {})
 		await expect(heading.first()).toBeVisible({ timeout: 15000 })
 
-		// Shared-mailbox IMAP host field is present.
-		await expect(page.locator('#email_imap_host')).toBeVisible({
+		// The shared-mailbox intake folder field is present.
+		await expect(page.getByLabel('Mailbox folder')).toBeVisible({
 			timeout: 10000,
 		})
 
@@ -66,17 +66,20 @@ test.describe('case-email-integration spec coverage', () => {
 		).toHaveCount(0)
 	})
 
-	// FIXME(#719): the "Test connection" button exists in EmailSettings.vue
-	// but does not render on the admin page even after every section has been
-	// scrolled in. The sibling test above loads the same page successfully.
-	// @e2e openspec/specs/case-email-integration/spec.md#composer-is-the-leaf-nc-mail-not-a-dossiq-component
+	// UNPARKED, MEASURED RATHER THAN ARGUED. The old FIXME(#719) said the
+	// "Test connection" button exists in EmailSettings.vue but does not render
+	// on the admin page even after every section has been scrolled in. Run
+	// unparked on CI run 34578033755 it passed on the first attempt. Nothing in
+	// the body below changed, so what moved was the app, not the test.
+	//
+	// @e2e exclude This used to cite "Composer is the leaf / NC Mail, not a
+	// dossiq component", which is about the case compose flow opening an NC Mail
+	// draft. This test reads admin-settings buttons and never opens a case. That
+	// scenario is now excluded in the spec because the Mail draft handoff is not
+	// built: prefillDraft returns a subject and body, and nothing opens a draft.
 	test('settings expose a Test connection control, not an outbound composer', async ({
 		page,
 	}) => {
-		test.fixme(
-			true,
-			'FIXME(#719): the "Test connection" button exists in EmailSettings.vue but does not render on the admin page even after every section has been scrolled in. The sibling test above loads the same page successfully.',
-		)
 		await page.goto(ADMIN_SETTINGS_URL, { waitUntil: 'domcontentloaded' })
 		await expect(page).not.toHaveURL(/login/, { timeout: 10000 })
 

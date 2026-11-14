@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T16
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
  */
 
 declare(strict_types=1);
@@ -35,14 +35,17 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\StateMachineServiceInterface;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Guards beschikking state transitions and logs them immutably.
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T16
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
  */
-class StateMachineService {
+class StateMachineService implements StateMachineServiceInterface {
 	/**
 	 * Allowed forward transitions and the single permitted back-edge.
 	 *
@@ -70,6 +73,15 @@ class StateMachineService {
 	];
 
 	/**
+	 * The exception message a refused mutation carries.
+	 *
+	 * `BeschikkingController` maps it to HTTP 409.
+	 *
+	 * @var string
+	 */
+	public const IMMUTABLE_ERROR = 'immutable';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings/config service.
@@ -88,7 +100,7 @@ class StateMachineService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T16
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
 	 */
 	public function isImmutable(string $status): bool {
 		return in_array($status, self::IMMUTABLE_STATUSES, true);
@@ -102,7 +114,7 @@ class StateMachineService {
 	 *
 	 * @return bool True when the transition is permitted.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T16
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
 	 */
 	public function validateTransition(string $currentStatus, string $nextStatus): bool {
 		$allowed = (self::TRANSITIONS[$currentStatus] ?? null);
@@ -123,23 +135,64 @@ class StateMachineService {
 	 *
 	 * @return array<string, mixed> The persisted log record (or an empty array when storage is unavailable).
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T16
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
 	 */
 	public function logTransition(string $decisionId, string $from, string $to, array $metadata = []): array {
+		$target = $this->logTarget();
+		if ($target === null) {
+			return [];
+		}
+
+		[$objectService, $register, $logSchema] = $target;
+		$record = $this->transitionRecord(decisionId: $decisionId, from: $from, to: $to, metadata: $metadata);
+
+		try {
+			$saved = $objectService->saveObject(object: $record, register: $register, schema: $logSchema);
+			return $this->toArray(value: $saved);
+		} catch (\Throwable $e) {
+			$this->logger->error('StateMachineService: failed to persist transition log', ['exception' => $e->getMessage(), 'decisionId' => $decisionId]);
+			return [];
+		}
+	}//end logTransition()
+
+	/**
+	 * Where the transition log is stored, or null (with a warning) when it cannot be.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The object service, register and log schema.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
+	 */
+	private function logTarget(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			$this->logger->warning('StateMachineService: storage unavailable, transition not logged');
-			return [];
+			return null;
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$logSchema = $this->settingsService->getConfigValue(key: 'state_machine_log_schema');
 		if ($register === '' || $logSchema === '') {
 			$this->logger->warning('StateMachineService: log schema not configured');
-			return [];
+			return null;
 		}
 
-		$record = [
+		return [$objectService, $register, $logSchema];
+	}//end logTarget()
+
+	/**
+	 * The stateMachineLog record of a transition.
+	 *
+	 * @param string               $decisionId The beschikking UUID.
+	 * @param string               $from       The source status.
+	 * @param string               $to         The target status.
+	 * @param array<string, mixed> $metadata   Actor/trigger/evidence metadata.
+	 *
+	 * @return array<string, mixed> The record.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
+	 */
+	private function transitionRecord(string $decisionId, string $from, string $to, array $metadata): array {
+		return [
 			'decisionId' => $decisionId,
 			'overgang' => [
 				'van' => $from,
@@ -151,18 +204,68 @@ class StateMachineService {
 				'evidenceMaterial' => ($metadata['evidenceMaterial'] ?? null),
 			],
 		];
+	}//end transitionRecord()
 
-		try {
-			$saved = $objectService->saveObject(object: $record, register: $register, schema: $logSchema);
-			return $this->toArray(value: $saved);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'StateMachineService: failed to persist transition log',
-				['exception' => $e->getMessage(), 'decisionId' => $decisionId],
-			);
-			return [];
+	/**
+	 * Refuse a content edit on a beschikking that has been signed.
+	 *
+	 * The STORED status decides. A payload that claims `draft` over a row that
+	 * is `sent` must be refused, and it is, because `$changed` is only ever
+	 * consulted for which fields the caller means to touch.
+	 *
+	 * Process events stay allowed at every status: `dispatch`, the bezwaar
+	 * link and `archive` are not content, and a beschikking that could not
+	 * record its own delivery would be unusable.
+	 *
+	 * @param array<string, mixed> $stored The beschikking as it is in the store.
+	 * @param array<string, mixed> $changed The fields the caller intends to change, keyed by name.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException 'immutable' when the stored status is frozen and a content field is touched,
+	 *                          or a write-once field already holds a different value.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function assertMutable(array $stored, array $changed): void {
+		foreach (self::WRITE_ONCE_FIELDS as $field) {
+			$was = (string)($stored[$field] ?? '');
+			if ($was !== '' && array_key_exists($field, $changed) === true && (string)$changed[$field] !== $was) {
+				throw new RuntimeException(self::IMMUTABLE_ERROR);
+			}
 		}
-	}//end logTransition()
+
+		if ($this->isImmutable(status: (string)($stored['currentStatus'] ?? '')) === false) {
+			return;
+		}
+
+		foreach (array_keys($changed) as $field) {
+			if (in_array($field, self::CONTENT_FIELDS, true) === true) {
+				throw new RuntimeException(self::IMMUTABLE_ERROR);
+			}
+		}
+	}//end assertMutable()
+
+	/**
+	 * Refuse a delete on a beschikking that has been signed.
+	 *
+	 * A signed beschikking is evidence. Correcting it is a successor
+	 * (REQ-BES-012); removing it is never an answer.
+	 *
+	 * @param array<string, mixed> $stored The beschikking as it is in the store.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException 'immutable' when the stored status is frozen.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function assertDeletable(array $stored): void {
+		if ($this->isImmutable(status: (string)($stored['currentStatus'] ?? '')) === true) {
+			throw new RuntimeException(self::IMMUTABLE_ERROR);
+		}
+	}//end assertDeletable()
 
 	/**
 	 * Normalise an ObjectService return value to an array.
@@ -172,17 +275,6 @@ class StateMachineService {
 	 * @return array<string, mixed>
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

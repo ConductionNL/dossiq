@@ -14,7 +14,8 @@
       "informatieobject": {
         "slug": "informatieobject",
         "icon": "FileDocumentOutline",
-        "version": "1.0.0",
+        "version": "1.3.0",
+        "searchable": false,
         "title": "Informatieobject",
         "description": "ZGW DRC document with full metadata, stored as a Nextcloud file plus a register object. schema.org DigitalDocument.",
         "x-schema-org": "DigitalDocument",
@@ -48,10 +49,28 @@
             "facetable": true,
             "default": "draft",
             "description": "ZGW DRC document status lifecycle (forward-only)",
-            "enum": ["draft", "final", "archived"]
+            "enum": ["draft", "final", "archived"],
+            "x-enum-labels": {"draft": "Draft", "final": "Final", "archived": "Archived"}
           },
           "informatieobjecttype": {"type": "string", "title": "Information Object Type Reference", "facetable": true, "maxLength": 255, "description": "Reference to an informatieobjecttype from the catalog"},
-          "creatiedatum":         {"type": "string", "title": "Creation Date", "format": "date", "description": "Creation date (ISO 8601)"},
+          "keywords": {
+            "type": "array",
+            "title": "Keywords",
+            "facetable": true,
+            "x-widget": "tags",
+            "description": "Free-text keywords you tag a document with, so you can find it back. A type is one per document and carries a confidentiality default; a keyword is many per document and carries nothing. The property name is English (decisions D13); the Dutch label lives in nl.json only.",
+            "items": {"type": "string", "maxLength": 64}
+          },
+          "direction": {
+            "type": "string",
+            "title": "Direction",
+            "facetable": true,
+            "default": "internal",
+            "description": "Whether the document came in, went out or stayed internal. Maps one to one onto zaaksysteem Richting and gzac richting.",
+            "enum": ["incoming", "outgoing", "internal"],
+            "x-enum-labels": {"incoming": "Incoming", "outgoing": "Outgoing", "internal": "Internal"}
+          },
+          "creatiedatum":         {"type": "string", "title": "Creation date", "format": "date", "description": "Creation date (ISO 8601)"},
           "bronorganisatie":      {"type": "string", "title": "Source Organization", "maxLength": 64, "description": "RSIN of the source organization"},
           "taal":                 {"type": "string", "title": "Language", "maxLength": 3, "default": "nld", "description": "ISO 639-2/B language code"},
           "description":          {"type": "string", "title": "Description", "description": "Free-text description"},
@@ -63,7 +82,9 @@
             "properties": {
               "algorithm": {"type": "string", "title": "Integrity Algorithm", "default": "sha256", "description": "Hash algorithm (fixed sha256)"},
               "value":    {"type": "string", "title": "Integrity Value", "maxLength": 128, "description": "Hex-encoded SHA-256 hash"},
-              "date":     {"type": "string", "title": "Registration Date", "format": "date-time", "description": "Hash computation timestamp"}
+              "date":     {"type": "string", "title": "Registration date", "format": "date-time", "description": "Hash computation timestamp"},
+              "status":   {"type": "string", "title": "Last check", "enum": ["unchanged", "changed", "missing", "unchecked"], "description": "Outcome of the last re-verification of the file against value"},
+              "checkedAt": {"type": "string", "title": "Last checked", "format": "date-time", "description": "When the file was last hashed again and compared with value"}
             }
           },
           "lockedOn":        {"type": "string", "title": "Locked On", "format": "date-time", "description": "Timestamp set when status transitions to definitief"},
@@ -87,13 +108,14 @@
             "description": "Nature of the relation",
             "enum": ["Hoort at omgekeerd", "Legt vast, omgekeerd"]
           },
-          "registrationDate":   {"type": "string", "title": "Registration Date", "format": "date-time", "description": "When the link was registered"}
+          "registrationDate":   {"type": "string", "title": "Registration date", "format": "date-time", "description": "When the link was registered"}
         }
       },
       "besluitinformatieobject": {
         "slug": "besluitinformatieobject",
         "icon": "Gavel",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Besluitinformatieobject",
         "description": "ZGW DRC join between a besluit (decision) and an informatieobject.",
         "type": "object",
@@ -101,13 +123,14 @@
         "properties": {
           "decision":            {"type": "string", "title": "Decision Reference", "facetable": true, "maxLength": 255, "description": "Reference to the besluit"},
           "informatieobject":   {"type": "string", "title": "Information Object Reference", "facetable": true, "maxLength": 255, "description": "Reference to the informatieobject"},
-          "registrationDate":   {"type": "string", "title": "Registration Date", "format": "date-time", "description": "When the link was registered"}
+          "registrationDate":   {"type": "string", "title": "Registration date", "format": "date-time", "description": "When the link was registered"}
         }
       },
       "informatieobjecttype": {
         "slug": "informatieobjecttype",
         "icon": "FolderTextOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Informatieobjecttype",
         "description": "ZGW DRC document type catalog entry. Defines the default confidentiality classification per document category.",
         "type": "object",

@@ -1,0 +1,95 @@
+[
+    {
+        "isInstalled": "shillinq"
+    },
+    {
+        "getObjectService": true
+    },
+    {
+        "getConfigValue": "register"
+    },
+    {
+        "getConfigValue": "case_schema"
+    },
+    {
+        "searchObjectsBySlug": [
+            "dossiq",
+            "case",
+            {
+                "isFinalStatus": 0,
+                "isDraft": 0,
+                "_limit": 500
+            }
+        ]
+    },
+    {
+        "stateOf": "c-warn"
+    },
+    {
+        "runAsSystem": true
+    },
+    {
+        "patchObject": [
+            "c-warn",
+            {
+                "paymentState": "paid",
+                "paymentStateCheckedAt": "2026-10-07T10:00:00+00:00"
+            },
+            "dossiq",
+            "case"
+        ]
+    },
+    {
+        "stateOf": "c-close"
+    },
+    {
+        "stateOf": "c-none"
+    },
+    {
+        "stateOf": "c-boom"
+    },
+    {
+        "runAsSystem": true
+    },
+    {
+        "patchObject": [
+            "c-boom",
+            {
+                "paymentState": "outstanding",
+                "paymentStateCheckedAt": "2026-10-07T10:00:00+00:00"
+            },
+            "dossiq",
+            "case"
+        ]
+    },
+    {
+        "warning": "PaymentStateProjectionJob: one case could not be refreshed",
+        "context": {
+            "caseId": "c-boom",
+            "exception": "locked"
+        }
+    },
+    {
+        "stateOf": "c-failing-warn"
+    },
+    {
+        "runAsSystem": true
+    },
+    {
+        "patchObject": [
+            "c-failing-warn",
+            {
+                "paymentState": "outstanding",
+                "paymentStateCheckedAt": "2026-10-07T10:00:00+00:00"
+            },
+            "dossiq",
+            "case"
+        ]
+    },
+    {
+        "info": "PaymentStateProjectionJob: refreshed the payment state of the open cases",
+        "context": {
+            "written": 2
+        }
+    }
+]

@@ -25,49 +25,57 @@
       "name": "Ontvangst",
       "description": "Verzoek ontvangen, ontvangstbevestiging verzenden",
       "order": 1,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "blue"
     },
     {
       "name": "Beoordeling ontvankelijkheid",
       "description": "Controleren of het verzoek aan de formele vereisten voldoet",
       "order": 2,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "purple"
     },
     {
       "name": "Zoeken documenten",
       "description": "Zoeken en verzamelen van relevante documenten",
       "order": 3,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "purple"
     },
     {
       "name": "Beoordelen documenten",
       "description": "Per document beoordelen of openbaarmaking mogelijk is",
       "order": 4,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "purple"
     },
     {
       "name": "Lakken / Anonimiseren",
       "description": "Gevoelige informatie in documenten anonimiseren",
       "order": 5,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "orange"
     },
     {
       "name": "Besluit",
       "description": "Formeel besluit nemen over openbaarmaking",
       "order": 6,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "teal"
     },
     {
       "name": "Publicatie",
       "description": "Goedgekeurde documenten publiceren in de leeskamer",
       "order": 7,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "green"
     },
     {
       "name": "Afgehandeld",
       "description": "Zaak is afgerond",
       "order": 8,
-      "isFinal": true
+      "isFinal": true,
+      "colour": "green"
     }
   ],
   "propertyDefinitions": [
@@ -89,7 +97,8 @@
       "name": "verzoekerType",
       "definition": "Type verzoeker",
       "description": "Categorie: burger, journalist of organisatie",
-      "propertyType": "string",
+      "propertyType": "enum",
+      "enumValues": ["burger", "journalist", "organisatie"],
       "isRequired": false
     },
     {
@@ -123,24 +132,19 @@
     {
       "name": "receiptDate",
       "definition": "Ontvangstdatum",
-      "description": "Datum waarop het WOO-verzoek is ontvangen (voor termijnberekening)",
+      "description": "Datum waarop het WOO-verzoek is ontvangen. Dossiq vult deze bij het aanmaken van de zaak; de wettelijke termijn begint hier.",
       "propertyType": "date",
-      "isRequired": true
+      "isRequired": false,
+      "hideOnCreate": true
     },
     {
       "name": "gewensteVorm",
       "definition": "Gewenste vorm van verstrekking",
       "description": "Hoe de verzoeker de documenten wil ontvangen: papier, digitaal of inzage",
-      "propertyType": "string",
+      "propertyType": "enum",
+      "enumValues": ["papier", "digitaal", "inzage"],
       "isRequired": false,
       "defaultValue": "digitaal"
-    },
-    {
-      "name": "verdagingReden",
-      "definition": "Reden verdaging",
-      "description": "Reden voor de verlenging van de beslistermijn",
-      "propertyType": "string",
-      "isRequired": false
     }
   ],
   "documentTypes": [
@@ -201,17 +205,5 @@
       "name": "Juridisch adviseur",
       "description": "Juridisch medewerker die adviseert over weigeringsgronden"
     }
-  ],
-  "weigeringsgronden": [
-    { "code": "5.1.1", "label": "Eenheid van de Kroon" },
-    { "code": "5.1.2", "label": "Veiligheid van de Staat" },
-    { "code": "5.1.3", "label": "Vertrouwelijk verstrekte bedrijfs- en fabricagegegevens" },
-    { "code": "5.1.4", "label": "Persoonlijke beleidsopvattingen" },
-    { "code": "5.1.5", "label": "Persoonlijke levenssfeer" },
-    { "code": "5.2.1", "label": "Economische of financiele belangen van de Staat" },
-    { "code": "5.2.2", "label": "Opsporing en vervolging van strafbare feiten" },
-    { "code": "5.2.3", "label": "Inspectie, controle en toezicht door bestuursorganen" },
-    { "code": "5.2.4", "label": "Vertrouwelijkheid van beraadslaging" },
-    { "code": "5.2.5", "label": "Het goed functioneren van de Staat" }
   ]
 }
