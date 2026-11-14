@@ -225,6 +225,21 @@ class MandaatEscalatieService implements MandaatEscalatieServiceInterface {
 			return $assigns;
 		}
 
+		$assigns = $this->searchRoleAssignments(search: $search, roleId: $roleId);
+
+		// Prefer primair toewijzing.
+		return $this->primairFirst(assigns: $assigns);
+	}//end roleAssignments()
+
+	/**
+	 * The assignments of one role as stored; none for a failed read.
+	 *
+	 * @param EscalationSearch $search Where to look.
+	 * @param string $roleId The role.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function searchRoleAssignments(EscalationSearch $search, string $roleId): array {
 		try {
 			$assigns = $this->searchObjectsAsArrays(
 				objectService: $search->objectService,
@@ -236,7 +251,17 @@ class MandaatEscalatieService implements MandaatEscalatieServiceInterface {
 			$assigns = [];
 		}
 
-		// Prefer primair toewijzing.
+		return $assigns;
+	}//end searchRoleAssignments()
+
+	/**
+	 * The assignments ordered primair, observer, tijdelijk, then the rest.
+	 *
+	 * @param array<int, array<string, mixed>> $assigns The assignments.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function primairFirst(array $assigns): array {
 		usort(
 			$assigns,
 			static function (array $a, array $b): int {
@@ -252,7 +277,7 @@ class MandaatEscalatieService implements MandaatEscalatieServiceInterface {
 		);
 
 		return $assigns;
-	}//end roleAssignments()
+	}//end primairFirst()
 
 	/**
 	 * Keep the mandaten that apply to a decision type, highest plafond first.
@@ -353,24 +378,49 @@ class MandaatEscalatieService implements MandaatEscalatieServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function autoRerouteOnPersonnelChange(string $oldUserId, string $newUserId): int {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaat_escalatie_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->escalationStore();
+		if ($store === null) {
 			return 0;
 		}
 
+		[$objectService, $register, $schema] = $store;
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['status' => 'open', 'targetUserId' => $oldUserId]
-			);
+			$filters = ['status' => 'open', 'targetUserId' => $oldUserId];
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 		} catch (\Throwable $e) {
 			return 0;
 		}
 
+		return $this->rerouteRows(store: $store, rows: $rows, newUserId: $newUserId);
+	}//end autoRerouteOnPersonnelChange()
+
+	/**
+	 * The object service, register and escalation schema, or null when any is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The escalation store, or null.
+	 */
+	private function escalationStore(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('mandaat_escalatie_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end escalationStore()
+
+	/**
+	 * Point each escalation at the new user, counting the ones that saved.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $store The escalation store.
+	 * @param array<int, array<string, mixed>> $rows The open escalations.
+	 * @param string $newUserId New user id.
+	 *
+	 * @return int Number of rerouted escalations.
+	 */
+	private function rerouteRows(array $store, array $rows, string $newUserId): int {
+		[$objectService, $register, $schema] = $store;
 		$count = 0;
 		foreach ($rows as $row) {
 			$row['targetUserId'] = $newUserId;
@@ -383,7 +433,7 @@ class MandaatEscalatieService implements MandaatEscalatieServiceInterface {
 		}
 
 		return $count;
-	}//end autoRerouteOnPersonnelChange()
+	}//end rerouteRows()
 
 	/**
 	 * Fetch a single escalation row by id.

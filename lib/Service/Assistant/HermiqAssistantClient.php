@@ -38,7 +38,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Assistant;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Kernel\Contracts\HermiqAssistantClientInterface;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;

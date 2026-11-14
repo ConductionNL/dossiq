@@ -143,39 +143,99 @@ final class ApiPathAliases {
 	 * @spec openspec/specs/api-contract/spec.md
 	 */
 	public static function withVersionedAliases(array $routes): array {
-		$declared = [];
-		$insertAt = 0;
-		foreach (array_values($routes['routes'] ?? []) as $index => $route) {
-			$declared[self::key(route: $route)] = true;
-			if (str_starts_with('/'.ltrim((string) ($route['url'] ?? ''), '/'), self::VERSION_PREFIX.'/') === true) {
-				$insertAt = ($index + 1);
-			}
-		}
-
-		$aliases = [];
-		foreach (($routes['routes'] ?? []) as $route) {
-			$url = '/'.ltrim((string) ($route['url'] ?? ''), '/');
-			if (self::isDeprecated(path: $url) === false || self::isApiFallback(route: $route) === true) {
-				continue;
-			}
-
-			$alias = array_merge(
-				$route,
-				[
-					'url'     => self::versioned(path: self::renamed(path: $url)),
-					'postfix' => ($route['postfix'] ?? '').'v1',
-				]
-			);
-			if (isset($declared[self::key(route: $alias)]) === false) {
-				$aliases[] = $alias;
-			}
-		}
+		$declared = self::declaredKeys(routes: $routes);
+		$insertAt = self::insertionPoint(routes: $routes);
+		$aliases  = self::aliasesOf(routes: $routes, declared: $declared);
 
 		$original         = array_values($routes['routes'] ?? []);
 		$routes['routes'] = array_merge(array_slice($original, 0, $insertAt), $aliases, array_slice($original, $insertAt));
 
 		return $routes;
 	}//end withVersionedAliases()
+
+	/**
+	 * The key of every route the declaration already holds.
+	 *
+	 * @param array<string,array<array-key,mixed>> $routes The declaration.
+	 *
+	 * @return array<string,bool> The keys, as a set.
+	 *
+	 * @spec openspec/specs/api-contract/spec.md
+	 */
+	private static function declaredKeys(array $routes): array {
+		$declared = [];
+		foreach (array_values($routes['routes'] ?? []) as $route) {
+			$declared[self::key(route: $route)] = true;
+		}
+
+		return $declared;
+	}//end declaredKeys()
+
+	/**
+	 * The position right after the last route already declared under `/api/v1/`.
+	 *
+	 * @param array<string,array<array-key,mixed>> $routes The declaration.
+	 *
+	 * @return int The position, 0 when there is none.
+	 *
+	 * @spec openspec/specs/api-contract/spec.md
+	 */
+	private static function insertionPoint(array $routes): int {
+		$insertAt = 0;
+		foreach (array_values($routes['routes'] ?? []) as $index => $route) {
+			if (str_starts_with('/'.ltrim((string) ($route['url'] ?? ''), '/'), self::VERSION_PREFIX.'/') === true) {
+				$insertAt = ($index + 1);
+			}
+		}
+
+		return $insertAt;
+	}//end insertionPoint()
+
+	/**
+	 * The `/api/v1/` alias of every unversioned API route that is not declared already.
+	 *
+	 * @param array<string,array<array-key,mixed>> $routes The declaration.
+	 * @param array<string,bool> $declared The keys of the routes already declared.
+	 *
+	 * @return array<int,array<array-key,mixed>> The aliases, in the order of the routes they copy.
+	 *
+	 * @spec openspec/specs/api-contract/spec.md
+	 */
+	private static function aliasesOf(array $routes, array $declared): array {
+		$aliases = [];
+		foreach (($routes['routes'] ?? []) as $route) {
+			$alias = self::aliasOf(route: $route);
+			if ($alias !== null && isset($declared[self::key(route: $alias)]) === false) {
+				$aliases[] = $alias;
+			}
+		}
+
+		return $aliases;
+	}//end aliasesOf()
+
+	/**
+	 * The `/api/v1/` alias of one route, or null when the route needs none.
+	 *
+	 * @param array<array-key,mixed> $route The route.
+	 *
+	 * @return array<array-key,mixed>|null The alias.
+	 *
+	 * @spec openspec/specs/api-contract/spec.md
+	 */
+	private static function aliasOf(array $route): ?array {
+		$url = '/'.ltrim((string) ($route['url'] ?? ''), '/');
+		if (self::isDeprecated(path: $url) === false || self::isApiFallback(route: $route) === true) {
+			return null;
+		}
+
+		return array_merge(
+			$route,
+			[
+				'url'     => self::versioned(path: self::renamed(path: $url)),
+				'postfix' => ($route['postfix'] ?? '').'v1',
+			]
+		);
+	}//end aliasOf()
 
 	/**
 	 * Whether a route is the API fallback, a single placeholder after `/api/` that spans segments.

@@ -33,7 +33,15 @@ namespace OCA\Dossiq\Service\Registrar;
 use OCA\Dossiq\Listener\Registrar\SaasServiceRegistrar;
 use OCA\Dossiq\Middleware\MiddlewareRegistrar;
 use OCA\Dossiq\Repair\RepairPortRegistrar;
+use OCA\Dossiq\Service\ComplaintService;
 use OCA\Dossiq\Service\ContractBindings;
+use OCA\Dossiq\Service\Mcp\AppointmentTools;
+use OCA\Dossiq\Service\Mcp\BeschikkingTools;
+use OCA\Dossiq\Service\Mcp\CaseTools;
+use OCA\Dossiq\Service\Mcp\IntakeTools;
+use OCA\Dossiq\Service\Mcp\ReportingTools;
+use OCA\Dossiq\Service\Mcp\TaskTools;
+use OCA\Dossiq\Service\Mcp\TermTools;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -44,6 +52,23 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
 class ServiceRegistrar {
+	/**
+	 * The services whose `#[McpTool]`-attributed methods the AI Chat Companion
+	 * reflects (see Mcp\DossiqScannableServices), in scan order.
+	 *
+	 * @var array<int, class-string>
+	 */
+	public const MCP_SCANNABLE_SERVICES = [
+		ReportingTools::class,
+		CaseTools::class,
+		ComplaintService::class,
+		TermTools::class,
+		AppointmentTools::class,
+		BeschikkingTools::class,
+		IntakeTools::class,
+		TaskTools::class,
+	];
+
 	/**
 	 * Register every dossiq service binding.
 	 *

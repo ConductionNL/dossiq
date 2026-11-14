@@ -22,7 +22,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Kernel\Contracts;
 
-use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
 
 /**
  * Contract of CaseSharingService.
@@ -122,7 +121,7 @@ interface CaseSharingServiceInterface {
 		string $label,
 		string $createdBy,
 		?string $expiresAt = null,
-		array $capabilities = CaseAccessLinkService::DEFAULT_CAPABILITIES,
+		array $capabilities = CaseAccessLinkServiceInterface::DEFAULT_CAPABILITIES,
 		?string $password = null,
 		array $sharedDocuments = [],
 		array $extra = [],

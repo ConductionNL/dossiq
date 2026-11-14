@@ -405,20 +405,24 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 		}
 
 		try {
-			$results = $objectService->findAll(
-				[
-					'filters' => (['register' => $ids['register'], 'schema' => $schema] + $filters),
-					'limit' => self::FOLD_LIMIT,
-				]
-			);
+			$results = $objectService->findAll(['filters' => (['register' => $ids['register'], 'schema' => $schema] + $filters), 'limit' => self::FOLD_LIMIT]);
 		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'[KpiAggregationService] Read failed, reporting an empty set for this metric',
-				['schema' => $schema, 'exception' => $e->getMessage()]
-			);
+			$this->logger->warning('[KpiAggregationService] Read failed, reporting an empty set for this metric',
+				['schema' => $schema, 'exception' => $e->getMessage()]);
 			return [];
 		}
 
+		return $this->plainRows(results: $results);
+	}//end rows()
+
+	/**
+	 * The rows of a findAll answer, as plain arrays.
+	 *
+	 * @param mixed $results The findAll answer.
+	 *
+	 * @return array<int, array> The rows, as plain arrays.
+	 */
+	private function plainRows(mixed $results): array {
 		$found = ($results['results'] ?? $results);
 		if (is_array($found) === false) {
 			return [];
@@ -430,7 +434,7 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 		}
 
 		return $rows;
-	}//end rows()
+	}//end plainRows()
 
 	/**
 	 * How many cases this user closed between two days, both included.

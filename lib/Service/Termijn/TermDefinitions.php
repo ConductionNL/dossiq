@@ -139,20 +139,25 @@ class TermDefinitions {
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['caseType' => $caseType]
-			);
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['caseType' => $caseType]);
 		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'TermDefinitions.allActiveFor lookup failed',
-				['caseType' => $caseType, 'error' => $e->getMessage()]
-			);
+			$this->logger->warning('TermDefinitions.allActiveFor lookup failed', ['caseType' => $caseType, 'error' => $e->getMessage()]);
 			return [];
 		}
 
+		return $this->activeNewestFirst(rows: $rows);
+	}//end allActiveFor()
+
+	/**
+	 * The definitions valid today, newest validFrom first.
+	 *
+	 * @param array<int, array<string, mixed>> $rows Candidate definitions.
+	 *
+	 * @return array<int, array<string, mixed>> The active definitions.
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
+	 */
+	private function activeNewestFirst(array $rows): array {
 		$today = (new DateTimeImmutable())->format('Y-m-d');
 		$active = $this->filterActiveDefinities(rows: $rows, today: $today);
 
@@ -163,7 +168,7 @@ class TermDefinitions {
 		);
 
 		return $active;
-	}//end allActiveFor()
+	}//end activeNewestFirst()
 
 	/**
 	 * Keep the TermijnDefinitie rows whose validity window covers today.

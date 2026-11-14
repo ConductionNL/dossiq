@@ -202,7 +202,27 @@ class StoredDecisionTables implements StoredDecisionTablesInterface {
 	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
 	 */
 	public function save(array $table): array {
-		$row = [
+		$row = $this->rowFor(table: $table);
+		if ($row['key'] === '' || $row['name'] === '') {
+			throw new RuntimeException('A decision table needs a key and a name.');
+		}
+
+		$this->writeRow(row: $row);
+
+		return $row;
+	}//end save()
+
+	/**
+	 * The stored row of a table dossiq owns.
+	 *
+	 * @param array<string, mixed> $table The table: key (stored), name, description, hitPolicy, inputs, outputs, rules.
+	 *
+	 * @return array<string, mixed> The row.
+	 *
+	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
+	 */
+	private function rowFor(array $table): array {
+		return [
 			'key' => $this->keyFor(key: (string)($table['key'] ?? '')),
 			'name' => (string)($table['name'] ?? ''),
 			'description' => (string)($table['description'] ?? ''),
@@ -212,10 +232,20 @@ class StoredDecisionTables implements StoredDecisionTablesInterface {
 			'rules' => array_values((array)($table['rules'] ?? [])),
 			'owner' => AppIdentity::APP_ID,
 		];
-		if ($row['key'] === '' || $row['name'] === '') {
-			throw new RuntimeException('A decision table needs a key and a name.');
-		}
+	}//end rowFor()
 
+	/**
+	 * Create the row, or replace the row with its key.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When OpenRegister refuses the table.
+	 *
+	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
+	 */
+	private function writeRow(array $row): void {
 		try {
 			$this->saveObjectAsArray(
 				objectService: $this->objectService(),
@@ -227,9 +257,7 @@ class StoredDecisionTables implements StoredDecisionTablesInterface {
 		} catch (Throwable $e) {
 			throw new RuntimeException('OpenRegister refused the decision table "' . $row['key'] . '": ' . $e->getMessage(), 0, $e);
 		}
-
-		return $row;
-	}//end save()
+	}//end writeRow()
 
 	/**
 	 * OpenRegister's object service.

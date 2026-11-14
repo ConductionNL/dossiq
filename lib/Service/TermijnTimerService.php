@@ -37,7 +37,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
 use OCA\Dossiq\Service\Term\ThresholdShares;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;

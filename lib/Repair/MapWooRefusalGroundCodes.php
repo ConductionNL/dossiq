@@ -122,35 +122,95 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
 	 */
 	public function run(IOutput $output): void {
+		$target = $this->mappingTarget(output: $output);
+		if ($target === null) {
+			return;
+		}
+
+		$this->mapTargets(target: $target, output: $output);
+	}//end run()
+
+	/**
+	 * The object service, register and settled codes, or null (said on the output) when one is unavailable.
+	 *
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return array{0: object, 1: string, 2: array<int, string>}|null The mapping target.
+	 *
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
+	 */
+	private function mappingTarget(IOutput $output): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		if ($objectService === null || $register === '') {
 			$output->info('OpenRegister unavailable, skipping the Woo refusal ground mapping.');
-			return;
+			return null;
 		}
 
 		$settled = $this->settledCodes(output: $output);
 		if ($settled === null) {
-			return;
+			return null;
 		}
 
+		return [$objectService, $register, $settled];
+	}//end mappingTarget()
+
+	/**
+	 * Map the rows of every configured target schema and report each tally.
+	 *
+	 * @param array{0: object, 1: string, 2: array<int, string>} $target The object service, register and settled codes.
+	 * @param IOutput                                            $output Progress reporting.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
+	 */
+	private function mapTargets(array $target, IOutput $output): void {
 		foreach (self::TARGET_CONFIG_KEYS as $key) {
 			$schema = (string)$this->settingsService->getConfigValue($key);
 			if ($schema === '') {
 				continue;
 			}
 
-			$mapping = new RefusalGroundMapping(objectService: $objectService, register: $register);
-			$mapping->configKey = $key;
-			$mapping->schema = $schema;
-			$mapping->settled = $settled;
-			$mapping->tally = (array)$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): array => $this->mapSchema(mapping: $mapping)
-			);
+			$mapping = $this->mappingFor(target: $target, key: $key, schema: $schema);
+			$mapping->tally = $this->tallyAsSystem(mapping: $mapping);
 			$this->reportTally(output: $output, mapping: $mapping);
 		}
-	}//end run()
+	}//end mapTargets()
+
+	/**
+	 * A fresh mapping of one target schema.
+	 *
+	 * @param array{0: object, 1: string, 2: array<int, string>} $target The object service, register and settled codes.
+	 * @param string                                             $key    The schema's config key.
+	 * @param string                                             $schema The schema.
+	 *
+	 * @return RefusalGroundMapping The mapping.
+	 */
+	private function mappingFor(array $target, string $key, string $schema): RefusalGroundMapping {
+		[$objectService, $register, $settled] = $target;
+
+		$mapping = new RefusalGroundMapping(objectService: $objectService, register: $register);
+		$mapping->configKey = $key;
+		$mapping->schema = $schema;
+		$mapping->settled = $settled;
+
+		return $mapping;
+	}//end mappingFor()
+
+	/**
+	 * Map the schema's rows as the system.
+	 *
+	 * @param RefusalGroundMapping $mapping The mapping.
+	 *
+	 * @return array<string, mixed> The tally.
+	 */
+	private function tallyAsSystem(RefusalGroundMapping $mapping): array {
+		return (array)$this->runAsSystemIfAvailable(
+			objectService: $mapping->objectService,
+			operation: fn (): array => $this->mapSchema(mapping: $mapping)
+		);
+	}//end tallyAsSystem()
 
 	/**
 	 * The codes on the settled list, or null (said on the output) while it cannot be read yet.
@@ -315,6 +375,26 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 			return;
 		}
 
+		if ($this->patchRow(mapping: $mapping, uuid: $uuid, changes: $changes) === false) {
+			return;
+		}
+
+		$mapping->tally['mapped']++;
+		if (isset($changes['groundsUnmapped']) === true) {
+			$mapping->tally['unmapped'][$uuid] = $changes['groundsUnmapped'];
+		}
+	}//end mapRow()
+
+	/**
+	 * Write the changes onto the row, counting a failed write.
+	 *
+	 * @param RefusalGroundMapping $mapping The schema, with its tally.
+	 * @param string               $uuid    The row's uuid.
+	 * @param array<string, mixed> $changes The mapped codes.
+	 *
+	 * @return bool True when the row was written.
+	 */
+	private function patchRow(RefusalGroundMapping $mapping, string $uuid, array $changes): bool {
 		try {
 			$this->patchObjectAsArray(
 				objectService: $mapping->objectService,
@@ -324,17 +404,27 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 				changes: $changes
 			);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: the Woo refusal ground mapping failed for one row',
-				['app' => AppIdentity::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
-			);
-			$mapping->tally['failed']++;
-			return;
+			$this->rowFailed(mapping: $mapping, uuid: $uuid, error: $e);
+			return false;
 		}
 
-		$mapping->tally['mapped']++;
-		if (isset($changes['groundsUnmapped']) === true) {
-			$mapping->tally['unmapped'][$uuid] = $changes['groundsUnmapped'];
-		}
-	}//end mapRow()
+		return true;
+	}//end patchRow()
+
+	/**
+	 * Log a row that could not be written and count it as failed.
+	 *
+	 * @param RefusalGroundMapping $mapping The schema, with its tally.
+	 * @param string               $uuid    The row's uuid.
+	 * @param Throwable            $error   The failure.
+	 *
+	 * @return void
+	 */
+	private function rowFailed(RefusalGroundMapping $mapping, string $uuid, Throwable $error): void {
+		$this->logger->error(
+			'Dossiq: the Woo refusal ground mapping failed for one row',
+			['app' => AppIdentity::APP_ID, 'uuid' => $uuid, 'exception' => $error->getMessage()]
+		);
+		$mapping->tally['failed']++;
+	}//end rowFailed()
 }//end class

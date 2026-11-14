@@ -55,6 +55,9 @@ use Throwable;
  * Keeps one of the two versions a conflict record holds.
  *
  * @spec openspec/changes/inspection-conflict-card/tasks.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of
+ *  small private steps; each method stays under the method thresholds.
  */
 class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	use SearchesObjects;
@@ -106,12 +109,32 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 		$objectService = $this->settings->getObjectService();
 		$register = $this->settings->getConfigValue(key: 'register');
 		if ($objectService === null || $register === '') {
-			return ConflictResolutionOutcome::refused(
-				status: Http::STATUS_SERVICE_UNAVAILABLE,
-				message: 'OpenRegister is niet beschikbaar.'
-			);
+			return ConflictResolutionOutcome::refused(status: Http::STATUS_SERVICE_UNAVAILABLE, message: 'OpenRegister is niet beschikbaar.');
 		}
 
+		$data = $this->openConflict(objectService: $objectService, register: $register, id: $id);
+		if ($data instanceof ConflictResolutionOutcome) {
+			return $data;
+		}
+
+		$refusal = $this->applyResolution(objectService: $objectService, register: $register, id: $id, resolution: $resolution, data: $data);
+
+		return ($refusal ?? $this->markResolved(objectService: $objectService, register: $register, id: $id, resolution: $resolution,
+			userId: $userId, data: $data));
+	}//end resolve()
+
+	/**
+	 * Read the conflict record, refusing when it is missing or already resolved.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register of the conflict record.
+	 * @param string $id            The conflict record's id.
+	 *
+	 * @return array<string, mixed>|ConflictResolutionOutcome The conflict record, or the refusal.
+	 *
+	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 */
+	private function openConflict(object $objectService, string $register, string $id): array|ConflictResolutionOutcome {
 		try {
 			$record = $this->read(objectService: $objectService, register: $register, schema: self::CONFLICT_SCHEMA, id: $id);
 		} catch (Throwable $e) {
@@ -123,6 +146,29 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			return ConflictResolutionOutcome::refused(status: Http::STATUS_CONFLICT, message: 'Dit conflict is al opgelost.');
 		}
 
+		return $data;
+	}//end openConflict()
+
+	/**
+	 * Apply the chosen side: for `client_wins`, write the device's values.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $register      The register of the conflict record.
+	 * @param string               $id            The conflict record's id.
+	 * @param string               $resolution    `client_wins` or `server_wins`.
+	 * @param array<string, mixed> $data          The conflict record.
+	 *
+	 * @return ConflictResolutionOutcome|null The refusal, or null once applied.
+	 *
+	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 */
+	private function applyResolution(
+		object $objectService,
+		string $register,
+		string $id,
+		string $resolution,
+		array $data,
+	): ?ConflictResolutionOutcome {
 		if ($resolution === self::CLIENT_WINS) {
 			$refusal = $this->writeDeviceValues(objectService: $objectService, register: $register, id: $id, data: $data);
 			if ($refusal !== null) {
@@ -130,6 +176,31 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			}
 		}
 
+		return null;
+	}//end applyResolution()
+
+	/**
+	 * Mark the conflict record resolved and its queue row synced.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $register      The register of the conflict record.
+	 * @param string               $id            The conflict record's id.
+	 * @param string               $resolution    `client_wins` or `server_wins`.
+	 * @param string               $userId        The session user's uid.
+	 * @param array<string, mixed> $data          The conflict record.
+	 *
+	 * @return ConflictResolutionOutcome The status and body to answer with.
+	 *
+	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 */
+	private function markResolved(
+		object $objectService,
+		string $register,
+		string $id,
+		string $resolution,
+		string $userId,
+		array $data,
+	): ConflictResolutionOutcome {
 		$resolvedAt = $this->time->now()->format(DATE_ATOM);
 		try {
 			$this->patchObjectAsArray(
@@ -156,7 +227,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			status: Http::STATUS_OK,
 			body: ['id' => $id, 'resolution' => $resolution, 'resolvedBy' => $userId, 'resolvedAt' => $resolvedAt]
 		);
-	}//end resolve()
+	}//end markResolved()
 
 	/**
 	 * Write the device's values onto the target, after every check.
@@ -174,9 +245,55 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 		string $id,
 		array $data,
 	): ?ConflictResolutionOutcome {
-		$targetId = $this->stringOf(value: ($data['targetId'] ?? null));
-		$targetRegister = $this->stringOf(value: ($data['targetRegister'] ?? null));
-		$targetSchema = $this->stringOf(value: ($data['targetSchema'] ?? null));
+		$target = $this->writableTarget(objectService: $objectService, data: $data);
+		if ($target instanceof ConflictResolutionOutcome) {
+			return $target;
+		}
+
+		$fields = $this->fieldsOf(data: $data);
+		$current = $this->dataOf(object: $target);
+		$refreshed = $this->refreshedServerVersion(data: $data, fields: $fields, current: $current);
+		if ($refreshed !== null) {
+			$this->storeServerVersion(objectService: $objectService, register: $register, id: $id, refreshed: $refreshed);
+			return ConflictResolutionOutcome::refused(
+				status: Http::STATUS_CONFLICT,
+				message: 'Op kantoor is de tekst intussen opnieuw gewijzigd. Kies opnieuw.'
+			);
+		}
+
+		$changes = $this->deviceChanges(data: $data, fields: $fields, current: $current);
+		if ($changes === []) {
+			return null;
+		}
+
+		return $this->writeOntoTarget(objectService: $objectService, data: $data, changes: $changes, id: $id);
+	}//end writeDeviceValues()
+
+	/**
+	 * The conflict's target register, schema and id ('' when absent).
+	 *
+	 * @param array<string, mixed> $data The conflict record.
+	 *
+	 * @return array{0: string, 1: string, 2: string} Register, schema and id.
+	 */
+	private function targetOf(array $data): array {
+		return [
+			$this->stringOf(value: ($data['targetRegister'] ?? null)),
+			$this->stringOf(value: ($data['targetSchema'] ?? null)),
+			$this->stringOf(value: ($data['targetId'] ?? null)),
+		];
+	}//end targetOf()
+
+	/**
+	 * The conflict's target, read and checked for the update right.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param array<string, mixed> $data          The conflict record.
+	 *
+	 * @return object|ConflictResolutionOutcome The target, or the refusal.
+	 */
+	private function writableTarget(object $objectService, array $data): object {
+		[$targetRegister, $targetSchema, $targetId] = $this->targetOf(data: $data);
 		if ($targetId === '' || $targetRegister === '' || $targetSchema === '') {
 			return ConflictResolutionOutcome::refused(
 				status: Http::STATUS_UNPROCESSABLE_ENTITY,
@@ -200,11 +317,21 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			);
 		}
 
-		$fields = $this->fieldsOf(data: $data);
-		$current = $this->dataOf(object: $target);
-		$serverVersion = $this->arrayOf(value: ($data['serverVersion'] ?? null));
-		$clientVersion = $this->arrayOf(value: ($data['clientVersion'] ?? null));
+		return $target;
+	}//end writableTarget()
 
+	/**
+	 * The server version with the office's current values, or null when the
+	 * office did not change any of the fields since the conflict was recorded.
+	 *
+	 * @param array<string, mixed> $data    The conflict record.
+	 * @param array<int, string>   $fields  The conflicting field paths.
+	 * @param array<string, mixed> $current The target's current data.
+	 *
+	 * @return array<string, mixed>|null The refreshed server version, or null.
+	 */
+	private function refreshedServerVersion(array $data, array $fields, array $current): ?array {
+		$serverVersion = $this->arrayOf(value: ($data['serverVersion'] ?? null));
 		$officeMoved = false;
 		$refreshed = $serverVersion;
 		foreach ($fields as $path) {
@@ -216,28 +343,51 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			$refreshed = $this->withValueAt(data: $refreshed, path: $path, value: $now);
 		}
 
-		if ($officeMoved === true) {
-			try {
-				$this->patchObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: self::CONFLICT_SCHEMA,
-					id: $id,
-					changes: ['serverVersion' => $refreshed]
-				);
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: the newest office value could not be stored on the conflict record',
-					['exception' => $e->getMessage(), 'id' => $id]
-				);
-			}
-
-			return ConflictResolutionOutcome::refused(
-				status: Http::STATUS_CONFLICT,
-				message: 'Op kantoor is de tekst intussen opnieuw gewijzigd. Kies opnieuw.'
-			);
+		if ($officeMoved === false) {
+			return null;
 		}
 
+		return $refreshed;
+	}//end refreshedServerVersion()
+
+	/**
+	 * Store the newest office values on the conflict record; a failure is logged.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $register      The register of the conflict record.
+	 * @param string               $id            The conflict record's id.
+	 * @param array<string, mixed> $refreshed     The refreshed server version.
+	 *
+	 * @return void
+	 */
+	private function storeServerVersion(object $objectService, string $register, string $id, array $refreshed): void {
+		try {
+			$this->patchObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: self::CONFLICT_SCHEMA,
+				id: $id,
+				changes: ['serverVersion' => $refreshed]
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the newest office value could not be stored on the conflict record',
+				['exception' => $e->getMessage(), 'id' => $id]
+			);
+		}
+	}//end storeServerVersion()
+
+	/**
+	 * The device's values per top-level field, merged into the current data.
+	 *
+	 * @param array<string, mixed> $data    The conflict record.
+	 * @param array<int, string>   $fields  The conflicting field paths.
+	 * @param array<string, mixed> $current The target's current data.
+	 *
+	 * @return array<string, mixed> The changes to write.
+	 */
+	private function deviceChanges(array $data, array $fields, array $current): array {
+		$clientVersion = $this->arrayOf(value: ($data['clientVersion'] ?? null));
 		$changes = [];
 		foreach ($fields as $path) {
 			$top = explode('.', $path)[0];
@@ -249,10 +399,21 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			)[$top];
 		}
 
-		if ($changes === []) {
-			return null;
-		}
+		return $changes;
+	}//end deviceChanges()
 
+	/**
+	 * Write the changes onto the conflict's target.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param array<string, mixed> $data          The conflict record.
+	 * @param array<string, mixed> $changes       The changes to write.
+	 * @param string               $id            The conflict record's id, for the log.
+	 *
+	 * @return ConflictResolutionOutcome|null The refusal, or null once written.
+	 */
+	private function writeOntoTarget(object $objectService, array $data, array $changes, string $id): ?ConflictResolutionOutcome {
+		[$targetRegister, $targetSchema, $targetId] = $this->targetOf(data: $data);
 		try {
 			$this->patchObjectAsArray(
 				objectService: $objectService,
@@ -273,7 +434,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 		}
 
 		return null;
-	}//end writeDeviceValues()
+	}//end writeOntoTarget()
 
 	/**
 	 * Mark the outbox row the record names as synced, when it exists.

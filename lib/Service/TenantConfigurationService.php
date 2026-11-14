@@ -130,31 +130,52 @@ class TenantConfigurationService {
 			// named-argument form threw "Unknown named parameter $register" and
 			// was swallowed by the catch below. Register/schema live inside
 			// `filters`; limit/offset are top-level config keys.
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => AppIdentity::REGISTER_SLUG,
-						'schema' => 'tenantConfiguration',
-						'tenantRef' => $tenantId,
-					],
-					'limit' => 1,
-					'offset' => 0,
-				]
-			);
-			if (is_array($rows) === true && count($rows) > 0) {
-				$config = $this->rowNormaliser->normalise(row: $rows[0])['data'];
-				if ($config === []) {
-					return null;
-				}
+			$rows = $objectService->findAll($this->configQuery(tenantId: $tenantId));
 
-				return $config;
-			}
-
-			return null;
+			return $this->firstConfig(rows: $rows);
 		} catch (Throwable $e) {
 			return null;
 		}//end try
 	}//end getConfig()
+
+	/**
+	 * The findAll() config that reads one tenant's configuration row.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 *
+	 * @return array<string, mixed> The query.
+	 */
+	private function configQuery(string $tenantId): array {
+		return [
+			'filters' => [
+				'register' => AppIdentity::REGISTER_SLUG,
+				'schema' => 'tenantConfiguration',
+				'tenantRef' => $tenantId,
+			],
+			'limit' => 1,
+			'offset' => 0,
+		];
+	}//end configQuery()
+
+	/**
+	 * The first row's data, or null when there is no row or it is empty.
+	 *
+	 * @param mixed $rows What findAll() answered.
+	 *
+	 * @return array<string,mixed>|null
+	 */
+	private function firstConfig($rows): ?array {
+		if (is_array($rows) === true && count($rows) > 0) {
+			$config = $this->rowNormaliser->normalise(row: $rows[0])['data'];
+			if ($config === []) {
+				return null;
+			}
+
+			return $config;
+		}
+
+		return null;
+	}//end firstConfig()
 
 	/*
 	 * NO updateBranding() / updateLocale() HERE.

@@ -117,44 +117,104 @@ class WooDecisionNotice {
 	public function tell(array $case, string $caseId, string $publicationId): bool {
 		$subjectRef = trim((string)($case['portalSubject'] ?? ''));
 		$objectService = $this->settingsService->getObjectService();
-		if ($subjectRef === '' || $caseId === '' || $publicationId === '' || $objectService === null) {
+		$ready = $this->canTell(subjectRef: $subjectRef, caseId: $caseId, publicationId: $publicationId, objectService: $objectService);
+		if ($ready === false) {
 			return false;
 		}
 
 		try {
-			$l10n = $this->l10nFactory->get(AppIdentity::APP_ID, self::LANGUAGE);
-			$link = $this->urlGenerator->getAbsoluteURL(self::SITE_PUBLICATION_PAGE . rawurlencode($publicationId));
-			$title = (string)($case['title'] ?? '');
-
-			$message = [
-				'subjectRef' => $subjectRef,
-				'subject' => $l10n->t('The decision on your Woo request has been published'),
-				'body' => $l10n->t('We have published the decision on your Woo request "%1$s".', [$title])
-					. "\n\n" . $l10n->t('Read the decision and the documents made public here: %1$s', [$link]),
-				'read' => false,
-				'receivedAt' => gmdate('c'),
-				'ruleKey' => PortalContributionProvider::RULE_WOO_REQUEST_PUBLISHED,
-				'recordLink' => ['app' => AppIdentity::APP_ID, 'collection' => self::CASE_COLLECTION, 'id' => $caseId],
-			];
-
-			$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): mixed => $objectService->saveObject(
-					object: $message,
-					register: self::PORTAL_MESSAGE_REGISTER,
-					schema: self::PORTAL_MESSAGE_SCHEMA,
-					_rbac: false,
-					_multitenancy: false,
-				)
-			);
+			$this->writeNotice(caseData: $case, caseId: $caseId, publicationId: $publicationId, objectService: $objectService);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'WooDecisionNotice: the resident could not be told the decision is published',
-				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'publicationId' => $publicationId, 'error' => $e->getMessage()]
-			);
+			$this->logUntold(caseId: $caseId, publicationId: $publicationId, error: $e);
 			return false;
 		}//end try
 
 		return true;
 	}//end tell()
+
+	/**
+	 * Write the decision notice into the resident's portal messages, as the system.
+	 *
+	 * @param array<string, mixed> $caseData      The case, as it was before the publish.
+	 * @param string               $caseId        The case uuid.
+	 * @param string               $publicationId The publication uuid in opencatalogi.
+	 * @param object|null          $objectService OpenRegister's object service.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
+	 */
+	private function writeNotice(array $caseData, string $caseId, string $publicationId, ?object $objectService): void {
+		$message = $this->noticeMessage(case: $caseData, caseId: $caseId, publicationId: $publicationId);
+
+		$this->runAsSystemIfAvailable(
+			objectService: $objectService,
+			operation: fn (): mixed => $objectService->saveObject(
+				object: $message,
+				register: self::PORTAL_MESSAGE_REGISTER,
+				schema: self::PORTAL_MESSAGE_SCHEMA,
+				_rbac: false,
+				_multitenancy: false,
+			)
+		);
+	}//end writeNotice()
+
+	/**
+	 * Log a notice that could not be written.
+	 *
+	 * @param string    $caseId        The case uuid.
+	 * @param string    $publicationId The publication uuid in opencatalogi.
+	 * @param Throwable $error         Why it could not be written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
+	 */
+	private function logUntold(string $caseId, string $publicationId, Throwable $error): void {
+		$this->logger->warning(
+			'WooDecisionNotice: the resident could not be told the decision is published',
+			['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'publicationId' => $publicationId, 'error' => $error->getMessage()]
+		);
+	}//end logUntold()
+
+	/**
+	 * Whether a resident, a case, a publication and OpenRegister are all in hand.
+	 *
+	 * @param string      $subjectRef    The resident following the case.
+	 * @param string      $caseId        The case uuid.
+	 * @param string      $publicationId The publication uuid in opencatalogi.
+	 * @param object|null $objectService OpenRegister's object service.
+	 *
+	 * @return bool
+	 */
+	private function canTell(string $subjectRef, string $caseId, string $publicationId, ?object $objectService): bool {
+		return !($subjectRef === '' || $caseId === '' || $publicationId === '' || $objectService === null);
+	}//end canTell()
+
+	/**
+	 * The portal message that tells the resident the decision is published.
+	 *
+	 * @param array<string, mixed> $case          The case, as it was before the publish.
+	 * @param string               $caseId        The case uuid.
+	 * @param string               $publicationId The publication uuid in opencatalogi.
+	 *
+	 * @return array<string, mixed> The message.
+	 */
+	private function noticeMessage(array $case, string $caseId, string $publicationId): array {
+		$subjectRef = trim((string)($case['portalSubject'] ?? ''));
+		$l10n = $this->l10nFactory->get(AppIdentity::APP_ID, self::LANGUAGE);
+		$link = $this->urlGenerator->getAbsoluteURL(self::SITE_PUBLICATION_PAGE . rawurlencode($publicationId));
+		$title = (string)($case['title'] ?? '');
+
+		return [
+			'subjectRef' => $subjectRef,
+			'subject' => $l10n->t('The decision on your Woo request has been published'),
+			'body' => $l10n->t('We have published the decision on your Woo request "%1$s".', [$title])
+				. "\n\n" . $l10n->t('Read the decision and the documents made public here: %1$s', [$link]),
+			'read' => false,
+			'receivedAt' => gmdate('c'),
+			'ruleKey' => PortalContributionProvider::RULE_WOO_REQUEST_PUBLISHED,
+			'recordLink' => ['app' => AppIdentity::APP_ID, 'collection' => self::CASE_COLLECTION, 'id' => $caseId],
+		];
+	}//end noticeMessage()
 }//end class

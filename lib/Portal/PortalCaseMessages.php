@@ -147,13 +147,40 @@ class PortalCaseMessages {
 			return [];
 		}
 
-		$messages = $this->searchObjectsAsArraysUnscoped(
+		$messages = $this->messagesOf(objectService: $objectService, register: $register, messageSchema: $messageSchema, caseId: $caseId);
+
+		return $this->residentEntries(messages: $messages, caseId: $caseId, resident: $resident);
+	}//end entries()
+
+	/**
+	 * The portaalBerichten stored against the case, unscoped.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register The register.
+	 * @param string $messageSchema The portaalBericht schema.
+	 * @param string $caseId The case.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function messagesOf(object $objectService, string $register, string $messageSchema, string $caseId): array {
+		return $this->searchObjectsAsArraysUnscoped(
 			objectService: $objectService,
 			register: $register,
 			schema: $messageSchema,
 			filters: ['caseId' => $caseId, '_limit' => self::LIMIT]
 		);
+	}//end messagesOf()
 
+	/**
+	 * The case's messages between the resident and the handler, newest first, in the inbox's words.
+	 *
+	 * @param array<int, array<string, mixed>> $messages The stored messages.
+	 * @param string $caseId The case.
+	 * @param string $resident The case's resident.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function residentEntries(array $messages, string $caseId, string $resident): array {
 		$entries = [];
 		foreach ($messages as $message) {
 			if (($message['caseId'] ?? null) !== $caseId || $this->isTheResidents(message: $message, resident: $resident) === false) {
@@ -166,7 +193,7 @@ class PortalCaseMessages {
 		usort($entries, static fn (array $a, array $b): int => strcmp((string)$b['receivedAt'], (string)$a['receivedAt']));
 
 		return $entries;
-	}//end entries()
+	}//end residentEntries()
 
 	/**
 	 * One message in the inbox's words.

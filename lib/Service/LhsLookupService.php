@@ -125,13 +125,7 @@ class LhsLookupService implements LhsLookupServiceInterface {
 		$behaviour = strtoupper(string: trim(string: $behaviour));
 		$gevolg = trim(string: $gevolg);
 
-		if (in_array(needle: $behaviour, haystack: self::VALID_GEDRAG, strict: true) === false) {
-			throw new RuntimeException('Invalid gedrag value: ' . $behaviour . '. Must be A, B, C or D.');
-		}
-
-		if (in_array(needle: $gevolg, haystack: self::VALID_GEVOLG, strict: true) === false) {
-			throw new RuntimeException('Invalid gevolg value: ' . $gevolg . '. Must be 1, 2, 3 or 4.');
-		}
+		$this->requireValid(behaviour: $behaviour, gevolg: $gevolg);
 
 		// The stored decision table first (the LHS package seeds it), then the
 		// legacy matrix cells, then the embedded table.
@@ -145,9 +139,41 @@ class LhsLookupService implements LhsLookupServiceInterface {
 			return $cell;
 		}
 
-		// Fallback to embedded table. The validated $behaviour/$gevolg pair is
-		// guaranteed to be a key in FALLBACK_MATRIX (4x4 = 16 cells), so no
-		// null-coalescing default is required.
+		return $this->fallbackCell(behaviour: $behaviour, gevolg: $gevolg);
+	}//end lookup()
+
+	/**
+	 * Refuse a gedrag or gevolg outside the matrix.
+	 *
+	 * @param string $behaviour The normalised gedrag.
+	 * @param string $gevolg    The normalised gevolg.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When either value is invalid.
+	 */
+	private function requireValid(string $behaviour, string $gevolg): void {
+		if (in_array(needle: $behaviour, haystack: self::VALID_GEDRAG, strict: true) === false) {
+			throw new RuntimeException('Invalid gedrag value: ' . $behaviour . '. Must be A, B, C or D.');
+		}
+
+		if (in_array(needle: $gevolg, haystack: self::VALID_GEVOLG, strict: true) === false) {
+			throw new RuntimeException('Invalid gevolg value: ' . $gevolg . '. Must be 1, 2, 3 or 4.');
+		}
+	}//end requireValid()
+
+	/**
+	 * The cell from the embedded fallback table.
+	 *
+	 * The validated $behaviour/$gevolg pair is guaranteed to be a key in
+	 * FALLBACK_MATRIX (4x4 = 16 cells), so no null-coalescing default is required.
+	 *
+	 * @param string $behaviour The validated gedrag.
+	 * @param string $gevolg    The validated gevolg.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function fallbackCell(string $behaviour, string $gevolg): array {
 		$key = $behaviour . ':' . $gevolg;
 		$intervention = self::FALLBACK_MATRIX[$key];
 
@@ -158,7 +184,7 @@ class LhsLookupService implements LhsLookupServiceInterface {
 			'description' => '',
 			'source' => 'fallback',
 		];
-	}//end lookup()
+	}//end fallbackCell()
 
 	/**
 	 * Evaluate the stored LHS intervention table in OpenRegister's register.

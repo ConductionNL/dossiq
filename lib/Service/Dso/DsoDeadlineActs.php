@@ -151,6 +151,19 @@ class DsoDeadlineActs implements DsoDeadlineActsInterface {
 			return false;
 		}
 
+		return $this->writeOverdue(case: $case);
+	}//end markOverdue()
+
+	/**
+	 * Write the overdue marker and its journal entry onto the case.
+	 *
+	 * @param array<string, mixed> $case The case, read fresh.
+	 *
+	 * @return bool True when the marker was written, false when the register is not configured.
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function writeOverdue(array $case): bool {
 		$objectService = $this->settingsService->getObjectService();
 		$register      = (string) $this->settingsService->getConfigValue('register');
 		$schema        = (string) $this->settingsService->getConfigValue('case_schema');
@@ -174,7 +187,7 @@ class DsoDeadlineActs implements DsoDeadlineActsInterface {
 		);
 
 		return true;
-	}//end markOverdue()
+	}//end writeOverdue()
 
 	/**
 	 * Whether the DSO term still runs on the case.

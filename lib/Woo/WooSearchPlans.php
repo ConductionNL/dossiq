@@ -217,20 +217,62 @@ class WooSearchPlans implements WooSearchPlansInterface {
 			return null;
 		}
 
+		$source = $this->sourceOf(from: $from);
+		if ($source === null) {
+			return null;
+		}
+
+		$configuration = $this->configurationFrom(source: $source, caseId: $caseId, from: $from);
+		$saved = $this->save(configKey: self::CONFIGURATION_SCHEMA, row: $configuration, uuid: '');
+
+		$this->savePlanFrom(caseId: $caseId, configuration: $configuration);
+		$this->access->reconcileAfterCreate(caseId: $caseId, created: 1);
+
+		return $saved;
+	}//end startFrom()
+
+	/**
+	 * The configuration of the earlier case, or the values of the named template.
+	 *
+	 * @param string $from The earlier case uuid, or the uuid of a named template.
+	 *
+	 * @return array<string, mixed>|null Null when `$from` names neither.
+	 */
+	private function sourceOf(string $from): ?array {
 		$source = $this->rowOfCase(configKey: self::CONFIGURATION_SCHEMA, caseId: $from);
 		if ($source === null) {
 			$source = $this->templates->find(uuid: $from, schema: $this->templateSchema())['values'] ?? null;
 		}
 
-		if ($source === null) {
-			return null;
-		}
+		return $source;
+	}//end sourceOf()
 
+	/**
+	 * The copied configuration, without what is not copied, pointing at the new case.
+	 *
+	 * @param array<string, mixed> $source The configuration copied from.
+	 * @param string               $caseId The new case uuid.
+	 * @param string               $from   Where it was copied from.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function configurationFrom(array $source, string $caseId, string $from): array {
 		$configuration = array_diff_key($source, array_flip(self::NOT_COPIED));
 		$configuration['case'] = $caseId;
 		$configuration['copiedFrom'] = $from;
-		$saved = $this->save(configKey: self::CONFIGURATION_SCHEMA, row: $configuration, uuid: '');
 
+		return $configuration;
+	}//end configurationFrom()
+
+	/**
+	 * Save the new case's search plan from its configuration.
+	 *
+	 * @param string               $caseId        The new case uuid.
+	 * @param array<string, mixed> $configuration Its configuration.
+	 *
+	 * @return void
+	 */
+	private function savePlanFrom(string $caseId, array $configuration): void {
 		$this->save(
 			configKey: self::PLAN_SCHEMA,
 			row: [
@@ -241,10 +283,7 @@ class WooSearchPlans implements WooSearchPlansInterface {
 			],
 			uuid: ''
 		);
-		$this->access->reconcileAfterCreate(caseId: $caseId, created: 1);
-
-		return $saved;
-	}//end startFrom()
+	}//end savePlanFrom()
 
 	/**
 	 * The schema id named templates of the request configuration are kept under in OpenRegister.
@@ -290,44 +329,88 @@ class WooSearchPlans implements WooSearchPlansInterface {
 	 * @throws WooCorpusRefused When a part is missing or wrong.
 	 */
 	private function validated(array $input): array {
+		$plan = [
+			'custodians' => $this->custodians(input: $input),
+			'systems' => array_values(array_unique(array_filter(array_map('strval', (array)($input['systems'] ?? [])), [WooSources::class, 'isKnown']))),
+			'periodFrom' => trim((string)($input['periodFrom'] ?? '')),
+			'periodTo' => trim((string)($input['periodTo'] ?? '')),
+			'terms' => trim((string)($input['terms'] ?? '')),
+		];
+
+		$missing = $this->missingPart(plan: $plan);
+		if ($missing !== '') {
+			throw new WooCorpusRefused(reason: 'plan_incomplete_' . $missing, status: 400);
+		}
+
+		return $plan;
+	}//end validated()
+
+	/**
+	 * The custodians the input names, each with a name.
+	 *
+	 * @param array<string, mixed> $input The input.
+	 *
+	 * @return array<int, array<string, string>> The custodians.
+	 */
+	private function custodians(array $input): array {
 		$custodians = [];
 		foreach ((array)($input['custodians'] ?? []) as $custodian) {
-			if (is_array($custodian) === false) {
-				$custodian = ['name' => $custodian];
-			}
-
-			$name = trim((string)($custodian['name'] ?? ''));
-			if ($name === '') {
+			$row = $this->custodianRow(custodian: $custodian);
+			if ($row === null) {
 				continue;
-			}
-
-			$row = ['name' => $name, 'function' => trim((string)($custodian['function'] ?? ''))];
-			$userId = trim((string)($custodian['userId'] ?? ''));
-			if ($userId !== '') {
-				$row['userId'] = $userId;
 			}
 
 			$custodians[] = $row;
 		}
 
-		$systems = array_values(array_unique(array_filter(array_map('strval', (array)($input['systems'] ?? [])), [WooSources::class, 'isKnown'])));
-		$from = trim((string)($input['periodFrom'] ?? ''));
-		$until = trim((string)($input['periodTo'] ?? ''));
-		$terms = trim((string)($input['terms'] ?? ''));
+		return $custodians;
+	}//end custodians()
 
-		$missing = match (true) {
-			$custodians === [] => 'custodians',
-			$systems === [] => 'systems',
-			$this->isDate(value: $from) === false || $this->isDate(value: $until) === false || $from > $until => 'period',
-			$terms === '' => 'terms',
-			default => '',
-		};
-		if ($missing !== '') {
-			throw new WooCorpusRefused(reason: 'plan_incomplete_' . $missing, status: 400);
+	/**
+	 * One custodian as the plan stores it, or null when it has no name.
+	 *
+	 * @param mixed $custodian A custodian row, or a bare name.
+	 *
+	 * @return array<string, string>|null The custodian.
+	 */
+	private function custodianRow(mixed $custodian): ?array {
+		if (is_array($custodian) === false) {
+			$custodian = ['name' => $custodian];
 		}
 
-		return ['custodians' => $custodians, 'systems' => $systems, 'periodFrom' => $from, 'periodTo' => $until, 'terms' => $terms];
-	}//end validated()
+		$name = trim((string)($custodian['name'] ?? ''));
+		if ($name === '') {
+			return null;
+		}
+
+		$row = ['name' => $name, 'function' => trim((string)($custodian['function'] ?? ''))];
+		$userId = trim((string)($custodian['userId'] ?? ''));
+		if ($userId !== '') {
+			$row['userId'] = $userId;
+		}
+
+		return $row;
+	}//end custodianRow()
+
+	/**
+	 * The first part of the plan that is missing or wrong, '' when none is.
+	 *
+	 * @param array<string, mixed> $plan The plan.
+	 *
+	 * @return string The part, or ''.
+	 */
+	private function missingPart(array $plan): string {
+		$from = $plan['periodFrom'];
+		$until = $plan['periodTo'];
+
+		return match (true) {
+			$plan['custodians'] === [] => 'custodians',
+			$plan['systems'] === [] => 'systems',
+			$this->isDate(value: $from) === false || $this->isDate(value: $until) === false || $from > $until => 'period',
+			$plan['terms'] === '' => 'terms',
+			default => '',
+		};
+	}//end missingPart()
 
 	/**
 	 * Whether a value is a Y-m-d date.

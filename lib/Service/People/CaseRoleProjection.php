@@ -84,15 +84,56 @@ class CaseRoleProjection implements CaseRoleProjectionInterface {
 			return '';
 		}
 
+		$roleType = $this->linkedRoleType(caseId: $caseId, personUid: $personUid, roleTypeId: $roleTypeId);
+		if ($roleType === null) {
+			return '';
+		}
+
+		$record = $this->roleRecord(link: $link, caseId: $caseId, personUid: $personUid, roleTypeId: $roleTypeId);
+
+		$uuid = $this->saveRole(record: $record);
+		$this->nameInitiator(case: $case, link: $link, roleType: $roleType);
+
+		return $uuid;
+	}//end project()
+
+	/**
+	 * The role type a link names, or null (logged) when this instance has no such role type.
+	 *
+	 * @param string $caseId     The case.
+	 * @param string $personUid  The person.
+	 * @param string $roleTypeId The role type the link names.
+	 *
+	 * @return array<string, mixed>|null The role type.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
+	 */
+	private function linkedRoleType(string $caseId, string $personUid, string $roleTypeId): ?array {
 		$roleType = $this->findRow(schemaKey: 'role_type_schema', id: $roleTypeId);
 		if ($roleType === null) {
 			$this->logger->info(
 				'Dossiq people: a link names no role type of this instance, so no role record was written',
 				['case' => $caseId, 'person' => $personUid, 'role' => $roleTypeId]
 			);
-			return '';
+			return null;
 		}
 
+		return $roleType;
+	}//end linkedRoleType()
+
+	/**
+	 * The role record for a link: the stored one, brought up to date, or a new one.
+	 *
+	 * @param array<string, mixed> $link       The link as OpenRegister stores it.
+	 * @param string               $caseId     The case.
+	 * @param string               $personUid  The person.
+	 * @param string               $roleTypeId The role type.
+	 *
+	 * @return array<string, mixed> The record to save.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
+	 */
+	private function roleRecord(array $link, string $caseId, string $personUid, string $roleTypeId): array {
 		$record = $this->existingRole(caseId: $caseId, personUid: $personUid, roleTypeId: $roleTypeId);
 		$record['case'] = $caseId;
 		$record['roleType'] = $roleTypeId;
@@ -100,11 +141,8 @@ class CaseRoleProjection implements CaseRoleProjectionInterface {
 		$record['name'] = $this->people->nameOf(link: $link);
 		$record['description'] = trim((string)($link['note'] ?? ''));
 
-		$uuid = $this->saveRole(record: $record);
-		$this->nameInitiator(case: $case, link: $link, roleType: $roleType);
-
-		return $uuid;
-	}//end project()
+		return $record;
+	}//end roleRecord()
 
 	/**
 	 * Remove the role record of a link that is gone.
@@ -149,10 +187,7 @@ class CaseRoleProjection implements CaseRoleProjectionInterface {
 	 * @return array<string, mixed> The record, [] when there is none yet.
 	 */
 	private function existingRole(string $caseId, string $personUid, string $roleTypeId): array {
-		$filters = ['case' => $caseId, 'participant' => $personUid, '_limit' => 50];
-		if ($roleTypeId !== '') {
-			$filters['roleType'] = $roleTypeId;
-		}
+		$filters = $this->roleFilters(caseId: $caseId, personUid: $personUid, roleTypeId: $roleTypeId);
 
 		try {
 			[$objectService, $register] = $this->requireRegister();
@@ -166,6 +201,35 @@ class CaseRoleProjection implements CaseRoleProjectionInterface {
 			return [];
 		}
 
+		return $this->firstWithId(rows: $rows);
+	}//end existingRole()
+
+	/**
+	 * The filters that find a person's role on a case, of one role type when named.
+	 *
+	 * @param string $caseId     The case.
+	 * @param string $personUid  The person.
+	 * @param string $roleTypeId The role type, or ''.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function roleFilters(string $caseId, string $personUid, string $roleTypeId): array {
+		$filters = ['case' => $caseId, 'participant' => $personUid, '_limit' => 50];
+		if ($roleTypeId !== '') {
+			$filters['roleType'] = $roleTypeId;
+		}
+
+		return $filters;
+	}//end roleFilters()
+
+	/**
+	 * The first row that carries an id, flattened, or [] when none does.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The role rows.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function firstWithId(array $rows): array {
 		foreach ($rows as $row) {
 			$self = (array)($row['@self'] ?? []);
 			$id = trim((string)($row['id'] ?? ($self['id'] ?? '')));
@@ -177,7 +241,7 @@ class CaseRoleProjection implements CaseRoleProjectionInterface {
 		}
 
 		return [];
-	}//end existingRole()
+	}//end firstWithId()
 
 	/**
 	 * Store a role record, new or existing.

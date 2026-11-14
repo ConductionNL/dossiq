@@ -127,13 +127,24 @@ class WooRequesterProperties {
 			return [];
 		}
 
+		$rows = $this->readDefinitionRows(objectService: $objectService, register: $register, schema: $schema, caseTypeId: $caseTypeId);
+
+		return $this->idsByName(rows: $rows);
+	}//end definitions()
+
+	/**
+	 * Read the case type's property definition rows, or none when they cannot be read.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register      The dossiq register.
+	 * @param string $schema        The property definition schema.
+	 * @param string $caseTypeId    The case type.
+	 *
+	 * @return array<int, array<string, mixed>> The rows, or [] when unreadable.
+	 */
+	private function readDefinitionRows(object $objectService, string $register, string $schema, string $caseTypeId): array {
 		try {
-			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['caseType' => $caseTypeId],
-			);
+			return $this->definitionRows(objectService: $objectService, register: $register, schema: $schema, caseTypeId: $caseTypeId);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'WooRequestIntake: the case type property definitions could not be read, so the requester details are kept on the request only',
@@ -141,7 +152,35 @@ class WooRequesterProperties {
 			);
 			return [];
 		}
+	}//end readDefinitionRows()
 
+	/**
+	 * Read the case type's property definition rows.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register      The dossiq register.
+	 * @param string $schema        The property definition schema.
+	 * @param string $caseTypeId    The case type.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function definitionRows(object $objectService, string $register, string $schema, string $caseTypeId): array {
+		return $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['caseType' => $caseTypeId],
+		);
+	}//end definitionRows()
+
+	/**
+	 * The definition id per name, for the rows that have both.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The definition rows.
+	 *
+	 * @return array<string, string> The definition id per name.
+	 */
+	private function idsByName(array $rows): array {
 		$definitions = [];
 		foreach ($rows as $row) {
 			$name = trim((string)($row['name'] ?? ''));
@@ -152,7 +191,7 @@ class WooRequesterProperties {
 		}
 
 		return $definitions;
-	}//end definitions()
+	}//end idsByName()
 
 	/**
 	 * One row's id, wherever the store put it.

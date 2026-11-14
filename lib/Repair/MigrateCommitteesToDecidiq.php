@@ -89,18 +89,8 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 	 * @spec openspec/changes/migrate-committees-to-decidiq/specs/migrate-committees-to-decidiq/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->delegation->isAvailable() === false) {
-			// The decision app is an OPTIONAL runtime dependency. An install
-			// without it keeps its local committees and keeps working; this is
-			// the one case where skipping is correct rather than a silent
-			// no-op, so it is reported as a skip and not as a success.
-			$output->info('Dossiq: the decision app is not installed; committees stay local.');
-			return;
-		}
-
-		$objectService = $this->settings->getObjectService();
+		$objectService = $this->availableObjectService(output: $output);
 		if ($objectService === null) {
-			$output->warning('Dossiq: OpenRegister is not available; committees were not migrated.');
 			return;
 		}
 
@@ -111,41 +101,11 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 			return;
 		}
 
-		// 🔴 A repair step runs during `occ upgrade`, where there is NO session.
-		// Without a system identity OpenRegister resolves the actor as Anonymous
-		// and refuses every write — and $output->warning() does not fail an
-		// upgrade, so the migration would do nothing while the upgrade reported
-		// success. The shared trait falls back to running the operation bare
-		// when runAsSystem() is absent; here that fallback is the exact silent
-		// no-op the spec forbids, so this step FAILS instead.
-		if (method_exists($objectService, 'runAsSystem') === false) {
-			throw new RuntimeException(
-				'Dossiq: OpenRegister exposes no runAsSystem(); the committee migration cannot establish an identity and refuses to run as Anonymous.'
-			);
-		}
-
-		$counts = ['migrated' => 0, 'skipped' => 0, 'failed' => 0];
-
-		$objectService->runAsSystem(
-			function () use ($objectService, $register, $schema, $output, &$counts): void {
-				$committees = $this->readCommittees(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					output: $output,
-				);
-
-				foreach ($committees as $committee) {
-					$this->migrateOne(
-						objectService: $objectService,
-						register: $register,
-						schema: $schema,
-						committee: $committee,
-						output: $output,
-						counts: $counts,
-					);
-				}
-			}
+		$counts = $this->migrateAll(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			output: $output,
 		);
 
 		$output->info(
@@ -158,6 +118,86 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 		);
 
 	}//end run()
+
+	/**
+	 * OpenRegister's object service when the decision app and OpenRegister are both present.
+	 *
+	 * @param IOutput $output The migration output.
+	 *
+	 * @return object|null The object service, or null when the migration is skipped.
+	 */
+	private function availableObjectService(IOutput $output): ?object {
+		if ($this->delegation->isAvailable() === false) {
+			// The decision app is an OPTIONAL runtime dependency. An install
+			// without it keeps its local committees and keeps working; this is
+			// the one case where skipping is correct rather than a silent
+			// no-op, so it is reported as a skip and not as a success.
+			$output->info('Dossiq: the decision app is not installed; committees stay local.');
+			return null;
+		}
+
+		$objectService = $this->settings->getObjectService();
+		if ($objectService === null) {
+			$output->warning('Dossiq: OpenRegister is not available; committees were not migrated.');
+			return null;
+		}
+
+		return $objectService;
+	}//end availableObjectService()
+
+	/**
+	 * Migrate every local committee under the system identity.
+	 *
+	 * @param object  $objectService OpenRegister's object service.
+	 * @param string  $register      The register slug.
+	 * @param string  $schema        The committee schema slug.
+	 * @param IOutput $output        The migration output.
+	 *
+	 * @return array<string, int> The migrated, skipped and failed counts.
+	 *
+	 * @throws RuntimeException When OpenRegister exposes no runAsSystem().
+	 */
+	private function migrateAll(object $objectService, string $register, string $schema, IOutput $output): array {
+		// 🔴 A repair step runs during `occ upgrade`, where there is NO session.
+		// Without a system identity OpenRegister resolves the actor as Anonymous
+		// and refuses every write — and $output->warning() does not fail an
+		// upgrade, so the migration would do nothing while the upgrade reported
+		// success. The shared trait falls back to running the operation bare
+		// when runAsSystem() is absent; here that fallback is the exact silent
+		// no-op the spec forbids, so this step FAILS instead.
+		$this->requireRunAsSystem(objectService: $objectService);
+
+		$counts = ['migrated' => 0, 'skipped' => 0, 'failed' => 0];
+
+		$objectService->runAsSystem(
+			function () use ($objectService, $register, $schema, $output, &$counts): void {
+				$committees = $this->readCommittees(objectService: $objectService, register: $register, schema: $schema, output: $output);
+
+				foreach ($committees as $committee) {
+					$this->migrateOne(objectService: $objectService, register: $register, schema: $schema, committee: $committee, output: $output, counts: $counts);
+				}
+			}
+		);
+
+		return $counts;
+	}//end migrateAll()
+
+	/**
+	 * Refuse to run when OpenRegister cannot establish a system identity.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When OpenRegister exposes no runAsSystem().
+	 */
+	private function requireRunAsSystem(object $objectService): void {
+		if (method_exists($objectService, 'runAsSystem') === false) {
+			throw new RuntimeException(
+				'Dossiq: OpenRegister exposes no runAsSystem(); the committee migration cannot establish an identity and refuses to run as Anonymous.'
+			);
+		}
+	}//end requireRunAsSystem()
 
 	/**
 	 * Read the local committees.

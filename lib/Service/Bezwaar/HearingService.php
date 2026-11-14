@@ -65,6 +65,9 @@ use RuntimeException;
  * Hearing service: scheduling, waiver, attendance and minutes capture.
  *
  * @spec openspec/specs/bezwaar-hearing/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class HearingService implements HearingServiceInterface {
 
@@ -273,14 +276,25 @@ class HearingService implements HearingServiceInterface {
 		array $entries,
 	): array {
 		if ($entries === []) {
-			throw new RuntimeException(
-				'At least one attendance entry is required'
-			);
+			throw new RuntimeException('At least one attendance entry is required');
 		}
 
 		$store = $this->openStore();
 		$current = $this->requireSession(store: $store, sessionId: $sessionId);
 
+		return $this->writeAttendance(store: $store, patch: $this->attendancePatch(sessionId: $sessionId, current: $current, entries: $entries));
+	}//end recordAttendance()
+
+	/**
+	 * The session patch that appends the entries and applies the attendance freeze.
+	 *
+	 * @param string                           $sessionId The session uuid.
+	 * @param array<string, mixed>             $current   The session as stored.
+	 * @param array<int, array<string, mixed>> $entries   The attendance entries.
+	 *
+	 * @return SessionPatch
+	 */
+	private function attendancePatch(string $sessionId, array $current, array $entries): SessionPatch {
 		$freeze = $this->planner->attendanceFreeze(current: $current);
 
 		$merged = (array)($current['attendance'] ?? []);
@@ -288,19 +302,13 @@ class HearingService implements HearingServiceInterface {
 			$merged[] = $entry;
 		}
 
-		return $this->writeAttendance(
-			store: $store,
-			patch: new SessionPatch(
-				sessionId: $sessionId,
-				current: $current,
-				update: [
-					'attendance' => $merged,
-					'attendanceFrozenAt' => $freeze['frozenAt'],
-				],
-				entries: $this->minutes->lateCorrections(entries: $entries, isFrozen: $freeze['isFrozen']),
-			)
+		return new SessionPatch(
+			sessionId: $sessionId,
+			current: $current,
+			update: ['attendance' => $merged, 'attendanceFrozenAt' => $freeze['frozenAt']],
+			entries: $this->minutes->lateCorrections(entries: $entries, isFrozen: $freeze['isFrozen']),
 		);
-	}//end recordAttendance()
+	}//end attendancePatch()
 
 	/**
 	 * Attach minutes (verslag) to a hearingSession and promote it to
@@ -324,9 +332,27 @@ class HearingService implements HearingServiceInterface {
 	): array {
 		$store = $this->openStore();
 		$current = $this->requireSession(store: $store, sessionId: $sessionId);
-		[$summary, $document] = $this->minutes->minutesTexts(payload: $payload, current: $current);
+		$texts = $this->minutes->minutesTexts(payload: $payload, current: $current);
 
-		// Audio recording handling: gated by explicit consent (AVG art. 6).
+		$this->guardConsent(store: $store, sessionId: $sessionId, payload: $payload, current: $current);
+
+		$patch = $this->minutesPatch(sessionId: $sessionId, current: $current, payload: $payload, texts: $texts);
+		return $this->recordMinutes(store: $store, patch: $patch);
+	}//end addMinutes()
+
+	/**
+	 * Refuse an audio recording without explicit consent (AVG art. 6).
+	 *
+	 * @param SessionStore         $store     The session store.
+	 * @param string               $sessionId The session uuid.
+	 * @param array<string, mixed> $payload   The minutes payload.
+	 * @param array<string, mixed> $current   The session as stored.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When audio consent is denied.
+	 */
+	private function guardConsent(SessionStore $store, string $sessionId, array $payload, array $current): void {
 		$this->minutes->guardRecordingConsent(
 			sessionId: $sessionId,
 			payload: $payload,
@@ -334,22 +360,33 @@ class HearingService implements HearingServiceInterface {
 			register: $store->register,
 			schema: $store->schema,
 		);
+	}//end guardConsent()
 
-		return $this->recordMinutes(
-			store: $store,
-			patch: new SessionPatch(
-				sessionId: $sessionId,
-				current: $current,
-				update: $this->minutes->buildMinutesUpdate(payload: $payload, summary: $summary, document: $document),
-				entries: [
-					[
-						'hasSummary' => trim($summary) !== '',
-						'hasDocument' => trim($document) !== '',
-					],
+	/**
+	 * The session patch that records the minutes.
+	 *
+	 * @param string                      $sessionId The session uuid.
+	 * @param array<string, mixed>        $current   The session as stored.
+	 * @param array<string, mixed>        $payload   The minutes payload.
+	 * @param array{0: string, 1: string} $texts     The minutes summary and document.
+	 *
+	 * @return SessionPatch
+	 */
+	private function minutesPatch(string $sessionId, array $current, array $payload, array $texts): SessionPatch {
+		[$summary, $document] = $texts;
+
+		return new SessionPatch(
+			sessionId: $sessionId,
+			current: $current,
+			update: $this->minutes->buildMinutesUpdate(payload: $payload, summary: $summary, document: $document),
+			entries: [
+				[
+					'hasSummary' => trim($summary) !== '',
+					'hasDocument' => trim($document) !== '',
 				],
-			)
+			],
 		);
-	}//end addMinutes()
+	}//end minutesPatch()
 
 	/**
 	 * Listener entry-point: seed a default hearing session for a bezwaar
@@ -513,16 +550,26 @@ class HearingService implements HearingServiceInterface {
 	 * @throws RuntimeException When saving or the entry fails.
 	 */
 	private function createSession(SessionStore $store, NewSession $session): array {
+		$saved = $this->saveNewSession(store: $store, session: $session);
+
+		$this->auditNewSession(store: $store, session: $session, saved: $saved);
+
+		return $saved;
+	}//end createSession()
+
+	/**
+	 * Save a new session in its initial state.
+	 *
+	 * @param SessionStore $store   The session store.
+	 * @param NewSession   $session The record and its entry.
+	 *
+	 * @return array<string, mixed> The saved record.
+	 *
+	 * @throws RuntimeException When saving fails.
+	 */
+	private function saveNewSession(SessionStore $store, NewSession $session): array {
 		try {
-			$saved = $this->createThenMove(
-				objectService: $store->objectService,
-				write: [
-					'register' => $store->register,
-					'schema' => $store->schema,
-					'object' => $session->record,
-					'field' => self::BORN_PAST_INITIAL[$session->event],
-				]
-			);
+			$saved = $this->createThenMove(objectService: $store->objectService, write: $this->newSessionWrite(store: $store, session: $session));
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq hearing: failed to ' . self::CREATE_ACTIONS[$session->event] . ': ' . $e->getMessage()
@@ -530,6 +577,38 @@ class HearingService implements HearingServiceInterface {
 			throw new RuntimeException('Could not ' . self::CREATE_ACTIONS[$session->event]);
 		}
 
+		return $saved;
+	}//end saveNewSession()
+
+	/**
+	 * The write that creates the session and moves it past its initial state.
+	 *
+	 * @param SessionStore $store   The session store.
+	 * @param NewSession   $session The record and its entry.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function newSessionWrite(SessionStore $store, NewSession $session): array {
+		return [
+			'register' => $store->register,
+			'schema' => $store->schema,
+			'object' => $session->record,
+			'field' => self::BORN_PAST_INITIAL[$session->event],
+		];
+	}//end newSessionWrite()
+
+	/**
+	 * Write the audit entry of a saved new session.
+	 *
+	 * @param SessionStore         $store   The session store.
+	 * @param NewSession           $session The record and its entry.
+	 * @param array<string, mixed> $saved   The saved record.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the entry fails.
+	 */
+	private function auditNewSession(SessionStore $store, NewSession $session, array $saved): void {
 		$this->auditTrail->recordForNewRecord(
 			objectService: $store->objectService,
 			register: $store->register,
@@ -539,9 +618,7 @@ class HearingService implements HearingServiceInterface {
 			payload: $session->auditPayload,
 			tag: $session->tag,
 		);
-
-		return $saved;
-	}//end createSession()
+	}//end auditNewSession()
 
 	/**
 	 * Record each late correction, then write the attendance.
@@ -559,6 +636,31 @@ class HearingService implements HearingServiceInterface {
 	 * @throws RuntimeException When an entry or the patch fails.
 	 */
 	private function writeAttendance(SessionStore $store, SessionPatch $patch): array {
+		$this->recordLateCorrections(store: $store, patch: $patch);
+
+		try {
+			return $this->patchSession(store: $store, patch: $patch);
+		} catch (\Throwable $e) {
+			$this->recordUnappliedCorrections(store: $store, patch: $patch, e: $e);
+
+			$this->logger->error(
+				'Dossiq hearing: failed to record attendance: ' . $e->getMessage()
+			);
+			throw new RuntimeException('Could not record attendance');
+		}//end try
+	}//end writeAttendance()
+
+	/**
+	 * Record each late correction before the attendance changes.
+	 *
+	 * @param SessionStore $store The session store.
+	 * @param SessionPatch $patch The attendance patch; its entries are the late corrections.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When an entry fails.
+	 */
+	private function recordLateCorrections(SessionStore $store, SessionPatch $patch): void {
 		foreach ($patch->entries as $correction) {
 			$this->auditTrail->record(
 				register: $store->register,
@@ -569,27 +671,29 @@ class HearingService implements HearingServiceInterface {
 				tag: self::TAG_VERSLAG,
 			);
 		}
+	}//end recordLateCorrections()
 
-		try {
-			return $this->patchSession(store: $store, patch: $patch);
-		} catch (\Throwable $e) {
-			foreach ($patch->entries as $correction) {
-				$this->auditTrail->recordRefusal(
-					register: $store->register,
-					schema: $store->schema,
-					objectUuid: $patch->sessionId,
-					event: 'attendance-late-correction-not-applied',
-					payload: $correction + ['error' => $e->getMessage()],
-					tag: self::TAG_VERSLAG,
-				);
-			}
-
-			$this->logger->error(
-				'Dossiq hearing: failed to record attendance: ' . $e->getMessage()
+	/**
+	 * Record each late correction as not applied after the patch failed.
+	 *
+	 * @param SessionStore $store The session store.
+	 * @param SessionPatch $patch The attendance patch; its entries are the late corrections.
+	 * @param \Throwable   $e     The patch failure.
+	 *
+	 * @return void
+	 */
+	private function recordUnappliedCorrections(SessionStore $store, SessionPatch $patch, \Throwable $e): void {
+		foreach ($patch->entries as $correction) {
+			$this->auditTrail->recordRefusal(
+				register: $store->register,
+				schema: $store->schema,
+				objectUuid: $patch->sessionId,
+				event: 'attendance-late-correction-not-applied',
+				payload: $correction + ['error' => $e->getMessage()],
+				tag: self::TAG_VERSLAG,
 			);
-			throw new RuntimeException('Could not record attendance');
-		}//end try
-	}//end writeAttendance()
+		}
+	}//end recordUnappliedCorrections()
 
 	/**
 	 * Record the verslag entry, then apply the minutes.

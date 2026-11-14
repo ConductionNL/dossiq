@@ -188,6 +188,29 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 			return false;
 		}
 
+		$bound = $this->bindRole(case: $case, readerId: $readerId, role: $role);
+
+		if ($bound === false) {
+			return false;
+		}
+
+		$this->recordBinding(mapper: $mapper, case: $case, readerId: $readerId, purpose: $purpose, role: $role);
+
+		return true;
+	}//end bindFor()
+
+	/**
+	 * Bind the reader to the role on the case; a failed read of the roles binds nobody.
+	 *
+	 * @param object $case     The case entity.
+	 * @param string $readerId The reader's user id.
+	 * @param string $role     The generic role the purpose names.
+	 *
+	 * @return bool True when the reader was bound.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function bindRole(object $case, string $readerId, string $role): bool {
 		$caseData = $this->dataOf(entity: $case);
 		if ($caseData === [] || isset($caseData['id']) === false) {
 			$caseData['id'] = $this->idOfEntity(entity: $case);
@@ -204,10 +227,23 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 			$bound = false;
 		}
 
-		if ($bound === false) {
-			return false;
-		}
+		return $bound;
+	}//end bindRole()
 
+	/**
+	 * Write the binding to the trail; a refused write leaves the binding standing.
+	 *
+	 * @param object $mapper   OpenRegister's audit trail mapper.
+	 * @param object $case     The case entity.
+	 * @param string $readerId The reader's user id.
+	 * @param string $purpose  The recorded purpose.
+	 * @param string $role     The role the reader was bound to.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function recordBinding(object $mapper, object $case, string $readerId, string $purpose, string $role): void {
 		try {
 			$this->write(
 				mapper: $mapper,
@@ -220,9 +256,7 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 			// The binding stands; the trail misses only the line that says why.
 			$this->logger->warning('Dossiq: the role an access purpose added could not be written to the trail', ['app' => AppIdentity::APP_ID]);
 		}
-
-		return true;
-	}//end bindFor()
+	}//end recordBinding()
 
 	/**
 	 * Whether the reader holds a role that opens the case without the dialog.

@@ -97,6 +97,27 @@ class DerivedCaseTypeReferences {
 		array $statusMap,
 		array $templateMap,
 	): array {
+		[$caseType, $changed] = $this->repointedReferences(caseType: $caseType, statusMap: $statusMap, templateMap: $templateMap);
+
+		if ($changed === false) {
+			return $caseType;
+		}
+
+		return $this->saveRepointed(objectService: $objectService, register: $register, schema: $schema, caseType: $caseType);
+	}//end repoint()
+
+	/**
+	 * The case type with its initial status and workflow pin repointed.
+	 *
+	 * @param array<string, mixed>  $caseType    The freshly created case type.
+	 * @param array<string, string> $statusMap   Old status id to new status id.
+	 * @param array<string, string> $templateMap Old template id to new template id.
+	 *
+	 * @return array{0: array<string, mixed>, 1: bool} The case type and whether it changed.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function repointedReferences(array $caseType, array $statusMap, array $templateMap): array {
 		$changed = false;
 
 		$initial = $this->store->referenceId(value: ($caseType['initialStatus'] ?? ''));
@@ -111,10 +132,22 @@ class DerivedCaseTypeReferences {
 			$changed = true;
 		}
 
-		if ($changed === false) {
-			return $caseType;
-		}
+		return [$caseType, $changed];
+	}//end repointedReferences()
 
+	/**
+	 * Save the repointed case type, keeping it unsaved (logged) on failure.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param string               $register      The register slug.
+	 * @param string               $schema        The case type schema id.
+	 * @param array<string, mixed> $caseType      The repointed case type.
+	 *
+	 * @return array<string, mixed> The saved row, or the case type when the save failed.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function saveRepointed(object $objectService, string $register, string $schema, array $caseType): array {
 		try {
 			$saved = $objectService->saveObject(
 				object: $caseType,
@@ -130,5 +163,5 @@ class DerivedCaseTypeReferences {
 		}
 
 		return $this->store->asRow(value: $saved);
-	}//end repoint()
+	}//end saveRepointed()
 }//end class

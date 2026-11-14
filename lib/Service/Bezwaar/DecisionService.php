@@ -365,25 +365,12 @@ class DecisionService implements DecisionServiceInterface {
 	 * @throws RuntimeException When the deciding app is unavailable.
 	 */
 	private function raiseDecision(array $store, array $decision): string {
-		$objectionRef = (string)$store['decisionId'];
-		$objectionId = (string)($decision['bezwaar'] ?? '');
-		if ($objectionId !== '') {
-			$objectionRef = $objectionId;
-		}
+		$objectionRef = $this->objectionRefOf(store: $store, decision: $decision);
 
 		try {
 			return $this->decisionDelegation->raiseBezwaarDecision(
 				objectionId: $objectionRef,
-				payload: [
-					'subjectRegister' => $store['register'],
-					'subjectSchema' => $store['schema'],
-					'subjectId' => $store['decisionId'],
-					'subjectLabel' => (string)($decision['title'] ?? ($decision['onderwerp'] ?? '')),
-					'dispositionType' => (string)($decision['dispositionType'] ?? ''),
-					'reasoning' => (string)($decision['reasoning'] ?? ''),
-					'legalBasis' => (string)($decision['legalBasis'] ?? ''),
-					'replacementDecision' => (string)($decision['replacementDecision'] ?? ''),
-				],
+				payload: $this->decisionPayload(store: $store, decision: $decision),
 			);
 		} catch (RuntimeException $e) {
 			// REQ-PDRD-002: surface the fail-closed error; do NOT set any local
@@ -395,6 +382,45 @@ class DecisionService implements DecisionServiceInterface {
 			throw new RuntimeException('Decision service unavailable: ' . $e->getMessage(), 0, $e);
 		}//end try
 	}//end raiseDecision()
+
+	/**
+	 * The objection the decision answers: its own `bezwaar`, or the decision id.
+	 *
+	 * @param array<string, mixed> $store    The register, decision schema and decision id.
+	 * @param array<string, mixed> $decision The stored decision.
+	 *
+	 * @return string
+	 */
+	private function objectionRefOf(array $store, array $decision): string {
+		$objectionRef = (string)$store['decisionId'];
+		$objectionId = (string)($decision['bezwaar'] ?? '');
+		if ($objectionId !== '') {
+			$objectionRef = $objectionId;
+		}
+
+		return $objectionRef;
+	}//end objectionRefOf()
+
+	/**
+	 * The payload the deciding app is asked to decide on.
+	 *
+	 * @param array<string, mixed> $store    The register, decision schema and decision id.
+	 * @param array<string, mixed> $decision The stored decision.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function decisionPayload(array $store, array $decision): array {
+		return [
+			'subjectRegister' => $store['register'],
+			'subjectSchema' => $store['schema'],
+			'subjectId' => $store['decisionId'],
+			'subjectLabel' => (string)($decision['title'] ?? ($decision['onderwerp'] ?? '')),
+			'dispositionType' => (string)($decision['dispositionType'] ?? ''),
+			'reasoning' => (string)($decision['reasoning'] ?? ''),
+			'legalBasis' => (string)($decision['legalBasis'] ?? ''),
+			'replacementDecision' => (string)($decision['replacementDecision'] ?? ''),
+		];
+	}//end decisionPayload()
 
 	/**
 	 * The fields publishing records: the reference and the notification audit

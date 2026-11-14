@@ -100,7 +100,6 @@ class SubCaseDeriver {
 	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	public function derive(string $parentCaseUuid, array $childData): array {
-		$childData = array_diff_key($childData, CallerIdentity::KEYS);
 		if ($parentCaseUuid === '') {
 			return ['ok' => false, 'reason' => 'parent_not_found'];
 		}
@@ -115,6 +114,23 @@ class SubCaseDeriver {
 			return ['ok' => false, 'reason' => 'parent_not_found'];
 		}
 
+		return $this->createChild(store: $store, link: $link, childData: $childData, parentCaseUuid: $parentCaseUuid);
+	}//end derive()
+
+	/**
+	 * Create the child under its parent, with what it inherits.
+	 *
+	 * @param SubCaseStore         $store          Where the child is saved.
+	 * @param SubCaseLink          $link           What the child is derived from.
+	 * @param array<string, mixed> $childData      The child as the form filled it in.
+	 * @param string               $parentCaseUuid The parent case.
+	 *
+	 * @return array{ok: bool, reason?: string, object?: array<string, mixed>, inherited?: array<string, mixed>, inheritanceApplied?: bool}
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	private function createChild(SubCaseStore $store, SubCaseLink $link, array $childData, string $parentCaseUuid): array {
+		$childData = array_diff_key($childData, CallerIdentity::KEYS);
 		// The child names its parent before anything is inherited: the
 		// declaration that says what to inherit hangs off this very property.
 		$childData[self::PARENT_PROPERTY] = $parentCaseUuid;
@@ -130,6 +146,21 @@ class SubCaseDeriver {
 			return ['ok' => false, 'reason' => 'create_failed'];
 		}
 
+		return $this->childCreated(link: $link, saved: $saved, applied: $applied);
+	}//end createChild()
+
+	/**
+	 * Record the child's provenance, and say it was created.
+	 *
+	 * @param SubCaseLink                         $link    What the child is derived from.
+	 * @param array{created: mixed}               $saved   The created child.
+	 * @param array{data: mixed, inherited: mixed} $applied The child that was saved and what it took.
+	 *
+	 * @return array{ok: bool, object: array<string, mixed>, inherited: mixed, inheritanceApplied: bool}
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	private function childCreated(SubCaseLink $link, array $saved, array $applied): array {
 		$this->record(link: $link, saved: ($saved + ['inherited' => $applied['inherited']]));
 
 		return [
@@ -138,7 +169,7 @@ class SubCaseDeriver {
 			'inherited' => $applied['inherited'],
 			'inheritanceApplied' => ($link->relations !== null),
 		];
-	}//end derive()
+	}//end childCreated()
 
 	/**
 	 * Where the derive reads and saves, or null when dossiq is not configured for it.
@@ -277,29 +308,13 @@ class SubCaseDeriver {
 	 */
 	private function declaration(?object $relations, object $parent): array {
 		if ($relations === null) {
-			$this->logger->warning(
-				'Dossiq: OpenRegister\'s relation service is unavailable, so the sub-case '
-				. 'inherits nothing from its parent and no provenance is recorded'
-			);
-			return [];
+			return $this->withoutRelations();
 		}
 
 		try {
-			$schemaId = $parent->getSchema();
-			$resolvedId  = null;
-			if (is_numeric($schemaId) === true) {
-				$resolvedId = (int)$schemaId;
-			}
-
-			$declaration = $relations->declarationFor(
-				schemaId: $resolvedId,
-				property: self::PARENT_PROPERTY
-			);
+			$declaration = $relations->declarationFor(schemaId: self::resolvedSchemaId(parent: $parent), property: self::PARENT_PROPERTY);
 		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the parentCase relation declaration could not be read',
-				['error' => $e->getMessage()]
-			);
+			$this->logger->warning('Dossiq: the parentCase relation declaration could not be read', ['error' => $e->getMessage()]);
 			return [];
 		}
 
@@ -309,6 +324,36 @@ class SubCaseDeriver {
 
 		return $declaration;
 	}//end declaration()
+
+	/**
+	 * Log that the relation service is unavailable, so nothing is inherited.
+	 *
+	 * @return array<string, mixed> The empty declaration.
+	 */
+	private function withoutRelations(): array {
+		$this->logger->warning(
+			'Dossiq: OpenRegister\'s relation service is unavailable, so the sub-case '
+			. 'inherits nothing from its parent and no provenance is recorded'
+		);
+		return [];
+	}//end withoutRelations()
+
+	/**
+	 * The parent's schema id as a number, or null when it is not numeric.
+	 *
+	 * @param object $parent The parent entity.
+	 *
+	 * @return int|null The schema id.
+	 */
+	private static function resolvedSchemaId(object $parent): ?int {
+		$schemaId = $parent->getSchema();
+		$resolvedId  = null;
+		if (is_numeric($schemaId) === true) {
+			$resolvedId = (int)$schemaId;
+		}
+
+		return $resolvedId;
+	}//end resolvedSchemaId()
 
 	/**
 	 * Write the provenance row, without losing the case when it fails.

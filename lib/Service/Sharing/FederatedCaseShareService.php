@@ -54,6 +54,7 @@ use Psr\Log\LoggerInterface;
  * Creates and revokes redacted, field-scoped federated case-share snapshots.
  *
  * @psalm-suppress UnusedClass
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
@@ -101,126 +102,178 @@ class FederatedCaseShareService {
 		string $permissionLevel,
 		string $createdBy,
 	): array {
-		$federationService = $this->gateway->federationShareService();
-		$objectService = $this->gateway->objectService();
-		if ($federationService === null || $objectService === null) {
+		$services = $this->federationServices();
+		if ($services === null) {
 			return ['error' => 'Federated case sharing requires the OpenRegister federation leaf'];
 		}
 
+		[$federationService, $objectService] = $services;
+
+		$config = $this->federatedShareConfig(sharedFields: $sharedFields);
+		if (isset($config['error']) === true) {
+			return $config;
+		}
+
+		[$register, $caseSchema, $shareSchema] = $config;
+
+		$shareData = $this->buildShareData(
+			objectService: $objectService,
+			caseId: $caseId,
+			remoteCloudId: $remoteCloudId,
+			register: $register,
+			caseSchema: $caseSchema,
+			sharedFields: $sharedFields,
+			sharedDocuments: $sharedDocuments,
+			permissionLevel: $permissionLevel,
+			createdBy: $createdBy,
+		);
+		if (isset($shareData['error']) === true) {
+			return $shareData;
+		}
+
+		return $this->publishShareSnapshot(
+			federationService: $federationService,
+			objectService: $objectService,
+			shareData: $shareData,
+			caseId: $caseId,
+			remoteCloudId: $remoteCloudId,
+			createdBy: $createdBy,
+			register: $register,
+			shareSchema: $shareSchema,
+		);
+	}//end createFederatedShare()
+
+	/**
+	 * The OR federation-share and object services, or null when either is unavailable.
+	 *
+	 * @return array{0: object, 1: object}|null The federation service and the object service
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
+	 */
+	private function federationServices(): ?array {
+		$federationService = $this->gateway->federationShareService();
+		$objectService = $this->gateway->objectService();
+		if ($federationService === null || $objectService === null) {
+			return null;
+		}
+
+		return [$federationService, $objectService];
+	}//end federationServices()
+
+	/**
+	 * Check the requested fields and read the configured register and schemas.
+	 *
+	 * @param array<string> $sharedFields Requested case field names
+	 *
+	 * @return array{0: string, 1: string, 2: string}|array{error: string} The register, case schema
+	 *                                                                     and share schema, or an error array
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
+	 */
+	private function federatedShareConfig(array $sharedFields): array {
 		$invalidFields = array_diff($sharedFields, CaseSharingService::FEDERATION_ALLOWED_FIELDS);
 		if (count($invalidFields) > 0) {
 			return ['error' => 'Field(s) not shareable across a federation boundary: ' . implode(', ', $invalidFields)];
 		}
 
-		$config = $this->federatedShareConfig();
-		if ($config === null) {
-			return ['error' => 'Federated case sharing is not configured'];
-		}
-
-		$caseData = $this->loadCaseForFederatedShare(
-			objectService: $objectService,
-			caseId: $caseId,
-			register: (int)$config['register'],
-			caseSchema: (int)$config['caseSchema']
-		);
-		if ($caseData === null) {
-			return ['error' => 'Case not found'];
-		}
-
-		$snapshot = $this->buildSnapshotRecord(
-			caseData: $caseData,
-			request: [
-				'caseId' => $caseId,
-				'remoteCloudId' => $remoteCloudId,
-				'sharedFields' => $sharedFields,
-				'sharedDocuments' => $sharedDocuments,
-				'permissionLevel' => $permissionLevel,
-				'createdBy' => $createdBy,
-			]
-		);
-		if (isset($snapshot['error']) === true) {
-			return $snapshot;
-		}
-
-		return $this->persistAndActivate(
-			federationService: $federationService,
-			objectService: $objectService,
-			shareData: $snapshot,
-			config: $config
-		);
-	}//end createFederatedShare()
-
-	/**
-	 * The register and the two schemas a federated share needs, or null when
-	 * any of them is not configured.
-	 *
-	 * @return array{register: string, caseSchema: string, shareSchema: string}|null The configuration.
-	 *
-	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
-	 */
-	private function federatedShareConfig(): ?array {
 		$register = $this->settingsService->getConfigValue('register');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
 		$shareSchema = $this->settingsService->getConfigValue('case_federated_share_schema');
 
 		if ($this->isFederatedShareConfigured(register: $register, caseSchema: $caseSchema, shareSchema: $shareSchema) === false) {
-			return null;
+			return ['error' => 'Federated case sharing is not configured'];
 		}
 
-		return ['register' => $register, 'caseSchema' => $caseSchema, 'shareSchema' => $shareSchema];
+		return [$register, $caseSchema, $shareSchema];
 	}//end federatedShareConfig()
 
 	/**
-	 * The pending share record: the allow-listed fields present on the case and
-	 * the requested documents, refused when a document is not attached to it.
+	 * Build the redacted snapshot record for a federated case share.
 	 *
-	 * @param array<string, mixed> $caseData The case.
-	 * @param array<string, mixed> $request  caseId, remoteCloudId, sharedFields, sharedDocuments, permissionLevel, createdBy.
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param string $caseId The UUID of the case to share
+	 * @param string $remoteCloudId The federated target (slug@host)
+	 * @param string $register The configured register id
+	 * @param string $caseSchema The configured case schema id
+	 * @param array<string> $sharedFields Requested case field names
+	 * @param array<string> $sharedDocuments Requested document references
+	 * @param string $permissionLevel Permission level slug
+	 * @param string $createdBy User ID of the share creator
 	 *
-	 * @return array<string, mixed> The record, or an error array.
+	 * @return array The snapshot record, or an error array
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
 	 */
-	private function buildSnapshotRecord(array $caseData, array $request): array {
+	private function buildShareData(
+		object $objectService,
+		string $caseId,
+		string $remoteCloudId,
+		string $register,
+		string $caseSchema,
+		array $sharedFields,
+		array $sharedDocuments,
+		string $permissionLevel,
+		string $createdBy,
+	): array {
+		$caseData = $this->loadCaseForFederatedShare(
+			objectService: $objectService,
+			caseId: $caseId,
+			register: (int)$register,
+			caseSchema: (int)$caseSchema
+		);
+		if ($caseData === null) {
+			return ['error' => 'Case not found'];
+		}
+
 		// Build the redacted snapshot — allow-listed fields present on the case only.
-		$fieldSnapshot = $this->buildFieldSnapshot(caseData: $caseData, sharedFields: $request['sharedFields']);
+		$fieldSnapshot = $this->buildFieldSnapshot(caseData: $caseData, sharedFields: $sharedFields);
 
 		// Only document references already attached to the case may cross.
 		$caseDocuments = (array)($caseData['documents'] ?? []);
-		$validDocuments = array_values(array_intersect($request['sharedDocuments'], $caseDocuments));
-		$invalidDocuments = array_diff($request['sharedDocuments'], $caseDocuments);
+		$validDocuments = array_values(array_intersect($sharedDocuments, $caseDocuments));
+		$invalidDocuments = array_diff($sharedDocuments, $caseDocuments);
 		if (count($invalidDocuments) > 0) {
 			return ['error' => 'Document(s) not attached to this case: ' . implode(', ', $invalidDocuments)];
 		}
 
 		return [
-			'caseId' => $request['caseId'],
-			'remoteCloudId' => $request['remoteCloudId'],
-			'sharedFields' => array_values($request['sharedFields']),
+			'caseId' => $caseId,
+			'remoteCloudId' => $remoteCloudId,
+			'sharedFields' => array_values($sharedFields),
 			'sharedDocuments' => $validDocuments,
 			'fieldSnapshot' => $fieldSnapshot,
-			'permissionLevel' => $request['permissionLevel'],
+			'permissionLevel' => $permissionLevel,
 			'status' => 'pending',
-			'createdBy' => $request['createdBy'],
+			'createdBy' => $createdBy,
 		];
-	}//end buildSnapshotRecord()
+	}//end buildShareData()
 
 	/**
-	 * Save the pending record, mint the outgoing share for it, mark it active,
-	 * and record the creation in the audit trail and the log.
+	 * Persist the snapshot, mint the OCM share for it and activate it.
 	 *
-	 * @param object                                                         $federationService OpenRegister's federation share service.
-	 * @param object                                                         $objectService     OpenRegister's object service.
-	 * @param array<string, mixed>                                           $shareData         The pending record.
-	 * @param array{register: string, caseSchema: string, shareSchema: string} $config            The configuration.
+	 * @param object $federationService The OR FederationShareService
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param array<string, mixed> $shareData The snapshot record
+	 * @param string $caseId The UUID of the case to share
+	 * @param string $remoteCloudId The federated target (slug@host)
+	 * @param string $createdBy User ID of the share creator
+	 * @param string $register The configured register id
+	 * @param string $shareSchema The configured federated-share schema id
 	 *
-	 * @return array<string, mixed> The active record, or an error array.
+	 * @return array The created federated share data, or an error array
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
 	 */
-	private function persistAndActivate(object $federationService, object $objectService, array $shareData, array $config): array {
-		$register = $config['register'];
-		$shareSchema = $config['shareSchema'];
+	private function publishShareSnapshot(
+		object $federationService,
+		object $objectService,
+		array $shareData,
+		string $caseId,
+		string $remoteCloudId,
+		string $createdBy,
+		string $register,
+		string $shareSchema,
+	): array {
 		$result = $objectService->saveObject(object: $shareData, register: (int)$register, schema: (int)$shareSchema);
 		$resultData = $this->gateway->toArray(value: $result);
 
@@ -228,9 +281,9 @@ class FederatedCaseShareService {
 
 		$federatedShare = $this->mintOutgoingShare(
 			federationService: $federationService,
-			caseId: $shareData['caseId'],
+			caseId: $caseId,
 			shareUuid: $shareUuid,
-			remoteCloudId: $shareData['remoteCloudId'],
+			remoteCloudId: $remoteCloudId,
 			register: (string)$register,
 			shareSchema: (string)$shareSchema
 		);
@@ -246,19 +299,19 @@ class FederatedCaseShareService {
 		$this->auditTrailService->emit(
 			[
 				'action' => 'federated_case_share_created',
-				'actor' => $shareData['createdBy'],
-				'resource' => $shareData['caseId'],
-				'tenantId' => $shareData['remoteCloudId'],
+				'actor' => $createdBy,
+				'resource' => $caseId,
+				'tenantId' => $remoteCloudId,
 			]
 		);
 
 		$this->logger->info(
 			'Dossiq: Federated case share created',
-			['caseId' => $shareData['caseId'], 'remoteCloudId' => $shareData['remoteCloudId'], 'shareId' => $shareUuid]
+			['caseId' => $caseId, 'remoteCloudId' => $remoteCloudId, 'shareId' => $shareUuid]
 		);
 
 		return $resultData;
-	}//end persistAndActivate()
+	}//end publishShareSnapshot()
 
 	/**
 	 * Revoke a federated case share. Sets the OR `FederatedShare.status` to
@@ -274,17 +327,66 @@ class FederatedCaseShareService {
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
 	 */
 	public function revokeFederatedShare(string $shareId, string $userId): array {
-		$federationService = $this->gateway->federationShareService();
-		$objectService = $this->gateway->objectService();
-		if ($federationService === null || $objectService === null) {
+		$loaded = $this->servicesAndShareToRevoke(shareId: $shareId);
+		if (isset($loaded['error']) === true) {
+			return $loaded;
+		}
+
+		[$federationService, $objectService, $register, $shareSchema, $shareData] = $loaded;
+
+		$revokeError = $this->revokeFederationToken(federationService: $federationService, shareData: $shareData, shareId: $shareId);
+		if ($revokeError !== null) {
+			return $revokeError;
+		}
+
+		return $this->storeRevokedShare(objectService: $objectService, shareData: $shareData, shareId: $shareId,
+			userId: $userId, register: $register, shareSchema: $shareSchema);
+	}//end revokeFederatedShare()
+
+	/**
+	 * The federation and object services, and the share to revoke with its register and schema.
+	 *
+	 * @param string $shareId The UUID of the caseFederatedShare to revoke
+	 *
+	 * @return array{0: object, 1: object, 2: string, 3: string, 4: array<string, mixed>}|array{error: string} The
+	 *         services, register, schema and share, or the error.
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
+	 */
+	private function servicesAndShareToRevoke(string $shareId): array {
+		$services = $this->federationServices();
+		if ($services === null) {
 			return ['error' => 'Federated case sharing requires the OpenRegister federation leaf'];
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$shareSchema = $this->settingsService->getConfigValue('case_federated_share_schema');
-		if (empty($register) === true || empty($shareSchema) === true) {
+		[$federationService, $objectService] = $services;
+
+		$loaded = $this->loadShareToRevoke(objectService: $objectService, shareId: $shareId);
+		if (isset($loaded['error']) === true) {
+			return $loaded;
+		}
+
+		return [$federationService, $objectService, ...$loaded];
+	}//end servicesAndShareToRevoke()
+
+	/**
+	 * Load the federated-share snapshot to revoke, with the register and schema it lives in.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param string $shareId The UUID of the caseFederatedShare to revoke
+	 *
+	 * @return array{0: string, 1: string, 2: array<string, mixed>}|array{error: string} The register,
+	 *                                                                                   schema and snapshot, or an error array
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
+	 */
+	private function loadShareToRevoke(object $objectService, string $shareId): array {
+		$target = $this->shareRegisterAndSchema();
+		if ($target === null) {
 			return ['error' => 'Federated case sharing is not configured'];
 		}
+
+		[$register, $shareSchema] = $target;
 
 		$shareObj = $objectService->find($shareId, register: (int)$register, schema: (int)$shareSchema);
 		if ($shareObj === null) {
@@ -297,6 +399,38 @@ class FederatedCaseShareService {
 		// the 'caseId'/'remoteCloudId' reads below as non-existent offsets.
 		$shareData = $this->gateway->toArray(value: $shareObj);
 
+		return [$register, $shareSchema, $shareData];
+	}//end loadShareToRevoke()
+
+	/**
+	 * The configured register and federated-share schema, or null when either is missing.
+	 *
+	 * @return array{0: string, 1: string}|null The register and schema ids
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
+	 */
+	private function shareRegisterAndSchema(): ?array {
+		$register = $this->settingsService->getConfigValue('register');
+		$shareSchema = $this->settingsService->getConfigValue('case_federated_share_schema');
+		if (empty($register) === true || empty($shareSchema) === true) {
+			return null;
+		}
+
+		return [$register, $shareSchema];
+	}//end shareRegisterAndSchema()
+
+	/**
+	 * Revoke the OR federated-share token behind a snapshot, when it has one.
+	 *
+	 * @param object $federationService The OR FederationShareService
+	 * @param array<string, mixed> $shareData The snapshot record
+	 * @param string $shareId The UUID of the caseFederatedShare to revoke
+	 *
+	 * @return array|null An error array when the revoke failed, otherwise null
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
+	 */
+	private function revokeFederationToken(object $federationService, array $shareData, string $shareId): ?array {
 		$federationShareId = $shareData['federationShareId'] ?? null;
 		if ($federationShareId !== null) {
 			try {
@@ -310,6 +444,31 @@ class FederatedCaseShareService {
 			}
 		}
 
+		return null;
+	}//end revokeFederationToken()
+
+	/**
+	 * Mark the snapshot revoked, save it and record the revocation.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param array<string, mixed> $shareData The snapshot record
+	 * @param string $shareId The UUID of the caseFederatedShare to revoke
+	 * @param string $userId The user ID performing the revocation
+	 * @param string $register The configured register id
+	 * @param string $shareSchema The configured federated-share schema id
+	 *
+	 * @return array The updated share data
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
+	 */
+	private function storeRevokedShare(
+		object $objectService,
+		array $shareData,
+		string $shareId,
+		string $userId,
+		string $register,
+		string $shareSchema,
+	): array {
 		$shareData['status'] = 'revoked';
 		$shareData['revokedBy'] = $userId;
 		$shareData['revokedAt'] = (new DateTime())->format('c');
@@ -332,7 +491,7 @@ class FederatedCaseShareService {
 		}
 
 		return $result->jsonSerialize();
-	}//end revokeFederatedShare()
+	}//end storeRevokedShare()
 
 	/**
 	 * Look up the caseId for a given federated share UUID (for the
@@ -350,28 +509,20 @@ class FederatedCaseShareService {
 			return null;
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$shareSchema = $this->settingsService->getConfigValue('case_federated_share_schema');
-		if (empty($register) === true || empty($shareSchema) === true) {
+		$target = $this->shareRegisterAndSchema();
+		if ($target === null) {
 			return null;
 		}
 
+		[$register, $shareSchema] = $target;
+
 		try {
-			$shareObj = $objectService->find($shareId, register: (int)$register, schema: (int)$shareSchema);
-			if ($shareObj === null) {
-				return null;
-			}
-
-			$shareData = $shareObj;
-			if (is_array($shareObj) === false) {
-				$shareData = $shareObj->jsonSerialize();
-			}
-
-			if (isset($shareData['caseId']) === true) {
-				return (string)$shareData['caseId'];
-			}
-
-			return null;
+			return $this->readShareCaseId(
+				objectService: $objectService,
+				shareId: $shareId,
+				register: $register,
+				shareSchema: $shareSchema,
+			);
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'CaseSharingService: getCaseIdForFederatedShare failed',
@@ -380,6 +531,36 @@ class FederatedCaseShareService {
 			return null;
 		}//end try
 	}//end getCaseIdForFederatedShare()
+
+	/**
+	 * Read the caseId off a stored federated share.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param string $shareId The federated share UUID
+	 * @param string $register The configured register id
+	 * @param string $shareSchema The configured federated-share schema id
+	 *
+	 * @return string|null The caseId, or null when not found
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
+	 */
+	private function readShareCaseId(object $objectService, string $shareId, string $register, string $shareSchema): ?string {
+		$shareObj = $objectService->find($shareId, register: (int)$register, schema: (int)$shareSchema);
+		if ($shareObj === null) {
+			return null;
+		}
+
+		$shareData = $shareObj;
+		if (is_array($shareObj) === false) {
+			$shareData = $shareObj->jsonSerialize();
+		}
+
+		if (isset($shareData['caseId']) === true) {
+			return (string)$shareData['caseId'];
+		}
+
+		return null;
+	}//end readShareCaseId()
 
 	/**
 	 * Whether every configuration value a federated share needs is present.

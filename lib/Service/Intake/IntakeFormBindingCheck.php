@@ -98,6 +98,27 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 			return [];
 		}
 
+		$validator = $this->usableValidator();
+		if ($validator === null) {
+			return [];
+		}
+
+		$schema = $this->readableCaseSchema();
+		if ($schema === null) {
+			return [];
+		}
+
+		return $this->findingsAgainst(validator: $validator, schema: $schema, caseType: $caseType);
+	}//end findingsFor()
+
+	/**
+	 * OpenRegister's form destination validator, or null (logged) when there is none.
+	 *
+	 * @return object|null The validator.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
+	 */
+	private function usableValidator(): ?object {
 		$validator = $this->settingsService->getOpenRegisterClass(self::VALIDATOR);
 		if ($validator === null || method_exists($validator, 'validate') === false) {
 			$this->logger->warning(
@@ -105,19 +126,43 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 					. 'type was saved without being checked against the case schema'
 			);
 
-			return [];
+			return null;
 		}
 
+		return $validator;
+	}//end usableValidator()
+
+	/**
+	 * The case schema, or null (logged) when it cannot be read.
+	 *
+	 * @return object|null The case schema, or null.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
+	 */
+	private function readableCaseSchema(): ?object {
 		$schema = $this->caseSchema();
 		if ($schema === null) {
 			$this->logger->warning(
 				'Dossiq intake: the case schema could not be read, so the intake form of a case type was '
 					. 'saved without being checked against it'
 			);
-
-			return [];
 		}
 
+		return $schema;
+	}//end readableCaseSchema()
+
+	/**
+	 * The validator's findings for the case type's mapping, plus the unmet requirements.
+	 *
+	 * @param object $validator The form destination validator.
+	 * @param object $schema The case schema.
+	 * @param array<string, mixed> $caseType The case type as it is about to be saved.
+	 *
+	 * @return array<int, array<string, mixed>> The findings.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
+	 */
+	private function findingsAgainst(object $validator, object $schema, array $caseType): array {
 		$mapping = $this->binding->mappingFor(caseType: $caseType);
 		$found = $validator->validate(mapping: $mapping, schema: $schema);
 		if (is_array($found) === false) {
@@ -128,7 +173,7 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 			array_values(array_filter($found, 'is_array')),
 			$this->unmetRequirements(caseType: $caseType, mapping: $mapping)
 		);
-	}//end findingsFor()
+	}//end findingsAgainst()
 
 	/**
 	 * Every problem with a mapping that opens a case of this type, whichever app owns the form.

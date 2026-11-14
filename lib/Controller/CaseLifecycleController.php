@@ -298,6 +298,29 @@ class CaseLifecycleController extends Controller {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function guarded(string $caseId, callable $run, ?callable $gate = null): JSONResponse {
+		$refusal = $this->gestureRefusal(caseId: $caseId, gate: $gate);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		try {
+			return new JSONResponse($run());
+		} catch (RuntimeException $e) {
+			return $this->refusedGesture(e: $e, caseId: $caseId);
+		} catch (\Throwable $e) {
+			return $this->failedGesture(e: $e, caseId: $caseId);
+		}//end try
+	}//end guarded()
+
+	/**
+	 * Refuse a gesture to an anonymous caller, a user without mutation access, or one the gate turns away.
+	 *
+	 * @param string $caseId The case.
+	 * @param callable|null $gate An extra check on the user, or null.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the gesture may run.
+	 */
+	private function gestureRefusal(string $caseId, ?callable $gate): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -311,27 +334,45 @@ class CaseLifecycleController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized to reopen this case'], Http::STATUS_FORBIDDEN);
 		}
 
-		try {
-			return new JSONResponse($run());
-		} catch (RuntimeException $e) {
-			$code = $e->getMessage();
-			$status = (self::REFUSAL_STATUS[$code] ?? Http::STATUS_BAD_REQUEST);
-			$this->logger->info('CaseLifecycleController: gesture refused', ['code' => $code, 'caseId' => $caseId]);
+		return null;
+	}//end gestureRefusal()
 
-			return new JSONResponse(['error' => 'The case does not allow this', 'code' => $code], $status);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'CaseLifecycleController: gesture failed',
-				['exception' => $e->getMessage(), 'caseId' => $caseId],
-			);
+	/**
+	 * Answer a gesture the case refused, with the status its refusal code maps to.
+	 *
+	 * @param RuntimeException $e The refusal.
+	 * @param string $caseId The case.
+	 *
+	 * @return JSONResponse
+	 */
+	private function refusedGesture(RuntimeException $e, string $caseId): JSONResponse {
+		$code = $e->getMessage();
+		$status = (self::REFUSAL_STATUS[$code] ?? Http::STATUS_BAD_REQUEST);
+		$this->logger->info('CaseLifecycleController: gesture refused', ['code' => $code, 'caseId' => $caseId]);
 
-			// `code` is what the page translates (`change_failed`); `error` is
-			// the English fallback, worded as the page's own msgid so a page
-			// that has no mapping for the code still shows a known sentence.
-			return new JSONResponse(
-				['error' => 'The case could not be changed.', 'code' => 'change_failed'],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
-		}//end try
-	}//end guarded()
+		return new JSONResponse(['error' => 'The case does not allow this', 'code' => $code], $status);
+	}//end refusedGesture()
+
+	/**
+	 * Answer a gesture that failed.
+	 *
+	 * @param \Throwable $e The failure.
+	 * @param string $caseId The case.
+	 *
+	 * @return JSONResponse
+	 */
+	private function failedGesture(\Throwable $e, string $caseId): JSONResponse {
+		$this->logger->error(
+			'CaseLifecycleController: gesture failed',
+			['exception' => $e->getMessage(), 'caseId' => $caseId],
+		);
+
+		// `code` is what the page translates (`change_failed`); `error` is
+		// the English fallback, worded as the page's own msgid so a page
+		// that has no mapping for the code still shows a known sentence.
+		return new JSONResponse(
+			['error' => 'The case could not be changed.', 'code' => 'change_failed'],
+			Http::STATUS_INTERNAL_SERVER_ERROR
+		);
+	}//end failedGesture()
 }//end class

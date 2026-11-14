@@ -114,32 +114,57 @@ class PortalCaseSteps {
 			return [];
 		}
 
+		$case = $this->readCase(read: $read, caseSchema: $caseSchema);
+		$caseType = trim((string)($case['caseType'] ?? ''));
+		if ($case === null || $caseType === '') {
+			return [];
+		}
+
+		$statusTypes = $this->statusTypesOf(read: $read, statusSchema: $statusSchema, caseType: $caseType);
+
+		return (new CaseSteps())->forCase(case: $case, statusTypes: $statusTypes);
+	}//end steps()
+
+	/**
+	 * Read the case, unscoped.
+	 *
+	 * @param PortalCaseRead $read       The case being read.
+	 * @param string         $caseSchema The case schema.
+	 *
+	 * @return array<string, mixed>|null The case, or null when it is not found.
+	 *
+	 * @spec openspec/changes/mandated-case-steps-read-unscoped/specs/portal-contribution/spec.md#requirement-a-case-read-under-a-mandate-shows-its-steps-and-documents-req-portal-023
+	 */
+	private function readCase(PortalCaseRead $read, string $caseSchema): ?array {
 		// Unscoped, as the history is: runAsSystem lifts RBAC only for a
 		// request without a Nextcloud user, and a person reading a case
 		// under a mandate is signed in as themselves, not as the case's
 		// party. Portaliq proved the case is theirs to read before asking.
-		$case = $this->reader->find(
+		return $this->reader->find(
 			objectService: $read->objectService,
 			register: $read->register,
 			schema: $caseSchema,
 			id: $read->caseId
 		);
-		if ($case === null) {
-			return [];
-		}
+	}//end readCase()
 
-		$caseType = trim((string)($case['caseType'] ?? ''));
-		if ($caseType === '') {
-			return [];
-		}
-
-		$statusTypes = $this->searchObjectsAsArraysUnscoped(
+	/**
+	 * The status types of the case's case type, unscoped.
+	 *
+	 * @param PortalCaseRead $read         The case being read.
+	 * @param string         $statusSchema The status type schema.
+	 * @param string         $caseType     The case type.
+	 *
+	 * @return array<int, array<string, mixed>> The status types.
+	 *
+	 * @spec openspec/changes/mandated-case-steps-read-unscoped/specs/portal-contribution/spec.md#requirement-a-case-read-under-a-mandate-shows-its-steps-and-documents-req-portal-023
+	 */
+	private function statusTypesOf(PortalCaseRead $read, string $statusSchema, string $caseType): array {
+		return $this->searchObjectsAsArraysUnscoped(
 			objectService: $read->objectService,
 			register: $read->register,
 			schema: $statusSchema,
 			filters: ['caseType' => $caseType, '_limit' => 100]
 		);
-
-		return (new CaseSteps())->forCase(case: $case, statusTypes: $statusTypes);
-	}//end steps()
+	}//end statusTypesOf()
 }//end class

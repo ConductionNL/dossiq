@@ -115,11 +115,39 @@ final class ConfiguredAdapter {
 			return $container->get($mockClass);
 		}
 
-		// A NAMED CLASS THAT DOES NOT ANSWER IS AN ERROR, NOT A FALLBACK. The
-		// admin asked for a real adapter; quietly running the mock instead
-		// would put the page back to claiming a channel it does not have. The
-		// mock still runs, because refusing to boot the app over one config
-		// value helps nobody, but the log says plainly what happened.
+		if (self::isUnusable(container: $container, logger: $logger, configKey: $configKey, named: $named, interface: $interface) === true) {
+			return $container->get($mockClass);
+		}
+
+		return self::buildNamed(container: $container, logger: $logger, configKey: $configKey, named: $named, mockClass: $mockClass);
+	}//end resolve()
+
+	/**
+	 * Whether the named class is missing or does not implement the seam, logged when so.
+	 *
+	 * A NAMED CLASS THAT DOES NOT ANSWER IS AN ERROR, NOT A FALLBACK. The
+	 * admin asked for a real adapter; quietly running the mock instead
+	 * would put the page back to claiming a channel it does not have. The
+	 * mock still runs, because refusing to boot the app over one config
+	 * value helps nobody, but the log says plainly what happened.
+	 *
+	 * @param ContainerInterface $container The DI container.
+	 * @param LoggerInterface $logger The logger.
+	 * @param string $configKey App-config key naming the adapter class.
+	 * @param string $named The class the key names.
+	 * @param string $interface The seam the adapter implements.
+	 *
+	 * @return bool True when the mock has to run instead.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private static function isUnusable(
+		ContainerInterface $container,
+		LoggerInterface $logger,
+		string $configKey,
+		string $named,
+		string $interface,
+	): bool {
 		if (class_exists($named) === false || is_a($named, $interface, true) === false) {
 			$logger->error(
 				$container->get(IL10N::class)->t(
@@ -130,9 +158,32 @@ final class ConfiguredAdapter {
 				['app' => AppIdentity::APP_ID]
 			);
 
-			return $container->get($mockClass);
+			return true;
 		}
 
+		return false;
+	}//end isUnusable()
+
+	/**
+	 * Build the named adapter, or the mock when building it fails.
+	 *
+	 * @param ContainerInterface $container The DI container.
+	 * @param LoggerInterface $logger The logger.
+	 * @param string $configKey App-config key naming the adapter class.
+	 * @param string $named The class the key names.
+	 * @param string $mockClass The built-in mock.
+	 *
+	 * @return mixed The adapter.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private static function buildNamed(
+		ContainerInterface $container,
+		LoggerInterface $logger,
+		string $configKey,
+		string $named,
+		string $mockClass,
+	): mixed {
 		try {
 			return $container->get($named);
 		} catch (Throwable $e) {
@@ -147,7 +198,8 @@ final class ConfiguredAdapter {
 
 			return $container->get($mockClass);
 		}
-	}//end resolve()
+	}//end buildNamed()
+
 	/**
 	 * The class the key names, or the seam's real default for an empty key.
 	 *

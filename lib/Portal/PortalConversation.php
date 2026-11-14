@@ -111,6 +111,17 @@ class PortalConversation {
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function replyAction(): array {
+		return self::replyTarget() + self::replyFields() + $this->replyFieldSources();
+	}//end replyAction()
+
+	/**
+	 * Where a reply is written, and for whom.
+	 *
+	 * @return array<string, mixed> The action's identity, register, schema and scope.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private static function replyTarget(): array {
 		return [
 			'id' => self::REPLY_ACTION,
 			'type' => 'create',
@@ -130,11 +141,20 @@ class PortalConversation {
 			// other end.
 			'scopeField' => 'senderRef',
 			'minTrust' => 'low',
+		];
+	}//end replyTarget()
+
+	/**
+	 * The fields a reply carries, its defaults and how each field is shown.
+	 *
+	 * @return array<string, mixed> The fields, defaults, required fields and field configs.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private static function replyFields(): array {
+		return [
 			'fields' => ['subject', 'content', 'attachments', 'caseId'],
-			'defaults' => [
-				'direction' => 'citizen_to_handler',
-				'senderType' => 'burger',
-			],
+			'defaults' => ['direction' => 'citizen_to_handler', 'senderType' => 'burger'],
 			'requiredFields' => ['content'],
 			'fieldConfigs' => [
 				'subject' => ['label' => 'Onderwerp'],
@@ -142,6 +162,18 @@ class PortalConversation {
 				'attachments' => self::ATTACHMENTS_FIELD,
 				'caseId' => ['label' => 'Over welke zaak gaat uw bericht?'],
 			],
+		];
+	}//end replyFields()
+
+	/**
+	 * The cases a reply may be about: offered by title, and guarded on write.
+	 *
+	 * @return array<string, mixed> The options providers and cross references.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function replyFieldSources(): array {
+		return [
 			// A RESIDENT PICKS A CASE BY ITS TITLE, NEVER BY ITS UUID. portaliq
 			// fills this list through the resident's own scoped case
 			// collection, so it can only ever offer cases they may read.
@@ -152,7 +184,7 @@ class PortalConversation {
 				'caseId' => $this->caseGuard(),
 			],
 		];
-	}//end replyAction()
+	}//end replyFieldSources()
 
 	/**
 	 * A question about the case on screen (design D-4).
@@ -174,11 +206,18 @@ class PortalConversation {
 			'schema' => 'portaalBericht',
 			'scopeField' => 'senderRef',
 			'minTrust' => 'low',
+		] + $this->askForm() + ['crossRefs' => ['caseId' => $this->caseGuard()]];
+	}//end askAction()
+
+	/**
+	 * The fields, defaults and field configuration of the ask action's form.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function askForm(): array {
+		return [
 			'fields' => ['subject', 'content', 'attachments', 'caseId'],
-			'defaults' => [
-				'direction' => 'citizen_to_handler',
-				'senderType' => 'burger',
-			],
+			'defaults' => ['direction' => 'citizen_to_handler', 'senderType' => 'burger'],
 			'requiredFields' => ['content'],
 			'fieldConfigs' => [
 				'caseId' => ['visible' => false],
@@ -186,11 +225,8 @@ class PortalConversation {
 				'content' => ['label' => 'Wat wilt u weten?', 'size' => 'large'],
 				'attachments' => self::ATTACHMENTS_FIELD,
 			],
-			'crossRefs' => [
-				'caseId' => $this->caseGuard(),
-			],
 		];
-	}//end askAction()
+	}//end askForm()
 
 	/**
 	 * The messages block on the case detail (design D-4): both directions, newest first.

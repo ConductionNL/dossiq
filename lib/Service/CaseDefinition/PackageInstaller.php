@@ -238,22 +238,52 @@ class PackageInstaller implements PackageInstallerInterface {
 		}
 
 		$run = new PackageInstallRun(id: $id, manifest: $manifest, package: $package, overLocalChanges: $overLocalChanges);
+
+		return $this->installRun(run: $run, package: $package);
+	}//end installPackage()
+
+	/**
+	 * Install a valid package: refuse when a requirement is missing, answer current when it is, else write it.
+	 *
+	 * @param PackageInstallRun    $run     The install.
+	 * @param array<string, mixed> $package The package as PackageDirectory::read() gives it.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 */
+	private function installRun(PackageInstallRun $run, array $package): array {
 		$missing = $this->capabilities->missing(requires: $run->requirements());
 		if ($missing !== []) {
-			return $this->outcome(
-				status: self::REFUSED,
-				id: $id,
-				version: $version,
-				message: "Package '{$id}' needs " . implode(', ', $missing) . ', which this instance does not provide.',
-			) + ['missing' => $missing];
+			return $this->capabilityRefusal(run: $run, missing: $missing);
 		}
 
-		if ($overLocalChanges === false && $this->ledger->isPackageCurrent(set: $id, version: $version, digest: $package['digest']) === true) {
-			return $this->outcome(status: self::CURRENT, id: $id, version: $version, message: "Package '{$id}' {$version} is already installed.");
+		if ($run->overLocalChanges === false
+			&& $this->ledger->isPackageCurrent(set: $run->id, version: $run->version, digest: $package['digest']) === true
+		) {
+			return $this->outcome(
+				status: self::CURRENT, id: $run->id, version: $run->version,
+				message: "Package '{$run->id}' {$run->version} is already installed."
+			);
 		}
 
 		return $this->write(run: $run);
-	}//end installPackage()
+	}//end installRun()
+
+	/**
+	 * The refusal of a package that needs what this instance does not provide.
+	 *
+	 * @param PackageInstallRun  $run     The install.
+	 * @param array<int, string> $missing The missing requirements.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 */
+	private function capabilityRefusal(PackageInstallRun $run, array $missing): array {
+		return $this->outcome(
+			status: self::REFUSED,
+			id: $run->id,
+			version: $run->version,
+			message: "Package '{$run->id}' needs " . implode(', ', $missing) . ', which this instance does not provide.',
+		) + ['missing' => $missing];
+	}//end capabilityRefusal()
 
 	/**
 	 * Write a valid package whose requirements are met and that is not current, and record it.
@@ -264,20 +294,12 @@ class PackageInstaller implements PackageInstallerInterface {
 	 */
 	private function write(PackageInstallRun $run): array {
 		if ($this->ledger->ledgerAvailable() === false) {
-			return $this->failed(
-				run: $run,
-				message: "Package '{$run->id}' was not installed: the shipped-set ledger is not configured, so its rows could not be recorded.",
-			);
+			return $this->noLedger(run: $run);
 		}
 
 		$plan = $this->plan(run: $run);
 		if ($plan['missing'] !== []) {
-			return $this->outcome(
-				status: self::REFUSED,
-				id: $run->id,
-				version: $run->version,
-				message: "Package '{$run->id}' needs " . implode('; ', $plan['reasons']) . '.',
-			) + ['missing' => array_values(array_unique($plan['missing']))];
+			return $this->planRefusal(run: $run, plan: $plan);
 		}
 
 		$result = $this->writer->writePackage(package: $run->id, groups: $plan['groups']);
@@ -285,6 +307,50 @@ class PackageInstaller implements PackageInstallerInterface {
 			return $this->failed(run: $run, message: $result['message']);
 		}
 
+		return $this->recordAndComplete(run: $run, result: $result, settings: $plan['settings']);
+	}//end write()
+
+	/**
+	 * The failure of an install on an instance without a shipped-set ledger.
+	 *
+	 * @param PackageInstallRun $run The install.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 */
+	private function noLedger(PackageInstallRun $run): array {
+		return $this->failed(
+			run: $run,
+			message: "Package '{$run->id}' was not installed: the shipped-set ledger is not configured, so its rows could not be recorded.",
+		);
+	}//end noLedger()
+
+	/**
+	 * The refusal of a package whose plan names something missing.
+	 *
+	 * @param PackageInstallRun    $run  The install.
+	 * @param array<string, mixed> $plan The plan, with `missing` and `reasons`.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 */
+	private function planRefusal(PackageInstallRun $run, array $plan): array {
+		return $this->outcome(
+			status: self::REFUSED,
+			id: $run->id,
+			version: $run->version,
+			message: "Package '{$run->id}' needs " . implode('; ', $plan['reasons']) . '.',
+		) + ['missing' => array_values(array_unique($plan['missing']))];
+	}//end planRefusal()
+
+	/**
+	 * Record every written row, taking them all back when one cannot be recorded, and answer the outcome.
+	 *
+	 * @param PackageInstallRun    $run      The install.
+	 * @param array<string, mixed> $result   The writer's result.
+	 * @param array<string, mixed> $settings The plan's settings.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 */
+	private function recordAndComplete(PackageInstallRun $run, array $result, array $settings): array {
 		if ($this->recordAll(run: $run, result: $result) === false) {
 			$this->writer->undo(written: $result['written']);
 
@@ -294,8 +360,8 @@ class PackageInstaller implements PackageInstallerInterface {
 			);
 		}
 
-		return $this->complete(run: $run, done: ['result' => $result, 'settings' => $plan['settings']]);
-	}//end write()
+		return $this->complete(run: $run, done: ['result' => $result, 'settings' => $settings]);
+	}//end recordAndComplete()
 
 	/**
 	 * What a write needs before a row is written: every address the package

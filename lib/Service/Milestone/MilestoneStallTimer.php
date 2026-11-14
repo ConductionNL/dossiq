@@ -153,7 +153,23 @@ class MilestoneStallTimer implements MilestoneStallTimerInterface {
 			return self::UNAVAILABLE;
 		}
 
-		$config = [
+		$config = $this->timerConfig(caseId: $caseId, waiting: $waiting, anchor: $anchor, slaDays: $slaDays);
+
+		return $this->armOn(engine: $engine, config: $config, caseId: $caseId);
+	}//end arm()
+
+	/**
+	 * The timer configuration for the engine.
+	 *
+	 * @param string               $caseId  The case id.
+	 * @param array<string, mixed> $waiting The milestone row.
+	 * @param DateTimeImmutable    $anchor  Midnight today.
+	 * @param int                  $slaDays Calendar days to the day after the deadline.
+	 *
+	 * @return array<string, mixed> The timer configuration.
+	 */
+	private function timerConfig(string $caseId, array $waiting, DateTimeImmutable $anchor, int $slaDays): array {
+		return [
 			'subjectType'     => 'object',
 			'subjectUuid'     => $caseId.self::SUBJECT_SUFFIX,
 			'appId'           => 'dossiq',
@@ -161,27 +177,59 @@ class MilestoneStallTimer implements MilestoneStallTimerInterface {
 			'purpose'         => 'due',
 			'legalEffect'     => 'none',
 			'sla'             => ['value' => $slaDays, 'unit' => 'calendarDays'],
-			'escalationRules' => [
-				[
-					'trigger'        => 'slaBreached',
-					'offset'         => 0,
-					'offsetUnit'     => 'calendarDays',
-					'notifyRole'     => [],
-					'escalateToRole' => [],
-					'priority'       => 'normal',
-					'message'        => 'mijlpaal-vertraagd',
-					'openIncident'   => false,
-				],
-			],
+			'escalationRules' => $this->escalationRules(),
 			'anchorEvent'     => 'milestone_waiting',
 			'anchorEventAt'   => $anchor,
-			'metadata'        => [
-				'source'              => self::METADATA_SOURCE,
-				'caseId'              => $caseId,
-				'milestoneIdentifier' => (string) ($waiting['milestoneIdentifier'] ?? ''),
+			'metadata'        => $this->timerMetadata(caseId: $caseId, waiting: $waiting),
+		];
+	}//end timerConfig()
+
+	/**
+	 * The escalation rules of the timer: a breach the day after the deadline.
+	 *
+	 * @return array<int, array<string, mixed>> The escalation rules.
+	 */
+	private function escalationRules(): array {
+		return [
+			[
+				'trigger'        => 'slaBreached',
+				'offset'         => 0,
+				'offsetUnit'     => 'calendarDays',
+				'notifyRole'     => [],
+				'escalateToRole' => [],
+				'priority'       => 'normal',
+				'message'        => 'mijlpaal-vertraagd',
+				'openIncident'   => false,
 			],
 		];
+	}//end escalationRules()
 
+	/**
+	 * The metadata stored on the timer.
+	 *
+	 * @param string               $caseId  The case id.
+	 * @param array<string, mixed> $waiting The milestone row.
+	 *
+	 * @return array<string, string> The metadata.
+	 */
+	private function timerMetadata(string $caseId, array $waiting): array {
+		return [
+			'source'              => self::METADATA_SOURCE,
+			'caseId'              => $caseId,
+			'milestoneIdentifier' => (string) ($waiting['milestoneIdentifier'] ?? ''),
+		];
+	}//end timerMetadata()
+
+	/**
+	 * Hand the configuration to the engine.
+	 *
+	 * @param object               $engine The timer engine.
+	 * @param array<string, mixed> $config The timer configuration.
+	 * @param string               $caseId The case id, for the log.
+	 *
+	 * @return string ARMED, or UNAVAILABLE.
+	 */
+	private function armOn(object $engine, array $config, string $caseId): string {
 		try {
 			$engine->arm(config: $config, actor: null);
 		} catch (Throwable $e) {
@@ -190,7 +238,7 @@ class MilestoneStallTimer implements MilestoneStallTimerInterface {
 		}
 
 		return self::ARMED;
-	}//end arm()
+	}//end armOn()
 
 	/**
 	 * Cancel the case's milestone timers (and only those).

@@ -122,6 +122,86 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 	public function lookUp(string $bsn, string $ownDomain, string $ground, string $requester): array {
 		$this->assertGround(ground: $ground);
 
+		$bsn = $this->requirePerson(bsn: $bsn);
+
+		$found = $this->foundElsewhere(bsn: $bsn, ownDomain: $ownDomain);
+
+		// The log is written in the same act as the answer, including when the
+		// answer is that nothing exists: a lookup that found nothing is still a
+		// lookup that happened, and it is exactly the one a person asking what
+		// was looked up about them would otherwise never hear about.
+		$this->log(bsn: $bsn, ground: $ground, requester: $requester, returned: $this->describe(found: $found));
+
+		return $found;
+	}//end lookUp()
+
+	/**
+	 * One entry per other domain holding an open case or record about the person.
+	 *
+	 * @param string $bsn The person looked up.
+	 * @param string $ownDomain The domain the caller works in, which is excluded.
+	 *
+	 * @return array<int, array{exists: bool, domain: string, contact: string}> The entries.
+	 *
+	 * @throws RefusedException When the store cannot be read.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 */
+	private function foundElsewhere(string $bsn, string $ownDomain): array {
+		$found = [];
+		// Procedures that moved onto a case type answer through their cases.
+		$caseContacts = $this->store->openCaseContactsAbout(bsn: $bsn);
+		foreach (SociaalDomeinStore::DOMAINS as $domain => $declaration) {
+			if ($domain === $ownDomain) {
+				continue;
+			}
+
+			$contact = $this->domainContact(domain: $domain, declaration: $declaration, bsn: $bsn, caseContacts: $caseContacts);
+			if ($contact === null) {
+				continue;
+			}
+
+			// FIELD BY FIELD. Nothing of the row or the case travels: not its
+			// title, not its status, not its dates and not its number. A
+			// property added to either tomorrow appears in nothing here.
+			$found[] = ['exists' => true, 'domain' => $domain, 'contact' => $contact];
+		}
+
+		return $found;
+	}//end foundElsewhere()
+
+	/**
+	 * Who to contact in a domain: its open record's contact, else its open case's.
+	 *
+	 * @param string $domain The domain.
+	 * @param array<string, mixed> $declaration The domain's declaration.
+	 * @param string $bsn The person looked up.
+	 * @param array<string, string> $caseContacts The open cases' contacts by domain.
+	 *
+	 * @return string|null The contact, or null when the domain holds nothing open.
+	 *
+	 * @throws RefusedException When the store cannot be read.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 */
+	private function domainContact(string $domain, array $declaration, string $bsn, array $caseContacts): ?string {
+		$contact = $this->openRecordContact(domain: $domain, declaration: $declaration, bsn: $bsn);
+
+		return ($contact ?? ($caseContacts[$domain] ?? null));
+	}//end domainContact()
+
+	/**
+	 * The trimmed BSN, refusing an empty one.
+	 *
+	 * @param string $bsn The person looked up.
+	 *
+	 * @return string The trimmed BSN.
+	 *
+	 * @throws RefusedException When no person is named.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 */
+	private function requirePerson(string $bsn): string {
 		$bsn = trim($bsn);
 		if ($bsn === '') {
 			throw new RefusedException(
@@ -131,59 +211,40 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 			);
 		}
 
-		$found = [];
-		// Procedures that moved onto a case type answer through their cases.
-		$caseContacts = $this->store->openCaseContactsAbout(bsn: $bsn);
-		foreach (SociaalDomeinStore::DOMAINS as $domain => $declaration) {
-			if ($domain === $ownDomain) {
+		return $bsn;
+	}//end requirePerson()
+
+	/**
+	 * The contact of the first open, unmigrated record a domain holds about the person.
+	 *
+	 * @param string $domain The domain.
+	 * @param array{schema: string, bsnKey: string} $declaration The domain's declaration.
+	 * @param string $bsn The person looked up.
+	 *
+	 * @return string|null The contact, or null when the domain holds no open record.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 */
+	private function openRecordContact(string $domain, array $declaration, string $bsn): ?string {
+		// The BSN KEY comes from the domain's own declaration, because the
+		// three schemas do not spell it the same way: a Jeugdwet case names
+		// the juvenile in `jeugdigeBsn`. Filtering it on `bsn` answers a
+		// clean "nothing here" rather than an error.
+		$filters = [$declaration['bsnKey'] => $bsn];
+
+		$contact = null;
+		foreach ($this->store->rows(schema: $declaration['schema'], filters: $filters) as $row) {
+			// A record that moved onto a case answers through its case.
+			if ($this->isOpen(row: $row) === false || trim((string)($row['migratedTo'] ?? '')) !== '') {
 				continue;
 			}
 
-			// The BSN KEY comes from the domain's own declaration, because the
-			// three schemas do not spell it the same way: a Jeugdwet case names
-			// the juvenile in `jeugdigeBsn`. Filtering it on `bsn` answers a
-			// clean "nothing here" rather than an error.
-			$filters = [$declaration['bsnKey'] => $bsn];
-
-			$contact = null;
-			foreach ($this->store->rows(schema: $declaration['schema'], filters: $filters) as $row) {
-				// A record that moved onto a case answers through its case.
-				if ($this->isOpen(row: $row) === false || trim((string)($row['migratedTo'] ?? '')) !== '') {
-					continue;
-				}
-
-				$contact = $this->contactFor(row: $row, domain: $domain);
-				break;
-			}
-
-			$contact = ($contact ?? ($caseContacts[$domain] ?? null));
-			if ($contact === null) {
-				continue;
-			}
-
-			// FIELD BY FIELD. Nothing of the row or the case travels: not its
-			// title, not its status, not its dates and not its number. A
-			// property added to either tomorrow appears in nothing here.
-			$found[] = [
-				'exists' => true,
-				'domain' => $domain,
-				'contact' => $contact,
-			];
+			$contact = $this->contactFor(row: $row, domain: $domain);
+			break;
 		}
 
-		// The log is written in the same act as the answer, including when the
-		// answer is that nothing exists: a lookup that found nothing is still a
-		// lookup that happened, and it is exactly the one a person asking what
-		// was looked up about them would otherwise never hear about.
-		$this->log(
-			bsn: $bsn,
-			ground: $ground,
-			requester: $requester,
-			returned: $this->describe(found: $found)
-		);
-
-		return $found;
-	}//end lookUp()
+		return $contact;
+	}//end openRecordContact()
 
 	/**
 	 * What was looked up about one person, with the grounds and the dates.

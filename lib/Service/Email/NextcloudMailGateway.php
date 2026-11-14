@@ -544,13 +544,24 @@ class NextcloudMailGateway implements MailGatewayInterface {
 		try {
 			$found = $manager->getMailAttachments($account, $mailbox, $uid);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: reading attachments failed',
-				['account' => $accountId, 'uid' => $uid, 'error' => $e->getMessage()]
-			);
+			$context = ['account' => $accountId, 'uid' => $uid, 'error' => $e->getMessage()];
+			$this->logger->warning('Dossiq: reading attachments failed', $context);
 			return [];
 		}
 
+		return self::attachmentRows(found: $found);
+	}//end attachments()
+
+	/**
+	 * The attachments Mail answered, as rows; anything that is not a list of arrays reads as none.
+	 *
+	 * @param mixed $found What Mail answered.
+	 *
+	 * @return array<int, array{name: string, mimeType: string, size: int}> The attachments.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private static function attachmentRows(mixed $found): array {
 		if (is_array($found) === false) {
 			return [];
 		}
@@ -561,15 +572,28 @@ class NextcloudMailGateway implements MailGatewayInterface {
 				continue;
 			}
 
-			$attachments[] = [
-				'name' => (string)($attachment['fileName'] ?? ($attachment['name'] ?? '')),
-				'mimeType' => (string)($attachment['mime'] ?? ($attachment['mimeType'] ?? '')),
-				'size' => (int)($attachment['size'] ?? 0),
-			];
-		}//end foreach
+			$attachments[] = self::attachmentRow(attachment: $attachment);
+		}
 
 		return $attachments;
-	}//end attachments()
+	}//end attachmentRows()
+
+	/**
+	 * One attachment, as a row.
+	 *
+	 * @param array<string, mixed> $attachment The attachment as Mail answered it.
+	 *
+	 * @return array{name: string, mimeType: string, size: int} The row.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private static function attachmentRow(array $attachment): array {
+		return [
+			'name' => (string)($attachment['fileName'] ?? ($attachment['name'] ?? '')),
+			'mimeType' => (string)($attachment['mime'] ?? ($attachment['mimeType'] ?? '')),
+			'size' => (int)($attachment['size'] ?? 0),
+		];
+	}//end attachmentRow()
 
 	/**
 	 * Unpack a Mail synchronisation event into normalised message rows.

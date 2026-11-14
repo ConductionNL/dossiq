@@ -58,20 +58,50 @@ class ComplaintPatternNotes {
 	 */
 	public function kpis(array $figures, array $targets): array {
 		$handling = $figures['handling'];
-		$perMonth = (int)round(((int)$figures['count']) / 3);
-		$withinAwb = $handling['withinAwbPercent'];
-		$upheld = $handling['upheldPercent'];
-		$averageDays = $handling['averageDays'];
 		$noneHandled = $this->l10n->t('No complaint was handled this quarter');
 
+		return $this->perMonthKpi(figures: $figures, targets: $targets)
+			+ $this->withinAwbKpi(handling: $handling, awbTarget: $targets[ComplaintPatterns::TARGET_WITHIN_AWB], noneHandled: $noneHandled)
+			+ $this->upheldKpi(handling: $handling, upheldTarget: $targets[ComplaintPatterns::TARGET_UPHELD], noneHandled: $noneHandled)
+			+ $this->averageDaysKpi(handling: $handling, noneHandled: $noneHandled);
+	}//end kpis()
+
+	/**
+	 * The complaints per month with its note.
+	 *
+	 * @param array<string, mixed> $figures The quarter's figures.
+	 * @param array<string, int>   $targets The organisation's targets.
+	 *
+	 * @return array<string, int|string>
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	private function perMonthKpi(array $figures, array $targets): array {
+		$perMonth = (int)round(((int)$figures['count']) / 3);
 		$perMonthTarget = $targets[ComplaintPatterns::TARGET_PER_MONTH];
-		$awbTarget = $targets[ComplaintPatterns::TARGET_WITHIN_AWB];
-		$upheldTarget = $targets[ComplaintPatterns::TARGET_UPHELD];
 
 		return [
 			'perMonth' => $perMonth,
 			'perMonthNote' => $this->l10n->t('Target: at most %s.', [(string)$perMonthTarget]).' '
 				.$this->verdict(onTarget: $perMonth <= $perMonthTarget, over: true),
+		];
+	}//end perMonthKpi()
+
+	/**
+	 * The share handled within the Awb term with its note.
+	 *
+	 * @param array<string, mixed> $handling    The quarter's handling figures.
+	 * @param int                  $awbTarget   The target percentage.
+	 * @param string               $noneHandled The note when nothing was handled.
+	 *
+	 * @return array<string, int|string|null>
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	private function withinAwbKpi(array $handling, int $awbTarget, string $noneHandled): array {
+		$withinAwb = $handling['withinAwbPercent'];
+
+		return [
 			'withinAwbPercent' => $withinAwb,
 			'withinAwbNote' => $this->noted(
 				value: $withinAwb,
@@ -80,6 +110,24 @@ class ComplaintPatternNotes {
 				onTarget: ($withinAwb ?? 0) > $awbTarget,
 				over: false
 			),
+		];
+	}//end withinAwbKpi()
+
+	/**
+	 * The share upheld with its note.
+	 *
+	 * @param array<string, mixed> $handling     The quarter's handling figures.
+	 * @param int                  $upheldTarget The target percentage.
+	 * @param string               $noneHandled  The note when nothing was handled.
+	 *
+	 * @return array<string, int|string|null>
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	private function upheldKpi(array $handling, int $upheldTarget, string $noneHandled): array {
+		$upheld = $handling['upheldPercent'];
+
+		return [
 			'upheldPercent' => $upheld,
 			'upheldNote' => $this->noted(
 				value: $upheld,
@@ -88,6 +136,23 @@ class ComplaintPatternNotes {
 				onTarget: ($upheld ?? 0) < $upheldTarget,
 				over: true
 			),
+		];
+	}//end upheldKpi()
+
+	/**
+	 * The average handling days with its note.
+	 *
+	 * @param array<string, mixed> $handling    The quarter's handling figures.
+	 * @param string               $noneHandled The note when nothing was handled.
+	 *
+	 * @return array<string, int|string|null>
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	private function averageDaysKpi(array $handling, string $noneHandled): array {
+		$averageDays = $handling['averageDays'];
+
+		return [
 			'averageDays' => $averageDays,
 			'averageDaysNote' => $this->noted(
 				value: $averageDays,
@@ -97,7 +162,7 @@ class ComplaintPatternNotes {
 				over: true
 			),
 		];
-	}//end kpis()
+	}//end averageDaysKpi()
 
 	/**
 	 * A note for a figure that may be absent.

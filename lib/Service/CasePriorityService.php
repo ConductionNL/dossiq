@@ -429,6 +429,28 @@ class CasePriorityService implements CasePriorityServiceInterface {
 		$impact = $this->normaliseImpact(value: (string)($case['impact'] ?? ''), fallback: $defaults['impact']);
 		$urgency = $this->normaliseUrgency(value: (string)($case['urgency'] ?? ''), fallback: $defaults['urgency']);
 
+		$impact = $this->assessedImpact(caseData: $case, caseTypeId: $caseTypeId, impact: $impact);
+
+		$derived = $this->derive(impact: $impact, urgency: $urgency, matrix: $this->matrixFor(caseTypeId: $caseTypeId));
+
+		$effective = $this->effectivePriority(caseData: $case, derived: $derived);
+
+		return ['impact' => $impact, 'urgency' => $urgency, 'priorityDerived' => $derived,
+			'priority' => $effective, 'priorityOrder' => $this->orderOf(priority: $effective)];
+	}//end resolve()
+
+	/**
+	 * The impact, replaced by the one the assessed risk level gives when the case type reads it from there.
+	 *
+	 * @param array<string, mixed> $caseData The case payload as it is being saved.
+	 * @param string $caseTypeId The case type.
+	 * @param string $impact The impact from the impact field.
+	 *
+	 * @return string The impact.
+	 *
+	 * @spec openspec/specs/case-priority/spec.md
+	 */
+	private function assessedImpact(array $caseData, string $caseTypeId, string $impact): string {
 		// REQ-MRK-02: a case type may read its impact from the assessed risk
 		// level instead of from the impact field. It feeds this axis and does
 		// NOT become a fifth priority word: the matrix below still decides,
@@ -436,32 +458,34 @@ class CasePriorityService implements CasePriorityServiceInterface {
 		// lives with the assessment rather than here, because what a risk
 		// level means is the assessment's business and what a priority is is
 		// this class's.
-		$assessed = (string)$this->risk?->impactFromRisk(case: $case, caseTypeId: $caseTypeId);
+		$assessed = (string)$this->risk?->impactFromRisk(case: $caseData, caseTypeId: $caseTypeId);
 		if (in_array($assessed, self::IMPACT_VALUES, true) === true) {
 			$impact = $assessed;
 		}
 
-		$derived = $this->derive(
-			impact: $impact,
-			urgency: $urgency,
-			matrix: $this->matrixFor(caseTypeId: $caseTypeId)
-		);
+		return $impact;
+	}//end assessedImpact()
 
-		$effective = $this->raise(current: $derived, floor: (string)($case['priorityFloor'] ?? ''));
+	/**
+	 * The priority the case carries: the derived one raised to its floor, unless a valid override names another.
+	 *
+	 * @param array<string, mixed> $caseData The case payload as it is being saved.
+	 * @param string $derived The priority the matrix derives.
+	 *
+	 * @return string The effective priority.
+	 *
+	 * @spec openspec/specs/case-priority/spec.md
+	 */
+	private function effectivePriority(array $caseData, string $derived): string {
+		$effective = $this->raise(current: $derived, floor: (string)($caseData['priorityFloor'] ?? ''));
 
-		$override = (string)($case['priorityOverride'] ?? '');
+		$override = (string)($caseData['priorityOverride'] ?? '');
 		if (in_array($override, self::PRIORITY_VALUES, true) === true) {
 			$effective = $override;
 		}
 
-		return [
-			'impact' => $impact,
-			'urgency' => $urgency,
-			'priorityDerived' => $derived,
-			'priority' => $effective,
-			'priorityOrder' => $this->orderOf(priority: $effective),
-		];
-	}//end resolve()
+		return $effective;
+	}//end effectivePriority()
 
 	/**
 	 * The impact and urgency behind a priority a writer already has.

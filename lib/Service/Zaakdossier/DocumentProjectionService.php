@@ -188,6 +188,19 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 			return;
 		}
 
+		$this->moveBetweenCases(record: $record, node: $node, sourcePath: $sourcePath);
+	}//end rehomeNode()
+
+	/**
+	 * Move a record that changed folder: drop the source case's join, then project or retire it.
+	 *
+	 * @param array<string, mixed> $record     The document record.
+	 * @param File                 $node       The moved file.
+	 * @param string               $sourcePath Where the file was.
+	 *
+	 * @return void
+	 */
+	private function moveBetweenCases(array $record, File $node, string $sourcePath): void {
 		$recordId = (string)$record['id'];
 		$sourceCaseId = $this->caseIdFromPath(path: $sourcePath);
 		$targetCase = $this->resolveCaseForNode(node: $node);
@@ -200,15 +213,28 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 			$this->store->deleteJoins(recordId: $recordId, caseId: $sourceCaseId);
 		}
 
+		$this->settle(record: $record, node: $node, targetCase: $targetCase);
+	}//end moveBetweenCases()
+
+	/**
+	 * Project the file into its new case, or retire a record no case joins any more.
+	 *
+	 * @param array<string, mixed>      $record     The document record.
+	 * @param File                      $node       The moved file.
+	 * @param array<string, mixed>|null $targetCase The case the file now sits in, if any.
+	 *
+	 * @return void
+	 */
+	private function settle(array $record, File $node, ?array $targetCase): void {
 		if ($targetCase !== null) {
 			$this->projectNode(node: $node);
 			return;
 		}
 
-		if ($this->store->joinsFor(recordId: $recordId) === []) {
+		if ($this->store->joinsFor(recordId: (string)$record['id']) === []) {
 			$this->retireRecord(record: $record);
 		}
-	}//end rehomeNode()
+	}//end settle()
 
 	/**
 	 * Move an API-first document's file into the case's folder on its first join.

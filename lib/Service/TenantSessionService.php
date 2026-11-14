@@ -87,6 +87,30 @@ class TenantSessionService {
 	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function activeTenant(): ?array {
+		$session = $this->sessionOrganisation();
+		if ($session === null) {
+			return null;
+		}
+
+		[$uid, $organisation, $tenantId] = $session;
+		try {
+			$member = $this->auth->isMemberOf(tenantId: $tenantId, userId: $uid);
+		} catch (Throwable $e) {
+			$this->logMembershipFailed(uid: $uid, tenantId: $tenantId, error: $e);
+			return null;
+		}
+
+		return $this->organisationIfMember(member: $member, organisation: $organisation, uid: $uid, tenantId: $tenantId);
+	}//end activeTenant()
+
+	/**
+	 * The signed-in user, their active organisation and its uuid, or null when either is missing.
+	 *
+	 * @return array{0: string, 1: array<string, mixed>, 2: string}|null The uid, organisation and tenant id.
+	 *
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
+	 */
+	private function sessionOrganisation(): ?array {
 		$uid = $this->uid();
 		if ($uid === '') {
 			return null;
@@ -98,17 +122,38 @@ class TenantSessionService {
 			return null;
 		}
 
-		try {
-			$member = $this->auth->isMemberOf(tenantId: $tenantId, userId: $uid);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: membership lookup failed while resolving the session tenant',
-				['uid' => $uid, 'tenantId' => $tenantId, 'exception' => $e->getMessage()]
-			);
+		return [$uid, $organisation, $tenantId];
+	}//end sessionOrganisation()
 
-			return null;
-		}
+	/**
+	 * Log a membership lookup that failed.
+	 *
+	 * @param string $uid The user.
+	 * @param string $tenantId The active organisation.
+	 * @param Throwable $error Why the lookup failed.
+	 *
+	 * @return void
+	 */
+	private function logMembershipFailed(string $uid, string $tenantId, Throwable $error): void {
+		$this->logger->error(
+			'Dossiq: membership lookup failed while resolving the session tenant',
+			['uid' => $uid, 'tenantId' => $tenantId, 'exception' => $error->getMessage()]
+		);
+	}//end logMembershipFailed()
 
+	/**
+	 * The organisation when the user has a tenantUser row for it, else null.
+	 *
+	 * @param bool $member Whether the user is a member.
+	 * @param array<string, mixed> $organisation The active organisation.
+	 * @param string $uid The user.
+	 * @param string $tenantId The active organisation's uuid.
+	 *
+	 * @return array<string, mixed>|null The organisation, or null.
+	 *
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
+	 */
+	private function organisationIfMember(bool $member, array $organisation, string $uid, string $tenantId): ?array {
 		if ($member === false) {
 			$this->logger->info(
 				'Dossiq: the active organisation has no tenantUser row for this user; no tenant',
@@ -119,7 +164,7 @@ class TenantSessionService {
 		}
 
 		return $organisation;
-	}//end activeTenant()
+	}//end organisationIfMember()
 
 	/**
 	 * The uuid of the tenant this request acts as, or null.

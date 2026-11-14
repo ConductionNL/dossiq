@@ -75,31 +75,74 @@ class ZrcUsageRights {
 			return null;
 		}
 
-		foreach ($zios as $zioObj) {
-			$docUuid = $this->documentUuidOf(zio: $zioObj);
-			if ($docUuid === null) {
-				continue;
-			}
-
-			$docData = $this->objectToArray(row: $this->find(uuid: $docUuid, config: $docConfig));
-			if ($this->usageRightsOf(docData: $docData) === null) {
-				$detail = 'Zaak kan niet afgesloten worden: niet alle informatieobjecten hebben indicatieGebruiksrecht gezet.';
-				return [
-					'detail' => $detail,
-					'code' => 'indicatiegebruiksrecht-unset',
-					'invalidParams' => [
-						[
-							'name' => 'nonFieldErrors',
-							'code' => 'indicatiegebruiksrecht-unset',
-							'reason' => $detail,
-						],
-					],
-				];
-			}
-		}//end foreach
+		if ($this->anyLacksUsageRights(zios: $zios, docConfig: $docConfig) === true) {
+			return $this->unsetRefusal();
+		}
 
 		return null;
 	}//end firstUnsetRefusal()
+
+	/**
+	 * Whether any linked document has no indicatieGebruiksrecht.
+	 *
+	 * @param iterable<mixed>      $zios      The zaak's ZIO rows.
+	 * @param array<string, mixed> $docConfig The document mapping configuration.
+	 *
+	 * @return bool True at the first document without one.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function anyLacksUsageRights(iterable $zios, array $docConfig): bool {
+		foreach ($zios as $zioObj) {
+			if ($this->lacksUsageRights(zio: $zioObj, docConfig: $docConfig) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end anyLacksUsageRights()
+
+	/**
+	 * Whether the document a ZIO links has no indicatieGebruiksrecht.
+	 *
+	 * @param mixed                $zio       The ZIO row.
+	 * @param array<string, mixed> $docConfig The document mapping configuration.
+	 *
+	 * @return bool True when the linked document has none; false when the ZIO links no document.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function lacksUsageRights(mixed $zio, array $docConfig): bool {
+		$docUuid = $this->documentUuidOf(zio: $zio);
+		if ($docUuid === null) {
+			return false;
+		}
+
+		$docData = $this->objectToArray(row: $this->find(uuid: $docUuid, config: $docConfig));
+		return $this->usageRightsOf(docData: $docData) === null;
+	}//end lacksUsageRights()
+
+	/**
+	 * The zrc-007q 400 body.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function unsetRefusal(): array {
+		$detail = 'Zaak kan niet afgesloten worden: niet alle informatieobjecten hebben indicatieGebruiksrecht gezet.';
+		return [
+			'detail' => $detail,
+			'code' => 'indicatiegebruiksrecht-unset',
+			'invalidParams' => [
+				[
+					'name' => 'nonFieldErrors',
+					'code' => 'indicatiegebruiksrecht-unset',
+					'reason' => $detail,
+				],
+			],
+		];
+	}//end unsetRefusal()
 
 	/**
 	 * Set indicatieGebruiksrecht on every document linked to the zaak that has none (zrc-007b).
@@ -152,44 +195,84 @@ class ZrcUsageRights {
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named constructor on a value object.
 	 */
 	private function settleUsageRights(string $docUuid, array $docConfig): void {
 		try {
-			$docData = $this->objectToArray(row: $this->find(uuid: $docUuid, config: $docConfig));
-			if ($this->usageRightsOf(docData: $docData) !== null) {
-				return;
-			}
-
-			$grScope = ZgwSearchScope::fromMapping(mappingConfig: $this->zgwService->getZgwMappingService()->getMapping('gebruiksrechten'));
-			if ($grScope === null) {
-				$this->zgwService->getLogger()->warning(
-					'zrc-007b: gebruiksrechten mapping has no searchable register/schema, '
-					. 'leaving indicatieGebruiksrecht unset for doc ' . $docUuid
-				);
-				return;
-			}
-
-			$hasGr = $this->hasUsageRights(docUuid: $docUuid, grScope: $grScope);
-			if ($hasGr === null) {
-				return;
-			}
-
-			unset($docData['@self'], $docData['organisation']);
-			$docData['usageRightsIndication'] = $hasGr;
-			$docData['id'] = $docUuid;
-			$this->zgwService->getObjectService()->saveObject(
-				register: $docConfig['sourceRegister'],
-				schema: $docConfig['sourceSchema'],
-				object: $docData,
-				uuid: $docUuid
-			);
+			$this->settleUsageRightsOf(docUuid: $docUuid, docConfig: $docConfig);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->debug(
 				'zrc-007b: Could not update indicatieGebruiksrecht for doc ' . $docUuid . ': ' . $e->getMessage()
 			);
 		}//end try
 	}//end settleUsageRights()
+
+	/**
+	 * Write the indication on a document that has none, when the lookup answered.
+	 *
+	 * @param string $docUuid The document.
+	 * @param array $docConfig The document mapping.
+	 *
+	 * @return void
+	 *
+	 * @throws \Throwable When the document cannot be read or saved.
+	 */
+	private function settleUsageRightsOf(string $docUuid, array $docConfig): void {
+		$docData = $this->objectToArray(row: $this->find(uuid: $docUuid, config: $docConfig));
+		if ($this->usageRightsOf(docData: $docData) !== null) {
+			return;
+		}
+
+		$hasGr = $this->usageRightsFound(docUuid: $docUuid);
+		if ($hasGr === null) {
+			return;
+		}
+
+		$this->writeUsageRights(docUuid: $docUuid, docConfig: $docConfig, docData: $docData, hasGr: $hasGr);
+	}//end settleUsageRightsOf()
+
+	/**
+	 * Whether gebruiksrechten exist for a document; null when they cannot be looked up.
+	 *
+	 * @param string $docUuid The document.
+	 *
+	 * @return bool|null
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named constructor on a value object.
+	 */
+	private function usageRightsFound(string $docUuid): ?bool {
+		$grScope = ZgwSearchScope::fromMapping(mappingConfig: $this->zgwService->getZgwMappingService()->getMapping('gebruiksrechten'));
+		if ($grScope === null) {
+			$this->zgwService->getLogger()->warning(
+				'zrc-007b: gebruiksrechten mapping has no searchable register/schema, '
+				. 'leaving indicatieGebruiksrecht unset for doc ' . $docUuid
+			);
+			return null;
+		}
+
+		return $this->hasUsageRights(docUuid: $docUuid, grScope: $grScope);
+	}//end usageRightsFound()
+
+	/**
+	 * Save the document with its indicatieGebruiksrecht.
+	 *
+	 * @param string $docUuid The document.
+	 * @param array $docConfig The document mapping.
+	 * @param array $docData The stored document.
+	 * @param bool $hasGr Whether gebruiksrechten exist.
+	 *
+	 * @return void
+	 */
+	private function writeUsageRights(string $docUuid, array $docConfig, array $docData, bool $hasGr): void {
+		unset($docData['@self'], $docData['organisation']);
+		$docData['usageRightsIndication'] = $hasGr;
+		$docData['id'] = $docUuid;
+		$this->zgwService->getObjectService()->saveObject(
+			register: $docConfig['sourceRegister'],
+			schema: $docConfig['sourceSchema'],
+			object: $docData,
+			uuid: $docUuid
+		);
+	}//end writeUsageRights()
 
 	/**
 	 * Whether gebruiksrechten exist for a document; null when the lookup failed.

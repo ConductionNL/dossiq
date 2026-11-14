@@ -93,36 +93,76 @@ class SeedDeadlineMonitoringData implements IRepairStep {
 		}
 
 		try {
-			$result = [];
-			$this->withSystemIdentity(
-				objectService: $this->settingsService->getObjectService(),
-				work: function () use (&$result): void {
-					$result = $this->seedService->seed();
-				}
-			);
-
-			$failed = (int)($result['failed'] ?? 0);
-			if (($result['success'] ?? false) === true && $failed === 0) {
-				$output->info(
-					'Termijnbewaking seed complete: '
-					. ((int)($result['definities'] ?? 0)) . ' definities ('
-					. ((int)($result['skipped'] ?? 0)) . ' overgeslagen)'
-				);
-				return;
-			}
-
-			// A seed that seeded nothing must not report success-shaped output:
-			// every failed row is named in the count, so an operator sees a
-			// broken fresh install instead of "0 definities (0 overgeslagen)".
-			$output->warning(
-				'Termijnbewaking seed issue: '
-				. ((int)($result['definities'] ?? 0)) . ' definities, '
-				. $failed . ' rijen geweigerd ('
-				. ((string)($result['message'] ?? 'per-row failures, see the log')) . ')'
-			);
+			$result = $this->seededAsSystem();
+			$this->report(output: $output, result: $result);
 		} catch (\Throwable $e) {
 			$output->warning('Could not seed termijnbewaking data: ' . $e->getMessage());
 			$this->logger->error('Dossiq termijnbewaking seed failed', ['exception' => $e->getMessage()]);
 		}//end try
 	}//end run()
+
+	/**
+	 * Run the seed under the system identity and return its result.
+	 *
+	 * @return array<string, mixed> The seed result.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
+	 */
+	private function seededAsSystem(): array {
+		$result = [];
+		$this->withSystemIdentity(
+			objectService: $this->settingsService->getObjectService(),
+			work: function () use (&$result): void {
+				$result = $this->seedService->seed();
+			}
+		);
+
+		return $result;
+	}//end seededAsSystem()
+
+	/**
+	 * Report the seed: complete when nothing failed, an issue naming the failures otherwise.
+	 *
+	 * @param IOutput $output Output sink.
+	 * @param array<string, mixed> $result The seed result.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
+	 */
+	private function report(IOutput $output, array $result): void {
+		$failed = (int)($result['failed'] ?? 0);
+		if (($result['success'] ?? false) === true && $failed === 0) {
+			$this->reportComplete(output: $output, result: $result);
+			return;
+		}
+
+		// A seed that seeded nothing must not report success-shaped output:
+		// every failed row is named in the count, so an operator sees a
+		// broken fresh install instead of "0 definities (0 overgeslagen)".
+		$output->warning(
+			'Termijnbewaking seed issue: '
+			. ((int)($result['definities'] ?? 0)) . ' definities, '
+			. $failed . ' rijen geweigerd ('
+			. ((string)($result['message'] ?? 'per-row failures, see the log')) . ')'
+		);
+	}//end report()
+
+	/**
+	 * Report a seed that completed without failures.
+	 *
+	 * @param IOutput $output Output sink.
+	 * @param array<string, mixed> $result The seed result.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
+	 */
+	private function reportComplete(IOutput $output, array $result): void {
+		$output->info(
+			'Termijnbewaking seed complete: '
+			. ((int)($result['definities'] ?? 0)) . ' definities ('
+			. ((int)($result['skipped'] ?? 0)) . ' overgeslagen)'
+		);
+	}//end reportComplete()
 }//end class

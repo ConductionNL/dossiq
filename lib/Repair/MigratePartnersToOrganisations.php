@@ -108,21 +108,29 @@ class MigratePartnersToOrganisations implements IRepairStep {
 		$summary = ['migrated' => 0, 'skipped' => 0, 'failed' => 0, 'total' => 0];
 
 		try {
-			$this->withSystemIdentity(
-				objectService: $this->settingsService->getObjectService(),
-				work: function () use (&$summary): void {
-					$summary = $this->migration->migrate();
-				}
-			);
+			$this->withSystemIdentity(objectService: $this->settingsService->getObjectService(), work: function () use (&$summary): void {
+				$summary = $this->migration->migrate();
+			});
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: partner migration repair step failed',
-				['exception' => $e->getMessage()]
-			);
+			$this->logger->error('Dossiq: partner migration repair step failed', ['exception' => $e->getMessage()]);
 			$output->warning('Dossiq: partner migration could not run: ' . $e->getMessage());
 			return;
 		}
 
+		self::report(output: $output, summary: $summary);
+	}//end run()
+
+	/**
+	 * Report what the partner migration did.
+	 *
+	 * @param IOutput                                                       $output  Output interface for progress reporting.
+	 * @param array{migrated: int, skipped: int, failed: int, total: int} $summary The migration's summary.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/partner-organisations/spec.md
+	 */
+	private static function report(IOutput $output, array $summary): void {
 		if ($summary['total'] === 0) {
 			$output->info('Dossiq: no partner organisations to migrate.');
 			return;
@@ -137,5 +145,5 @@ class MigratePartnersToOrganisations implements IRepairStep {
 				$summary['total']
 			)
 		);
-	}//end run()
+	}//end report()
 }//end class

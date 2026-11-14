@@ -167,6 +167,26 @@ class PublicCaseSurvivorController extends Controller {
 	 * @return array<string, mixed>|null The projection, or null when it may not be read.
 	 */
 	private function renderPublicly(string $caseId): ?array {
+		$store = $this->publicCaseStore();
+		if ($store === null) {
+			return null;
+		}
+
+		try {
+			return $this->findRenderedCase(store: $store, caseId: $caseId);
+		} catch (Throwable $e) {
+			// RBAC-denied, not found, or any read failure: one answer.
+			$this->logger->debug('Dossiq: a surviving case could not be read publicly: ' . $e->getMessage());
+			return null;
+		}
+	}//end renderPublicly()
+
+	/**
+	 * The object service, register and case schema to read a case from, or null when one is not configured.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null
+	 */
+	private function publicCaseStore(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$schema = (string)$this->settingsService->getConfigValue('case_schema');
@@ -174,34 +194,44 @@ class PublicCaseSurvivorController extends Controller {
 			return null;
 		}
 
-		try {
-			$entity = $objectService->find(
-				id: $caseId,
-				_extend: [],
-				files: false,
-				register: $register,
-				schema: $schema,
-				_rbac: true,
-				_multitenancy: true
-			);
+		return [$objectService, $register, $schema];
+	}//end publicCaseStore()
 
-			if ($entity === null) {
-				return null;
-			}
+	/**
+	 * Find a case under RBAC and multitenancy and render it, or null when it is not there.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $store The object service, register and case schema.
+	 * @param string $caseId The case id.
+	 *
+	 * @return array|null The rendered case.
+	 *
+	 * @throws Throwable When the read is denied or fails.
+	 */
+	private function findRenderedCase(array $store, string $caseId): ?array {
+		[$objectService, $register, $schema] = $store;
 
-			$rendered = $objectService->renderEntity(
-				entity: $entity,
-				_rbac: true,
-				_multitenancy: true
-			);
-		} catch (Throwable $e) {
-			// RBAC-denied, not found, or any read failure: one answer.
-			$this->logger->debug('Dossiq: a surviving case could not be read publicly: ' . $e->getMessage());
+		$entity = $objectService->find(
+			id: $caseId,
+			_extend: [],
+			files: false,
+			register: $register,
+			schema: $schema,
+			_rbac: true,
+			_multitenancy: true
+		);
+
+		if ($entity === null) {
 			return null;
 		}
 
+		$rendered = $objectService->renderEntity(
+			entity: $entity,
+			_rbac: true,
+			_multitenancy: true
+		);
+
 		return $this->asArrayOrNull(value: $rendered);
-	}//end renderPublicly()
+	}//end findRenderedCase()
 
 	/**
 	 * A rendered entity as an array, or null when it is any other shape.

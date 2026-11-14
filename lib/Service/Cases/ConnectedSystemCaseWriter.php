@@ -162,13 +162,52 @@ class ConnectedSystemCaseWriter implements ConnectedSystemCaseWriterInterface {
 			return self::refusal(kind: self::REFUSED, reason: 'Het zaaktype is niet gekoppeld aan een zaaktype in dossiq.');
 		}
 
+		return $this->openUnlessKnown(operation: $operation, caseType: $caseType, system: $system);
+	}//end create()
+
+	/**
+	 * Open the case unless this system already opened it.
+	 *
+	 * @param array<string, mixed> $operation The operation, with an identifier and a title.
+	 * @param array<string, mixed> $caseType  The dossiq case type it maps to.
+	 * @param string               $system    The connection id.
+	 *
+	 * @return array The outcome (WriteOutcome).
+	 *
+	 * @throws RuntimeException When the register is not configured, or the case could not be read back.
+	 *
+	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-case-opened-by-a-connected-system-keeps-its-origin
+	 */
+	private function openUnlessKnown(array $operation, array $caseType, string $system): array {
+		$external = self::text(value: ($operation['identifier'] ?? ''));
+		$title    = self::text(value: ($operation['title'] ?? ''));
+
 		[$objects, $register, $schema] = $this->store();
 		if ($this->findOwnCase(identifier: $external, system: $system) !== null) {
 			return self::refusal(kind: self::CONFLICT, reason: 'Deze zaak bestaat al.');
 		}
 
+		$newCase = $this->newCase(operation: $operation, caseType: $caseType, title: $title, external: $external, system: $system);
+		return $this->storeNewCase(objects: $objects, register: $register, schema: $schema, case: $newCase, system: $system, external: $external);
+	}//end openUnlessKnown()
+
+	/**
+	 * The case a connected system opens, without its empty fields.
+	 *
+	 * @param array<string, mixed> $operation The operation.
+	 * @param array<string, mixed> $caseType  The dossiq case type it maps to.
+	 * @param string               $title     The case's omschrijving.
+	 * @param string               $external  The system's own identifier.
+	 * @param string               $system    The connection id.
+	 *
+	 * @return array<string, string> The case.
+	 *
+	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-case-opened-by-a-connected-system-keeps-its-origin
+	 */
+	private function newCase(array $operation, array $caseType, string $title, string $external, string $system): array {
 		$initiator = (array)($operation['initiator'] ?? []);
-		$case      = array_filter(
+
+		return array_filter(
 			[
 				'title' => $title,
 				'description' => self::text(value: ($operation['description'] ?? '')),
@@ -185,7 +224,32 @@ class ConnectedSystemCaseWriter implements ConnectedSystemCaseWriterInterface {
 			],
 			static fn (string $value): bool => $value !== ''
 		);
+	}//end newCase()
 
+	/**
+	 * Save the new case and answer the number it was given.
+	 *
+	 * @param object               $objects  The object service.
+	 * @param string               $register The register id.
+	 * @param string               $schema   The case schema id.
+	 * @param array<string, mixed> $case     The case.
+	 * @param string               $system   The connection id.
+	 * @param string               $external The system's own identifier.
+	 *
+	 * @return array The outcome (WriteOutcome).
+	 *
+	 * @throws RuntimeException When the case was written but could not be read back.
+	 *
+	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-case-opened-by-a-connected-system-keeps-its-origin
+	 */
+	private function storeNewCase(
+		object $objects,
+		string $register,
+		string $schema,
+		array $case,
+		string $system,
+		string $external,
+	): array {
 		$saved = $this->saveObjectAsArray(objectService: $objects, register: $register, schema: $schema, object: $case);
 		if ($saved === null) {
 			throw new RuntimeException('The case was written but could not be read back.');
@@ -199,7 +263,7 @@ class ConnectedSystemCaseWriter implements ConnectedSystemCaseWriterInterface {
 		}
 
 		return ['identifier' => $number];
-	}//end create()
+	}//end storeNewCase()
 
 	/**
 	 * Change the descriptive fields of a case.

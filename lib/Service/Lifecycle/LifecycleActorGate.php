@@ -122,14 +122,39 @@ class LifecycleActorGate {
 			// every signed-in user), so the rule is enforced here, and it is
 			// checked before the admin bypass so promoting the account cannot
 			// widen it.
-			return ($act === 'abort'
-				&& $this->rules->autoCloseOptedIn(caseTypeId: (string)($case['caseType'] ?? '')) === true);
+			return $this->backgroundMay(act: $act, case: $case);
 		}
 
 		if ($this->isAdmin(uid: $uid) === true) {
 			return true;
 		}
 
+		return $this->mayByRole(act: $act, case: $case, uid: $uid);
+	}//end may()
+
+	/**
+	 * Whether the background account may perform the act: only the opted-in silence close.
+	 *
+	 * @param string               $act  The act.
+	 * @param array<string, mixed> $case The loaded case.
+	 *
+	 * @return bool
+	 */
+	private function backgroundMay(string $act, array $case): bool {
+		return ($act === 'abort'
+			&& $this->rules->autoCloseOptedIn(caseTypeId: (string)($case['caseType'] ?? '')) === true);
+	}//end backgroundMay()
+
+	/**
+	 * Whether the user holds the role the act needs, or the act needs none.
+	 *
+	 * @param string               $act  The act.
+	 * @param array<string, mixed> $case The loaded case.
+	 * @param string               $uid  The user.
+	 *
+	 * @return bool
+	 */
+	private function mayByRole(string $act, array $case, string $uid): bool {
 		$role = $this->roleFor(act: $act, case: $case);
 		if ($role === '') {
 			return (in_array($act, self::CLOSED_WITHOUT_A_ROLE, true) === false);
@@ -145,7 +170,7 @@ class LifecycleActorGate {
 
 			return false;
 		}
-	}//end may()
+	}//end mayByRole()
 
 	/**
 	 * Refuse the act when the caller may not perform it, naming the role.

@@ -78,6 +78,22 @@ final class PortalWithdrawalTarget implements PortalWithdrawalTargetInterface {
 			return null;
 		}
 
+		return $this->unreachableRefusal(withdrawal: $withdrawal, statuses: $statuses, moves: $moves, target: $target);
+	}//end refusal()
+
+	/**
+	 * The refusal for the first open status no move leads from to the target.
+	 *
+	 * @param array<string, mixed>             $withdrawal The `portalWithdrawal` block being saved.
+	 * @param array<string, string>            $statuses   The type's statuses: id to title.
+	 * @param array<int, array<string, mixed>> $moves      The active template's transitions.
+	 * @param string                           $target     The target status id.
+	 *
+	 * @return array{reason: string, parameters: array<int, string>}|null The refusal, or null when every open status reaches the target.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function unreachableRefusal(array $withdrawal, array $statuses, array $moves, string $target): ?array {
 		foreach ($this->openStatuses(withdrawal: $withdrawal) as $open) {
 			if ($open === $target || isset($statuses[$open]) === false) {
 				continue;
@@ -92,7 +108,7 @@ final class PortalWithdrawalTarget implements PortalWithdrawalTargetInterface {
 		}
 
 		return null;
-	}//end refusal()
+	}//end unreachableRefusal()
 
 	/**
 	 * The statuses the withdrawal is open in, as ids.

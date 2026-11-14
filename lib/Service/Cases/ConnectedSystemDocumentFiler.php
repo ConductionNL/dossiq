@@ -71,13 +71,56 @@ class ConnectedSystemDocumentFiler {
 			return self::refused(reason: 'Een document heeft een bestandsnaam en een inhoud nodig.');
 		}
 
-		$typeName = self::text(value: ($operation['documentTypeName'] ?? ''));
-		$type     = self::text(value: ($documentTypes[$typeName] ?? ''));
-		if ($typeName === '' || $type === '') {
+		$type = $this->documentType(operation: $operation, documentTypes: $documentTypes);
+		if ($type === '') {
 			return self::refused(reason: 'Het documenttype is niet gekoppeld aan een documenttype in dossiq.');
 		}
 
-		$metadata = array_filter(
+		$metadata = $this->documentMetadata(operation: $operation, fileName: $fileName, type: $type);
+
+		$result = $this->upload(
+			caseId: self::text(value: ($case['@self']['id'] ?? ($case['id'] ?? ''))),
+			fileName: $fileName,
+			content: $content,
+			format: self::text(value: ($operation['format'] ?? '')),
+			metadata: $metadata
+		);
+		return $this->filedOutcome(result: $result, system: $system);
+	}//end file()
+
+	/**
+	 * The dossiq document type the system's document type name maps to.
+	 *
+	 * @param array<string, mixed>  $operation     The generic add-document operation.
+	 * @param array<string, string> $documentTypes The system's document type name to a dossiq document type id.
+	 *
+	 * @return string The document type id, or '' when the operation names none or it is not mapped.
+	 *
+	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-document-from-a-connected-system-takes-the-upload-path
+	 */
+	private function documentType(array $operation, array $documentTypes): string {
+		$typeName = self::text(value: ($operation['documentTypeName'] ?? ''));
+		$type     = self::text(value: ($documentTypes[$typeName] ?? ''));
+		if ($typeName === '' || $type === '') {
+			return '';
+		}
+
+		return $type;
+	}//end documentType()
+
+	/**
+	 * The document metadata, without its empty fields.
+	 *
+	 * @param array<string, mixed> $operation The generic add-document operation.
+	 * @param string               $fileName  The file name.
+	 * @param string               $type      The dossiq document type id.
+	 *
+	 * @return array<string, string> The metadata.
+	 *
+	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-document-from-a-connected-system-takes-the-upload-path
+	 */
+	private function documentMetadata(array $operation, string $fileName, string $type): array {
+		return array_filter(
 			[
 				'title' => self::text(value: ($operation['title'] ?? $fileName)),
 				'informatieobjecttype' => $type,
@@ -90,14 +133,19 @@ class ConnectedSystemDocumentFiler {
 			],
 			static fn (string $value): bool => $value !== ''
 		);
+	}//end documentMetadata()
 
-		$result = $this->upload(
-			caseId: self::text(value: ($case['@self']['id'] ?? ($case['id'] ?? ''))),
-			fileName: $fileName,
-			content: $content,
-			format: self::text(value: ($operation['format'] ?? '')),
-			metadata: $metadata
-		);
+	/**
+	 * The outcome of the upload: the document's identifier, or a logged refusal.
+	 *
+	 * @param array<string, mixed> $result The upload path's result entry.
+	 * @param string               $system The connection id, for the log.
+	 *
+	 * @return array{identifier?: string, refusal?: string, kind?: string} The outcome.
+	 *
+	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-document-from-a-connected-system-takes-the-upload-path
+	 */
+	private function filedOutcome(array $result, string $system): array {
 		if (($result['success'] ?? false) !== true) {
 			$this->logger->warning(
 				'ConnectedSystemCaseWriter: a document from a connected system was not filed',
@@ -107,7 +155,7 @@ class ConnectedSystemDocumentFiler {
 		}
 
 		return ['identifier' => self::text(value: ($result['informatieobject']['id'] ?? ''))];
-	}//end file()
+	}//end filedOutcome()
 
 	/**
 	 * Hand the bytes to the upload path as the file it expects.

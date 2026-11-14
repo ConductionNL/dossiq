@@ -109,6 +109,48 @@ class BezwaarHearingController extends Controller {
 	 * @spec openspec/specs/bezwaar-hearing/spec.md
 	 */
 	public function recordAttendance(string $sessionId): JSONResponse {
+		$refusal = $this->attendanceRefusal(sessionId: $sessionId);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$entries = $this->request->getParam('entries');
+		if (is_array($entries) === false) {
+			$entries = [];
+		}
+
+		return $this->storeAttendance(sessionId: $sessionId, entries: $entries);
+	}//end recordAttendance()
+
+	/**
+	 * Record the attendance entries of a hearing session, answering a refusal as 400.
+	 *
+	 * @param string $sessionId The hearing session.
+	 * @param array $entries The attendance entries.
+	 *
+	 * @return JSONResponse
+	 */
+	private function storeAttendance(string $sessionId, array $entries): JSONResponse {
+		try {
+			return new JSONResponse(
+				$this->hearingService->recordAttendance(
+					sessionId: $sessionId,
+					entries: array_values($entries)
+				)
+			);
+		} catch (RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}//end storeAttendance()
+
+	/**
+	 * Refuse recording attendance to an anonymous caller, or for a session whose bezwaar case the user may not change.
+	 *
+	 * @param string $sessionId The hearing session.
+	 *
+	 * @return JSONResponse|null The refusal, or null when attendance may be recorded.
+	 */
+	private function attendanceRefusal(string $sessionId): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -124,20 +166,6 @@ class BezwaarHearingController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
-		$entries = $this->request->getParam('entries');
-		if (is_array($entries) === false) {
-			$entries = [];
-		}
-
-		try {
-			return new JSONResponse(
-				$this->hearingService->recordAttendance(
-					sessionId: $sessionId,
-					entries: array_values($entries)
-				)
-			);
-		} catch (RuntimeException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
-	}//end recordAttendance()
+		return null;
+	}//end attendanceRefusal()
 }//end class

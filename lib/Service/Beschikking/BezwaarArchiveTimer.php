@@ -153,7 +153,23 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 			return self::UNAVAILABLE;
 		}
 
-		$config = [
+		$config = $this->timerConfig(trigger: $trigger, triggerId: $triggerId, anchor: $anchor, slaDays: $slaDays);
+
+		return $this->armOn(engine: $engine, config: $config, triggerId: $triggerId);
+	}//end arm()
+
+	/**
+	 * The timer configuration for the engine.
+	 *
+	 * @param array<string, mixed> $trigger   The trigger.
+	 * @param string               $triggerId Its id.
+	 * @param DateTimeImmutable    $anchor    Midnight of the bekendmaking (or today).
+	 * @param int                  $slaDays   Days from the anchor to the archive date.
+	 *
+	 * @return array<string, mixed> The timer configuration.
+	 */
+	private function timerConfig(array $trigger, string $triggerId, DateTimeImmutable $anchor, int $slaDays): array {
+		return [
 			'subjectType'     => 'object',
 			'subjectUuid'     => $triggerId,
 			'appId'           => 'dossiq',
@@ -161,28 +177,60 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 			'purpose'         => 'due',
 			'legalEffect'     => 'none',
 			'sla'             => ['value' => $slaDays, 'unit' => 'calendarDays'],
-			'escalationRules' => [
-				[
-					'trigger'        => 'slaBreached',
-					'offset'         => 0,
-					'offsetUnit'     => 'calendarDays',
-					'notifyRole'     => [],
-					'escalateToRole' => [],
-					'priority'       => 'normal',
-					'message'        => 'bezwaartermijn-verstreken',
-					'openIncident'   => false,
-				],
-			],
+			'escalationRules' => $this->escalationRules(),
 			'anchorEvent'     => 'bekendmaking',
 			'anchorEventAt'   => $anchor,
-			'metadata'        => [
-				'source'     => self::METADATA_SOURCE,
-				'triggerId'  => $triggerId,
-				'decisionId' => (string) ($trigger['decisionId'] ?? ''),
-				'basis'      => 'Awb 6:7',
+			'metadata'        => $this->timerMetadata(trigger: $trigger, triggerId: $triggerId),
+		];
+	}//end timerConfig()
+
+	/**
+	 * The escalation rules of the timer: a breach on the archive date.
+	 *
+	 * @return array<int, array<string, mixed>> The escalation rules.
+	 */
+	private function escalationRules(): array {
+		return [
+			[
+				'trigger'        => 'slaBreached',
+				'offset'         => 0,
+				'offsetUnit'     => 'calendarDays',
+				'notifyRole'     => [],
+				'escalateToRole' => [],
+				'priority'       => 'normal',
+				'message'        => 'bezwaartermijn-verstreken',
+				'openIncident'   => false,
 			],
 		];
+	}//end escalationRules()
 
+	/**
+	 * The metadata stored on the timer.
+	 *
+	 * @param array<string, mixed> $trigger   The trigger.
+	 * @param string               $triggerId Its id.
+	 *
+	 * @return array<string, string> The metadata.
+	 */
+	private function timerMetadata(array $trigger, string $triggerId): array {
+		return [
+			'source'     => self::METADATA_SOURCE,
+			'triggerId'  => $triggerId,
+			'decisionId' => (string) ($trigger['decisionId'] ?? ''),
+			'basis'      => 'Awb 6:7',
+		];
+	}//end timerMetadata()
+
+	/**
+	 * Hand the configuration to the engine.
+	 *
+	 * @param object               $engine    The timer engine.
+	 * @param array<string, mixed> $config    The timer configuration.
+	 * @param string               $triggerId The trigger id, for the log.
+	 *
+	 * @return string ARMED, or UNAVAILABLE.
+	 */
+	private function armOn(object $engine, array $config, string $triggerId): string {
 		try {
 			$engine->arm(config: $config, actor: null);
 		} catch (Throwable $e) {
@@ -194,7 +242,7 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 		}
 
 		return self::ARMED;
-	}//end arm()
+	}//end armOn()
 
 	/**
 	 * Cancel the trigger's open timers.

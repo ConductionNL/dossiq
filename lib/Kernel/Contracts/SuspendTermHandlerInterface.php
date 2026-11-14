@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Kernel\Contracts;
 
+use OCA\Dossiq\Service\Transitions\ActionHandlerInterface;
+
 /**
  * Contract of SuspendTermHandler.
  *
@@ -33,7 +35,7 @@ namespace OCA\Dossiq\Kernel\Contracts;
  *
  * @spec exclude Structural contract, no functional requirement.
  */
-interface SuspendTermHandlerInterface {
+interface SuspendTermHandlerInterface extends ActionHandlerInterface {
 
 
 }//end interface

@@ -197,6 +197,26 @@ class DsoController extends Controller {
 		$body = $this->readJsonBody();
 		$newStatus = (string)($body['newStatus'] ?? '');
 
+		$refusal = $this->statusRefusal(newStatus: $newStatus);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		try {
+			return $this->applyStatusTransition(caseId: $caseId, user: $user, body: $body, newStatus: $newStatus);
+		} catch (\Exception $e) {
+			return $this->failure(exception: $e, action: 'transitionStatus', message: 'Could not transition status');
+		}//end try
+	}//end transitionStatus()
+
+	/**
+	 * Refuse a missing or unknown DSO status.
+	 *
+	 * @param string $newStatus The requested status.
+	 *
+	 * @return JSONResponse|null The refusal, or null for a valid status.
+	 */
+	private function statusRefusal(string $newStatus): ?JSONResponse {
 		if ($newStatus === '') {
 			return new JSONResponse(['error' => 'newStatus is required'], Http::STATUS_BAD_REQUEST);
 		}
@@ -205,25 +225,37 @@ class DsoController extends Controller {
 			return new JSONResponse(['error' => 'Invalid status value'], Http::STATUS_BAD_REQUEST);
 		}
 
-		try {
-			$case = $this->mutableCase(caseId: $caseId, user: $user);
-			if ($case === null) {
-				return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
-			}
+		return null;
+	}//end statusRefusal()
 
-			$updated = $this->dsoCaseService->transitionStatus(
-				caseId: $caseId,
-				newStatus: $newStatus,
-				besluitdatum: $this->optionalString(body: $body, key: 'besluitdatum'),
-				notes: $this->optionalString(body: $body, key: 'notes'),
-				userId: $user->getUID()
-			);
+	/**
+	 * Move a case the user may change to a new DSO status.
+	 *
+	 * @param string $caseId The case.
+	 * @param IUser $user The current user.
+	 * @param array $body The request body.
+	 * @param string $newStatus The requested status.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @throws \Exception When reading or transitioning the case fails.
+	 */
+	private function applyStatusTransition(string $caseId, IUser $user, array $body, string $newStatus): JSONResponse {
+		$case = $this->mutableCase(caseId: $caseId, user: $user);
+		if ($case === null) {
+			return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
+		}
 
-			return new JSONResponse($updated);
-		} catch (\Exception $e) {
-			return $this->failure(exception: $e, action: 'transitionStatus', message: 'Could not transition status');
-		}//end try
-	}//end transitionStatus()
+		$updated = $this->dsoCaseService->transitionStatus(
+			caseId: $caseId,
+			newStatus: $newStatus,
+			besluitdatum: $this->optionalString(body: $body, key: 'besluitdatum'),
+			notes: $this->optionalString(body: $body, key: 'notes'),
+			userId: $user->getUID()
+		);
+
+		return new JSONResponse($updated);
+	}//end applyStatusTransition()
 
 	/**
 	 * Generate a beschikking document for a DSO case.
@@ -387,24 +419,40 @@ class DsoController extends Controller {
 		}
 
 		try {
-			$case = $this->mutableCase(caseId: $caseId, user: $user);
-			if ($case === null) {
-				return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
-			}
-
-			$this->doorsturenNotifier->dispatchDoorgestuurd(
-				case: $case,
-				caseId: $caseId,
-				targetBevoegdGezag: $targetBevoegdGezag,
-				reason: $reason,
-				userId: $user->getUID()
-			);
-
-			return $this->forwarded(caseId: $caseId, targetBevoegdGezag: $targetBevoegdGezag);
+			return $this->forwardCase(caseId: $caseId, user: $user, targetBevoegdGezag: $targetBevoegdGezag, reason: $reason);
 		} catch (\Exception $e) {
 			return $this->failure(exception: $e, action: 'doorsturen', message: 'Could not doorsturen');
 		}//end try
 	}//end doorsturen()
+
+	/**
+	 * Forward a case the user may change to another bevoegd gezag.
+	 *
+	 * @param string $caseId The case.
+	 * @param IUser $user The current user.
+	 * @param string $targetBevoegdGezag The bevoegd gezag to forward to.
+	 * @param string $reason Why the case is forwarded.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @throws \Exception When reading the case or dispatching fails.
+	 */
+	private function forwardCase(string $caseId, IUser $user, string $targetBevoegdGezag, string $reason): JSONResponse {
+		$case = $this->mutableCase(caseId: $caseId, user: $user);
+		if ($case === null) {
+			return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$this->doorsturenNotifier->dispatchDoorgestuurd(
+			case: $case,
+			caseId: $caseId,
+			targetBevoegdGezag: $targetBevoegdGezag,
+			reason: $reason,
+			userId: $user->getUID()
+		);
+
+		return $this->forwarded(caseId: $caseId, targetBevoegdGezag: $targetBevoegdGezag);
+	}//end forwardCase()
 
 	/**
 	 * Map a workflow exception onto a response.
