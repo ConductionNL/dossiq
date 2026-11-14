@@ -440,9 +440,9 @@ class ApprovalGate {
 			'rule' => $rule,
 			'sentence' => $sentence,
 			'status' => $status,
-			'label' => ($answer?->gate['label'] ?? ''),
-			'decisionRef' => ($answer?->reference ?? ''),
-			'approvers' => ($answer?->approvers ?? []),
+			'label' => ($answer->gate['label'] ?? ''),
+			'decisionRef' => ($answer->reference ?? ''),
+			'approvers' => ($answer->approvers ?? []),
 		];
 	}//end refused()
 
