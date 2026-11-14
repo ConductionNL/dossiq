@@ -65,6 +65,8 @@ use RuntimeException;
  * Hearing service: scheduling, waiver, attendance and minutes capture.
  *
  * @spec openspec/specs/bezwaar-hearing/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class HearingService implements HearingServiceInterface {
 
@@ -559,6 +561,31 @@ class HearingService implements HearingServiceInterface {
 	 * @throws RuntimeException When an entry or the patch fails.
 	 */
 	private function writeAttendance(SessionStore $store, SessionPatch $patch): array {
+		$this->recordLateCorrections(store: $store, patch: $patch);
+
+		try {
+			return $this->patchSession(store: $store, patch: $patch);
+		} catch (\Throwable $e) {
+			$this->recordUnappliedCorrections(store: $store, patch: $patch, e: $e);
+
+			$this->logger->error(
+				'Dossiq hearing: failed to record attendance: ' . $e->getMessage()
+			);
+			throw new RuntimeException('Could not record attendance');
+		}//end try
+	}//end writeAttendance()
+
+	/**
+	 * Record each late correction before the attendance changes.
+	 *
+	 * @param SessionStore $store The session store.
+	 * @param SessionPatch $patch The attendance patch; its entries are the late corrections.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When an entry fails.
+	 */
+	private function recordLateCorrections(SessionStore $store, SessionPatch $patch): void {
 		foreach ($patch->entries as $correction) {
 			$this->auditTrail->record(
 				register: $store->register,
@@ -569,27 +596,29 @@ class HearingService implements HearingServiceInterface {
 				tag: self::TAG_VERSLAG,
 			);
 		}
+	}//end recordLateCorrections()
 
-		try {
-			return $this->patchSession(store: $store, patch: $patch);
-		} catch (\Throwable $e) {
-			foreach ($patch->entries as $correction) {
-				$this->auditTrail->recordRefusal(
-					register: $store->register,
-					schema: $store->schema,
-					objectUuid: $patch->sessionId,
-					event: 'attendance-late-correction-not-applied',
-					payload: $correction + ['error' => $e->getMessage()],
-					tag: self::TAG_VERSLAG,
-				);
-			}
-
-			$this->logger->error(
-				'Dossiq hearing: failed to record attendance: ' . $e->getMessage()
+	/**
+	 * Record each late correction as not applied after the patch failed.
+	 *
+	 * @param SessionStore $store The session store.
+	 * @param SessionPatch $patch The attendance patch; its entries are the late corrections.
+	 * @param \Throwable   $e     The patch failure.
+	 *
+	 * @return void
+	 */
+	private function recordUnappliedCorrections(SessionStore $store, SessionPatch $patch, \Throwable $e): void {
+		foreach ($patch->entries as $correction) {
+			$this->auditTrail->recordRefusal(
+				register: $store->register,
+				schema: $store->schema,
+				objectUuid: $patch->sessionId,
+				event: 'attendance-late-correction-not-applied',
+				payload: $correction + ['error' => $e->getMessage()],
+				tag: self::TAG_VERSLAG,
 			);
-			throw new RuntimeException('Could not record attendance');
-		}//end try
-	}//end writeAttendance()
+		}
+	}//end recordUnappliedCorrections()
 
 	/**
 	 * Record the verslag entry, then apply the minutes.
