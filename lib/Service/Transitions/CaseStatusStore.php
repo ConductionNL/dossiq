@@ -167,12 +167,8 @@ class CaseStatusStore {
 			'noWorkflowTemplate' => $noWorkflowTemplate,
 		];
 
-		$payload = $this->withOptionalStatusFields(
-			payload: $payload,
-			fromStatus: $fromStatus,
-			comment: $comment,
-			actor: $actor,
-		);
+		$payload = $this->withActor(payload: $payload, actor: $actor);
+		$payload = $this->withGiven(payload: $payload, fields: ['fromStatus' => $fromStatus, 'description' => $comment]);
 
 		$record = $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
 
@@ -214,18 +210,16 @@ class CaseStatusStore {
 	}//end statusRecordStore()
 
 	/**
-	 * Add the actor, prior status and comment to a statusRecord payload when given.
+	 * The statusRecord payload with the actor, when the caller names one.
 	 *
 	 * @param array<string, mixed> $payload The statusRecord payload.
-	 * @param string $fromStatus Prior statusType UUID.
-	 * @param string|null $comment Free-form comment.
-	 * @param string $actor Who made the move, or the empty string when the caller names nobody.
+	 * @param string               $actor   Who made the move, or the empty string when the caller names nobody.
 	 *
-	 * @return array<string, mixed> The payload with the optional fields.
+	 * @return array<string, mixed> The payload.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function withOptionalStatusFields(array $payload, string $fromStatus, ?string $comment, string $actor): array {
+	private function withActor(array $payload, string $actor): array {
 		// WHO made this move. The four-eyes rule reads this chain to find who
 		// performed a named earlier act, and before this property the only
 		// answer was the row's OpenRegister owner, which is a fact about who
@@ -236,16 +230,29 @@ class CaseStatusStore {
 		if (trim($actor) !== '') {
 			$payload['actor'] = $actor;
 		}
-		if ($fromStatus !== '') {
-			$payload['fromStatus'] = $fromStatus;
-		}
 
-		if ($comment !== null && $comment !== '') {
-			$payload['description'] = $comment;
+		return $payload;
+	}//end withActor()
+
+	/**
+	 * The statusRecord payload with each field that is neither null nor empty.
+	 *
+	 * @param array<string, mixed>       $payload The statusRecord payload.
+	 * @param array<string, string|null> $fields  The prior statusType UUID as `fromStatus`, the comment as `description`.
+	 *
+	 * @return array<string, mixed> The payload.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function withGiven(array $payload, array $fields): array {
+		foreach ($fields as $key => $value) {
+			if ((string)$value !== '') {
+				$payload[$key] = $value;
+			}
 		}
 
 		return $payload;
-	}//end withOptionalStatusFields()
+	}//end withGiven()
 
 	/**
 	 * Where the move's timeline entry is built.
