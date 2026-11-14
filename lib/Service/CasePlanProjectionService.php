@@ -192,10 +192,11 @@ class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 	 * @return array<int, array<string, mixed>> The top-level nodes.
 	 */
 	private function convertRootItems(array $byId, array $order): array {
+		$index = new PlanItemIndex(byId: $byId, order: $order);
 		$items = [];
 		foreach ($order as $id) {
 			if (trim((string)($byId[$id]['parentId'] ?? '')) === '') {
-				$items[] = $this->convertItem(item: $byId[$id], byId: $byId, order: $order, seen: []);
+				$items[] = $this->convertItem(item: $byId[$id], index: $index, seen: []);
 			}
 		}
 
@@ -490,16 +491,15 @@ class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 	/**
 	 * Convert one plan item and, for a stage, its children.
 	 *
-	 * @param array<string, mixed>                      $item  The dossiq plan item.
-	 * @param array<string, array<string, mixed>>       $byId  Every plan item, keyed by id.
-	 * @param array<int, string>                        $order The declared order of ids.
-	 * @param array<string, boolean>                    $seen  Ancestor ids, to catch a parent cycle.
+	 * @param array<string, mixed>   $item  The dossiq plan item.
+	 * @param PlanItemIndex          $index Every plan item, keyed by id, and the declared order of ids.
+	 * @param array<string, boolean> $seen  Ancestor ids, to catch a parent cycle.
 	 *
 	 * @return array<string, mixed> The OpenRegister node.
 	 *
 	 * @throws UnexpectedValueException Naming the item it refuses.
 	 */
-	private function convertItem(array $item, array $byId, array $order, array $seen): array {
+	private function convertItem(array $item, PlanItemIndex $index, array $seen): array {
 		$id = trim((string)($item['id'] ?? ''));
 		if (isset($seen[$id]) === true) {
 			throw new UnexpectedValueException(sprintf("caseModel plan item '%s' is its own ancestor.", $id));
@@ -511,7 +511,7 @@ class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 			return $node;
 		}
 
-		$node['children'] = $this->childrenOf(id: $id, byId: $byId, order: $order, seen: $seen);
+		$node['children'] = $this->childrenOf(id: $id, index: $index, seen: $seen);
 
 		return $node;
 	}//end convertItem()
@@ -598,20 +598,20 @@ class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 	/**
 	 * Convert the direct children of a stage, in declared order.
 	 *
-	 * @param string                              $id    The stage's id.
-	 * @param array<string, array<string, mixed>> $byId  Every plan item, keyed by id.
-	 * @param array<int, string>                  $order The declared order of ids.
-	 * @param array<string, boolean>              $seen  Ancestor ids, to catch a parent cycle.
+	 * @param string                 $id    The stage's id.
+	 * @param PlanItemIndex          $index Every plan item, keyed by id, and the declared order of ids.
+	 * @param array<string, boolean> $seen  Ancestor ids, to catch a parent cycle.
 	 *
 	 * @return array<int, array<string, mixed>> The child nodes.
 	 *
 	 * @throws UnexpectedValueException Naming the child it refuses.
 	 */
-	private function childrenOf(string $id, array $byId, array $order, array $seen): array {
+	private function childrenOf(string $id, PlanItemIndex $index, array $seen): array {
+		$byId = $index->byId;
 		$children = [];
-		foreach ($order as $childId) {
+		foreach ($index->order as $childId) {
 			if (trim((string)($byId[$childId]['parentId'] ?? '')) === $id) {
-				$children[] = $this->convertItem(item: $byId[$childId], byId: $byId, order: $order, seen: $seen);
+				$children[] = $this->convertItem(item: $byId[$childId], index: $index, seen: $seen);
 			}
 		}
 
@@ -658,7 +658,7 @@ class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 	private function convertOnPart(array $onPart, string $where): array {
 		$planItem = trim((string)($onPart['planItem'] ?? ''));
 		if ($planItem !== '') {
-			return $this->convertPlanItemOnPart(onPart: $onPart, planItem: $planItem, where: $where);
+			return $this->convertPlanItemOnPart(onPart: $onPart, where: $where);
 		}
 
 		$caseFileItem = trim((string)($onPart['caseFileItem'] ?? ''));
@@ -672,15 +672,17 @@ class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 	/**
 	 * Convert a dossiq on-part on a plan item into an OpenRegister on-part.
 	 *
+	 * The plan item it listens to is the on-part's trimmed `planItem`.
+	 *
 	 * @param array<string, mixed> $onPart The dossiq on-part.
-	 * @param string $planItem The plan item it listens to.
-	 * @param string $where Which sentry, for the refusal message.
+	 * @param string               $where  Which sentry, for the refusal message.
 	 *
 	 * @return array<string, mixed> The OpenRegister on-part.
 	 *
 	 * @throws UnexpectedValueException Naming the event it refuses.
 	 */
-	private function convertPlanItemOnPart(array $onPart, string $planItem, string $where): array {
+	private function convertPlanItemOnPart(array $onPart, string $where): array {
+		$planItem = trim((string)($onPart['planItem'] ?? ''));
 		$standardEvent = (string)($onPart['standardEvent'] ?? '');
 		if (array_key_exists($standardEvent, self::STANDARD_EVENTS) === false) {
 			throw new UnexpectedValueException(
