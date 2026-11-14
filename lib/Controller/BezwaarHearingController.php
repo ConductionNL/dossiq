@@ -109,19 +109,9 @@ class BezwaarHearingController extends Controller {
 	 * @spec openspec/specs/bezwaar-hearing/spec.md
 	 */
 	public function recordAttendance(string $sessionId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		// Writes an awb-art-7:7 audit entry against a hearing session picked
-		// by uuid; the parent bezwaar case is resolved first so the ordinary
-		// per-case guard applies. An unresolvable session denies.
-		$caseId = $this->hearingService->getCaseIdForSession(sessionId: $sessionId);
-		if ($caseId === null
-			|| $this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false
-		) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->attendanceRefusal(sessionId: $sessionId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$entries = $this->request->getParam('entries');
@@ -140,4 +130,30 @@ class BezwaarHearingController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end recordAttendance()
+
+	/**
+	 * Refuse recording attendance to an anonymous caller, or for a session whose bezwaar case the user may not change.
+	 *
+	 * @param string $sessionId The hearing session.
+	 *
+	 * @return JSONResponse|null The refusal, or null when attendance may be recorded.
+	 */
+	private function attendanceRefusal(string $sessionId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		// Writes an awb-art-7:7 audit entry against a hearing session picked
+		// by uuid; the parent bezwaar case is resolved first so the ordinary
+		// per-case guard applies. An unresolvable session denies.
+		$caseId = $this->hearingService->getCaseIdForSession(sessionId: $sessionId);
+		if ($caseId === null
+			|| $this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false
+		) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
+		return null;
+	}//end attendanceRefusal()
 }//end class

@@ -114,24 +114,13 @@ class SubstitutionController extends Controller {
 
 		$absentee = (string)$this->request->getParam('absentee', $actorId);
 
-		// Per-object guard: own absence, or coordinator acting for another.
-		if ($absentee !== $actorId && $this->accessGuard->isCoordinator(userId: $actorId) === false) {
-			return $this->accessGuard->forbidden(message: 'You may only register a substitution for yourself');
+		$refusal = $this->substitutionRefusal(absentee: $absentee, actorId: $actorId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
-			$created = $this->substitutionService->create(
-				absentee: $absentee,
-				substitute: (string)$this->request->getParam('substitute', ''),
-				startDate: (string)$this->request->getParam('startDate', ''),
-				endDate: (string)$this->request->getParam('endDate', ''),
-				scope: (string)$this->request->getParam('scope', 'all'),
-				scopeRefs: (array)$this->request->getParam('scopeRefs', []),
-				reason: (string)$this->request->getParam('reason', 'verlof'),
-				createdBy: $actorId,
-				comment: (string)$this->request->getParam('comment', '')
-			);
-			return new JSONResponse($created, Http::STATUS_CREATED);
+			return $this->createSubstitution(absentee: $absentee, actorId: $actorId);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		} catch (\Throwable $e) {
@@ -139,6 +128,49 @@ class SubstitutionController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}//end try
 	}//end create()
+
+	/**
+	 * Refuse registering another user's absence, unless the actor is a coordinator.
+	 *
+	 * @param string $absentee The absent user.
+	 * @param string $actorId The current user.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the actor may register it.
+	 */
+	private function substitutionRefusal(string $absentee, string $actorId): ?JSONResponse {
+		// Per-object guard: own absence, or coordinator acting for another.
+		if ($absentee !== $actorId && $this->accessGuard->isCoordinator(userId: $actorId) === false) {
+			return $this->accessGuard->forbidden(message: 'You may only register a substitution for yourself');
+		}
+
+		return null;
+	}//end substitutionRefusal()
+
+	/**
+	 * Create the substitution the request describes.
+	 *
+	 * @param string $absentee The absent user.
+	 * @param string $actorId The current user.
+	 *
+	 * @return JSONResponse The created substitution.
+	 *
+	 * @throws \InvalidArgumentException When the request is invalid.
+	 * @throws \Throwable When creating fails.
+	 */
+	private function createSubstitution(string $absentee, string $actorId): JSONResponse {
+		$created = $this->substitutionService->create(
+			absentee: $absentee,
+			substitute: (string)$this->request->getParam('substitute', ''),
+			startDate: (string)$this->request->getParam('startDate', ''),
+			endDate: (string)$this->request->getParam('endDate', ''),
+			scope: (string)$this->request->getParam('scope', 'all'),
+			scopeRefs: (array)$this->request->getParam('scopeRefs', []),
+			reason: (string)$this->request->getParam('reason', 'verlof'),
+			createdBy: $actorId,
+			comment: (string)$this->request->getParam('comment', '')
+		);
+		return new JSONResponse($created, Http::STATUS_CREATED);
+	}//end createSubstitution()
 
 	/**
 	 * Release a departed or absent handler's caseload, as one bulk job.
