@@ -266,15 +266,7 @@ class DrcController extends ZgwController {
 		try {
 			return $this->createValidatedEio(resource: $resource, mappingConfig: $mappingConfig);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'DRC create error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-
-			return new JSONResponse(
-				data: ['detail' => $e->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->loggedBadRequest(e: $e, logPrefix: 'DRC create error: ');
 		}//end try
 	}//end createEio()
 
@@ -470,11 +462,7 @@ class DrcController extends ZgwController {
 	private function storeInhoud(array $objectData, string $objectUuid, mixed $inhoud, array $mappingConfig): array {
 		$fileName = $this->documentFileName(objectData: $objectData);
 
-		$fileSize = $this->zgwService->getDocumentService()->storeBase64(
-			uuid: $objectUuid,
-			fileName: $fileName,
-			content: $inhoud
-		);
+		$fileSize = $this->zgwService->getDocumentService()->storeBase64(uuid: $objectUuid, fileName: $fileName, content: $inhoud);
 
 		// The file id, and NOT only the size. Three surfaces resolve a
 		// document through `fileId` and each of them fails SILENTLY
@@ -771,15 +759,27 @@ class DrcController extends ZgwController {
 			return $response;
 		}
 
+		$this->cleanUpDeletedEio(uuid: $uuid, hasStoredFiles: $hasStoredFiles);
+
+		return $response;
+	}//end destroyEio()
+
+	/**
+	 * Remove what a deleted document leaves behind: its gebruiksrechten and its stored files.
+	 *
+	 * @param string $uuid The document UUID.
+	 * @param bool $hasStoredFiles Whether the document had stored files.
+	 *
+	 * @return void
+	 */
+	private function cleanUpDeletedEio(string $uuid, bool $hasStoredFiles): void {
 		// Drc-008 (VNG): Cascade delete gebruiksrechten after EIO deletion.
 		$this->cascadeDeleteGebruiksrechten(eioUuid: $uuid);
 
 		if ($hasStoredFiles === true) {
 			$this->deleteStoredFiles(uuid: $uuid);
 		}
-
-		return $response;
-	}//end destroyEio()
+	}//end cleanUpDeletedEio()
 
 	/**
 	 * Refuse deleting a document that ObjectInformatieObjecten still point at, or whose relations could not be checked.
@@ -900,13 +900,9 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function download(string $uuid): DataDownloadResponse|JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		if ($this->zgwService->getObjectService() === null) {
-			return $this->zgwService->unavailableResponse();
+		$objectService = $this->authorisedObjectService();
+		if ($objectService instanceof JSONResponse) {
+			return $objectService;
 		}
 
 		$mappingConfig = $this->zgwService->getZgwMappingService()->getMapping('enkelvoudiginformatieobject');
@@ -920,17 +916,28 @@ class DrcController extends ZgwController {
 		try {
 			return $this->downloadStoredFile(uuid: $uuid, mappingConfig: $mappingConfig);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'DRC download error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-
-			return new JSONResponse(
-				data: ['detail' => 'Not found'],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
+			return $this->downloadFailure(e: $e);
 		}//end try
 	}//end download()
+
+	/**
+	 * Log a failed download and answer it as not found.
+	 *
+	 * @param \Throwable $e The failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function downloadFailure(\Throwable $e): JSONResponse {
+		$this->zgwService->getLogger()->error(
+			'DRC download error: ' . $e->getMessage(),
+			['exception' => $e]
+		);
+
+		return new JSONResponse(
+			data: ['detail' => 'Not found'],
+			statusCode: Http::STATUS_NOT_FOUND
+		);
+	}//end downloadFailure()
 
 	/**
 	 * Answer a document's stored file, or 404 when it has none.
@@ -983,14 +990,9 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function lock(string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return $this->zgwService->unavailableResponse();
+		$objectService = $this->authorisedObjectService();
+		if ($objectService instanceof JSONResponse) {
+			return $objectService;
 		}
 
 		// Check if already locked (entity lock or data blob fallback).
@@ -1146,18 +1148,38 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function unlock(string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return $this->zgwService->unavailableResponse();
+		$objectService = $this->authorisedObjectService();
+		if ($objectService instanceof JSONResponse) {
+			return $objectService;
 		}
 
 		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
 
+		$refusal = $this->unlockRefusal(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		// Try OpenRegister's LockHandler, fall back to clearing data blob.
+		try {
+			return $this->unlockAndClearLockId(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+		} catch (\Throwable $e) {
+			// Fallback: unlock via saveObject when LockHandler fails
+			// (e.g., no Nextcloud user session in JWT-only context).
+			return $this->unlockFallback(objectService: $objectService, uuid: $uuid, original: $e);
+		}
+	}//end unlock()
+
+	/**
+	 * Refuse unlocking a document that is not locked, or an unforced unlock with the wrong lockId.
+	 *
+	 * @param object $objectService The object service.
+	 * @param array|null $mappingConfig The EIO mapping, null when not configured.
+	 * @param string $uuid The document UUID.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the unlock may go ahead.
+	 */
+	private function unlockRefusal(object $objectService, ?array $mappingConfig, string $uuid): ?JSONResponse {
 		// Check if the document is actually locked (entity or data blob).
 		$storedLockId = $this->storedLockIdFor(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
 
@@ -1172,20 +1194,8 @@ class DrcController extends ZgwController {
 		$lockId = $body['lock'] ?? '';
 
 		// Determine if this is a forced unlock (wrong/empty lockId + scope).
-		$refusal = $this->refuseUnforcedUnlock(lockId: $lockId, storedLockId: $storedLockId);
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		// Try OpenRegister's LockHandler, fall back to clearing data blob.
-		try {
-			return $this->unlockAndClearLockId(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
-		} catch (\Throwable $e) {
-			// Fallback: unlock via saveObject when LockHandler fails
-			// (e.g., no Nextcloud user session in JWT-only context).
-			return $this->unlockFallback(objectService: $objectService, uuid: $uuid, original: $e);
-		}
-	}//end unlock()
+		return $this->refuseUnforcedUnlock(lockId: $lockId, storedLockId: $storedLockId);
+	}//end unlockRefusal()
 
 	/**
 	 * Unlock a document through OpenRegister and clear its stored lockId.
@@ -1520,6 +1530,19 @@ class DrcController extends ZgwController {
 			return;
 		}
 
+		$this->deleteGebruiksrechtenOrWarn(objectService: $objectService, grScope: $grScope, eioUuid: $eioUuid);
+	}//end cascadeDeleteGebruiksrechten()
+
+	/**
+	 * Delete the gebruiksrechten that point at a document, logging a failure instead of raising it.
+	 *
+	 * @param object $objectService The object service.
+	 * @param ZgwSearchScope $grScope The gebruiksrechten scope.
+	 * @param string $eioUuid The EIO UUID.
+	 *
+	 * @return void
+	 */
+	private function deleteGebruiksrechtenOrWarn(object $objectService, ZgwSearchScope $grScope, string $eioUuid): void {
 		try {
 			$this->deleteGebruiksrechtenOf(objectService: $objectService, grScope: $grScope, eioUuid: $eioUuid);
 		} catch (\Throwable $e) {
@@ -1527,7 +1550,7 @@ class DrcController extends ZgwController {
 				'drc-008: Failed to cascade delete gebruiksrechten for EIO ' . $eioUuid . ': ' . $e->getMessage()
 			);
 		}//end try
-	}//end cascadeDeleteGebruiksrechten()
+	}//end deleteGebruiksrechtenOrWarn()
 
 	/**
 	 * The searchable gebruiksrechten scope for a delete cascade, null (and logged when unsearchable) without one.
@@ -1670,6 +1693,19 @@ class DrcController extends ZgwController {
 			return;
 		}
 
+		$this->clearIndicationWhenNoneRemain(objectService: $objectService, grScope: $grScope, eioUuid: $eioUuid);
+	}//end checkAndClearIndicatieGebruiksrecht()
+
+	/**
+	 * Clear indicatieGebruiksrecht when no gebruiksrechten remain, logging a failed count instead of raising it.
+	 *
+	 * @param object $objectService The object service.
+	 * @param ZgwSearchScope $grScope The gebruiksrechten scope.
+	 * @param string $eioUuid The EIO UUID.
+	 *
+	 * @return void
+	 */
+	private function clearIndicationWhenNoneRemain(object $objectService, ZgwSearchScope $grScope, string $eioUuid): void {
 		try {
 			$total = $this->countGebruiksrechtenOf(objectService: $objectService, grScope: $grScope, eioUuid: $eioUuid);
 
@@ -1682,7 +1718,7 @@ class DrcController extends ZgwController {
 				'drc-006: Failed to check remaining gebruiksrechten: ' . $e->getMessage()
 			);
 		}//end try
-	}//end checkAndClearIndicatieGebruiksrecht()
+	}//end clearIndicationWhenNoneRemain()
 
 	/**
 	 * The searchable gebruiksrechten scope for the indicatieGebruiksrecht check, null (and logged when unsearchable) without one.
@@ -1816,14 +1852,28 @@ class DrcController extends ZgwController {
 			return;
 		}
 
+		$this->setUsageRightsIndicationOrWarn(objectService: $objectService, eioConfig: $eioConfig, eioUuid: $ioMatches[1], value: $value);
+	}//end setIndicatieGebruiksrecht()
+
+	/**
+	 * Write usageRightsIndication on a document, logging a failure instead of raising it.
+	 *
+	 * @param object $objectService The object service.
+	 * @param array $eioConfig The EIO mapping.
+	 * @param string $eioUuid The EIO UUID.
+	 * @param bool|null $value The value to set (true or null).
+	 *
+	 * @return void
+	 */
+	private function setUsageRightsIndicationOrWarn(object $objectService, array $eioConfig, string $eioUuid, ?bool $value): void {
 		try {
-			$this->writeUsageRightsIndication(objectService: $objectService, eioConfig: $eioConfig, eioUuid: $ioMatches[1], value: $value);
+			$this->writeUsageRightsIndication(objectService: $objectService, eioConfig: $eioConfig, eioUuid: $eioUuid, value: $value);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning(
 				'drc-006: Failed to set indicatieGebruiksrecht: ' . $e->getMessage()
 			);
 		}//end try
-	}//end setIndicatieGebruiksrecht()
+	}//end setUsageRightsIndicationOrWarn()
 
 	/**
 	 * Upload a chunk (bestandsdeel) for a document.
@@ -1846,14 +1896,9 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function uploadChunk(string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return $this->zgwService->unavailableResponse();
+		$objectService = $this->authorisedObjectService();
+		if ($objectService instanceof JSONResponse) {
+			return $objectService;
 		}
 
 		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
@@ -1864,17 +1909,48 @@ class DrcController extends ZgwController {
 		try {
 			return $this->receiveChunk(uuid: $uuid, objectService: $objectService, mappingConfig: $mappingConfig);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'DRC chunk upload error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-
-			return new JSONResponse(
-				data: ['detail' => $e->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->loggedBadRequest(e: $e, logPrefix: 'DRC chunk upload error: ');
 		}//end try
 	}//end uploadChunk()
+
+	/**
+	 * Pass the JWT check and answer the object service, or the auth error or 503 that stops the request.
+	 *
+	 * @return object The object service, or the JSONResponse that refuses the request.
+	 */
+	private function authorisedObjectService(): object {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
+
+		$objectService = $this->zgwService->getObjectService();
+		if ($objectService === null) {
+			return $this->zgwService->unavailableResponse();
+		}
+
+		return $objectService;
+	}//end authorisedObjectService()
+
+	/**
+	 * Log a failed write and answer it as 400 with the failure's message.
+	 *
+	 * @param \Throwable $e The failure.
+	 * @param string $logPrefix What the log line starts with.
+	 *
+	 * @return JSONResponse
+	 */
+	private function loggedBadRequest(\Throwable $e, string $logPrefix): JSONResponse {
+		$this->zgwService->getLogger()->error(
+			$logPrefix . $e->getMessage(),
+			['exception' => $e]
+		);
+
+		return new JSONResponse(
+			data: ['detail' => $e->getMessage()],
+			statusCode: Http::STATUS_BAD_REQUEST
+		);
+	}//end loggedBadRequest()
 
 	/**
 	 * Check a chunk against the document's pending upload, read it from the body and store it.
@@ -2081,12 +2157,7 @@ class DrcController extends ZgwController {
 		}
 
 		try {
-			$existing = $this->zgwService->getObjectService()->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$objectData = $this->objectToArray(row: $existing);
+			$objectData = $this->storedEioData(uuid: $uuid, mappingConfig: $mappingConfig);
 
 			$data = $response->getData();
 			if (is_array($data) === false) {
@@ -2100,6 +2171,26 @@ class DrcController extends ZgwController {
 			// Silently skip enrichment on errors.
 		}//end try
 	}//end enrichWithBestandsdelen()
+
+	/**
+	 * Read a stored document as an array.
+	 *
+	 * @param string $uuid The document UUID.
+	 * @param array $mappingConfig The EIO mapping.
+	 *
+	 * @return array The stored document.
+	 *
+	 * @throws \Throwable When the document cannot be found.
+	 */
+	private function storedEioData(string $uuid, array $mappingConfig): array {
+		$existing = $this->zgwService->getObjectService()->find(
+			$uuid,
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema']
+		);
+
+		return $this->objectToArray(row: $existing);
+	}//end storedEioData()
 
 	/**
 	 * The bestandsdelen a shown document lists: its pending chunks, else [].
