@@ -83,4 +83,15 @@ interface PagesSeenInterface {
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function unseenInCase(string $caseId): array;
+	/**
+	 * The refusal of a verdict on an in-scope document whose required pages are not all seen.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param array<string, mixed> $assessment The assessment.
+	 *
+	 * @return array<string, string> `['pagesSeen' => sentence]`, or empty.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 */
+	public function refusalFor(string $caseId, array $assessment): array;
 }//end interface
