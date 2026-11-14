@@ -288,21 +288,7 @@ class CaseRebindGate {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function assertDropConfirmed(array $dropped, array $confirmed): void {
-		$normalise = static function (array $names): array {
-			$keys = [];
-			foreach ($names as $name) {
-				if (is_scalar($name) === true && trim((string)$name) !== '') {
-					$keys[] = mb_strtolower(trim((string)$name));
-				}
-			}
-
-			$keys = array_values(array_unique($keys));
-			sort($keys);
-
-			return $keys;
-		};
-
-		if ($normalise($dropped) === $normalise($confirmed)) {
+		if (self::normalisedNames(names: $dropped) === self::normalisedNames(names: $confirmed)) {
 			return;
 		}
 
@@ -318,6 +304,27 @@ class CaseRebindGate {
 			status: RefusedException::STATUS_UNPROCESSABLE,
 		);
 	}//end assertDropConfirmed()
+
+	/**
+	 * The non-blank names, trimmed, lowercased, distinct and sorted.
+	 *
+	 * @param array<int, mixed> $names The names.
+	 *
+	 * @return array<int, string> The comparable names.
+	 */
+	private static function normalisedNames(array $names): array {
+		$keys = [];
+		foreach ($names as $name) {
+			if (is_scalar($name) === true && trim((string)$name) !== '') {
+				$keys[] = mb_strtolower(trim((string)$name));
+			}
+		}
+
+		$keys = array_values(array_unique($keys));
+		sort($keys);
+
+		return $keys;
+	}//end normalisedNames()
 
 	/**
 	 * Refuse a rebind the case does not carry the target's required fields for.

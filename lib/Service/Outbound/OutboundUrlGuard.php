@@ -193,6 +193,18 @@ class OutboundUrlGuard {
 			return null;
 		}
 
+		return $this->addressOfHost(host: $host, insideOwnNetwork: $insideOwnNetwork);
+	}//end addressFor()
+
+	/**
+	 * Resolve a host and judge every address it answers with.
+	 *
+	 * @param string $host The host.
+	 * @param bool $insideOwnNetwork True when the address must be inside the own network, false when it must be outside.
+	 *
+	 * @return string|null The first address, or null when the host is refused.
+	 */
+	private function addressOfHost(string $host, bool $insideOwnNetwork): ?string {
 		$addresses = [$host];
 		if (filter_var($host, FILTER_VALIDATE_IP) === false) {
 			$addresses = $this->resolver->addressesOf(host: $host);
@@ -203,6 +215,19 @@ class OutboundUrlGuard {
 			return null;
 		}
 
+		return $this->firstPassing(host: $host, addresses: $addresses, insideOwnNetwork: $insideOwnNetwork);
+	}//end addressOfHost()
+
+	/**
+	 * The first address, when every address passes.
+	 *
+	 * @param string $host The host.
+	 * @param string[] $addresses The addresses the host answers with.
+	 * @param bool $insideOwnNetwork True when the address must be inside the own network, false when it must be outside.
+	 *
+	 * @return string|null The first address, or null when one is refused.
+	 */
+	private function firstPassing(string $host, array $addresses, bool $insideOwnNetwork): ?string {
 		foreach ($addresses as $address) {
 			if ($this->passes(address: $address, insideOwnNetwork: $insideOwnNetwork) === false) {
 				$this->refused(
@@ -214,7 +239,7 @@ class OutboundUrlGuard {
 		}
 
 		return $addresses[0];
-	}//end addressFor()
+	}//end firstPassing()
 
 	/**
 	 * Whether one address passes.

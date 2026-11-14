@@ -194,11 +194,26 @@ class ConsultationTerms {
 		$since = $this->today->modify('-' . self::BOTTLENECK_WINDOW_DAYS . ' days')->format('Y-m-d');
 		$today = $this->today->format('Y-m-d');
 
+		$bodies = $this->tallyBodies(consultations: $consultations, since: $since, today: $today);
+		$report = $this->flaggedRows(bodies: $bodies, threshold: $threshold);
+
+		return ['threshold' => $threshold, 'windowDays' => self::BOTTLENECK_WINDOW_DAYS, 'bodies' => $report];
+	}//end bottlenecks()
+
+	/**
+	 * Per advisory body, the requests created since a day and the late ones among them.
+	 *
+	 * @param array<int, array<string, mixed>> $consultations The advice requests.
+	 * @param string                           $since         The first day of the window, Y-m-d.
+	 * @param string                           $today         Today, Y-m-d.
+	 *
+	 * @return array<string, array{adviceAuthority: string, total: int, late: int}> The counts, by body.
+	 */
+	private function tallyBodies(array $consultations, string $since, string $today): array {
 		$bodies = [];
 		foreach ($consultations as $consultation) {
-			$created = substr((string)($consultation['createdAt'] ?? ''), 0, 10);
-			$body = trim((string)($consultation['adviceAuthority'] ?? ''));
-			if ($created === '' || $created < $since || $body === '') {
+			$body = $this->windowBody(consultation: $consultation, since: $since);
+			if ($body === '') {
 				continue;
 			}
 
@@ -209,6 +224,36 @@ class ConsultationTerms {
 			}
 		}
 
+		return $bodies;
+	}//end tallyBodies()
+
+	/**
+	 * The advisory body of a request created in the window, or '' when it falls outside or names none.
+	 *
+	 * @param array<string, mixed> $consultation The advice request.
+	 * @param string               $since        The first day of the window, Y-m-d.
+	 *
+	 * @return string The advisory body, or ''.
+	 */
+	private function windowBody(array $consultation, string $since): string {
+		$created = substr((string)($consultation['createdAt'] ?? ''), 0, 10);
+		$body = trim((string)($consultation['adviceAuthority'] ?? ''));
+		if ($created === '' || $created < $since || $body === '') {
+			return '';
+		}
+
+		return $body;
+	}//end windowBody()
+
+	/**
+	 * Each body's counts with its late share and whether it passes the threshold.
+	 *
+	 * @param array<string, array{adviceAuthority: string, total: int, late: int}> $bodies    The counts, by body.
+	 * @param float                                                                 $threshold The late share that flags a body.
+	 *
+	 * @return array<int, array<string, mixed>> The report rows.
+	 */
+	private function flaggedRows(array $bodies, float $threshold): array {
 		$report = [];
 		foreach ($bodies as $row) {
 			$row['lateShare'] = round($row['late'] / $row['total'], 4);
@@ -216,8 +261,8 @@ class ConsultationTerms {
 			$report[] = $row;
 		}
 
-		return ['threshold' => $threshold, 'windowDays' => self::BOTTLENECK_WINDOW_DAYS, 'bodies' => $report];
-	}//end bottlenecks()
+		return $report;
+	}//end flaggedRows()
 
 	/**
 	 * Whether an advice request is late on this day.

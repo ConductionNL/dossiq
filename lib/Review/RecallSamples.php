@@ -209,28 +209,10 @@ class RecallSamples implements RecallSamplesInterface {
 	public function judge(string $caseId, string $sampleId, string $documentRef, bool $inScope, string $userId): array {
 		$sample = $this->find(caseId: $caseId, sampleId: $sampleId);
 		$documents = array_map('strval', (array)($sample['documents'] ?? []));
-		if (in_array($documentRef, $documents, true) === false) {
-			throw new RefusedException(
-				rule: 'review-recall-document-unknown',
-				sentence: 'Only a sampled document can be judged in the sample.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$this->assertSampled(documents: $documents, documentRef: $documentRef);
+		$this->assertOpen(sample: $sample);
 
-		if (isset($sample['estimatedAt']) === true && $sample['estimatedAt'] !== '') {
-			throw new RefusedException(
-				rule: 'review-recall-sample-closed',
-				sentence: 'Every document of this sample is judged and its estimate is recorded.',
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
-
-		$judgements = (array)($sample['judgements'] ?? []);
-		$judgements[$documentRef] = DocumentRelevance::OUT_OF_SCOPE;
-		if ($inScope === true) {
-			$judgements[$documentRef] = DocumentRelevance::IN_SCOPE;
-		}
-
+		$judgements = $this->judgementsWith(sample: $sample, documentRef: $documentRef, inScope: $inScope);
 		$sample['judgements'] = $judgements;
 		if (count(array_intersect($documents, array_map('strval', array_keys($judgements)))) === count($documents)) {
 			$sample = $this->complete(caseId: $caseId, sample: $sample, userId: $userId);
@@ -238,6 +220,64 @@ class RecallSamples implements RecallSamplesInterface {
 
 		return $this->withProgress(sample: $this->save(sample: $sample));
 	}//end judge()
+
+	/**
+	 * Refuse a judgement of a document outside the sample.
+	 *
+	 * @param list<string> $documents The sampled documents.
+	 * @param string $documentRef The document to judge.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the document is not sampled.
+	 */
+	private function assertSampled(array $documents, string $documentRef): void {
+		if (in_array($documentRef, $documents, true) === false) {
+			throw new RefusedException(
+				rule: 'review-recall-document-unknown',
+				sentence: 'Only a sampled document can be judged in the sample.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertSampled()
+
+	/**
+	 * Refuse a judgement in a sample whose estimate is recorded.
+	 *
+	 * @param array<string, mixed> $sample The recall sample.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the sample is closed.
+	 */
+	private function assertOpen(array $sample): void {
+		if (isset($sample['estimatedAt']) === true && $sample['estimatedAt'] !== '') {
+			throw new RefusedException(
+				rule: 'review-recall-sample-closed',
+				sentence: 'Every document of this sample is judged and its estimate is recorded.',
+				status: RefusedException::STATUS_REFUSED,
+			);
+		}
+	}//end assertOpen()
+
+	/**
+	 * The sample's judgements, with this document judged in or out of scope.
+	 *
+	 * @param array<string, mixed> $sample The recall sample.
+	 * @param string $documentRef The judged document.
+	 * @param bool $inScope Whether the document is about the request after all.
+	 *
+	 * @return array<string, string> The judgements by document.
+	 */
+	private function judgementsWith(array $sample, string $documentRef, bool $inScope): array {
+		$judgements = (array)($sample['judgements'] ?? []);
+		$judgements[$documentRef] = DocumentRelevance::OUT_OF_SCOPE;
+		if ($inScope === true) {
+			$judgements[$documentRef] = DocumentRelevance::IN_SCOPE;
+		}
+
+		return $judgements;
+	}//end judgementsWith()
 
 	/**
 	 * The case's samples, newest first, each with its progress.

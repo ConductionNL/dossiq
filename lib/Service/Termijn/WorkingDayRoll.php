@@ -477,15 +477,17 @@ class WorkingDayRoll {
 			return;
 		}
 
-		try {
-			$this->calculator = $this->settings->getOpenRegisterClass(self::ENGINE_CALCULATOR);
-			$calendars = $this->settings->getOpenRegisterClass(self::ENGINE_CALENDARS);
-			if ($this->calculator === null || $calendars === null) {
-				$this->calculator = null;
-				return;
-			}
+		$this->resolveEngine();
+	}//end resolve()
 
-			$this->calendar = $calendars->resolve(null, null);
+	/**
+	 * Read the engine's calculator and calendar, or neither when the calendar is unavailable.
+	 *
+	 * @return void
+	 */
+	private function resolveEngine(): void {
+		try {
+			$this->readEngine();
 		} catch (Throwable $e) {
 			$this->logger?->warning(
 				'Dossiq termijn: the organisation calendar is unavailable',
@@ -494,5 +496,21 @@ class WorkingDayRoll {
 			$this->calculator = null;
 			$this->calendar = null;
 		}
-	}//end resolve()
+	}//end resolveEngine()
+
+	/**
+	 * Read the engine's calculator and the organisation calendar.
+	 *
+	 * @return void
+	 */
+	private function readEngine(): void {
+		$this->calculator = $this->settings->getOpenRegisterClass(self::ENGINE_CALCULATOR);
+		$calendars = $this->settings->getOpenRegisterClass(self::ENGINE_CALENDARS);
+		if ($this->calculator === null || $calendars === null) {
+			$this->calculator = null;
+			return;
+		}
+
+		$this->calendar = $calendars->resolve(null, null);
+	}//end readEngine()
 }//end class

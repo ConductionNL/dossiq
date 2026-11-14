@@ -303,26 +303,53 @@ class CaseAttentionFlagService implements CaseAttentionFlagServiceInterface {
 
 		$readable = [];
 		foreach ($rows as $row) {
-			if (is_array($row) === false) {
-				continue;
+			$entry = $this->readableRow(row: $row);
+			if ($entry !== null) {
+				$readable[] = $entry;
 			}
-
-			$act = trim((string)($row['act'] ?? ''));
-			$reason = trim((string)($row['reason'] ?? ''));
-			if (in_array($act, self::ACTS, true) === false || $reason === '') {
-				continue;
-			}
-
-			$readable[] = [
-				'act' => $act,
-				'reason' => $reason,
-				'actor' => trim((string)($row['actor'] ?? '')),
-				'moment' => trim((string)($row['moment'] ?? '')),
-			];
 		}
 
 		return $readable;
 	}//end history()
+
+	/**
+	 * One history row, trimmed, or null when it misses its act or its reason.
+	 *
+	 * @param mixed $row The stored row.
+	 *
+	 * @return array<string, string>|null The row, or null.
+	 */
+	private function readableRow(mixed $row): array|null {
+		if (is_array($row) === false) {
+			return null;
+		}
+
+		$act = trim((string)($row['act'] ?? ''));
+		$reason = trim((string)($row['reason'] ?? ''));
+		if (in_array($act, self::ACTS, true) === false || $reason === '') {
+			return null;
+		}
+
+		return $this->historyEntry(row: $row, act: $act, reason: $reason);
+	}//end readableRow()
+
+	/**
+	 * One readable history row, trimmed.
+	 *
+	 * @param array<string, mixed> $row    The stored row.
+	 * @param string               $act    Its act.
+	 * @param string               $reason Its reason.
+	 *
+	 * @return array<string, string> The row.
+	 */
+	private function historyEntry(array $row, string $act, string $reason): array {
+		return [
+			'act' => $act,
+			'reason' => $reason,
+			'actor' => trim((string)($row['actor'] ?? '')),
+			'moment' => trim((string)($row['moment'] ?? '')),
+		];
+	}//end historyEntry()
 
 	/**
 	 * Read the stored case, as the signed-in user.

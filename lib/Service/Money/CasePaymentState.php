@@ -182,42 +182,60 @@ class CasePaymentState implements CasePaymentStateInterface {
 	 * @return array{waivedOnly: bool, anyOutstanding: bool, anyUnreadable: bool} What the list holds.
 	 */
 	private function tally(array $requests): array {
-		$waivedOnly = true;
-		$anyOutstanding = false;
-		$anyUnreadable = false;
-
+		$kinds = [];
 		foreach ($requests as $request) {
-			if (is_array($request) === false) {
-				// Skipping it was worse than it looks: a case whose ONLY request
-				// was unparseable fell through to the waiver branch and read
-				// `waived`, which opens the gate and says a person decided to let
-				// the money go. Nobody decided anything.
-				$anyUnreadable = true;
-				continue;
-			}
-
-			$reported = (string)($request['reported']['state'] ?? '');
-			if (in_array($reported, self::UNREADABLE, true) === true) {
-				$anyUnreadable = true;
-				continue;
-			}
-
-			if (in_array($reported, self::SETTLED, true) === false) {
-				$anyOutstanding = true;
-				continue;
-			}
-
-			if ($this->wasWaived(request: $request) === false) {
-				$waivedOnly = false;
-			}
+			$kinds[$this->kindOf(request: $request)] = true;
 		}
 
 		return [
-			'waivedOnly' => $waivedOnly,
-			'anyOutstanding' => $anyOutstanding,
-			'anyUnreadable' => $anyUnreadable,
+			'waivedOnly' => isset($kinds['paid']) === false,
+			'anyOutstanding' => isset($kinds['outstanding']),
+			'anyUnreadable' => isset($kinds['unreadable']),
 		];
 	}//end tally()
+
+	/**
+	 * What one request holds: `unreadable`, `outstanding`, `paid` or `waived`.
+	 *
+	 * @param mixed $request One payment request as the leaf sent it.
+	 *
+	 * @return string The kind of request.
+	 */
+	private function kindOf(mixed $request): string {
+		if (is_array($request) === false) {
+			// Skipping it was worse than it looks: a case whose ONLY request
+			// was unparseable fell through to the waiver branch and read
+			// `waived`, which opens the gate and says a person decided to let
+			// the money go. Nobody decided anything.
+			return 'unreadable';
+		}
+
+		return $this->kindOfReported(request: $request);
+	}//end kindOf()
+
+	/**
+	 * What one readable request holds, by the state the leaf reported.
+	 *
+	 * @param array<string, mixed> $request One payment request as the leaf sent it.
+	 *
+	 * @return string The kind of request.
+	 */
+	private function kindOfReported(array $request): string {
+		$reported = (string)($request['reported']['state'] ?? '');
+		if (in_array($reported, self::UNREADABLE, true) === true) {
+			return 'unreadable';
+		}
+
+		if (in_array($reported, self::SETTLED, true) === false) {
+			return 'outstanding';
+		}
+
+		if ($this->wasWaived(request: $request) === false) {
+			return 'paid';
+		}
+
+		return 'waived';
+	}//end kindOfReported()
 
 	/**
 	 * Whether a settled request was settled by letting the money go.

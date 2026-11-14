@@ -130,23 +130,37 @@ class PortalContactDetailsChangedListener implements IEventListener {
 		$this->runAsSystemIfAvailable(
 			objectService: $objectService,
 			operation: function () use ($objectService, $register, $schema, $change): void {
-				$rows = $this->searchObjectsAsArraysUnscoped(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					filters: ['portalSubject' => $change->subject, '_limit' => self::LIMIT],
-				);
-				$cases = new RunningCaseStore(objectService: $objectService, register: $register, schema: $schema);
-				foreach ($rows as $row) {
-					if ($this->isRunning(row: $row, change: $change) === false) {
-						continue;
-					}
-
-					$this->apply(cases: $cases, row: $row, channel: $change->channel);
-				}
+				$this->followIn(objectService: $objectService, register: $register, schema: $schema, change: $change);
 			}
 		);
 	}//end follow()
+
+	/**
+	 * Set the channel on every running case of the subject in the case register.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $register      The register.
+	 * @param string               $schema        The case schema.
+	 * @param ContactChannelChange $change        The subject, the organisation and the portal channel.
+	 *
+	 * @return void
+	 */
+	private function followIn(object $objectService, string $register, string $schema, ContactChannelChange $change): void {
+		$rows = $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['portalSubject' => $change->subject, '_limit' => self::LIMIT],
+		);
+		$cases = new RunningCaseStore(objectService: $objectService, register: $register, schema: $schema);
+		foreach ($rows as $row) {
+			if ($this->isRunning(row: $row, change: $change) === false) {
+				continue;
+			}
+
+			$this->apply(cases: $cases, row: $row, channel: $change->channel);
+		}
+	}//end followIn()
 
 	/**
 	 * Whether a row is a running case of this subject in this organisation.

@@ -201,35 +201,57 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
-		$object = $step->object;
-		$parameters = $step->parameters;
-		$commit = $step->commit;
-		$caseId = $this->caseId(object: $object);
+		$caseId = $this->caseId(object: $step->object);
 		if ($caseId === '') {
 			return BulkActionResult::skipped(reason: 'no_case_id');
 		}
 
-		$case = $this->caseData(object: $object);
-		$property = trim((string)($parameters['property'] ?? ''));
-		$value = ($parameters['value'] ?? null);
+		return $this->applyTo(step: $step, caseId: $caseId);
+	}//end apply()
 
-		if (array_key_exists($property, $case) === true && $case[$property] === $value) {
+	/**
+	 * Write the value onto a case with an id, or say whether it would change anything.
+	 *
+	 * @param BulkStep $step   The member object, the parameters and whether to commit.
+	 * @param string   $caseId The case uuid.
+	 *
+	 * @return BulkActionResult What happened, or what would.
+	 */
+	private function applyTo(BulkStep $step, string $caseId): BulkActionResult {
+		$caseData = $this->caseData(object: $step->object);
+		$property = trim((string)($step->parameters['property'] ?? ''));
+		$value = ($step->parameters['value'] ?? null);
+
+		if (array_key_exists($property, $caseData) === true && $caseData[$property] === $value) {
 			return BulkActionResult::skipped(reason: 'already_set');
 		}
 
-		if ($commit === false) {
+		if ($step->commit === false) {
 			return BulkActionResult::applied();
 		}
 
+		$caseData[$property] = $value;
+
+		return $this->written(caseId: $caseId, caseData: $caseData);
+	}//end applyTo()
+
+	/**
+	 * Store the changed case and say how it went.
+	 *
+	 * @param string               $caseId   The case uuid.
+	 * @param array<string, mixed> $caseData The case, with the new value on it.
+	 *
+	 * @return BulkActionResult Applied, or failed with the reason.
+	 */
+	private function written(string $caseId, array $caseData): BulkActionResult {
 		try {
-			$case[$property] = $value;
-			$this->write(caseId: $caseId, case: $case);
+			$this->write(caseId: $caseId, case: $caseData);
 
 			return BulkActionResult::applied();
 		} catch (Throwable $e) {
 			return BulkActionResult::failed(message: $e->getMessage());
 		}//end try
-	}//end apply()
+	}//end written()
 
 	/**
 	 * Store the changed case.

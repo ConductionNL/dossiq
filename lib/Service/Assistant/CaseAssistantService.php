@@ -274,6 +274,24 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
 
+		$found = $this->findCase(objectService: $objectService, caseId: $caseId, register: $register, schema: $schema);
+
+		return $this->casePayload(found: $found, caseId: $caseId);
+	}//end loadReadableCase()
+
+	/**
+	 * Read the case through the caller-scoped object service.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $caseId        The case id.
+	 * @param string $register      The register.
+	 * @param string $schema        The case schema.
+	 *
+	 * @return mixed What the object service answered.
+	 *
+	 * @throws Exception (code 404) When the read fails.
+	 */
+	private function findCase(object $objectService, string $caseId, string $register, string $schema): mixed {
 		try {
 			$case = $objectService->find(id: $caseId, register: $register, schema: $schema);
 		} catch (Throwable $e) {
@@ -284,16 +302,30 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 			throw new Exception('Case not found: ' . $caseId, 404);
 		}
 
-		if ($case === null) {
+		return $case;
+	}//end findCase()
+
+	/**
+	 * The found case as a payload.
+	 *
+	 * @param mixed  $found  What the object service answered.
+	 * @param string $caseId The case id.
+	 *
+	 * @return array<string, mixed> The case payload.
+	 *
+	 * @throws Exception (code 404) When nothing was found.
+	 */
+	private function casePayload(mixed $found, string $caseId): array {
+		if ($found === null) {
 			throw new Exception('Case not found: ' . $caseId, 404);
 		}
 
-		if (is_object($case) === true && method_exists($case, 'jsonSerialize') === true) {
-			return $case->jsonSerialize();
+		if (is_object($found) === true && method_exists($found, 'jsonSerialize') === true) {
+			return $found->jsonSerialize();
 		}
 
-		return (array)$case;
-	}//end loadReadableCase()
+		return (array)$found;
+	}//end casePayload()
 
 	/**
 	 * Build a bounded, safe case-context summary — ONLY fields already shown

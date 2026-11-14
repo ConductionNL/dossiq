@@ -31,6 +31,8 @@ use OCA\Dossiq\Service\Term\DayCount;
  * report service does both. The table rows live in {@see ProcessingTimeRows}.
  *
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class ProcessingTimeCalculator {
 
@@ -228,28 +230,8 @@ class ProcessingTimeCalculator {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function distribution(array $completed, array $types): array {
-		$counts  = array_fill(0, count(self::BINS), 0);
-		$targets = [];
-
-		foreach ($completed as $record) {
-			$days = $this->processingDays(record: $record);
-			if ($days === null) {
-				continue;
-			}
-
-			$target = ($types[(string)($record['caseType'] ?? '')]['targetDays'] ?? null);
-			if ($target !== null) {
-				$targets[$target] = true;
-			}
-
-			$index = $this->binIndex(days: $days);
-			$counts[$index]++;
-		}
-
-		$bins = [];
-		foreach (self::BINS as $index => $bin) {
-			$bins[] = ['label' => $bin['label'], 'count' => $counts[$index]];
-		}
+		[$counts, $targets] = $this->binCountsAndTargets(completed: $completed, types: $types);
+		$bins = $this->binsOf(counts: $counts);
 
 		$slaTargetDays = null;
 		$targetBin     = null;
@@ -260,6 +242,65 @@ class ProcessingTimeCalculator {
 
 		return ['bins' => $bins, 'slaTargetDays' => $slaTargetDays, 'targetBin' => $targetBin];
 	}//end distribution()
+
+	/**
+	 * Count the records per bin and collect the targets they carry.
+	 *
+	 * @param array<int, array<string, mixed>>    $completed Completed records.
+	 * @param array<string, array<string, mixed>> $types     Prepared types keyed by id.
+	 *
+	 * @return array{0: array<int, int>, 1: array<int|string, true>} The counts per bin index, and the targets seen.
+	 */
+	private function binCountsAndTargets(array $completed, array $types): array {
+		$counts  = array_fill(0, count(self::BINS), 0);
+		$targets = [];
+
+		foreach ($completed as $record) {
+			$days = $this->processingDays(record: $record);
+			if ($days === null) {
+				continue;
+			}
+
+			$targets += $this->targetOf(record: $record, types: $types);
+			$index    = $this->binIndex(days: $days);
+			$counts[$index]++;
+		}
+
+		return [$counts, $targets];
+	}//end binCountsAndTargets()
+
+	/**
+	 * The record type's target as a set entry, or nothing when the type has none.
+	 *
+	 * @param array<string, mixed>                $record A completed record.
+	 * @param array<string, array<string, mixed>> $types  Prepared types keyed by id.
+	 *
+	 * @return array<int|string, true> The target as key, or empty.
+	 */
+	private function targetOf(array $record, array $types): array {
+		$target = ($types[(string)($record['caseType'] ?? '')]['targetDays'] ?? null);
+		if ($target !== null) {
+			return [$target => true];
+		}
+
+		return [];
+	}//end targetOf()
+
+	/**
+	 * The bins with their labels and counts.
+	 *
+	 * @param array<int, int> $counts The counts per bin index.
+	 *
+	 * @return array<int, array{label: string, count: int}> The bins.
+	 */
+	private function binsOf(array $counts): array {
+		$bins = [];
+		foreach (self::BINS as $index => $bin) {
+			$bins[] = ['label' => $bin['label'], 'count' => $counts[$index]];
+		}
+
+		return $bins;
+	}//end binsOf()
 
 	/**
 	 * Monthly target compliance over a trailing window ending this month.
