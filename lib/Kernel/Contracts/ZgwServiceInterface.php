@@ -24,7 +24,6 @@ namespace OCA\Dossiq\Kernel\Contracts;
 
 use OCA\Dossiq\Kernel\Contracts\ZgwBusinessRulesServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwDocumentServiceInterface;
-use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\OpenRegister\Db\Mapping;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -260,11 +259,11 @@ interface ZgwServiceInterface {
 	/**
 	 * Get the ZGW mapping service.
 	 *
-	 * @return ZgwMappingService
+	 * @return ZgwMappingServiceInterface
 	 *
 	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
-	public function getZgwMappingService(): ZgwMappingService;
+	public function getZgwMappingService(): ZgwMappingServiceInterface;
 
 	/**
 	 * Handle audit trail index — proxies to OpenRegister's audit trail.
