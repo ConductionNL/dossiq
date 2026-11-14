@@ -117,39 +117,65 @@ class WooDecisionNotice {
 	public function tell(array $case, string $caseId, string $publicationId): bool {
 		$subjectRef = trim((string)($case['portalSubject'] ?? ''));
 		$objectService = $this->settingsService->getObjectService();
-		$ready = $this->canTell(
-			subjectRef: $subjectRef,
-			caseId: $caseId,
-			publicationId: $publicationId,
-			objectService: $objectService
-		);
+		$ready = $this->canTell(subjectRef: $subjectRef, caseId: $caseId, publicationId: $publicationId, objectService: $objectService);
 		if ($ready === false) {
 			return false;
 		}
 
 		try {
-			$message = $this->noticeMessage(case: $case, caseId: $caseId, publicationId: $publicationId);
-
-			$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): mixed => $objectService->saveObject(
-					object: $message,
-					register: self::PORTAL_MESSAGE_REGISTER,
-					schema: self::PORTAL_MESSAGE_SCHEMA,
-					_rbac: false,
-					_multitenancy: false,
-				)
-			);
+			$this->writeNotice(caseData: $case, caseId: $caseId, publicationId: $publicationId, objectService: $objectService);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'WooDecisionNotice: the resident could not be told the decision is published',
-				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'publicationId' => $publicationId, 'error' => $e->getMessage()]
-			);
+			$this->logUntold(caseId: $caseId, publicationId: $publicationId, error: $e);
 			return false;
 		}//end try
 
 		return true;
 	}//end tell()
+
+	/**
+	 * Write the decision notice into the resident's portal messages, as the system.
+	 *
+	 * @param array<string, mixed> $caseData      The case, as it was before the publish.
+	 * @param string               $caseId        The case uuid.
+	 * @param string               $publicationId The publication uuid in opencatalogi.
+	 * @param object|null          $objectService OpenRegister's object service.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
+	 */
+	private function writeNotice(array $caseData, string $caseId, string $publicationId, ?object $objectService): void {
+		$message = $this->noticeMessage(case: $caseData, caseId: $caseId, publicationId: $publicationId);
+
+		$this->runAsSystemIfAvailable(
+			objectService: $objectService,
+			operation: fn (): mixed => $objectService->saveObject(
+				object: $message,
+				register: self::PORTAL_MESSAGE_REGISTER,
+				schema: self::PORTAL_MESSAGE_SCHEMA,
+				_rbac: false,
+				_multitenancy: false,
+			)
+		);
+	}//end writeNotice()
+
+	/**
+	 * Log a notice that could not be written.
+	 *
+	 * @param string    $caseId        The case uuid.
+	 * @param string    $publicationId The publication uuid in opencatalogi.
+	 * @param Throwable $error         Why it could not be written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
+	 */
+	private function logUntold(string $caseId, string $publicationId, Throwable $error): void {
+		$this->logger->warning(
+			'WooDecisionNotice: the resident could not be told the decision is published',
+			['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'publicationId' => $publicationId, 'error' => $error->getMessage()]
+		);
+	}//end logUntold()
 
 	/**
 	 * Whether a resident, a case, a publication and OpenRegister are all in hand.
