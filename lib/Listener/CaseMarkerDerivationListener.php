@@ -42,11 +42,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseAttentionMarkerServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseRiskAssessmentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\PreSaveCheck;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
-use OCA\Dossiq\Service\CaseAttentionMarkerService;
-use OCA\Dossiq\Service\CaseRiskAssessmentService;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -66,15 +66,15 @@ class CaseMarkerDerivationListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService            $settingsService Schema slug bridge.
-	 * @param CaseRiskAssessmentService  $riskService     The assessed level and what it feeds.
-	 * @param CaseAttentionMarkerService $markerService   What raises a marker and what clears it.
+	 * @param SettingsServiceInterface            $settingsService Schema slug bridge.
+	 * @param CaseRiskAssessmentServiceInterface  $riskService     The assessed level and what it feeds.
+	 * @param CaseAttentionMarkerServiceInterface $markerService   What raises a marker and what clears it.
 	 * @param LoggerInterface            $logger          Structured logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseRiskAssessmentService $riskService,
-		private readonly CaseAttentionMarkerService $markerService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseRiskAssessmentServiceInterface $riskService,
+		private readonly CaseAttentionMarkerServiceInterface $markerService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

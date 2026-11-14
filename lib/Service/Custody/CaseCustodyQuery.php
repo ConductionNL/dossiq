@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Custody;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseCustodyQueryInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -37,7 +38,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseCustodyQuery {
+class CaseCustodyQuery implements CaseCustodyQueryInterface {
 
 	/**
 	 * How many holdings one unit read takes at most.

@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Cases;
 
+use OCA\Dossiq\Kernel\Contracts\CaseNextStatusInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IL10N;
@@ -36,7 +37,7 @@ use Throwable;
  *
  * @spec openspec/changes/task-holds-up-next-status/specs/task-page/spec.md#requirement-a-task-says-which-step-its-case-waits-to-move-to
  */
-class CaseNextStatus {
+class CaseNextStatus implements CaseNextStatusInterface {
 
 	use SearchesObjects;
 

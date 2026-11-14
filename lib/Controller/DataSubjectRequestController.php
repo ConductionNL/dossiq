@@ -44,8 +44,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\CaseCaller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Gdpr\DataSubjectRequestCase;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DataSubjectRequestCaseInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -72,8 +72,8 @@ class DataSubjectRequestController extends Controller {
 	 *
 	 * @param string                 $appName     The app name.
 	 * @param IRequest               $request     The request.
-	 * @param DataSubjectRequestCase $requests    The case side of a data subject request.
-	 * @param CaseAccessGuard        $accessGuard Per-case authorization, failing closed.
+	 * @param DataSubjectRequestCaseInterface $requests    The case side of a data subject request.
+	 * @param CaseAccessGuardInterface        $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession           $userSession The session.
 	 * @param LoggerInterface        $logger      The logger.
 	 *
@@ -84,8 +84,8 @@ class DataSubjectRequestController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DataSubjectRequestCase $requests,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly DataSubjectRequestCaseInterface $requests,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\Access\CaseRecordGrantsBackfill;
+use OCA\Dossiq\Kernel\Contracts\CaseRecordGrantsBackfillInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -62,13 +62,13 @@ class ReconcileCaseRecordGrants implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseRecordGrantsBackfill $backfill The walk over every declaring case.
+	 * @param CaseRecordGrantsBackfillInterface $backfill The walk over every declaring case.
 	 * @param LoggerInterface          $logger   The log an unfinished run is written to.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly CaseRecordGrantsBackfill $backfill,
+		private readonly CaseRecordGrantsBackfillInterface $backfill,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

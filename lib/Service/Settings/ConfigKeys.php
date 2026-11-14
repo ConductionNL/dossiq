@@ -422,6 +422,10 @@ class ConfigKeys {
 		// the rule for the publication date (PublicationService).
 		'publication_template',
 		'publication_date_rule',
+		// Public ZGW API access: the header a trusted reverse proxy forwards
+		// the client certificate's SHA-256 fingerprint in. Empty switches
+		// certificate access off (ApiCredentialResolver, REQ-PAA-02).
+		'public_api_client_cert_header',
 		// The administrator's own text per notification kind (REQ-CRS-13);
 		// Notifier::customText() reads them.
 		...self::NOTIFICATION_TEXT_KEYS,

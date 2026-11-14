@@ -55,6 +55,15 @@ class SessionDefinitionReaderTest extends TestCase {
 	}//end testACaseTypeWithoutSessionsDeclaresNone()
 
 	/**
+	 * A sessions value that is not a list declares none rather than failing.
+	 *
+	 * @return void
+	 */
+	public function testASessionsValueThatIsNotAListDeclaresNone(): void {
+		self::assertSame([], (new SessionDefinitionReader())->allOf(caseType: ['sessions' => 'hearing']));
+	}//end testASessionsValueThatIsNotAListDeclaresNone()
+
+	/**
 	 * Two sessions with one key are refused.
 	 *
 	 * @return void

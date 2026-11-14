@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use OCP\App\IAppManager;
 use OCP\Files\IRootFolder;
@@ -203,7 +203,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 	private function pollAttempts(): int {
 		return max(
 			1,
-			$this->appConfig->getValueInt(Application::APP_ID, 'libresign_poll_attempts', self::DEFAULT_POLL_ATTEMPTS)
+			$this->appConfig->getValueInt(AppIdentity::APP_ID, 'libresign_poll_attempts', self::DEFAULT_POLL_ATTEMPTS)
 		);
 	}//end pollAttempts()
 
@@ -216,7 +216,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 		return max(
 			0,
 			$this->appConfig->getValueInt(
-				Application::APP_ID,
+				AppIdentity::APP_ID,
 				'libresign_poll_interval_seconds',
 				self::DEFAULT_POLL_INTERVAL_SECONDS
 			)
@@ -265,7 +265,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 		$raw = (string)($status['statusText'] ?? ($status['status'] ?? ''));
 		$this->logger->warning(
 			'LibresignSigningAdapter: unrecognised LibreSign status value',
-			['app' => Application::APP_ID, 'uuid' => $uuid, 'raw' => $raw],
+			['app' => AppIdentity::APP_ID, 'uuid' => $uuid, 'raw' => $raw],
 		);
 	}//end warnUnrecognised()
 
@@ -290,7 +290,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'LibresignSigningAdapter: fetchValidationReport degraded to an invalid report',
-				['app' => Application::APP_ID, 'validationRapportId' => $validationRapportId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'validationRapportId' => $validationRapportId, 'error' => $e->getMessage()],
 			);
 
 			return $this->assembler->assembleFailedValidationReport(validationRapportId: $validationRapportId);

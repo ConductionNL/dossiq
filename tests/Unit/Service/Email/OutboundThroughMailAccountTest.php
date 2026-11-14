@@ -56,13 +56,12 @@ use RuntimeException;
 require_once __DIR__ . '/../../../Support/Mail/LocalMessage.php';
 
 /**
- * @covers \OCA\Dossiq\Service\Email\NextcloudMailGateway::sendMessage
+ * @covers \OCA\Dossiq\Service\Email\NextcloudMailGateway
  * @covers \OCA\Dossiq\Service\Email\OutboundCaseMail
  * @covers \OCA\Dossiq\Service\Email\OutboundState
  * @covers \OCA\Dossiq\Repair\RetireImapCredentials
  * @covers \OCA\Dossiq\Service\Email\OutboundMailPolicy
  *
- * @uses \OCA\Dossiq\Service\Email\NextcloudMailGateway
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
  * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut

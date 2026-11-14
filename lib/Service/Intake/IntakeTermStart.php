@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\IntakeTermStartInterface;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -52,21 +53,7 @@ use Throwable;
  *
  * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
  */
-class IntakeTermStart {
-
-	/**
-	 * The property holding the moment the submission arrived.
-	 *
-	 * @var string
-	 */
-	public const RECEIVED_AT = 'receivedAt';
-
-	/**
-	 * The property holding the first working moment the term counts from.
-	 *
-	 * @var string
-	 */
-	public const TERM_STARTS_AT = 'termStartsAt';
+class IntakeTermStart implements IntakeTermStartInterface {
 
 	/**
 	 * The property holding whether the two differ.
@@ -155,7 +142,6 @@ class IntakeTermStart {
 
 		return $stamp;
 	}//end stampForCase()
-
 
 	/**
 	 * The moment a case's term starts: its `termStartsAt`.

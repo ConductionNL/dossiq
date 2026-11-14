@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\Service\Intake\TriageSleep;
+use OCA\Dossiq\Kernel\Contracts\TriageSleepInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -66,13 +66,13 @@ class TriageWakeJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory             $time           The time factory.
-	 * @param TriageSleep              $sleep          The triage sleep.
+	 * @param TriageSleepInterface              $sleep          The triage sleep.
 	 * @param LoggerInterface          $logger         The logger.
 	 * @param BackgroundServiceAccount $serviceAccount The account the sweep writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly TriageSleep $sleep,
+		private readonly TriageSleepInterface $sleep,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 	) {

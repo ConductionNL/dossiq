@@ -36,10 +36,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\PortalWithdrawalTargetInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\PreSaveCheck;
-use OCA\Dossiq\Service\CaseType\PortalWithdrawalTarget;
 use OCA\Dossiq\Service\CaseTypeStore;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -73,14 +73,14 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService        $settingsService Schema slug bridge.
+	 * @param SettingsServiceInterface        $settingsService Schema slug bridge.
 	 * @param CaseTypeLookup $caseTypes The case type resolver and store, and the portal withdrawal target.
 	 * @param IL10N                  $l10n            Translation service.
 	 * @param LoggerInterface        $logger          Structured logger.
 	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly CaseTypeLookup $caseTypes,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
@@ -205,7 +205,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 * @return string The translated sentence.
 	 */
 	private function sentence(array $refusal): string {
-		if ($refusal['reason'] === PortalWithdrawalTarget::NOT_OWN) {
+		if ($refusal['reason'] === PortalWithdrawalTargetInterface::NOT_OWN) {
 			return $this->l10n->t(
 				'A withdrawal lands on %s, which is not a status of this case type. Pick one of its own statuses.',
 				$refusal['parameters']

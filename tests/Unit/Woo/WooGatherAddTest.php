@@ -39,8 +39,12 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentDefaults;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
 use OCA\Dossiq\Service\Zaakdossier\CaseFileCollector;
+use OCA\Dossiq\Service\Email\CompoundFileStreams;
+use OCA\Dossiq\Service\Email\MessageThreadReader;
+use OCA\Dossiq\Service\Zaakdossier\CaseMailThreads;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\MailHeaderReader;
+use OCA\Dossiq\Tests\Support\CompoundFileBuilder;
 use OCA\Dossiq\Tests\Support\HeaderParsingTextExtraction;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\MakesCaseReviewerAccess;
@@ -85,6 +89,10 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Woo\WooPickRun
  * @uses \OCA\Dossiq\Woo\WooPickedFile
  * @uses \OCA\Dossiq\Service\Custody\DossierRegister
+ * @uses \OCA\Dossiq\Service\Zaakdossier\CaseMailThreads
+ * @uses \OCA\Dossiq\Service\Email\MessageThreadHeaders
+ * @uses \OCA\Dossiq\Service\Email\MessageThreadReader
+ * @uses \OCA\Dossiq\Service\Email\CompoundFileStreams
  */
 class WooGatherAddTest extends TestCase {
 
@@ -303,7 +311,7 @@ class WooGatherAddTest extends TestCase {
 		return new WooGatherAdd(
 			rootFolder: $rootFolder,
 			store: $store,
-			collector: new CaseFileCollector(store: $store, projection: $projection, mailHeaders: $this->mailHeaders()),
+			collector: new CaseFileCollector(store: $store, projection: $projection, mailHeaders: $this->mailHeaders(), mailThreads: $this->mailThreads(store: $store)),
 			sources: $sources,
 			accessGuard: $guard,
 			l10n: $l10n,
@@ -311,6 +319,23 @@ class WooGatherAddTest extends TestCase {
 			collection: $collection,
 		);
 	}//end service()
+
+	/**
+	 * The real conversation placement over the same register.
+	 *
+	 * @param DocumentRecordStore $store The record store.
+	 *
+	 * @return CaseMailThreads The placement.
+	 */
+	private function mailThreads(DocumentRecordStore $store): CaseMailThreads {
+		$caseDocuments = new WooCaseDocuments(settingsService: $this->settings, rootFolder: $this->createMock(IRootFolder::class), logger: $this->createMock(LoggerInterface::class));
+
+		return new CaseMailThreads(
+			provenance: new CaseDocumentProvenance(store: $store, caseDocuments: $caseDocuments),
+			store: $store,
+			reader: new MessageThreadReader(compoundFile: new CompoundFileStreams()),
+		);
+	}//end mailThreads()
 
 	/**
 	 * The real mail header reader over the header-parsing extraction fake.
@@ -403,6 +428,95 @@ class WooGatherAddTest extends TestCase {
 		// The .msg never reaches the parser; the headerless .eml does and yields no sender.
 		self::assertSame(['headerless.eml'], $this->extraction->parsed);
 	}//end testUnreadableHeadersAreMarked()
+
+	/**
+	 * REQ-WRC-006: a three-mail reply chain collected from two custodians shares one
+	 * conversation, the third naming only the mail it answers; a headerless `.msg`
+	 * stands alone. The report counts two conversations and lists the chain in date
+	 * order, and every written provenance fits the real document schema.
+	 *
+	 * @return void
+	 */
+	public function testAReplyChainFromTwoCustodiansIsOneConversation(): void {
+		$mails = [
+			31 => ['planning.eml', "Message-ID: <a1@mail.gemeente.nl>\r\nDate: Tue, 12 Mar 2024 09:15:00 +0100\r\nFrom: a.jansen@gemeente.nl\r\n\r\nPlanning"],
+			32 => ['re-planning.eml', "Message-ID: <b2@aannemer.nl>\r\nIn-Reply-To: <a1@mail.gemeente.nl>\r\nReferences: <a1@mail.gemeente.nl>\r\nDate: Wed, 13 Mar 2024 10:00:00 +0100\r\nFrom: b@aannemer.nl\r\n\r\nAkkoord"],
+			33 => ['re-re-planning.eml', "Message-ID: <c3@mail.gemeente.nl>\r\nIn-Reply-To: <b2@aannemer.nl>\r\nDate: Thu, 14 Mar 2024 11:00:00 +0100\r\nFrom: c@gemeente.nl\r\n\r\nDank"],
+			34 => ['losse-notitie.msg', CompoundFileBuilder::msg(properties: ['0037' => 'Notitie'])],
+		];
+		foreach ($mails as $fileId => [$name, $bytes]) {
+			$this->userFiles[$fileId] = $this->fileDouble(path: '/pjansen/files/Postvak/' . $name, fileId: $fileId, content: $bytes);
+		}
+
+		// The reply comes in first, from the second custodian; the chain still closes.
+		$results = $this->service()->addPicks(
+			caseId: self::CASE_ID,
+			picks: [
+				['source' => 'files', 'custodian' => 'Afdeling Vergunningen', 'key' => '33', 'location' => 'Postvak'],
+				['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '31', 'location' => 'Postvak'],
+				['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '32', 'location' => 'Postvak'],
+				['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '34', 'location' => 'Postvak'],
+			],
+			terms: 'Stationsweg',
+			user: $this->user, custodians: self::CUSTODIANS);
+
+		self::assertSame(['added', 'added', 'added', 'added'], array_column($results, 'status'));
+		$provenance = [];
+		$real = new RealSchemaValidator();
+		foreach ($results as $index => $result) {
+			$provenance[$index] = $this->register->row('informatieobject', $result['documentId'])['provenance'];
+			self::assertSame([], $real->errors(slug: 'informatieobject', payload: ['provenance' => $provenance[$index]], creating: false));
+		}
+
+		[$third, $first, $second, $note] = $provenance;
+		self::assertSame($first['threadId'], $second['threadId']);
+		self::assertSame($first['threadId'], $third['threadId']);
+		self::assertNotSame($first['threadId'], $note['threadId']);
+		self::assertSame('Afdeling Vergunningen', $third['custodian']);
+		self::assertSame(['b2@aannemer.nl'], $third['parentIds']);
+		self::assertSame('2024-03-13T09:00:00+00:00', $second['sentAt']);
+		self::assertArrayNotHasKey('sentAt', $note);
+		self::assertArrayHasKey('threadId', $real->schemas['zaakinformatieobject']['properties']['provenance']['properties']);
+
+		$report = $this->collection()->report(caseId: self::CASE_ID);
+		self::assertSame(4, $report['documents']);
+		self::assertSame(2, $report['conversations']);
+		self::assertSame(
+			[
+				['threadId' => $first['threadId'], 'messages' => [
+					['documentId' => $results[1]['documentId'], 'sentAt' => '2024-03-12T08:15:00+00:00'],
+					['documentId' => $results[2]['documentId'], 'sentAt' => '2024-03-13T09:00:00+00:00'],
+					['documentId' => $results[0]['documentId'], 'sentAt' => '2024-03-14T10:00:00+00:00'],
+				]],
+				['threadId' => $note['threadId'], 'messages' => [
+					['documentId' => $results[3]['documentId'], 'sentAt' => ''],
+				]],
+			],
+			$report['threads']
+		);
+	}//end testAReplyChainFromTwoCustodiansIsOneConversation()
+
+	/**
+	 * The collection report over the same register.
+	 *
+	 * @return WooCollection The collection.
+	 */
+	private function collection(): WooCollection {
+		$session = $this->createMock(IUserSession::class);
+		$store = new DocumentRecordStore(settingsService: $this->settings);
+		$caseDocuments = new WooCaseDocuments(settingsService: $this->settings, rootFolder: $this->createMock(IRootFolder::class), logger: $this->createMock(LoggerInterface::class));
+		$access = $this->caseReviewerAccessOver($this->settings);
+
+		return new WooCollection(
+			settingsService: $this->settings,
+			caseDocuments: $caseDocuments,
+			store: $store,
+			assessments: new WOODocumentAssessmentService(settingsService: $this->settings, userSession: $session, logger: $this->createMock(LoggerInterface::class), caseDocuments: $caseDocuments),
+			plans: new WooSearchPlans(settingsService: $this->settings, templates: $this->createMock(RecordTemplateReader::class), access: $access),
+			provenance: new CaseDocumentProvenance(store: $store, caseDocuments: $caseDocuments),
+			access: $access,
+		);
+	}//end collection()
 
 	/**
 	 * The outstanding count the assessment reads, over the same register.

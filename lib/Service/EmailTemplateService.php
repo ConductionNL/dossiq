@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\EmailTemplateServiceInterface;
 use OCA\Dossiq\Service\Email\EmailTemplateRepository;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -42,7 +43,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
  */
-class EmailTemplateService {
+class EmailTemplateService implements EmailTemplateServiceInterface {
 
 	/**
 	 * Default templates seeded when a caseType has no email templates.
@@ -300,7 +301,6 @@ class EmailTemplateService {
 			'templateId' => $templateId,
 		];
 	}//end prefillDraft()
-
 
 	/**
 	 * Resolve `{{name}}` placeholders against the variable map.

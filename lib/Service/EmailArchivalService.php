@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\EmailArchivalServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
@@ -40,7 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T05
  */
-class EmailArchivalService {
+class EmailArchivalService implements EmailArchivalServiceInterface {
 
 	use SearchesObjects;
 

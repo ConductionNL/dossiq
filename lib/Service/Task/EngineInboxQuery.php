@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Task;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\EngineInboxQueryInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/add-work-queue/spec.md#requirement-three-surfaces-one-rule
  */
-class EngineInboxQuery {
+class EngineInboxQuery implements EngineInboxQueryInterface {
 
     /**
      * OpenRegister's inbox criteria, reached by name.

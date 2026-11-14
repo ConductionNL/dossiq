@@ -117,6 +117,8 @@ import RemedyLodgeDialog from './dialogs/RemedyLodgeDialog.vue'
 import RemindDialog from './dialogs/RemindDialog.vue'
 import SearchPlanDialog from './dialogs/SearchPlanDialog.vue'
 import TaskAssignDialog from './dialogs/TaskAssignDialog.vue'
+// @spec openspec/changes/handler-asks-the-applicant-for-missing-information/specs/termijn-pause-extension/spec.md#requirement-the-handler-asks-for-missing-information-from-the-case-page-req-avr-05
+import AanvullingVragenModal from './modals/AanvullingVragenModal.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 import DeelzaakCreateModal from './modals/DeelzaakCreateModal.vue'
 // The Documents tab's upload dialog and bulk-action dialog
@@ -691,6 +693,13 @@ const registry = {
 		component: DocumentMetadataDialog,
 		propsSchema: {},
 		_note: "Upload metadata dialog. Opened by the Documents tab's object-list `dropZone`/upload-button action as `type: open-modal`, which hands over `props.files` (the dropped or picked File[]) the same way a header action's `open-modal` props arrive -- verbatim, no `@`-token resolution. `caseId` is passed for the same reason GenerateDocumentDialog's is, and falls back to the route when it still holds the literal token. Self-sufficient: fetches the informatieobjecttype catalog and performs the upload itself, since there is no parent DossierTab any more to do either.",
+	},
+	// @spec openspec/changes/handler-asks-the-applicant-for-missing-information/specs/termijn-pause-extension/spec.md#requirement-the-handler-asks-for-missing-information-from-the-case-page-req-avr-05
+	AanvullingVragenModal: {
+		kind: 'modal',
+		component: AanvullingVragenModal,
+		propsSchema: {},
+		_note: "Ask the applicant for missing information (board DqAanvullingVragen, REQ-AVR-05). Opened by the CaseDetail header action `request-information` as `type: open-modal`, offered while the case is open, not suspended and has no open aanvullingsverzoek. It posts to `POST /api/cases/{caseId}/information-request`, which sends the letter, suspends the statutory term and writes the record as one act; a refusal is shown as the server's own sentence and the form reports no success of its own. It reads the case type's pause reasons from the lifecycle answer and its `maxSuspensionDays` to bound the term; the server enforces both again.",
 	},
 	// @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	FileRequestDialog: {

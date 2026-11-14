@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseType\CaseTypeRightsByRole;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeRightsByRoleInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -47,14 +47,14 @@ class CaseTypeRightsController extends Controller {
 	 *
 	 * @param string               $appName The app name.
 	 * @param IRequest             $request The request.
-	 * @param CaseTypeRightsByRole $rights  Reads the rights matrix per role.
+	 * @param CaseTypeRightsByRoleInterface $rights  Reads the rights matrix per role.
 	 *
 	 * @spec openspec/changes/case-type-rights-by-role/specs/case-types/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseTypeRightsByRole $rights,
+		private readonly CaseTypeRightsByRoleInterface $rights,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

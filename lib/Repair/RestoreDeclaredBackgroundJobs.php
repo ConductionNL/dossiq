@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\App\IAppManager;
 use OCP\BackgroundJob\IJobList;
 use OCP\Migration\IOutput;
@@ -74,7 +74,7 @@ class RestoreDeclaredBackgroundJobs implements IRepairStep {
 	 * @spec openspec/specs/background-jobs/spec.md
 	 */
 	public function run(IOutput $output): void {
-		$declared = (array)($this->appManager->getAppInfo(Application::APP_ID)['background-jobs'] ?? []);
+		$declared = (array)($this->appManager->getAppInfo(AppIdentity::APP_ID)['background-jobs'] ?? []);
 		$added = 0;
 		foreach ($declared as $class) {
 			if ($this->jobList->has((string)$class, null) === false) {

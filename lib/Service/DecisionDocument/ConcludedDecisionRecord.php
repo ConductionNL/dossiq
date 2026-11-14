@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\DecisionDocument;
 
-use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
+use OCA\Dossiq\Kernel\Contracts\AdvisoryCommitteeServiceInterface;
 use OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -47,11 +47,11 @@ class ConcludedDecisionRecord {
 	/**
 	 * Constructor.
 	 *
-	 * @param AdvisoryCommitteeService $bacService Advice-request audit writer (Awb art. 7:13 lid 7).
+	 * @param AdvisoryCommitteeServiceInterface $bacService Advice-request audit writer (Awb art. 7:13 lid 7).
 	 * @param LoggerInterface          $logger     Logger.
 	 */
 	public function __construct(
-		private readonly AdvisoryCommitteeService $bacService,
+		private readonly AdvisoryCommitteeServiceInterface $bacService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

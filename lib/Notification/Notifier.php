@@ -30,7 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Notification;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
 use OCA\Dossiq\Service\QuotaLimitLabel;
 use OCP\IAppConfig;
 use OCP\IURLGenerator;
@@ -44,7 +45,7 @@ use OCP\Notification\UnknownNotificationException;
  *
  * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
  */
-class Notifier implements INotifier {
+class Notifier implements INotifier, NotifierInterface {
 
 	/**
 	 * The subject key for an @mention in a note.
@@ -65,11 +66,6 @@ class Notifier implements INotifier {
 	 * The subject key MilestoneStallActs dispatches for a stalled milestone.
 	 */
 	public const SUBJECT_MILESTONE_BOTTLENECK = 'milestone_bottleneck';
-
-	/**
-	 * The subject key CaseReassignmentService dispatches for a transfer digest.
-	 */
-	public const SUBJECT_CASES_REASSIGNED = 'cases_reassigned';
 
 	/**
 	 * Advice was asked of the recipient. Two keys, one event: AdviceNotifier
@@ -122,51 +118,6 @@ class Notifier implements INotifier {
 	 * A permit case has run past its decision term.
 	 */
 	public const SUBJECT_DSO_DEADLINE_OVERDUE = 'dso_deadline_overdue';
-
-	/**
-	 * A case's statutory term reached a rung its term definition tells the handler about.
-	 */
-	public const SUBJECT_TERM_NEARING = 'term_nearing';
-
-	/**
-	 * A case's statutory term ran out, and its term definition tells the handler about that.
-	 */
-	public const SUBJECT_TERM_EXCEEDED = 'term_exceeded';
-
-	/**
-	 * A StUF endpoint was taken out of service by the circuit breaker.
-	 */
-	public const SUBJECT_STUF_CIRCUIT_OPEN = 'stuf_circuit_open';
-
-	/**
-	 * A StUF message went unanswered.
-	 */
-	public const SUBJECT_STUF_TIMEOUT = 'stuf_timeout';
-
-	/**
-	 * A StUF message came back refused.
-	 */
-	public const SUBJECT_STUF_PERMANENT_ERROR = 'stuf_permanent_error';
-
-	/**
-	 * The applicant changed, added to or answered on their case in the portal.
-	 */
-	public const SUBJECT_APPLICANT_RESPONDED = 'applicant_responded';
-
-	/**
-	 * The applicant withdrew their case in the portal.
-	 */
-	public const SUBJECT_APPLICANT_WITHDREW = 'applicant_withdrew';
-
-	/**
-	 * The background jobs have no usable service account, so they wrote nothing.
-	 */
-	public const SUBJECT_BACKGROUND_ACCOUNT_MISSING = 'background_service_account_missing';
-
-	/**
-	 * The subject key QuotaGate dispatches when a tenant crosses its soft limit.
-	 */
-	public const SUBJECT_QUOTA_SOFT_LIMIT = 'tenant_quota_soft_limit';
 
 	/**
 	 * Every subject key this notifier can render.
@@ -245,7 +196,7 @@ class Notifier implements INotifier {
 	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 	 */
 	public function getID(): string {
-		return Application::APP_ID;
+		return AppIdentity::APP_ID;
 	}//end getID()
 
 	/**
@@ -282,7 +233,7 @@ class Notifier implements INotifier {
 		}
 
 		$subjectKey = (self::TEXT_KEY_ALIASES[$text->subjectKey] ?? $text->subjectKey);
-		$custom     = trim($this->appConfig->getValueString(Application::APP_ID, self::TEXT_KEY_PREFIX.$subjectKey, ''));
+		$custom     = trim($this->appConfig->getValueString(AppIdentity::APP_ID, self::TEXT_KEY_PREFIX.$subjectKey, ''));
 		if ($custom === '') {
 			return '';
 		}
@@ -310,7 +261,7 @@ class Notifier implements INotifier {
 	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 	 */
 	public function prepare(INotification $notification, string $languageCode): INotification {
-		if ($notification->getApp() !== Application::APP_ID) {
+		if ($notification->getApp() !== AppIdentity::APP_ID) {
 			throw new UnknownNotificationException('Notification not handled by Dossiq');
 		}
 
@@ -321,7 +272,7 @@ class Notifier implements INotifier {
 
 		$text = new NotificationText();
 		$text->subjectKey = $subjectKey;
-		$text->l = $this->l10nFactory->get(Application::APP_ID, $languageCode);
+		$text->l = $this->l10nFactory->get(AppIdentity::APP_ID, $languageCode);
 		$text->parameters = $notification->getSubjectParameters();
 
 		[$subject, $message] = $this->wording(text: $text);
@@ -334,7 +285,7 @@ class Notifier implements INotifier {
 		$notification->setParsedSubject($subject);
 		$notification->setParsedMessage($message);
 		$notification->setIcon(
-			$this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath(Application::APP_ID, 'app-dark.svg'))
+			$this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath(AppIdentity::APP_ID, 'app-dark.svg'))
 		);
 
 		return $notification;

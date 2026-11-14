@@ -38,9 +38,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Portal\PortalContributionProvider;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
@@ -87,13 +87,13 @@ class WooDecisionNotice {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService OpenRegister's object service.
+	 * @param SettingsServiceInterface $settingsService OpenRegister's object service.
 	 * @param IURLGenerator   $urlGenerator    Makes the publication link absolute, host and port included.
 	 * @param IFactory        $l10nFactory     The Dutch text, whatever the request's language.
 	 * @param LoggerInterface $logger          Records a message that could not be written.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly IFactory $l10nFactory,
 		private readonly LoggerInterface $logger,
@@ -122,7 +122,7 @@ class WooDecisionNotice {
 		}
 
 		try {
-			$l10n = $this->l10nFactory->get(Application::APP_ID, self::LANGUAGE);
+			$l10n = $this->l10nFactory->get(AppIdentity::APP_ID, self::LANGUAGE);
 			$link = $this->urlGenerator->getAbsoluteURL(self::SITE_PUBLICATION_PAGE . rawurlencode($publicationId));
 			$title = (string)($case['title'] ?? '');
 
@@ -134,7 +134,7 @@ class WooDecisionNotice {
 				'read' => false,
 				'receivedAt' => gmdate('c'),
 				'ruleKey' => PortalContributionProvider::RULE_WOO_REQUEST_PUBLISHED,
-				'recordLink' => ['app' => Application::APP_ID, 'collection' => self::CASE_COLLECTION, 'id' => $caseId],
+				'recordLink' => ['app' => AppIdentity::APP_ID, 'collection' => self::CASE_COLLECTION, 'id' => $caseId],
 			];
 
 			$this->runAsSystemIfAvailable(
@@ -150,7 +150,7 @@ class WooDecisionNotice {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'WooDecisionNotice: the resident could not be told the decision is published',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'publicationId' => $publicationId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'publicationId' => $publicationId, 'error' => $e->getMessage()]
 			);
 			return false;
 		}//end try

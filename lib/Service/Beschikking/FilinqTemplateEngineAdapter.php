@@ -44,13 +44,14 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
+ * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.2
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\IUserSession;
@@ -108,17 +109,25 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * @param SettingsService $settings Supplies the case register/schema a template binds to.
 	 * @param IUserSession $userSession The acting user; filinq stores the output in their Files.
 	 * @param LoggerInterface $logger Structured logger.
+	 * @param DecisionTemplateEngine $engines The engine the case type names for a template.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly SettingsService $settings,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly DecisionTemplateEngine $engines,
 	) {
 	}//end __construct()
 
 	/**
 	 * Render a beschikking template through filinq and store the result.
+	 *
+	 * The engine the case type names for the template (`filinq`, or
+	 * `vendor:<sourceSlug>` for a document vendor reached through integriq)
+	 * travels to filinq with the render. A vendor render that fails is refused
+	 * with a message naming the vendor; it never falls back to filinq's own
+	 * engine or to the mock.
 	 *
 	 * @param string $templateId The filinq template UUID.
 	 * @param array<string, mixed> $context The zaakdata + beschikking context.
@@ -128,6 +137,7 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * @throws RuntimeException When filinq is absent, no user is acting, or the render fails.
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.2
 	 */
 	public function render(string $templateId, array $context): array {
 		$documentService = FleetAppId::getService($this->container, 'filinq', self::DOCUMENT_SERVICE);
@@ -147,6 +157,7 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		}
 
 		$caseId = (string)($context['caseId'] ?? '');
+		$engine = $this->engines->engineFor(caseId: $caseId, templateId: $templateId);
 
 		try {
 			$result = $documentService->generateDocument(
@@ -159,12 +170,22 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 					'caseId' => $caseId,
 					'filename' => $this->buildFilename(caseId: $caseId),
 					'output' => ['mode' => 'both'],
+					'engine' => $engine,
 				]
 			);
 		} catch (Throwable $e) {
+			$vendor = DecisionTemplateEngine::vendorSlugOf(engine: $engine);
+			if ($vendor !== null) {
+				$this->logger->error(
+					'A document vendor refused a beschikking render',
+					['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'source' => $vendor, 'exception' => $e->getMessage()]
+				);
+				throw new RuntimeException(DecisionTemplateEngine::vendorName(slug: $vendor) . ' is niet bereikbaar', 0, $e);
+			}
+
 			$this->logger->error(
 				'Filinq refused a beschikking render',
-				['app' => Application::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('filinq_render_failed: ' . $e->getMessage(), 0, $e);
 		}
@@ -227,7 +248,7 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Filinq does not know the beschikking template',
-				['app' => Application::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('filinq_template_unknown: ' . $templateId, 0, $e);
 		}
@@ -279,7 +300,7 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Filinq could not list the versions of a beschikking template',
-				['app' => Application::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -366,7 +387,7 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		if ($register === '' || $schema === '') {
 			$this->logger->warning(
 				'Rendering a beschikking without the case object: register or case_schema is unset',
-				['app' => Application::APP_ID, 'caseId' => $caseId]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId]
 			);
 			return [];
 		}

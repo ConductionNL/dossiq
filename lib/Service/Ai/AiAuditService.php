@@ -37,12 +37,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Ai;
 
+use OCA\Dossiq\Kernel\Contracts\AiAuditServiceInterface;
+
 /**
  * Records and reads the AI oversight audit trail.
  *
  * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
  */
-class AiAuditService {
+class AiAuditService implements AiAuditServiceInterface {
 	/**
 	 * Constructor.
 	 *
@@ -109,7 +111,6 @@ class AiAuditService {
 				$entry[$key] = (string)$context[$key];
 			}
 		}
-
 
 		$this->recordAuditEntry(entry: $entry);
 
