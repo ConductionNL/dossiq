@@ -130,7 +130,10 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 			$this->runAsSystemIfAvailable(
 				objectService: $objectService,
 				operation: function () use ($objectService, $register, $schema, $output): void {
-					$this->copySchema(objectService: $objectService, register: $register, schema: $schema, output: $output);
+					$this->copySchema(
+						objectService: $objectService,
+						copy: new BezwaarAuditCopy(register: $register, schema: $schema, output: $output),
+					);
 				}
 			);
 		}
@@ -139,21 +142,19 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 	/**
 	 * Copy the arrays of every record of one schema, page by page.
 	 *
-	 * @param object  $objectService OpenRegister's ObjectService.
-	 * @param string  $register      The register.
-	 * @param string  $schema        The schema.
-	 * @param IOutput $output        Repair output.
+	 * @param object           $objectService OpenRegister's ObjectService.
+	 * @param BezwaarAuditCopy $copy          The register, the schema and the repair output.
 	 *
 	 * @return void
 	 */
-	private function copySchema(object $objectService, string $register, string $schema, IOutput $output): void {
+	private function copySchema(object $objectService, BezwaarAuditCopy $copy): void {
 		$copied = 0;
 		$failed = [];
 		$offset = 0;
 		do {
-			$query = ['filters' => ['register' => $register, 'schema' => $schema], 'limit' => self::PAGE, 'offset' => $offset];
+			$query = ['filters' => ['register' => $copy->register, 'schema' => $copy->schema], 'limit' => self::PAGE, 'offset' => $offset];
 			$rows = (array)$objectService->findAll($query);
-			[$pageCopied, $pageFailed] = $this->copyPage(rows: $rows, register: $register, schema: $schema, output: $output);
+			[$pageCopied, $pageFailed] = $this->copyPage(rows: $rows, copy: $copy);
 			$copied += $pageCopied;
 			$failed = array_merge($failed, $pageFailed);
 
@@ -161,24 +162,22 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 			$more = (count($rows) === self::PAGE);
 		} while ($more === true);
 
-		$output->info($schema.': '.$copied.' embedded bezwaar audit entries copied, '.count($failed).' records not copied.');
+		$copy->output->info($copy->schema.': '.$copied.' embedded bezwaar audit entries copied, '.count($failed).' records not copied.');
 	}//end copySchema()
 
 	/**
 	 * Copy the arrays of every record on one page.
 	 *
 	 * @param array<int, mixed> $rows The page of records.
-	 * @param string $register The register.
-	 * @param string $schema The schema.
-	 * @param IOutput $output Repair output.
+	 * @param BezwaarAuditCopy  $copy The register, the schema and the repair output.
 	 *
 	 * @return array{0: int, 1: list<string>} How many entries were copied, and the records that could not be.
 	 */
-	private function copyPage(array $rows, string $register, string $schema, IOutput $output): array {
+	private function copyPage(array $rows, BezwaarAuditCopy $copy): array {
 		$copied = 0;
 		$failed = [];
 		foreach ($this->normaliseObjectRows(rows: $rows) as $row) {
-			[$count, $failedUuid] = $this->copyRow(register: $register, schema: $schema, row: $row, output: $output);
+			[$count, $failedUuid] = $this->copyRow(copy: $copy, row: $row);
 			$copied += $count;
 			if ($failedUuid !== null) {
 				$failed[] = $failedUuid;
@@ -191,14 +190,12 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 	/**
 	 * Copy one record's array, reporting a record that could not be copied.
 	 *
-	 * @param string $register The register.
-	 * @param string $schema The schema.
-	 * @param array<string, mixed> $row The record.
-	 * @param IOutput $output Repair output.
+	 * @param BezwaarAuditCopy     $copy The register, the schema and the repair output.
+	 * @param array<string, mixed> $row  The record.
 	 *
 	 * @return array{0: int, 1: string|null} How many entries were copied, and the record when it could not be.
 	 */
-	private function copyRow(string $register, string $schema, array $row, IOutput $output): array {
+	private function copyRow(BezwaarAuditCopy $copy, array $row): array {
 		$uuid = (string)($row['@self']['id'] ?? ($row['id'] ?? ($row['uuid'] ?? '')));
 		$entries = $row['auditTrail'] ?? [];
 		if ($uuid === '' || is_array($entries) === false || $entries === []) {
@@ -206,9 +203,9 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 		}
 
 		try {
-			return [$this->copyRecord(register: $register, schema: $schema, uuid: $uuid, entries: array_values($entries)), null];
+			return [$this->copyRecord(copy: $copy, uuid: $uuid, entries: array_values($entries)), null];
 		} catch (Throwable $e) {
-			$this->reportNotCopied(schema: $schema, uuid: $uuid, error: $e, output: $output);
+			$this->reportNotCopied(copy: $copy, uuid: $uuid, error: $e);
 			return [0, $uuid];
 		}
 	}//end copyRow()
@@ -216,34 +213,32 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 	/**
 	 * Report a record whose entries could not be copied.
 	 *
-	 * @param string $schema The schema.
-	 * @param string $uuid The record.
-	 * @param Throwable $error Why the copy failed.
-	 * @param IOutput $output Repair output.
+	 * @param BezwaarAuditCopy $copy  The schema and the repair output.
+	 * @param string           $uuid  The record.
+	 * @param Throwable        $error Why the copy failed.
 	 *
 	 * @return void
 	 */
-	private function reportNotCopied(string $schema, string $uuid, Throwable $error, IOutput $output): void {
-		$output->warning('The bezwaar audit entries of '.$schema.' '.$uuid.' could not be copied: '.$error->getMessage());
+	private function reportNotCopied(BezwaarAuditCopy $copy, string $uuid, Throwable $error): void {
+		$copy->output->warning('The bezwaar audit entries of '.$copy->schema.' '.$uuid.' could not be copied: '.$error->getMessage());
 		$this->logger->error(
 			'Dossiq: embedded bezwaar audit entries not copied',
-			['schema' => $schema, 'object' => $uuid, 'exception' => $error->getMessage()]
+			['schema' => $copy->schema, 'object' => $uuid, 'exception' => $error->getMessage()]
 		);
 	}//end reportNotCopied()
 
 	/**
 	 * Copy one record's entries that are not on its trail yet, in order.
 	 *
-	 * @param string                           $register The register.
-	 * @param string                           $schema   The schema.
-	 * @param string                           $uuid     The record.
-	 * @param array<int, array<string, mixed>> $entries  The embedded entries, in array order.
+	 * @param BezwaarAuditCopy                 $copy    The register and the schema.
+	 * @param string                           $uuid    The record.
+	 * @param array<int, array<string, mixed>> $entries The embedded entries, in array order.
 	 *
 	 * @return int How many entries were copied.
 	 *
 	 * @throws RuntimeException When an entry names no event or cannot be written.
 	 */
-	private function copyRecord(string $register, string $schema, string $uuid, array $entries): int {
+	private function copyRecord(BezwaarAuditCopy $copy, string $uuid, array $entries): int {
 		$done = $this->copiedIndexes(objectUuid: $uuid);
 		$copied = 0;
 		foreach ($entries as $index => $entry) {
@@ -261,8 +256,8 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 			}
 
 			$this->auditTrail->write(
-				register: $register,
-				schema: $schema,
+				register: $copy->register,
+				schema: $copy->schema,
 				objectUuid: $uuid,
 				action: BezwaarAuditTrailInterface::ACTION_PREFIX.$event,
 				context: $entry + ['migratedFrom' => 'auditTrail', 'migratedIndex' => $index],
