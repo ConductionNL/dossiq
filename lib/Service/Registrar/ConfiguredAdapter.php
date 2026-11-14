@@ -115,11 +115,12 @@ final class ConfiguredAdapter {
 			return $container->get($mockClass);
 		}
 
-		if (self::isUnusable(container: $container, logger: $logger, configKey: $configKey, named: $named, interface: $interface) === true) {
+		$binding = new AdapterBinding(container: $container, logger: $logger, configKey: $configKey, named: $named);
+		if (self::isUnusable(binding: $binding, interface: $interface) === true) {
 			return $container->get($mockClass);
 		}
 
-		return self::buildNamed(container: $container, logger: $logger, configKey: $configKey, named: $named, mockClass: $mockClass);
+		return self::buildNamed(binding: $binding, mockClass: $mockClass);
 	}//end resolve()
 
 	/**
@@ -131,29 +132,21 @@ final class ConfiguredAdapter {
 	 * mock still runs, because refusing to boot the app over one config
 	 * value helps nobody, but the log says plainly what happened.
 	 *
-	 * @param ContainerInterface $container The DI container.
-	 * @param LoggerInterface $logger The logger.
-	 * @param string $configKey App-config key naming the adapter class.
-	 * @param string $named The class the key names.
+	 * @param AdapterBinding $binding The container, logger, config key and the class the key names.
 	 * @param string $interface The seam the adapter implements.
 	 *
 	 * @return bool True when the mock has to run instead.
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
-	private static function isUnusable(
-		ContainerInterface $container,
-		LoggerInterface $logger,
-		string $configKey,
-		string $named,
-		string $interface,
-	): bool {
+	private static function isUnusable(AdapterBinding $binding, string $interface): bool {
+		$named = $binding->named;
 		if (class_exists($named) === false || is_a($named, $interface, true) === false) {
-			$logger->error(
-				$container->get(IL10N::class)->t(
+			$binding->logger->error(
+				$binding->container->get(IL10N::class)->t(
 					'The adapter class named in %1$s cannot be used: %2$s is missing or does not '
 					. 'implement the seam. A mock adapter is running in its place.',
-					[$configKey, $named]
+					[$binding->configKey, $named]
 				),
 				['app' => AppIdentity::APP_ID]
 			);
@@ -167,27 +160,20 @@ final class ConfiguredAdapter {
 	/**
 	 * Build the named adapter, or the mock when building it fails.
 	 *
-	 * @param ContainerInterface $container The DI container.
-	 * @param LoggerInterface $logger The logger.
-	 * @param string $configKey App-config key naming the adapter class.
-	 * @param string $named The class the key names.
+	 * @param AdapterBinding $binding The container, logger, config key and the class the key names.
 	 * @param string $mockClass The built-in mock.
 	 *
 	 * @return mixed The adapter.
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
-	private static function buildNamed(
-		ContainerInterface $container,
-		LoggerInterface $logger,
-		string $configKey,
-		string $named,
-		string $mockClass,
-	): mixed {
+	private static function buildNamed(AdapterBinding $binding, string $mockClass): mixed {
+		$container = $binding->container;
+		$configKey = $binding->configKey;
 		try {
-			return $container->get($named);
+			return $container->get($binding->named);
 		} catch (Throwable $e) {
-			$logger->error(
+			$binding->logger->error(
 				$container->get(IL10N::class)->t(
 					'The adapter class named in %1$s could not be built. A mock adapter is running '
 					. 'in its place.',
