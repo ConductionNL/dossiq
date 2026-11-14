@@ -83,30 +83,36 @@ class ResumeTermHandler implements ActionHandlerInterface {
 		}
 
 		try {
-			$instance = $this->terms->getTermijnInstanceForZaak($caseId);
-			if ($instance === null) {
-				return new ActionResult(succeeded: false, error: 'no_term_on_this_case');
-			}
-
-			if ((string)($instance['status'] ?? '') !== 'paused') {
-				return new ActionResult(succeeded: false, error: 'term_not_paused');
-			}
-
-			$resumed = $this->pauses->resumeAfterPauze(
-				termInstanceId: (string)($instance['id'] ?? ($instance['uuid'] ?? ''))
-			);
-
-			return new ActionResult(
-				succeeded: true,
-				data: ['endDate' => (string)($resumed['endDateCurrent'] ?? '')]
-			);
+			return $this->resume(caseId: $caseId);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'ResumeTermHandler: the term could not be resumed',
-				['exception' => $e->getMessage(), 'case' => $caseId]
-			);
+			$this->logger->error('ResumeTermHandler: the term could not be resumed', ['exception' => $e->getMessage(), 'case' => $caseId]);
 
 			return new ActionResult(succeeded: false, error: 'resume_term_failed');
 		}//end try
 	}//end handle()
+
+	/**
+	 * Resume the case's paused term.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return ActionResult The outcome.
+	 */
+	private function resume(string $caseId): ActionResult {
+		$instance = $this->terms->getTermijnInstanceForZaak($caseId);
+		if ($instance === null) {
+			return new ActionResult(succeeded: false, error: 'no_term_on_this_case');
+		}
+
+		if ((string)($instance['status'] ?? '') !== 'paused') {
+			return new ActionResult(succeeded: false, error: 'term_not_paused');
+		}
+
+		$resumed = $this->pauses->resumeAfterPauze(termInstanceId: (string)($instance['id'] ?? ($instance['uuid'] ?? '')));
+
+		return new ActionResult(
+			succeeded: true,
+			data: ['endDate' => (string)($resumed['endDateCurrent'] ?? '')]
+		);
+	}//end resume()
 }//end class

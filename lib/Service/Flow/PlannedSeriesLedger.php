@@ -50,6 +50,8 @@ use Throwable;
  * Counts a series' firings and reads the cases it opened.
  *
  * @spec openspec/specs/workflow-definition-engine/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PlannedSeriesLedger {
 
@@ -171,39 +173,73 @@ class PlannedSeriesLedger {
 	 * @return array<int, mixed> The rows.
 	 */
 	private function rowsOf(string $flowId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$scope = $this->seriesScope();
+		if ($scope === null) {
 			return [];
 		}
 
 		try {
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => $register,
-						'schema' => $schema,
-						'handoffSource' => (PlannedFollowUpDocument::SERIES_SOURCE . $flowId),
-					],
-					'limit' => self::PAGE,
-				],
-			);
+			$rows = $scope['objectService']->findAll($this->seriesQuery(scope: $scope, flowId: $flowId));
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'PlannedSeriesLedger: could not read the cases a series created',
-				['flow' => $flowId, 'exception' => $e->getMessage()]
+				'PlannedSeriesLedger: could not read the cases a series created', ['flow' => $flowId, 'exception' => $e->getMessage()]
 			);
 
 			return [];
 		}
 
+		return $this->resultsOf(rows: $rows);
+	}//end rowsOf()
+
+	/**
+	 * The object service, register and case schema, or null when one is missing.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|null The scope.
+	 */
+	private function seriesScope(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
+	}//end seriesScope()
+
+	/**
+	 * The query for the cases one series opened.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $scope  The scope.
+	 * @param string                                                          $flowId The series flow's uuid.
+	 *
+	 * @return array<string, mixed> The query.
+	 */
+	private function seriesQuery(array $scope, string $flowId): array {
+		return [
+			'filters' => [
+				'register' => $scope['register'],
+				'schema' => $scope['schema'],
+				'handoffSource' => (PlannedFollowUpDocument::SERIES_SOURCE . $flowId),
+			],
+			'limit' => self::PAGE,
+		];
+	}//end seriesQuery()
+
+	/**
+	 * The rows of a findAll() answer, paginated or not.
+	 *
+	 * @param mixed $rows The answer.
+	 *
+	 * @return array<int, mixed> The rows.
+	 */
+	private function resultsOf(mixed $rows): array {
 		if (is_array($rows) === true && isset($rows['results']) === true) {
 			return (array)$rows['results'];
 		}
 
 		return (array)$rows;
-	}//end rowsOf()
+	}//end resultsOf()
 
 	/**
 	 * The rows as `{id, title}` pairs, dropping anything with no id.

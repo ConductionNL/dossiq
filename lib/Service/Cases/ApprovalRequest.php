@@ -97,6 +97,26 @@ class ApprovalRequest implements ApprovalRequestInterface {
 			);
 		}
 
+		$gate = $this->gateOf(case: $case, act: $act);
+
+		$decisionRef = $this->raiseDecision(caseId: $caseId, case: $case, gate: $gate, userId: $userId);
+
+		return $this->recordReference(case: $case, gate: $gate, decisionRef: $decisionRef);
+	}//end raise()
+
+	/**
+	 * The approval gate the case type declares for the act.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 * @param string               $act  The gated act.
+	 *
+	 * @return array{act: string, decisionType: string, label: string} The gate.
+	 *
+	 * @throws RefusedException When the act is not gated.
+	 *
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 */
+	private function gateOf(array $case, string $act): array {
 		$caseType = $this->caseTypes->effectiveCaseType(caseTypeId: trim((string)($case['caseType'] ?? '')));
 		$gate = ApprovalGateDeclaration::gateFor(caseType: $caseType, act: $act);
 		if ($gate === []) {
@@ -107,6 +127,24 @@ class ApprovalRequest implements ApprovalRequestInterface {
 			);
 		}
 
+		return $gate;
+	}//end gateOf()
+
+	/**
+	 * Raise the decidiq decision the gate waits on.
+	 *
+	 * @param string                                                  $caseId The case UUID.
+	 * @param array<string, mixed>                                    $case   The case.
+	 * @param array{act: string, decisionType: string, label: string} $gate   The gate.
+	 * @param string                                                  $userId Who is asking.
+	 *
+	 * @return string The decision reference.
+	 *
+	 * @throws RefusedException When decidiq cannot be reached.
+	 *
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 */
+	private function raiseDecision(string $caseId, array $case, array $gate, string $userId): string {
 		try {
 			$decisionRef = $this->decisions->raiseDecision(
 				decisionType: $gate['decisionType'],
@@ -128,6 +166,21 @@ class ApprovalRequest implements ApprovalRequestInterface {
 			);
 		}
 
+		return $decisionRef;
+	}//end raiseDecision()
+
+	/**
+	 * Record the decision reference on the case.
+	 *
+	 * @param array<string, mixed>                                    $case        The case.
+	 * @param array{act: string, decisionType: string, label: string} $gate        The gate.
+	 * @param string                                                  $decisionRef The decision reference.
+	 *
+	 * @return array{act: string, decisionRef: string, raisedAt: string} The link that was recorded.
+	 *
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 */
+	private function recordReference(array $case, array $gate, string $decisionRef): array {
 		$raisedAt = (new DateTimeImmutable())->format('c');
 		$case[ApprovalGateDeclaration::REFERENCES] = ApprovalGateDeclaration::withReference(
 			case: $case,
@@ -138,5 +191,5 @@ class ApprovalRequest implements ApprovalRequestInterface {
 		$this->store->saveCase(case: $case);
 
 		return ['act' => $gate['act'], 'decisionRef' => $decisionRef, 'raisedAt' => $raisedAt];
-	}//end raise()
+	}//end recordReference()
 }//end class

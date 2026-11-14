@@ -327,26 +327,10 @@ class DocumentRelevance implements DocumentRelevanceInterface {
 			throw $this->unstored(previous: null);
 		}
 
-		$uuid = ($review['id'] ?? ($review['uuid'] ?? null));
-		if ($uuid !== null) {
-			$uuid = (string)$uuid;
-		}
+		$uuid = $this->reviewUuid(review: $review);
 
 		unset($review['@self'], $review['id'], $review['uuid']);
-		try {
-			$saved = $this->settingsService->getObjectService()->saveObject(
-				object: $review,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
-				uuid: $uuid,
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: a Document review could not be written',
-				['app' => AppIdentity::APP_ID, 'document' => ($review['documentRef'] ?? ''), 'exception' => $e->getMessage()]
-			);
-			throw $this->unstored(previous: $e);
-		}
+		$saved = $this->storeReview(review: $review, uuid: $uuid);
 
 		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
 			return (array)$saved->jsonSerialize();
@@ -354,6 +338,67 @@ class DocumentRelevance implements DocumentRelevanceInterface {
 
 		return (array)$saved;
 	}//end save()
+
+	/**
+	 * The review's id, or null for a new review.
+	 *
+	 * @param array<string, mixed> $review The review.
+	 *
+	 * @return string|null The id.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	private function reviewUuid(array $review): ?string {
+		$uuid = ($review['id'] ?? ($review['uuid'] ?? null));
+		if ($uuid !== null) {
+			$uuid = (string)$uuid;
+		}
+
+		return $uuid;
+	}//end reviewUuid()
+
+	/**
+	 * Write the review, logging a failure and refusing it.
+	 *
+	 * @param array<string, mixed> $review The review, without its ids.
+	 * @param string|null          $uuid   The id, or null for a new review.
+	 *
+	 * @return mixed The saved object.
+	 *
+	 * @throws RefusedException When the review cannot be written.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	private function storeReview(array $review, ?string $uuid): mixed {
+		try {
+			return $this->settingsService->getObjectService()->saveObject(
+				object: $review,
+				register: $this->settingsService->getConfigValue('register'),
+				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
+				uuid: $uuid,
+			);
+		} catch (Throwable $e) {
+			throw $this->failedWrite(review: $review, error: $e);
+		}
+	}//end storeReview()
+
+	/**
+	 * Log a review that could not be written, and the refusal for it.
+	 *
+	 * @param array<string, mixed> $review The review.
+	 * @param Throwable            $error  The failure.
+	 *
+	 * @return RefusedException The refusal to throw.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	private function failedWrite(array $review, Throwable $error): RefusedException {
+		$this->logger->error(
+			'Dossiq: a Document review could not be written',
+			['app' => AppIdentity::APP_ID, 'document' => ($review['documentRef'] ?? ''), 'exception' => $error->getMessage()]
+		);
+		return $this->unstored(previous: $error);
+	}//end failedWrite()
 
 	/**
 	 * The refusal when a review cannot be stored.

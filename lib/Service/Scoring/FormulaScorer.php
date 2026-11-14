@@ -42,6 +42,8 @@ use InvalidArgumentException;
  * Evaluates a scoring formula's expression against named values.
  *
  * @spec openspec/specs/dossiq-procurement-evaluation-award/spec.md#requirement-req-eva-003-scoring-formulas-shall-be-data-not-code
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class FormulaScorer {
 
@@ -245,12 +247,7 @@ class FormulaScorer {
 	 * @throws InvalidArgumentException On a malformed factor or a missing value.
 	 */
 	private function factor(): float {
-		$token = ($this->tokens[$this->position] ?? null);
-		if ($token === null) {
-			throw new InvalidArgumentException('scoring_formula_malformed');
-		}
-
-		$this->position++;
+		$token = $this->nextToken();
 		if ($token[0] === 'num') {
 			return (float)$token[1];
 		}
@@ -260,11 +257,52 @@ class FormulaScorer {
 		}
 
 		if ($token === ['op', '(']) {
-			$value = $this->nested(step: fn (): float => $this->sum());
-			$this->expectOp(op: ')');
-			return $value;
+			return $this->parenthesised();
 		}
 
+		return $this->nameFactor(token: $token);
+	}//end factor()
+
+	/**
+	 * Take the next token.
+	 *
+	 * @return array{0: string, 1: mixed} The token.
+	 *
+	 * @throws InvalidArgumentException When the formula ends here.
+	 */
+	private function nextToken(): array {
+		$token = ($this->tokens[$this->position] ?? null);
+		if ($token === null) {
+			throw new InvalidArgumentException('scoring_formula_malformed');
+		}
+
+		$this->position++;
+		return $token;
+	}//end nextToken()
+
+	/**
+	 * A parenthesised sum, after its opening parenthesis.
+	 *
+	 * @return float
+	 *
+	 * @throws InvalidArgumentException On a malformed sum or a missing closing parenthesis.
+	 */
+	private function parenthesised(): float {
+		$value = $this->nested(step: fn (): float => $this->sum());
+		$this->expectOp(op: ')');
+		return $value;
+	}//end parenthesised()
+
+	/**
+	 * A factor that starts with a name: a call or a named value.
+	 *
+	 * @param array{0: string, 1: mixed} $token The token taken.
+	 *
+	 * @return float
+	 *
+	 * @throws InvalidArgumentException On a malformed factor or a missing value.
+	 */
+	private function nameFactor(array $token): float {
 		if ($token[0] === 'name' && $this->peekOp(op: '(') === true) {
 			return $this->call(name: $token[1]);
 		}
@@ -278,7 +316,7 @@ class FormulaScorer {
 		}
 
 		throw new InvalidArgumentException('scoring_formula_malformed');
-	}//end factor()
+	}//end nameFactor()
 
 	/**
 	 * A call of one of the allowed functions.

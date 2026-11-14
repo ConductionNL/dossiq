@@ -124,41 +124,128 @@ class CaseRoleHolder {
 	 */
 	public function bind(array $case, string $uid, string $genericRole, string $displayName): bool {
 		$caseId = $this->idOf(row: $case);
-		if ($caseId === '' || trim($uid) === '' || $this->holdsAny(case: $case, uid: $uid, genericRoles: [$genericRole]) === true) {
+		$roleType = $this->bindableRoleType(caseRow: $case, caseId: $caseId, uid: $uid, genericRole: $genericRole);
+		if ($roleType === null) {
 			return false;
 		}
 
-		$roleTypes = $this->roleTypeIds(genericRoles: [$genericRole], caseTypeId: trim((string)($case['caseType'] ?? '')));
+		try {
+			return $this->saveBinding(caseId: $caseId, uid: $uid, roleType: $roleType, displayName: $displayName) !== null;
+		} catch (Throwable $e) {
+			$this->logNotBound(caseId: $caseId, genericRole: $genericRole, error: $e);
+			return false;
+		}
+	}//end bind()
+
+	/**
+	 * The role type to bind the person to, or null when no binding is to be added.
+	 *
+	 * @param array<string, mixed> $caseRow The stored case.
+	 * @param string $caseId The case id.
+	 * @param string $uid The person's Nextcloud user id.
+	 * @param string $genericRole The generic role.
+	 *
+	 * @return string|null The role type uuid, or null.
+	 *
+	 * @throws RuntimeException When the role types or bindings cannot be read.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function bindableRoleType(array $caseRow, string $caseId, string $uid, string $genericRole): ?string {
+		if ($this->cannotBind(caseRow: $caseRow, caseId: $caseId, uid: $uid, genericRole: $genericRole) === true) {
+			return null;
+		}
+
+		return $this->roleTypeToBind(caseRow: $caseRow, caseId: $caseId, genericRole: $genericRole);
+	}//end bindableRoleType()
+
+	/**
+	 * Store the binding of a person to a role type on a case.
+	 *
+	 * @param string $caseId The case id.
+	 * @param string $uid The person's Nextcloud user id.
+	 * @param string $roleType The role type uuid.
+	 * @param string $displayName What the People tab calls them; '' reads their Nextcloud name.
+	 *
+	 * @return array<string, mixed>|null The stored binding, or null.
+	 *
+	 * @throws RuntimeException When OpenRegister is absent.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function saveBinding(string $caseId, string $uid, string $roleType, string $displayName): ?array {
+		return $this->saveObjectAsArray(
+			objectService: $this->objectService(),
+			register: $this->settingsService->getConfigValue('register'),
+			schema: $this->settingsService->getConfigValue('role_schema'),
+			object: [
+				'name' => $this->nameOf(uid: trim($uid), displayName: $displayName),
+				'roleType' => $roleType,
+				'case' => $caseId,
+				'participant' => CaseSeats::USER_PREFIX . trim($uid),
+			],
+		);
+	}//end saveBinding()
+
+	/**
+	 * Log that the person could not be bound to the case.
+	 *
+	 * @param string $caseId The case id.
+	 * @param string $genericRole The generic role.
+	 * @param Throwable $error Why the binding failed.
+	 *
+	 * @return void
+	 */
+	private function logNotBound(string $caseId, string $genericRole, Throwable $error): void {
+		$this->logger->warning(
+			'Dossiq: the reader could not be bound to the case',
+			['caseId' => $caseId, 'genericRole' => $genericRole, 'exception' => $error->getMessage()],
+		);
+	}//end logNotBound()
+
+	/**
+	 * Whether the case or the person is missing, or the person holds the role already.
+	 *
+	 * @param array<string, mixed> $caseRow     The stored case.
+	 * @param string               $caseId      The case id.
+	 * @param string               $uid         The person's Nextcloud user id.
+	 * @param string               $genericRole The generic role.
+	 *
+	 * @return bool True when no binding is to be added.
+	 *
+	 * @throws RuntimeException When the bindings cannot be read.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function cannotBind(array $caseRow, string $caseId, string $uid, string $genericRole): bool {
+		return $caseId === '' || trim($uid) === '' || $this->holdsAny(case: $caseRow, uid: $uid, genericRoles: [$genericRole]) === true;
+	}//end cannotBind()
+
+	/**
+	 * The role type to bind a generic role through, or null (logged) when no role type carries it.
+	 *
+	 * @param array<string, mixed> $caseRow     The stored case.
+	 * @param string               $caseId      The case id.
+	 * @param string               $genericRole The generic role.
+	 *
+	 * @return string|null The first matching role type id, or null.
+	 *
+	 * @throws RuntimeException When the role types cannot be read.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function roleTypeToBind(array $caseRow, string $caseId, string $genericRole): ?string {
+		$roleTypes = $this->roleTypeIds(genericRoles: [$genericRole], caseTypeId: trim((string)($caseRow['caseType'] ?? '')));
 		if ($roleTypes === []) {
 			$this->logger->warning(
 				'Dossiq: no role type carries the generic role, so the reader is not bound to the case',
 				['caseId' => $caseId, 'genericRole' => $genericRole],
 			);
-			return false;
+			return null;
 		}
 
-		try {
-			$saved = $this->saveObjectAsArray(
-				objectService: $this->objectService(),
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $this->settingsService->getConfigValue('role_schema'),
-				object: [
-					'name' => $this->nameOf(uid: trim($uid), displayName: $displayName),
-					'roleType' => $roleTypes[0],
-					'case' => $caseId,
-					'participant' => CaseSeats::USER_PREFIX . trim($uid),
-				],
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the reader could not be bound to the case',
-				['caseId' => $caseId, 'genericRole' => $genericRole, 'exception' => $e->getMessage()],
-			);
-			return false;
-		}
-
-		return $saved !== null;
-	}//end bind()
+		return $roleTypes[0];
+	}//end roleTypeToBind()
 
 	/**
 	 * What to call a person: the given name, else their Nextcloud display name, else the uid.

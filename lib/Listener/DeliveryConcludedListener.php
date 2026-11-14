@@ -180,15 +180,23 @@ class DeliveryConcludedListener implements IEventListener {
 			return;
 		}
 
+		$this->projectWith(objectService: $objectService, delivery: $delivery);
+	}//end projectOntoCase()
+
+	/**
+	 * Load the delivery's case, apply the outcome to its publication and save it.
+	 *
+	 * @param object            $objectService The OpenRegister ObjectService.
+	 * @param ConcludedDelivery $delivery      The case, the correlation id, the channel and the terminal outcome.
+	 *
+	 * @return void
+	 */
+	private function projectWith(object $objectService, ConcludedDelivery $delivery): void {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
 
-		$case = $this->loadCase(objectService: $objectService, caseId: $delivery->caseId, register: $register, schema: $schema);
+		$case = $this->concludedCase(objectService: $objectService, delivery: $delivery, register: $register, schema: $schema);
 		if ($case === null) {
-			$this->logger->warning(
-				'Dossiq DeliveryConcludedListener: case not found for concluded delivery',
-				['caseId' => $delivery->caseId, 'correlationId' => $delivery->correlationId]
-			);
 			return;
 		}
 
@@ -198,12 +206,30 @@ class DeliveryConcludedListener implements IEventListener {
 		}
 
 		$case['publications'] = $applied;
-		$objectService->saveObject(
-			object: $case,
-			register: $register,
-			schema: $schema,
-		);
-	}//end projectOntoCase()
+		$objectService->saveObject(object: $case, register: $register, schema: $schema);
+	}//end projectWith()
+
+	/**
+	 * Load the delivery's case, logging when it is not found.
+	 *
+	 * @param object            $objectService The OpenRegister ObjectService.
+	 * @param ConcludedDelivery $delivery      The concluded delivery.
+	 * @param mixed             $register      The configured register id.
+	 * @param mixed             $schema        The configured case schema id.
+	 *
+	 * @return array<string, mixed>|null The case data, or null when not found.
+	 */
+	private function concludedCase(object $objectService, ConcludedDelivery $delivery, mixed $register, mixed $schema): ?array {
+		$case = $this->loadCase(objectService: $objectService, caseId: $delivery->caseId, register: $register, schema: $schema);
+		if ($case === null) {
+			$this->logger->warning(
+				'Dossiq DeliveryConcludedListener: case not found for concluded delivery',
+				['caseId' => $delivery->caseId, 'correlationId' => $delivery->correlationId]
+			);
+		}
+
+		return $case;
+	}//end concludedCase()
 
 	/**
 	 * The case's publications with the outcome on the matching delivery, or

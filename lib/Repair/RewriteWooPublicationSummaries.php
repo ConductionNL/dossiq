@@ -121,7 +121,18 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 			return;
 		}
 
-		$targets = [
+		foreach ($this->summaryTargets() as $name => $target) {
+			$this->rewriteTarget(objectService: $objectService, name: $name, target: $target, output: $output);
+		}
+	}//end run()
+
+	/**
+	 * The publications and decisions to rewrite, with their fields.
+	 *
+	 * @return array<string, array<string, mixed>> The targets by name.
+	 */
+	private function summaryTargets(): array {
+		return [
 			'publications' => [
 				'register' => $this->settingsService->getWooPublicationConfigValue('woo_publication_register'),
 				'schema'   => $this->settingsService->getWooPublicationConfigValue('woo_publication_schema'),
@@ -133,33 +144,43 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 				'fields'   => ['description'],
 			],
 		];
+	}//end summaryTargets()
 
-		foreach ($targets as $name => $target) {
-			if ($target['register'] === '' || $target['schema'] === '') {
-				$output->info('Woo summary rewrite: ' . $name . ' not configured, skipped.');
-				continue;
-			}
+	/**
+	 * Rewrite the summaries of one target and report the tally.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $name          The target's name.
+	 * @param array<string, mixed> $target        The register, schema and fields.
+	 * @param IOutput              $output        Progress reporting.
+	 *
+	 * @return void
+	 */
+	private function rewriteTarget(object $objectService, string $name, array $target, IOutput $output): void {
+		if ($target['register'] === '' || $target['schema'] === '') {
+			$output->info('Woo summary rewrite: ' . $name . ' not configured, skipped.');
+			return;
+		}
 
-			try {
-				$tally = (array)$this->runAsSystemIfAvailable(
-					objectService: $objectService,
-					operation: fn (): array => $this->rewriteAll(objectService: $objectService, target: $target)
-				);
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: the Woo summary rewrite could not read the ' . $name,
-					['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
-				);
-				$output->info('Woo summary rewrite: ' . $name . ' could not be read, skipped.');
-				continue;
-			}
-
-			$output->info(
-				'Woo summary rewrite, ' . $name . ': ' . (int)($tally['rewritten'] ?? 0) . ' rewritten, '
-				. (int)($tally['failed'] ?? 0) . ' failed.'
+		try {
+			$tally = (array)$this->runAsSystemIfAvailable(
+				objectService: $objectService,
+				operation: fn (): array => $this->rewriteAll(objectService: $objectService, target: $target)
 			);
-		}//end foreach
-	}//end run()
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the Woo summary rewrite could not read the ' . $name,
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
+			);
+			$output->info('Woo summary rewrite: ' . $name . ' could not be read, skipped.');
+			return;
+		}
+
+		$output->info(
+			'Woo summary rewrite, ' . $name . ': ' . (int)($tally['rewritten'] ?? 0) . ' rewritten, '
+			. (int)($tally['failed'] ?? 0) . ' failed.'
+		);
+	}//end rewriteTarget()
 
 	/**
 	 * The new values for one row, or [] when it carries no old summary.
@@ -277,32 +298,55 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 			return $this->titles[$caseId];
 		}
 
-		$title = '';
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($objectService !== null && $register !== '' && $caseSchema !== '') {
-			try {
-				$case = $this->findObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: $caseSchema,
-					id: $caseId
-				);
-				$value = ($case['title'] ?? null);
-				if (is_string($value) === true) {
-					$title = trim($value);
-				}
-			} catch (Throwable $e) {
-				$this->logger->info(
-					'Dossiq: the Woo summary rewrite could not read a case title',
-					['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
-				);
-			}
-		}
+		$title = $this->readTitle(caseId: $caseId);
 
 		$this->titles[$caseId] = $title;
 
 		return $title;
 	}//end titleOf()
+
+	/**
+	 * The case's title as stored, or '' when OpenRegister is not configured or the title cannot be read.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return string The title.
+	 */
+	private function readTitle(string $caseId): string {
+		$title = '';
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
+		if ($objectService !== null && $register !== '' && $caseSchema !== '') {
+			$title = $this->caseTitle(objectService: $objectService, register: $register, caseSchema: $caseSchema, caseId: $caseId);
+		}
+
+		return $title;
+	}//end readTitle()
+
+	/**
+	 * The title of one case, or '' (logged) when it cannot be read.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register.
+	 * @param string $caseSchema    The case schema.
+	 * @param string $caseId        The case uuid.
+	 *
+	 * @return string The title.
+	 */
+	private function caseTitle(object $objectService, string $register, string $caseSchema, string $caseId): string {
+		$title = '';
+		try {
+			$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
+			$value = ($case['title'] ?? null);
+			if (is_string($value) === true) {
+				$title = trim($value);
+			}
+		} catch (Throwable $e) {
+			$context = ['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()];
+			$this->logger->info('Dossiq: the Woo summary rewrite could not read a case title', $context);
+		}
+
+		return $title;
+	}//end caseTitle()
 }//end class

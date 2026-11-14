@@ -106,12 +106,7 @@ class PhaseTermService implements PhaseTermServiceInterface {
 	 *
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
-	public function enterPhase(
-		string $caseId,
-		string $caseTypeId,
-		string $statusTypeId,
-		?DateTimeImmutable $when = null,
-	): ?array {
+	public function enterPhase(string $caseId, string $caseTypeId, string $statusTypeId, ?DateTimeImmutable $when = null): ?array {
 		if ($caseId === '' || $statusTypeId === '') {
 			return null;
 		}
@@ -124,6 +119,22 @@ class PhaseTermService implements PhaseTermServiceInterface {
 			return null;
 		}
 
+		return $this->startPhaseClock(caseId: $caseId, statusTypeId: $statusTypeId, days: $days, moment: $moment);
+	}//end enterPhase()
+
+	/**
+	 * Start a phase's clock on a case.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $statusTypeId The phase being entered.
+	 * @param int $days The phase's term in days.
+	 * @param DateTimeImmutable $moment When the move happened.
+	 *
+	 * @return array<string, mixed>|null The started phase term.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	private function startPhaseClock(string $caseId, string $statusTypeId, int $days, DateTimeImmutable $moment): ?array {
 		$instance = $this->terms->bindLeadTime(
 			caseId: $caseId,
 			kind: TermKind::PHASE,
@@ -138,7 +149,7 @@ class PhaseTermService implements PhaseTermServiceInterface {
 		);
 
 		return $instance;
-	}//end enterPhase()
+	}//end startPhaseClock()
 
 	/**
 	 * Stop every running phase clock on a case.

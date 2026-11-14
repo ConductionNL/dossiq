@@ -148,6 +148,19 @@ class NotificatieService {
 			return;
 		}
 
+		$subscriptions = $this->subscriptions(abonnementMapping: $abonnementMapping);
+
+		$this->deliverToAll(subscriptions: $subscriptions, notification: $notification);
+	}//end deliver()
+
+	/**
+	 * Every stored subscription.
+	 *
+	 * @param array $abonnementMapping The abonnement mapping (`sourceRegister`, `sourceSchema`)
+	 *
+	 * @return array The subscriptions, as stored
+	 */
+	private function subscriptions(array $abonnementMapping): array {
 		$query = $this->objectService->buildSearchQuery(
 			requestParams: [],
 			register: $abonnementMapping['sourceRegister'],
@@ -155,8 +168,18 @@ class NotificatieService {
 		);
 		$result = $this->objectService->searchObjectsPaginated(query: $query);
 
-		$subscriptions = $result['results'] ?? [];
+		return $result['results'] ?? [];
+	}//end subscriptions()
 
+	/**
+	 * Deliver the notification to each subscription.
+	 *
+	 * @param array $subscriptions The subscriptions, as stored
+	 * @param array $notification  The notification payload
+	 *
+	 * @return void
+	 */
+	private function deliverToAll(array $subscriptions, array $notification): void {
 		foreach ($subscriptions as $subscription) {
 			$subData = $subscription;
 			if (is_array($subscription) === false) {
@@ -168,7 +191,7 @@ class NotificatieService {
 				notification: $notification
 			);
 		}
-	}//end deliver()
+	}//end deliverToAll()
 
 	/**
 	 * Deliver notification to a single subscription if it matches.

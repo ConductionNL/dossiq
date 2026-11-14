@@ -146,6 +146,22 @@ class ContentTemplateService implements ContentTemplateServiceInterface {
 			return null;
 		}
 
+		return $this->offeredRows(rows: $rows, kind: $kind, caseTypeId: $caseTypeId, search: $search);
+	}//end offered()
+
+	/**
+	 * The stored templates in scope for the case type and matching the search.
+	 *
+	 * @param array<int, array<string, mixed>> $rows       The stored templates of the kind.
+	 * @param string                           $kind       The kind.
+	 * @param string                           $caseTypeId The case type the handler is working on.
+	 * @param string                           $search     Part of the name, or '' for all of them.
+	 *
+	 * @return array<int, array<string, mixed>> The templates.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
+	 */
+	private function offeredRows(array $rows, string $kind, string $caseTypeId, string $search): array {
 		$offered = [];
 		foreach ($rows as $row) {
 			if ($this->inScope(row: $row, caseTypeId: $caseTypeId) === false) {
@@ -167,7 +183,7 @@ class ContentTemplateService implements ContentTemplateServiceInterface {
 		}//end foreach
 
 		return $offered;
-	}//end offered()
+	}//end offeredRows()
 
 	/**
 	 * The fields one template presets, ready to drop into the dialog that

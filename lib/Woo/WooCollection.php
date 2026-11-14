@@ -100,26 +100,10 @@ class WooCollection implements WooCollectionInterface {
 
 		// The rows a person is shown, and the split per custodian, come from what the caller may read.
 		$exclusions = $this->exclusions(caseId: $caseId);
-		foreach ($exclusions as $exclusion) {
-			$custodian = (string)($exclusion['custodian'] ?? '');
-			if ($custodian !== '') {
-				$custodians[$custodian] = ($custodians[$custodian] ?? $this->zero());
-				$custodians[$custodian]['excluded']++;
-			}
-		}
+		$custodians = $this->withExcludedPerCustodian(exclusions: $exclusions, custodians: $custodians);
 
 		// The totals hold for the case whoever asks: an exclusion the caller cannot read still counts.
-		$excludedDocs = [];
-		$neverArrived = 0;
-		foreach ($this->exclusionsOfCase(caseId: $caseId) as $exclusion) {
-			$docRef = (string)($exclusion['documentRef'] ?? '');
-			if ($docRef === '') {
-				$neverArrived++;
-				continue;
-			}
-
-			$excludedDocs[$docRef] = true;
-		}
+		[$excludedDocs, $neverArrived] = $this->caseExclusionTotals(caseId: $caseId);
 
 		$documentIds = $this->caseDocuments->idsFor(caseId: $caseId);
 		$assessed = 0;
@@ -148,6 +132,49 @@ class WooCollection implements WooCollectionInterface {
 			'threads' => $conversations,
 		];
 	}//end report()
+
+	/**
+	 * The custodian groups with each readable exclusion counted against its custodian.
+	 *
+	 * @param array<int, array<string, mixed>>  $exclusions The exclusions the caller may read.
+	 * @param array<string, array<string, int>> $custodians The custodian groups.
+	 *
+	 * @return array<string, array<string, int>> The custodian groups.
+	 */
+	private function withExcludedPerCustodian(array $exclusions, array $custodians): array {
+		foreach ($exclusions as $exclusion) {
+			$custodian = (string)($exclusion['custodian'] ?? '');
+			if ($custodian !== '') {
+				$custodians[$custodian] = ($custodians[$custodian] ?? $this->zero());
+				$custodians[$custodian]['excluded']++;
+			}
+		}
+
+		return $custodians;
+	}//end withExcludedPerCustodian()
+
+	/**
+	 * The case's excluded documents and the count of exclusions that never arrived.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array{0: array<string, bool>, 1: int} The excluded document refs and the never-arrived count.
+	 */
+	private function caseExclusionTotals(string $caseId): array {
+		$excludedDocs = [];
+		$neverArrived = 0;
+		foreach ($this->exclusionsOfCase(caseId: $caseId) as $exclusion) {
+			$docRef = (string)($exclusion['documentRef'] ?? '');
+			if ($docRef === '') {
+				$neverArrived++;
+				continue;
+			}
+
+			$excludedDocs[$docRef] = true;
+		}
+
+		return [$excludedDocs, $neverArrived];
+	}//end caseExclusionTotals()
 
 	/**
 	 * The collected mails grouped by conversation, each conversation's messages in date order.

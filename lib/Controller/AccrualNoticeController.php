@@ -116,10 +116,23 @@ class AccrualNoticeController extends Controller {
 
 		$instance = $this->termInstanceOf(caseId: $request['caseId'], instanceId: $request['instanceId']);
 		$refused = $this->refusalFor(instance: $instance, caseId: $request['caseId'], user: $user, receipt: $request['receipt']);
-		if ($refused !== null) {
-			return $refused;
-		}
 
+		return ($refused ?? $this->storeNotice(instance: $instance, request: $request, body: $body));
+	}//end register()
+
+	/**
+	 * Register the notice on its term instance, answering 201 or the 400 that says why not.
+	 *
+	 * @param array<string, mixed>|null                                                                 $instance The term instance.
+	 * @param array{caseId: string, instanceId: string, channel: string, receipt: DateTimeImmutable} $request  The notice's fields.
+	 * @param array<string, mixed>                                                                      $body     The request body.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 */
+	private function storeNotice(?array $instance, array $request, array $body): JSONResponse {
 		try {
 			$row = $this->service->registerNotice(
 				(string)($instance['id'] ?? $request['instanceId']),
@@ -133,7 +146,7 @@ class AccrualNoticeController extends Controller {
 			$this->logger->info('Ingebrekestelling register failed: ' . $e->getMessage());
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
-	}//end register()
+	}//end storeNotice()
 
 	/**
 	 * The fields a notice needs, read from the body, or the 400 that says what is missing.

@@ -86,38 +86,11 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 		}
 
 		$size = (int)($metadata['sizeBytes'] ?? 0);
-		$mode = 'sync';
-		if ($size > self::SYNC_SIZE_THRESHOLD_BYTES) {
-			$mode = 'async';
-		}
+		$mode = $this->modeFor(size: $size);
 
 		$archivalId = uniqid(prefix: 'archival-', more_entropy: true);
 
-		// Who this message is FROM, as a party of the case rather than as
-		// the address in the header. The address stays on `from`; this is
-		// the party a handler can open. An address nobody on the case
-		// holds leaves it empty: the intake does not create a party per
-		// stranger who mails the case.
-		$sender = $this->correspondents->partyHolding(
-			caseId: $caseId,
-			address: (string)($metadata['from'] ?? ''),
-		);
-
-		$documentRecord = [
-			'archivalId' => $archivalId,
-			'case' => $caseId,
-			'source' => 'email',
-			'sender' => $sender,
-			'direction' => DocumentCorrespondents::DIRECTION_INCOMING,
-			'mailMessageId' => (string)($metadata['mailMessageId'] ?? ''),
-			'subject' => (string)($metadata['subject'] ?? ''),
-			'from' => (string)($metadata['from'] ?? ''),
-			'to' => (string)($metadata['to'] ?? ''),
-			'sentAt' => (string)($metadata['sentAt'] ?? ''),
-			'sizeBytes' => $size,
-			'pdfStatus' => 'pending',
-			'pdfAttempts' => 0,
-		];
+		$documentRecord = $this->documentRecord(caseId: $caseId, archivalId: $archivalId, metadata: $metadata, size: $size);
 
 		$this->persistDocument(payload: $documentRecord);
 		$this->appendCaseAudit(
@@ -136,6 +109,64 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 			'pdfStatus' => 'pending',
 		];
 	}//end archiveLinkedEmail()
+
+	/**
+	 * Whether a message of this size is archived inline or in the background.
+	 *
+	 * @param int $size The message size in bytes.
+	 *
+	 * @return string `async` above the sync threshold, `sync` otherwise.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T05
+	 */
+	private function modeFor(int $size): string {
+		$mode = 'sync';
+		if ($size > self::SYNC_SIZE_THRESHOLD_BYTES) {
+			$mode = 'async';
+		}
+
+		return $mode;
+	}//end modeFor()
+
+	/**
+	 * The document record of a linked email.
+	 *
+	 * @param string               $caseId     Owning case UUID.
+	 * @param string               $archivalId The archival identifier.
+	 * @param array<string, mixed> $metadata   Email metadata.
+	 * @param int                  $size       The message size in bytes.
+	 *
+	 * @return array<string, mixed> The document record.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T05
+	 */
+	private function documentRecord(string $caseId, string $archivalId, array $metadata, int $size): array {
+		// Who this message is FROM, as a party of the case rather than as
+		// the address in the header. The address stays on `from`; this is
+		// the party a handler can open. An address nobody on the case
+		// holds leaves it empty: the intake does not create a party per
+		// stranger who mails the case.
+		$sender = $this->correspondents->partyHolding(
+			caseId: $caseId,
+			address: (string)($metadata['from'] ?? ''),
+		);
+
+		return [
+			'archivalId' => $archivalId,
+			'case' => $caseId,
+			'source' => 'email',
+			'sender' => $sender,
+			'direction' => DocumentCorrespondents::DIRECTION_INCOMING,
+			'mailMessageId' => (string)($metadata['mailMessageId'] ?? ''),
+			'subject' => (string)($metadata['subject'] ?? ''),
+			'from' => (string)($metadata['from'] ?? ''),
+			'to' => (string)($metadata['to'] ?? ''),
+			'sentAt' => (string)($metadata['sentAt'] ?? ''),
+			'sizeBytes' => $size,
+			'pdfStatus' => 'pending',
+			'pdfAttempts' => 0,
+		];
+	}//end documentRecord()
 
 	/*
 	 * NO markComplete() HERE — YET.
@@ -188,28 +219,28 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T09
 	 */
 	public function listFailedArchivals(int $limit = 50): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$target = $this->archivalTarget();
+		if ($target === null) {
 			return [];
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_document_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
+		[$objectService, $register, $schema] = $target;
+		$filters = ['source' => 'email', 'pdfStatus' => 'failed', '_limit' => $limit];
+		$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: [
-				'source' => 'email',
-				'pdfStatus' => 'failed',
-				'_limit' => $limit,
-			],
-		);
+		return $this->retryable(rows: $rows);
+	}//end listFailedArchivals()
 
+	/**
+	 * The failed rows that have retries left.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The failed archival rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T09
+	 */
+	private function retryable(array $rows): array {
 		// Cap further by retry-count so we never thrash on a permanently failed row.
 		return array_values(
 			array_filter(
@@ -217,7 +248,7 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 				static fn (array $row): bool => ((int)($row['pdfAttempts'] ?? 0) < 3)
 			)
 		);
-	}//end listFailedArchivals()
+	}//end retryable()
 
 	/**
 	 * Persist the archival object.
@@ -235,13 +266,38 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_document_schema');
 		if (empty($register) === true || empty($schema) === true) {
-			$this->logger->warning(
-				'case_document_schema unconfigured — skipping archival persistence',
-				['archivalId' => $payload['archivalId'] ?? '']
-			);
+			$this->logSchemaUnconfigured(payload: $payload);
 			return;
 		}
 
+		$this->saveDocument(objectService: $objectService, register: $register, schema: $schema, payload: $payload);
+	}//end persistDocument()
+
+	/**
+	 * Log that the document schema is not configured, so nothing is persisted.
+	 *
+	 * @param array<string, mixed> $payload Document payload.
+	 *
+	 * @return void
+	 */
+	private function logSchemaUnconfigured(array $payload): void {
+		$this->logger->warning(
+			'case_document_schema unconfigured — skipping archival persistence',
+			['archivalId' => $payload['archivalId'] ?? '']
+		);
+	}//end logSchemaUnconfigured()
+
+	/**
+	 * Save the archival object, logging a failure.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register The register.
+	 * @param string $schema The document schema.
+	 * @param array<string, mixed> $payload Document payload.
+	 *
+	 * @return void
+	 */
+	private function saveDocument(object $objectService, string $register, string $schema, array $payload): void {
 		try {
 			$objectService->saveObject(
 				object: $payload,
@@ -254,7 +310,7 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 				['archivalId' => $payload['archivalId'] ?? '', 'error' => $e->getMessage()]
 			);
 		}
-	}//end persistDocument()
+	}//end saveDocument()
 
 	/**
 	 * Load an archival record by archivalId.
@@ -299,16 +355,12 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 			return false;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$target = $this->archivalTarget();
+		if ($target === null) {
 			return false;
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_document_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return false;
-		}
+		[$objectService, $register, $schema] = $target;
 
 		$payload = array_merge($existing, $fields);
 		try {
@@ -326,6 +378,26 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 			return false;
 		}
 	}//end updateArchival()
+
+	/**
+	 * The object service, register and schema archival records live in.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The target, or null when OpenRegister or the schema is missing.
+	 */
+	private function archivalTarget(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_document_schema');
+		if (empty($register) === true || empty($schema) === true) {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end archivalTarget()
 
 	/**
 	 * Append an audit event to the case audit trail (OR-managed).

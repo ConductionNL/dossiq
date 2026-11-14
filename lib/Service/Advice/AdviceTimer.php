@@ -173,54 +173,7 @@ class AdviceTimer implements AdviceTimerInterface {
 			return self::UNAVAILABLE;
 		}
 
-		$rules = [
-			[
-				'trigger'        => 'slaBreached',
-				'offset'         => 0,
-				'offsetUnit'     => 'calendarDays',
-				'notifyRole'     => [],
-				'escalateToRole' => [],
-				'priority'       => 'medium',
-				'message'        => 'advies-verlopen',
-				'openIncident'   => false,
-			],
-		];
-
-		// The rung sits reminderDays + 1 before the breach, which is the
-		// deadline minus reminderDays. Only when that day is still ahead: the
-		// job never reminded a request inside the window, and the engine
-		// refuses a rung before its anchor.
-		$lead = ($this->reminderDays() + 1);
-		if ($lead < $slaDays) {
-			$rules[] = [
-				'trigger'        => 'preBreach',
-				'offset'         => $lead,
-				'offsetUnit'     => 'calendarDays',
-				'notifyRole'     => [],
-				'escalateToRole' => [],
-				'priority'       => 'medium',
-				'message'        => 'advies-herinnering',
-				'openIncident'   => false,
-			];
-		}
-
-		$config = [
-			'subjectType'     => 'object',
-			'subjectUuid'     => $adviceId,
-			'appId'           => 'dossiq',
-			'title'           => 'Adviestermijn '.(string) ($advice['subject'] ?? $adviceId),
-			'purpose'         => 'due',
-			'legalEffect'     => 'none',
-			'sla'             => ['value' => $slaDays, 'unit' => 'calendarDays'],
-			'escalationRules' => $rules,
-			'anchorEvent'     => 'advice_requested',
-			'anchorEventAt'   => $anchor,
-			'metadata'        => [
-				'source'   => self::METADATA_SOURCE,
-				'adviceId' => $adviceId,
-				'caseId'   => (string) ($advice['case'] ?? ''),
-			],
-		];
+		$config = $this->timerConfig(advice: $advice, adviceId: $adviceId, anchor: $anchor, slaDays: $slaDays);
 
 		try {
 			$engine->arm(config: $config, actor: null);
@@ -234,6 +187,112 @@ class AdviceTimer implements AdviceTimerInterface {
 
 		return self::ARMED;
 	}//end arm()
+
+	/**
+	 * The engine config of the request's timer.
+	 *
+	 * @param array<string, mixed>   $advice   The request.
+	 * @param string                 $adviceId Its id.
+	 * @param \DateTimeImmutable     $anchor   Midnight today.
+	 * @param int                    $slaDays  Days from the anchor to the breach.
+	 *
+	 * @return array<string, mixed> The config.
+	 */
+	private function timerConfig(array $advice, string $adviceId, \DateTimeImmutable $anchor, int $slaDays): array {
+		$rules = $this->escalationRules(slaDays: $slaDays);
+
+		$config = [
+			'subjectType'     => 'object',
+			'subjectUuid'     => $adviceId,
+			'appId'           => 'dossiq',
+			'title'           => 'Adviestermijn '.(string) ($advice['subject'] ?? $adviceId),
+			'purpose'         => 'due',
+			'legalEffect'     => 'none',
+			'sla'             => ['value' => $slaDays, 'unit' => 'calendarDays'],
+			'escalationRules' => $rules,
+			'anchorEvent'     => 'advice_requested',
+			'anchorEventAt'   => $anchor,
+			'metadata'        => $this->timerMetadata(advice: $advice, adviceId: $adviceId),
+		];
+
+		return $config;
+	}//end timerConfig()
+
+	/**
+	 * The breach rung, plus the reminder rung when its day is still ahead.
+	 *
+	 * @param int $slaDays Days from the anchor to the breach.
+	 *
+	 * @return array<int, array<string, mixed>> The escalation rules.
+	 */
+	private function escalationRules(int $slaDays): array {
+		$rules = [$this->breachRung()];
+
+		// The rung sits reminderDays + 1 before the breach, which is the
+		// deadline minus reminderDays. Only when that day is still ahead: the
+		// job never reminded a request inside the window, and the engine
+		// refuses a rung before its anchor.
+		$lead = ($this->reminderDays() + 1);
+		if ($lead < $slaDays) {
+			$rules[] = $this->reminderRung(lead: $lead);
+		}
+
+		return $rules;
+	}//end escalationRules()
+
+	/**
+	 * The rung that fires on the breach itself.
+	 *
+	 * @return array<string, mixed> The rule.
+	 */
+	private function breachRung(): array {
+		return [
+			'trigger'        => 'slaBreached',
+			'offset'         => 0,
+			'offsetUnit'     => 'calendarDays',
+			'notifyRole'     => [],
+			'escalateToRole' => [],
+			'priority'       => 'medium',
+			'message'        => 'advies-verlopen',
+			'openIncident'   => false,
+		];
+	}//end breachRung()
+
+	/**
+	 * The reminder rung, the given number of days before the breach.
+	 *
+	 * @param int $lead Days before the breach.
+	 *
+	 * @return array<string, mixed> The rule.
+	 */
+	private function reminderRung(int $lead): array {
+		return [
+			'trigger'        => 'preBreach',
+			'offset'         => $lead,
+			'offsetUnit'     => 'calendarDays',
+			'notifyRole'     => [],
+			'escalateToRole' => [],
+			'priority'       => 'medium',
+			'message'        => 'advies-herinnering',
+			'openIncident'   => false,
+		];
+	}//end reminderRung()
+
+	/**
+	 * The metadata that ties a timer back to its request and case.
+	 *
+	 * @param array<string, mixed> $advice   The request.
+	 * @param string               $adviceId Its id.
+	 *
+	 * @return array<string, string> The metadata.
+	 */
+	private function timerMetadata(array $advice, string $adviceId): array {
+		return [
+			'source'   => self::METADATA_SOURCE,
+			'adviceId' => $adviceId,
+			'caseId'   => (string) ($advice['case'] ?? ''),
+		];
+	}//end timerMetadata()
 
 	/**
 	 * Cancel the request's open timers.

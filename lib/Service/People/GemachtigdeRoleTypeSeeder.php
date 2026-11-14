@@ -110,22 +110,11 @@ class GemachtigdeRoleTypeSeeder implements GemachtigdeRoleTypeSeederInterface {
 	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
 	 */
 	public function seed(): array {
-		$nothing = [
-			'available' => false,
-			'created' => 0,
-			'adopted' => 0,
-			'kept' => 0,
-			'refused' => null,
-		];
+		$nothing = $this->nothingDone();
 
 		try {
 			[$objectService, $register, $schema] = $this->target();
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::PAGE_SIZE],
-			);
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['_limit' => self::PAGE_SIZE]);
 		} catch (Throwable $e) {
 			// \Throwable rather than \Exception: an OpenRegister that predates
 			// the slug bridge answers a PHP Error, and an upgrade must not stop
@@ -140,6 +129,36 @@ class GemachtigdeRoleTypeSeeder implements GemachtigdeRoleTypeSeederInterface {
 
 		$adoptable = $this->seededRow(rows: $rows);
 
+		return $this->writeElevated(objectService: $objectService, register: $register, schema: $schema, adoptable: $adoptable);
+	}//end seed()
+
+	/**
+	 * The answer of a seed that did nothing.
+	 *
+	 * @return array{available: bool, created: int, adopted: int, kept: int, refused: string|null}
+	 */
+	private function nothingDone(): array {
+		return [
+			'available' => false,
+			'created' => 0,
+			'adopted' => 0,
+			'kept' => 0,
+			'refused' => null,
+		];
+	}//end nothingDone()
+
+	/**
+	 * Run the write as the system user, answering a refusal instead of throwing.
+	 *
+	 * @param object                    $objectService OpenRegister's object service.
+	 * @param string                    $register      The dossiq register.
+	 * @param string                    $schema        The role type schema.
+	 * @param array<string, mixed>|null $adoptable     The shipped row, when there is one.
+	 *
+	 * @return array{available: bool, created: int, adopted: int, kept: int, refused: string|null}
+	 *                                                                                            What the write did.
+	 */
+	private function writeElevated(object $objectService, string $register, string $schema, ?array $adoptable): array {
 		try {
 			return $this->runAsSystemIfAvailable(
 				objectService: $objectService,
@@ -151,9 +170,9 @@ class GemachtigdeRoleTypeSeeder implements GemachtigdeRoleTypeSeederInterface {
 				),
 			);
 		} catch (Throwable $e) {
-			return array_merge($nothing, ['available' => true, 'refused' => $e->getMessage()]);
+			return array_merge($this->nothingDone(), ['available' => true, 'refused' => $e->getMessage()]);
 		}
-	}//end seed()
+	}//end writeElevated()
 
 	/**
 	 * Stamp the key onto the row that already is this role, or write the row.
@@ -172,29 +191,52 @@ class GemachtigdeRoleTypeSeeder implements GemachtigdeRoleTypeSeederInterface {
 		string $schema,
 		?array $adoptable,
 	): array {
-		$done = [
-			'available' => true,
-			'created' => 0,
-			'adopted' => 0,
-			'kept' => 0,
-			'refused' => null,
-		];
+		$done = array_merge($this->nothingDone(), ['available' => true]);
 
 		if ($adoptable !== null) {
-			$row = $adoptable;
-			unset($row['@self']);
-			$row['genericRole'] = self::GENERIC_ROLE;
-			$this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $row,
-				uuid: $this->uuidOf(row: $adoptable),
-			);
+			$this->adopt(objectService: $objectService, register: $register, schema: $schema, adoptable: $adoptable);
 
 			return array_merge($done, ['adopted' => 1]);
 		}
 
+		$this->create(objectService: $objectService, register: $register, schema: $schema);
+
+		return array_merge($done, ['created' => 1]);
+	}//end write()
+
+	/**
+	 * Stamp the generic role onto the shipped row.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $register      The dossiq register.
+	 * @param string               $schema        The role type schema.
+	 * @param array<string, mixed> $adoptable     The shipped row.
+	 *
+	 * @return void
+	 */
+	private function adopt(object $objectService, string $register, string $schema, array $adoptable): void {
+		$row = $adoptable;
+		unset($row['@self']);
+		$row['genericRole'] = self::GENERIC_ROLE;
+		$this->saveObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			object: $row,
+			uuid: $this->uuidOf(row: $adoptable),
+		);
+	}//end adopt()
+
+	/**
+	 * Write the generic role type row.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The dossiq register.
+	 * @param string $schema        The role type schema.
+	 *
+	 * @return void
+	 */
+	private function create(object $objectService, string $register, string $schema): void {
 		$this->saveObjectAsArray(
 			objectService: $objectService,
 			register: $register,
@@ -205,9 +247,7 @@ class GemachtigdeRoleTypeSeeder implements GemachtigdeRoleTypeSeederInterface {
 				'genericRole' => self::GENERIC_ROLE,
 			],
 		);
-
-		return array_merge($done, ['created' => 1]);
-	}//end write()
+	}//end create()
 
 	/**
 	 * The rows that already are the generic representative.

@@ -129,49 +129,30 @@ class WooDossierReturn {
 	public function append(array $case, string $publicationId, string $title): bool {
 		$collectionId = trim((string)($case['wooRequest']['collectionId'] ?? ''));
 		$objectService = $this->settingsService->getObjectService();
-		if ($collectionId === '' || $publicationId === '' || $objectService === null) {
+		if ($this->canAppend(collectionId: $collectionId, publicationId: $publicationId, objectService: $objectService) === false) {
 			return false;
 		}
 
 		$register = $this->settingsService->getWooPublicationConfigValue('woo_collection_register');
 		$schema = $this->settingsService->getWooPublicationConfigValue('woo_collection_schema');
+		$target = ['register' => $register, 'schema' => $schema, 'id' => $collectionId];
 
 		try {
-			$collection = $this->reader->find(objectService: $objectService, register: $register, schema: $schema, id: $collectionId);
-			if (is_array($collection) === false) {
-				$this->logger->warning('WooDossierReturn: the source dossier is gone', ['collection' => $collectionId]);
+			$collection = $this->ownedCollection(objectService: $objectService, target: $target, case: $case);
+			if ($collection === null) {
 				return false;
 			}
 
-			if ($this->isTheRequesters(case: $case, collection: $collection) === false) {
-				$this->logger->warning('WooDossierReturn: the source dossier is not the requester\'s', ['collection' => $collectionId]);
-				return false;
+			$items = $this->itemsWith(collection: $collection, publicationId: $publicationId, title: $title);
+			if ($items === null) {
+				return true;
 			}
-
-			$items = array_values(array_filter((array)($collection['items'] ?? []), 'is_array'));
-			foreach ($items as $item) {
-				if ((string)($item['publication'] ?? '') === $publicationId) {
-					return true;
-				}
-			}
-
-			// The shape of opencatalogi's `collection.items[]`: `id` is a uuid
-			// and every property is a string, so a whole-publication item
-			// leaves `attachment` out instead of writing null (OpenRegister
-			// refuses the null, and the decision never reached the dossier).
-			$items[] = [
-				'id' => $this->uuid(),
-				'publication' => $publicationId,
-				'note' => $title,
-				'addedAt' => date('c'),
-				'addedBy' => self::ADDED_BY,
-			];
 
 			$this->runAsSystemIfAvailable(
 				objectService: $objectService,
 				operation: fn (): mixed => $this->writeItems(
 					objectService: $objectService,
-					target: ['register' => $register, 'schema' => $schema, 'id' => $collectionId],
+					target: $target,
 					collection: $collection,
 					items: $items,
 				)
@@ -186,6 +167,76 @@ class WooDossierReturn {
 
 		return true;
 	}//end append()
+
+	/**
+	 * Whether a dossier, a publication and OpenRegister are all in hand.
+	 *
+	 * @param string      $collectionId  The source dossier uuid.
+	 * @param string      $publicationId The publication uuid.
+	 * @param object|null $objectService OpenRegister's object service.
+	 *
+	 * @return bool
+	 */
+	private function canAppend(string $collectionId, string $publicationId, ?object $objectService): bool {
+		return !($collectionId === '' || $publicationId === '' || $objectService === null);
+	}//end canAppend()
+
+	/**
+	 * Read the source dossier, unscoped, when it is still the requester's.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param array<string, mixed> $target        The register, schema and collection id.
+	 * @param array<string, mixed> $case          The case, with `portalSubject`.
+	 *
+	 * @return array<string, mixed>|null The collection, or null when it is gone or not the requester's.
+	 */
+	private function ownedCollection(object $objectService, array $target, array $case): ?array {
+		$collectionId = $target['id'];
+		$collection = $this->reader->find(objectService: $objectService, register: $target['register'], schema: $target['schema'], id: $collectionId);
+		if (is_array($collection) === false) {
+			$this->logger->warning('WooDossierReturn: the source dossier is gone', ['collection' => $collectionId]);
+			return null;
+		}
+
+		if ($this->isTheRequesters(case: $case, collection: $collection) === false) {
+			$this->logger->warning('WooDossierReturn: the source dossier is not the requester\'s', ['collection' => $collectionId]);
+			return null;
+		}
+
+		return $collection;
+	}//end ownedCollection()
+
+	/**
+	 * The collection's items with the publication added, or null when it already holds it.
+	 *
+	 * @param array<string, mixed> $collection    The collection as it was read.
+	 * @param string               $publicationId The publication uuid.
+	 * @param string               $title         What the item's note says.
+	 *
+	 * @return array<int, array<string, mixed>>|null The items to write, or null when nothing changes.
+	 */
+	private function itemsWith(array $collection, string $publicationId, string $title): ?array {
+		$items = array_values(array_filter((array)($collection['items'] ?? []), 'is_array'));
+		foreach ($items as $item) {
+			if ((string)($item['publication'] ?? '') === $publicationId) {
+				return null;
+			}
+		}
+
+		// The shape of opencatalogi's `collection.items[]`: `id` is a uuid
+		// and every property is a string, so a whole-publication item
+		// leaves `attachment` out instead of writing null (OpenRegister
+		// refuses the null, and the decision never reached the dossier).
+		$items[] = [
+			'id' => $this->uuid(),
+			'publication' => $publicationId,
+			'note' => $title,
+			'addedAt' => date('c'),
+			'addedBy' => self::ADDED_BY,
+		];
+
+		return $items;
+	}//end itemsWith()
 
 	/**
 	 * Whether the collection is still owned by the case's requester.

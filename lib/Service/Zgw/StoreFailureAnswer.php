@@ -87,19 +87,47 @@ class StoreFailureAnswer {
 		}
 
 		if (is_a($error, self::NOT_AUTHORIZED) === true || $error->getCode() === Http::STATUS_FORBIDDEN) {
-			$this->logger->warning('{operation}: not allowed on {object}: ' . $error->getMessage(), $context);
-			return new JSONResponse(
-				data: [
-					'type' => 'PermissionDenied',
-					'code' => 'permission_denied',
-					'title' => 'U heeft geen toestemming voor deze actie.',
-					'status' => Http::STATUS_FORBIDDEN,
-					'detail' => 'U heeft geen toestemming voor deze actie.',
-				],
-				statusCode: Http::STATUS_FORBIDDEN
-			);
+			return $this->notAllowed(error: $error, context: $context);
 		}
 
+		return $this->notCompleted(error: $error, context: $context);
+	}//end respond()
+
+	/**
+	 * The answer for a store call that was not allowed, logged.
+	 *
+	 * @param Throwable $error The failure.
+	 * @param array<string, mixed> $context What was asked of the store.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function notAllowed(Throwable $error, array $context): JSONResponse {
+		$this->logger->warning('{operation}: not allowed on {object}: ' . $error->getMessage(), $context);
+		return new JSONResponse(
+			data: [
+				'type' => 'PermissionDenied',
+				'code' => 'permission_denied',
+				'title' => 'U heeft geen toestemming voor deze actie.',
+				'status' => Http::STATUS_FORBIDDEN,
+				'detail' => 'U heeft geen toestemming voor deze actie.',
+			],
+			statusCode: Http::STATUS_FORBIDDEN
+		);
+	}//end notAllowed()
+
+	/**
+	 * The answer for a store call the store did not complete, logged.
+	 *
+	 * @param Throwable $error The failure.
+	 * @param array<string, mixed> $context What was asked of the store.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function notCompleted(Throwable $error, array $context): JSONResponse {
 		$this->logger->error('{operation}: the store did not complete the call for {object}: ' . $error->getMessage(), $context);
 		return new JSONResponse(
 			data: [
@@ -108,7 +136,7 @@ class StoreFailureAnswer {
 			],
 			statusCode: ZgwRuleResults::NOT_VERIFIED_STATUS
 		);
-	}//end respond()
+	}//end notCompleted()
 
 	/**
 	 * The answer for an object the store does not hold.

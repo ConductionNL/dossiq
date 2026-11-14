@@ -177,18 +177,42 @@ class InspectionRunService implements InspectionRunServiceInterface {
 	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-panel-on-case-dashboard
 	 */
 	public function asRun(array $task): array {
-		$responses = ($task['responses'] ?? []);
-		if (is_array($responses) === false) {
-			$responses = [];
-		}
-
-		$metadata = ($task['metadata'] ?? []);
-		if (is_array($metadata) === false) {
-			$metadata = [];
-		}
+		$responses = $this->arrayOrEmpty(value: ($task['responses'] ?? []));
+		$metadata = $this->arrayOrEmpty(value: ($task['metadata'] ?? []));
 
 		$moment = (string)($task['completedAt'] ?? $metadata['legacyCompletedAt'] ?? $task['created'] ?? '');
 
+		return $this->runHead(task: $task, moment: $moment) + $this->runFindings(task: $task, responses: $responses, metadata: $metadata);
+	}//end asRun()
+
+	/**
+	 * The value when it is an array, else the empty array.
+	 *
+	 * @param mixed $value The stored value.
+	 *
+	 * @return array<mixed> The array.
+	 *
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-panel-on-case-dashboard
+	 */
+	private function arrayOrEmpty(mixed $value): array {
+		if (is_array($value) === false) {
+			return [];
+		}
+
+		return $value;
+	}//end arrayOrEmpty()
+
+	/**
+	 * The run's identity, who did it, when and with what result.
+	 *
+	 * @param array<string, mixed> $task   The serialised task.
+	 * @param string               $moment When it was completed.
+	 *
+	 * @return array<string, mixed> The leading fields of the run.
+	 *
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-panel-on-case-dashboard
+	 */
+	private function runHead(array $task, string $moment): array {
 		return [
 			'id' => (string)($task['uuid'] ?? ''),
 			'case' => (string)($task['objectUuid'] ?? ''),
@@ -198,6 +222,22 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			'completedBy' => (string)($task['completedBy'] ?? ''),
 			'inspectionDate' => $moment,
 			'result' => (string)($task['outcome'] ?? ''),
+		];
+	}//end runHead()
+
+	/**
+	 * The run's answers, remarks, location, photos and state.
+	 *
+	 * @param array<string, mixed> $task      The serialised task.
+	 * @param array<mixed>         $responses The answers.
+	 * @param array<string, mixed> $metadata  The task metadata.
+	 *
+	 * @return array<string, mixed> The trailing fields of the run.
+	 *
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-panel-on-case-dashboard
+	 */
+	private function runFindings(array $task, array $responses, array $metadata): array {
+		return [
 			'failedItems' => $this->answers->failedCount(answers: $responses),
 			'items' => array_map(fn (array $answer): array => $this->answers->forPanel(answer: $answer), array_values(array_filter($responses, 'is_array'))),
 			'remarks' => (string)($task['comment'] ?? ''),
@@ -205,7 +245,7 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			'photos' => ($task['evidence'] ?? []),
 			'state' => (string)($task['state'] ?? ''),
 		];
-	}//end asRun()
+	}//end runFindings()
 
 	/**
 	 * The fields of the run's task.
@@ -218,6 +258,24 @@ class InspectionRunService implements InspectionRunServiceInterface {
 	 * @return array<string, mixed> The task fields.
 	 */
 	private function taskData(string $caseId, array $template, array $payload, string $actor): array {
+		$metadata = $this->metadataOf(payload: $payload);
+
+		$data = $this->baseTaskData(caseId: $caseId, template: $template, payload: $payload, actor: $actor);
+		if ($metadata !== []) {
+			$data['metadata'] = $metadata;
+		}
+
+		return $this->withRegister(data: $data);
+	}//end taskData()
+
+	/**
+	 * The metadata the request body carries, without empty values.
+	 *
+	 * @param array<string, mixed> $payload The request body.
+	 *
+	 * @return array<string, mixed> The metadata.
+	 */
+	private function metadataOf(array $payload): array {
 		$metadata = [];
 		foreach (self::METADATA as $key) {
 			if (array_key_exists($key, $payload) === true && $payload[$key] !== null && $payload[$key] !== '') {
@@ -225,7 +283,21 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			}
 		}
 
-		$data = [
+		return $metadata;
+	}//end metadataOf()
+
+	/**
+	 * The task fields every run carries.
+	 *
+	 * @param string               $caseId   The case uuid.
+	 * @param array<string, mixed> $template The frozen template.
+	 * @param array<string, mixed> $payload  The request body.
+	 * @param string               $actor    The inspector.
+	 *
+	 * @return array<string, mixed> The task fields.
+	 */
+	private function baseTaskData(string $caseId, array $template, array $payload, string $actor): array {
+		return [
 			'title' => 'Inspectie: ' . (string)($template['name'] ?? ''),
 			'kind' => self::KIND,
 			'appId' => 'dossiq',
@@ -237,10 +309,16 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			'templateSnapshot' => $template,
 			'startAt' => (string)($payload['inspectionDate'] ?? date(format: 'c')),
 		];
-		if ($metadata !== []) {
-			$data['metadata'] = $metadata;
-		}
+	}//end baseTaskData()
 
+	/**
+	 * The task fields with the case's register and schema, when both are configured.
+	 *
+	 * @param array<string, mixed> $data The task fields.
+	 *
+	 * @return array<string, mixed> The task fields.
+	 */
+	private function withRegister(array $data): array {
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
 		if ($register !== '' && $schema !== '') {
@@ -249,7 +327,7 @@ class InspectionRunService implements InspectionRunServiceInterface {
 		}
 
 		return $data;
-	}//end taskData()
+	}//end withRegister()
 
 	/**
 	 * The template a run is filled against.

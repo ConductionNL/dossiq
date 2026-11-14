@@ -46,6 +46,8 @@ use Psr\Log\LoggerInterface;
  * Backfill workflowTemplate objects from implicit statusType ordering.
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class MigrateWorkflowDefinitions implements IRepairStep {
 
@@ -250,32 +252,56 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		$statuses = null;
 		foreach ($caseType->versions as $template) {
 			$id = (string)($template['id'] ?? '');
-			if ($id === '' || str_contains((string)json_encode($template), BackfilledTemplateLabels::CAST_OF_A_MAP) === false) {
+			if ($this->carriesCastMarker(id: $id, template: $template) === false) {
 				continue;
 			}
 
 			$statuses ??= $this->statusesById(target: $target, caseTypeId: (string)($caseType->row['id'] ?? ''));
 			$changes = $this->labels->healed(template: $template, caseType: $caseType->row, statusesById: $statuses);
-			if ($changes === []) {
-				continue;
-			}
-
-			try {
-				$this->patchObjectAsArray(
-					objectService: $target->objectService,
-					register: $target->register,
-					schema: $target->schemas->template,
-					id: $id,
-					changes: $changes,
-				);
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: workflow backfill could not heal the labels of a basis template',
-					['app' => AppIdentity::APP_ID, 'template' => $id, 'exception' => $e->getMessage()]
-				);
-			}
+			$this->patchHealed(target: $target, id: $id, changes: $changes);
 		}//end foreach
 	}//end healBackfilled()
+
+	/**
+	 * Whether a stored template has an id and carries the backfill's cast-of-a-map marker.
+	 *
+	 * @param string $id The template id.
+	 * @param array<string, mixed> $template The stored template.
+	 *
+	 * @return bool True when the template is to be healed.
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 */
+	private function carriesCastMarker(string $id, array $template): bool {
+		return $id !== '' && str_contains((string)json_encode($template), BackfilledTemplateLabels::CAST_OF_A_MAP) === true;
+	}//end carriesCastMarker()
+
+	/**
+	 * Write a template's healed labels through the partial write; nothing when nothing was healed.
+	 *
+	 * @param BackfillTarget $target The register and schemas.
+	 * @param string $id The template id.
+	 * @param array<string, mixed> $changes The healed fields.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 */
+	private function patchHealed(BackfillTarget $target, string $id, array $changes): void {
+		if ($changes === []) {
+			return;
+		}
+
+		try {
+			$this->patchObjectAsArray(objectService: $target->objectService, register: $target->register,
+				schema: $target->schemas->template, id: $id, changes: $changes);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: workflow backfill could not heal the labels of a basis template',
+				['app' => AppIdentity::APP_ID, 'template' => $id, 'exception' => $e->getMessage()]
+			);
+		}
+	}//end patchHealed()
 
 	/**
 	 * The statuses of a case type, by id; empty when they cannot be read.
@@ -385,12 +411,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 */
 	private function orderedStatuses(BackfillTarget $target, string $caseTypeId): array {
 		try {
-			$statusRows = $this->searchObjectsAsArrays(
-				objectService: $target->objectService,
-				register: $target->register,
-				schema: $target->schemas->status,
-				filters: ['caseType' => $caseTypeId, '_limit' => 500],
-			);
+			$statusRows = $this->searchStatuses(target: $target, caseTypeId: $caseTypeId);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: workflow backfill failed to list statusTypes',
@@ -399,6 +420,36 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			return [];
 		}
 
+		return $this->sortedByOrder(statuses: $this->statusesWithId(statusRows: $statusRows));
+	}//end orderedStatuses()
+
+	/**
+	 * Search a case type's statuses.
+	 *
+	 * @param BackfillTarget $target     The register and schemas.
+	 * @param string         $caseTypeId The case type.
+	 *
+	 * @return array<int, mixed> The raw rows.
+	 *
+	 * @throws \Throwable When the search fails.
+	 */
+	private function searchStatuses(BackfillTarget $target, string $caseTypeId): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $target->objectService,
+			register: $target->register,
+			schema: $target->schemas->status,
+			filters: ['caseType' => $caseTypeId, '_limit' => 500],
+		);
+	}//end searchStatuses()
+
+	/**
+	 * The rows that read as an array and carry an id.
+	 *
+	 * @param array<int, mixed> $statusRows The raw rows.
+	 *
+	 * @return array<int, array<string, mixed>> The statuses.
+	 */
+	private function statusesWithId(array $statusRows): array {
 		$statuses = [];
 		foreach ($statusRows as $raw) {
 			$row = $this->objectToArrayOrNull(value: $raw);
@@ -407,6 +458,17 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			}
 		}
 
+		return $statuses;
+	}//end statusesWithId()
+
+	/**
+	 * The statuses sorted by their order.
+	 *
+	 * @param array<int, array<string, mixed>> $statuses The statuses.
+	 *
+	 * @return array<int, array<string, mixed>> The statuses, in order.
+	 */
+	private function sortedByOrder(array $statuses): array {
 		usort(
 			$statuses,
 			static function (array $a, array $b): int {
@@ -415,7 +477,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		);
 
 		return $statuses;
-	}//end orderedStatuses()
+	}//end sortedByOrder()
 
 	/**
 	 * Pin the open cases of a caseType to its new template at version 1.

@@ -124,6 +124,29 @@ class CaseTypeAcknowledgement {
 	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function declarationFor(array $caseType): array {
+		$declaration = $this->declaredOverDefaults(caseType: $caseType);
+		$declaration = $this->normalisedScalars(declaration: $declaration);
+
+		$declaration['addressFields'] = array_values(
+			array_filter(
+				array_map(static fn (mixed $path): string => trim((string)$path), (array)$declaration['addressFields']),
+				static fn (string $path): bool => $path !== ''
+			)
+		);
+
+		return $declaration;
+	}//end declarationFor()
+
+	/**
+	 * The defaults with every non-null value the case type declares laid over them.
+	 *
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return array<string, mixed> The declaration, not yet normalised.
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 */
+	private function declaredOverDefaults(array $caseType): array {
 		$declared = ($caseType['acknowledgement'] ?? null);
 		if (is_array($declared) === false) {
 			$declared = [];
@@ -139,6 +162,19 @@ class CaseTypeAcknowledgement {
 			$declaration[$key] = $declared[$key];
 		}
 
+		return $declaration;
+	}//end declaredOverDefaults()
+
+	/**
+	 * The declaration with its flags as booleans, its channels as a list and its texts trimmed.
+	 *
+	 * @param array<string, mixed> $declaration The declaration, defaults filled in.
+	 *
+	 * @return array<string, mixed> The declaration.
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 */
+	private function normalisedScalars(array $declaration): array {
 		$declaration['enabled'] = ($declaration['enabled'] !== false);
 		$declaration['statutory'] = ($declaration['statutory'] !== false);
 		$declaration['contentOnPlatform'] = ($declaration['contentOnPlatform'] === true);
@@ -155,15 +191,8 @@ class CaseTypeAcknowledgement {
 			$declaration['language'] = (string)self::DEFAULTS['language'];
 		}
 
-		$declaration['addressFields'] = array_values(
-			array_filter(
-				array_map(static fn (mixed $path): string => trim((string)$path), (array)$declaration['addressFields']),
-				static fn (string $path): bool => $path !== ''
-			)
-		);
-
 		return $declaration;
-	}//end declarationFor()
+	}//end normalisedScalars()
 
 	/**
 	 * The e-mail addresses a case keeps where its case type declares them.
@@ -321,6 +350,35 @@ class CaseTypeAcknowledgement {
 	public function momentsFor(array $caseType): array {
 		$declaration = $this->declarationFor(caseType: $caseType);
 
+		$moments = $this->declaredMoments(caseType: $caseType);
+
+		if ($this->namesTheStatutoryMoment(moments: $moments) === true) {
+			return $moments;
+		}
+
+		array_unshift(
+			$moments,
+			[
+				'moment' => self::MOMENT_RECEIVED,
+				'template' => self::TEMPLATE,
+				'statutory' => ($declaration['statutory'] === true),
+				'enabled' => ($declaration['enabled'] === true),
+			]
+		);
+
+		return $moments;
+	}//end momentsFor()
+
+	/**
+	 * The notification moments the case type declares, normalised, skipping entries without a moment.
+	 *
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return array<int, array<string, mixed>> The declared moments.
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 */
+	private function declaredMoments(array $caseType): array {
 		$moments = [];
 		$declared = ($caseType['notificationMoments'] ?? null);
 		if (is_array($declared) === true) {
@@ -343,22 +401,8 @@ class CaseTypeAcknowledgement {
 			}
 		}
 
-		if ($this->namesTheStatutoryMoment(moments: $moments) === true) {
-			return $moments;
-		}
-
-		array_unshift(
-			$moments,
-			[
-				'moment' => self::MOMENT_RECEIVED,
-				'template' => self::TEMPLATE,
-				'statutory' => ($declaration['statutory'] === true),
-				'enabled' => ($declaration['enabled'] === true),
-			]
-		);
-
 		return $moments;
-	}//end momentsFor()
+	}//end declaredMoments()
 
 	/**
 	 * What publishing this case type should warn about, in sentences.

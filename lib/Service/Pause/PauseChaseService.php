@@ -273,10 +273,7 @@ class PauseChaseService implements PauseChaseServiceInterface {
 		$step->moment = $moment;
 		$step->recipient = $this->recipientFor(caseId: $step->caseId);
 		if ($step->recipient === '') {
-			$this->logger->warning(
-				'Dossiq pause: a reminder was due but the case carries no address to send it to',
-				['app' => AppIdentity::APP_ID, 'instance' => $step->instanceId, 'case' => $step->caseId]
-			);
+			$this->warnNoRecipient(step: $step);
 			return false;
 		}
 
@@ -285,6 +282,35 @@ class PauseChaseService implements PauseChaseServiceInterface {
 			return false;
 		}
 
+		$this->recordChased(step: $step, reason: $reason, moment: $moment);
+
+		return true;
+	}//end chase()
+
+	/**
+	 * Log that a reminder was due but the case has no address to send it to.
+	 *
+	 * @param PauseStep $step The step.
+	 *
+	 * @return void
+	 */
+	private function warnNoRecipient(PauseStep $step): void {
+		$this->logger->warning(
+			'Dossiq pause: a reminder was due but the case carries no address to send it to',
+			['app' => AppIdentity::APP_ID, 'instance' => $step->instanceId, 'case' => $step->caseId]
+		);
+	}//end warnNoRecipient()
+
+	/**
+	 * Write down that a reminder went: on the instance, as a step, on the case and in the log.
+	 *
+	 * @param PauseStep            $step   The step, numbered.
+	 * @param array<string, mixed> $reason The normalised reason in force.
+	 * @param DateTimeImmutable    $moment When this is happening.
+	 *
+	 * @return void
+	 */
+	private function recordChased(PauseStep $step, array $reason, DateTimeImmutable $moment): void {
 		$this->termService->updateTermijnInstance(
 			$step->instanceId,
 			[
@@ -298,9 +324,7 @@ class PauseChaseService implements PauseChaseServiceInterface {
 		$this->recordStep(step: $step);
 		$this->projectOntoCase(step: $step);
 		$this->logChased(step: $step);
-
-		return true;
-	}//end chase()
+	}//end recordChased()
 
 	/**
 	 * The step for one paused row and its reason.
@@ -538,21 +562,13 @@ class PauseChaseService implements PauseChaseServiceInterface {
 	 */
 	private function projectOntoCase(PauseStep $step): void {
 		$caseId = $step->caseId;
-		$objectService = $this->settings->getObjectService();
-		$register = (string)$this->settings->getConfigValue('register');
-		$schema = (string)$this->settings->getConfigValue('case_schema');
-		if ($objectService === null || $caseId === '' || $register === '' || $schema === '') {
+		$store = $this->caseStore();
+		if ($store === null || $caseId === '') {
 			return;
 		}
 
-		$changes = [
-			'pauseWaitingOn' => (string)$step->reason['waitingOn'],
-			'chasesSent' => $step->number,
-		];
-		$since = $this->chase->schedule->pauseStartMoment(date: (string)($step->instance['pauzeStartDatum'] ?? ''));
-		if ($since !== null) {
-			$changes['waitingSince'] = $since;
-		}
+		[$objectService, $register, $schema] = $store;
+		$changes = $this->waitingChanges(step: $step);
 
 		try {
 			$this->patchObjectAsArray(
@@ -569,6 +585,42 @@ class PauseChaseService implements PauseChaseServiceInterface {
 			);
 		}
 	}//end projectOntoCase()
+
+	/**
+	 * The object service, register and case schema, or null when any of them is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The case store.
+	 */
+	private function caseStore(): ?array {
+		$objectService = $this->settings->getObjectService();
+		$register = (string)$this->settings->getConfigValue('register');
+		$schema = (string)$this->settings->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end caseStore()
+
+	/**
+	 * The waiting facts to write onto the case for a reminder.
+	 *
+	 * @param PauseStep $step The reminder that went out.
+	 *
+	 * @return array<string, mixed> The case changes.
+	 */
+	private function waitingChanges(PauseStep $step): array {
+		$changes = [
+			'pauseWaitingOn' => (string)$step->reason['waitingOn'],
+			'chasesSent' => $step->number,
+		];
+		$since = $this->chase->schedule->pauseStartMoment(date: (string)($step->instance['pauzeStartDatum'] ?? ''));
+		if ($since !== null) {
+			$changes['waitingSince'] = $since;
+		}
+
+		return $changes;
+	}//end waitingChanges()
 
 	/**
 	 * Every suspended term instance.

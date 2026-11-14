@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Kernel\Contracts;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Review\PagesSeen;
 
 /**
  * Contract of DocumentRelevance.
@@ -92,11 +91,11 @@ interface DocumentRelevanceInterface {
 	/**
 	 * The pages seen on these reviews, and the required pages still unseen.
 	 *
-	 * @return PagesSeen The pages seen, over these reviews.
+	 * @return PagesSeenInterface The pages seen, over these reviews.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
-	public function pages(): PagesSeen;
+	public function pages(): PagesSeenInterface;
 
 	/**
 	 * Save a review, creating or replacing it.

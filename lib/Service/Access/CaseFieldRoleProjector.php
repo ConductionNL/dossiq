@@ -269,20 +269,59 @@ class CaseFieldRoleProjector implements CaseFieldRoleProjectorInterface {
 	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function writeToSchema(string $caseTypeId, array $own): bool {
-		$schemaMapper = $this->container->get(self::SCHEMA_MAPPER);
-		if (is_object($schemaMapper) === false) {
+		$resolved = $this->mapperAndCaseSchema();
+		if ($resolved === null) {
 			return false;
 		}
 
-		$schema = $this->slugs->resolve(schemaMapper: $schemaMapper, slug: self::CASE_SCHEMA_SLUG);
-		if ($schema === null) {
-			return false;
-		}
+		[$schemaMapper, $schema] = $resolved;
 
+		return $this->projectOnto(schemaMapper: $schemaMapper, schema: $schema, caseTypeId: $caseTypeId, own: $own);
+	}//end writeToSchema()
+
+	/**
+	 * Compute the ledger and the properties and update the schema when either changed.
+	 *
+	 * @param object               $schemaMapper The schema mapper.
+	 * @param object               $schema       The case schema.
+	 * @param string               $caseTypeId   The case type being published, or '' for a reapply.
+	 * @param array<string, mixed> $own          What that case type now projects.
+	 *
+	 * @return bool True when the schema was written.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function projectOnto(object $schemaMapper, object $schema, string $caseTypeId, array $own): bool {
 		$configuration = $this->arrayOf(value: $schema->getConfiguration());
 		$properties = $this->arrayOf(value: $schema->getProperties());
 
 		$ledger = $this->arrayOf(value: ($configuration[self::LEDGER_KEY] ?? []));
+		[$updatedLedger, $updatedProperties] = $this->projected(caseTypeId: $caseTypeId, own: $own, ledger: $ledger, properties: $properties);
+
+		if ($updatedLedger === $ledger && $updatedProperties === $properties) {
+			return false;
+		}
+
+		$schema->setConfiguration($this->configurationWith(configuration: $configuration, updatedLedger: $updatedLedger));
+		$schema->setProperties($updatedProperties);
+		$schemaMapper->update($schema);
+
+		return true;
+	}//end projectOnto()
+
+	/**
+	 * The ledger with this case type's projection, and the properties that ledger implies.
+	 *
+	 * @param string               $caseTypeId The case type being published, or '' for a reapply.
+	 * @param array<string, mixed> $own        What that case type now projects.
+	 * @param array<string, mixed> $ledger     The stored ledger.
+	 * @param array<string, mixed> $properties The stored schema properties.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>} The updated ledger and properties.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function projected(string $caseTypeId, array $own, array $ledger, array $properties): array {
 		$updatedLedger = $this->ledger->ledgerWith(
 			ledger: $ledger,
 			caseTypeId: $caseTypeId,
@@ -296,21 +335,48 @@ class CaseFieldRoleProjector implements CaseFieldRoleProjectorInterface {
 			previous: $ledger
 		);
 
-		if ($updatedLedger === $ledger && $updatedProperties === $properties) {
-			return false;
+		return [$updatedLedger, $updatedProperties];
+	}//end projected()
+
+	/**
+	 * OpenRegister's schema mapper and the case schema, or null when either is missing.
+	 *
+	 * @return array{0: object, 1: object}|null The mapper and the schema.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function mapperAndCaseSchema(): ?array {
+		$schemaMapper = $this->container->get(self::SCHEMA_MAPPER);
+		if (is_object($schemaMapper) === false) {
+			return null;
 		}
 
+		$schema = $this->slugs->resolve(schemaMapper: $schemaMapper, slug: self::CASE_SCHEMA_SLUG);
+		if ($schema === null) {
+			return null;
+		}
+
+		return [$schemaMapper, $schema];
+	}//end mapperAndCaseSchema()
+
+	/**
+	 * The schema configuration with the ledger replaced, or dropped when empty.
+	 *
+	 * @param array<string, mixed> $configuration The schema configuration.
+	 * @param array<string, mixed> $updatedLedger The new ledger.
+	 *
+	 * @return array<string, mixed> The configuration to store.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function configurationWith(array $configuration, array $updatedLedger): array {
 		unset($configuration[self::LEDGER_KEY]);
 		if ($updatedLedger !== []) {
 			$configuration[self::LEDGER_KEY] = $updatedLedger;
 		}
 
-		$schema->setConfiguration($configuration);
-		$schema->setProperties($updatedProperties);
-		$schemaMapper->update($schema);
-
-		return true;
-	}//end writeToSchema()
+		return $configuration;
+	}//end configurationWith()
 
 	/**
 	 * One schema column as an array, whatever it answered.

@@ -142,9 +142,24 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 			throw new RuntimeException('Template not found');
 		}
 
-		$currentVersion = (int)($existing['version'] ?? 1);
+		$this->deactivate(existing: $existing, templateId: $templateId);
 
-		// Mark the prior version inactive so the active filter only sees the new copy.
+		$payload = $this->nextVersion(existing: $existing, data: $data);
+
+		return $this->repository->saveTemplate(payload: $this->withDelivery(payload: $payload, data: $data, existing: $existing));
+	}//end updateTemplate()
+
+	/**
+	 * Mark the prior version inactive so the active filter only sees the new copy; a failure is logged.
+	 *
+	 * @param array<string, mixed> $existing   The current version.
+	 * @param string               $templateId Existing template id/slug.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function deactivate(array $existing, string $templateId): void {
 		$previous = $existing;
 		$previous['isActive'] = false;
 		try {
@@ -155,8 +170,22 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 				['template' => $templateId, 'error' => $e->getMessage()]
 			);
 		}
+	}//end deactivate()
 
-		$payload = [
+	/**
+	 * The next version's payload: the edit over the current version, one version up and active.
+	 *
+	 * @param array<string, mixed> $existing The current version.
+	 * @param array<string, mixed> $data     New payload.
+	 *
+	 * @return array<string, mixed> The new version, before its delivery fields.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function nextVersion(array $existing, array $data): array {
+		$currentVersion = (int)($existing['version'] ?? 1);
+
+		return [
 			'caseType' => $existing['caseType'] ?? '',
 			'name' => (string)($data['name'] ?? ($existing['name'] ?? '')),
 			'subject' => (string)($data['subject'] ?? ($existing['subject'] ?? '')),
@@ -165,9 +194,7 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 			'isActive' => true,
 			'previousVersion' => $existing['id'] ?? null,
 		];
-
-		return $this->repository->saveTemplate(payload: $this->withDelivery(payload: $payload, data: $data, existing: $existing));
-	}//end updateTemplate()
+	}//end nextVersion()
 
 	/**
 	 * Add when and how a template goes out: `moment` (a case event),
@@ -270,6 +297,23 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 			throw new RuntimeException('Template not found');
 		}
 
+		$case = $this->draftableCase(caseId: $caseId);
+
+		return $this->rendered(template: $template, case: $case) + ['caseId' => $caseId, 'templateId' => $templateId];
+	}//end prefillDraft()
+
+	/**
+	 * The case a draft is written for, refused when it is missing or final.
+	 *
+	 * @param string $caseId Case UUID.
+	 *
+	 * @return array<string, mixed> The case.
+	 *
+	 * @throws \RuntimeException When the case is missing or final.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function draftableCase(string $caseId): array {
 		$case = $this->repository->findCase(caseId: $caseId);
 		if ($case === null) {
 			throw new RuntimeException('Case not found');
@@ -279,12 +323,47 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 			throw new RuntimeException('Case is in a final state — drafting is disabled');
 		}
 
+		return $case;
+	}//end draftableCase()
+
+	/**
+	 * The template's subject and body resolved against the case.
+	 *
+	 * @param array<string, mixed> $template The template.
+	 * @param array<string, mixed> $case     The case.
+	 *
+	 * @return array{subject: string, body: string, unresolved: array<int, string>}
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function rendered(array $template, array $case): array {
 		$vars = $this->buildVariableMap(case: $case);
 		$rawSubject = (string)($template['subject'] ?? '');
 		$rawBody = (string)($template['body'] ?? '');
 		$subject = $this->resolve(text: $rawSubject, vars: $vars);
 		$body = $this->resolve(text: $rawBody, vars: $vars);
-		$unresolved = array_values(
+		$unresolved = $this->unresolvedIn(rawSubject: $rawSubject, rawBody: $rawBody, vars: $vars);
+
+		return [
+			'subject' => $subject,
+			'body' => $body,
+			'unresolved' => $unresolved,
+		];
+	}//end rendered()
+
+	/**
+	 * The variable names the subject and body name but the map does not hold.
+	 *
+	 * @param string                $rawSubject The template subject.
+	 * @param string                $rawBody    The template body.
+	 * @param array<string, string> $vars       Variable map.
+	 *
+	 * @return array<int, string> The unresolved names, each once.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function unresolvedIn(string $rawSubject, string $rawBody, array $vars): array {
+		return array_values(
 			array_unique(
 				array_merge(
 					$this->collectUnresolved(text: $rawSubject, vars: $vars),
@@ -292,15 +371,7 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 				)
 			)
 		);
-
-		return [
-			'subject' => $subject,
-			'body' => $body,
-			'unresolved' => $unresolved,
-			'caseId' => $caseId,
-			'templateId' => $templateId,
-		];
-	}//end prefillDraft()
+	}//end unresolvedIn()
 
 	/**
 	 * Resolve `{{name}}` placeholders against the variable map.

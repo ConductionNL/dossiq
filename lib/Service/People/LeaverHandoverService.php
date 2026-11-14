@@ -170,13 +170,7 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	public function execute(string $fromUser, string $toUser, string $actor): array {
 		$fromUser = trim($fromUser);
 		$toUser = trim($toUser);
-		if ($fromUser === '' || $toUser === '') {
-			throw new InvalidArgumentException('Both fromUser and toUser are required');
-		}
-
-		if ($fromUser === $toUser) {
-			throw new InvalidArgumentException('Cannot hand a person their own work');
-		}
+		$this->assertHandoverPair(fromUser: $fromUser, toUser: $toUser);
 
 		// The coordinator seats are read BEFORE the cases move. Reading them
 		// afterwards would work today and break the first time the case walk
@@ -185,31 +179,12 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 		$coordinated = $this->seats->casesCoordinatedBy(uid: $fromUser);
 		$drafts = $this->draftsOf(uid: $fromUser);
 
-		// The cases move as one bulk job, committed here rather than rehearsed:
-		// a leaver handover is an act somebody already decided, not a proposal
-		// waiting for a coordinator to read it. The job walks them in the
-		// background and reports per case what it did
-		// (bulk-actions-report-progress, D-1).
-		$reason = 'Handover of ' . $fromUser . '\'s work to ' . $toUser . ', ordered by ' . $actor;
-		$batch = $this->reassignment->releaseCaseload(
-			fromUser: $fromUser,
-			toUser: $toUser,
-			justification: $reason,
-			filter: null,
-			actorId: $actor,
-			commit: true,
-		);
-		$job = (array)($batch['job'] ?? []);
-		$caseIds = (array)($batch['caseIds'] ?? []);
-		$batchId = (string)($job['uuid'] ?? ($job['id'] ?? ''));
+		$batch = $this->releaseCaseload(fromUser: $fromUser, toUser: $toUser, actor: $actor);
+		$batchId = self::batchIdOf(batch: $batch);
 		$now = (new DateTimeImmutable())->format('c');
 
-		$seatsMoved = 0;
-		foreach ($coordinated as $caseId) {
-			if ($this->moveCoordinatorSeat(caseId: $caseId, toUser: $toUser, fromUser: $fromUser, actor: $actor, batchId: $batchId, now: $now) === true) {
-				$seatsMoved += 1;
-			}
-		}
+		$seatsMoved = $this->moveCoordinatorSeats(coordinated: $coordinated, toUser: $toUser, fromUser: $fromUser,
+			actor: $actor, batchId: $batchId, now: $now);
 
 		// ⚠️ Recorded against the cases the act was ORDERED over, not against
 		// the ones the job has finished writing. The job walks in the
@@ -219,39 +194,162 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 		// "this person's work was handed over on this date", which is what an
 		// auditor asks; what happened to each individual case is the job's own
 		// report, at /api/bulk-jobs/{id}/members.
-		$this->recordOnCases(
-			cases: $caseIds,
-			fromUser: $fromUser,
-			toUser: $toUser,
-			actor: $actor,
-			batchId: $batchId,
-			now: $now,
-		);
+		$this->recordOnCases(cases: (array)($batch['caseIds'] ?? []), fromUser: $fromUser, toUser: $toUser, actor: $actor, batchId: $batchId, now: $now);
 
-		$this->logger->info(
-			'Dossiq leaver handover: a person\'s work was handed over',
-			[
-				'batchId' => $batchId,
-				'from' => $fromUser,
-				'to' => $toUser,
-				'actor' => $actor,
-				'cases' => count($caseIds),
-				'job' => $batchId,
-				'coordinatorSeats' => $seatsMoved,
-				'draftsNotMoved' => count($drafts),
-			],
-		);
+		$result = self::handoverResult(batch: $batch, batchId: $batchId, seatsMoved: $seatsMoved, drafts: $drafts);
+		return $this->loggedHandover(result: $result, fromUser: $fromUser, toUser: $toUser, actor: $actor);
+	}//end execute()
 
+	/**
+	 * The batch id of a committed caseload job.
+	 *
+	 * @param array<string, mixed> $batch The batch the reassignment service answered.
+	 *
+	 * @return string The job's uuid, or its id, or ''.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 */
+	private static function batchIdOf(array $batch): string {
+		$job = (array)($batch['job'] ?? []);
+		return (string)($job['uuid'] ?? ($job['id'] ?? ''));
+	}//end batchIdOf()
+
+	/**
+	 * What a handover moved, and the job that is moving the cases.
+	 *
+	 * @param array<string, mixed>             $batch      The batch the reassignment service answered.
+	 * @param string                           $batchId    The handover's batch id.
+	 * @param int                              $seatsMoved How many coordinator seats moved.
+	 * @param array<int, array<string, mixed>> $drafts     The drafts the leaver holds.
+	 *
+	 * @return array{batchId: string, job: array<string, mixed>, succeeded: int, failed: int,
+	 *               coordinatorSeats: int, drafts: array<int, array<string, mixed>>,
+	 *               tasks: array<int, array<string, mixed>>}
+	 *         The handover's outcome.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 */
+	private static function handoverResult(array $batch, string $batchId, int $seatsMoved, array $drafts): array {
 		return [
 			'batchId' => $batchId,
-			'job' => $job,
-			'succeeded' => count($caseIds),
+			'job' => (array)($batch['job'] ?? []),
+			'succeeded' => count((array)($batch['caseIds'] ?? [])),
 			'failed' => 0,
 			'coordinatorSeats' => $seatsMoved,
 			'drafts' => $drafts,
 			'tasks' => (array)($batch['tasks'] ?? []),
 		];
-	}//end execute()
+	}//end handoverResult()
+
+	/**
+	 * Log that a person's work was handed over, and pass the outcome on.
+	 *
+	 * @param array<string, mixed> $result   The handover's outcome.
+	 * @param string               $fromUser The person who is leaving.
+	 * @param string               $toUser   The person receiving the work.
+	 * @param string               $actor    The administrator running the act.
+	 *
+	 * @return array<string, mixed> The same outcome.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 */
+	private function loggedHandover(array $result, string $fromUser, string $toUser, string $actor): array {
+		$this->logger->info('Dossiq leaver handover: a person\'s work was handed over', [
+			'batchId' => $result['batchId'],
+			'from' => $fromUser,
+			'to' => $toUser,
+			'actor' => $actor,
+			'cases' => $result['succeeded'],
+			'job' => $result['batchId'],
+			'coordinatorSeats' => $result['coordinatorSeats'],
+			'draftsNotMoved' => count($result['drafts']),
+		]);
+
+		return $result;
+	}//end loggedHandover()
+
+	/**
+	 * Commit the bulk job that moves the leaver's cases to the successor.
+	 *
+	 * @param string $fromUser The person who is leaving.
+	 * @param string $toUser   The person receiving the work.
+	 * @param string $actor    The administrator running the act.
+	 *
+	 * @return array{job: array<string, mixed>, tasks: array<int, array<string, mixed>>, caseIds: array<int, string>}
+	 *         The batch the reassignment service answered.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 */
+	private function releaseCaseload(string $fromUser, string $toUser, string $actor): array {
+		// The cases move as one bulk job, committed here rather than rehearsed:
+		// a leaver handover is an act somebody already decided, not a proposal
+		// waiting for a coordinator to read it. The job walks them in the
+		// background and reports per case what it did
+		// (bulk-actions-report-progress, D-1).
+		$reason = 'Handover of ' . $fromUser . '\'s work to ' . $toUser . ', ordered by ' . $actor;
+		return $this->reassignment->releaseCaseload(
+			fromUser: $fromUser,
+			toUser: $toUser,
+			justification: $reason,
+			filter: null,
+			actorId: $actor,
+			commit: true,
+		);
+	}//end releaseCaseload()
+
+	/**
+	 * Refuse a handover that names nobody, or the leaver as their own successor.
+	 *
+	 * @param string $fromUser The person who is leaving, trimmed.
+	 * @param string $toUser   The person receiving the work, trimmed.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When a person is missing, or is their own successor.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 */
+	private function assertHandoverPair(string $fromUser, string $toUser): void {
+		if ($fromUser === '' || $toUser === '') {
+			throw new InvalidArgumentException('Both fromUser and toUser are required');
+		}
+
+		if ($fromUser === $toUser) {
+			throw new InvalidArgumentException('Cannot hand a person their own work');
+		}
+	}//end assertHandoverPair()
+
+	/**
+	 * Give every coordinator seat the leaver held to the receiving person.
+	 *
+	 * @param array<int, string> $coordinated The cases the leaver coordinates.
+	 * @param string $toUser   Who receives the seats.
+	 * @param string $fromUser Who held them.
+	 * @param string $actor    Who ran the act.
+	 * @param string $batchId  The handover's batch id.
+	 * @param string $now      The moment of the act.
+	 *
+	 * @return int How many seats moved.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 */
+	private function moveCoordinatorSeats(
+		array $coordinated,
+		string $toUser,
+		string $fromUser,
+		string $actor,
+		string $batchId,
+		string $now,
+	): int {
+		$seatsMoved = 0;
+		foreach ($coordinated as $caseId) {
+			if ($this->moveCoordinatorSeat(caseId: $caseId, toUser: $toUser, fromUser: $fromUser, actor: $actor, batchId: $batchId, now: $now) === true) {
+				$seatsMoved += 1;
+			}
+		}
+
+		return $seatsMoved;
+	}//end moveCoordinatorSeats()
 
 	/**
 	 * Give one case's coordinator seat to the receiving person.
@@ -265,32 +363,16 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	 *
 	 * @return bool True when the seat moved.
 	 */
-	private function moveCoordinatorSeat(
-		string $caseId,
-		string $toUser,
-		string $fromUser,
-		string $actor,
-		string $batchId,
-		string $now,
-	): bool {
+	private function moveCoordinatorSeat(string $caseId, string $toUser, string $fromUser,
+		string $actor, string $batchId, string $now): bool {
 		try {
 			$this->seats->nameCoordinator(caseId: $caseId, participant: $toUser);
-			$this->recordOnCase(
-				caseId: $caseId,
-				record: [
-					'fromUser' => $fromUser,
-					'toUser' => $toUser,
-					'actor' => $actor,
-					'seat' => CaseSeats::COORDINATOR,
-					'batchId' => $batchId,
-					'movedAt' => $now,
-				],
-			);
+			$record = ['fromUser' => $fromUser, 'toUser' => $toUser, 'actor' => $actor,
+				'seat' => CaseSeats::COORDINATOR, 'batchId' => $batchId, 'movedAt' => $now];
+			$this->recordOnCase(caseId: $caseId, record: $record);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq leaver handover: a coordinator seat could not be moved',
-				['caseId' => $caseId, 'exception' => $e->getMessage()],
-			);
+			$context = ['caseId' => $caseId, 'exception' => $e->getMessage()];
+			$this->logger->warning('Dossiq leaver handover: a coordinator seat could not be moved', $context);
 
 			return false;
 		}
@@ -383,14 +465,26 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 			return [];
 		}
 
+		$rows = $this->draftCaseTypeRows(uid: $uid);
+
+		return $this->ownedDrafts(rows: $rows, uid: $uid);
+	}//end draftsOf()
+
+	/**
+	 * The draft case type rows, or none (logged) when they cannot be read.
+	 *
+	 * @param string $uid The person, trimmed.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 */
+	private function draftCaseTypeRows(string $uid): array {
 		try {
 			[$objectService, $register] = $this->context();
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_type_schema'),
-				filters: ['isDraft' => true, '_limit' => self::PAGE_SIZE],
-			);
+			$schema = $this->schema(key: 'case_type_schema');
+			$filters = ['isDraft' => true, '_limit' => self::PAGE_SIZE];
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq leaver handover: the drafts could not be read',
@@ -400,6 +494,20 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 			return [];
 		}
 
+		return $rows;
+	}//end draftCaseTypeRows()
+
+	/**
+	 * The rows a person owns, as drafts.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The draft case type rows.
+	 * @param string                           $uid  The person, trimmed.
+	 *
+	 * @return array<int, array<string, mixed>> The drafts, as `{id, title, schema}`.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 */
+	private function ownedDrafts(array $rows, string $uid): array {
 		$drafts = [];
 		foreach ($rows as $row) {
 			$self = (array)($row['@self'] ?? []);
@@ -408,15 +516,29 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 				continue;
 			}
 
-			$drafts[] = [
-				'id' => trim((string)($row['id'] ?? ($self['id'] ?? ''))),
-				'title' => $this->text->forReader(value: ($row['title'] ?? '')),
-				'schema' => 'caseType',
-			];
+			$drafts[] = $this->draftEntry(row: $row, self: $self);
 		}
 
 		return $drafts;
-	}//end draftsOf()
+	}//end ownedDrafts()
+
+	/**
+	 * One draft, as `{id, title, schema}`.
+	 *
+	 * @param array<string, mixed> $row  The draft case type row.
+	 * @param array<string, mixed> $self The row's `@self` block.
+	 *
+	 * @return array<string, mixed> The draft.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 */
+	private function draftEntry(array $row, array $self): array {
+		return [
+			'id' => trim((string)($row['id'] ?? ($self['id'] ?? ''))),
+			'title' => $this->text->forReader(value: ($row['title'] ?? '')),
+			'schema' => 'caseType',
+		];
+	}//end draftEntry()
 
 	/**
 	 * The object service and register, or an exception.

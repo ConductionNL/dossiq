@@ -94,17 +94,43 @@ class ComplaintPatterns implements ComplaintPatternsInterface {
 		}
 
 		$months = $period->trailingMonths();
-		$complaints = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: [
-				'receiptDate' => ['gte' => min($months[0].'-01', $period->previous()->firstDay()), 'lte' => $period->lastDay()],
-				'_limit' => 10000,
-			]
-		);
+		$filters = $this->receiptFilters(period: $period, months: $months);
+		$complaints = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 		$dispositions = $this->dispositions(objectService: $objectService, register: $register);
 		$figures = $this->figures->compute(period: $period, complaints: $complaints, dispositions: $dispositions);
+
+		return $this->patterns(period: $period, figures: $figures, months: $months);
+	}//end forQuarter()
+
+	/**
+	 * The search filters for the complaints received in the trailing months and the quarter before.
+	 *
+	 * @param QuarterPeriod $period The quarter.
+	 * @param array<int, string> $months The trailing months, oldest first.
+	 *
+	 * @return array<string, mixed> The filters.
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	private function receiptFilters(QuarterPeriod $period, array $months): array {
+		return [
+			'receiptDate' => ['gte' => min($months[0].'-01', $period->previous()->firstDay()), 'lte' => $period->lastDay()],
+			'_limit' => 10000,
+		];
+	}//end receiptFilters()
+
+	/**
+	 * The answer for one quarter, from the computed figures and the targets.
+	 *
+	 * @param QuarterPeriod $period The quarter.
+	 * @param array<string, mixed> $figures The computed figures.
+	 * @param array<int, string> $months The trailing months, oldest first.
+	 *
+	 * @return array<string, mixed> The answer.
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	private function patterns(QuarterPeriod $period, array $figures, array $months): array {
 		$targets = $this->targets();
 
 		return [
@@ -118,7 +144,7 @@ class ComplaintPatterns implements ComplaintPatternsInterface {
 			'byMonth' => $figures['byMonth'] + ['target' => array_fill(0, count($months), $targets[self::TARGET_PER_MONTH])],
 			'resolutionByCategory' => $figures['handling']['resolutionByCategory'],
 		];
-	}//end forQuarter()
+	}//end patterns()
 
 	/**
 	 * The final disposition per complaint id; one awaiting approval is not final.
@@ -191,25 +217,63 @@ class ComplaintPatterns implements ComplaintPatternsInterface {
 	 * @return list<array{title: string, text: string}>
 	 */
 	private function findings(QuarterPeriod $period, array $byCategory): array {
-		$parts = [];
-		foreach ($byCategory['risePercent'] as $index => $rise) {
-			if ($rise !== null) {
-				$count = $byCategory['counts'][$index];
-				$before = (string)$byCategory['previousCounts'][$index];
-				$parts[] = $this->l10n->n(
-					'%1$s (%2$s complaint, from %3$s to %2$s)',
-					'%1$s (%2$s complaints, from %3$s to %2$s)',
-					$count,
-					[$byCategory['labels'][$index], (string)$count, $before]
-				);
-			}
-		}
+		$parts = $this->risenCategories(byCategory: $byCategory);
 
 		if ($parts === []) {
 			return [];
 		}
 
-		return [[
+		return [$this->risenFinding(period: $period, parts: $parts)];
+	}//end findings()
+
+	/**
+	 * One phrase per category that rose past the flag, naming its count before and now.
+	 *
+	 * @param array{labels: list<string>, counts: list<int>, risePercent: list<int|null>, previousCounts: list<int>} $byCategory The category counts.
+	 *
+	 * @return list<string> The phrases.
+	 */
+	private function risenCategories(array $byCategory): array {
+		$parts = [];
+		foreach ($byCategory['risePercent'] as $index => $rise) {
+			if ($rise !== null) {
+				$parts[] = $this->risePhrase(byCategory: $byCategory, index: $index);
+			}
+		}
+
+		return $parts;
+	}//end risenCategories()
+
+	/**
+	 * One risen category, named with its count before and now.
+	 *
+	 * @param array{labels: list<string>, counts: list<int>, risePercent: list<int|null>, previousCounts: list<int>} $byCategory The category counts.
+	 * @param int $index The category's position.
+	 *
+	 * @return string The phrase.
+	 */
+	private function risePhrase(array $byCategory, int $index): string {
+		$count = $byCategory['counts'][$index];
+		$before = (string)$byCategory['previousCounts'][$index];
+
+		return $this->l10n->n(
+			'%1$s (%2$s complaint, from %3$s to %2$s)',
+			'%1$s (%2$s complaints, from %3$s to %2$s)',
+			$count,
+			[$byCategory['labels'][$index], (string)$count, $before]
+		);
+	}//end risePhrase()
+
+	/**
+	 * The finding naming every category that rose past the flag.
+	 *
+	 * @param QuarterPeriod $period The quarter.
+	 * @param list<string> $parts One phrase per risen category.
+	 *
+	 * @return array{title: string, text: string}
+	 */
+	private function risenFinding(QuarterPeriod $period, array $parts): array {
+		return [
 			'title' => $this->l10n->n(
 				'%n category rose by more than half in the %s',
 				'%n categories rose by more than half in the %s',
@@ -217,6 +281,6 @@ class ComplaintPatterns implements ComplaintPatternsInterface {
 				[mb_strtolower($this->quarterLabel(period: $period))]
 			),
 			'text' => implode('; ', $parts).'.',
-		]];
-	}//end findings()
+		];
+	}//end risenFinding()
 }//end class

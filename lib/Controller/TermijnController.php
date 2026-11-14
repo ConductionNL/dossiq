@@ -347,30 +347,61 @@ class TermijnController extends Controller {
 		$body = $this->jsonBody();
 		$when = (string)($body['voltooiDatum'] ?? '');
 		$documentLink = (string)($body['documentLink'] ?? '');
+		[$completedAt, $refusal] = $this->completedAtOf(when: $when);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		try {
+			return $this->completeTermijn(id: $id, completedAt: $completedAt, documentLink: $documentLink);
+		} catch (Throwable $e) {
+			return $this->error(e: $e, log: 'Voltooi failed');
+		}
+	}//end voltooi()
+
+	/**
+	 * The voltooiDatum a request sends, parsed; null when it sends none.
+	 *
+	 * @param string $when The raw voltooiDatum.
+	 *
+	 * @return array{0: \DateTimeImmutable|null, 1: JSONResponse|null} The parsed date (null when none was sent), and any refusal.
+	 */
+	private function completedAtOf(string $when): array {
 		$completedAt = null;
 		if ($when !== '') {
 			try {
 				$completedAt = $this->dates->parse($when, 'voltooiDatum');
 			} catch (InvalidArgumentException $e) {
-				return $this->badRequest(msg: $e->getMessage());
+				return [null, $this->badRequest(msg: $e->getMessage())];
 			}
 		}
 
-		try {
-			$row = $this->term->markTermijnCompleted(
-				$id,
-				$completedAt,
-				$documentLink
-			);
-			if ($row === null) {
-				return $this->notFound(msg: 'TermijnInstance not found: ' . $id);
-			}
+		return [$completedAt, null];
+	}//end completedAtOf()
 
-			return new JSONResponse($row);
-		} catch (Throwable $e) {
-			return $this->error(e: $e, log: 'Voltooi failed');
+	/**
+	 * Mark a termijn completed and answer the updated row.
+	 *
+	 * @param string $id The termijn instance.
+	 * @param \DateTimeImmutable|null $completedAt The completion date, or null.
+	 * @param string $documentLink The document the completion points at.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @throws Throwable When completing fails.
+	 */
+	private function completeTermijn(string $id, $completedAt, string $documentLink): JSONResponse {
+		$row = $this->term->markTermijnCompleted(
+			$id,
+			$completedAt,
+			$documentLink
+		);
+		if ($row === null) {
+			return $this->notFound(msg: 'TermijnInstance not found: ' . $id);
 		}
-	}//end voltooi()
+
+		return new JSONResponse($row);
+	}//end completeTermijn()
 
 	/**
 	 * Build a 404 Not Found response.

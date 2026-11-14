@@ -77,6 +77,29 @@ class ZtcPublishController extends ZgwController {
 	 * @return JSONResponse
 	 */
 	private function handlePublish(string $resource, string $uuid): JSONResponse {
+		$refusal = $this->publishRefusal();
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
+		if ($mappingConfig === null) {
+			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
+		}
+
+		try {
+			return new JSONResponse(data: $this->published(resource: $resource, uuid: $uuid, mappingConfig: $mappingConfig), statusCode: Http::STATUS_CREATED);
+		} catch (\Throwable $e) {
+			return $this->publishFailure(e: $e);
+		}//end try
+	}//end handlePublish()
+
+	/**
+	 * Refuse a publish without valid JWT auth or without OpenRegister.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the publish may go ahead.
+	 */
+	private function publishRefusal(): ?JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
 			return $authError;
@@ -86,46 +109,72 @@ class ZtcPublishController extends ZgwController {
 			return $this->zgwService->unavailableResponse();
 		}
 
-		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
-		if ($mappingConfig === null) {
-			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
-		}
+		return null;
+	}//end publishRefusal()
 
-		try {
-			$existing = $this->zgwService->getObjectService()->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$existingData = $this->publishedCopy(existingData: $this->objectToArray(row: $existing));
+	/**
+	 * Save the stored type as published and map the result outbound.
+	 *
+	 * @param string $resource      The ZGW resource name.
+	 * @param string $uuid          The resource UUID.
+	 * @param array  $mappingConfig The resource mapping configuration.
+	 *
+	 * @return array The outbound-mapped type.
+	 *
+	 * @throws \Throwable When the type cannot be read or saved.
+	 */
+	private function published(string $resource, string $uuid, array $mappingConfig): array {
+		$existing = $this->zgwService->getObjectService()->find(
+			$uuid,
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema']
+		);
+		$existingData = $this->publishedCopy(existingData: $this->objectToArray(row: $existing));
 
-			$object = $this->zgwService->getObjectService()->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $existingData,
-				uuid: $uuid
-			);
-			$objectData = $this->objectToArray(row: $object);
+		$object = $this->zgwService->getObjectService()->saveObject(
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema'],
+			object: $existingData,
+			uuid: $uuid
+		);
+		return $this->mapPublished(resource: $resource, mappingConfig: $mappingConfig, objectData: $this->objectToArray(row: $object));
+	}//end published()
 
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-			$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-			$mapped = $this->zgwService->applyOutboundMapping(
-				objectData: $objectData,
-				mapping: $outboundMapping,
-				mappingConfig: $mappingConfig,
-				baseUrl: $baseUrl
-			);
+	/**
+	 * Apply the outbound mapping to the published type.
+	 *
+	 * @param string $resource      The ZGW resource name.
+	 * @param array  $mappingConfig The resource mapping configuration.
+	 * @param array  $objectData    The saved type.
+	 *
+	 * @return array The outbound-mapped type.
+	 */
+	private function mapPublished(string $resource, array $mappingConfig, array $objectData): array {
+		$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
+		$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
+		return $this->zgwService->applyOutboundMapping(
+			objectData: $objectData,
+			mapping: $outboundMapping,
+			mappingConfig: $mappingConfig,
+			baseUrl: $baseUrl
+		);
+	}//end mapPublished()
 
-			return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'ZTC publish error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
+	/**
+	 * Log a publish failure and build the 400 response.
+	 *
+	 * @param \Throwable $e The caught failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function publishFailure(\Throwable $e): JSONResponse {
+		$this->zgwService->getLogger()->error(
+			'ZTC publish error: ' . $e->getMessage(),
+			['exception' => $e]
+		);
 
-			return new JSONResponse(data: ['detail' => $e->getMessage()], statusCode: Http::STATUS_BAD_REQUEST);
-		}//end try
-	}//end handlePublish()
+		return new JSONResponse(data: ['detail' => $e->getMessage()], statusCode: Http::STATUS_BAD_REQUEST);
+	}//end publishFailure()
 
 	/**
 	 * The stored type as it is saved on publish: concept off, bookkeeping keys gone.

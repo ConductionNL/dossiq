@@ -87,29 +87,67 @@ class CaseShareList implements CaseShareListInterface {
 				continue;
 			}
 
-			$status    = (self::STATUS[(string)($share['state'] ?? '')] ?? 'active');
-			$documents = $this->documentsOf(share: $share);
-			$url       = (string)($share['accessLinkUrl'] ?? '');
-			$kind      = 'case';
-			if ($documents > 0) {
-				$kind = 'file';
-			}
-
-			$rows[] = [
-				'id' => (string)$linkId,
-				'kind' => $kind,
-				'title' => $this->titleOf(share: $share, documents: $documents),
-				'meta' => $this->metaOf(share: $share),
-				'status' => $status,
-				'url' => $url,
-				'link' => $url,
-				'revocable' => (in_array($status, ['active', 'paused'], true) === true
-					&& (string)($share['createdBy'] ?? '') === $uid),
-			];
-		}//end foreach
+			$rows[] = $this->rowOf(share: $share, linkId: $linkId, uid: $uid);
+		}
 
 		return $rows;
 	}//end rows()
+
+	/**
+	 * The row for one share.
+	 *
+	 * @param array<string, mixed> $share  The share.
+	 * @param int                  $linkId Its access link id.
+	 * @param string               $uid    The reader.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function rowOf(array $share, int $linkId, string $uid): array {
+		$status    = (self::STATUS[(string)($share['state'] ?? '')] ?? 'active');
+		$documents = $this->documentsOf(share: $share);
+		$url       = (string)($share['accessLinkUrl'] ?? '');
+
+		return [
+			'id' => (string)$linkId,
+			'kind' => $this->kindOf(documents: $documents),
+			'title' => $this->titleOf(share: $share, documents: $documents),
+			'meta' => $this->metaOf(share: $share),
+			'status' => $status,
+			'url' => $url,
+			'link' => $url,
+			'revocable' => $this->isRevocable(share: $share, status: $status, uid: $uid),
+		];
+	}//end rowOf()
+
+	/**
+	 * A share of documents is a file share; otherwise it shares the case.
+	 *
+	 * @param int $documents How many documents the share holds.
+	 *
+	 * @return string
+	 */
+	private function kindOf(int $documents): string {
+		$kind = 'case';
+		if ($documents > 0) {
+			$kind = 'file';
+		}
+
+		return $kind;
+	}//end kindOf()
+
+	/**
+	 * Whether the reader may revoke the share: it is live and they made it.
+	 *
+	 * @param array<string, mixed> $share  The share.
+	 * @param string               $status The share's status.
+	 * @param string               $uid    The reader.
+	 *
+	 * @return bool
+	 */
+	private function isRevocable(array $share, string $status, string $uid): bool {
+		return (in_array($status, ['active', 'paused'], true) === true
+			&& (string)($share['createdBy'] ?? '') === $uid);
+	}//end isRevocable()
 
 	/**
 	 * How many documents a share carries.

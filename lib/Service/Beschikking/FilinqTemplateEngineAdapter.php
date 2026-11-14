@@ -44,6 +44,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
+ * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.2
  */
 
 declare(strict_types=1);
@@ -53,6 +54,7 @@ namespace OCA\Dossiq\Service\Beschikking;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Support\FleetAppId;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -108,17 +110,25 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * @param SettingsService $settings Supplies the case register/schema a template binds to.
 	 * @param IUserSession $userSession The acting user; filinq stores the output in their Files.
 	 * @param LoggerInterface $logger Structured logger.
+	 * @param DecisionTemplateEngine $engines The engine the case type names for a template.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly SettingsService $settings,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly DecisionTemplateEngine $engines,
 	) {
 	}//end __construct()
 
 	/**
 	 * Render a beschikking template through filinq and store the result.
+	 *
+	 * The engine the case type names for the template (`filinq`, or
+	 * `vendor:<sourceSlug>` for a document vendor reached through integriq)
+	 * travels to filinq with the render. A vendor render that fails is refused
+	 * with a message naming the vendor; it never falls back to filinq's own
+	 * engine or to the mock.
 	 *
 	 * @param string $templateId The filinq template UUID.
 	 * @param array<string, mixed> $context The zaakdata + beschikking context.
@@ -128,8 +138,35 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * @throws RuntimeException When filinq is absent, no user is acting, or the render fails.
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.2
 	 */
 	public function render(string $templateId, array $context): array {
+		$documentService = $this->filinqDocumentService();
+		$user = $this->actingUser();
+
+		$caseId = (string)($context['caseId'] ?? '');
+		$engine = $this->engines->engineFor(caseId: $caseId, templateId: $templateId);
+
+		try {
+			$options = $this->renderOptions(context: $context, user: $user, caseId: $caseId, engine: $engine);
+			$result = $documentService->generateDocument($templateId, $this->buildDataRefs(caseId: $caseId), $options);
+		} catch (Throwable $e) {
+			throw $this->renderFailure(engine: $engine, templateId: $templateId, e: $e);
+		}
+
+		return $this->toComposition(result: (array)$result, templateId: $templateId);
+	}//end render()
+
+	/**
+	 * Resolve filinq's DocumentService, refusing when filinq is absent.
+	 *
+	 * @return object The DocumentService.
+	 *
+	 * @throws RuntimeException When filinq's DocumentService cannot be resolved.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function filinqDocumentService(): object {
 		$documentService = FleetAppId::getService($this->container, 'filinq', self::DOCUMENT_SERVICE);
 		if ($documentService === null) {
 			throw new RuntimeException(
@@ -138,6 +175,19 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			);
 		}
 
+		return $documentService;
+	}//end filinqDocumentService()
+
+	/**
+	 * The acting Nextcloud user, refusing when nobody is acting.
+	 *
+	 * @return IUser The acting user.
+	 *
+	 * @throws RuntimeException When no user is acting.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function actingUser(): IUser {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			// Filinq refuses to store a generated document without an owning
@@ -146,31 +196,63 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			throw new RuntimeException('user_required: a beschikking render must run as a Nextcloud user');
 		}
 
-		$caseId = (string)($context['caseId'] ?? '');
+		return $user;
+	}//end actingUser()
 
-		try {
-			$result = $documentService->generateDocument(
-				$templateId,
-				$this->buildDataRefs(caseId: $caseId),
-				[
-					'format' => 'pdf',
-					'adHocData' => $context,
-					'userId' => $user->getUID(),
-					'caseId' => $caseId,
-					'filename' => $this->buildFilename(caseId: $caseId),
-					'output' => ['mode' => 'both'],
-				]
-			);
-		} catch (Throwable $e) {
+	/**
+	 * The options filinq's generateDocument() receives for a beschikking render.
+	 *
+	 * @param array<string, mixed> $context The zaakdata + beschikking context.
+	 * @param IUser $user The acting user.
+	 * @param string $caseId The case id.
+	 * @param string $engine The engine the case type names for the template.
+	 *
+	 * @return array<string, mixed> The render options.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function renderOptions(array $context, IUser $user, string $caseId, string $engine): array {
+		return [
+			'format' => 'pdf',
+			'adHocData' => $context,
+			'userId' => $user->getUID(),
+			'caseId' => $caseId,
+			'filename' => $this->buildFilename(caseId: $caseId),
+			'output' => ['mode' => 'both'],
+			'engine' => $engine,
+		];
+	}//end renderOptions()
+
+	/**
+	 * Log a refused render and build the exception that reports it.
+	 *
+	 * A vendor render names the vendor; a filinq render carries filinq's message.
+	 *
+	 * @param string $engine The engine the render went to.
+	 * @param string $templateId The filinq template UUID.
+	 * @param Throwable $e The render failure.
+	 *
+	 * @return RuntimeException The exception to throw.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.2
+	 */
+	private function renderFailure(string $engine, string $templateId, Throwable $e): RuntimeException {
+		$vendor = DecisionTemplateEngine::vendorSlugOf(engine: $engine);
+		if ($vendor !== null) {
 			$this->logger->error(
-				'Filinq refused a beschikking render',
-				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+				'A document vendor refused a beschikking render',
+				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'source' => $vendor, 'exception' => $e->getMessage()]
 			);
-			throw new RuntimeException('filinq_render_failed: ' . $e->getMessage(), 0, $e);
+			return new RuntimeException(DecisionTemplateEngine::vendorName(slug: $vendor) . ' is niet bereikbaar', 0, $e);
 		}
 
-		return $this->toComposition(result: (array)$result, templateId: $templateId);
-	}//end render()
+		$this->logger->error(
+			'Filinq refused a beschikking render',
+			['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+		);
+		return new RuntimeException('filinq_render_failed: ' . $e->getMessage(), 0, $e);
+	}//end renderFailure()
 
 	/**
 	 * Resolve the template version effective on a given date.
@@ -222,8 +304,30 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			);
 		}
 
+		$template = $this->fetchTemplate(templateService: $templateService, templateId: $templateId);
+
+		return [
+			'templateId' => $templateId,
+			'version' => $this->effectiveVersion(templateId: $templateId, effectiveDate: $effectiveDate, template: $template),
+			'effectiveDate' => $effectiveDate,
+		];
+	}//end resolveVersion()
+
+	/**
+	 * Fetch a template from filinq, refusing a template filinq does not know.
+	 *
+	 * @param object $templateService Filinq's TemplateService.
+	 * @param string $templateId The filinq template UUID.
+	 *
+	 * @return array<string, mixed> The template.
+	 *
+	 * @throws RuntimeException When filinq does not know the template.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function fetchTemplate(object $templateService, string $templateId): array {
 		try {
-			$template = (array)$templateService->getTemplate($templateId);
+			return (array)$templateService->getTemplate($templateId);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Filinq does not know the beschikking template',
@@ -231,7 +335,22 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			);
 			throw new RuntimeException('filinq_template_unknown: ' . $templateId, 0, $e);
 		}
+	}//end fetchTemplate()
 
+	/**
+	 * The version in force on the date, else the template's own version.
+	 *
+	 * @param string $templateId The filinq template UUID.
+	 * @param string $effectiveDate The ISO date the beschikking is effective.
+	 * @param array<string, mixed> $template The template as filinq returns it.
+	 *
+	 * @return string The resolved version.
+	 *
+	 * @throws RuntimeException When filinq holds no version for the template.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function effectiveVersion(string $templateId, string $effectiveDate, array $template): string {
 		$version = $this->versionInForce(templateId: $templateId, effectiveDate: $effectiveDate);
 		if ($version === null) {
 			$version = $this->templateOwnVersion(template: $template);
@@ -243,12 +362,8 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			);
 		}
 
-		return [
-			'templateId' => $templateId,
-			'version' => $version,
-			'effectiveDate' => $effectiveDate,
-		];
-	}//end resolveVersion()
+		return $version;
+	}//end effectiveVersion()
 
 	/**
 	 * The highest chain version created on or before the effective date.

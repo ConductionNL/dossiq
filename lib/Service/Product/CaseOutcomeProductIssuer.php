@@ -263,16 +263,7 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 		$changes = (array)$outcome->declared['changesProduct'];
 		$schema = $this->schemaOf(declared: $outcome->declared);
 		$productId = $outcome->answer(name: (string)($changes['answer'] ?? ''));
-		$product = $this->read(objectService: $outcome->objectService, register: $outcome->register, schema: $schema, id: $productId);
-		if ($product === null) {
-			return null;
-		}
-
-		if ($this->inForceFor(outcome: $outcome, product: $product) === false) {
-			$this->logger->warning(
-				'Dossiq: a change case names a product that is not its requester\'s or not in force',
-				['case' => ($outcome->caseObject['id'] ?? ''), 'product' => $productId]
-			);
+		if ($this->changeableProduct(outcome: $outcome, schema: $schema, productId: $productId) === false) {
 			return null;
 		}
 
@@ -281,6 +272,46 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 			return null;
 		}
 
+		return $this->patchProduct(outcome: $outcome, schema: $schema, productId: $productId, set: $set);
+	}//end change()
+
+	/**
+	 * Whether the product a change case names exists and is its requester's own and in force; logged when not.
+	 *
+	 * @param ProductOutcome $outcome   The change case and its declaration.
+	 * @param string         $schema    The product schema.
+	 * @param string         $productId The product the change case names.
+	 *
+	 * @return bool True when the product may be changed.
+	 */
+	private function changeableProduct(ProductOutcome $outcome, string $schema, string $productId): bool {
+		$product = $this->read(objectService: $outcome->objectService, register: $outcome->register, schema: $schema, id: $productId);
+		if ($product === null) {
+			return false;
+		}
+
+		if ($this->inForceFor(outcome: $outcome, product: $product) === false) {
+			$this->logger->warning(
+				'Dossiq: a change case names a product that is not its requester\'s or not in force',
+				['case' => ($outcome->caseObject['id'] ?? ''), 'product' => $productId]
+			);
+			return false;
+		}
+
+		return true;
+	}//end changeableProduct()
+
+	/**
+	 * Write the change set onto the product, as the system when the object service offers it.
+	 *
+	 * @param ProductOutcome       $outcome   The change case and its declaration.
+	 * @param string               $schema    The product schema.
+	 * @param string               $productId The product.
+	 * @param array<string, mixed> $set       The fields to set.
+	 *
+	 * @return array<string, mixed>|null The product, changed.
+	 */
+	private function patchProduct(ProductOutcome $outcome, string $schema, string $productId, array $set): ?array {
 		return $this->runAsSystemIfAvailable(
 			objectService: $outcome->objectService,
 			operation: fn (): ?array => $this->patchObjectAsArray(
@@ -291,7 +322,7 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 				changes: $set
 			)
 		);
-	}//end change()
+	}//end patchProduct()
 
 	/**
 	 * Whether a product is the change case requester's own and still in force.

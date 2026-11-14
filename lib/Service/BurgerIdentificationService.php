@@ -175,10 +175,7 @@ class BurgerIdentificationService implements BurgerIdentificationServiceInterfac
 			return '';
 		}
 
-		$field = 'TEL';
-		if (str_contains($identifier, '@') === true) {
-			$field = 'EMAIL';
-		}
+		$field = $this->searchFieldFor(identifier: $identifier);
 
 		try {
 			$matches = $manager->search($identifier, [$field]);
@@ -190,6 +187,37 @@ class BurgerIdentificationService implements BurgerIdentificationServiceInterfac
 			return '';
 		}
 
+		return $this->firstContactRef(matches: $matches);
+	}//end lookupByIdentifier()
+
+	/**
+	 * The contacts field an identifier is searched in: EMAIL for an address, TEL otherwise.
+	 *
+	 * @param string $identifier A phone number or email address.
+	 *
+	 * @return string The field.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
+	 */
+	private function searchFieldFor(string $identifier): string {
+		$field = 'TEL';
+		if (str_contains($identifier, '@') === true) {
+			$field = 'EMAIL';
+		}
+
+		return $field;
+	}//end searchFieldFor()
+
+	/**
+	 * The burger reference of the first match that carries a UID.
+	 *
+	 * @param mixed $matches The contacts search results.
+	 *
+	 * @return string The burger reference, or empty string when none carries one.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
+	 */
+	private function firstContactRef(mixed $matches): string {
 		foreach ((array)$matches as $match) {
 			$uid = (string)($match['UID'] ?? '');
 			if ($uid !== '') {
@@ -198,7 +226,7 @@ class BurgerIdentificationService implements BurgerIdentificationServiceInterfac
 		}
 
 		return '';
-	}//end lookupByIdentifier()
+	}//end firstContactRef()
 
 	/**
 	 * Resolve the optional Nextcloud contacts manager.

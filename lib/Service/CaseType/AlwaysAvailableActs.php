@@ -119,21 +119,7 @@ class AlwaysAvailableActs {
 	private function decided(array $declared, array $case, string $userId): array {
 		$acts = [];
 		foreach ($declared as $act) {
-			$role = (string)$act['requiredRole'];
-			$available = true;
-			$reason = '';
-
-			if ($role !== '') {
-				$verdict = $this->roles->evaluate(
-					guardConfig: ['allowedRoles' => [$role]],
-					case: $case,
-					userId: $userId
-				);
-				$available = $verdict->passed;
-				if ($available === false) {
-					$reason = (string)($verdict->failureMessage ?? '');
-				}
-			}
+			[$available, $reason] = $this->roleVerdict(role: (string)$act['requiredRole'], caseData: $case, userId: $userId);
 
 			$acts[] = [
 				'id' => (string)$act['id'],
@@ -150,6 +136,30 @@ class AlwaysAvailableActs {
 
 		return $acts;
 	}//end decided()
+
+	/**
+	 * Whether the reader holds the act's required role, and why not when they do not.
+	 *
+	 * @param string               $role     The required role, or '' for none.
+	 * @param array<string, mixed> $caseData The case.
+	 * @param string               $userId   Who is asking.
+	 *
+	 * @return array{0: bool, 1: string} Available, and the reason when it is not.
+	 */
+	private function roleVerdict(string $role, array $caseData, string $userId): array {
+		$available = true;
+		$reason = '';
+
+		if ($role !== '') {
+			$verdict = $this->roles->evaluate(guardConfig: ['allowedRoles' => [$role]], case: $caseData, userId: $userId);
+			$available = $verdict->passed;
+			if ($available === false) {
+				$reason = (string)($verdict->failureMessage ?? '');
+			}
+		}
+
+		return [$available, $reason];
+	}//end roleVerdict()
 
 	/**
 	 * Read one configured object by id, or null when there is none.

@@ -116,44 +116,133 @@ class StatusDwellTimer {
 			return null;
 		}
 
+		$config = $this->dwellTimerConfig(
+			caseId: $caseId,
+			statusTypeId: $statusTypeId,
+			maximumDwell: $maximumDwell,
+			statusName: $statusName
+		);
+
+		return $this->armOnEngine(engine: $engine, config: $config, caseId: $caseId);
+	}//end arm()
+
+	/**
+	 * The timer configuration of a status's maximum dwell.
+	 *
+	 * @param string $caseId       The case.
+	 * @param string $statusTypeId The status entered.
+	 * @param int    $maximumDwell The maximum, in working days.
+	 * @param string $statusName   The status's name, for the timer's title.
+	 *
+	 * @return array<string, mixed> The engine configuration.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function dwellTimerConfig(string $caseId, string $statusTypeId, int $maximumDwell, string $statusName): array {
+		return [
+			'subjectType' => 'object',
+			'subjectUuid' => $caseId,
+			'appId' => 'dossiq',
+			'title' => $this->dwellTitle(statusName: $statusName, statusTypeId: $statusTypeId),
+			'purpose' => 'due',
+			'legalEffect' => 'none',
+			'sla' => $this->dwellSla(maximumDwell: $maximumDwell),
+			'escalationRules' => $this->dwellEscalationRules(),
+			'anchorEvent' => self::ANCHOR_EVENT,
+			'metadata' => $this->dwellMetadata(caseId: $caseId, statusTypeId: $statusTypeId, maximumDwell: $maximumDwell),
+		];
+	}//end dwellTimerConfig()
+
+	/**
+	 * The timer's title, naming the status or, without a name, its type id.
+	 *
+	 * @param string $statusName   The status's name.
+	 * @param string $statusTypeId The status entered.
+	 *
+	 * @return string The title.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function dwellTitle(string $statusName, string $statusTypeId): string {
 		$named = $statusName;
 		if ($named === '') {
 			$named = $statusTypeId;
 		}
 
-		$config = [
-			'subjectType' => 'object',
-			'subjectUuid' => $caseId,
-			'appId' => 'dossiq',
-			'title' => 'Maximum dwell ' . $named,
-			'purpose' => 'due',
-			'legalEffect' => 'none',
-			'sla' => [
-				'value' => $maximumDwell,
-				'unit' => TermijnTimerService::UNIT_BUSINESS_DAYS,
-			],
-			'escalationRules' => [
-				[
-					'trigger' => 'slaBreached',
-					'offset' => 0,
-					'offsetUnit' => TermijnTimerService::UNIT_BUSINESS_DAYS,
-					'notifyRole' => ['handler'],
-					'escalateToRole' => [],
-					'priority' => 'normal',
-					'message' => self::BREACH_MESSAGE,
-					'openIncident' => false,
-				],
-			],
-			'anchorEvent' => self::ANCHOR_EVENT,
-			'metadata' => [
-				'source' => self::METADATA_SOURCE,
-				'kind' => self::KIND_STATUS_DWELL,
-				'caseId' => $caseId,
-				'statusTypeId' => $statusTypeId,
-				'maximumDwell' => $maximumDwell,
+		return 'Maximum dwell ' . $named;
+	}//end dwellTitle()
+
+	/**
+	 * The timer's SLA: the maximum dwell in working days.
+	 *
+	 * @param int $maximumDwell The maximum, in working days.
+	 *
+	 * @return array<string, mixed> The SLA.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function dwellSla(int $maximumDwell): array {
+		return [
+			'value' => $maximumDwell,
+			'unit' => TermijnTimerService::UNIT_BUSINESS_DAYS,
+		];
+	}//end dwellSla()
+
+	/**
+	 * The timer's escalation: notify the handler when the SLA is breached.
+	 *
+	 * @return array<int, array<string, mixed>> The escalation rules.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function dwellEscalationRules(): array {
+		return [
+			[
+				'trigger' => 'slaBreached',
+				'offset' => 0,
+				'offsetUnit' => TermijnTimerService::UNIT_BUSINESS_DAYS,
+				'notifyRole' => ['handler'],
+				'escalateToRole' => [],
+				'priority' => 'normal',
+				'message' => self::BREACH_MESSAGE,
+				'openIncident' => false,
 			],
 		];
+	}//end dwellEscalationRules()
 
+	/**
+	 * The timer's metadata, naming the case and the status it guards.
+	 *
+	 * @param string $caseId       The case.
+	 * @param string $statusTypeId The status entered.
+	 * @param int    $maximumDwell The maximum, in working days.
+	 *
+	 * @return array<string, mixed> The metadata.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function dwellMetadata(string $caseId, string $statusTypeId, int $maximumDwell): array {
+		return [
+			'source' => self::METADATA_SOURCE,
+			'kind' => self::KIND_STATUS_DWELL,
+			'caseId' => $caseId,
+			'statusTypeId' => $statusTypeId,
+			'maximumDwell' => $maximumDwell,
+		];
+	}//end dwellMetadata()
+
+	/**
+	 * Arm the configured timer on the engine.
+	 *
+	 * @param object               $engine The FlowTimerService.
+	 * @param array<string, mixed> $config The engine configuration.
+	 * @param string               $caseId The case.
+	 *
+	 * @return string|null The armed timer uuid, or null when the engine refused.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function armOnEngine(object $engine, array $config, string $caseId): ?string {
 		// The catch LOGS and falls through; the degraded answer is the last
 		// statement of the method rather than a `return null` hidden in an
 		// exception handler. `ServiceCatchReturnsNullTest` is the guard, and
@@ -172,7 +261,7 @@ class StatusDwellTimer {
 		}
 
 		return (string)$timer->getUuid();
-	}//end arm()
+	}//end armOnEngine()
 
 	/**
 	 * Cancel the dwell timer a case is carrying.

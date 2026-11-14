@@ -145,30 +145,10 @@ final class RoleLinkDefinition {
 			throw new InvalidArgumentException('A relation role must be an object.');
 		}
 
-		$role = self::text(config: $config, key: 'role');
-		if (preg_match('/^[a-z][a-zA-Z0-9-]*$/', $role) !== 1) {
-			throw new InvalidArgumentException('A relation role needs a `role` key of letters, digits and dashes.');
-		}
-
-		$target = self::textOr(config: $config, key: 'target', default: self::TARGET_CASE);
-		if (in_array($target, [self::TARGET_CASE, self::TARGET_OBJECT], true) === false) {
-			throw new InvalidArgumentException("Relation role '$role' points at '$target'; use case or object.");
-		}
-
-		$targetSchema = self::text(config: $config, key: 'targetSchema');
-		if ($target === self::TARGET_OBJECT && $targetSchema === '') {
-			throw new InvalidArgumentException("Relation role '$role' points at an object but names no `targetSchema`.");
-		}
-
-		$nature = self::textOr(config: $config, key: 'natureRelationship', default: 'vervolg');
-		if (in_array($nature, CaseRelationService::RELATION_TYPES, true) === false) {
-			throw new InvalidArgumentException("Relation role '$role' writes `natureRelationship` '$nature', which is not a relation type.");
-		}
-
-		$record = ($config['record'] ?? []);
-		if (is_array($record) === false) {
-			throw new InvalidArgumentException("Relation role '$role' has a `record` that is not an object.");
-		}
+		$role = self::validRole(config: $config);
+		[$target, $targetSchema] = self::validTarget(config: $config, role: $role);
+		$nature = self::validNature(config: $config, role: $role);
+		$record = self::validRecord(config: $config, role: $role);
 
 		$this->role               = $role;
 		$this->label              = self::textOr(config: $config, key: 'label', default: $role);
@@ -182,6 +162,94 @@ final class RoleLinkDefinition {
 		$this->recordTargetField  = self::textOr(config: $record, key: 'targetField', default: 'target');
 		$this->recordActorField   = self::textOrNull(config: $record, key: 'actorField');
 	}//end __construct()
+
+	/**
+	 * The role key, checked.
+	 *
+	 * @param array<mixed, mixed> $config One `relations[]` entry.
+	 *
+	 * @return string The role.
+	 *
+	 * @throws InvalidArgumentException When the entry is not well-formed.
+	 *
+	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-case-type-declares-the-roles-a-case-can-be-linked-with-req-lcr-1
+	 */
+	private static function validRole(array $config): string {
+		$role = self::text(config: $config, key: 'role');
+		if (preg_match('/^[a-z][a-zA-Z0-9-]*$/', $role) !== 1) {
+			throw new InvalidArgumentException('A relation role needs a `role` key of letters, digits and dashes.');
+		}
+
+		return $role;
+	}//end validRole()
+
+	/**
+	 * The target and its schema, checked.
+	 *
+	 * @param array<mixed, mixed> $config One `relations[]` entry.
+	 * @param string $role The role, for the error sentence.
+	 *
+	 * @return array{0: string, 1: string} The target and target schema.
+	 *
+	 * @throws InvalidArgumentException When the entry is not well-formed.
+	 *
+	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-case-type-declares-the-roles-a-case-can-be-linked-with-req-lcr-1
+	 */
+	private static function validTarget(array $config, string $role): array {
+		$target = self::textOr(config: $config, key: 'target', default: self::TARGET_CASE);
+		if (in_array($target, [self::TARGET_CASE, self::TARGET_OBJECT], true) === false) {
+			throw new InvalidArgumentException("Relation role '$role' points at '$target'; use case or object.");
+		}
+
+		$targetSchema = self::text(config: $config, key: 'targetSchema');
+		if ($target === self::TARGET_OBJECT && $targetSchema === '') {
+			throw new InvalidArgumentException("Relation role '$role' points at an object but names no `targetSchema`.");
+		}
+
+		return [$target, $targetSchema];
+	}//end validTarget()
+
+	/**
+	 * The nature of the relation, checked.
+	 *
+	 * @param array<mixed, mixed> $config One `relations[]` entry.
+	 * @param string $role The role, for the error sentence.
+	 *
+	 * @return string The relation type.
+	 *
+	 * @throws InvalidArgumentException When the entry is not well-formed.
+	 *
+	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-case-type-declares-the-roles-a-case-can-be-linked-with-req-lcr-1
+	 */
+	private static function validNature(array $config, string $role): string {
+		$nature = self::textOr(config: $config, key: 'natureRelationship', default: 'vervolg');
+		if (in_array($nature, CaseRelationService::RELATION_TYPES, true) === false) {
+			throw new InvalidArgumentException("Relation role '$role' writes `natureRelationship` '$nature', which is not a relation type.");
+		}
+
+		return $nature;
+	}//end validNature()
+
+	/**
+	 * The record declaration, checked.
+	 *
+	 * @param array<mixed, mixed> $config One `relations[]` entry.
+	 * @param string $role The role, for the error sentence.
+	 *
+	 * @return array<mixed, mixed> The record declaration.
+	 *
+	 * @throws InvalidArgumentException When the entry is not well-formed.
+	 *
+	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-case-type-declares-the-roles-a-case-can-be-linked-with-req-lcr-1
+	 */
+	private static function validRecord(array $config, string $role): array {
+		$record = ($config['record'] ?? []);
+		if (is_array($record) === false) {
+			throw new InvalidArgumentException("Relation role '$role' has a `record` that is not an object.");
+		}
+
+		return $record;
+	}//end validRecord()
 
 	/**
 	 * Whether the role opens a record when a case is linked.

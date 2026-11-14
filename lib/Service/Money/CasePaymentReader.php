@@ -123,6 +123,21 @@ class CasePaymentReader implements CasePaymentReaderInterface {
 			return $this->states->projection(state: CasePaymentState::STALE, checkedAt: $now);
 		}
 
+		return $this->readState(leaf: $leaf, caseId: $caseId, now: $now);
+	}//end stateOf()
+
+	/**
+	 * The case's payment state as the leaf lists it, stale when it cannot be read.
+	 *
+	 * @param object $leaf   The leaf provider.
+	 * @param string $caseId The case uuid.
+	 * @param string $now    When it is read.
+	 *
+	 * @return array{paymentState: string, paymentStateCheckedAt: string} The projection.
+	 *
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 */
+	private function readState(object $leaf, string $caseId, string $now): array {
 		try {
 			$answer = $leaf->list(self::CASE_REGISTER, self::CASE_SCHEMA, $caseId);
 		} catch (Throwable $e) {
@@ -134,6 +149,20 @@ class CasePaymentReader implements CasePaymentReaderInterface {
 			return $this->states->projection(state: CasePaymentState::STALE, checkedAt: $now);
 		}
 
+		return $this->stateOfAnswer(answer: $answer, now: $now);
+	}//end readState()
+
+	/**
+	 * The payment state of the leaf's answer, stale when it holds no items.
+	 *
+	 * @param mixed  $answer What the leaf listed.
+	 * @param string $now    When it is read.
+	 *
+	 * @return array{paymentState: string, paymentStateCheckedAt: string} The projection.
+	 *
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 */
+	private function stateOfAnswer($answer, string $now): array {
 		$items = ($answer['items'] ?? null);
 		if (is_array($items) === false) {
 			// An envelope without items is a shape this app does not know how
@@ -146,7 +175,7 @@ class CasePaymentReader implements CasePaymentReaderInterface {
 			state: $this->states->fromRequests(requests: $items),
 			checkedAt: $now,
 		);
-	}//end stateOf()
+	}//end stateOfAnswer()
 
 	/**
 	 * shillinq's payment leaf, or null when it cannot be had. ForfeitInvoiceRaiser

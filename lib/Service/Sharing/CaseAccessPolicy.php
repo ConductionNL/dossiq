@@ -116,13 +116,74 @@ class CaseAccessPolicy {
 			return true;
 		}
 
+		$config = $this->caseConfig();
+		if ($config === null) {
+			return true;
+		}
+
+		return $this->accessForLoadedCase(objectService: $objectService, config: $config, caseId: $caseId, userId: $userId);
+	}//end canUserAccessCase()
+
+	/**
+	 * Load the case and decide whether the user is its assignee or a sharer.
+	 *
+	 * @param object                    $objectService The OpenRegister ObjectService
+	 * @param array{0: string, 1: string} $config        The register and case schema ids
+	 * @param string                    $caseId        The case UUID
+	 * @param string                    $userId        The caller's user ID
+	 *
+	 * @return bool True when the user may proceed
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function accessForLoadedCase(object $objectService, array $config, string $caseId, string $userId): bool {
+		[$register, $caseSchema] = $config;
+
+		$caseData = $this->loadCaseForAccess(objectService: $objectService, caseId: $caseId, register: $register, caseSchema: $caseSchema);
+		if (is_bool($caseData) === true) {
+			return $caseData;
+		}
+
+		return $this->isAssigneeOrSharer(
+			objectService: $objectService,
+			caseData: $caseData,
+			caseId: $caseId,
+			userId: $userId,
+			register: $register
+		);
+	}//end accessForLoadedCase()
+
+	/**
+	 * The configured register and case schema, or null when either is missing.
+	 *
+	 * @return array{0: string, 1: string}|null The register and case schema ids
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function caseConfig(): ?array {
 		$register = $this->settingsService->getConfigValue('register');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
 
 		if (empty($register) === true || empty($caseSchema) === true) {
-			return true;
+			return null;
 		}
 
+		return [$register, $caseSchema];
+	}//end caseConfig()
+
+	/**
+	 * Load the case, or the access answer when it cannot be loaded.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param string $caseId The case UUID
+	 * @param string $register The configured register id
+	 * @param string $caseSchema The configured case schema id
+	 *
+	 * @return array<string, mixed>|bool The case data, false when the case is missing, true when loading failed
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function loadCaseForAccess(object $objectService, string $caseId, string $register, string $caseSchema): array|bool {
 		try {
 			$caseObj = $objectService->find($caseId, register: (int)$register, schema: (int)$caseSchema);
 			if ($caseObj === null) {
@@ -139,6 +200,23 @@ class CaseAccessPolicy {
 			return true;
 		}
 
+		return $caseData;
+	}//end loadCaseForAccess()
+
+	/**
+	 * Whether the user is an assignee of the case, or created a share for it.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param array<string, mixed> $caseData The case data
+	 * @param string $caseId The case UUID
+	 * @param string $userId The caller's user ID
+	 * @param string $register The configured register id
+	 *
+	 * @return bool True when the user may proceed
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function isAssigneeOrSharer(object $objectService, array $caseData, string $caseId, string $userId, string $register): bool {
 		// Direct assignee field, then the assignees array.
 		if ($this->isCaseAssignee(caseData: $caseData, userId: $userId) === true) {
 			return true;
@@ -157,7 +235,7 @@ class CaseAccessPolicy {
 		}
 
 		return false;
-	}//end canUserAccessCase()
+	}//end isAssigneeOrSharer()
 
 	/**
 	 * Whether a case names the given user as assignee.
@@ -200,35 +278,39 @@ class CaseAccessPolicy {
 	 *
 	 * @return bool True when a share created by this user exists
 	 */
-	private function hasCreatedShareForCase(
-		object $objectService,
-		string $caseId,
-		string $userId,
-		int $register,
-	): bool {
+	private function hasCreatedShareForCase(object $objectService, string $caseId, string $userId, int $register): bool {
 		$shareSchema = $this->settingsService->getConfigValue('case_share_schema');
 		if (empty($shareSchema) === true) {
 			return false;
 		}
 
 		try {
-			$shares = $objectService->findAll(
-				['filters' => ['register' => $register, 'schema' => (int)$shareSchema, 'caseId' => $caseId]],
-			);
+			$shares = $objectService->findAll(['filters' => ['register' => $register, 'schema' => (int)$shareSchema, 'caseId' => $caseId]]);
 
-			foreach ($shares as $share) {
-				$shareData = $this->gateway->toArray(value: $share);
-				if (isset($shareData['createdBy']) === true && (string)$shareData['createdBy'] === $userId) {
-					return true;
-				}
-			}
+			return $this->anyCreatedBy(shares: $shares, userId: $userId);
 		} catch (\Throwable $e) {
-			$this->logger->debug(
-				'CaseSharingService: share lookup in canUserAccessCase failed',
-				['caseId' => $caseId, 'exception' => $e->getMessage()]
-			);
+			$this->logger->debug('CaseSharingService: share lookup in canUserAccessCase failed', ['caseId' => $caseId, 'exception' => $e->getMessage()]);
 		}//end try
 
 		return false;
 	}//end hasCreatedShareForCase()
+
+	/**
+	 * Whether any of the shares was created by the user.
+	 *
+	 * @param iterable $shares The case's share objects
+	 * @param string   $userId The caller's user ID
+	 *
+	 * @return bool True when one share names the user as its creator
+	 */
+	private function anyCreatedBy(iterable $shares, string $userId): bool {
+		foreach ($shares as $share) {
+			$shareData = $this->gateway->toArray(value: $share);
+			if (isset($shareData['createdBy']) === true && (string)$shareData['createdBy'] === $userId) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end anyCreatedBy()
 }//end class

@@ -88,6 +88,23 @@ class BatchSelection implements BatchSelectionInterface {
 			return array_values(array_unique(array_map('strval', $documents)));
 		}
 
+		$this->refuseUnknownFields(filter: $filter);
+
+		return $this->filtered(caseId: $caseId, filter: $filter);
+	}//end select()
+
+	/**
+	 * Refuse a filter naming a field neither the review nor the provenance carries.
+	 *
+	 * @param array<string, string> $filter The filter.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the filter names a field neither carries.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function refuseUnknownFields(array $filter): void {
 		if (array_diff(array_keys($filter), self::fields()) !== []) {
 			throw new RefusedException(
 				rule: 'review-batch-filter-unknown',
@@ -95,7 +112,21 @@ class BatchSelection implements BatchSelectionInterface {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end refuseUnknownFields()
 
+	/**
+	 * The documents matching every field of the filter, by provenance and by review.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param array<string, string> $filter The filter, by field of the review or of the provenance.
+	 *
+	 * @return list<string> The documents.
+	 *
+	 * @throws RefusedException When the documents' provenance cannot be read.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function filtered(string $caseId, array $filter): array {
 		$byReview = array_intersect_key($filter, array_flip(self::REVIEW_FIELDS));
 		$byProvenance = array_diff_key($filter, $byReview);
 
@@ -105,18 +136,33 @@ class BatchSelection implements BatchSelectionInterface {
 		}
 
 		if ($byReview !== []) {
-			$matching = [];
-			foreach ($this->reviews->forCase(caseId: $caseId) as $ref => $review) {
-				if ($this->matches(review: $review, filter: $byReview) === true) {
-					$matching[] = (string)$ref;
-				}
-			}
-
+			$matching = $this->byReview(caseId: $caseId, filter: $byReview);
 			$selected = $this->intersect(selected: $selected, matching: $matching);
 		}
 
 		return ($selected ?? []);
-	}//end select()
+	}//end filtered()
+
+	/**
+	 * The documents whose review matches the review part of the filter.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param array<string, string> $filter The review part of the filter.
+	 *
+	 * @return list<string>
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function byReview(string $caseId, array $filter): array {
+		$matching = [];
+		foreach ($this->reviews->forCase(caseId: $caseId) as $ref => $review) {
+			if ($this->matches(review: $review, filter: $filter) === true) {
+				$matching[] = (string)$ref;
+			}
+		}
+
+		return $matching;
+	}//end byReview()
 
 	/**
 	 * The documents whose provenance matches; a provenance that cannot be read refuses the batch.

@@ -255,14 +255,29 @@ class BeroepService {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	public function addFileInspectionRequest(
-		string $appealId,
-		string $requestedAt,
-		?string $fileBundle = null,
-	): array {
+	public function addFileInspectionRequest(string $appealId, string $requestedAt, ?string $fileBundle = null): array {
 		$store = $this->appealStore(otherSchemaKey: null);
 		$current = $this->requireAppeal(store: $store, appealId: $appealId);
 
+		$entry = $this->inspectionEntry(requestedAt: $requestedAt, fileBundle: $fileBundle);
+
+		$requests = (array)($current['fileInspectionRequests'] ?? []);
+		$requests[] = $entry;
+
+		return $this->patchInspectionRequests(store: $store, appealId: $appealId, current: $current, requests: $requests);
+	}//end addFileInspectionRequest()
+
+	/**
+	 * A file-inspection request entry with its deadline.
+	 *
+	 * @param string      $requestedAt ISO date the rechtbank issued the request
+	 * @param string|null $fileBundle  Optional NC file ID / dossier ref
+	 *
+	 * @return array<string, string> The entry.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function inspectionEntry(string $requestedAt, ?string $fileBundle): array {
 		$entry = [
 			'requestedAt' => $requestedAt,
 			'deadline' => $this->shiftDate(base: $requestedAt, modifier: self::FILE_INSPECTION_WINDOW),
@@ -271,9 +286,24 @@ class BeroepService {
 			$entry['fileBundle'] = $fileBundle;
 		}
 
-		$requests = (array)($current['fileInspectionRequests'] ?? []);
-		$requests[] = $entry;
+		return $entry;
+	}//end inspectionEntry()
 
+	/**
+	 * Write the beroep's file-inspection requests.
+	 *
+	 * @param array<string, mixed>             $store    The beroep store.
+	 * @param string                           $appealId UUID of the beroep
+	 * @param array<string, mixed>             $current  The stored beroep.
+	 * @param array<int, array<string, mixed>> $requests The requests, with the new one.
+	 *
+	 * @return array<string, mixed> The updated beroep record
+	 *
+	 * @throws RuntimeException When the write fails.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function patchInspectionRequests(array $store, string $appealId, array $current, array $requests): array {
 		return $this->patchAppeal(
 			store: $store,
 			patch: [
@@ -284,7 +314,7 @@ class BeroepService {
 				'error' => 'Could not add file-inspection request',
 			]
 		);
-	}//end addFileInspectionRequest()
+	}//end patchInspectionRequests()
 
 	/*
 	 * NO recordJudgment() HERE.

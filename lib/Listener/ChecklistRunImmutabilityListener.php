@@ -123,27 +123,66 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 	 */
 	private function isFrozenRunMutation(Event $event): bool {
 		if ($event instanceof ObjectLeavingEvent === true) {
-			$stored = $this->extractObject(event: $event, method: 'getObject');
-
-			return $stored !== null
-				&& $this->isChecklistRunSchema(object: $stored) === true
-				&& in_array((string)($stored['status'] ?? ''), self::FROZEN_STATUSES, true) === true;
+			return $this->isFrozenRunLeaving(event: $event);
 		}
 
+		$pair = $this->updatedRun(event: $event);
+		if ($pair === null) {
+			return false;
+		}
+
+		return $this->isFrozenRunChange(old: $pair[0], new: $pair[1]);
+	}//end isFrozenRunMutation()
+
+	/**
+	 * Whether a move takes away a checklist run that is already frozen.
+	 *
+	 * @param Event $event The move event
+	 *
+	 * @return bool True when the move must be rejected.
+	 */
+	private function isFrozenRunLeaving(Event $event): bool {
+		$stored = $this->extractObject(event: $event, method: 'getObject');
+
+		return $stored !== null
+			&& $this->isChecklistRunSchema(object: $stored) === true
+			&& in_array((string)($stored['status'] ?? ''), self::FROZEN_STATUSES, true) === true;
+	}//end isFrozenRunLeaving()
+
+	/**
+	 * The old and new payloads of an updated checklist run, or null when the update is not one.
+	 *
+	 * @param Event $event The dispatched update event
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>}|null The old and new payloads.
+	 */
+	private function updatedRun(Event $event): ?array {
 		$new = $this->extractObject(event: $event, method: 'getNewObject');
 		if ($new === null) {
-			return false;
+			return null;
 		}
 
 		if ($this->isChecklistRunSchema(object: $new) === false) {
-			return false;
+			return null;
 		}
 
 		$old = $this->extractObject(event: $event, method: 'getOldObject');
 		if ($old === null) {
-			return false;
+			return null;
 		}
 
+		return [$old, $new];
+	}//end updatedRun()
+
+	/**
+	 * Whether an update changes a checklist run that was already frozen.
+	 *
+	 * @param array<string, mixed> $old The stored payload
+	 * @param array<string, mixed> $new The updated payload
+	 *
+	 * @return bool True when the update must be rejected.
+	 */
+	private function isFrozenRunChange(array $old, array $new): bool {
 		$oldStatus = (string)($old['status'] ?? '');
 		$newStatus = (string)($new['status'] ?? '');
 
@@ -158,7 +197,7 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 		}
 
 		return true;
-	}//end isFrozenRunMutation()
+	}//end isFrozenRunChange()
 
 	/**
 	 * Whether the supplied object belongs to the inspectionChecklistRun schema.

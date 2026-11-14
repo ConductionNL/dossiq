@@ -190,32 +190,70 @@ class ProcessingTimeRows {
 
 		$rows = [];
 		foreach ($tallies as $typeId => $tally) {
-			$type   = $types[$typeId];
-			$target = $type['targetDays'];
-			$avg    = null;
-			$rate   = null;
-			if ($tally['total'] > 0) {
-				$avg = (int)round($tally['totalDays'] / $tally['total']);
-			}
-
-			if ($target !== null) {
-				$rate = $this->calculator->percent(part: $tally['withinSla'], whole: $tally['total']);
-			}
-
-			$rows[] = [
-				'id'             => (string)$typeId,
-				'name'           => (string)$type['name'],
-				'targetDays'     => $target,
-				'avgActualDays'  => $avg,
-				'complianceRate' => $rate,
-				'total'          => $tally['total'],
-				'withinSla'      => $tally['withinSla'],
-				'status'         => $this->performanceStatus(rate: $rate),
-			];
-		}//end foreach
+			$rows[] = $this->performanceRow(typeId: $typeId, type: $types[$typeId], tally: $tally);
+		}
 
 		return $rows;
 	}//end performance()
+
+	/**
+	 * The performance row of one case type.
+	 *
+	 * @param int|string           $typeId The type id.
+	 * @param array<string, mixed> $type   The prepared type.
+	 * @param array<string, mixed> $tally  Its tally.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function performanceRow(int|string $typeId, array $type, array $tally): array {
+		$target = $type['targetDays'];
+		$avg    = $this->averageDays(tally: $tally);
+		$rate   = $this->complianceRate(target: $target, tally: $tally);
+
+		return [
+			'id'             => (string)$typeId,
+			'name'           => (string)$type['name'],
+			'targetDays'     => $target,
+			'avgActualDays'  => $avg,
+			'complianceRate' => $rate,
+			'total'          => $tally['total'],
+			'withinSla'      => $tally['withinSla'],
+			'status'         => $this->performanceStatus(rate: $rate),
+		];
+	}//end performanceRow()
+
+	/**
+	 * The average processing time in days, or null when nothing completed.
+	 *
+	 * @param array<string, mixed> $tally The tally.
+	 *
+	 * @return int|null
+	 */
+	private function averageDays(array $tally): ?int {
+		$avg = null;
+		if ($tally['total'] > 0) {
+			$avg = (int)round($tally['totalDays'] / $tally['total']);
+		}
+
+		return $avg;
+	}//end averageDays()
+
+	/**
+	 * The share completed within the target, or null when the type has no target.
+	 *
+	 * @param mixed                $target The target in days, or null.
+	 * @param array<string, mixed> $tally  The tally.
+	 *
+	 * @return int|null
+	 */
+	private function complianceRate(mixed $target, array $tally): ?int {
+		$rate = null;
+		if ($target !== null) {
+			$rate = $this->calculator->percent(part: $tally['withinSla'], whole: $tally['total']);
+		}
+
+		return $rate;
+	}//end complianceRate()
 
 	/**
 	 * The tallies of every version of one case type added together, under the

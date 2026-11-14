@@ -38,6 +38,8 @@ use OCA\Dossiq\Service\Term\TermCarryOver;
 /**
  * Maps one source record onto a case, by a case type's import declaration.
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ *
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-a-case-type-declares-how-another-apps-records-become-its-cases-req-cri-001
  */
 class RecordCaseMapping {
@@ -343,15 +345,41 @@ class RecordCaseMapping {
 			return $raw;
 		}
 
-		$text = '';
-		if (is_scalar($raw) === true) {
-			$text = trim((string)preg_replace('/\s+/u', ' ', (string)$raw));
-		}
+		$text = $this->textOf(raw: $raw);
 
 		if (isset($field['values']) === true) {
 			return $this->listed(field: $field, text: $text);
 		}
 
+		return $this->typed(field: $field, shape: $shape, text: $text);
+	}//end shaped()
+
+	/**
+	 * A scalar raw value as text with its whitespace collapsed; '' for anything else.
+	 *
+	 * @param mixed $raw The raw value.
+	 *
+	 * @return string The text.
+	 */
+	private function textOf(mixed $raw): string {
+		$text = '';
+		if (is_scalar($raw) === true) {
+			$text = trim((string)preg_replace('/\s+/u', ' ', (string)$raw));
+		}
+
+		return $text;
+	}//end textOf()
+
+	/**
+	 * A text value in the shape its declaration asks for.
+	 *
+	 * @param array<string, mixed> $field The field declaration.
+	 * @param string $shape The declared shape.
+	 * @param string $text The raw value as text.
+	 *
+	 * @return mixed The value, or null when empty or unreadable.
+	 */
+	private function typed(array $field, string $shape, string $text): mixed {
 		if ($text === '') {
 			return null;
 		}
@@ -364,7 +392,7 @@ class RecordCaseMapping {
 			'boolean' => in_array(strtolower($text), self::TRUE_WORDS, true),
 			default => $this->cut(text: $text, length: (int)($field['maxLength'] ?? 0)),
 		};
-	}//end shaped()
+	}//end typed()
 
 	/**
 	 * A value read through its declared list.

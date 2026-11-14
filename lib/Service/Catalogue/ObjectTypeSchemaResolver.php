@@ -196,13 +196,24 @@ class ObjectTypeSchemaResolver {
 			$pair   = $this->container->get(self::RESOLVER)->resolvePair(registerRef: $register, schemaRef: $schema);
 			$entity = $pair['schema'];
 		} catch (Exception $e) {
-			$this->logger->info(
-				'Dossiq: the schema a linked object names could not be read',
-				['register' => $register, 'schema' => $schema, 'reason' => $e->getMessage()]
-			);
+			$this->logger->info('Dossiq: the schema a linked object names could not be read',
+				['register' => $register, 'schema' => $schema, 'reason' => $e->getMessage()]);
 			return self::UNREADABLE;
 		}
 
+		return $this->described(entity: $entity, pair: $pair, schema: $schema);
+	}//end read()
+
+	/**
+	 * A resolved schema as the catalogue row shows it.
+	 *
+	 * @param object               $entity The schema entity.
+	 * @param array<string, mixed> $pair   The resolved register and schema.
+	 * @param string               $schema The schema id or slug the URL names.
+	 *
+	 * @return array{id: string, title: string, properties: int, views: array<int, string>, objects: int|null} The schema.
+	 */
+	private function described($entity, array $pair, string $schema): array {
 		$properties = (array)$entity->getProperties();
 
 		$schemaId = '';
@@ -217,7 +228,7 @@ class ObjectTypeSchemaResolver {
 			'views'      => self::viewsOf(properties: $properties),
 			'objects'    => $this->objectCount(register: ($pair['register'] ?? null), schema: $entity),
 		];
-	}//end read()
+	}//end described()
 
 	/**
 	 * How many objects the register holds in the schema, or null without

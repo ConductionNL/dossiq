@@ -274,36 +274,62 @@ class BezwaarLegalHoldListener implements IEventListener {
 		}
 
 		try {
-			// MagicMapper has no findByUuid(); calling it raised a fatal Error that
-			// the \Throwable catch below swallowed on EVERY invocation, so no Awb
-			// legal hold was ever placed. RBAC and multitenancy are disabled because
-			// this runs inside an event handler where there is no session user or
-			// active organisation to filter by — an organisation-scoped read would
-			// find nothing and silently reopen the same hole.
-			$caseObject = $objectMapper->find(
-				identifier: $caseId,
-				_rbac: false,
-				_multitenancy: false
-			);
-			if (is_object($caseObject) === true) {
-				return $caseObject;
-			}
-
-			return null;
+			return $this->findCaseObject(objectMapper: $objectMapper, caseId: $caseId);
 		} catch (\Throwable $e) {
 			// A legal hold is an archiving-law control: failing to resolve the case
 			// means the hold is NOT applied, so it must never be silent again.
-			$this->logger->warning(
-				'Dossiq legal-hold: could not resolve case object',
-				[
-					'app' => AppIdentity::APP_ID,
-					'caseId' => $caseId,
-					'error' => $e->getMessage(),
-				]
-			);
+			$this->logUnresolvedCase(caseId: $caseId, error: $e);
 			return null;
 		}//end try
 	}//end resolveCaseObject()
+
+	/**
+	 * Find the case ObjectEntity, without RBAC or multitenancy.
+	 *
+	 * @param object $objectMapper OpenRegister's object mapper.
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return object|null The ObjectEntity, or null when the mapper answers no object.
+	 *
+	 * @throws \Throwable When the mapper cannot find the case.
+	 */
+	private function findCaseObject(object $objectMapper, string $caseId): ?object {
+		// MagicMapper has no findByUuid(); calling it raised a fatal Error that
+		// the \Throwable catch in resolveCaseObject() swallowed on EVERY invocation, so no Awb
+		// legal hold was ever placed. RBAC and multitenancy are disabled because
+		// this runs inside an event handler where there is no session user or
+		// active organisation to filter by — an organisation-scoped read would
+		// find nothing and silently reopen the same hole.
+		$caseObject = $objectMapper->find(
+			identifier: $caseId,
+			_rbac: false,
+			_multitenancy: false
+		);
+		if (is_object($caseObject) === true) {
+			return $caseObject;
+		}
+
+		return null;
+	}//end findCaseObject()
+
+	/**
+	 * Log a case object that could not be resolved, so the missing hold is not silent.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param \Throwable $error Why it could not be resolved.
+	 *
+	 * @return void
+	 */
+	private function logUnresolvedCase(string $caseId, \Throwable $error): void {
+		$this->logger->warning(
+			'Dossiq legal-hold: could not resolve case object',
+			[
+				'app' => AppIdentity::APP_ID,
+				'caseId' => $caseId,
+				'error' => $error->getMessage(),
+			]
+		);
+	}//end logUnresolvedCase()
 
 	/**
 	 * Resolve an OpenRegister collaborator by FQN, or null when unavailable.

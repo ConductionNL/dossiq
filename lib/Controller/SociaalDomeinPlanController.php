@@ -139,34 +139,74 @@ class SociaalDomeinPlanController extends Controller {
 	#[NoAdminRequired]
 	public function planOfCase(string $caseId): JSONResponse {
 		try {
-			$status = $this->planAccess->caseRead(caseId: $caseId);
-			if ($status !== Http::STATUS_OK) {
-				return $this->denied(status: $status);
-			}
-
-			$plans = [];
-			if (trim($caseId) !== '') {
-				$plans = $this->store->rows(schema: CasePlanReviewInterface::SCHEMA, filters: ['caseId' => $caseId]);
-			}
-
-			if ($plans === []) {
-				return new JSONResponse(['planId' => null, 'plan' => null, 'goals' => [], 'interventions' => [], 'dueForReview' => false]);
-			}
-
-			usort(
-				$plans,
-				static fn (array $one, array $two): int => strcmp((string)($two['preparedDate'] ?? ''), (string)($one['preparedDate'] ?? ''))
-			);
-			$plan   = $plans[0];
-			$planId = (string)($plan['id'] ?? ($plan['@self']['id'] ?? ''));
-
-			return new JSONResponse($this->planPayload(plan: $plan, planId: $planId));
+			return $this->latestPlanOfCase(caseId: $caseId);
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'case-plan-of-case', e: $e);
 		} catch (Throwable $e) {
 			return $this->broke(op: 'case-plan-of-case', e: $e);
 		}//end try
 	}//end planOfCase()
+
+	/**
+	 * The newest plan of a case the user may read, or an empty plan when it has none.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @throws RefusedException When the plan cannot be read.
+	 * @throws Throwable When reading fails.
+	 */
+	private function latestPlanOfCase(string $caseId): JSONResponse {
+		$status = $this->planAccess->caseRead(caseId: $caseId);
+		if ($status !== Http::STATUS_OK) {
+			return $this->denied(status: $status);
+		}
+
+		$plans = $this->plansOfCase(caseId: $caseId);
+		if ($plans === []) {
+			return new JSONResponse(['planId' => null, 'plan' => null, 'goals' => [], 'interventions' => [], 'dueForReview' => false]);
+		}
+
+		$plan   = $this->newestPlan(plans: $plans);
+		$planId = (string)($plan['id'] ?? ($plan['@self']['id'] ?? ''));
+
+		return new JSONResponse($this->planPayload(plan: $plan, planId: $planId));
+	}//end latestPlanOfCase()
+
+	/**
+	 * The plans stored for a case, [] for a blank case id.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array The plans.
+	 *
+	 * @throws Throwable When reading fails.
+	 */
+	private function plansOfCase(string $caseId): array {
+		$plans = [];
+		if (trim($caseId) !== '') {
+			$plans = $this->store->rows(schema: CasePlanReviewInterface::SCHEMA, filters: ['caseId' => $caseId]);
+		}
+
+		return $plans;
+	}//end plansOfCase()
+
+	/**
+	 * The plan with the latest preparedDate.
+	 *
+	 * @param array $plans The plans, at least one.
+	 *
+	 * @return array The newest plan.
+	 */
+	private function newestPlan(array $plans): array {
+		usort(
+			$plans,
+			static fn (array $one, array $two): int => strcmp((string)($two['preparedDate'] ?? ''), (string)($one['preparedDate'] ?? ''))
+		);
+
+		return $plans[0];
+	}//end newestPlan()
 
 	/**
 	 * A plan with its goals, interventions and review state.
@@ -200,32 +240,54 @@ class SociaalDomeinPlanController extends Controller {
 	#[NoAdminRequired]
 	public function saveGoal(string $planId): JSONResponse {
 		try {
-			$status = $this->planAccess->planWrite(
-				planId: $planId,
-				recordSchema: CasePlanGoalsInterface::SCHEMA,
-				recordId: trim((string)$this->request->getParam('id', ''))
-			);
+			$status = $this->goalWriteStatus(planId: $planId);
 			if ($status !== Http::STATUS_OK) {
 				return $this->denied(status: $status);
 			}
 
-			return new JSONResponse(
-				$this->goals->save(
-					goal: [
-						'id' => trim((string)$this->request->getParam('id', '')),
-						'plan' => $planId,
-						'title' => (string)$this->request->getParam('title', ''),
-						'metWhen' => (string)$this->request->getParam('metWhen', ''),
-						'state' => (string)$this->request->getParam('state', 'open'),
-					]
-				)
-			);
+			return new JSONResponse($this->goals->save(goal: $this->goalFromRequest(planId: $planId)));
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'case-plan-goal', e: $e);
 		} catch (Throwable $e) {
 			return $this->broke(op: 'case-plan-goal', e: $e);
 		}
 	}//end saveGoal()
+
+	/**
+	 * Whether the caller may write the goal the request names on the plan.
+	 *
+	 * @param string $planId The gezinsplan uuid.
+	 *
+	 * @return int Http::STATUS_OK, or the refusal status.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 */
+	private function goalWriteStatus(string $planId): int {
+		return $this->planAccess->planWrite(
+			planId: $planId,
+			recordSchema: CasePlanGoalsInterface::SCHEMA,
+			recordId: trim((string)$this->request->getParam('id', ''))
+		);
+	}//end goalWriteStatus()
+
+	/**
+	 * The goal the request describes.
+	 *
+	 * @param string $planId The gezinsplan uuid.
+	 *
+	 * @return array<string, string> The goal.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 */
+	private function goalFromRequest(string $planId): array {
+		return [
+			'id' => trim((string)$this->request->getParam('id', '')),
+			'plan' => $planId,
+			'title' => (string)$this->request->getParam('title', ''),
+			'metWhen' => (string)$this->request->getParam('metWhen', ''),
+			'state' => (string)$this->request->getParam('state', 'open'),
+		];
+	}//end goalFromRequest()
 
 	/**
 	 * Close a goal against what it said would count as met.

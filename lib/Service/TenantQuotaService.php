@@ -130,47 +130,83 @@ class TenantQuotaService implements TenantQuotaServiceInterface {
 
 		$rows = [];
 		foreach (self::TIER_DEFAULTS[$tier] as $quotaType => $cfg) {
-			$object = [
-				'tenantRef' => $tenantId,
-				'quotaType' => $quotaType,
-				'currentUsage' => 0,
-				'softLimitWarningPercent' => 80,
-				'enforcement' => $cfg['enforcement'],
-				'resetAt' => $this->nextResetAt(quotaType: $quotaType),
-			];
+			$object = $this->initialQuotaRow(tenantId: $tenantId, quotaType: $quotaType, cfg: $cfg);
 
-			// The mapped two carry no `limit` on the row. The tier default goes
-			// onto the Organisation instead, so there is exactly one copy of it.
-			$isMapped = $this->organisationLimits->owns(quotaType: $quotaType);
-			if ($isMapped === true) {
-				$this->organisationLimits->write(
-					tenantId: $tenantId,
-					quotaType: $quotaType,
-					limit: $cfg['limit']
-				);
+			$row = $this->persistQuotaRow(objectService: $objectService, object: $object);
+			if ($row !== null) {
+				$rows[] = $row;
 			}
-
-			if ($isMapped === false) {
-				$object['limit'] = $cfg['limit'];
-			}
-
-			try {
-				$row = $objectService->saveObject(
-					object: $object,
-					register: AppIdentity::REGISTER_SLUG,
-					schema: 'tenantQuota',
-					uuid: null,
-				);
-				if (is_array($row) === true) {
-					$rows[] = $row;
-				}
-			} catch (Throwable $e) {
-				$this->logger->error('Dossiq: quota initialise write failed', ['exception' => $e->getMessage()]);
-			}//end try
-		}//end foreach
+		}
 
 		return $rows;
 	}//end initialize()
+
+	/**
+	 * The quota row a tier default starts a tenant on.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param string $quotaType Type.
+	 * @param array<string, mixed> $cfg The tier default (limit, enforcement).
+	 *
+	 * @return array<string, mixed> The row to persist.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
+	 */
+	private function initialQuotaRow(string $tenantId, string $quotaType, array $cfg): array {
+		$object = [
+			'tenantRef' => $tenantId,
+			'quotaType' => $quotaType,
+			'currentUsage' => 0,
+			'softLimitWarningPercent' => 80,
+			'enforcement' => $cfg['enforcement'],
+			'resetAt' => $this->nextResetAt(quotaType: $quotaType),
+		];
+
+		// The mapped two carry no `limit` on the row. The tier default goes
+		// onto the Organisation instead, so there is exactly one copy of it.
+		$isMapped = $this->organisationLimits->owns(quotaType: $quotaType);
+		if ($isMapped === true) {
+			$this->organisationLimits->write(
+				tenantId: $tenantId,
+				quotaType: $quotaType,
+				limit: $cfg['limit']
+			);
+		}
+
+		if ($isMapped === false) {
+			$object['limit'] = $cfg['limit'];
+		}
+
+		return $object;
+	}//end initialQuotaRow()
+
+	/**
+	 * Persist one initial quota row.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param array<string, mixed> $object The row to persist.
+	 *
+	 * @return array<string, mixed>|null The persisted row, or null when the write failed.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
+	 */
+	private function persistQuotaRow(object $objectService, array $object): ?array {
+		try {
+			$row = $objectService->saveObject(
+				object: $object,
+				register: AppIdentity::REGISTER_SLUG,
+				schema: 'tenantQuota',
+				uuid: null,
+			);
+			if (is_array($row) === true) {
+				return $row;
+			}
+		} catch (Throwable $e) {
+			$this->logger->error('Dossiq: quota initialise write failed', ['exception' => $e->getMessage()]);
+		}//end try
+
+		return null;
+	}//end persistQuotaRow()
 
 	/**
 	 * Get the quota row for (tenant, type).

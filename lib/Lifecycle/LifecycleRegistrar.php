@@ -8,7 +8,7 @@
  * subsystem needs belong next to that subsystem, not on the bootstrap class.
  *
  * @category AppInfo
- * @package  OCA\Dossiq\Service\Registrar
+ * @package  OCA\Dossiq\Lifecycle
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,17 +24,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service\Registrar;
+namespace OCA\Dossiq\Lifecycle;
 
-use OCA\Dossiq\Lifecycle\CaseActionList;
-use OCA\Dossiq\Lifecycle\CaseActionProvider;
-use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
-use OCA\Dossiq\Service\Cases\ExternalHome;
-use OCA\Dossiq\Service\Money\CasePaymentReader;
-use OCA\Dossiq\Service\Money\UnpaidCaseGate;
-use OCA\Dossiq\Service\StatusTransitionService;
-use OCA\Dossiq\Service\Transitions\CaseResultWriter;
-use OCA\Dossiq\Service\Transitions\CaseTypeReader;
+use OCA\Dossiq\Kernel\Contracts\ExternalHomeInterface;
+use OCA\Dossiq\Kernel\Contracts\OpenRegisterGrantsGatewayInterface;
+use OCA\Dossiq\Kernel\Contracts\StatusTransitionServiceInterface;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -75,9 +69,9 @@ class LifecycleRegistrar {
 		$context->registerService(
 			CaseActionProvider::class,
 			static fn (ContainerInterface $container): CaseActionProvider => new CaseActionProvider(
-				transitionEngine: $container->get(StatusTransitionService::class),
-				grants: $container->get(OpenRegisterGrantsGateway::class),
-				externalHome: $container->get(ExternalHome::class),
+				transitionEngine: $container->get(StatusTransitionServiceInterface::class),
+				grants: $container->get(OpenRegisterGrantsGatewayInterface::class),
+				externalHome: $container->get(ExternalHomeInterface::class),
 				// The acts a case offers, and what blocks them. Named here for
 				// the reason the others are: this service is built by hand, so
 				// a dependency added to the constructor and not to this call is

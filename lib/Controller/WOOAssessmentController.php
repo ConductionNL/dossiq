@@ -59,6 +59,7 @@ use Psr\Log\LoggerInterface;
  * parameter is a distinct, independently-used collaborator (same rationale
  * as CouplingBetweenObjects above); `woo-llm-anonymisation` adds one more
  * (`WOOAnonymisationAssistService`) to an already-wide, long-established list.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
@@ -252,33 +253,72 @@ class WOOAssessmentController extends Controller {
 
 		// A chosen letter must be a document of this case, checked before anything is written.
 		$letter = trim((string)$this->request->getParam('letter', ''));
+		return $this->assembleDecisionResponse(id: $id, decisionData: $decisionData, letter: $letter);
+	}//end createDecision()
+
+	/**
+	 * Assemble the besluit with its chosen letter, answering a refusal or failure as a response.
+	 *
+	 * @param string $id           The case UUID.
+	 * @param mixed  $decisionData The decision fields.
+	 * @param string $letter       The chosen letter, or ''.
+	 *
+	 * @return JSONResponse Created decision with assessment summary, or the error.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
+	 */
+	private function assembleDecisionResponse(string $id, mixed $decisionData, string $letter): JSONResponse {
 		try {
 			$this->letters?->assertOnCase(caseId: $id, documentId: $letter);
-			$result = $this->decisionService->assembleDecision(
-				caseId: $id,
-				decisionData: $decisionData,
-				letter: $letter,
-			);
+			$result = $this->decisionService->assembleDecision(caseId: $id, decisionData: $decisionData, letter: $letter);
 			return new JSONResponse($this->withLinkedLetter(result: $result, letter: $letter));
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		} catch (RefusedException $e) {
-			return new JSONResponse(
-				[
-					'error' => $e->getRule(),
-					'message' => $this->l10n->t('The decision waits until every required page has been seen.'),
-					'unseen' => $this->decisionService->unseenPages(caseId: $id),
-				],
-				$e->getStatus()
-			);
+			return $this->unseenPagesRefusal(error: $e, id: $id);
 		} catch (\RuntimeException $e) {
-			$this->logger->error(
-				'WOO besluit assembly failed: ' . $e->getMessage(),
-				['app' => 'dossiq','caseId' => $id],
-			);
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
+			return $this->assemblyFailure(error: $e, id: $id);
 		}
-	}//end createDecision()
+	}//end assembleDecisionResponse()
+
+	/**
+	 * The refusal of a besluit that waits for pages nobody has seen, naming those pages.
+	 *
+	 * @param RefusedException $error The refusal.
+	 * @param string           $id    The case UUID.
+	 *
+	 * @return JSONResponse The refusal.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
+	 */
+	private function unseenPagesRefusal(RefusedException $error, string $id): JSONResponse {
+		return new JSONResponse(
+			[
+				'error' => $error->getRule(),
+				'message' => $this->l10n->t('The decision waits until every required page has been seen.'),
+				'unseen' => $this->decisionService->unseenPages(caseId: $id),
+			],
+			$error->getStatus()
+		);
+	}//end unseenPagesRefusal()
+
+	/**
+	 * Log a failed besluit assembly and answer it as a server error.
+	 *
+	 * @param \RuntimeException $error The failure.
+	 * @param string            $id    The case UUID.
+	 *
+	 * @return JSONResponse The error.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
+	 */
+	private function assemblyFailure(\RuntimeException $error, string $id): JSONResponse {
+		$this->logger->error(
+			'WOO besluit assembly failed: ' . $error->getMessage(),
+			['app' => 'dossiq','caseId' => $id],
+		);
+		return new JSONResponse(['error' => $error->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
+	}//end assemblyFailure()
 
 	/**
 	 * A request parameter that may arrive as JSON text, decoded; unreadable text reads as an empty list.
@@ -413,15 +453,23 @@ class WOOAssessmentController extends Controller {
 
 		$this->requireCaseMutationAccess(caseId: $id, user: $user);
 
+		return $this->proposalFor(id: $id, documentRef: $documentRef, user: $user);
+	}//end proposeRedaction()
+
+	/**
+	 * Propose the redaction spans for the posted text, answering a refusal or failure as JSON.
+	 *
+	 * @param string $id          The case id.
+	 * @param string $documentRef The document reference.
+	 * @param IUser  $user        The reviewer.
+	 *
+	 * @return JSONResponse
+	 */
+	private function proposalFor(string $id, string $documentRef, IUser $user): JSONResponse {
 		$text = (string)$this->request->getParam('text', '');
 
 		try {
-			$result = $this->anonymisationAssist->proposeSpans(
-				caseId: $id,
-				documentRef: $documentRef,
-				text: $text,
-				userId: $user->getUID(),
-			);
+			$result = $this->anonymisationAssist->proposeSpans(caseId: $id, documentRef: $documentRef, text: $text, userId: $user->getUID());
 			return new JSONResponse($result);
 		} catch (RefusedException $e) {
 			// Another reviewer's assessment (REQ-CRA-003): the rule and its status, not a 400.
@@ -429,13 +477,26 @@ class WOOAssessmentController extends Controller {
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		} catch (\RuntimeException $e) {
-			$this->logger->warning(
-				'WOO redaction proposal failed: ' . $e->getMessage(),
-				['app' => 'dossiq','caseId' => $id, 'documentRef' => $documentRef],
-			);
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+			return $this->proposalFailed(id: $id, documentRef: $documentRef, error: $e->getMessage());
 		}
-	}//end proposeRedaction()
+	}//end proposalFor()
+
+	/**
+	 * Log a failed redaction proposal and answer it as a bad request.
+	 *
+	 * @param string $id          The case id.
+	 * @param string $documentRef The document reference.
+	 * @param string $error       What went wrong.
+	 *
+	 * @return JSONResponse
+	 */
+	private function proposalFailed(string $id, string $documentRef, string $error): JSONResponse {
+		$this->logger->warning(
+			'WOO redaction proposal failed: ' . $error,
+			['app' => 'dossiq','caseId' => $id, 'documentRef' => $documentRef],
+		);
+		return new JSONResponse(['error' => $error], Http::STATUS_BAD_REQUEST);
+	}//end proposalFailed()
 
 	/**
 	 * Record a human reviewer's approve/reject decision on a pending

@@ -127,11 +127,7 @@ class ApplicantPortalActs implements ApplicantPortalActsInterface {
 	 * @spec openspec/changes/site-business-and-authorisation/specs/portal-contribution/spec.md
 	 */
 	public function recordWrite(string $caseId, string $act, array $fields, string $occurredAt, array $mandate=[]): bool {
-		if (isset(self::WRITE_ACTS[$act]) === false) {
-			$this->logger->warning(
-				'Dossiq: a portal write on case {case} names an act this app does not know, {act}',
-				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'act' => $act],
-			);
+		if ($this->isKnownAct(caseId: $caseId, act: $act) === false) {
 			return false;
 		}
 
@@ -140,6 +136,51 @@ class ApplicantPortalActs implements ApplicantPortalActsInterface {
 			return false;
 		}
 
+		$this->recordOnTimeline(caseId: $caseId, act: $act, fields: $fields, occurredAt: $occurredAt);
+
+		$this->tellTheRepresented(caseId: $caseId, act: $act, mandate: $mandate, occurredAt: $occurredAt);
+
+		$this->notifyAssignee(
+			case: $case,
+			caseId: $caseId,
+			subject: NotifierInterface::SUBJECT_APPLICANT_RESPONDED,
+			parameters: ['act' => $act],
+		);
+
+		return true;
+	}//end recordWrite()
+
+	/**
+	 * Whether the act is one this app records, warning when it is not.
+	 *
+	 * @param string $caseId The case the write landed on.
+	 * @param string $act    The act.
+	 *
+	 * @return boolean
+	 */
+	private function isKnownAct(string $caseId, string $act): bool {
+		if (isset(self::WRITE_ACTS[$act]) === false) {
+			$this->logger->warning(
+				'Dossiq: a portal write on case {case} names an act this app does not know, {act}',
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'act' => $act],
+			);
+			return false;
+		}
+
+		return true;
+	}//end isKnownAct()
+
+	/**
+	 * Record the applicant's write on the case's internal timeline.
+	 *
+	 * @param string             $caseId     The case the write landed on.
+	 * @param string             $act        The act.
+	 * @param array<int, string> $fields     The field names the act touched.
+	 * @param string             $occurredAt The moment of the write, ISO 8601.
+	 *
+	 * @return void
+	 */
+	private function recordOnTimeline(string $caseId, string $act, array $fields, string $occurredAt): void {
 		$touched = implode(', ', array_filter(array_map('strval', $fields), static fn (string $field): bool => $field !== ''));
 
 		$message = self::WRITE_ACTS[$act];
@@ -158,18 +199,7 @@ class ApplicantPortalActs implements ApplicantPortalActsInterface {
 			],
 			visibility: CaseTimelineInterface::INTERNAL,
 		);
-
-		$this->tellTheRepresented(caseId: $caseId, act: $act, mandate: $mandate, occurredAt: $occurredAt);
-
-		$this->notifyAssignee(
-			case: $case,
-			caseId: $caseId,
-			subject: NotifierInterface::SUBJECT_APPLICANT_RESPONDED,
-			parameters: ['act' => $act],
-		);
-
-		return true;
-	}//end recordWrite()
+	}//end recordOnTimeline()
 
 	/**
 	 * A write made for someone else under a mandate is told to that person on

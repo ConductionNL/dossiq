@@ -152,6 +152,24 @@ final class EscalationRuleValidator {
 	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private function validateTiming(array $rule, string $path): array {
+		return array_merge(
+			$this->triggerErrors(rule: $rule, path: $path),
+			$this->offsetErrors(rule: $rule, path: $path),
+			$this->offsetUnitErrors(rule: $rule, path: $path),
+		);
+	}//end validateTiming()
+
+	/**
+	 * The error for an escalationRule trigger that is not a known one.
+	 *
+	 * @param array<string, mixed> $rule The escalationRule object.
+	 * @param string $path The path prefix for any error.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 *
+	 * @spec openspec/specs/process-step-configuration/spec.md
+	 */
+	private function triggerErrors(array $rule, string $path): array {
 		$errors = [];
 
 		$trigger = ($rule['trigger'] ?? null);
@@ -163,6 +181,22 @@ final class EscalationRuleValidator {
 			);
 		}
 
+		return $errors;
+	}//end triggerErrors()
+
+	/**
+	 * The error for an escalationRule offset that is not a non-negative integer.
+	 *
+	 * @param array<string, mixed> $rule The escalationRule object.
+	 * @param string $path The path prefix for any error.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 *
+	 * @spec openspec/specs/process-step-configuration/spec.md
+	 */
+	private function offsetErrors(array $rule, string $path): array {
+		$errors = [];
+
 		$offset = ($rule['offset'] ?? null);
 		if (is_int($offset) === false || $offset < 0) {
 			$errors[] = $this->error(
@@ -171,6 +205,22 @@ final class EscalationRuleValidator {
 				message: 'escalationRule.offset must be a non-negative integer'
 			);
 		}
+
+		return $errors;
+	}//end offsetErrors()
+
+	/**
+	 * The error for an escalationRule offsetUnit that is not a known one.
+	 *
+	 * @param array<string, mixed> $rule The escalationRule object.
+	 * @param string $path The path prefix for any error.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 *
+	 * @spec openspec/specs/process-step-configuration/spec.md
+	 */
+	private function offsetUnitErrors(array $rule, string $path): array {
+		$errors = [];
 
 		$offsetUnit = ($rule['offsetUnit'] ?? null);
 		if (is_string($offsetUnit) === false
@@ -184,7 +234,7 @@ final class EscalationRuleValidator {
 		}
 
 		return $errors;
-	}//end validateTiming()
+	}//end offsetUnitErrors()
 
 	/**
 	 * Rule 7: a preBreach offset cannot exceed sla.value.
