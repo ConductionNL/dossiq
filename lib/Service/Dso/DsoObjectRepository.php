@@ -162,7 +162,8 @@ class DsoObjectRepository implements DsoObjectRepositoryInterface {
 		}
 
 		return $this->filteredDashboard(
-			cases: $cases['results'], activiteitgroep: $activiteitgroep, regelkwalificatie: $regelkwalificatie, location: $location
+			cases: $cases['results'],
+			filters: new DashboardFilters(activiteitgroep: $activiteitgroep, regelkwalificatie: $regelkwalificatie, location: $location),
 		);
 	}//end fetchDashboard()
 
@@ -197,23 +198,16 @@ class DsoObjectRepository implements DsoObjectRepositoryInterface {
 	 * The dashboard outcome with the in-memory filters applied.
 	 *
 	 * @param array<int,mixed> $cases The zaken.
-	 * @param string $activiteitgroep Filter by activiteitgroep.
-	 * @param string $regelkwalificatie Filter by regelkwalificatie.
-	 * @param string $location Filter by locatie substring.
+	 * @param DashboardFilters $filters The activiteitgroep, regelkwalificatie and locatie filters.
 	 *
 	 * @return array{error: null, results: array<int,array<string,mixed>>} The query outcome.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
-	private function filteredDashboard(array $cases, string $activiteitgroep, string $regelkwalificatie, string $location): array {
+	private function filteredDashboard(array $cases, DashboardFilters $filters): array {
 		return [
 			'error' => null,
-			'results' => $this->applyInMemoryFilters(
-				cases: $cases,
-				activiteitgroep: $activiteitgroep,
-				regelkwalificatie: $regelkwalificatie,
-				location: $location
-			),
+			'results' => $this->applyInMemoryFilters(cases: $cases, filters: $filters),
 		];
 	}//end filteredDashboard()
 
@@ -221,21 +215,15 @@ class DsoObjectRepository implements DsoObjectRepositoryInterface {
 	 * Apply in-memory filters that cannot be pushed to ObjectService params.
 	 *
 	 * @param array<int,mixed> $cases The zaken array (elements come from ObjectService and are not guaranteed to be arrays)
-	 * @param string $activiteitgroep Filter by activiteitgroep
-	 * @param string $regelkwalificatie Filter by regelkwalificatie
-	 * @param string $location Filter by locatie substring
+	 * @param DashboardFilters $filters The activiteitgroep, regelkwalificatie and locatie substring filters
 	 *
 	 * @return array<int,array<string,mixed>> The filtered zaken.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
-	private function applyInMemoryFilters(
-		array $cases,
-		string $activiteitgroep,
-		string $regelkwalificatie,
-		string $location,
-	): array {
-		if ($activiteitgroep === '' && $regelkwalificatie === '' && $location === '') {
+	private function applyInMemoryFilters(array $cases, DashboardFilters $filters): array {
+		$location = $filters->location;
+		if ($filters->activiteitgroep === '' && $filters->regelkwalificatie === '' && $location === '') {
 			return $cases;
 		}
 

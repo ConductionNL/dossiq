@@ -65,6 +65,13 @@ class BrcController extends ZgwController {
 	private const ZGW_API = 'besluiten';
 
 	/**
+	 * The ZGW resource a besluit delete acts on.
+	 *
+	 * @var string
+	 */
+	private const DECISION_RESOURCE = 'besluiten';
+
+	/**
 	 * What the Besluiten API keeps in step in the Zaken and Documenten registers.
 	 *
 	 * @var BrcCrossRegisterSync
@@ -459,7 +466,7 @@ class BrcController extends ZgwController {
 			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
 		}
 
-		$refusal = $this->deleteDecision(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, resource: $resource);
+		$refusal = $this->deleteDecision(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
 		if ($refusal !== null) {
 			return $refusal;
 		}
@@ -487,12 +494,11 @@ class BrcController extends ZgwController {
 	 * @param object $objectService The object service.
 	 * @param array $mappingConfig The besluiten mapping.
 	 * @param string $uuid The besluit UUID.
-	 * @param string $resource The ZGW resource name.
 	 *
 	 * @return JSONResponse|null The failure, not-found or validation response, or null once deleted.
 	 */
-	private function deleteDecision(object $objectService, array $mappingConfig, string $uuid, string $resource): ?JSONResponse {
-		$object = $resource . ' ' . $uuid;
+	private function deleteDecision(object $objectService, array $mappingConfig, string $uuid): ?JSONResponse {
+		$object = self::DECISION_RESOURCE . ' ' . $uuid;
 		try {
 			$existingObj = $objectService->find(
 				$uuid,
@@ -508,7 +514,7 @@ class BrcController extends ZgwController {
 		}
 
 		try {
-			return $this->validateAndDeleteDecision(objectService: $objectService, existingObj: $existingObj, uuid: $uuid, resource: $resource);
+			return $this->validateAndDeleteDecision(objectService: $objectService, existingObj: $existingObj, uuid: $uuid);
 		} catch (\Throwable $e) {
 			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete besluit', object: $object);
 		}//end try
@@ -520,19 +526,18 @@ class BrcController extends ZgwController {
 	 * @param object $objectService The object service.
 	 * @param mixed $existingObj The stored besluit.
 	 * @param string $uuid The besluit UUID.
-	 * @param string $resource The ZGW resource name.
 	 *
 	 * @return JSONResponse|null The validation error, or null once deleted.
 	 *
 	 * @throws \Throwable When the sync or the delete fails.
 	 */
-	private function validateAndDeleteDecision(object $objectService, mixed $existingObj, string $uuid, string $resource): ?JSONResponse {
+	private function validateAndDeleteDecision(object $objectService, mixed $existingObj, string $uuid): ?JSONResponse {
 		$existingData = $this->objectToArray(row: $existingObj);
 
 		// Run destroy business rules.
 		$ruleResult = $this->zgwService->getBusinessRulesService()->validate(
 			zgwApi: self::ZGW_API,
-			resource: $resource,
+			resource: self::DECISION_RESOURCE,
 			action: 'destroy',
 			body: [],
 			existingObject: $existingData
