@@ -134,9 +134,9 @@ final class MapsZgwRowsTest extends TestCase {
 	 * @return void
 	 */
 	public function testOutboundRowsMapEachRow(): void {
-		$this->zgwService->expects($this->once())->method('createOutboundMapping')->willReturn(['m']);
+		$this->zgwService->expects($this->once())->method('createOutboundMapping')->willReturn(new \stdClass());
 		$this->zgwService->method('applyOutboundMapping')->willReturnCallback(
-			static fn (array $objectData, array $mapping, array $mappingConfig, string $baseUrl): array => ['url' => $baseUrl . '/' . $objectData['id']]
+			static fn (array $objectData, object $mapping, array $mappingConfig, string $baseUrl): array => ['url' => $baseUrl . '/' . $objectData['id']]
 		);
 
 		$rows = $this->host()->call('outboundRows', ['rows' => [['id' => 'a'], ['id' => 'b']], 'mappingConfig' => [], 'baseUrl' => 'https://x']);
