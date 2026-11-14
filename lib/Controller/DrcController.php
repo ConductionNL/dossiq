@@ -1719,6 +1719,28 @@ class DrcController extends ZgwController {
 	 * @return array|null Array with informatieobjectUuid, or null
 	 */
 	private function getGebruiksrechtData(string $uuid): ?array {
+		$source = $this->gebruiksrechtSource();
+		if ($source === null) {
+			return null;
+		}
+
+		[$objectService, $mappingConfig] = $source;
+		try {
+			$obj = $objectService->find($uuid, register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema']);
+			return $this->informatieobjectUuidOf(data: $this->objectToArray(row: $obj));
+		} catch (\Throwable $e) {
+			// Not found.
+		}
+
+		return null;
+	}//end getGebruiksrechtData()
+
+	/**
+	 * The object service and the gebruiksrechten mapping.
+	 *
+	 * @return array{0: object, 1: array}|null Null when either is unavailable.
+	 */
+	private function gebruiksrechtSource(): array|null {
 		$objectService = $this->zgwService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -1729,25 +1751,25 @@ class DrcController extends ZgwController {
 			return null;
 		}
 
-		try {
-			$obj = $objectService->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$data = $this->objectToArray(row: $obj);
+		return [$objectService, $mappingConfig];
+	}//end gebruiksrechtSource()
 
-			$ioRef = $data['document'] ?? ($data['informatieobject'] ?? '');
-			$uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
-			if (preg_match($uuidPattern, (string)$ioRef, $grMatches) === 1) {
-				return ['informatieobjectUuid' => $grMatches[1]];
-			}
-		} catch (\Throwable $e) {
-			// Not found.
+	/**
+	 * The informatieobject uuid a gebruiksrecht refers to.
+	 *
+	 * @param array $data The gebruiksrecht.
+	 *
+	 * @return array|null Array with informatieobjectUuid, or null when it names none.
+	 */
+	private function informatieobjectUuidOf(array $data): array|null {
+		$ioRef = $data['document'] ?? ($data['informatieobject'] ?? '');
+		$uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
+		if (preg_match($uuidPattern, (string)$ioRef, $grMatches) === 1) {
+			return ['informatieobjectUuid' => $grMatches[1]];
 		}
 
 		return null;
-	}//end getGebruiksrechtData()
+	}//end informatieobjectUuidOf()
 
 	/**
 	 * Check if EIO still has gebruiksrechten after deletion (drc-006 VNG).
