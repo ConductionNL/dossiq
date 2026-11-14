@@ -339,7 +339,7 @@ class CaseCollaborationService implements CaseCollaborationServiceInterface {
 	 */
 	private function resolveRemoteToken(string $shareToken, string $federatedShareId): ?array {
 		$shareMapper = $this->getFederatedShareMapper();
-		if ($shareMapper === null || $shareToken === '' || $federatedShareId === '') {
+		if ($shareMapper === null || $this->namesAShare(shareToken: $shareToken, federatedShareId: $federatedShareId) === false) {
 			return null;
 		}
 
@@ -349,6 +349,18 @@ class CaseCollaborationService implements CaseCollaborationServiceInterface {
 			return null;
 		}
 
+		return $this->sharedWithOf(share: $share, federatedShareId: $federatedShareId);
+	}//end resolveRemoteToken()
+
+	/**
+	 * Who an outgoing, live share of this federated share was made with.
+	 *
+	 * @param object $share            The federated share found by its token.
+	 * @param string $federatedShareId The federated share id the caller names.
+	 *
+	 * @return array{sharedWith: string}|null Null when the share is not outgoing, not live, or of another id.
+	 */
+	private function sharedWithOf(object $share, string $federatedShareId): ?array {
 		if ($share->getDirection() !== 'outgoing') {
 			return null;
 		}
@@ -365,7 +377,19 @@ class CaseCollaborationService implements CaseCollaborationServiceInterface {
 		}
 
 		return ['sharedWith' => (string)$share->getSharedWith()];
-	}//end resolveRemoteToken()
+	}//end sharedWithOf()
+
+	/**
+	 * Whether both the share token and the federated share id are given.
+	 *
+	 * @param string $shareToken       The share token.
+	 * @param string $federatedShareId The federated share id.
+	 *
+	 * @return bool
+	 */
+	private function namesAShare(string $shareToken, string $federatedShareId): bool {
+		return $shareToken !== '' && $federatedShareId !== '';
+	}//end namesAShare()
 
 	/**
 	 * Resolve OpenRegister's ObjectService.

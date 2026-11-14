@@ -112,6 +112,17 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 			return [];
 		}
 
+		return $this->openMissingSteps(tenantId: $tenantId);
+	}//end createOnboarding()
+
+	/**
+	 * Open every onboarding step the tenant does not carry yet, legacy rows carried over first.
+	 *
+	 * @param string $tenantId The tenant (Organisation) uuid.
+	 *
+	 * @return array<int, array<string, string>> The steps opened.
+	 */
+	private function openMissingSteps(string $tenantId): array {
 		$actor = $this->actor();
 		$existing = $this->stepsCarryingLegacyRows(tenantId: $tenantId, actor: $actor);
 		$created = [];
@@ -127,7 +138,7 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 		}
 
 		return $created;
-	}//end createOnboarding()
+	}//end openMissingSteps()
 
 	/**
 	 * The steps with "Mandates set" done once the tenant has an active mandate.
@@ -251,6 +262,22 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 			return $steps;
 		}
 
+		if ($this->carryLegacyRows(tenantId: $tenantId, actor: $actor) === 0) {
+			return [];
+		}
+
+		return $this->steps->forTenant(tenantId: $tenantId, actor: $actor);
+	}//end stepsCarryingLegacyRows()
+
+	/**
+	 * Open an engine step for every known step a legacy onboarding row holds.
+	 *
+	 * @param string $tenantId The tenant (Organisation) uuid.
+	 * @param string $actor    Who carries the rows over.
+	 *
+	 * @return int How many steps the engine accepted.
+	 */
+	private function carryLegacyRows(string $tenantId, string $actor): int {
 		$carried = 0;
 		foreach ($this->legacyRows(tenantId: $tenantId) as $row) {
 			$step = (string) ($row['data']['step'] ?? '');
@@ -259,24 +286,32 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 				continue;
 			}
 
-			$metadata = ['onboardingRow' => $row['uuid']];
-			foreach (['completedBy', 'completedAt', 'blockedReason'] as $field) {
-				if ((string) ($row['data'][$field] ?? '') !== '') {
-					$metadata[$field] = (string) $row['data'][$field];
-				}
-			}
-
+			$metadata = $this->legacyMetadata(row: $row);
 			if ($this->steps->open(tenantId: $tenantId, step: $step, title: $step, status: $status, actor: $actor, metadata: $metadata) !== '') {
 				$carried++;
 			}
 		}
 
-		if ($carried === 0) {
-			return [];
+		return $carried;
+	}//end carryLegacyRows()
+
+	/**
+	 * The metadata a carried step keeps from its legacy row.
+	 *
+	 * @param array $row The legacy onboarding row.
+	 *
+	 * @return array<string, string> The row's uuid and its non-empty completion and block fields.
+	 */
+	private function legacyMetadata(array $row): array {
+		$metadata = ['onboardingRow' => $row['uuid']];
+		foreach (['completedBy', 'completedAt', 'blockedReason'] as $field) {
+			if ((string) ($row['data'][$field] ?? '') !== '') {
+				$metadata[$field] = (string) $row['data'][$field];
+			}
 		}
 
-		return $this->steps->forTenant(tenantId: $tenantId, actor: $actor);
-	}//end stepsCarryingLegacyRows()
+		return $metadata;
+	}//end legacyMetadata()
 
 	/**
 	 * The tenant's legacy `tenantOnboardingTask` rows, each as uuid and data.

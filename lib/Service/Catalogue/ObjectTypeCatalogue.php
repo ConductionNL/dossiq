@@ -358,27 +358,65 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 
 		$caseTypeOf = [];
 		foreach (array_chunk($caseIds, self::PAGE_SIZE) as $chunk) {
-			$cases = $this->searchObjectsAsArrays(
-				objectService: $target->objectService,
-				register: $target->register,
-				schema: $schema,
-				filters: ['_ids' => $chunk, '_limit' => count($chunk)]
-			);
-			foreach ($cases as $case) {
-				$id = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
-				$type = ($case['caseType'] ?? '');
-				if (is_array($type) === true) {
-					$type = ($type['id'] ?? ($type['uuid'] ?? ''));
-				}
-
-				if ($id !== '' && is_string($type) === true && $type !== '') {
-					$caseTypeOf[$id] = $type;
-				}
-			}
+			$caseTypeOf = $this->withCaseTypes(caseTypeOf: $caseTypeOf, cases: $this->casesIn(target: $target, schema: $schema, chunk: $chunk));
 		}
 
 		return $caseTypeOf;
 	}//end caseTypesOf()
+
+	/**
+	 * One chunk of cases, read by id.
+	 *
+	 * @param CatalogueRegister  $target The register the cases live in.
+	 * @param string             $schema The case schema.
+	 * @param array<int, string> $chunk  The case ids.
+	 *
+	 * @return array<int, array<string, mixed>> The cases.
+	 */
+	private function casesIn(CatalogueRegister $target, string $schema, array $chunk): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $target->objectService,
+			register: $target->register,
+			schema: $schema,
+			filters: ['_ids' => $chunk, '_limit' => count($chunk)]
+		);
+	}//end casesIn()
+
+	/**
+	 * Add each case's case type id, keyed by the case id, skipping a case without either.
+	 *
+	 * @param array<string, string>            $caseTypeOf The case type ids so far.
+	 * @param array<int, array<string, mixed>> $cases      The cases.
+	 *
+	 * @return array<string, string> The case type ids.
+	 */
+	private function withCaseTypes(array $caseTypeOf, array $cases): array {
+		foreach ($cases as $row) {
+			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
+			$type = $this->caseTypeRef(row: $row);
+			if ($id !== '' && is_string($type) === true && $type !== '') {
+				$caseTypeOf[$id] = $type;
+			}
+		}
+
+		return $caseTypeOf;
+	}//end withCaseTypes()
+
+	/**
+	 * The case type a case names: the id or uuid of an object, or the value itself.
+	 *
+	 * @param array<string, mixed> $row The case.
+	 *
+	 * @return mixed The case type reference.
+	 */
+	private function caseTypeRef(array $row): mixed {
+		$type = ($row['caseType'] ?? '');
+		if (is_array($type) === true) {
+			$type = ($type['id'] ?? ($type['uuid'] ?? ''));
+		}
+
+		return $type;
+	}//end caseTypeRef()
 
 	/**
 	 * How many distinct case types the given cases are of.
