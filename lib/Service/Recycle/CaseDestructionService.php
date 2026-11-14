@@ -58,6 +58,8 @@ use Throwable;
  * Decides whether a deleted case may be destroyed, then has it destroyed.
  *
  * @spec openspec/specs/case-management/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseDestructionService implements CaseDestructionServiceInterface {
 
@@ -349,9 +351,32 @@ class CaseDestructionService implements CaseDestructionServiceInterface {
 	 * @return array<string, mixed> The record.
 	 */
 	private function record(object $entity, array $scope, ?array $window, bool $waived): array {
+		$context = $this->destructionContext(entity: $entity, scope: $scope, window: $window, waived: $waived);
+
+		$recorded = $this->recordWithOpenRegister(entity: $entity, scope: $scope, context: $context);
+		if ($recorded !== null) {
+			return $recorded;
+		}
+
+		$this->fallbackRecord(entity: $entity, context: $context, actor: $context['destroyedBy']);
+
+		return $context;
+	}//end record()
+
+	/**
+	 * The record of the act, naming who decided it.
+	 *
+	 * @param object $entity OpenRegister's object entity.
+	 * @param array<string, mixed> $scope What the destruction took.
+	 * @param array<string, mixed>|null $window The window at the moment of the act.
+	 * @param bool $waived Whether an open window was waived.
+	 *
+	 * @return array<string, mixed> The record.
+	 */
+	private function destructionContext(object $entity, array $scope, ?array $window, bool $waived): array {
 		$user = $this->userSession->getUser();
 		$actor = ($user?->getUID() ?? 'system');
-		$context = [
+		return [
 			'destroyedBy' => $actor,
 			'destroyedAt' => (new DateTime())->format(DateTime::ATOM),
 			'objectUuid' => (string)$entity->getUuid(),
@@ -360,27 +385,29 @@ class CaseDestructionService implements CaseDestructionServiceInterface {
 			'windowWaived' => $waived,
 			'scope' => $scope,
 		];
+	}//end destructionContext()
 
-		$recorder = $this->settingsService->getOpenRegisterClass(
-			class: 'OCA\\OpenRegister\\Service\\Deletion\\DestructionRecorder'
-		);
+	/**
+	 * Let OpenRegister's DestructionRecorder record the act.
+	 *
+	 * @param object $entity OpenRegister's object entity.
+	 * @param array<string, mixed> $scope What the destruction took.
+	 * @param array<string, mixed> $context The record.
+	 *
+	 * @return array<string, mixed>|null OpenRegister's record, or null when it has no recorder or the recorder failed.
+	 */
+	private function recordWithOpenRegister(object $entity, array $scope, array $context): ?array {
+		$recorder = $this->settingsService->getOpenRegisterClass(class: 'OCA\\OpenRegister\\Service\\Deletion\\DestructionRecorder');
 		if ($recorder !== null && method_exists($recorder, 'record') === true) {
 			try {
-				return $recorder->record(
-					object: $entity,
-					scope: $scope,
-					rule: 'case-type-destroying-role',
-					context: $context
-				);
+				return $recorder->record(object: $entity, scope: $scope, rule: 'case-type-destroying-role', context: $context);
 			} catch (Throwable $e) {
 				$this->logger->warning('Dossiq: OpenRegister could not record the destruction: ' . $e->getMessage());
 			}
 		}
 
-		$this->fallbackRecord(entity: $entity, context: $context, actor: $actor);
-
-		return $context;
-	}//end record()
+		return null;
+	}//end recordWithOpenRegister()
 
 	/**
 	 * Write the destruction record ourselves when OpenRegister has no recorder.
