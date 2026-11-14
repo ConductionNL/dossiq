@@ -210,6 +210,48 @@ class CaseDocumentDrafts implements CaseDocumentDraftsInterface {
 	 * @return DocumentGenerationRequestedEvent The request event.
 	 */
 	private function requestEvent(string $caseId, array $case, array $declaration, array $built): DocumentGenerationRequestedEvent {
+		return new DocumentGenerationRequestedEvent(
+			request: $this->generationRequest(caseId: $caseId, case: $case, declaration: $declaration, built: $built),
+			requestingApp: AppIdentity::APP_ID
+		);
+	}//end requestEvent()
+
+	/**
+	 * The request body of the generation event.
+	 *
+	 * @param string               $caseId      The case uuid.
+	 * @param array<string, mixed> $case        The case row.
+	 * @param array<string, mixed> $declaration The draft declaration.
+	 * @param array<string, mixed> $built       The declared data.
+	 *
+	 * @return array<string, mixed> The request.
+	 */
+	private function generationRequest(string $caseId, array $case, array $declaration, array $built): array {
+		$data = $this->templateData(case: $case, declaration: $declaration, built: $built);
+		$title = $this->filename(declaration: $declaration);
+
+		return [
+			'templateSlug' => (string)$declaration['templateSlug'],
+			'templateNamespace' => trim((string)($declaration['templateNamespace'] ?? self::DEFAULT_NAMESPACE)),
+			'format' => (string)($declaration['format'] ?? 'pdf'),
+			'filename' => $title,
+			'storeFile' => true,
+			'data' => $data,
+			'object' => $this->caseObject(caseId: $caseId),
+			'metadata' => $this->metadata(declaration: $declaration),
+		];
+	}//end generationRequest()
+
+	/**
+	 * The data the template is rendered with: the case, and the declared data.
+	 *
+	 * @param array<string, mixed> $case        The case row.
+	 * @param array<string, mixed> $declaration The draft declaration.
+	 * @param array<string, mixed> $built       The declared data.
+	 *
+	 * @return array<string, mixed> The data.
+	 */
+	private function templateData(array $case, array $declaration, array $built): array {
 		$dataKey = trim((string)($declaration['dataKey'] ?? ''));
 		$data = ['case' => $case];
 		if ($dataKey === '') {
@@ -220,29 +262,39 @@ class CaseDocumentDrafts implements CaseDocumentDraftsInterface {
 			$data[$dataKey] = $built;
 		}
 
+		return $data;
+	}//end templateData()
+
+	/**
+	 * The filename of the drafted document: the declared title, or the template slug.
+	 *
+	 * @param array<string, mixed> $declaration The draft declaration.
+	 *
+	 * @return string The filename.
+	 */
+	private function filename(array $declaration): string {
 		$title = trim((string)($declaration['title'] ?? ''));
 		if ($title === '') {
 			$title = (string)$declaration['templateSlug'];
 		}
 
-		return new DocumentGenerationRequestedEvent(
-			request: [
-				'templateSlug' => (string)$declaration['templateSlug'],
-				'templateNamespace' => trim((string)($declaration['templateNamespace'] ?? self::DEFAULT_NAMESPACE)),
-				'format' => (string)($declaration['format'] ?? 'pdf'),
-				'filename' => $title,
-				'storeFile' => true,
-				'data' => $data,
-				'object' => [
-					'register' => $this->settingsService->getConfigValue('register'),
-					'schema' => $this->settingsService->getConfigValue('case_schema'),
-					'id' => $caseId,
-				],
-				'metadata' => $this->metadata(declaration: $declaration),
-			],
-			requestingApp: AppIdentity::APP_ID
-		);
-	}//end requestEvent()
+		return $title;
+	}//end filename()
+
+	/**
+	 * The case object the document is filed on.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array<string, mixed> The register, schema and id.
+	 */
+	private function caseObject(string $caseId): array {
+		return [
+			'register' => $this->settingsService->getConfigValue('register'),
+			'schema' => $this->settingsService->getConfigValue('case_schema'),
+			'id' => $caseId,
+		];
+	}//end caseObject()
 
 	/**
 	 * What filinq answered, with the document filed on the case.
