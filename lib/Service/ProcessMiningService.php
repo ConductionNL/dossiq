@@ -17,8 +17,8 @@
  *
  * This class is the orchestrator only. The read path lives in
  * {@see ProcessMiningDataLoader}; each metric family lives in its own
- * calculator ({@see DwellTimeAnalyzer}, {@see TransitionMatrixBuilder},
- * {@see ThroughputTrendCalculator}). What remains here is the report
+ * calculator ({@see \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer}, {@see \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder},
+ * {@see \OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator}). What remains here is the report
  * assembly: resolving the reporting period, grouping the loaded cases per
  * case type, and handing each group to the calculators.
  *
@@ -50,12 +50,9 @@ namespace OCA\Dossiq\Service;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\ProcessMiningServiceInterface;
-use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
 use OCA\Dossiq\Service\ProcessMining\PhaseSummary;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
-use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
-use OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 
 /**
@@ -279,7 +276,7 @@ class ProcessMiningService implements ProcessMiningServiceInterface {
 	/**
 	 * Build dwell-time intervals: one entry per (case, status-visit).
 	 *
-	 * Delegates to {@see DwellTimeAnalyzer::computeDwellIntervals()}.
+	 * Delegates to {@see \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer::computeDwellIntervals()}.
 	 *
 	 * @param array<string, array<int, array<string, mixed>>> $recordsByCase Chronologically sorted statusRecords, keyed by case id.
 	 * @param array<string, array<string, mixed>> $casesById Case rows, keyed by id.
@@ -310,7 +307,7 @@ class ProcessMiningService implements ProcessMiningServiceInterface {
 	/**
 	 * Aggregate dwell-time intervals per status into median/p90/mean stats.
 	 *
-	 * Delegates to {@see DwellTimeAnalyzer::aggregateDwellStats()}.
+	 * Delegates to {@see \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer::aggregateDwellStats()}.
 	 *
 	 * @param array<int, array{caseId: string, statusId: string, hours: float}> $intervals Dwell intervals.
 	 * @param array<string, array<string, mixed>> $statusTypeIndex StatusType rows, keyed by id.
@@ -326,7 +323,7 @@ class ProcessMiningService implements ProcessMiningServiceInterface {
 	/**
 	 * Rank statuses by bottleneck severity: median dwell time x visit volume.
 	 *
-	 * Delegates to {@see DwellTimeAnalyzer::rankBottlenecks()}.
+	 * Delegates to {@see \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer::rankBottlenecks()}.
 	 *
 	 * @param array<int, array<string, mixed>> $dwellStats Per-status dwell stats.
 	 *
@@ -341,7 +338,7 @@ class ProcessMiningService implements ProcessMiningServiceInterface {
 	/**
 	 * Build the from→to transition frequency matrix and detect rework loops.
 	 *
-	 * Delegates to {@see TransitionMatrixBuilder::computeTransitionMatrix()}.
+	 * Delegates to {@see \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder::computeTransitionMatrix()}.
 	 *
 	 * @param array<string, array<int, array<string, mixed>>> $recordsByCase Chronologically sorted statusRecords, keyed by case id.
 	 * @param array<string, array<string, mixed>> $statusTypeIndex StatusType rows, keyed by id.
@@ -361,7 +358,7 @@ class ProcessMiningService implements ProcessMiningServiceInterface {
 	/**
 	 * Walk one case's chronologically sorted statusRecords into from→to pairs.
 	 *
-	 * Delegates to {@see TransitionMatrixBuilder::computeCaseTransitions()}.
+	 * Delegates to {@see \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder::computeCaseTransitions()}.
 	 *
 	 * @param array<int, array<string, mixed>> $sortedRecords Chronologically sorted statusRecords for one case.
 	 *
@@ -376,7 +373,7 @@ class ProcessMiningService implements ProcessMiningServiceInterface {
 	/**
 	 * Weekly throughput trend: cases closed (by `endDate`) per ISO week.
 	 *
-	 * Delegates to {@see ThroughputTrendCalculator::computeThroughputTrend()}.
+	 * Delegates to {@see \OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator::computeThroughputTrend()}.
 	 *
 	 * @param array<string, array<string, mixed>> $cases Case rows, keyed by id.
 	 * @param DateTimeImmutable $from Inclusive period start.

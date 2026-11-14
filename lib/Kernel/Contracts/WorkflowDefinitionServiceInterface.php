@@ -22,7 +22,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Kernel\Contracts;
 
-use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
 
 /**
  * Contract of WorkflowDefinitionService.
@@ -37,7 +36,7 @@ use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
  */
 interface WorkflowDefinitionServiceInterface {
 
-	public const STATUS_PUBLISHED = WorkflowLifecycleGuard::STATUS_PUBLISHED;
+	public const STATUS_PUBLISHED = WorkflowLifecycleGuardInterface::STATUS_PUBLISHED;
 
 	/**
 	 * Clone an existing published or deprecated definition into a new

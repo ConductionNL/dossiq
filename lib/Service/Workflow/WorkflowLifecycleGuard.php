@@ -56,7 +56,6 @@ class WorkflowLifecycleGuard implements WorkflowLifecycleGuardInterface {
 	 * Lifecycle states. Mirrors the enum on the workflowTemplate schema.
 	 */
 	public const STATUS_DRAFT = 'draft';
-	public const STATUS_PUBLISHED = 'published';
 	public const STATUS_DEPRECATED = 'deprecated';
 
 	/**
