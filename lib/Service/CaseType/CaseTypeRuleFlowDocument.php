@@ -121,11 +121,10 @@ class CaseTypeRuleFlowDocument {
 			return null;
 		}
 
-		$conditions = $this->conditionsOf(rule: $rule, step: $step);
 		$step['config'] = $this->actionConfig(step: $step, scope: $scope);
 
-		return $this->header(rule: $rule, scope: $scope, ruleId: $ruleId) + [
-			'nodes' => $this->nodes(rule: $rule, step: $step, scope: $scope, conditions: $conditions),
+		return $this->header(rule: $rule, scope: $scope) + [
+			'nodes' => $this->nodes(rule: $rule, step: $step, scope: $scope),
 			'edges' => self::EDGES,
 		];
 	}//end build()
@@ -133,15 +132,15 @@ class CaseTypeRuleFlowDocument {
 	/**
 	 * The flow document's name, description, settings and marker.
 	 *
-	 * @param array<string, mixed> $rule   The rule.
-	 * @param RuleFlowScope        $scope  The case type the flow belongs to.
-	 * @param string               $ruleId The rule's id.
+	 * @param array<string, mixed> $rule  The rule.
+	 * @param RuleFlowScope        $scope The case type the flow belongs to.
 	 *
 	 * @return array<string, mixed> The document fields before its nodes.
 	 *
 	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
-	private function header(array $rule, RuleFlowScope $scope, string $ruleId): array {
+	private function header(array $rule, RuleFlowScope $scope): array {
+		$ruleId = (string)($rule['id'] ?? '');
 		return [
 			'name' => $scope->caseTypeTitle . ': ' . $this->nameOf(rule: $rule),
 			'description' => 'Projected from rule "' . $ruleId . '" of case type ' . $scope->caseTypeTitle
@@ -156,16 +155,18 @@ class CaseTypeRuleFlowDocument {
 	/**
 	 * The flow's nodes: trigger, condition filter, action and end.
 	 *
-	 * @param array<string, mixed>                                                 $rule       The rule.
-	 * @param array{type: string, config: array<string, mixed>, guard?: array<string, mixed>} $step       The action's step, with its config.
-	 * @param RuleFlowScope                                                        $scope      The case type the flow belongs to.
-	 * @param array<int|string, mixed>                                             $conditions The conditions the filter holds.
+	 * The filter holds the rule's conditions with its status and the step's guard added.
+	 *
+	 * @param array<string, mixed>                                                 $rule  The rule.
+	 * @param array{type: string, config: array<string, mixed>, guard?: array<string, mixed>} $step  The action's step, with its config.
+	 * @param RuleFlowScope                                                        $scope The case type the flow belongs to.
 	 *
 	 * @return array<int, array<string, mixed>> The nodes.
 	 *
 	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
-	private function nodes(array $rule, array $step, RuleFlowScope $scope, array $conditions): array {
+	private function nodes(array $rule, array $step, RuleFlowScope $scope): array {
+		$conditions = $this->conditionsOf(rule: $rule, step: $step);
 		return [
 			$this->trigger(rule: $rule, scope: $scope),
 			[
