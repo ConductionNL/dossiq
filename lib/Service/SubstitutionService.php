@@ -336,11 +336,7 @@ class SubstitutionService implements SubstitutionServiceInterface {
 	 *
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
-	private function activeRowOn(
-		array $row,
-		string $refDay,
-		object $objectService,
-	): ?array {
+	private function activeRowOn(array $row, string $refDay, object $objectService): ?array {
 		$status = (string)($row['status'] ?? '');
 		// `revoked` and the lazily persisted `ended` both land here: a
 		// substitution that is not active routes nothing, and leave does not
@@ -352,16 +348,31 @@ class SubstitutionService implements SubstitutionServiceInterface {
 		// The leave, when humaniq knows of one, sets the period outright. It is
 		// read before the typed dates are applied, because the case it exists
 		// for is exactly the one the typed dates would have excluded.
-		$leave = $this->leaveReader->approvedLeaveCovering(
-			userId: (string)($row['absentee'] ?? ''),
-			day: $refDay
-		);
+		$leave = $this->leaveReader->approvedLeaveCovering(userId: (string)($row['absentee'] ?? ''), day: $refDay);
 		if ($leave !== null) {
 			$row['_activeUntil'] = $leave['endDate'];
 
 			return $row;
 		}
 
+		return $this->unexpiredRow(row: $row, refDay: $refDay, objectService: $objectService);
+	}//end activeRowOn()
+
+	/**
+	 * The row once it has started, or null when it is past its typed end.
+	 *
+	 * Applies the lazy-expiry side effect: a row past its typed end is
+	 * best-effort persisted as `ended` and excluded.
+	 *
+	 * @param array<string, mixed> $row           The substitution row.
+	 * @param string               $refDay        Reference day (Y-m-d).
+	 * @param object               $objectService The ObjectService.
+	 *
+	 * @return array<string, mixed>|null The applicable row, or null.
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	private function unexpiredRow(array $row, string $refDay, object $objectService): ?array {
 		// Lazy expiry: past endDate and no leave behind it -> ended, excluded.
 		$end = (string)($row['endDate'] ?? '');
 		if ($end !== '' && $refDay > $end) {
@@ -374,7 +385,7 @@ class SubstitutionService implements SubstitutionServiceInterface {
 		}
 
 		return $this->startedRow(row: $row, refDay: $refDay);
-	}//end activeRowOn()
+	}//end unexpiredRow()
 
 	/**
 	 * The row with its typed end as `_activeUntil`, or null before its typed start.

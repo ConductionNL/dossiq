@@ -88,32 +88,70 @@ class PoolMembership {
 		}
 
 		$members = [];
-		$seen = [];
 		foreach ($roles as $role) {
-			if (is_array($role) === false || (string)($role['roleType'] ?? '') !== $roleType) {
+			$member = $this->member(role: $role, roleType: $roleType, team: $team);
+			if ($member === null || isset($members[$member['participant']]) === true) {
 				continue;
 			}
 
-			$participant = (string)($role['participant'] ?? '');
-			if ($participant === '' || isset($seen[$participant]) === true) {
-				continue;
-			}
-
-			$memberTeam = trim((string)($role['team'] ?? ''));
-			if ($team !== '' && $memberTeam !== $team) {
-				continue;
-			}
-
-			$seen[$participant] = true;
-			$members[] = [
-				'participant' => $participant,
-				'weight' => $this->weightOf(role: $role),
-				'team' => $memberTeam,
-			];
+			$members[$member['participant']] = $member;
 		}
 
-		return $members;
+		return array_values($members);
 	}//end membersOf()
+
+	/**
+	 * One role row as a pool member, or null when it does not hold the roleType or the team.
+	 *
+	 * @param mixed  $role     The role row bound to the case.
+	 * @param string $roleType The roleType the rule targets.
+	 * @param string $team     The team the rule narrows to, or '' for all of them.
+	 *
+	 * @return array{participant: string, weight: float, team: string}|null
+	 *
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-rule-may-target-a-position-inside-a-team-req-rtp-02
+	 */
+	private function member(mixed $role, string $roleType, string $team): ?array {
+		if ($this->holdsRoleType(role: $role, roleType: $roleType) === false) {
+			return null;
+		}
+
+		$participant = (string)($role['participant'] ?? '');
+		if ($participant === '') {
+			return null;
+		}
+
+		$memberTeam = trim((string)($role['team'] ?? ''));
+		if ($this->inTeam(memberTeam: $memberTeam, team: $team) === false) {
+			return null;
+		}
+
+		return ['participant' => $participant, 'weight' => $this->weightOf(role: $role), 'team' => $memberTeam];
+	}//end member()
+
+	/**
+	 * Whether a member's team is the one the rule narrows to, every team passing when it names none.
+	 *
+	 * @param string $memberTeam The member's team.
+	 * @param string $team       The team the rule narrows to, or '' for all of them.
+	 *
+	 * @return bool
+	 */
+	private function inTeam(string $memberTeam, string $team): bool {
+		return $team === '' || $memberTeam === $team;
+	}//end inTeam()
+
+	/**
+	 * Whether a role row is an array binding this roleType.
+	 *
+	 * @param mixed  $role     The role row bound to the case.
+	 * @param string $roleType The roleType the rule targets.
+	 *
+	 * @return bool
+	 */
+	private function holdsRoleType(mixed $role, string $roleType): bool {
+		return is_array($role) === true && (string)($role['roleType'] ?? '') === $roleType;
+	}//end holdsRoleType()
 
 	/**
 	 * The weight one membership declares.
