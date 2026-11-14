@@ -59,7 +59,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCP\IGroup;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\Migration\IOutput;
@@ -229,7 +228,7 @@ class ProvisionAssignedGroups implements IRepairStep {
 			$output->info('Dossiq: created group "' . $groupId . '" for shipped flow assignments.');
 			$this->logger->info('Dossiq: provisioned assigned group', ['group' => $groupId]);
 
-			$this->seedWithAdministrators(group: $group, groupId: $groupId, output: $output);
+			$this->seedWithAdministrators(minted: new MintedGroup(group: $group, groupId: $groupId), output: $output);
 		}
 	}//end run()
 
@@ -246,16 +245,16 @@ class ProvisionAssignedGroups implements IRepairStep {
 	 * complete work through is the shape of failure this whole step exists to
 	 * remove.
 	 *
-	 * @param IGroup $group The group that was just created.
-	 * @param string $groupId The group id, for messages.
-	 * @param IOutput $output Output sink.
+	 * @param MintedGroup $minted The group that was just created, and its id for messages.
+	 * @param IOutput     $output Output sink.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function seedWithAdministrators(IGroup $group, string $groupId, IOutput $output): void {
-		$added = $this->addAdministrators(group: $group, groupId: $groupId, administrators: $this->administrators());
+	private function seedWithAdministrators(MintedGroup $minted, IOutput $output): void {
+		$groupId = $minted->groupId;
+		$added = $this->addAdministrators(minted: $minted, administrators: $this->administrators());
 
 		if ($added === []) {
 			$this->reportEmptyGroup(groupId: $groupId, output: $output);
@@ -285,18 +284,17 @@ class ProvisionAssignedGroups implements IRepairStep {
 	/**
 	 * Add each administrator to the group.
 	 *
-	 * @param IGroup $group The group that was just created.
-	 * @param string $groupId The group id, for messages.
-	 * @param IUser[] $administrators The administrators.
+	 * @param MintedGroup $minted The group that was just created, and its id for messages.
+	 * @param IUser[]     $administrators The administrators.
 	 *
 	 * @return string[] The uids that were added.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function addAdministrators(IGroup $group, string $groupId, array $administrators): array {
+	private function addAdministrators(MintedGroup $minted, array $administrators): array {
 		$added = [];
 		foreach ($administrators as $administrator) {
-			if ($this->addAdministrator(group: $group, groupId: $groupId, administrator: $administrator) === true) {
+			if ($this->addAdministrator(minted: $minted, administrator: $administrator) === true) {
 				$added[] = $administrator->getUID();
 			}
 		}
@@ -307,21 +305,20 @@ class ProvisionAssignedGroups implements IRepairStep {
 	/**
 	 * Add one administrator to the group, warning when the backend refuses.
 	 *
-	 * @param IGroup $group The group that was just created.
-	 * @param string $groupId The group id, for messages.
-	 * @param IUser $administrator The administrator.
+	 * @param MintedGroup $minted The group that was just created, and its id for messages.
+	 * @param IUser       $administrator The administrator.
 	 *
 	 * @return boolean Whether the administrator was added.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function addAdministrator(IGroup $group, string $groupId, IUser $administrator): bool {
+	private function addAdministrator(MintedGroup $minted, IUser $administrator): bool {
 		try {
-			$group->addUser($administrator);
+			$minted->group->addUser($administrator);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not seed an administrator into the assigned group',
-				['group' => $groupId, 'user' => $administrator->getUID(), 'exception' => $e->getMessage()]
+				['group' => $minted->groupId, 'user' => $administrator->getUID(), 'exception' => $e->getMessage()]
 			);
 			return false;
 		}
