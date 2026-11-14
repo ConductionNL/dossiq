@@ -69,28 +69,89 @@ class KccWerkplekSeedDataService implements KccWerkplekSeedDataServiceInterface 
 			return ['success' => false, 'message' => 'OpenRegister is not available'];
 		}
 
+		$targets = $this->seedTargets();
+		if ($targets['failure'] !== null) {
+			return ['success' => false, 'message' => $targets['failure']];
+		}
+
+		$seed = $this->seedData();
+		if ($seed['failure'] !== null) {
+			return ['success' => false, 'message' => $seed['failure']];
+		}
+
+		$counts = ['quickActions' => 0, 'belplannen' => 0, 'skipped' => 0, 'failed' => 0];
+
+		$this->seedAsSystem(objectService: $objectService, targets: $targets, data: $seed['data'], counts: $counts);
+
+		return $this->seedOutcome(counts: $counts);
+	}//end seed()
+
+	/**
+	 * The register and schemas to seed into, or the reason they are missing.
+	 *
+	 * @return array{failure: string|null, register: string, quickActionSchema: string, belplanSchema: string} The targets.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/specs.md
+	 */
+	private function seedTargets(): array {
+		$targets = ['failure' => null, 'register' => '', 'quickActionSchema' => '', 'belplanSchema' => ''];
+
 		$register = (string)$this->settingsService->getConfigValue('register');
 		if ($register === '') {
-			return ['success' => false, 'message' => 'Dossiq register not configured'];
+			return array_merge($targets, ['failure' => 'Dossiq register not configured']);
 		}
 
 		$quickActionSchema = (string)$this->settingsService->getConfigValue('kcc_quick_action_schema');
 		$belplanSchema = (string)$this->settingsService->getConfigValue('belplan_schema');
 		if ($quickActionSchema === '' || $belplanSchema === '') {
-			return ['success' => false, 'message' => 'KCC-werkplek schemas not configured'];
+			return array_merge($targets, ['failure' => 'KCC-werkplek schemas not configured']);
 		}
 
+		return [
+			'failure' => null,
+			'register' => $register,
+			'quickActionSchema' => $quickActionSchema,
+			'belplanSchema' => $belplanSchema,
+		];
+	}//end seedTargets()
+
+	/**
+	 * The decoded seed file, or the reason it could not be read.
+	 *
+	 * @return array{failure: string|null, data: array<mixed>} The seed data.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/specs.md
+	 */
+	private function seedData(): array {
 		$seedPath = __DIR__ . '/../Settings/kcc_werkplek_seed_data.json';
 		if (file_exists($seedPath) === false) {
-			return ['success' => false, 'message' => 'Seed file not found'];
+			return ['failure' => 'Seed file not found', 'data' => []];
 		}
 
 		$data = json_decode((string)file_get_contents($seedPath), true);
 		if (is_array($data) === false) {
-			return ['success' => false, 'message' => 'Invalid seed JSON'];
+			return ['failure' => 'Invalid seed JSON', 'data' => []];
 		}
 
-		$counts = ['quickActions' => 0, 'belplannen' => 0, 'skipped' => 0, 'failed' => 0];
+		return ['failure' => null, 'data' => $data];
+	}//end seedData()
+
+	/**
+	 * Seed the quick-actions and belplannen, elevated to the system user.
+	 *
+	 * @param object                                                                  $objectService OpenRegister ObjectService.
+	 * @param array{register: string, quickActionSchema: string, belplanSchema: string} $targets       The register and schemas.
+	 * @param array<mixed>                                                            $data          The decoded seed file.
+	 * @param array<string, int>                                                      $counts        Counter accumulator (by reference).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/specs.md
+	 */
+	private function seedAsSystem(object $objectService, array $targets, array $data, array &$counts): void {
+		$register = $targets['register'];
+		$quickActionSchema = $targets['quickActionSchema'];
+		$belplanSchema = $targets['belplanSchema'];
 
 		// This service is only ever invoked from boot-time repair steps
 		// (SeedKccWerkplekData, SeedDeadlineMonitoringData) — never from a live
@@ -119,7 +180,18 @@ class KccWerkplekSeedDataService implements KccWerkplekSeedDataServiceInterface 
 				);
 			}
 		);
+	}//end seedAsSystem()
 
+	/**
+	 * The seed result, failed when any row was refused.
+	 *
+	 * @param array<string, int> $counts The per-kind counts.
+	 *
+	 * @return array<string, mixed> Result with 'success' and either 'message' or per-kind counts.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/specs.md
+	 */
+	private function seedOutcome(array $counts): array {
 		// A SEED THAT SEEDED NOTHING MUST NOT REPORT SUCCESS. Every row failure
 		// below is counted rather than only logged, and one failure makes the
 		// whole call unsuccessful — otherwise "five quick-actions refused" and
@@ -141,7 +213,7 @@ class KccWerkplekSeedDataService implements KccWerkplekSeedDataServiceInterface 
 		$this->logger->info('Dossiq KCC-werkplek: seed complete', $counts);
 
 		return array_merge(['success' => true], $counts);
-	}//end seed()
+	}//end seedOutcome()
 
 	/**
 	 * Seed a list of rows into one schema, skipping ids that already exist.
