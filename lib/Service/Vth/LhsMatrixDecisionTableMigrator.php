@@ -172,8 +172,6 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 			$row = $this->migrateOne(
 				matrix: $matrix,
 				objectService: $objectService,
-				register: StoredDecisionTables::REGISTER,
-				tableSchema: StoredDecisionTables::SCHEMA,
 				dryRun: $dryRun,
 			);
 
@@ -191,17 +189,18 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 	/**
 	 * Project one matrix.
 	 *
+	 * The table is written to StoredDecisionTables::REGISTER and ::SCHEMA.
+	 *
 	 * @param array<string, mixed> $matrix        The stored matrix.
 	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register.
-	 * @param string               $tableSchema   The decision-table schema.
 	 * @param boolean              $dryRun        Report only.
 	 *
 	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
 	 *
 	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
-	private function migrateOne(array $matrix, object $objectService, string $register, string $tableSchema, bool $dryRun): array {
+	private function migrateOne(array $matrix, object $objectService, bool $dryRun): array {
+		$tableSchema = StoredDecisionTables::SCHEMA;
 		$id = (string)($matrix['id'] ?? ($matrix['@self']['id'] ?? ''));
 		$marker = (self::MARKER_PREFIX . $id);
 
@@ -212,12 +211,7 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 
 		$table = $projected['table'];
 
-		$existing = $this->existingTable(
-			objectService: $objectService,
-			register: $register,
-			tableSchema: $tableSchema,
-			marker: $marker
-		);
+		$existing = $this->existingTable(objectService: $objectService, marker: $marker);
 
 		$reconciled = $this->reconcileWithExisting(existing: $existing, table: $table, marker: $marker);
 		if ($reconciled['refusal'] !== null) {
@@ -233,8 +227,6 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 
 		return $this->storeTable(
 			objectService: $objectService,
-			register: $register,
-			tableSchema: $tableSchema,
 			table: $table,
 			marker: $marker,
 			outcome: $outcome
@@ -329,8 +321,6 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 	 * Save the projected table.
 	 *
 	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register.
-	 * @param string               $tableSchema   The decision-table schema.
 	 * @param array<string, mixed> $table         The projected table.
 	 * @param string               $marker        The provenance marker.
 	 * @param string               $outcome       `created` or `updated`.
@@ -341,14 +331,12 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 	 */
 	private function storeTable(
 		object $objectService,
-		string $register,
-		string $tableSchema,
 		array $table,
 		string $marker,
 		string $outcome,
 	): array {
 		try {
-			$objectService->saveObject(object: $table, register: $register, schema: $tableSchema);
+			$objectService->saveObject(object: $table, register: StoredDecisionTables::REGISTER, schema: StoredDecisionTables::SCHEMA);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not project an LHS matrix onto a decision table',
@@ -370,20 +358,18 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 	 * second table the moment somebody renamed the first.
 	 *
 	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The register.
-	 * @param string $tableSchema   The decision-table schema.
 	 * @param string $marker        The provenance marker.
 	 *
 	 * @return array<string, mixed>|null The existing table.
 	 *
 	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
-	private function existingTable(object $objectService, string $register, string $tableSchema, string $marker): ?array {
+	private function existingTable(object $objectService, string $marker): ?array {
 		try {
 			$rows = $this->searchObjectsAsArraysUnscoped(
 				objectService: $objectService,
-				register: $register,
-				schema: $tableSchema,
+				register: StoredDecisionTables::REGISTER,
+				schema: StoredDecisionTables::SCHEMA,
 				filters: ['owner' => AppIdentity::APP_ID, '_limit' => 200],
 			);
 		} catch (Throwable $e) {
