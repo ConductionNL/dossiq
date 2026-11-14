@@ -142,17 +142,7 @@ class RoleLinkService implements RoleLinkServiceInterface {
 			targetId: $targetId
 		);
 
-		if ($linkedCase !== '' && $linkedCase !== $caseId) {
-			$result = $this->relations->addRelation(
-				caseId: $caseId,
-				targetId: $linkedCase,
-				natureRelationship: $definition->natureRelationship
-			);
-			$reason = (string)($result['reason'] ?? '');
-			if (($result['ok'] ?? false) !== true && $reason !== 'duplicate') {
-				throw new RuntimeException("The cases could not be linked: $reason.");
-			}
-		}
+		$this->relateCases(caseId: $caseId, linkedCase: $linkedCase, definition: $definition);
 
 		return [
 			'linkedCase' => $linkedCase,
@@ -166,6 +156,33 @@ class RoleLinkService implements RoleLinkServiceInterface {
 			),
 		];
 	}//end link()
+
+	/**
+	 * Relate the case to the linked case, when there is one other than itself.
+	 *
+	 * @param string             $caseId     The case being linked.
+	 * @param string             $linkedCase The case the link points at, or ''.
+	 * @param RoleLinkDefinition $definition The role's definition.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the relation is refused for a reason other than a duplicate.
+	 *
+	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-linking-a-case-with-a-role-writes-the-relation-and-the-record-req-lcr-2
+	 */
+	private function relateCases(string $caseId, string $linkedCase, RoleLinkDefinition $definition): void {
+		if ($linkedCase !== '' && $linkedCase !== $caseId) {
+			$result = $this->relations->addRelation(
+				caseId: $caseId,
+				targetId: $linkedCase,
+				natureRelationship: $definition->natureRelationship
+			);
+			$reason = (string)($result['reason'] ?? '');
+			if (($result['ok'] ?? false) !== true && $reason !== 'duplicate') {
+				throw new RuntimeException("The cases could not be linked: $reason.");
+			}
+		}
+	}//end relateCases()
 
 	/**
 	 * The roles declared by the case type of a case.
