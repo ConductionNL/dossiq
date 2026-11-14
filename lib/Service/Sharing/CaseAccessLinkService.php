@@ -143,9 +143,8 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 		?string $password = null,
 		?string $label = null,
 	): array {
-		$caseId = trim($caseId);
-		$fileId = trim($fileId);
-		if ($caseId === '' || $fileId === '') {
+		$subjectId = $this->fileSubjectId(caseId: $caseId, fileId: $fileId);
+		if ($subjectId === '') {
 			return ['error' => 'A file link must name both the case and the file'];
 		}
 
@@ -153,7 +152,7 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 			request: new AccessLinkRequest(
 				userId: $userId,
 				subjectType: 'file',
-				subjectId: $caseId . '/' . $fileId,
+				subjectId: $subjectId,
 				capabilities: ['read'],
 				expiresAt: $expiresAt,
 				password: $password,
@@ -161,6 +160,24 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 			)
 		);
 	}//end mintFileLink()
+
+	/**
+	 * The `<objectUuid>/<fileId>` subject of a file link, '' when either part is blank.
+	 *
+	 * @param string $caseId The uuid of the object carrying the file.
+	 * @param string $fileId The file id on that object.
+	 *
+	 * @return string
+	 */
+	private function fileSubjectId(string $caseId, string $fileId): string {
+		$caseId = trim($caseId);
+		$fileId = trim($fileId);
+		if ($caseId === '' || $fileId === '') {
+			return '';
+		}
+
+		return $caseId . '/' . $fileId;
+	}//end fileSubjectId()
 
 	/**
 	 * Revoke a link.
