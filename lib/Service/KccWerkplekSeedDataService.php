@@ -162,20 +162,24 @@ class KccWerkplekSeedDataService implements KccWerkplekSeedDataServiceInterface 
 			objectService: $objectService,
 			operation: function () use ($objectService, $register, $quickActionSchema, $belplanSchema, $data, &$counts): void {
 				$this->seedRows(
-					objectService: $objectService,
-					register: $register,
-					schema: $quickActionSchema,
+					target: new KccSeedTarget(
+						objectService: $objectService,
+						register: $register,
+						schema: $quickActionSchema,
+						counterKey: 'quickActions'
+					),
 					rows: (array)($data['kccQuickActions'] ?? []),
-					counterKey: 'quickActions',
 					counts: $counts,
 				);
 
 				$this->seedRows(
-					objectService: $objectService,
-					register: $register,
-					schema: $belplanSchema,
+					target: new KccSeedTarget(
+						objectService: $objectService,
+						register: $register,
+						schema: $belplanSchema,
+						counterKey: 'belplannen'
+					),
 					rows: (array)($data['belplannen'] ?? []),
-					counterKey: 'belplannen',
 					counts: $counts,
 				);
 			}
@@ -218,24 +222,15 @@ class KccWerkplekSeedDataService implements KccWerkplekSeedDataServiceInterface 
 	/**
 	 * Seed a list of rows into one schema, skipping ids that already exist.
 	 *
-	 * @param object $objectService OpenRegister ObjectService.
-	 * @param string $register Register id.
-	 * @param string $schema Schema id.
-	 * @param array<int, mixed> $rows Seed rows.
-	 * @param string $counterKey Counter key to increment on insert.
+	 * @param KccSeedTarget      $target The object service, register, schema and counter key.
+	 * @param array<int, mixed>  $rows   Seed rows.
 	 * @param array<string, int> $counts Counter accumulator (by reference).
 	 *
 	 * @return void
 	 */
-	private function seedRows(
-		object $objectService,
-		string $register,
-		string $schema,
-		array $rows,
-		string $counterKey,
-		array &$counts,
-	): void {
-		$existingIds = $this->existingIds(objectService: $objectService, register: $register, schema: $schema);
+	private function seedRows(KccSeedTarget $target, array $rows, array &$counts): void {
+		$schema = $target->schema;
+		$existingIds = $this->existingIds(target: $target);
 
 		foreach ($rows as $row) {
 			if (is_array($row) === false) {
@@ -255,8 +250,8 @@ class KccWerkplekSeedDataService implements KccWerkplekSeedDataServiceInterface 
 				// $object/$extend/$register, which either threw a
 				// TypeError or silently wrote the wrong data. Named
 				// arguments make the mapping unambiguous.
-				$objectService->saveObject(object: $row, register: $register, schema: $schema);
-				$counts[$counterKey]++;
+				$target->objectService->saveObject(object: $row, register: $target->register, schema: $schema);
+				$counts[$target->counterKey]++;
 			} catch (Throwable $e) {
 				$counts['failed']++;
 				$this->logger->error(
@@ -270,15 +265,14 @@ class KccWerkplekSeedDataService implements KccWerkplekSeedDataServiceInterface 
 	/**
 	 * Collect existing object ids for idempotent skip-detection.
 	 *
-	 * @param object $objectService OpenRegister ObjectService.
-	 * @param string $register Register id.
-	 * @param string $schema Schema id.
+	 * @param KccSeedTarget $target The object service, register and schema.
 	 *
 	 * @return array<int, string>
 	 */
-	private function existingIds(object $objectService, string $register, string $schema): array {
+	private function existingIds(KccSeedTarget $target): array {
+		$schema = $target->schema;
 		try {
-			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema);
+			$rows = $this->searchObjectsAsArrays(objectService: $target->objectService, register: $target->register, schema: $schema);
 		} catch (Throwable $e) {
 			// An unreadable schema is reported, not assumed empty: "no rows
 			// exist" and "the read was refused" both returned [], and the second

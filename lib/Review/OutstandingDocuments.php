@@ -97,55 +97,54 @@ class OutstandingDocuments {
 			return ['count' => 0, 'documents' => []];
 		}
 
+		$scope = new CaseDocumentScope(objectService: $objectService, register: $register, caseId: $caseId);
+
 		// Collect all documents for this case.
-		$allDocs = $this->collectCaseDocumentIds(objectService: $objectService, register: $register, docSchema: $docSchema, caseId: $caseId);
+		$allDocs = $this->collectCaseDocumentIds(scope: $scope, docSchema: $docSchema);
 
 		if (empty($allDocs) === true) {
 			return ['count' => 0, 'documents' => []];
 		}
 
-		$assessments = $this->assessmentRows(objectService: $objectService, register: $register, assessmentSchema: $assessmentSchema, caseId: $caseId);
-		$excludedDocIds = $this->excludedDocIds(objectService: $objectService, register: $register, caseId: $caseId, assessments: $assessments);
+		$assessments = $this->assessmentRows(scope: $scope, assessmentSchema: $assessmentSchema);
 
-		return $this->outstandingResult(caseId: $caseId, allDocs: $allDocs, assessments: $assessments, excludedDocIds: $excludedDocIds);
+		return $this->outstandingResult(scope: $scope, allDocs: $allDocs, assessments: $assessments);
 	}//end forCaseIn()
 
 	/**
 	 * The documents that are not waiting for assessment.
 	 *
-	 * @param object                           $objectService The OpenRegister object service
-	 * @param mixed                            $register      Configured register identifier
-	 * @param string                           $caseId        The case UUID
-	 * @param array<int, array<string, mixed>> $assessments   The case's assessments
+	 * @param CaseDocumentScope                $scope       The object service, register and case
+	 * @param array<int, array<string, mixed>> $assessments The case's assessments
 	 *
 	 * @return array<string, mixed> The excluded document ids, as keys
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 */
-	private function excludedDocIds(object $objectService, mixed $register, string $caseId, array $assessments): array {
+	private function excludedDocIds(CaseDocumentScope $scope, array $assessments): array {
 		// A document set aside before review is not waiting for assessment
 		// (woo-request-corpus-collection, REQ-WRC-003), and the redacted copy
 		// of a partly public document is part of that document's assessment.
-		return $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId)
+		return $this->collectExcludedDocumentIds(scope: $scope)
 			+ $this->refsOf(assessments: $assessments, field: 'redactedDocumentRef');
 	}//end excludedDocIds()
 
 	/**
 	 * The outstanding documents: neither assessed nor excluded.
 	 *
-	 * @param string                           $caseId         The case UUID
-	 * @param array<string, mixed>             $allDocs        The case's documents
-	 * @param array<int, array<string, mixed>> $assessments    The case's assessments
-	 * @param array<string, mixed>             $excludedDocIds The excluded document ids
+	 * @param CaseDocumentScope                $scope       The object service, register and case
+	 * @param array<string, mixed>             $allDocs     The case's documents
+	 * @param array<int, array<string, mixed>> $assessments The case's assessments
 	 *
 	 * @return array<string, mixed> Array with 'count' and 'documents' list of unassessed doc IDs
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 */
-	private function outstandingResult(string $caseId, array $allDocs, array $assessments, array $excludedDocIds): array {
+	private function outstandingResult(CaseDocumentScope $scope, array $allDocs, array $assessments): array {
+		$excludedDocIds = $this->excludedDocIds(scope: $scope, assessments: $assessments);
 		$assessedDocIds = $this->refsOf(assessments: $assessments, field: 'documentRef');
 
-		$outstanding = $this->outstandingOf(caseId: $caseId, allDocs: array_diff_key($allDocs, $excludedDocIds), assessedDocIds: $assessedDocIds);
+		$outstanding = $this->outstandingOf(caseId: $scope->caseId, allDocs: array_diff_key($allDocs, $excludedDocIds), assessedDocIds: $assessedDocIds);
 
 		return [
 			'count' => count($outstanding),
@@ -173,12 +172,13 @@ class OutstandingDocuments {
 			return [];
 		}
 
-		$allDocs = $this->caseDocumentIds(objectService: $objectService, register: $register, caseId: $caseId);
+		$scope = new CaseDocumentScope(objectService: $objectService, register: $register, caseId: $caseId);
+		$allDocs = $this->caseDocumentIds(scope: $scope);
 		if ($allDocs === []) {
 			return [];
 		}
 
-		$excluded = $this->setAsideIds(objectService: $objectService, register: $register, caseId: $caseId);
+		$excluded = $this->setAsideIds(scope: $scope);
 
 		return array_map('strval', array_keys(array_diff_key($allDocs, $excluded)));
 	}//end underReview()
@@ -186,42 +186,34 @@ class OutstandingDocuments {
 	/**
 	 * Every document on the case, keyed by identifier.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param mixed  $register      The register.
-	 * @param string $caseId        The case UUID.
+	 * @param CaseDocumentScope $scope The object service, register and case.
 	 *
 	 * @return array<string, mixed> The documents, keyed by identifier.
 	 *
 	 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-answers-every-document-with-its-assessment-req-das-004
 	 */
-	private function caseDocumentIds(object $objectService, mixed $register, string $caseId): array {
+	private function caseDocumentIds(CaseDocumentScope $scope): array {
 		return $this->collectCaseDocumentIds(
-			objectService: $objectService,
-			register: $register,
+			scope: $scope,
 			docSchema: $this->settingsService->getConfigValue('document_schema'),
-			caseId: $caseId,
 		);
 	}//end caseDocumentIds()
 
 	/**
 	 * The documents set aside: excluded, or replaced by a redacted copy.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param mixed  $register      The register.
-	 * @param string $caseId        The case UUID.
+	 * @param CaseDocumentScope $scope The object service, register and case.
 	 *
 	 * @return array<string, mixed> The set-aside documents, keyed by identifier.
 	 *
 	 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-answers-every-document-with-its-assessment-req-das-004
 	 */
-	private function setAsideIds(object $objectService, mixed $register, string $caseId): array {
-		return $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId)
+	private function setAsideIds(CaseDocumentScope $scope): array {
+		return $this->collectExcludedDocumentIds(scope: $scope)
 			+ $this->refsOf(
 				assessments: $this->assessmentRows(
-					objectService: $objectService,
-					register: $register,
+					scope: $scope,
 					assessmentSchema: $this->settingsService->getConfigValue('woo_assessment_schema'),
-					caseId: $caseId,
 				),
 				field: 'redactedDocumentRef'
 			);
@@ -255,14 +247,13 @@ class OutstandingDocuments {
 	/**
 	 * Collect the identifiers of every document attached to a case.
 	 *
-	 * @param object $objectService OpenRegister object service
-	 * @param mixed $register Configured register identifier
-	 * @param mixed $docSchema Configured document schema identifier
-	 * @param string $caseId The case UUID
+	 * @param CaseDocumentScope $scope     The object service, register and case
+	 * @param mixed             $docSchema Configured document schema identifier
 	 *
 	 * @return array<string, bool> Document identifiers as keys, empty when the schema is not configured
 	 */
-	private function collectCaseDocumentIds(object $objectService, mixed $register, mixed $docSchema, string $caseId): array {
+	private function collectCaseDocumentIds(CaseDocumentScope $scope, mixed $docSchema): array {
+		$caseId = $scope->caseId;
 		// Where the case upload writes documents: informatieobjecten joined to
 		// the case (found by the e2e Woo journey, portaliq#1001).
 		if ($this->caseDocuments !== null) {
@@ -274,8 +265,8 @@ class OutstandingDocuments {
 		}
 
 		$docs = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
+			objectService: $scope->objectService,
+			register: $scope->register,
 			schema: $docSchema,
 			filters: ['case' => $caseId, '_limit' => 500],
 		);
@@ -325,14 +316,12 @@ class OutstandingDocuments {
 	/**
 	 * Every assessment of a case.
 	 *
-	 * @param object $objectService OpenRegister object service
-	 * @param mixed $register Configured register identifier
-	 * @param mixed $assessmentSchema Configured assessment schema identifier
-	 * @param string $caseId The case UUID
+	 * @param CaseDocumentScope $scope            The object service, register and case
+	 * @param mixed             $assessmentSchema Configured assessment schema identifier
 	 *
 	 * @return array<int, array<string, mixed>> The assessments, empty when the schema is not configured
 	 */
-	private function assessmentRows(object $objectService, mixed $register, mixed $assessmentSchema, string $caseId): array {
+	private function assessmentRows(CaseDocumentScope $scope, mixed $assessmentSchema): array {
 		if (empty($assessmentSchema) === true) {
 			return [];
 		}
@@ -342,10 +331,10 @@ class OutstandingDocuments {
 		// not outstanding. Only document references are used; nothing of the
 		// assessment itself is answered.
 		return $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
+			objectService: $scope->objectService,
+			register: $scope->register,
 			schema: $assessmentSchema,
-			filters: ['caseRef' => $caseId, '_limit' => 500],
+			filters: ['caseRef' => $scope->caseId, '_limit' => 500],
 		);
 	}//end assessmentRows()
 
@@ -372,13 +361,12 @@ class OutstandingDocuments {
 	/**
 	 * Collect the identifiers of every document of a case that was set aside before review.
 	 *
-	 * @param object $objectService OpenRegister object service
-	 * @param mixed  $register      Configured register identifier
-	 * @param string $caseId        The case UUID
+	 * @param CaseDocumentScope $scope The object service, register and case
 	 *
 	 * @return array<string, bool> Excluded document identifiers as keys, empty when the schema is not configured
 	 */
-	private function collectExcludedDocumentIds(object $objectService, mixed $register, string $caseId): array {
+	private function collectExcludedDocumentIds(CaseDocumentScope $scope): array {
+		$caseId = $scope->caseId;
 		$exclusionSchema = $this->settingsService->getConfigValue('woo_exclusion_schema');
 		if (empty($exclusionSchema) === true) {
 			return [];
@@ -388,8 +376,8 @@ class OutstandingDocuments {
 		// the case: it is read whoever asks, and kept only when it names this case.
 		$excluded = [];
 		$rows = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
+			objectService: $scope->objectService,
+			register: $scope->register,
 			schema: $exclusionSchema,
 			filters: ['case' => $caseId, '_limit' => 1000],
 		);

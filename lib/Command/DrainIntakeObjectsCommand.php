@@ -163,14 +163,16 @@ class DrainIntakeObjectsCommand extends Command {
 		$objectService = $this->settingsService->getObjectService();
 		$submitter = $this->formSubmit();
 		$admin = $this->admin(output: $output);
-
-		$ready = $this->prerequisitesMet(
+		$setup = new PortalDrainSetup(
 			objectService: $objectService,
 			submitter: $submitter,
 			admin: $admin,
 			register: $register,
-			caseSchema: $caseSchema
+			caseSchema: $caseSchema,
+			sourceSchema: $sourceSchema
 		);
+
+		$ready = $this->prerequisitesMet(setup: $setup);
 		if ($ready === false) {
 			$output->writeln('<error>OpenRegister with its form submit (openregister#4563) and the dossiq register are needed to drain.</error>');
 			return Command::FAILURE;
@@ -190,9 +192,9 @@ class DrainIntakeObjectsCommand extends Command {
 		$report = $this->drain->drain(
 			sources: $sources,
 			plan: self::PLAN,
-			existing: $this->existingCaseOf(objectService: $objectService, register: $register, caseSchema: $caseSchema),
-			submit: $this->submitterOf(submitter: $submitter, register: $register, caseSchema: $caseSchema, admin: $admin),
-			markSource: $this->sourceMarker(objectService: $objectService, register: $register, sourceSchema: $sourceSchema),
+			existing: $this->existingCaseOf(setup: $setup),
+			submit: $this->submitterOf(setup: $setup),
+			markSource: $this->sourceMarker(setup: $setup),
 			apply: $apply
 		);
 
@@ -202,68 +204,47 @@ class DrainIntakeObjectsCommand extends Command {
 	/**
 	 * Whether OpenRegister, its form submit, an admin and the dossiq register are all in hand.
 	 *
-	 * @param object|null $objectService OpenRegister's object service.
-	 * @param object|null $submitter     The FormSubmitService.
-	 * @param IUser|null  $admin         The admin the cases are opened as.
-	 * @param string      $register      The dossiq register.
-	 * @param string      $caseSchema    The case schema.
+	 * @param PortalDrainSetup $setup The object service, form submit, admin, register and case schema.
 	 *
 	 * @return bool
 	 */
-	private function prerequisitesMet(?object $objectService, ?object $submitter, ?IUser $admin, string $register, string $caseSchema): bool {
-		return !($objectService === null || $submitter === null || $admin === null || $register === '' || $caseSchema === '');
+	private function prerequisitesMet(PortalDrainSetup $setup): bool {
+		return !($setup->objectService === null || $setup->submitter === null || $setup->admin === null
+			|| $setup->register === '' || $setup->caseSchema === '');
 	}//end prerequisitesMet()
 
 	/**
 	 * The callback that names the case already holding a source.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The dossiq register.
-	 * @param string $caseSchema    The case schema.
+	 * @param PortalDrainSetup $setup The object service, register and case schema.
 	 *
 	 * @return callable(array): string
 	 */
-	private function existingCaseOf(object $objectService, string $register, string $caseSchema): callable {
-		return fn (array $source): string => $this->caseHolding(
-			objectService: $objectService,
-			register: $register,
-			caseSchema: $caseSchema,
-			source: $source
-		);
+	private function existingCaseOf(PortalDrainSetup $setup): callable {
+		return fn (array $source): string => $this->caseHolding(setup: $setup, source: $source);
 	}//end existingCaseOf()
 
 	/**
 	 * The callback that submits one case.
 	 *
-	 * @param object $submitter  The FormSubmitService.
-	 * @param string $register   The dossiq register.
-	 * @param string $caseSchema The case schema.
-	 * @param IUser  $admin      The admin the case is opened as.
+	 * @param PortalDrainSetup $setup The form submit, register, case schema and admin.
 	 *
 	 * @return callable(array): array
 	 */
-	private function submitterOf(object $submitter, string $register, string $caseSchema, IUser $admin): callable {
-		return fn (array $case): array => $this->submit(
-			submitter: $submitter,
-			register: $register,
-			caseSchema: $caseSchema,
-			case: $case,
-			admin: $admin
-		);
+	private function submitterOf(PortalDrainSetup $setup): callable {
+		return fn (array $case): array => $this->submit(setup: $setup, case: $case);
 	}//end submitterOf()
 
 	/**
 	 * The callback that marks a source with the case it became.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The dossiq register.
-	 * @param string $sourceSchema  The source schema.
+	 * @param PortalDrainSetup $setup The object service, register and source schema.
 	 *
 	 * @return callable(array, string): void
 	 */
-	private function sourceMarker(object $objectService, string $register, string $sourceSchema): callable {
-		return function (array $source, string $caseId) use ($objectService, $register, $sourceSchema): void {
-			$this->markSource(objectService: $objectService, register: $register, schema: $sourceSchema, source: $source, caseId: $caseId);
+	private function sourceMarker(PortalDrainSetup $setup): callable {
+		return function (array $source, string $caseId) use ($setup): void {
+			$this->markSource(setup: $setup, source: $source, caseId: $caseId);
 		};
 	}//end sourceMarker()
 
@@ -331,21 +312,18 @@ class DrainIntakeObjectsCommand extends Command {
 	/**
 	 * Submit one case through OpenRegister's form submit.
 	 *
-	 * @param object               $submitter  The FormSubmitService.
-	 * @param string               $register   The register id.
-	 * @param string               $caseSchema The case schema id.
-	 * @param array<string, mixed> $case       The case.
-	 * @param IUser                $admin      The subject the case is written for.
+	 * @param PortalDrainSetup     $setup The form submit, register, case schema and the subject the case is written for.
+	 * @param array<string, mixed> $case  The case.
 	 *
 	 * @return array<string, mixed> `id`, or `findings`.
 	 */
-	private function submit(object $submitter, string $register, string $caseSchema, array $case, IUser $admin): array {
+	private function submit(PortalDrainSetup $setup, array $case): array {
 		try {
-			$answer = $submitter->submit(
-				destination: ['register' => $register, 'schema' => $caseSchema],
+			$answer = $setup->submitter->submit(
+				destination: ['register' => $setup->register, 'schema' => $setup->caseSchema],
 				mapping: null,
 				payload: $case,
-				subject: $admin
+				subject: $setup->admin
 			);
 		} catch (Throwable $e) {
 			$findings = [['property' => '', 'code' => 'refused', 'message' => $e->getMessage()]];
@@ -362,23 +340,21 @@ class DrainIntakeObjectsCommand extends Command {
 	/**
 	 * The id of a case that already carries this source's id as its earlier reference.
 	 *
-	 * @param object               $objectService The object service.
-	 * @param string               $register      The register id.
-	 * @param string               $caseSchema    The case schema id.
-	 * @param array<string, mixed> $source        The source object.
+	 * @param PortalDrainSetup     $setup  The object service, register and case schema.
+	 * @param array<string, mixed> $source The source object.
 	 *
 	 * @return string The case id, or the empty string.
 	 */
-	private function caseHolding(object $objectService, string $register, string $caseSchema, array $source): string {
+	private function caseHolding(PortalDrainSetup $setup, array $source): string {
 		$sourceId = trim((string)($source['id'] ?? ''));
 		if ($sourceId === '') {
 			return '';
 		}
 
 		$rows = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseSchema,
+			objectService: $setup->objectService,
+			register: $setup->register,
+			schema: $setup->caseSchema,
 			filters: ['externalReference' => $sourceId, '_limit' => 1]
 		);
 
@@ -388,20 +364,18 @@ class DrainIntakeObjectsCommand extends Command {
 	/**
 	 * Record the case id on the source, so the next run skips it.
 	 *
-	 * @param object               $objectService The object service.
-	 * @param string               $register      The register id.
-	 * @param string               $schema        The source schema id.
-	 * @param array<string, mixed> $source        The source object.
-	 * @param string               $caseId        The case id.
+	 * @param PortalDrainSetup     $setup  The object service, register and source schema.
+	 * @param array<string, mixed> $source The source object.
+	 * @param string               $caseId The case id.
 	 *
 	 * @return void
 	 */
-	private function markSource(object $objectService, string $register, string $schema, array $source, string $caseId): void {
+	private function markSource(PortalDrainSetup $setup, array $source, string $caseId): void {
 		$sourceId = (string)($source['id'] ?? '');
 		$payload = array_merge($source, [(string)self::PLAN['deliveredField'] => $caseId]);
 		unset($payload['@self'], $payload['id'], $payload['uuid']);
 
-		$objectService->saveObject(object: $payload, register: $register, schema: $schema, uuid: $sourceId);
+		$setup->objectService->saveObject(object: $payload, register: $setup->register, schema: $setup->sourceSchema, uuid: $sourceId);
 	}//end markSource()
 
 	/**

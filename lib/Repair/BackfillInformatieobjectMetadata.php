@@ -39,7 +39,6 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
-use OCP\Files\Node;
 use OCP\Files\NotFoundException;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -134,7 +133,11 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			return;
 		}
 
-		[$created, $skipped] = $this->backfillEveryFolder(objectService: $objectService, target: $target, folder: $folder);
+		[$register, $infoSchema] = $target;
+		[$created, $skipped] = $this->backfillEveryFolder(
+			target: new InformatieobjectTarget(objectService: $objectService, register: $register, schema: $infoSchema),
+			folder: $folder
+		);
 
 		$output->info('Dossiq backfill: created ' . $created . ' informatieobject(en), skipped ' . $skipped . ' existing.');
 	}//end runInner()
@@ -160,15 +163,13 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	/**
 	 * Back-fill every case folder under the storage folder.
 	 *
-	 * @param object                      $objectService The OpenRegister object service.
-	 * @param array{0: string, 1: string} $target        The register and informatieobject schema.
-	 * @param Folder                      $folder        The storage folder.
+	 * @param InformatieobjectTarget $target The object service, register and informatieobject schema.
+	 * @param Folder                 $folder The storage folder.
 	 *
 	 * @return array{0: int, 1: int} The number created and the number skipped.
 	 */
-	private function backfillEveryFolder(object $objectService, array $target, Folder $folder): array {
-		[$register, $infoSchema] = $target;
-		$existing = $this->existingFilenames(objectService: $objectService, register: $register, schema: $infoSchema);
+	private function backfillEveryFolder(InformatieobjectTarget $target, Folder $folder): array {
+		$existing = $this->existingFilenames(target: $target);
 
 		$created = 0;
 		$skipped = 0;
@@ -177,13 +178,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 				continue;
 			}
 
-			$result = $this->backfillFolderNode(
-				objectService: $objectService,
-				register: $register,
-				schema: $infoSchema,
-				node: $node,
-				existing: $existing,
-			);
+			$result = $this->backfillFolderNode(target: $target, node: $node, existing: $existing);
 			$created += $result['created'];
 			$skipped += $result['skipped'];
 			$existing = $result['existing'];
@@ -198,15 +193,13 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	 * Files whose name is already registered are counted as skipped; `_part_` upload fragments are
 	 * ignored entirely. A per-file failure is logged and does not abort the folder.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register slug.
-	 * @param string $schema The informatieobject schema slug.
-	 * @param Folder $node The case folder to walk.
-	 * @param array<int, string> $existing Filenames already registered.
+	 * @param InformatieobjectTarget $target   The object service, register and informatieobject schema.
+	 * @param Folder                 $node     The case folder to walk.
+	 * @param array<int, string>     $existing Filenames already registered.
 	 *
 	 * @return array{created: int, skipped: int, existing: array<int, string>} Counts plus the grown filename list.
 	 */
-	private function backfillFolderNode(object $objectService, string $register, string $schema, Folder $node, array $existing): array {
+	private function backfillFolderNode(InformatieobjectTarget $target, Folder $node, array $existing): array {
 		$created = 0;
 		$skipped = 0;
 
@@ -224,13 +217,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			}
 
 			try {
-				$this->backfillFile(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					folderUuid: $node->getName(),
-					file: $file,
-				);
+				$this->backfillFile(target: $target, folderUuid: $node->getName(), file: $file);
 				$existing[] = $fileName;
 				$created++;
 			} catch (\Throwable $e) {
@@ -247,11 +234,11 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	/**
 	 * The node as a file to back-fill, or null for a folder or an upload fragment.
 	 *
-	 * @param Node $node A node in a case folder.
+	 * @param mixed $node An entry of a case folder's directory listing.
 	 *
 	 * @return File|null The file, or null when it is not back-filled.
 	 */
-	private function backfillableFile(Node $node): ?File {
+	private function backfillableFile(mixed $node): ?File {
 		if ($node instanceof File === false) {
 			return null;
 		}
@@ -266,25 +253,23 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	/**
 	 * Create an informatieobject (+ join when possible) for one existing file.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register slug.
-	 * @param string $schema The informatieobject schema slug.
-	 * @param string $folderUuid The storing folder UUID (used as the link key).
-	 * @param File $file The Nextcloud file node.
+	 * @param InformatieobjectTarget $target     The object service, register and informatieobject schema.
+	 * @param string                 $folderUuid The storing folder UUID (used as the link key).
+	 * @param File                   $file       The Nextcloud file node.
 	 *
 	 * @return void
 	 */
-	private function backfillFile(object $objectService, string $register, string $schema, string $folderUuid, File $file): void {
+	private function backfillFile(InformatieobjectTarget $target, string $folderUuid, File $file): void {
 		$informatieobject = $this->informatieobjectFor(file: $file);
 
-		$saved = $objectService->saveObject(object: $informatieobject, register: $register, schema: $schema);
+		$saved = $target->objectService->saveObject(object: $informatieobject, register: $target->register, schema: $target->schema);
 		$infoId = $this->savedUuid(saved: $saved);
 
 		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
 		if ($joinSchema !== '' && $infoId !== '') {
-			$objectService->saveObject(
+			$target->objectService->saveObject(
 				object: $this->joinRecord(folderUuid: $folderUuid, infoId: $infoId),
-				register: $register,
+				register: $target->register,
 				schema: $joinSchema,
 			);
 		}
@@ -388,17 +373,15 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	/**
 	 * Collect the bestandsnaam of every existing informatieobject for idempotency.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register slug.
-	 * @param string $schema The informatieobject schema slug.
+	 * @param InformatieobjectTarget $target The object service, register and informatieobject schema.
 	 *
 	 * @return string[] Filenames already represented by an informatieobject.
 	 */
-	private function existingFilenames(object $objectService, string $register, string $schema): array {
+	private function existingFilenames(InformatieobjectTarget $target): array {
 		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+			objectService: $target->objectService,
+			register: $target->register,
+			schema: $target->schema,
 			filters: ['_limit' => 10000],
 		);
 
