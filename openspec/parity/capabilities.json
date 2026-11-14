@@ -17520,8 +17520,8 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"built": {
-				"state": "building",
-				"evidence": "LhsController recommend, override and lookup have no caller in src/; the matrix migrates to decision tables (occ); the LhsRecommendations pages are read-only and reachable by URL only",
+				"state": "built",
+				"evidence": "CaseDetail header action advice-from-decision-table opens src/dialogs/DecisionTableAdviceDialog.vue (inputs the case type's decision table declares, the recommendation, accept or deviate with a mandatory reason) over lib/Controller/DecisionAdviceController.php; the choice is a decisionAdvice object listed on the case's Decisions tab, next to the case's lhsRecommendation objects",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
 					"openspec/specs/enforcement-lhs",
@@ -17532,9 +17532,9 @@
 					"canvas": "design-system",
 					"board": "DqHandhaving"
 				},
-				"readOn": "2026-10-07",
-				"reachedOn": "LhsRecommendations pages, by URL only (no menu entry, read-only)",
-				"note": "Missing: the enforcement panel or wizard on a handhaving case that asks for a recommendation and records an override.",
+				"readOn": "2026-11-14",
+				"reachedOn": "CaseDetail",
+				"note": "Built from code and unit tests; the live pass against board DqHandhaving and the e2e spec are still open in the plan, and /api/lhs still answers on its own rather than forwarding to /api/decision-advice.",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
 				"plan": "openspec/changes/enforcement-intervention-from-the-case",
 				"requirement": "openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs :: A handler asks the case type's decision table for advice on the case (REQ-LHS-CASE-01)"
