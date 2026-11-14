@@ -159,20 +159,7 @@ class StufRegisterAccess implements StufRegisterAccessInterface {
 	 */
 	public function findAll(string $schema, array $filters = [], int $limit = 100): array {
 		try {
-			$service = $this->getObjectService();
-			if ($service === null) {
-				// A READ, so an empty list is the honest answer for an absent
-				// register — and it matches what this method already returns when
-				// the lookup throws, two lines below.
-				return [];
-			}
-
-			$objects = $service->findAll(
-				[
-					'filters' => array_merge(['register' => $this->getRegisterId(), 'schema' => $schema], $filters),
-					'limit' => $limit,
-				]
-			);
+			$objects = $this->readObjects(schema: $schema, filters: $filters, limit: $limit);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				message: 'StUF register findAll failed: {err}',
@@ -185,13 +172,50 @@ class StufRegisterAccess implements StufRegisterAccessInterface {
 			return [];
 		}
 
+		return $this->normaliseAll(objects: $objects);
+	}//end findAll()
+
+	/**
+	 * Read the objects of a schema, or none when the register is absent.
+	 *
+	 * @param string               $schema  The schema.
+	 * @param array<string, mixed> $filters Extra filters.
+	 * @param int                  $limit   The maximum number of objects.
+	 *
+	 * @return mixed The objects the object service answers.
+	 */
+	private function readObjects(string $schema, array $filters, int $limit): mixed {
+		$service = $this->getObjectService();
+		if ($service === null) {
+			// A READ, so an empty list is the honest answer for an absent
+			// register — and it matches what findAll() already returns when
+			// the lookup throws.
+			return [];
+		}
+
+		return $service->findAll(
+			[
+				'filters' => array_merge(['register' => $this->getRegisterId(), 'schema' => $schema], $filters),
+				'limit' => $limit,
+			]
+		);
+	}//end readObjects()
+
+	/**
+	 * Normalise each object to its array form.
+	 *
+	 * @param array<int|string, mixed> $objects The objects.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function normaliseAll(array $objects): array {
 		$result = [];
 		foreach ($objects as $obj) {
 			$result[] = $this->normalise(value: $obj);
 		}
 
 		return $result;
-	}//end findAll()
+	}//end normaliseAll()
 
 	/**
 	 * Resolve the OR register id for dossiq from IAppConfig.
