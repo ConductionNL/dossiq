@@ -356,34 +356,14 @@ abstract class ZgwRulesBase {
 	 */
 	protected function validateInformatieobjectUrl(string $ioUrl): ?array {
 		if ($this->isValidUrl(url: $ioUrl) === false) {
-			return $this->error(
-				status: 400,
-				detail: 'De informatieobject URL is ongeldig.',
-				invalidParams: [
-					$this->fieldError(
-						fieldName: 'informatieobject',
-						code: 'bad-url',
-						reason: 'Ongeldige URL.'
-					),
-				]
-			);
+			return $this->badInformatieobjectUrl(reason: 'Ongeldige URL.');
 		}
 
 		$ioUuid = $this->extractUuid(url: $ioUrl);
 
 		// Brc-003a: If UUID extraction fails, the URL doesn't point to a valid resource.
 		if ($ioUuid === null) {
-			return $this->error(
-				status: 400,
-				detail: 'De informatieobject URL is ongeldig.',
-				invalidParams: [
-					$this->fieldError(
-						fieldName: 'informatieobject',
-						code: 'bad-url',
-						reason: 'De informatieobject URL bevat geen geldig UUID.'
-					),
-				]
-			);
+			return $this->badInformatieobjectUrl(reason: 'De informatieobject URL bevat geen geldig UUID.');
 		}
 
 		// If we can look up the document in our own register, do so.
@@ -394,6 +374,29 @@ abstract class ZgwRulesBase {
 
 		return null;
 	}//end validateInformatieobjectUrl()
+
+	/**
+	 * The validation error for an informatieobject URL that is not usable.
+	 *
+	 * @param string $reason Why the URL is not usable
+	 *
+	 * @return array Validation error
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function badInformatieobjectUrl(string $reason): array {
+		return $this->error(
+			status: 400,
+			detail: 'De informatieobject URL is ongeldig.',
+			invalidParams: [
+				$this->fieldError(
+					fieldName: 'informatieobject',
+					code: 'bad-url',
+					reason: $reason
+				),
+			]
+		);
+	}//end badInformatieobjectUrl()
 
 	/**
 	 * Look the informatieobject up in the own register; a miss is not an error.
@@ -437,19 +440,57 @@ abstract class ZgwRulesBase {
 	 */
 	protected function validateExternalUrl(string $url, string $fieldName): ?array {
 		if ($this->isValidUrl(url: $url) === false) {
-			return $this->error(
-				status: 400,
-				detail: "De {$fieldName} URL is ongeldig.",
-				invalidParams: [
-					$this->fieldError(
-						fieldName: $fieldName,
-						code: 'bad-url',
-						reason: "De {$fieldName} URL is ongeldig."
-					),
-				]
+			return $this->urlError(fieldName: $fieldName, code: 'bad-url', message: "De {$fieldName} URL is ongeldig.");
+		}
+
+		$lastSegment = $this->lastPathSegment(url: $url);
+
+		if ($this->fieldValidator->isUuid($lastSegment) === false) {
+			return $this->urlError(
+				fieldName: $fieldName,
+				code: 'invalid-resource',
+				message: "De {$fieldName} URL wijst niet naar een geldig object."
 			);
 		}
 
+		return null;
+	}//end validateExternalUrl()
+
+	/**
+	 * The validation error for a URL field, with the same sentence as detail and reason.
+	 *
+	 * @param string $fieldName The field name for error reporting
+	 * @param string $code The error code
+	 * @param string $message The sentence
+	 *
+	 * @return array Validation error
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function urlError(string $fieldName, string $code, string $message): array {
+		return $this->error(
+			status: 400,
+			detail: $message,
+			invalidParams: [
+				$this->fieldError(
+					fieldName: $fieldName,
+					code: $code,
+					reason: $message
+				),
+			]
+		);
+	}//end urlError()
+
+	/**
+	 * The last segment of a URL's path, or an empty string.
+	 *
+	 * @param string $url The URL
+	 *
+	 * @return string The last path segment
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function lastPathSegment(string $url): string {
 		$path = parse_url($url, PHP_URL_PATH) ?? '';
 		$segments = array_filter(explode('/', $path));
 		$lastSegment = end($segments);
@@ -457,22 +498,8 @@ abstract class ZgwRulesBase {
 			$lastSegment = '';
 		}
 
-		if ($this->fieldValidator->isUuid($lastSegment) === false) {
-			return $this->error(
-				status: 400,
-				detail: "De {$fieldName} URL wijst niet naar een geldig object.",
-				invalidParams: [
-					$this->fieldError(
-						fieldName: $fieldName,
-						code: 'invalid-resource',
-						reason: "De {$fieldName} URL wijst niet naar een geldig object."
-					),
-				]
-			);
-		}
-
-		return null;
-	}//end validateExternalUrl()
+		return $lastSegment;
+	}//end lastPathSegment()
 
 	/**
 	 * Fetch data from an external URL (selectielijst, resultaattypeomschrijving).

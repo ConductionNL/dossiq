@@ -65,6 +65,7 @@ use Throwable;
  * directory, the portal's field list and the field writer. Splitting the class
  * to lower the count would spread one statutory duty over several files, which
  * is the thing this change exists to stop.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/specs/burger-notifications/spec.md
  */
@@ -162,11 +163,7 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
 	public function acknowledge(string $caseId, int $attempt = 1): array {
-		$case = $this->readCase(caseId: $caseId) ?? throw new RefusedException(
-			rule: 'acknowledgement-register-not-configured',
-			sentence: 'We could not read the case, so receipt could not be confirmed.',
-			status: RefusedException::STATUS_INDETERMINATE,
-		);
+		$case = $this->readableCase(caseId: $caseId, sentence: 'We could not read the case, so receipt could not be confirmed.');
 		$caseType = $this->caseTypeOf(case: $case);
 
 		$settled = $this->nothingToSend(caseId: $caseId, case: $case, caseType: $caseType);
@@ -176,6 +173,48 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 
 		$ack = $this->prepared(ack: ['caseId' => $caseId, 'case' => $case, 'caseType' => $caseType]);
 
+		$payload = $this->sentPayload(caseId: $caseId, ack: $ack);
+
+		$dispatch = (array)($payload['dispatch'] ?? []);
+		$met = $this->metDuty(dispatch: $dispatch, recipient: $ack['recipient'], attempt: $attempt);
+		$this->recordMet(ack: $ack, met: $met);
+
+		return ['sent' => true, 'duty' => $met, 'record' => (array)($dispatch['record'] ?? []), 'payload' => $payload];
+	}//end acknowledge()
+
+	/**
+	 * The case, read, or a refusal naming why it could not be.
+	 *
+	 * @param string $caseId   The case UUID.
+	 * @param string $sentence What the refusal tells the person.
+	 *
+	 * @return array<string, mixed> The case.
+	 *
+	 * @throws RefusedException When the case cannot be read.
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 */
+	private function readableCase(string $caseId, string $sentence): array {
+		return $this->readCase(caseId: $caseId) ?? throw new RefusedException(
+			rule: 'acknowledgement-register-not-configured',
+			sentence: $sentence,
+			status: RefusedException::STATUS_INDETERMINATE,
+		);
+	}//end readableCase()
+
+	/**
+	 * Send the acknowledgement and return the sender's payload.
+	 *
+	 * @param string               $caseId The case UUID.
+	 * @param array<string, mixed> $ack    The prepared acknowledgement.
+	 *
+	 * @return array<string, mixed> The payload.
+	 *
+	 * @throws RefusedException When no transport took the acknowledgement.
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
+	 */
+	private function sentPayload(string $caseId, array $ack): array {
 		// The sender picks the channel (portal inbox, digital post, e-mail),
 		// calls its transport and records the result on the case. A notice no
 		// transport took throws, so nothing below runs for it (REQ-WRN-003).
@@ -185,20 +224,31 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 			throw $this->notSent(caseId: $caseId, notice: $e);
 		}
 
-		$dispatch = (array)($payload['dispatch'] ?? []);
-		$met = [
+		return $payload;
+	}//end sentPayload()
+
+	/**
+	 * The duty as it reads once the acknowledgement went out.
+	 *
+	 * @param array<string, mixed> $dispatch  What the sender recorded about the dispatch.
+	 * @param mixed                $recipient The address it went to.
+	 * @param integer              $attempt   Which attempt this is, counting from one.
+	 *
+	 * @return array<string, mixed> The met duty.
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 */
+	private function metDuty(array $dispatch, mixed $recipient, int $attempt): array {
+		return [
 			'required' => true,
 			'status' => self::STATUS_MET,
 			'channel' => (string)($dispatch['channel'] ?? ''),
-			'recipient' => $ack['recipient'],
+			'recipient' => $recipient,
 			'sentAt' => (string)($dispatch['sentAt'] ?? ''),
 			'attempts' => $attempt,
 			'lastError' => '',
 		];
-		$this->recordMet(ack: $ack, met: $met);
-
-		return ['sent' => true, 'duty' => $met, 'record' => (array)($dispatch['record'] ?? []), 'payload' => $payload];
-	}//end acknowledge()
+	}//end metDuty()
 
 	/**
 	 * The acknowledgement ready to send: its address, its term and the context the template reads.
@@ -425,6 +475,29 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 	public function recordFailedAttempt(string $caseId, string $sentence, int $attempt): bool {
 		$more = ($attempt < self::MAX_ATTEMPTS);
 
+		[$status, $outcome] = $this->failureState(more: $more);
+
+		$duty = ['required' => true, 'status' => $status, 'attempts' => $attempt, 'lastError' => $sentence];
+		$this->write(caseId: $caseId, changes: ['acknowledgementDuty' => $duty]);
+
+		$this->logger->warning(
+			'Dossiq acknowledgement: attempt {attempt} for case {case} failed, {outcome}',
+			['case' => $caseId, 'attempt' => $attempt, 'outcome' => $outcome, 'reason' => $sentence],
+		);
+
+		return $more;
+	}//end recordFailedAttempt()
+
+	/**
+	 * The duty status after a failed attempt, and how the log names it.
+	 *
+	 * @param boolean $more Whether another attempt is due.
+	 *
+	 * @return array{0: string, 1: string} The status and the outcome phrase.
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 */
+	private function failureState(bool $more): array {
 		$status = self::STATUS_UNMET;
 		$outcome = 'the duty now reads unmet';
 		if ($more === true) {
@@ -432,30 +505,8 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 			$outcome = 'another is due';
 		}
 
-		$this->write(
-			caseId: $caseId,
-			changes: [
-				'acknowledgementDuty' => [
-					'required' => true,
-					'status' => $status,
-					'attempts' => $attempt,
-					'lastError' => $sentence,
-				],
-			],
-		);
-
-		$this->logger->warning(
-			'Dossiq acknowledgement: attempt {attempt} for case {case} failed, {outcome}',
-			[
-				'case' => $caseId,
-				'attempt' => $attempt,
-				'outcome' => $outcome,
-				'reason' => $sentence,
-			],
-		);
-
-		return $more;
-	}//end recordFailedAttempt()
+		return [$status, $outcome];
+	}//end failureState()
 
 	/**
 	 * Record that a person confirmed receipt another way.
@@ -475,42 +526,13 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function recordMetAnotherWay(string $caseId, string $how, string $recordedBy): array {
-		$case = $this->readCase(caseId: $caseId);
-		if ($case === null) {
-			throw new RefusedException(
-				rule: 'acknowledgement-register-not-configured',
-				sentence: 'We could not read the case, so nothing was recorded.',
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
-		}
-
-		$how = trim($how);
-		if ($how === '') {
-			throw new RefusedException(
-				rule: 'acknowledgement-needs-a-reason',
-				sentence: 'Say how receipt was confirmed, so the case records more than a tick.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$case = $this->readableCase(caseId: $caseId, sentence: 'We could not read the case, so nothing was recorded.');
+		$how = $this->statedHow(how: $how);
 
 		$metAt = (new DateTimeImmutable())->format('c');
-		$duty = [
-			'required' => true,
-			'status' => self::STATUS_MET,
-			'metBy' => $recordedBy,
-			'metAt' => $metAt,
-			'metHow' => $how,
-		];
+		$duty = ['required' => true, 'status' => self::STATUS_MET, 'metBy' => $recordedBy, 'metAt' => $metAt, 'metHow' => $how];
 
-		$record = [
-			'moment' => CaseTypeAcknowledgement::MOMENT_RECEIVED,
-			'channel' => 'recorded-by-hand',
-			'recipient' => $this->addressOn(case: $case),
-			'template' => CaseTypeAcknowledgement::TEMPLATE,
-			'templateVersion' => self::TEMPLATE_VERSION,
-			'sentAt' => $metAt,
-			'contentWithheld' => false,
-		];
+		$record = $this->recordedByHand(caseData: $case, metAt: $metAt);
 
 		$this->write(
 			caseId: $caseId,
@@ -522,6 +544,52 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 
 		return $duty;
 	}//end recordMetAnotherWay()
+
+	/**
+	 * How receipt was confirmed, trimmed, or a refusal when it is not said.
+	 *
+	 * @param string $how How receipt was confirmed.
+	 *
+	 * @return string The trimmed answer.
+	 *
+	 * @throws RefusedException When no answer was given.
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 */
+	private function statedHow(string $how): string {
+		$how = trim($how);
+		if ($how === '') {
+			throw new RefusedException(
+				rule: 'acknowledgement-needs-a-reason',
+				sentence: 'Say how receipt was confirmed, so the case records more than a tick.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $how;
+	}//end statedHow()
+
+	/**
+	 * The outbound record of an acknowledgement a person confirmed by hand.
+	 *
+	 * @param array<string, mixed> $caseData The case.
+	 * @param string               $metAt    When the duty was met.
+	 *
+	 * @return array<string, mixed> The record.
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 */
+	private function recordedByHand(array $caseData, string $metAt): array {
+		return [
+			'moment' => CaseTypeAcknowledgement::MOMENT_RECEIVED,
+			'channel' => 'recorded-by-hand',
+			'recipient' => $this->addressOn(case: $caseData),
+			'template' => CaseTypeAcknowledgement::TEMPLATE,
+			'templateVersion' => self::TEMPLATE_VERSION,
+			'sentAt' => $metAt,
+			'contentWithheld' => false,
+		];
+	}//end recordedByHand()
 
 	/**
 	 * The duty as the case carries it.

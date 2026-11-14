@@ -96,6 +96,20 @@ class SeedIntakeSources implements IRepairStep {
 
 		$result = $this->seeder->seed();
 
+		$this->report(output: $output, result: $result);
+	}//end run()
+
+	/**
+	 * Report what the seed did: nothing for want of a register, refusals, or the counts.
+	 *
+	 * @param IOutput $output Progress reporting.
+	 * @param array<string, mixed> $result The seeder's result.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function report(IOutput $output, array $result): void {
 		if ($result['available'] === false) {
 			// The register belongs to OpenRegister and is seeded by its own
 			// repair step. A deployment where that step has not run yet is not
@@ -108,22 +122,24 @@ class SeedIntakeSources implements IRepairStep {
 		}
 
 		if ($result['refused'] !== []) {
-			$output->warning(
-				sprintf(
-					'Intake channels: %d created, %d refreshed, %d REFUSED (%s). See the log for each refusal.',
-					$result['created'],
-					$result['updated'],
-					count($result['refused']),
-					implode(', ', $result['refused'])
-				)
-			);
-			$this->logger->warning(
-				'Dossiq: intake-source seed refused rows',
-				['refused' => $result['refused']]
-			);
+			$this->reportRefused(output: $output, result: $result);
 			return;
 		}
 
+		$this->reportSeeded(output: $output, result: $result);
+	}//end report()
+
+	/**
+	 * Report the counts of a seed that refused nothing.
+	 *
+	 * @param IOutput $output Progress reporting.
+	 * @param array<string, mixed> $result The seeder's result.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function reportSeeded(IOutput $output, array $result): void {
 		$output->info(
 			sprintf(
 				'Intake channels seeded: %d created, %d refreshed.',
@@ -131,5 +147,28 @@ class SeedIntakeSources implements IRepairStep {
 				$result['updated']
 			)
 		);
-	}//end run()
+	}//end reportSeeded()
+
+	/**
+	 * Report a seed that refused rows, on the output and in the log.
+	 *
+	 * @param IOutput $output Progress reporting.
+	 * @param array<string, mixed> $result The seeder's result.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function reportRefused(IOutput $output, array $result): void {
+		$output->warning(
+			sprintf(
+				'Intake channels: %d created, %d refreshed, %d REFUSED (%s). See the log for each refusal.',
+				$result['created'],
+				$result['updated'],
+				count($result['refused']),
+				implode(', ', $result['refused'])
+			)
+		);
+		$this->logger->warning('Dossiq: intake-source seed refused rows', ['refused' => $result['refused']]);
+	}//end reportRefused()
 }//end class
