@@ -179,6 +179,20 @@ class BelplanRoutingService implements BelplanRoutingServiceInterface {
 			return [];
 		}
 
+		return $this->withExpertise(results: $results, vaardigheid: $vaardigheid);
+	}//end getSpecialistBeschikbaarheid()
+
+	/**
+	 * The availability records, kept only when they list the vaardigheid (all of them for an empty one).
+	 *
+	 * @param mixed  $results     The search results.
+	 * @param string $vaardigheid The vaardigheid / expertise code, empty for all.
+	 *
+	 * @return array<int, array<string, mixed>> The availability records.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 */
+	private function withExpertise(mixed $results, string $vaardigheid): array {
 		$records = [];
 		foreach ((array)$results as $result) {
 			$record = $this->toArray(result: $result);
@@ -193,7 +207,7 @@ class BelplanRoutingService implements BelplanRoutingServiceInterface {
 		}
 
 		return $records;
-	}//end getSpecialistBeschikbaarheid()
+	}//end withExpertise()
 
 	/**
 	 * Map a keuzemenu selection onto a vaardigheid via belplan routing steps.
