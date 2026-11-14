@@ -204,7 +204,7 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 		$id = (string)($matrix['id'] ?? ($matrix['@self']['id'] ?? ''));
 		$marker = (self::MARKER_PREFIX . $id);
 
-		$projected = $this->projectedTable(matrix: $matrix, id: $id, marker: $marker, tableSchema: $tableSchema);
+		$projected = $this->projectedTable(matrix: $matrix, marker: $marker, tableSchema: $tableSchema);
 		if ($projected['refusal'] !== null) {
 			return $projected['refusal'];
 		}
@@ -237,8 +237,7 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 	/**
 	 * The matrix projected as a decision table, or the refusal row when it cannot be.
 	 *
-	 * @param array<string, mixed> $matrix      The stored matrix.
-	 * @param string               $id          The matrix id.
+	 * @param array<string, mixed> $matrix      The stored matrix, with its id.
 	 * @param string               $marker      The migration marker.
 	 * @param string               $tableSchema The decision-table schema.
 	 *
@@ -247,7 +246,8 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 	 *
 	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
-	private function projectedTable(array $matrix, string $id, string $marker, string $tableSchema): array {
+	private function projectedTable(array $matrix, string $marker, string $tableSchema): array {
+		$id = (string)($matrix['id'] ?? ($matrix['@self']['id'] ?? ''));
 		if ($id === '' || $tableSchema === '') {
 			return [
 				'refusal' => ['outcome' => 'failed', 'marker' => $marker, 'detail' => 'no matrix id, or no decision-table schema configured'],

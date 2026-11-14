@@ -196,7 +196,7 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 		// report, at /api/bulk-jobs/{id}/members.
 		$this->recordOnCases(cases: (array)($batch['caseIds'] ?? []), act: $act);
 
-		$result = self::handoverResult(batch: $batch, batchId: $batchId, seatsMoved: $seatsMoved, drafts: $drafts);
+		$result = self::handoverResult(batch: $batch, seatsMoved: $seatsMoved, drafts: $drafts);
 		return $this->loggedHandover(result: $result, act: $act);
 	}//end execute()
 
@@ -217,8 +217,9 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	/**
 	 * What a handover moved, and the job that is moving the cases.
 	 *
+	 * The handover's batch id is the job's, read from the batch.
+	 *
 	 * @param array<string, mixed>             $batch      The batch the reassignment service answered.
-	 * @param string                           $batchId    The handover's batch id.
 	 * @param int                              $seatsMoved How many coordinator seats moved.
 	 * @param array<int, array<string, mixed>> $drafts     The drafts the leaver holds.
 	 *
@@ -229,9 +230,9 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
-	private static function handoverResult(array $batch, string $batchId, int $seatsMoved, array $drafts): array {
+	private static function handoverResult(array $batch, int $seatsMoved, array $drafts): array {
 		return [
-			'batchId' => $batchId,
+			'batchId' => self::batchIdOf(batch: $batch),
 			'job' => (array)($batch['job'] ?? []),
 			'succeeded' => count((array)($batch['caseIds'] ?? [])),
 			'failed' => 0,
