@@ -162,7 +162,10 @@ class TermijnTimerFiredListener implements IEventListener {
 			return;
 		}
 
-		$this->routeRung(event: $event, metadata: $metadata, instance: $instance, instanceId: $instanceId);
+		$this->routeRung(
+			fire: new TermijnRungFire(rungKey: (string)$event->getRungKey(), instance: $instance, instanceId: $instanceId),
+			metadata: $metadata
+		);
 	}//end dispatch()
 
 	/**
@@ -207,61 +210,57 @@ class TermijnTimerFiredListener implements IEventListener {
 	/**
 	 * Route a rung by the kind of term its timer carries.
 	 *
-	 * @param FlowTimerFiredEvent $event The fire.
+	 * @param TermijnRungFire      $fire     The rung's key, the TermijnInstance row and its id.
 	 * @param array<string, mixed> $metadata The timer metadata.
-	 * @param array<string, mixed> $instance The TermijnInstance row.
-	 * @param string $instanceId Its id.
 	 *
 	 * @return void
 	 */
-	private function routeRung(FlowTimerFiredEvent $event, array $metadata, array $instance, string $instanceId): void {
+	private function routeRung(TermijnRungFire $fire, array $metadata): void {
 		$kind = (string)($metadata['kind'] ?? '');
 		if ($kind === TermijnTimerServiceInterface::KIND_HERSTELTERMIJN) {
-			$this->handleHersteltermijnRung(event: $event, instance: $instance, instanceId: $instanceId);
+			$this->handleHersteltermijnRung(fire: $fire);
 			return;
 		}
 
-		$this->handleBeslistermijnRung(event: $event, instance: $instance, instanceId: $instanceId);
+		$this->handleBeslistermijnRung(fire: $fire);
 	}//end routeRung()
 
 	/**
 	 * A hersteltermijn rung: a reminder inside the term, or the term running out.
 	 *
-	 * @param FlowTimerFiredEvent $event The fire.
-	 * @param array<string, mixed> $instance The TermijnInstance row.
-	 * @param string $instanceId Its id.
+	 * @param TermijnRungFire $fire The rung's key, the TermijnInstance row and its id.
 	 *
 	 * @return void
 	 */
-	private function handleHersteltermijnRung(FlowTimerFiredEvent $event, array $instance, string $instanceId): void {
+	private function handleHersteltermijnRung(TermijnRungFire $fire): void {
 		// Two kinds of rung live on the helper now. `slaBreached:0` is the
 		// hersteltermijn running out; every `preBreach:<days>` rung is a
 		// reminder due inside it. They are told apart by the trigger rather
 		// than by the message, because the rung KEY is the one part of a
 		// fire the engine guarantees and the listener already parses.
-		if ($this->isChaseRung(rungKey: (string)$event->getRungKey()) === true) {
-			$this->handleChase(instance: $instance);
+		if ($this->isChaseRung(rungKey: $fire->rungKey) === true) {
+			$this->handleChase(instance: $fire->instance);
 			return;
 		}
 
-		$this->handlePauseExpiry(instance: $instance, instanceId: $instanceId);
+		$this->handlePauseExpiry(instance: $fire->instance, instanceId: $fire->instanceId);
 	}//end handleHersteltermijnRung()
 
 	/**
 	 * A beslistermijn rung: threshold bookkeeping, breach flip, accrual sync.
 	 *
-	 * @param FlowTimerFiredEvent $event The fire.
-	 * @param array<string, mixed> $instance The TermijnInstance row.
-	 * @param string $instanceId Its id.
+	 * @param TermijnRungFire $fire The rung's key, the TermijnInstance row and its id.
 	 *
 	 * @return void
 	 */
-	private function handleBeslistermijnRung(FlowTimerFiredEvent $event, array $instance, string $instanceId): void {
+	private function handleBeslistermijnRung(TermijnRungFire $fire): void {
+		$instance = $fire->instance;
+		$instanceId = $fire->instanceId;
 		if (in_array((string)($instance['status'] ?? ''), self::TERMINAL_STATUSES, true) === true) {
 			return;
 		}
 
-		$bucket = $this->bucketFromRungKey(rungKey: (string)$event->getRungKey());
+		$bucket = $this->bucketFromRungKey(rungKey: $fire->rungKey);
 		if ($bucket === null) {
 			return;
 		}
