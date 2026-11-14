@@ -45,14 +45,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Registrar;
 
-use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter;
 use OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter;
-use OCA\Dossiq\Support\FleetAppId;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;

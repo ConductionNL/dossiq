@@ -36,6 +36,13 @@ namespace OCA\Dossiq\Kernel\Contracts;
 interface WorkflowLifecycleGuardInterface {
 
 	/**
+	 * The published lifecycle state of a workflow definition.
+	 *
+	 * @var string
+	 */
+	public const STATUS_PUBLISHED = 'published';
+
+	/**
 	 * The refusals of the most recent publish check, newest call only.
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
