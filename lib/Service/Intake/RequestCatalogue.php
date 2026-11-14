@@ -73,40 +73,94 @@ class RequestCatalogue {
 	public function entries(): array {
 		$entries = [];
 		foreach ($this->caseTypes->everyCaseType() as $caseType) {
-			if (($caseType['isDraft'] ?? false) === true) {
+			if ($this->isOnIntake(caseType: $caseType) === false) {
 				continue;
 			}
 
-			if ($this->aiFeatures->onSurface(caseType: $caseType, surface: CaseTypeAiFeatures::SURFACE_INTAKE) === []) {
-				continue;
-			}
-
-			$type = trim((string)($caseType['identifier'] ?? ''));
-			if ($type === '') {
-				$type = $this->caseTypes->rowId(row: $caseType);
-			}
-
+			$type = $this->requestTypeOf(caseType: $caseType);
 			if ($type === '' || isset($entries[$type]) === true) {
 				// One entry per request type, however many published versions
 				// share its identifier: the filing picks the version.
 				continue;
 			}
 
-			$title = $this->text->forReader(value: ($caseType['title'] ?? ($caseType['name'] ?? '')));
-			if ($title === '') {
-				$title = $type;
-			}
+			$entries[$type] = $this->entryFor(caseType: $caseType, type: $type);
+		}
 
-			$entries[$type] = [
-				'type' => $type,
-				'title' => $title,
-				'description' => $this->text->forReader(value: ($caseType['description'] ?? '')),
-			];
-		}//end foreach
+		return self::byTitle(entries: $entries);
+	}//end entries()
 
+	/**
+	 * Whether a case type is published and declares an AI feature on the intake surface.
+	 *
+	 * @param array<string, mixed> $caseType The case type.
+	 *
+	 * @return bool True when it belongs in the catalogue.
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-request-catalogue-is-the-case-types-declared-for-intake
+	 */
+	private function isOnIntake(array $caseType): bool {
+		if (($caseType['isDraft'] ?? false) === true) {
+			return false;
+		}
+
+		return $this->aiFeatures->onSurface(caseType: $caseType, surface: CaseTypeAiFeatures::SURFACE_INTAKE) !== [];
+	}//end isOnIntake()
+
+	/**
+	 * The request type a case type files: its identifier, else its row id.
+	 *
+	 * @param array<string, mixed> $caseType The case type.
+	 *
+	 * @return string The request type, '' when it has neither.
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-request-catalogue-is-the-case-types-declared-for-intake
+	 */
+	private function requestTypeOf(array $caseType): string {
+		$type = trim((string)($caseType['identifier'] ?? ''));
+		if ($type === '') {
+			$type = $this->caseTypes->rowId(row: $caseType);
+		}
+
+		return $type;
+	}//end requestTypeOf()
+
+	/**
+	 * The catalogue entry of a request type, titled in the reader's language.
+	 *
+	 * @param array<string, mixed> $caseType The case type.
+	 * @param string               $type     The request type.
+	 *
+	 * @return array{type: string, title: string, description: string} The entry.
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-request-catalogue-is-the-case-types-declared-for-intake
+	 */
+	private function entryFor(array $caseType, string $type): array {
+		$title = $this->text->forReader(value: ($caseType['title'] ?? ($caseType['name'] ?? '')));
+		if ($title === '') {
+			$title = $type;
+		}
+
+		return [
+			'type' => $type,
+			'title' => $title,
+			'description' => $this->text->forReader(value: ($caseType['description'] ?? '')),
+		];
+	}//end entryFor()
+
+	/**
+	 * The entries as a list, in title order.
+	 *
+	 * @param array<string, array{type: string, title: string, description: string}> $entries The entries, by type.
+	 *
+	 * @return list<array{type: string, title: string, description: string}> The entries.
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-request-catalogue-is-the-case-types-declared-for-intake
+	 */
+	private static function byTitle(array $entries): array {
 		$entries = array_values($entries);
 		usort($entries, static fn (array $left, array $right): int => strcmp($left['title'], $right['title']));
 
 		return $entries;
-	}//end entries()
+	}//end byTitle()
 }//end class
