@@ -120,13 +120,10 @@ class DossierCompiler {
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
-		$docSchema = $this->settingsService->getConfigValue(key: 'case_document_schema');
-
-		if ($register === '' || $caseSchema === '' || $docSchema === '') {
-			throw new RuntimeException('Case or document schema is not configured');
-		}
+		$schemas = $this->dossierSchemas();
+		$register = $schemas['register'];
+		$caseSchema = $schemas['caseSchema'];
+		$docSchema = $schemas['docSchema'];
 
 		$case = $this->findObjectAsArray(
 			objectService: $objectService,
@@ -144,6 +141,50 @@ class DossierCompiler {
 		// documents within the same rank.
 		$caseUuids = $this->resolveDossierCaseUuids(case: $case, caseId: $caseId);
 
+		$documents = $this->documentsOf(
+			objectService: $objectService,
+			register: $register,
+			docSchema: $docSchema,
+			caseUuids: $caseUuids,
+		);
+
+		return $this->orderDocuments(documents: $documents);
+	}//end compile()
+
+	/**
+	 * The register and the case and document schemas a dossier is read from.
+	 *
+	 * @return array{register: string, caseSchema: string, docSchema: string} The configured ids.
+	 *
+	 * @throws RuntimeException When any of them is not configured.
+	 *
+	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
+	 */
+	private function dossierSchemas(): array {
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
+		$docSchema = $this->settingsService->getConfigValue(key: 'case_document_schema');
+
+		if ($register === '' || $caseSchema === '' || $docSchema === '') {
+			throw new RuntimeException('Case or document schema is not configured');
+		}
+
+		return ['register' => $register, 'caseSchema' => $caseSchema, 'docSchema' => $docSchema];
+	}//end dossierSchemas()
+
+	/**
+	 * The caseDocument records of every case in the dossier, case by case.
+	 *
+	 * @param object             $objectService The OpenRegister ObjectService.
+	 * @param string             $register      The register id.
+	 * @param string             $docSchema     The caseDocument schema id.
+	 * @param array<int, string> $caseUuids     The cases whose documents belong in the dossier.
+	 *
+	 * @return array<int, array<string, mixed>> The documents, unordered.
+	 *
+	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
+	 */
+	private function documentsOf(object $objectService, string $register, string $docSchema, array $caseUuids): array {
 		$documents = [];
 		foreach ($caseUuids as $uuid) {
 			$documents = array_merge(
@@ -157,8 +198,8 @@ class DossierCompiler {
 			);
 		}
 
-		return $this->orderDocuments(documents: $documents);
-	}//end compile()
+		return $documents;
+	}//end documentsOf()
 
 	/**
 	 * Resolve the ordered list of case UUIDs that contribute documents.
