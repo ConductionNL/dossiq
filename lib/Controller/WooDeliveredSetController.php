@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\FileSetItemFilesInterface;
-use OCA\Dossiq\Woo\WooDeliveredSetVerifier;
+use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetVerifierInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -53,7 +53,7 @@ class WooDeliveredSetController extends Controller {
 	 *
 	 * @param string                  $appName     The app name.
 	 * @param IRequest                $request     The request.
-	 * @param WooDeliveredSetVerifier $verifier    Recomputes the hashes.
+	 * @param WooDeliveredSetVerifierInterface $verifier    Recomputes the hashes.
 	 * @param CaseAccessGuardInterface         $guard       Case read access.
 	 * @param IUserSession            $userSession The caller.
 	 * @param FileSetItemFilesInterface        $files       Reads both files of an item.
@@ -61,7 +61,7 @@ class WooDeliveredSetController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly WooDeliveredSetVerifier $verifier,
+		private readonly WooDeliveredSetVerifierInterface $verifier,
 		private readonly CaseAccessGuardInterface $guard,
 		private readonly IUserSession $userSession,
 		private readonly FileSetItemFilesInterface $files,

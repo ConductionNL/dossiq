@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCollectionQueriesInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -45,7 +46,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-selecting-query-is-saved-and-can-be-re-run-req-wrc-004
  */
-class WooCollectionQueries {
+class WooCollectionQueries implements WooCollectionQueriesInterface {
 
 	use SearchesObjects;
 

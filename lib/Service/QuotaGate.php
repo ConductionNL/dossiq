@@ -29,8 +29,8 @@ namespace OCA\Dossiq\Service;
 use DateTime;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
 use OCA\Dossiq\Kernel\Contracts\QuotaGateInterface;
-use OCA\Dossiq\Notification\Notifier;
 use OCP\IL10N;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
@@ -199,7 +199,7 @@ class QuotaGate implements QuotaGateInterface {
 					->setDateTime(new DateTime())
 					->setObject('tenant', $tenantId)
 					->setSubject(
-						Notifier::SUBJECT_QUOTA_SOFT_LIMIT,
+						NotifierInterface::SUBJECT_QUOTA_SOFT_LIMIT,
 						['quotaType' => $quotaType, 'used' => $used, 'limit' => $limit]
 					);
 				$this->notifications->notify($notification);

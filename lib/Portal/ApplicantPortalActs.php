@@ -49,10 +49,11 @@ namespace OCA\Dossiq\Portal;
 
 use DateTime;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ApplicantPortalActsInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
-use OCA\Dossiq\Notification\Notifier;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 
@@ -61,7 +62,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/portal-contribution/spec.md
  */
-class ApplicantPortalActs {
+class ApplicantPortalActs implements ApplicantPortalActsInterface {
 
 	/**
 	 * The act a withdrawal is recorded under. portaliq's write acts are its
@@ -163,7 +164,7 @@ class ApplicantPortalActs {
 		$this->notifyAssignee(
 			case: $case,
 			caseId: $caseId,
-			subject: Notifier::SUBJECT_APPLICANT_RESPONDED,
+			subject: NotifierInterface::SUBJECT_APPLICANT_RESPONDED,
 			parameters: ['act' => $act],
 		);
 
@@ -237,7 +238,7 @@ class ApplicantPortalActs {
 		$this->notifyAssignee(
 			case: $case,
 			caseId: $caseId,
-			subject: Notifier::SUBJECT_APPLICANT_WITHDREW,
+			subject: NotifierInterface::SUBJECT_APPLICANT_WITHDREW,
 			parameters: ['reason' => $reason],
 		);
 

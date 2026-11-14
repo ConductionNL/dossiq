@@ -22,16 +22,17 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
+use OCA\Dossiq\Kernel\Contracts\ReviewSummaryInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
-use OCA\Dossiq\Woo\WooCaseDocuments;
 
 /**
  * Reports a case's documents by relevance and by verdict, and what is still outstanding.
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
-class ReviewSummary {
+class ReviewSummary implements ReviewSummaryInterface {
 
 	/**
 	 * Constructor.
@@ -39,7 +40,7 @@ class ReviewSummary {
 	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance $reviews The relevance store.
 	 * @param WOODocumentAssessmentServiceInterface $assessments The verdicts and the outstanding list.
-	 * @param WooCaseDocuments $caseDocuments Where a case's documents are.
+	 * @param WooCaseDocumentsInterface $caseDocuments Where a case's documents are.
 	 * @param ReviewConfiguration $configuration Whether the case type switches document review on.
 	 *
 	 * @return void
@@ -48,7 +49,7 @@ class ReviewSummary {
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly DocumentRelevance $reviews,
 		private readonly WOODocumentAssessmentServiceInterface $assessments,
-		private readonly WooCaseDocuments $caseDocuments,
+		private readonly WooCaseDocumentsInterface $caseDocuments,
 		private readonly ReviewConfiguration $configuration,
 	) {
 	}//end __construct()

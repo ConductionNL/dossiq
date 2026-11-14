@@ -459,6 +459,8 @@ use OCA\Dossiq\Kernel\Contracts\WorkflowLifecycleGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\WorkflowTemplateFlowMigratorInterface;
 use OCA\Dossiq\Kernel\Contracts\WorkQueueServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZaakdossierServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZgwBusinessRulesServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZgwDocumentServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwJwtValidatorInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwMappingServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
@@ -1244,6 +1246,8 @@ final class ContractBindings {
 		$context->registerServiceAlias(WorkflowLifecycleGuardInterface::class, WorkflowLifecycleGuard::class);
 		$context->registerServiceAlias(WorkflowTemplateFlowMigratorInterface::class, WorkflowTemplateFlowMigrator::class);
 		$context->registerServiceAlias(ZaakdossierServiceInterface::class, ZaakdossierService::class);
+		$context->registerServiceAlias(ZgwBusinessRulesServiceInterface::class, ZgwBusinessRulesService::class);
+		$context->registerServiceAlias(ZgwDocumentServiceInterface::class, ZgwDocumentService::class);
 		$context->registerServiceAlias(ZgwJwtValidatorInterface::class, ZgwJwtValidator::class);
 		$context->registerServiceAlias(ZgwMappingServiceInterface::class, ZgwMappingService::class);
 		$context->registerServiceAlias(ZgwServiceInterface::class, ZgwService::class);

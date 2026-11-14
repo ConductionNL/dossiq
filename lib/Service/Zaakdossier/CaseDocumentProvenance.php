@@ -35,7 +35,7 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\Contracts\CaseDocumentProvenanceInterface;
-use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 
 /**
  * Reads and filters the provenance of the documents on a case.
@@ -53,13 +53,13 @@ class CaseDocumentProvenance implements CaseDocumentProvenanceInterface {
 	 * Constructor.
 	 *
 	 * @param DocumentRecordStore $store         A document's record and its join to the case.
-	 * @param WooCaseDocuments    $caseDocuments Which documents are on the case.
+	 * @param WooCaseDocumentsInterface    $caseDocuments Which documents are on the case.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly DocumentRecordStore $store,
-		private readonly WooCaseDocuments $caseDocuments,
+		private readonly WooCaseDocumentsInterface $caseDocuments,
 	) {
 	}//end __construct()
 

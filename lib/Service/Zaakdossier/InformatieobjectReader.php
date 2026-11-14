@@ -34,8 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentVerdictsInterface;
 use OCA\Dossiq\Kernel\Contracts\InformatieobjectReaderInterface;
-use OCA\Dossiq\Review\DocumentVerdicts;
 use OCA\Dossiq\Service\Documents\ScanVerdictReader;
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -58,7 +58,7 @@ class InformatieobjectReader implements InformatieobjectReaderInterface {
 	 * @param InformatieobjectAccessGuard $accessGuard The confidentiality guard.
 	 * @param ZgwDocumentService $documentService The binary storage service.
 	 * @param ScanVerdictReader|null $verdicts What the virus scanner recorded per file, for the listing's Scan column.
-	 * @param DocumentVerdicts|null $reviewVerdicts The review verdict of each document, for the row pill.
+	 * @param DocumentVerdictsInterface|null $reviewVerdicts The review verdict of each document, for the row pill.
 	 * @param AccessExceptionNames|null $exceptionNames The display names of an access exception, for the Who can see this card.
 	 *
 	 * @return void
@@ -68,7 +68,7 @@ class InformatieobjectReader implements InformatieobjectReaderInterface {
 		private readonly InformatieobjectAccessGuard $accessGuard,
 		private readonly ZgwDocumentService $documentService,
 		private readonly ?ScanVerdictReader $verdicts = null,
-		private readonly ?DocumentVerdicts $reviewVerdicts = null,
+		private readonly ?DocumentVerdictsInterface $reviewVerdicts = null,
 		private readonly ?AccessExceptionNames $exceptionNames = null,
 	) {
 	}//end __construct()

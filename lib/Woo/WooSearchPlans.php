@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Woo;
 use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
 use OCA\Dossiq\Kernel\Contracts\RecordTemplateReaderInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooSearchPlansInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
@@ -48,7 +49,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
  */
-class WooSearchPlans {
+class WooSearchPlans implements WooSearchPlansInterface {
 
 	use SearchesObjects;
 

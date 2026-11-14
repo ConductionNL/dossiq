@@ -45,7 +45,7 @@ namespace OCA\Dossiq\Service;
 use DateTime;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAssignmentServiceInterface;
-use OCA\Dossiq\Notification\Notifier;
+use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
 use OCA\Dossiq\Service\Support\CaseReadAndPatch;
 use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
@@ -222,7 +222,7 @@ class CaseAssignmentService implements CaseAssignmentServiceInterface {
 				->setUser($toUser)
 				->setDateTime(new DateTime())
 				->setObject('case', $caseId)
-				->setSubject(Notifier::SUBJECT_CASES_REASSIGNED, ['fromUser' => $fromUser, 'count' => 1]);
+				->setSubject(NotifierInterface::SUBJECT_CASES_REASSIGNED, ['fromUser' => $fromUser, 'count' => 1]);
 			$this->notificationManager->notify($notification);
 		} catch (Throwable $e) {
 			$this->logger->warning(
