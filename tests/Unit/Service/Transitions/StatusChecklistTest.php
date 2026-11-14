@@ -44,6 +44,7 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\StatusChecklist
+ * @uses \OCA\Dossiq\Service\Support\StoredArray
  */
 class StatusChecklistTest extends TestCase {
 	/**

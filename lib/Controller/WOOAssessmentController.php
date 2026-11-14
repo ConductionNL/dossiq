@@ -27,15 +27,15 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\DecisionDocument\DecisionLetter;
-use OCA\Dossiq\Service\Cases\HandlerActsAsSystem;
-use OCA\Dossiq\Service\Termijn\ExtensionNotice;
-use OCA\Dossiq\Service\WOOAnonymisationAssistService;
-use OCA\Dossiq\Service\WOODeadlineService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DecisionLetterInterface;
+use OCA\Dossiq\Kernel\Contracts\ExtensionNoticeInterface;
+use OCA\Dossiq\Kernel\Contracts\HandlerActsAsSystemInterface;
+use OCA\Dossiq\Kernel\Contracts\WOOAnonymisationAssistServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODeadlineServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooPublicationServiceInterface;
 use OCA\Dossiq\Service\WOODecisionService;
-use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\WooPublicationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -70,38 +70,38 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param WOODocumentAssessmentService $assessmentService Document assessment service
-	 * @param WOODeadlineService $deadlineService Deadline service
+	 * @param WOODocumentAssessmentServiceInterface $assessmentService Document assessment service
+	 * @param WOODeadlineServiceInterface $deadlineService Deadline service
 	 * @param WOODecisionService $decisionService Decision service
-	 * @param WooPublicationService $publicationService WOO publication (via OpenCatalogi) service
-	 * @param WOOAnonymisationAssistService $anonymisationAssist LLM-assisted redaction-span proposal
+	 * @param WooPublicationServiceInterface $publicationService WOO publication (via OpenCatalogi) service
+	 * @param WOOAnonymisationAssistServiceInterface $anonymisationAssist LLM-assisted redaction-span proposal
 	 *                                                           service (woo-llm-anonymisation)
 	 * @param IUserSession $userSession Current user session
-	 * @param CaseAccessGuard $caseAccessGuard Per-case mutation authorization (fails closed)
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case mutation authorization (fails closed)
 	 * @param LoggerInterface $logger Logger
 	 * @param IL10N $l10n Translations for the refusal a header action shows
-	 * @param HandlerActsAsSystem $handlerActs Runs a publish or withdraw as the system, for the
+	 * @param HandlerActsAsSystemInterface $handlerActs Runs a publish or withdraw as the system, for the
 	 *        case's handler at the publication step.
-	 * @param ExtensionNotice|null $extensionNotice Tells the requester about an extension, with the
+	 * @param ExtensionNoticeInterface|null $extensionNotice Tells the requester about an extension, with the
 	 *        reason and the new end. Absent, the answer says the requester was not told.
-	 * @param DecisionLetter|null $letters Checks a chosen letter is on the case and links the
+	 * @param DecisionLetterInterface|null $letters Checks a chosen letter is on the case and links the
 	 *        decision to its letter. Absent, no letter is checked and none is linked.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly WOODocumentAssessmentService $assessmentService,
-		private readonly WOODeadlineService $deadlineService,
+		private readonly WOODocumentAssessmentServiceInterface $assessmentService,
+		private readonly WOODeadlineServiceInterface $deadlineService,
 		private readonly WOODecisionService $decisionService,
-		private readonly WooPublicationService $publicationService,
-		private readonly WOOAnonymisationAssistService $anonymisationAssist,
+		private readonly WooPublicationServiceInterface $publicationService,
+		private readonly WOOAnonymisationAssistServiceInterface $anonymisationAssist,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly LoggerInterface $logger,
 		private readonly IL10N $l10n,
-		private readonly HandlerActsAsSystem $handlerActs,
-		private readonly ?ExtensionNotice $extensionNotice = null,
-		private readonly ?DecisionLetter $letters = null,
+		private readonly HandlerActsAsSystemInterface $handlerActs,
+		private readonly ?ExtensionNoticeInterface $extensionNotice = null,
+		private readonly ?DecisionLetterInterface $letters = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

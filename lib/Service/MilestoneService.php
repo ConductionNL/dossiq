@@ -27,7 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\MilestoneServiceInterface;
 use OCA\Dossiq\Service\Milestone\MilestoneRepository;
 use OCA\Dossiq\Service\Milestone\StalledCaseDetector;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -43,7 +44,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
-class MilestoneService {
+class MilestoneService implements MilestoneServiceInterface {
 
 	use SearchesObjects;
 
@@ -226,7 +227,7 @@ class MilestoneService {
 
 		$this->logger->info(
 			'Milestone marked: ' . $definitionId . ' on case ' . $caseId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return [
@@ -289,7 +290,7 @@ class MilestoneService {
 		$this->logger->info(
 			'Milestone reversed: ' . $definitionId . ' on case ' . $caseId
 			. ' by ' . $userId . ' reason: ' . $reason,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return true;
@@ -309,7 +310,7 @@ class MilestoneService {
 		// across all cases of this type and calculate averages.
 		$this->logger->debug(
 			'Duration analytics requested for case type: ' . $caseTypeId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return [

@@ -29,6 +29,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Custody\TakeoverStore
  * @uses   \OCA\Dossiq\Exception\RefusedException
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class TakeoverStoreTest extends TestCase {
 

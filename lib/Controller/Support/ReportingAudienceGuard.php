@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller\Support;
 
-use OCA\Dossiq\Service\Reporting\ReportingAudience;
+use OCA\Dossiq\Kernel\Contracts\ReportingAudienceInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IUserSession;
@@ -34,20 +34,20 @@ trait ReportingAudienceGuard {
 	 * Refuse a caller who may not read a figure about every case.
 	 *
 	 * @param IUserSession      $userSession The session.
-	 * @param ReportingAudience $audience    Who may read a figure about every case.
+	 * @param ReportingAudienceInterface $audience    Who may read a figure about every case.
 	 *
 	 * @return JSONResponse|null The refusal, or null to proceed.
 	 *
 	 * @spec openspec/specs/security-hardening/spec.md
 	 */
-	private function refuseOutsideReportingAudience(IUserSession $userSession, ReportingAudience $audience): ?JSONResponse {
+	private function refuseOutsideReportingAudience(IUserSession $userSession, ReportingAudienceInterface $audience): ?JSONResponse {
 		$user = $userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
 		}
 
 		if ($audience->isInAudience(user: $user) === false) {
-			return new JSONResponse(['message' => ReportingAudience::REFUSAL], Http::STATUS_FORBIDDEN);
+			return new JSONResponse(['message' => ReportingAudienceInterface::REFUSAL], Http::STATUS_FORBIDDEN);
 		}
 
 		return null;

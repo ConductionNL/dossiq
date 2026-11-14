@@ -27,14 +27,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentRelevanceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
+use OCA\Dossiq\Review\DisclosureAssessmentValidator;
+use OCA\Dossiq\Review\OutstandingDocuments;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Review\DisclosureAssessmentValidator;
-use OCA\Dossiq\Review\DocumentRelevance;
-use OCA\Dossiq\Review\OutstandingDocuments;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -47,7 +48,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
  */
-class WOODocumentAssessmentService {
+class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterface {
 
 	use SearchesObjects;
 
@@ -84,13 +85,14 @@ class WOODocumentAssessmentService {
 	 * @param SettingsService $settingsService Settings service
 	 * @param IUserSession $userSession Current user session
 	 * @param LoggerInterface $logger Logger
-	 * @param WooCaseDocuments|null $caseDocuments Where a case's documents are: its informatieobjecten.
+	 * @param WooCaseDocumentsInterface|null $caseDocuments Where a case's documents are: its informatieobjecten.
 	 * @param WooRefusalGrounds|null $refusalGrounds The settled list a cited ground is checked against.
 	 *        Built over the same settings and logger when left out, because those are its only
 	 *        collaborators and a default built from them is the instance the container wires.
 	 * @param CaseReviewerAccess|null $reviewerAccess Who may change an assessment and who reads it,
 	 *        when the case type keeps its assessments private to the case (case-reviewer-access).
-	 * @param DocumentRelevance|null $reviews Each document's relevance and pages seen (woo-review-triage); null keeps every document needing a verdict.
+	 * @param DocumentRelevanceInterface|null $reviews Each document's relevance and pages seen (woo-review-triage);
+	 *        null keeps every document needing a verdict.
 	 * @param OutstandingDocuments|null $outstanding The review's outstanding documents, as the container builds them
 	 *        (with the case type's drafted document types left out); null builds one from the collaborators above.
 	 */
@@ -98,10 +100,10 @@ class WOODocumentAssessmentService {
 		private readonly SettingsService $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		?WooCaseDocuments $caseDocuments = null,
+		?WooCaseDocumentsInterface $caseDocuments = null,
 		?WooRefusalGrounds $refusalGrounds = null,
 		private readonly ?CaseReviewerAccess $reviewerAccess = null,
-		private readonly ?DocumentRelevance $reviews = null,
+		private readonly ?DocumentRelevanceInterface $reviews = null,
 		?OutstandingDocuments $outstanding = null,
 	) {
 		$this->refusalGrounds       = ($refusalGrounds ?? new WooRefusalGrounds(settingsService: $settingsService, logger: $logger));
@@ -171,7 +173,7 @@ class WOODocumentAssessmentService {
 
 		$this->logger->info(
 			'WOO bulk-upsert: ' . count($saved) . ' saved, ' . $outstanding['count'] . ' outstanding for case ' . $caseId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return [
@@ -269,7 +271,7 @@ class WOODocumentAssessmentService {
 		} catch (RefusedException $e) {
 			$this->logger->warning(
 				'WOO bulk-upsert: the judged documents could not be marked in scope for case ' . $caseId,
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()],
 			);
 		}
 	}//end markJudgedInScope()
@@ -552,7 +554,7 @@ class WOODocumentAssessmentService {
 		$this->logger->info(
 			'WOO redaction proposal saved for document ' . $documentRef . ' in case ' . $caseId
 			. ' (status: ' . ($proposal['status'] ?? 'unknown') . ')',
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return $savedObject;

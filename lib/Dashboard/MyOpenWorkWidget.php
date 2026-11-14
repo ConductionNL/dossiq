@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Dashboard;
 
-use OCA\Dossiq\Service\Queue\PersonalQueueService;
+use OCA\Dossiq\Kernel\Contracts\PersonalQueueServiceInterface;
 use OCA\Dossiq\Service\Queue\QueueItem;
 use OCP\Dashboard\IButtonWidget;
 use OCP\Dashboard\IIconWidget;
@@ -60,7 +60,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 * Constructor.
 	 *
 	 * @param IL10N                $l10n    Translations.
-	 * @param PersonalQueueService $queue   The one personal queue.
+	 * @param PersonalQueueServiceInterface $queue   The one personal queue.
 	 * @param OpenWorkSummary      $summary Counts the queue into summary rows, and holds the links.
 	 *
 	 * @return void
@@ -69,7 +69,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 */
 	public function __construct(
 		private readonly IL10N $l10n,
-		private readonly PersonalQueueService $queue,
+		private readonly PersonalQueueServiceInterface $queue,
 		private readonly OpenWorkSummary $summary,
 	) {
 	}//end __construct()

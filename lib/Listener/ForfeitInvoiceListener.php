@@ -30,8 +30,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Exception\ForfeitInvoiceNotRaisedException;
-use OCA\Dossiq\Service\Money\ForfeitInvoiceRaiser;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\ForfeitInvoiceRaiserInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -55,13 +55,13 @@ class ForfeitInvoiceListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Names the enforcement act schema.
-	 * @param ForfeitInvoiceRaiser $raiser Raises the invoice.
+	 * @param SettingsServiceInterface $settingsService Names the enforcement act schema.
+	 * @param ForfeitInvoiceRaiserInterface $raiser Raises the invoice.
 	 * @param LoggerInterface $logger Records an invoice that was not raised.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly ForfeitInvoiceRaiser $raiser,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly ForfeitInvoiceRaiserInterface $raiser,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

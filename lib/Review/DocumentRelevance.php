@@ -24,9 +24,10 @@ namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentRelevanceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -41,13 +42,11 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
-class DocumentRelevance {
+class DocumentRelevance implements DocumentRelevanceInterface {
 
 	use SearchesObjects;
 
 	public const UNMARKED = 'unmarked';
-
-	public const IN_SCOPE = 'in-scope';
 
 	public const OUT_OF_SCOPE = 'out-of-scope';
 
@@ -61,13 +60,13 @@ class DocumentRelevance {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -344,7 +343,7 @@ class DocumentRelevance {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: a Document review could not be written',
-				['app' => Application::APP_ID, 'document' => ($review['documentRef'] ?? ''), 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'document' => ($review['documentRef'] ?? ''), 'exception' => $e->getMessage()]
 			);
 			throw $this->unstored(previous: $e);
 		}

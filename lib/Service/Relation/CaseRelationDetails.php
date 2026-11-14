@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Relation;
 
+use OCA\Dossiq\Kernel\Contracts\CaseRelationDetailsInterface;
 use OCP\IUserManager;
 
 /**
@@ -37,7 +38,7 @@ use OCP\IUserManager;
  *
  * @spec openspec/specs/related-case-linking/spec.md
  */
-class CaseRelationDetails {
+class CaseRelationDetails implements CaseRelationDetailsInterface {
 	/**
 	 * Constructor.
 	 *

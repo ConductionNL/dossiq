@@ -54,6 +54,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
  */
 class ReferenceIdCopiesTest extends TestCase {
 	/**

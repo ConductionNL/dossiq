@@ -22,7 +22,7 @@
         "properties": {
           "title":           {"type": "string", "maxLength": 255, "title": "Title", "description": "Name of this case model."},
           "description":     {"type": "string", "title": "Description", "description": "Purpose and usage notes for this case model."},
-          "caseType":         {"type": "string", "format": "uuid", "$ref": "caseType", "onDelete": "CASCADE", "title": "Case Type", "description": "Reference to the case type this case model belongs to. That caseType's handlingModel MUST be 'cmmn' for this model to be loadable by CaseModelEngine."},
+          "caseType":         {"type": "string", "format": "uuid", "$ref": "caseType", "onDelete": "CASCADE", "title": "Case Type", "description": "Reference to the case type this case model belongs to. That caseType's handlingModel MUST be 'cmmn' for this model to be projected onto the case plan in OpenRegister when a case starts."},
           "version":         {"type": "integer", "default": 1, "title": "Version", "description": "Auto-incrementing version number, mirroring workflowTemplate."},
           "lifecycleStatus": {"type": "string", "enum": ["draft", "published", "deprecated"], "default": "draft", "title": "Lifecycle status", "description": "draft = editable, cannot back new cases. published = immutable, can back new cases (one active per caseType). deprecated = immutable, existing cases keep using it."},
           "caseFileItems": {

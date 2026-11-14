@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\Consultation\ConsultationTerms;
  * @uses \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaKeyReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaSlugResolver
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class ConsultationReportsTest extends TestCase {
 

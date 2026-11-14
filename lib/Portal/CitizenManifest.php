@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
+use OCA\Dossiq\Kernel\Contracts\CitizenManifestInterface;
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
 
 /**
@@ -42,7 +43,7 @@ use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
  *
  * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
  */
-class CitizenManifest {
+class CitizenManifest implements CitizenManifestInterface {
 
 	/**
 	 * The row action that answers a question of `vragenAanU`.
@@ -80,21 +81,6 @@ class CitizenManifest {
 	 * The case fields a resident may propose a new value for.
 	 */
 	public const PROPOSABLE_CASE_FIELDS = ['title', 'description'];
-
-	/**
-	 * The field the requester's files travel under (portaliq row-action-carries-files).
-	 */
-	public const ANSWER_FILES_FIELD = 'bijlagen';
-
-	/**
-	 * At most this many files with one answer.
-	 */
-	public const ANSWER_FILES_MAX = 5;
-
-	/**
-	 * At most this many bytes per file (10 MiB).
-	 */
-	public const ANSWER_FILES_MAX_BYTES = 10485760;
 
 	/**
 	 * The case field holding the day the case's decision was sent (CaseRemedy::SENT_FIELD).

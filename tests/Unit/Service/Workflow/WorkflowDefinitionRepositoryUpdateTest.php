@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Covers the read-modify-write an update has to be.
  *
- * @coversNothing
+ * @covers \OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository
  */
 class WorkflowDefinitionRepositoryUpdateTest extends TestCase {
 

@@ -74,6 +74,23 @@ class BackgroundServiceAccountCheckTest extends TestCase {
 		$this->assertSame($why . ' ' . self::UNTIL, $result->getDescription());
 	}//end testAnUnusableAccountWarnsWhyAndWhatStops()
 
+	public function testAUsableAccountNeverAsksForTheGroup(): void {
+		$this->account->expects($this->once())->method('status')->willReturn(['usable' => true, 'userId' => 'svc', 'reason' => 'disabled']);
+		$this->account->expects($this->never())->method('group');
+
+		$result = $this->check()->run();
+
+		$this->assertSame(SetupResult::SUCCESS, $result->getSeverity());
+		$this->assertSame('The Dossiq background jobs save as svc.', $result->getDescription());
+	}//end testAUsableAccountNeverAsksForTheGroup()
+
+	public function testOnlyTheMembershipRefusalAsksForTheGroup(): void {
+		$this->account->method('status')->willReturn(['usable' => false, 'userId' => 'svc', 'reason' => 'disabled']);
+		$this->account->expects($this->never())->method('group');
+
+		$this->assertSame(SetupResult::WARNING, $this->check()->run()->getSeverity());
+	}//end testOnlyTheMembershipRefusalAsksForTheGroup()
+
 	public function testTheCheckIsASystemCheckWithATranslatedName(): void {
 		$check = $this->check();
 

@@ -31,6 +31,7 @@ use RuntimeException;
  * the uuid fallback, automatic actions that did not run, and engine failures.
  *
  * @covers \OCA\Dossiq\BulkAction\TransitionCasesAction
+ * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
  */
 class TransitionCasesActionTest extends TestCase {
 

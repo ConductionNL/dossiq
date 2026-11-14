@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Milestone;
 
+use OCA\Dossiq\Kernel\Contracts\MilestoneRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -47,7 +48,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/milestone-tracking/spec.md
  */
-class MilestoneRepository {
+class MilestoneRepository implements MilestoneRepositoryInterface {
 
 	use SearchesObjects;
 

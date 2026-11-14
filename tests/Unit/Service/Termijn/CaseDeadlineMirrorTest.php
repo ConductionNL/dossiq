@@ -160,6 +160,29 @@ class CaseDeadlineMirrorTest extends TestCase {
 	}//end testTheRunningTermWinsOverACompletedOne()
 
 	/**
+	 * A statutory instance that carries no end date yet cannot decide a
+	 * deadline, so it is passed over for the next statutory instance that has
+	 * one, rather than deciding a case's deadline to be nothing.
+	 *
+	 * @return void
+	 */
+	public function testAStatutoryInstanceWithoutAnEndIsPassedOver(): void {
+		$rows = [
+			['id' => 'no-end', 'kind' => 'statutory', 'status' => 'verlengd'],
+			['id' => 'has-end', 'kind' => 'statutory', 'status' => 'verlengd', 'endDateCurrent' => '2026-11-20'],
+		];
+
+		self::assertSame('has-end', CaseDeadlineMirror::decidingInstance($rows)['id']);
+
+		self::assertNull(
+			CaseDeadlineMirror::decidingInstance([
+				['id' => 'only-no-end', 'kind' => 'statutory', 'status' => 'verlengd'],
+			]),
+			'A statutory term with no end decides nothing at all.'
+		);
+	}//end testAStatutoryInstanceWithoutAnEndIsPassedOver()
+
+	/**
 	 * A case the store does not hold is not invented.
 	 *
 	 * @return void

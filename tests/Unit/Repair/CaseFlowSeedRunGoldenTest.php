@@ -37,6 +37,11 @@ use RuntimeException;
  * Golden tests for CaseFlowSeedDataRepairStep::run().
  *
  * @covers \OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep
+ * @uses \OCA\Dossiq\Repair\CaseFlowSeedFile
+ * @uses \OCA\Dossiq\Repair\CaseFlowSeedIndex
+ * @uses \OCA\Dossiq\Repair\CaseFlowSeedPhaseBackfill
+ * @uses \OCA\Dossiq\Repair\CaseFlowSeedRun
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class CaseFlowSeedRunGoldenTest extends TestCase {
 

@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\Dossiq\Kernel\Contracts\ConfiguredRegistryServiceInterface;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
-class ConfiguredRegistryService {
+class ConfiguredRegistryService implements ConfiguredRegistryServiceInterface {
 
 	use SearchesObjects;
 

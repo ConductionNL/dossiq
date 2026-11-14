@@ -40,6 +40,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\DossierCompiler
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\ReferencedUuid
  */
 class DossierReferenceUuidCopiesTest extends TestCase {
 	/**

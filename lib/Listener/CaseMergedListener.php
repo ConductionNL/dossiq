@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\CaseMergeService;
+use OCA\Dossiq\Kernel\Contracts\CaseMergeServiceInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -55,11 +55,11 @@ class CaseMergedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseMergeService $mergeService The dossiq consequences of a merge.
+	 * @param CaseMergeServiceInterface $mergeService The dossiq consequences of a merge.
 	 * @param LoggerInterface  $logger       Logger.
 	 */
 	public function __construct(
-		private readonly CaseMergeService $mergeService,
+		private readonly CaseMergeServiceInterface $mergeService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

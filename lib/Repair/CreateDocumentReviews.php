@@ -22,9 +22,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\DocumentRelevanceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Review\DocumentRelevance;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Throwable;
@@ -63,14 +63,14 @@ class CreateDocumentReviews implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
-	 * @param DocumentRelevance $reviews The review store.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
+	 * @param DocumentRelevanceInterface $reviews The review store.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly DocumentRelevance $reviews,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly DocumentRelevanceInterface $reviews,
 	) {
 	}//end __construct()
 
@@ -165,7 +165,7 @@ class CreateDocumentReviews implements IRepairStep {
 		$review = [
 			'case' => $caseId,
 			'documentRef' => $documentRef,
-			'relevance' => DocumentRelevance::IN_SCOPE,
+			'relevance' => DocumentRelevanceInterface::IN_SCOPE,
 			'relevanceSource' => 'reviewer',
 			'markedBy' => (string)($assessment['assessedBy'] ?? ''),
 			'markedAt' => (string)($assessment['assessedAt'] ?? ''),

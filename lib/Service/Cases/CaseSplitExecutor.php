@@ -47,6 +47,7 @@ namespace OCA\Dossiq\Service\Cases;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseSplitExecutorInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -57,7 +58,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseSplitExecutor {
+class CaseSplitExecutor implements CaseSplitExecutorInterface {
 
 	use SearchesObjects;
 
@@ -472,7 +473,6 @@ class CaseSplitExecutor {
 		}
 	}//end takeOverStatus()
 
-
 	/**
 	 * The second case's fields, taken from the first.
 	 *
@@ -633,7 +633,6 @@ class CaseSplitExecutor {
 		return $ids;
 	}//end idsFor()
 
-
 	/**
 	 * Which parts a split may divide on this case.
 	 *
@@ -695,7 +694,5 @@ class CaseSplitExecutor {
 			return null;
 		}
 	}//end caseTypeOf()
-
-
 
 }//end class

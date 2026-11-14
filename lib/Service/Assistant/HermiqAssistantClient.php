@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Assistant;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\Contracts\HermiqAssistantClientInterface;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
@@ -50,7 +51,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
  */
-class HermiqAssistantClient {
+class HermiqAssistantClient implements HermiqAssistantClientInterface {
 	/**
 	 * Hermiq's minimal, tool-free conversational endpoint (case-assistant-surface).
 	 *

@@ -57,8 +57,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
- * @uses   \OCA\Dossiq\Service\Support\ReferencedUuid
- * @uses   \OCA\Dossiq\Service\Support\SerialisedResult
+ * @uses \OCA\Dossiq\Service\Support\ReferencedUuid
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class DeadlineCaseCreatedShippedDataTest extends TestCase {
 

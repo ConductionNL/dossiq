@@ -28,8 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Consultation\ConsultationAccessGuard;
-use OCA\Dossiq\Service\Consultation\ConsultationReports;
+use OCA\Dossiq\Kernel\Contracts\ConsultationAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ConsultationReportsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -46,14 +46,14 @@ class ConsultationReportController extends Controller {
 	 *
 	 * @param string                  $appName     The app name.
 	 * @param IRequest                $request     The request.
-	 * @param ConsultationReports     $reports     The two reports.
-	 * @param ConsultationAccessGuard $accessGuard Who may read which request.
+	 * @param ConsultationReportsInterface     $reports     The two reports.
+	 * @param ConsultationAccessGuardInterface $accessGuard Who may read which request.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ConsultationReports $reports,
-		private readonly ConsultationAccessGuard $accessGuard,
+		private readonly ConsultationReportsInterface $reports,
+		private readonly ConsultationAccessGuardInterface $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

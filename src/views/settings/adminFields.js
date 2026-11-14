@@ -108,7 +108,7 @@ function logoField(t) {
  *
  * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
  * @return {Array<object>} The fields.
- * @spec openspec/specs/admin-settings/spec.md
+ * @spec openspec/changes/admin-message-and-portal-texts/specs/admin-settings/spec.md#requirement-an-administrator-shall-set-the-message-and-portal-texts-in-the-admin-settings
  */
 export function textsAndAccessFields(t) {
 	return [
@@ -124,6 +124,7 @@ export function textsAndAccessFields(t) {
  *
  * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
  * @return {Array<object>} The fields.
+ * @spec openspec/changes/admin-message-and-portal-texts/specs/admin-settings/spec.md#requirement-an-administrator-shall-set-the-message-and-portal-texts-in-the-admin-settings
  */
 function messageTextFields(t) {
 	return [

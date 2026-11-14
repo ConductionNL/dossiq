@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Status;
 
+use OCA\Dossiq\Kernel\Contracts\DerivedStatusServiceInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 
@@ -44,7 +45,7 @@ use OCA\Dossiq\Service\Support\LanguageMapText;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class DerivedStatusService {
+class DerivedStatusService implements DerivedStatusServiceInterface {
 
 	/**
 	 * Constructor.

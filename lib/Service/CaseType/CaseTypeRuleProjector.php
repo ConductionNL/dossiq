@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Container\ContainerInterface;
@@ -272,7 +272,7 @@ class CaseTypeRuleProjector {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: a case type rule flow could not be published',
-				['app' => Application::APP_ID, 'flow' => $document['notes'] ?? '', 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'flow' => $document['notes'] ?? '', 'exception' => $e->getMessage()]
 			);
 			return 'Rule ' . (string)($document['name'] ?? '') . ' was not published: ' . $e->getMessage();
 		}
@@ -295,7 +295,7 @@ class CaseTypeRuleProjector {
 		$more = true;
 
 		while ($more === true) {
-			$page = $flowService->findAll(Application::APP_ID, null, null, self::FLOW_PAGE, $offset);
+			$page = $flowService->findAll(AppIdentity::APP_ID, null, null, self::FLOW_PAGE, $offset);
 			if (is_array($page) === false) {
 				break;
 			}

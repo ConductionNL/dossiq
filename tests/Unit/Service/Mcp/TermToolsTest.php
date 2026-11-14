@@ -170,4 +170,39 @@ class TermToolsTest extends TestCase {
 
 		$this->assertSame([null, '2026-11-03'], $seen);
 	}//end testResumePassesTheParsedDateOrNone()
+
+	public function testAnExtensionRefusalIsAnEnvelope(): void {
+		$this->signIn();
+		$this->terms->method('getTermijnInstance')->willReturn(['id' => 'd-1', 'case' => 'c-1']);
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->extension->expects($this->once())->method('requestExtension')
+			->with('d-1', 'r', '2026-12-01', 'https://docs/brief-1')
+			->willThrowException(new RuntimeException('Maximum number of extensions reached'));
+
+		$this->assertSame(
+			['error' => 'refused', 'message' => 'Maximum number of extensions reached'],
+			$this->tools->extendDeadline(deadlineId: 'd-1', rationale: 'r', newEndDate: '2026-12-01', documentLink: 'https://docs/brief-1')
+		);
+	}//end testAnExtensionRefusalIsAnEnvelope()
+
+	public function testAnUnreadableResumeDateIsRefusedBeforeTheService(): void {
+		$this->signIn();
+		$this->terms->method('getTermijnInstance')->willReturn(['id' => 'd-1', 'case' => 'c-1']);
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->pause->expects($this->never())->method('resumeAfterPauze');
+
+		$this->assertSame('invalid_date', $this->tools->resumeDeadline(deadlineId: 'd-1', resumeDate: 'sometime soon')['error']);
+	}//end testAnUnreadableResumeDateIsRefusedBeforeTheService()
+
+	public function testAResumeRefusalIsAnEnvelope(): void {
+		$this->signIn();
+		$this->terms->method('getTermijnInstance')->willReturn(['id' => 'd-1', 'case' => 'c-1']);
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->pause->method('resumeAfterPauze')->willThrowException(new RuntimeException('Term is not paused'));
+
+		$this->assertSame(
+			['error' => 'refused', 'message' => 'Term is not paused'],
+			$this->tools->resumeDeadline(deadlineId: 'd-1')
+		);
+	}//end testAResumeRefusalIsAnEnvelope()
 }//end class

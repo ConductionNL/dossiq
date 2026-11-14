@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Kernel\Contracts\CaseDecisionAccessInterface;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 
@@ -36,12 +37,7 @@ use OCA\Dossiq\Service\SettingsService;
  *
  * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-decision-on-a-cases-file-is-changed-by-its-decider-or-a-supervisor-of-that-case-req-cra-006
  */
-class CaseDecisionAccess {
-
-	/**
-	 * The refusal reason handed to OpenRegister.
-	 */
-	public const REFUSAL = 'case-supervisor-required';
+class CaseDecisionAccess implements CaseDecisionAccessInterface {
 
 	/**
 	 * The field on a case document that holds the document.

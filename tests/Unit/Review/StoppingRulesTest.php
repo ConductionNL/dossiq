@@ -21,9 +21,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Review;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Review\DocumentRelevance;
+use OCA\Dossiq\Review\ReviewWrites;
 use OCA\Dossiq\Review\StoppingRules;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -34,8 +36,10 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Review\StoppingRules
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
+ * @spec openspec/changes/woo-review-recall-and-stopping/tasks.md#1-the-stopping-rule
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Review\DocumentRelevance
+ * @uses \OCA\Dossiq\Review\ReviewWrites
  */
 class StoppingRulesTest extends TestCase {
 
@@ -60,16 +64,27 @@ class StoppingRulesTest extends TestCase {
 	/**
 	 * The service on the store.
 	 *
+	 * @param CaseReviewerAccess|null $access The reviewer access, a stub when null.
+	 * @param LoggerInterface|null    $logger The logger, a stub when null.
+	 *
 	 * @return StoppingRules The service.
 	 */
-	private function rules(): StoppingRules {
+	private function rules(?CaseReviewerAccess $access=null, ?LoggerInterface $logger=null): StoppingRules {
 		$config = ['register' => 'dossiq', 'document_review_schema' => 'documentReview', 'stopping_rule_schema' => 'stoppingRule'];
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = ($logger ?? $this->createMock(originalClassName: LoggerInterface::class));
+		$access = ($access ?? $this->createMock(originalClassName: CaseReviewerAccess::class));
 
-		return new StoppingRules(settingsService: $settings, reviews: new DocumentRelevance(settingsService: $settings, logger: $logger), logger: $logger);
+		$reviews = new DocumentRelevance(settingsService: $settings, logger: $logger);
+
+		return new StoppingRules(
+			settingsService: $settings,
+			reviews: $reviews,
+			logger: $logger,
+			writes: new ReviewWrites(reviews: $reviews, reviewerAccess: $access)
+		);
 	}//end rules()
 
 	/**
@@ -134,4 +149,51 @@ class StoppingRulesTest extends TestCase {
 
 		$this->assertSame([], $this->store->all('stoppingRule'));
 	}//end testAnOutOfRangeTargetIsRefused()
+
+	/**
+	 * A declared rule reconciles its case's reviewer access in the same request,
+	 * so the assignee the case type grants it to can read and update it.
+	 *
+	 * @return void
+	 */
+	public function testADeclaredRuleReconcilesItsCase(): void {
+		$access = $this->createMock(originalClassName: CaseReviewerAccess::class);
+		$access->expects($this->once())->method('reconcile')->with('case-x')
+			->willReturn(['status' => 'reconciled', 'granted' => 1, 'revoked' => 0, 'refused' => 0]);
+
+		$this->rules(access: $access)->declare(caseId: 'case-x', targetRecall: 0.8, confidence: 0.95, userId: 'handler-h');
+	}//end testADeclaredRuleReconcilesItsCase()
+
+	/**
+	 * A reconcile that fails keeps the stored rule and is logged.
+	 *
+	 * @return void
+	 */
+	public function testAFailingReconcileKeepsTheRuleAndIsLogged(): void {
+		$access = $this->createMock(originalClassName: CaseReviewerAccess::class);
+		$access->method('reconcile')->willThrowException(new \RuntimeException(message: 'grants down'));
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with(
+			'Dossiq: a stopping rule was stored but the reviewer access of its case could not be reconciled',
+			$this->callback(callback: static fn (array $context): bool => $context['case'] === 'case-x' && $context['exception'] === 'grants down')
+		);
+
+		$rule = $this->rules(access: $access, logger: $logger)->declare(caseId: 'case-x', targetRecall: 0.8, confidence: 0.95, userId: 'handler-h');
+
+		$this->assertSame(expected: 0.8, actual: $rule['targetRecall']);
+		$this->assertCount(expectedCount: 1, haystack: $this->store->all('stoppingRule'));
+	}//end testAFailingReconcileKeepsTheRuleAndIsLogged()
+
+	/**
+	 * A refused rule is not stored, so nothing is reconciled.
+	 *
+	 * @return void
+	 */
+	public function testARefusedRuleReconcilesNothing(): void {
+		$access = $this->createMock(originalClassName: CaseReviewerAccess::class);
+		$access->expects($this->never())->method('reconcile');
+
+		$this->expectException(exception: RefusedException::class);
+		$this->rules(access: $access)->declare(caseId: 'case-x', targetRecall: 0.4, confidence: 0.95, userId: 'handler-h');
+	}//end testARefusedRuleReconcilesNothing()
 }//end class

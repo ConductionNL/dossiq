@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\WooListenerRegistrar;
 use OCA\Dossiq\Listener\WooReportsInitialStateListener;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -38,7 +38,7 @@ use PHPUnit\Framework\TestCase;
  * Dossiq's page gets `woo_reports`, offering the throughput only to a reader while it is on.
  *
  * @covers \OCA\Dossiq\Listener\WooReportsInitialStateListener
- * @covers \OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\WooListenerRegistrar
  * @covers \OCA\Dossiq\Woo\WooReportSwitches
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001

@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeVersionChainInterface;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Support\TranslatedText;
 
@@ -48,7 +49,7 @@ use OCA\Dossiq\Service\Support\TranslatedText;
  *
  * @spec openspec/specs/zaaktype-versioning/spec.md
  */
-class CaseTypeVersionChain {
+class CaseTypeVersionChain implements CaseTypeVersionChainInterface {
 
 	/**
 	 * Constructor.

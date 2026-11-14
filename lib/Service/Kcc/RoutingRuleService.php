@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Kcc;
 
+use OCA\Dossiq\Kernel\Contracts\RoutingRuleServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\AppFramework\OCS\OCSBadRequestException;
@@ -42,7 +43,7 @@ use OCP\AppFramework\OCS\OCSBadRequestException;
  *
  * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
  */
-class RoutingRuleService {
+class RoutingRuleService implements RoutingRuleServiceInterface {
 	/**
 	 * Constructor.
 	 *

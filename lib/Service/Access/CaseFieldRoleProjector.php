@@ -66,6 +66,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Kernel\Contracts\CaseFieldRoleProjectorInterface;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
@@ -78,7 +79,7 @@ use Throwable;
  *
  * @spec openspec/specs/security-hardening/spec.md
  */
-class CaseFieldRoleProjector {
+class CaseFieldRoleProjector implements CaseFieldRoleProjectorInterface {
 
 	/**
 	 * The schema the rules are published onto.

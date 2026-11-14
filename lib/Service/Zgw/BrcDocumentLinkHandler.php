@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
-use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -60,11 +60,11 @@ class BrcDocumentLinkHandler {
 	/**
 	 * Constructor.
 	 *
-	 * @param ZgwService $zgwService The shared ZGW service.
+	 * @param ZgwServiceInterface $zgwService The shared ZGW service.
 	 * @param BrcCrossRegisterSync $sync Keeps the Documenten register in step.
 	 */
 	public function __construct(
-		private readonly ZgwService $zgwService,
+		private readonly ZgwServiceInterface $zgwService,
 		private readonly BrcCrossRegisterSync $sync,
 	) {
 	}//end __construct()

@@ -31,7 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
-use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 
 /**
  * Builds the cross-reference URL lists of ZTC zaaktypen and besluittypen.
@@ -74,10 +74,10 @@ class ZtcCrossReferenceEnricher {
 	/**
 	 * Constructor.
 	 *
-	 * @param ZgwService $zgwService Supplies the ObjectService and the ZGW mappings
+	 * @param ZgwServiceInterface $zgwService Supplies the ObjectService and the ZGW mappings
 	 */
 	public function __construct(
-		private readonly ZgwService $zgwService,
+		private readonly ZgwServiceInterface $zgwService,
 	) {
 		$this->lookup = new ZtcRelatedTypeLookup(zgwService: $zgwService);
 	}//end __construct()

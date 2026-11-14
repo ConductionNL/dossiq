@@ -29,8 +29,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PaymentScheduleRaiserInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -40,7 +41,7 @@ use Throwable;
  *
  * @spec openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten/spec.md#requirement-advances-are-a-payment-schedule-raised-with-finance-when-due-req-sub-case-02
  */
-class PaymentScheduleRaiser {
+class PaymentScheduleRaiser implements PaymentScheduleRaiserInterface {
 	/**
 	 * The schema whose objects carry a payment schedule.
 	 */
@@ -142,7 +143,7 @@ class PaymentScheduleRaiser {
 			$decision['paymentSchedule'] = $schedule;
 			$objectService->saveObject(
 				object: $decision,
-				register: Application::REGISTER_SLUG,
+				register: AppIdentity::REGISTER_SLUG,
 				schema: self::DECISION_SCHEMA,
 				uuid: (string)($decision['id'] ?? $decision['uuid'] ?? '')
 			);
@@ -212,7 +213,7 @@ class PaymentScheduleRaiser {
 	private function page(object $objectService, int $offset): array {
 		$rows = $objectService->findAll(
 			[
-				'filters' => ['register' => Application::REGISTER_SLUG, 'schema' => self::DECISION_SCHEMA],
+				'filters' => ['register' => AppIdentity::REGISTER_SLUG, 'schema' => self::DECISION_SCHEMA],
 				'limit' => self::PAGE_SIZE,
 				'offset' => $offset,
 			]

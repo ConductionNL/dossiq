@@ -30,9 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\LhsLookupService;
-use OCA\Dossiq\Service\Vth\LhsRecommendationService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\LhsLookupServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\LhsRecommendationServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -58,22 +58,22 @@ class LhsController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param LhsRecommendationService $lhsService LHS engine
-	 * @param LhsLookupService $lhsLookupService LHS simple lookup service
+	 * @param LhsRecommendationServiceInterface $lhsService LHS engine
+	 * @param LhsLookupServiceInterface $lhsLookupService LHS simple lookup service
 	 * @param IUserSession $userSession User session
 	 * @param IGroupManager $groupManager Group manager
 	 * @param LoggerInterface $logger Logger
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly LhsRecommendationService $lhsService,
-		private readonly LhsLookupService $lhsLookupService,
+		private readonly LhsRecommendationServiceInterface $lhsService,
+		private readonly LhsLookupServiceInterface $lhsLookupService,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

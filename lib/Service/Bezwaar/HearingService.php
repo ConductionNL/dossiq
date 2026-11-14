@@ -49,6 +49,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Bezwaar;
 
+use OCA\Dossiq\Kernel\Contracts\HearingServiceInterface;
 use OCA\Dossiq\Service\Hearing\HearingPlan;
 use OCA\Dossiq\Service\Hearing\NewSession;
 use OCA\Dossiq\Service\Hearing\SessionPatch;
@@ -65,7 +66,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/bezwaar-hearing/spec.md
  */
-class HearingService {
+class HearingService implements HearingServiceInterface {
 
 	use SearchesObjects;
 	use OpensInTheInitialState;
@@ -541,7 +542,6 @@ class HearingService {
 
 		return $saved;
 	}//end createSession()
-
 
 	/**
 	 * Record each late correction, then write the attendance.

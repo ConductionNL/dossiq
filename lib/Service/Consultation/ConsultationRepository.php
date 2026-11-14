@@ -39,7 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Consultation;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -151,7 +151,7 @@ class ConsultationRepository {
 
 		$this->logger->info(
 			'Consultation deleted: ' . $consultationId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return true;

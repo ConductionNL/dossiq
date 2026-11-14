@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\BesluitMigrationService;
+use OCA\Dossiq\Kernel\Contracts\BesluitMigrationServiceInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -43,10 +43,10 @@ class MigrateBesluitenToDecidiqCommand extends Command {
 	/**
 	 * Wire the command against the migration service.
 	 *
-	 * @param BesluitMigrationService $migrationService Besluit → decidiq Decision migrator.
+	 * @param BesluitMigrationServiceInterface $migrationService Besluit → decidiq Decision migrator.
 	 */
 	public function __construct(
-		private readonly BesluitMigrationService $migrationService,
+		private readonly BesluitMigrationServiceInterface $migrationService,
 	) {
 		parent::__construct();
 	}//end __construct()

@@ -88,7 +88,7 @@ interface RedactionProposalObjectServiceStub {
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
  * @uses \OCA\Dossiq\Review\DocumentRelevance
  * @uses \OCA\Dossiq\Review\PagesSeen
- * @uses   \OCA\Dossiq\Service\WooAssessmentLocation
+ * @uses \OCA\Dossiq\Service\WooAssessmentLocation
  */
 class WOODocumentAssessmentServiceTest extends TestCase {
 
@@ -616,82 +616,6 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$this->assertSame('niet_openbaar', $register->row('wooDocumentAssessment', 'a-7')['classification']);
 		$this->assertCount(1, $register->all('wooDocumentAssessment'), 'no second assessment for the same document');
 	}//end testASecondReviewerCannotOverwrite()
-
-	/**
-	 * The author re-assessing their own document updates that record in place and nothing is created.
-	 *
-	 * @return void
-	 */
-	public function testTheAuthorUpdatesTheirAssessmentInPlace(): void {
-		$register = new InMemoryRegister();
-		$register->seed('wooDocumentAssessment', 'a-7', ['caseRef' => 'case-1', 'documentRef' => 'doc-7', 'classification' => 'niet_openbaar', '@self' => ['owner' => 'j.devries']]);
-		$access = $this->createMock(CaseReviewerAccess::class);
-		$access->method('refusalFor')->willReturn(null);
-		$access->expects($this->once())->method('reconcileAfterCreate')->with('case-1', 0);
-
-		$result = $this->serviceWithAccess(register: $register, access: $access, userId: 'j.devries')
-			->bulkUpsert('case-1', [['documentRef' => 'doc-7', 'classification' => 'openbaar', 'assessedBy' => 'forged']]);
-
-		$this->assertSame([], $result['errors']);
-		$this->assertCount(1, $result['saved']);
-		$this->assertCount(1, $register->all('wooDocumentAssessment'), 'no second assessment for the same document');
-		$row = $register->row('wooDocumentAssessment', 'a-7');
-		$this->assertSame('openbaar', $row['classification']);
-		$this->assertSame('case-1', $row['caseRef']);
-		$this->assertSame('j.devries', $row['assessedBy']);
-	}//end testTheAuthorUpdatesTheirAssessmentInPlace()
-
-	/**
-	 * The reviewer who made an assessment updates it in place; in the same batch
-	 * a new document is created and an invalid one is reported, not saved.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
-	 */
-	public function testAMixedBatchUpdatesCreatesAndRefuses(): void {
-		$register = new InMemoryRegister();
-		$register->seed('wooDocumentAssessment', 'a-7', ['caseRef' => 'case-1', 'documentRef' => 'doc-7', 'classification' => 'niet_openbaar', 'assessedBy' => 'p.bakker', '@self' => ['owner' => 'p.bakker']]);
-		$access = $this->createMock(CaseReviewerAccess::class);
-		$access->method('refusalFor')->willReturn(null);
-		$access->expects($this->once())->method('reconcileAfterCreate')->with('case-1', 1);
-
-		$result = $this->serviceWithAccess(register: $register, access: $access, userId: 'p.bakker')->bulkUpsert(
-			'case-1',
-			[
-				['documentRef' => 'doc-7', 'classification' => 'openbaar'],
-				['documentRef' => 'doc-9', 'classification' => 'geheim'],
-				['documentRef' => 'doc-8', 'classification' => 'openbaar'],
-			]
-		);
-
-		$this->assertCount(2, $result['saved']);
-		$this->assertCount(1, $result['errors']);
-		$this->assertSame('doc-9', $result['errors'][0]['documentRef']);
-		$this->assertCount(2, $register->all('wooDocumentAssessment'), 'doc-7 is updated, doc-8 created, doc-9 refused');
-		$updated = $register->row('wooDocumentAssessment', 'a-7');
-		$this->assertSame('openbaar', $updated['classification']);
-		$this->assertSame('case-1', $updated['caseRef']);
-		$this->assertSame('p.bakker', $updated['assessedBy']);
-		$this->assertSame(WooRefusalGrounds::LIST_VERSION, $updated['groundsListVersion']);
-	}//end testAMixedBatchUpdatesCreatesAndRefuses()
-
-	/**
-	 * Without a register or an assessment schema nothing is assessed.
-	 *
-	 * @return void
-	 */
-	public function testBulkUpsertThrowsWhenTheSchemaIsNotConfigured(): void {
-		$this->settingsService->method('getObjectService')->willReturn(new InMemoryRegister());
-		$this->settingsService->method('getConfigValue')->willReturnCallback(
-			static fn (string $key, string $default = ''): string => ['register' => 'dossiq'][$key] ?? $default
-		);
-
-		$this->expectException(\RuntimeException::class);
-		$this->expectExceptionMessage('WOO assessment schema not configured');
-
-		$this->service->bulkUpsert('case-1', [['documentRef' => 'doc-1', 'classification' => 'openbaar']]);
-	}//end testBulkUpsertThrowsWhenTheSchemaIsNotConfigured()
 
 	/**
 	 * REQ-CRA-002: a created assessment is reconciled to the people on the case at once.

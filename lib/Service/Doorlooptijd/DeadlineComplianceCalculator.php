@@ -39,19 +39,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Doorlooptijd;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\DeadlineComplianceCalculatorInterface;
 
 /**
  * Computes the deadline-compliance metrics of the throughput-time dashboard.
  *
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
-class DeadlineComplianceCalculator {
-	/**
-	 * The groupings a throughput summary takes.
-	 *
-	 * @var array<int, string>
-	 */
-	public const GRANULARITIES = ['week', 'month', 'quarter', 'year'];
+class DeadlineComplianceCalculator implements DeadlineComplianceCalculatorInterface {
 
 	/**
 	 * The KPI counter each RAG status adds to; on-time adds to none.

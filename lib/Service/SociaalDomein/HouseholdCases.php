@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\SociaalDomein;
 
+use OCA\Dossiq\Kernel\Contracts\HouseholdCasesInterface;
 use OCA\Dossiq\Service\Support\TrustedRevealRead;
 
 /**
@@ -43,7 +44,7 @@ use OCA\Dossiq\Service\Support\TrustedRevealRead;
  *
  * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
-class HouseholdCases {
+class HouseholdCases implements HouseholdCasesInterface {
 	/**
 	 * The case type categories of each domain, as the case types spell them.
 	 *

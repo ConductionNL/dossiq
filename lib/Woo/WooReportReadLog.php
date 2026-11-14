@@ -24,9 +24,10 @@ namespace OCA\Dossiq\Woo;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooReportReadLogInterface;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  */
-class WooReportReadLog {
+class WooReportReadLog implements WooReportReadLogInterface {
 
 	/**
 	 * The audit action of a throughput read.
@@ -61,13 +62,13 @@ class WooReportReadLog {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -118,7 +119,7 @@ class WooReportReadLog {
 			} catch (Throwable $e) {
 				$this->logger->error(
 					'Dossiq: a Woo throughput read could not be recorded, so it is refused',
-					['app' => Application::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
+					['app' => AppIdentity::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
 				);
 				throw $this->notRecorded(previous: $e);
 			}
