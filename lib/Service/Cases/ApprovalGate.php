@@ -217,37 +217,18 @@ class ApprovalGate {
 	private function verdictFromDecidiq(array $gate, string $reference, string $userId): array {
 		$read = $this->decisions->readDecisionState(decisionId: $reference, actorId: $userId);
 		$state = (string)($read['state'] ?? '');
-		$envelope = (array)($read['envelope'] ?? []);
-		$approvers = $this->approversIn(envelope: $envelope);
+		$approvers = $this->approversIn(envelope: (array)($read['envelope'] ?? []));
 
 		if ($state === ContractDecisionDelegationService::DECISION_STATE_DECIDED) {
-			return $this->decided(
-				gate: $gate,
-				status: (string)($read['status'] ?? ''),
-				reference: $reference,
-				approvers: $approvers,
-			);
+			return $this->decided(gate: $gate, status: (string)($read['status'] ?? ''), reference: $reference, approvers: $approvers);
 		}
 
 		if ($state === ContractDecisionDelegationService::DECISION_STATE_OPEN) {
-			return $this->refused(
-				rule: self::RULE_OUTSTANDING,
-				sentence: $this->l10n->t('%1$s is still open. %2$s', [$gate['label'], $this->onWhom(approvers: $approvers)]),
-				status: RefusedException::STATUS_UNPROCESSABLE,
-				label: $gate['label'],
-				reference: $reference,
-				approvers: $approvers,
-			);
+			return $this->stillOpen(gate: $gate, reference: $reference, approvers: $approvers);
 		}
 
 		if ($state === ContractDecisionDelegationService::DECISION_STATE_WITHDRAWN) {
-			return $this->refused(
-				rule: self::RULE_OUTSTANDING,
-				sentence: $this->l10n->t('%s was withdrawn without an answer. Ask for it again in decidiq.', [$gate['label']]),
-				status: RefusedException::STATUS_UNPROCESSABLE,
-				label: $gate['label'],
-				reference: $reference,
-			);
+			return $this->withdrawn(gate: $gate, reference: $reference);
 		}
 
 		// GONE, REFUSED and UNREADABLE all end here, and all three block. They
@@ -256,6 +237,44 @@ class ApprovalGate {
 		// could not be found would be the fail-open this class exists to stop.
 		return $this->cannotRead(gate: $gate, state: $state, reference: $reference);
 	}//end verdictFromDecidiq()
+
+	/**
+	 * The verdict on a decision decidiq still has open.
+	 *
+	 * @param array{act: string, decisionType: string, label: string} $gate      The declared gate.
+	 * @param string                                                  $reference The decidiq decision id.
+	 * @param array<int, string>                                      $approvers Who decidiq named.
+	 *
+	 * @return array<string, mixed> The verdict.
+	 */
+	private function stillOpen(array $gate, string $reference, array $approvers): array {
+		return $this->refused(
+			rule: self::RULE_OUTSTANDING,
+			sentence: $this->l10n->t('%1$s is still open. %2$s', [$gate['label'], $this->onWhom(approvers: $approvers)]),
+			status: RefusedException::STATUS_UNPROCESSABLE,
+			label: $gate['label'],
+			reference: $reference,
+			approvers: $approvers,
+		);
+	}//end stillOpen()
+
+	/**
+	 * The verdict on a decision that was withdrawn without an answer.
+	 *
+	 * @param array{act: string, decisionType: string, label: string} $gate      The declared gate.
+	 * @param string                                                  $reference The decidiq decision id.
+	 *
+	 * @return array<string, mixed> The verdict.
+	 */
+	private function withdrawn(array $gate, string $reference): array {
+		return $this->refused(
+			rule: self::RULE_OUTSTANDING,
+			sentence: $this->l10n->t('%s was withdrawn without an answer. Ask for it again in decidiq.', [$gate['label']]),
+			status: RefusedException::STATUS_UNPROCESSABLE,
+			label: $gate['label'],
+			reference: $reference,
+		);
+	}//end withdrawn()
 
 	/**
 	 * The verdict on a decision decidiq has concluded.
