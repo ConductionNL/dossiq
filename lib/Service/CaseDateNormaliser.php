@@ -213,20 +213,8 @@ class CaseDateNormaliser implements CaseDateNormaliserInterface {
 			return DateTimeImmutable::createFromInterface($value)->setTimezone($zone);
 		}
 
-		if (is_string($value) === false) {
-			return null;
-		}
-
-		$trimmed = trim($value);
-		if ($trimmed === '') {
-			return null;
-		}
-
-		if (preg_match(self::ISO_PATTERN, $trimmed, $parts) !== 1) {
-			return null;
-		}
-
-		if (checkdate((int)$parts[2], (int)$parts[3], (int)$parts[1]) === false) {
+		$trimmed = $this->isoDateText(value: $value);
+		if ($trimmed === null) {
 			return null;
 		}
 
@@ -238,6 +226,45 @@ class CaseDateNormaliser implements CaseDateNormaliserInterface {
 
 		return $parsed->setTimezone($zone);
 	}//end tryParse()
+
+	/**
+	 * The value trimmed, when it is a string naming a real ISO date.
+	 *
+	 * @param mixed $value The value to read.
+	 *
+	 * @return string|null The trimmed text, or null.
+	 */
+	private function isoDateText(mixed $value): string|null {
+		if (is_string($value) === false) {
+			return null;
+		}
+
+		$trimmed = trim($value);
+		if ($trimmed === '') {
+			return null;
+		}
+
+		if ($this->namesRealIsoDate(trimmed: $trimmed) === false) {
+			return null;
+		}
+
+		return $trimmed;
+	}//end isoDateText()
+
+	/**
+	 * Whether the text matches the ISO pattern and names a day that exists.
+	 *
+	 * @param string $trimmed The trimmed text.
+	 *
+	 * @return bool True for a real ISO date.
+	 */
+	private function namesRealIsoDate(string $trimmed): bool {
+		if (preg_match(self::ISO_PATTERN, $trimmed, $parts) !== 1) {
+			return false;
+		}
+
+		return checkdate((int)$parts[2], (int)$parts[3], (int)$parts[1]);
+	}//end namesRealIsoDate()
 
 	/**
 	 * A submitted value as the calendar date it names, `Y-m-d`.
@@ -398,20 +425,7 @@ class CaseDateNormaliser implements CaseDateNormaliserInterface {
 		}
 
 		try {
-			$service = $this->settingsService->getOpenRegisterClass(self::ENGINE_CALENDAR_CLASS);
-			if ($service === null || method_exists($service, 'resolve') === false) {
-				return null;
-			}
-
-			$calendar = $service->resolve(null, null);
-			if (is_object($calendar) === false
-				|| method_exists($calendar, self::ENGINE_CALENDAR_ZONE_METHOD) === false
-			) {
-				return null;
-			}
-
-			$identifier = $calendar->{self::ENGINE_CALENDAR_ZONE_METHOD}();
-			return $this->acceptZone(identifier: $identifier);
+			return $this->zoneOfEngineCalendar();
 		} catch (Throwable $exception) {
 			$this->logger->debug(
 				'Dossiq: the engine working calendar did not answer a time zone',
@@ -420,6 +434,28 @@ class CaseDateNormaliser implements CaseDateNormaliserInterface {
 			return null;
 		}
 	}//end engineCalendarZone()
+
+	/**
+	 * Ask the engine working calendar for its zone.
+	 *
+	 * @return string|null The IANA identifier, or null when the calendar does not state one.
+	 */
+	private function zoneOfEngineCalendar(): string|null {
+		$service = $this->settingsService->getOpenRegisterClass(self::ENGINE_CALENDAR_CLASS);
+		if ($service === null || method_exists($service, 'resolve') === false) {
+			return null;
+		}
+
+		$calendar = $service->resolve(null, null);
+		if (is_object($calendar) === false
+			|| method_exists($calendar, self::ENGINE_CALENDAR_ZONE_METHOD) === false
+		) {
+			return null;
+		}
+
+		$identifier = $calendar->{self::ENGINE_CALENDAR_ZONE_METHOD}();
+		return $this->acceptZone(identifier: $identifier);
+	}//end zoneOfEngineCalendar()
 
 	/**
 	 * The zone this tenant administers, or the app's own `timezone` setting
