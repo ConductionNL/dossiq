@@ -78,6 +78,8 @@ use RuntimeException;
  * trade. The fourteen are each injected and each named, so the class is
  * readable even where it is wide.
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) Same list, same reason.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class BeschikkingService implements BeschikkingServiceInterface {
 
@@ -297,27 +299,9 @@ class BeschikkingService implements BeschikkingServiceInterface {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
 		$current = (string)($decision['currentStatus'] ?? '');
 
-		if ($this->stateMachine->validateTransition($current, 'approved-mandate') === false) {
-			throw new RuntimeException('invalid_transition');
-		}
+		$this->requireTransition(current: $current, target: 'approved-mandate');
 
-		$regeling = $this->mandateVerifier->resolveMandaatRegeling(caseType: (string)($decision['caseType'] ?? ''));
-		$level = $this->mandateVerifier->resolveNiveauForUser(
-			regeling: $regeling,
-			decision: $decision,
-			approvedBy: $approvedBy
-		);
-
-		if ($level === null) {
-			throw new RuntimeException('mandaat_insufficient');
-		}
-
-		$decision['mandateGranted'] = [
-			'mandateSchemeId' => (string)($regeling['id'] ?? ($regeling['@self']['slug'] ?? '')),
-			'mandateLevel' => $level,
-			'approvedBy' => $approvedBy,
-			'approvedDate' => (new DateTimeImmutable())->format('c'),
-		];
+		$decision['mandateGranted'] = $this->grantedMandate(decision: $decision, approvedBy: $approvedBy);
 		$decision['currentStatus'] = 'approved-mandate';
 
 		$saved = $this->repository->save(decision: $decision);
@@ -330,6 +314,53 @@ class BeschikkingService implements BeschikkingServiceInterface {
 
 		return $saved;
 	}//end akkoord()
+
+	/**
+	 * Refuse a transition the state machine does not allow.
+	 *
+	 * @param string $current The current status.
+	 * @param string $target  The status to move to.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException On an invalid transition.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T07
+	 */
+	private function requireTransition(string $current, string $target): void {
+		if ($this->stateMachine->validateTransition($current, $target) === false) {
+			throw new RuntimeException('invalid_transition');
+		}
+	}//end requireTransition()
+
+	/**
+	 * The mandate the approver holds for this beschikking.
+	 *
+	 * @param array<string, mixed> $decision   The beschikking.
+	 * @param string               $approvedBy The approver's Nextcloud UID.
+	 *
+	 * @return array<string, mixed> The `mandateGranted` record.
+	 *
+	 * @throws RuntimeException When the approver's mandaat is insufficient.
+	 * @throws RefusedException When the mandate scheme could not be read, so the mandate cannot be checked.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T07
+	 */
+	private function grantedMandate(array $decision, string $approvedBy): array {
+		$regeling = $this->mandateVerifier->resolveMandaatRegeling(caseType: (string)($decision['caseType'] ?? ''));
+		$level = $this->mandateVerifier->resolveNiveauForUser(regeling: $regeling, decision: $decision, approvedBy: $approvedBy);
+
+		if ($level === null) {
+			throw new RuntimeException('mandaat_insufficient');
+		}
+
+		return [
+			'mandateSchemeId' => (string)($regeling['id'] ?? ($regeling['@self']['slug'] ?? '')),
+			'mandateLevel' => $level,
+			'approvedBy' => $approvedBy,
+			'approvedDate' => (new DateTimeImmutable())->format('c'),
+		];
+	}//end grantedMandate()
 
 	/**
 	 * Sign the beschikking via the TSP and transition to ondertekend. [T08]
@@ -348,9 +379,7 @@ class BeschikkingService implements BeschikkingServiceInterface {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
 		$current = (string)($decision['currentStatus'] ?? '');
 
-		if ($this->stateMachine->validateTransition($current, 'signed') === false) {
-			throw new RuntimeException('invalid_transition');
-		}
+		$this->requireTransition(current: $current, target: 'signed');
 
 		// BEFORE THE TSP IS CALLED, not after. A signature is minted at a
 		// provider and countersigned onto the file; refusing afterwards would
@@ -360,6 +389,30 @@ class BeschikkingService implements BeschikkingServiceInterface {
 
 		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
 		$signature = $this->signingAdapter->sign($fileId, $signatory, $tspProvider);
+
+		$decision = $this->withSignature(decision: $decision, signature: $signature, tspProvider: $tspProvider, signatory: $signatory);
+		$decision['currentStatus'] = 'signed';
+
+		$saved = $this->repository->save(decision: $decision);
+		$this->logSigned(decisionId: $decisionId, current: $current, signatory: $signatory, signature: $signature);
+
+		return $saved;
+	}//end onderteken()
+
+	/**
+	 * The beschikking with the TSP's signature written onto it.
+	 *
+	 * @param array<string, mixed> $decision    The beschikking.
+	 * @param array<string, mixed> $signature   What the TSP answered.
+	 * @param string               $tspProvider The TSP provider slug.
+	 * @param string               $signatory   The signer's Nextcloud UID.
+	 *
+	 * @return array<string, mixed> The signed beschikking, not yet saved.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T08
+	 */
+	private function withSignature(array $decision, array $signature, string $tspProvider, string $signatory): array {
+		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
 
 		$decision['signature'] = [
 			'tspProvider' => $tspProvider,
@@ -371,9 +424,23 @@ class BeschikkingService implements BeschikkingServiceInterface {
 			'validationRapportId' => (string)($signature['validationRapportId'] ?? ''),
 		];
 		$decision['compositeContent']['fileId'] = (string)($signature['signedBestandId'] ?? $fileId);
-		$decision['currentStatus'] = 'signed';
 
-		$saved = $this->repository->save(decision: $decision);
+		return $decision;
+	}//end withSignature()
+
+	/**
+	 * Log the transition to signed, with the TSP's report as evidence.
+	 *
+	 * @param string               $decisionId The beschikking UUID.
+	 * @param string               $current    The status before signing.
+	 * @param string               $signatory  The signer's Nextcloud UID.
+	 * @param array<string, mixed> $signature  What the TSP answered.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T08
+	 */
+	private function logSigned(string $decisionId, string $current, string $signatory, array $signature): void {
 		$this->stateMachine->logTransition(
 			$decisionId,
 			$current,
@@ -382,15 +449,10 @@ class BeschikkingService implements BeschikkingServiceInterface {
 				'actor' => $signatory,
 				'actorType' => 'employee',
 				'trigger' => 'manual',
-				'evidenceMaterial' => [
-					'kind' => 'tsp-handtekening-rapport',
-					'rapportId' => (string)($signature['validationRapportId'] ?? ''),
-				],
+				'evidenceMaterial' => ['kind' => 'tsp-handtekening-rapport', 'rapportId' => (string)($signature['validationRapportId'] ?? '')],
 			],
 		);
-
-		return $saved;
-	}//end onderteken()
+	}//end logSigned()
 
 	/**
 	 * Send the beschikking to the requester and, only when a transport took it, transition to sent. [T09]
@@ -642,11 +704,33 @@ class BeschikkingService implements BeschikkingServiceInterface {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
 		$current = (string)($decision['currentStatus'] ?? '');
 
-		if ($this->stateMachine->validateTransition($current, 'archived') === false) {
-			throw new RuntimeException('invalid_transition');
-		}
+		$this->requireTransition(current: $current, target: 'archived');
 
-		$metadata = [
+		$metadata = $this->tmloMetadata(decision: $decision);
+
+		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
+		$result = $this->archivalAdapter->ingest($decisionId, $fileId, $metadata);
+
+		$decision['archive'] = $this->archiveRecord(result: $result, metadata: $metadata);
+		$decision['currentStatus'] = 'archived';
+
+		$saved = $this->repository->save(decision: $decision);
+		$this->stateMachine->logTransition($decisionId, $current, 'archived', ['actor' => 'systeem', 'actorType' => 'systeem', 'trigger' => 'automatic']);
+
+		return $saved;
+	}//end archive()
+
+	/**
+	 * The TMLO metadata the beschikking is archived with.
+	 *
+	 * @param array<string, mixed> $decision The beschikking.
+	 *
+	 * @return array<string, string> The TMLO metadata.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T13
+	 */
+	private function tmloMetadata(array $decision): array {
+		return [
 			'schema' => 'TMLO-1.2',
 			'identificatieKenmerk' => (string)($decision['reference'] ?? ''),
 			'aggregatieniveau' => 'Archiefstuk',
@@ -655,28 +739,26 @@ class BeschikkingService implements BeschikkingServiceInterface {
 			'vertrouwelijkheid' => 'vertrouwelijk',
 			'bewaartermijn' => 'P15Y',
 		];
+	}//end tmloMetadata()
 
-		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
-		$result = $this->archivalAdapter->ingest($decisionId, $fileId, $metadata);
-
-		$decision['archive'] = [
+	/**
+	 * The `archive` record of an ingested beschikking.
+	 *
+	 * @param array<string, mixed>  $result   What the archive answered.
+	 * @param array<string, string> $metadata The TMLO metadata.
+	 *
+	 * @return array<string, mixed> The archive record.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T13
+	 */
+	private function archiveRecord(array $result, array $metadata): array {
+		return [
 			'archivedOn' => (new DateTimeImmutable())->format('c'),
 			'archiveId' => (string)$result['archiveId'],
 			'tmloMetadata' => $metadata,
 			'destructionDate' => (string)$result['destructionDate'],
 		];
-		$decision['currentStatus'] = 'archived';
-
-		$saved = $this->repository->save(decision: $decision);
-		$this->stateMachine->logTransition(
-			$decisionId,
-			$current,
-			'archived',
-			['actor' => 'systeem', 'actorType' => 'systeem', 'trigger' => 'automatic'],
-		);
-
-		return $saved;
-	}//end archive()
+	}//end archiveRecord()
 
 	/**
 	 * Issue a successor to a signed beschikking.
