@@ -156,6 +156,19 @@ class NormaliseCommunicationChannelValues implements IRepairStep {
 			return 'skipped';
 		}
 
+		return $this->patched(target: $target, caseId: $caseId, value: $value);
+	}//end convertOne()
+
+	/**
+	 * Write the slug for one case's free-text channel value.
+	 *
+	 * @param RepairSchema $target The case schema being repaired.
+	 * @param string       $caseId The case's id.
+	 * @param string       $value  The free-text channel value it holds.
+	 *
+	 * @return string converted or failed.
+	 */
+	private function patched(RepairSchema $target, string $caseId, string $value): string {
 		$changes = $this->channels->normalise(value: $value);
 		try {
 			$target->patch(id: $caseId, changes: $changes);
@@ -167,11 +180,24 @@ class NormaliseCommunicationChannelValues implements IRepairStep {
 			return 'failed';
 		}
 
+		$this->logConverted(caseId: $caseId, changes: $changes, value: $value);
+
+		return 'converted';
+	}//end patched()
+
+	/**
+	 * Log one converted case.
+	 *
+	 * @param string               $caseId  The case's id.
+	 * @param array<string, mixed> $changes The fields written.
+	 * @param string               $value   The value it held.
+	 *
+	 * @return void
+	 */
+	private function logConverted(string $caseId, array $changes, string $value): void {
 		$this->logger->info(
 			sprintf('Dossiq channels: case %s now reads "%s"; it held "%s"', $caseId, (string)($changes['communicationChannel'] ?? ''), $value),
 			['app' => AppIdentity::APP_ID],
 		);
-
-		return 'converted';
-	}//end convertOne()
+	}//end logConverted()
 }//end class
