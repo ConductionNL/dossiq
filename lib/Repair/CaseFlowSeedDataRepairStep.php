@@ -423,8 +423,8 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	/**
 	 * The declared statuses with a name the case type does not have yet.
 	 *
-	 * @param array<int,mixed>   $statusTypes The statuses declared in the seed.
-	 * @param array<string, int> $present     The names the case type already has, as keys.
+	 * @param array<int,mixed>     $statusTypes The statuses declared in the seed.
+	 * @param array<string, mixed> $present     The names the case type already has, as keys.
 	 *
 	 * @return array<int, array<string, mixed>> The statuses to create.
 	 *
