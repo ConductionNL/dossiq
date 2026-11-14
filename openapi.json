@@ -372,6 +372,10 @@
             "description": "Reporting REST surface."
         },
         {
+            "name": "decision-advice",
+            "description": "Advice on an enforcement intervention for a case, and the outcome chosen on it."
+        },
+        {
             "name": "deelzaak",
             "description": "REST controller for sub-case operations."
         },
@@ -16402,6 +16406,134 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Problem401"
+                    }
+                }
+            }
+        },
+        "/decision-advice/case/{caseId}/form": {
+          "get": {
+            "operationId": "decision-advice-form",
+            "summary": "Read what the advice dialog asks on a case",
+            "description": "The decision table the case type names (`caseType.adviceDecisionTable`), the inputs it declares with the values its rules use, and the outcomes a handler can choose. `available` is false when the case type names no table. Needs a signed-in Nextcloud user who may read the case.",
+            "tags": [
+              "decision-advice"
+            ],
+            "parameters": [
+              {
+                "name": "caseId",
+                "in": "path",
+                "required": true,
+                "description": "The case UUID.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "The request succeeded.",
+                "headers": {
+                  "API-Version": {
+                    "$ref": "#/components/headers/API-Version"
+                  }
+                },
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "400": {
+                "$ref": "#/components/responses/Problem400"
+              },
+              "401": {
+                "$ref": "#/components/responses/Problem401"
+              },
+              "403": {
+                "$ref": "#/components/responses/Problem403"
+              },
+              "404": {
+                "$ref": "#/components/responses/Problem404"
+              },
+              "409": {
+                "$ref": "#/components/responses/Problem409"
+              }
+            }
+          }
+        },
+        "/decision-advice/override": {
+            "post": {
+                "operationId": "decision-advice-override",
+                "summary": "Choose an outcome on a stored advice",
+                "description": "Record the outcome chosen on a stored advice, with a reason when it departs from the advice. Body: `adviceId`, `outcome` and `reason`. An advice that was already decided is refused with 409. Needs a signed-in Nextcloud user who may act on the case.",
+                "tags": [
+                    "decision-advice"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Problem409"
+                    }
+                }
+            }
+        },
+        "/decision-advice/recommend": {
+            "post": {
+                "operationId": "decision-advice-recommend",
+                "summary": "Recommend an enforcement intervention for a case",
+                "description": "Compute and store an intervention advice for a case from its inputs. Body: `caseId` and `inputs`. Needs a signed-in Nextcloud user who may act on the case.",
+                "tags": [
+                    "decision-advice"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
                     }
                 }
             }

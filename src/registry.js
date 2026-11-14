@@ -97,6 +97,7 @@ import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import ContactMomentDetailDialog from './dialogs/ContactMomentDetailDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
+import DecisionTableAdviceDialog from './dialogs/DecisionTableAdviceDialog.vue'
 import DocumentAccessExceptionDialog from './dialogs/DocumentAccessExceptionDialog.vue'
 import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
 import DocumentCompareDialog from './dialogs/DocumentCompareDialog.vue'
@@ -411,6 +412,14 @@ const registry = {
 		component: DeelzaakCreateModal,
 		propsSchema: {},
 		_note: "CaseDetail `case-sub-cases` list's create action. Creates the sub-case through /api/deelzaken (validate, then derive), so it inherits what case.parentCase declares; the list's own create form would save the case directly and inherit nothing. parentCase arrives as the resolved `@objectId`; the modal reads the parent and its case type itself and says why when the parent cannot take a sub-case.",
+	},
+
+	// @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md
+	DecisionTableAdviceDialog: {
+		kind: 'modal',
+		component: DecisionTableAdviceDialog,
+		propsSchema: {},
+		_note: "CaseDetail `advice-from-decision-table` header action, board DqHandhaving (REQ-LHS-CASE-01). Reads the inputs and outcomes of the decision table the case type names from /api/decision-advice/case/{caseId}/form, asks /api/decision-advice/recommend (the server stores the advice on the case) and records acceptance or a deviation with a reason through /api/decision-advice/override, which refuses a deviation without one. Named for what it does, not for a procedure: the case type's configuration decides which table it asks.",
 	},
 
 	// @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
