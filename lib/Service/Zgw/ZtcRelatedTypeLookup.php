@@ -152,11 +152,10 @@ class ZtcRelatedTypeLookup {
 
 		$iotUrls = [];
 		$caseTypeLinks = new MappedObjects(objectService: $objectService, mapping: $ziotMapping);
-		$documentTypes = new MappedObjects(objectService: $objectService, mapping: $iotMapping);
 		foreach ($this->searchRowsOrNone(objects: $caseTypeLinks, params: ['caseType' => $uuid]) as $ziotData) {
 			$iotRef = $ziotData['informatieobjecttype'] ?? '';
 			if ($iotRef !== '') {
-				$sameName = $this->sameNameDocumentTypeUrls(documentTypes: $documentTypes, iotRef: $iotRef, baseUrl: $baseUrl);
+				$sameName = $this->sameNameDocumentTypeUrls(objectService: $objectService, iotMapping: $iotMapping, iotRef: $iotRef, baseUrl: $baseUrl);
 				array_push($iotUrls, ...$sameName);
 			}
 		}
@@ -167,13 +166,15 @@ class ZtcRelatedTypeLookup {
 	/**
 	 * The URLs of every informatieobjecttype named like the referenced one.
 	 *
-	 * @param MappedObjects $documentTypes The object service with the informatieobjecttypen mapping
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param array $iotMapping The informatieobjecttypen mapping
 	 * @param mixed $iotRef The referenced informatieobjecttype uuid
 	 * @param string $baseUrl The Catalogi API base URL
 	 *
 	 * @return array<string> The URLs (empty when the type has no name)
 	 */
-	private function sameNameDocumentTypeUrls(MappedObjects $documentTypes, mixed $iotRef, string $baseUrl): array {
+	private function sameNameDocumentTypeUrls(object $objectService, array $iotMapping, mixed $iotRef, string $baseUrl): array {
+		$documentTypes = new MappedObjects(objectService: $objectService, mapping: $iotMapping);
 		try {
 			$found = $this->findIn(objectService: $documentTypes->objectService, mapping: $documentTypes->mapping, id: $iotRef);
 			$iotName = $this->text->textOf(value: ($found['name'] ?? ''));
