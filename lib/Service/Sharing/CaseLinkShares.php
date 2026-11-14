@@ -256,22 +256,7 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_share_schema');
 		if (empty($register) === true || empty($schema) === true) {
-			// 🔴 NAME WHAT IS UNAVAILABLE. This branch is reached when this
-			// instance never finished configuring dossiq, which is a LOCAL
-			// gap and not OpenRegister refusing anything. It used to answer
-			// a bare "Service unavailable", which the controller then mapped
-			// to 502. An e2e lane spent a batch on that 502 before the cause
-			// turned out to be an unwritten app-config key. The `reason` is
-			// what lets the controller answer 503 rather than 502.
-			$this->logger->error(
-				'CaseLinkShares: the case share schema is not configured, so no share can be recorded',
-				['caseId' => $caseId, 'register' => $register, 'schema' => $schema]
-			);
-			return [
-				'error' => 'Sharing is not configured on this instance yet. '
-					. 'An administrator reloads the dossiq configuration to map the case share schema.',
-				'reason' => self::REASON_NOT_CONFIGURED,
-			];
+			return $this->notConfiguredError(caseId: $caseId, register: $register, schema: $schema);
 		}
 
 		$capabilities = (array)($link['capabilities'] ?? []);
@@ -291,14 +276,7 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 				schema: (int)$schema,
 			);
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				'CaseLinkShares: the link was minted and the share record was not written',
-				['caseId' => $caseId, 'exception' => $e->getMessage()]
-			);
-			return [
-				'error' => 'The link could not be recorded on the case, so it was withdrawn again.',
-				'reason' => self::REASON_ROLLED_BACK,
-			];
+			return $this->rolledBackError(caseId: $caseId, exception: $e);
 		}
 
 		$this->logger->info(
@@ -313,6 +291,57 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 
 		return $this->gateway->toArray($result);
 	}//end store()
+
+	/**
+	 * Log and describe a share that cannot be recorded because the case share schema is not configured.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $register The configured register, possibly empty.
+	 * @param string $schema The configured case share schema, possibly empty.
+	 *
+	 * @return array<string, string> The error array.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function notConfiguredError(string $caseId, string $register, string $schema): array {
+		// 🔴 NAME WHAT IS UNAVAILABLE. This branch is reached when this
+		// instance never finished configuring dossiq, which is a LOCAL
+		// gap and not OpenRegister refusing anything. It used to answer
+		// a bare "Service unavailable", which the controller then mapped
+		// to 502. An e2e lane spent a batch on that 502 before the cause
+		// turned out to be an unwritten app-config key. The `reason` is
+		// what lets the controller answer 503 rather than 502.
+		$this->logger->error(
+			'CaseLinkShares: the case share schema is not configured, so no share can be recorded',
+			['caseId' => $caseId, 'register' => $register, 'schema' => $schema]
+		);
+		return [
+			'error' => 'Sharing is not configured on this instance yet. '
+				. 'An administrator reloads the dossiq configuration to map the case share schema.',
+			'reason' => self::REASON_NOT_CONFIGURED,
+		];
+	}//end notConfiguredError()
+
+	/**
+	 * Log and describe a share record that could not be written after the link was minted.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param \Throwable $exception Why the write failed.
+	 *
+	 * @return array<string, string> The error array.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function rolledBackError(string $caseId, \Throwable $exception): array {
+		$this->logger->error(
+			'CaseLinkShares: the link was minted and the share record was not written',
+			['caseId' => $caseId, 'exception' => $exception->getMessage()]
+		);
+		return [
+			'error' => 'The link could not be recorded on the case, so it was withdrawn again.',
+			'reason' => self::REASON_ROLLED_BACK,
+		];
+	}//end rolledBackError()
 
 	/**
 	 * Pull the links a failed mint already published.

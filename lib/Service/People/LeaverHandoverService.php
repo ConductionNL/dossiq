@@ -179,20 +179,7 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 		$coordinated = $this->seats->casesCoordinatedBy(uid: $fromUser);
 		$drafts = $this->draftsOf(uid: $fromUser);
 
-		// The cases move as one bulk job, committed here rather than rehearsed:
-		// a leaver handover is an act somebody already decided, not a proposal
-		// waiting for a coordinator to read it. The job walks them in the
-		// background and reports per case what it did
-		// (bulk-actions-report-progress, D-1).
-		$reason = 'Handover of ' . $fromUser . '\'s work to ' . $toUser . ', ordered by ' . $actor;
-		$batch = $this->reassignment->releaseCaseload(
-			fromUser: $fromUser,
-			toUser: $toUser,
-			justification: $reason,
-			filter: null,
-			actorId: $actor,
-			commit: true,
-		);
+		$batch = $this->releaseCaseload(fromUser: $fromUser, toUser: $toUser, actor: $actor);
 		$job = (array)($batch['job'] ?? []);
 		$caseIds = (array)($batch['caseIds'] ?? []);
 		$batchId = (string)($job['uuid'] ?? ($job['id'] ?? ''));
@@ -248,6 +235,35 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 			'tasks' => (array)($batch['tasks'] ?? []),
 		];
 	}//end execute()
+
+	/**
+	 * Commit the bulk job that moves the leaver's cases to the successor.
+	 *
+	 * @param string $fromUser The person who is leaving.
+	 * @param string $toUser   The person receiving the work.
+	 * @param string $actor    The administrator running the act.
+	 *
+	 * @return array{job: array<string, mixed>, tasks: array<int, array<string, mixed>>, caseIds: array<int, string>}
+	 *         The batch the reassignment service answered.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 */
+	private function releaseCaseload(string $fromUser, string $toUser, string $actor): array {
+		// The cases move as one bulk job, committed here rather than rehearsed:
+		// a leaver handover is an act somebody already decided, not a proposal
+		// waiting for a coordinator to read it. The job walks them in the
+		// background and reports per case what it did
+		// (bulk-actions-report-progress, D-1).
+		$reason = 'Handover of ' . $fromUser . '\'s work to ' . $toUser . ', ordered by ' . $actor;
+		return $this->reassignment->releaseCaseload(
+			fromUser: $fromUser,
+			toUser: $toUser,
+			justification: $reason,
+			filter: null,
+			actorId: $actor,
+			commit: true,
+		);
+	}//end releaseCaseload()
 
 	/**
 	 * Refuse a handover that names nobody, or the leaver as their own successor.

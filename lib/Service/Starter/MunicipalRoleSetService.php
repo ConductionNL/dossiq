@@ -142,11 +142,21 @@ class MunicipalRoleSetService implements MunicipalRoleSetServiceInterface {
 			return null;
 		}
 
-		$byName = [];
-		foreach ($existing as $role) {
-			$byName[$this->text->textOf(value: ($role['name'] ?? ''))] = true;
-		}
+		$byName = $this->namesOf(roles: $existing);
 
+		return $this->seedMissing(byName: $byName);
+	}//end seed()
+
+	/**
+	 * Write every shipped role whose name is not taken yet.
+	 *
+	 * @param array<string, true> $byName The names already shipped, as keys.
+	 *
+	 * @return array{seeded: int, skipped: int} The tally.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function seedMissing(array $byName): array {
 		$tally = ['seeded' => 0, 'skipped' => 0];
 		foreach (self::ROLES_SHIPPED as $role) {
 			if (isset($byName[$role['name']]) === true) {
@@ -154,23 +164,56 @@ class MunicipalRoleSetService implements MunicipalRoleSetServiceInterface {
 				continue;
 			}
 
-			$payload = ($role + ['shippedSet' => ShippedSets::MUNICIPAL_ROLES, 'dormant' => true]);
-			$saved = $this->shippedRoles->store->save(configKey: self::ROLE_TYPES, payload: $payload);
-			if ($saved === null) {
-				continue;
+			if ($this->seedRole(role: $role) === true) {
+				$tally['seeded']++;
 			}
-
-			$tally['seeded']++;
-			$this->shippedRoles->shipped->stamp(
-				set: ShippedSets::MUNICIPAL_ROLES,
-				targetSchema: 'roleType',
-				targetObject: $this->shippedRoles->store->idOf(row: $saved),
-				object: $saved,
-			);
-		}//end foreach
+		}
 
 		return $tally;
-	}//end seed()
+	}//end seedMissing()
+
+	/**
+	 * The names of the roles already shipped, as keys.
+	 *
+	 * @param array<int, array<string, mixed>> $roles The shipped roles.
+	 *
+	 * @return array<string, true> Name => true.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function namesOf(array $roles): array {
+		$byName = [];
+		foreach ($roles as $role) {
+			$byName[$this->text->textOf(value: ($role['name'] ?? ''))] = true;
+		}
+
+		return $byName;
+	}//end namesOf()
+
+	/**
+	 * Write one shipped role, dormant, and stamp it as part of the set.
+	 *
+	 * @param array<string, mixed> $role The role as shipped.
+	 *
+	 * @return bool True when it was written.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function seedRole(array $role): bool {
+		$payload = ($role + ['shippedSet' => ShippedSets::MUNICIPAL_ROLES, 'dormant' => true]);
+		$saved = $this->shippedRoles->store->save(configKey: self::ROLE_TYPES, payload: $payload);
+		if ($saved === null) {
+			return false;
+		}
+
+		$this->shippedRoles->shipped->stamp(
+			set: ShippedSets::MUNICIPAL_ROLES,
+			targetSchema: 'roleType',
+			targetObject: $this->shippedRoles->store->idOf(row: $saved),
+			object: $saved,
+		);
+		return true;
+	}//end seedRole()
 
 	/**
 	 * What the roles screen should show: the set, whether it is adopted, and
