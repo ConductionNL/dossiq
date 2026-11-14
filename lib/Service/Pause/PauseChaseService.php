@@ -273,10 +273,7 @@ class PauseChaseService implements PauseChaseServiceInterface {
 		$step->moment = $moment;
 		$step->recipient = $this->recipientFor(caseId: $step->caseId);
 		if ($step->recipient === '') {
-			$this->logger->warning(
-				'Dossiq pause: a reminder was due but the case carries no address to send it to',
-				['app' => AppIdentity::APP_ID, 'instance' => $step->instanceId, 'case' => $step->caseId]
-			);
+			$this->warnNoRecipient(step: $step);
 			return false;
 		}
 
@@ -285,6 +282,35 @@ class PauseChaseService implements PauseChaseServiceInterface {
 			return false;
 		}
 
+		$this->recordChased(step: $step, reason: $reason, moment: $moment);
+
+		return true;
+	}//end chase()
+
+	/**
+	 * Log that a reminder was due but the case has no address to send it to.
+	 *
+	 * @param PauseStep $step The step.
+	 *
+	 * @return void
+	 */
+	private function warnNoRecipient(PauseStep $step): void {
+		$this->logger->warning(
+			'Dossiq pause: a reminder was due but the case carries no address to send it to',
+			['app' => AppIdentity::APP_ID, 'instance' => $step->instanceId, 'case' => $step->caseId]
+		);
+	}//end warnNoRecipient()
+
+	/**
+	 * Write down that a reminder went: on the instance, as a step, on the case and in the log.
+	 *
+	 * @param PauseStep            $step   The step, numbered.
+	 * @param array<string, mixed> $reason The normalised reason in force.
+	 * @param DateTimeImmutable    $moment When this is happening.
+	 *
+	 * @return void
+	 */
+	private function recordChased(PauseStep $step, array $reason, DateTimeImmutable $moment): void {
 		$this->termService->updateTermijnInstance(
 			$step->instanceId,
 			[
@@ -298,9 +324,7 @@ class PauseChaseService implements PauseChaseServiceInterface {
 		$this->recordStep(step: $step);
 		$this->projectOntoCase(step: $step);
 		$this->logChased(step: $step);
-
-		return true;
-	}//end chase()
+	}//end recordChased()
 
 	/**
 	 * The step for one paused row and its reason.

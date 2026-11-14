@@ -165,38 +165,39 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 		// success. The shared trait falls back to running the operation bare
 		// when runAsSystem() is absent; here that fallback is the exact silent
 		// no-op the spec forbids, so this step FAILS instead.
-		if (method_exists($objectService, 'runAsSystem') === false) {
-			throw new RuntimeException(
-				'Dossiq: OpenRegister exposes no runAsSystem(); the committee migration cannot establish an identity and refuses to run as Anonymous.'
-			);
-		}
+		$this->requireRunAsSystem(objectService: $objectService);
 
 		$counts = ['migrated' => 0, 'skipped' => 0, 'failed' => 0];
 
 		$objectService->runAsSystem(
 			function () use ($objectService, $register, $schema, $output, &$counts): void {
-				$committees = $this->readCommittees(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					output: $output,
-				);
+				$committees = $this->readCommittees(objectService: $objectService, register: $register, schema: $schema, output: $output);
 
 				foreach ($committees as $committee) {
-					$this->migrateOne(
-						objectService: $objectService,
-						register: $register,
-						schema: $schema,
-						committee: $committee,
-						output: $output,
-						counts: $counts,
-					);
+					$this->migrateOne(objectService: $objectService, register: $register, schema: $schema, committee: $committee, output: $output, counts: $counts);
 				}
 			}
 		);
 
 		return $counts;
 	}//end migrateAll()
+
+	/**
+	 * Refuse to run when OpenRegister cannot establish a system identity.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When OpenRegister exposes no runAsSystem().
+	 */
+	private function requireRunAsSystem(object $objectService): void {
+		if (method_exists($objectService, 'runAsSystem') === false) {
+			throw new RuntimeException(
+				'Dossiq: OpenRegister exposes no runAsSystem(); the committee migration cannot establish an identity and refuses to run as Anonymous.'
+			);
+		}
+	}//end requireRunAsSystem()
 
 	/**
 	 * Read the local committees.

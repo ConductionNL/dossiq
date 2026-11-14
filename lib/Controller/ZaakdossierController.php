@@ -109,12 +109,27 @@ class ZaakdossierController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
+		return new JSONResponse($this->visibleDossier(user: $user, caseId: $caseId, file: $file));
+	}//end listDossier()
+
+	/**
+	 * The dossier as this user may see it, with its verdicts and rights, grouped by type.
+	 *
+	 * @param \OCP\IUser           $user   The signed-in user.
+	 * @param string               $caseId The case (zaak) UUID.
+	 * @param array<string, mixed> $file   The case's dossier.
+	 *
+	 * @return array<string, mixed> The grouped dossier.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
+	 */
+	private function visibleDossier($user, string $caseId, array $file): array {
 		$filtered = $this->reader->filterForUser(
 			user: $user,
 			informatieobjecten: ($file['informatieobjecten'] ?? []),
 		);
 
-		$regrouped = $this->fileService->groupByType(
+		return $this->fileService->groupByType(
 			documents: $this->writes->withChangeRight(
 				user: $user,
 				documents: $this->reader->withAccessExceptionNames(
@@ -122,9 +137,7 @@ class ZaakdossierController extends Controller {
 				)
 			)
 		);
-
-		return new JSONResponse($regrouped);
-	}//end listDossier()
+	}//end visibleDossier()
 
 	/**
 	 * Upload one or more documents to a case dossier.

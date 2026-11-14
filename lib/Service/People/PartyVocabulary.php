@@ -75,32 +75,76 @@ class PartyVocabulary {
 	 */
 	public function kinds(): array {
 		return [
-			[
-				'key' => 'person',
-				'label' => $this->l10n->t('Person'),
-				'description' => $this->l10n->t('A natural person, with or without an account on this instance.'),
-				'identityShapes' => ['naturalPerson'],
-			],
-			[
-				'key' => 'organisation',
-				'label' => $this->l10n->t('Organisation'),
-				'description' => $this->l10n->t('A company, authority or other body acting on the case.'),
-				'identityShapes' => ['organization'],
-			],
-			[
-				'key' => 'colleague',
-				'label' => $this->l10n->t('Colleague'),
-				'description' => $this->l10n->t('A colleague of the municipality who takes part in the case, such as an adviser.'),
-				'identityShapes' => ['naturalPerson'],
-			],
-			[
-				'key' => 'address',
-				'label' => $this->l10n->t('Address'),
-				'description' => $this->l10n->t('A place the case is about, such as the address a permit is asked for.'),
-				'roles' => [self::ROLE_LOCATION],
-			],
+			$this->personKind(),
+			$this->organisationKind(),
+			$this->colleagueKind(),
+			$this->addressKind(),
 		];
 	}//end kinds()
+
+	/**
+	 * The `person` party kind.
+	 *
+	 * @return array<string, mixed> The `partyKinds` entry.
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
+	 */
+	private function personKind(): array {
+		return [
+			'key' => 'person',
+			'label' => $this->l10n->t('Person'),
+			'description' => $this->l10n->t('A natural person, with or without an account on this instance.'),
+			'identityShapes' => ['naturalPerson'],
+		];
+	}//end personKind()
+
+	/**
+	 * The `organisation` party kind.
+	 *
+	 * @return array<string, mixed> The `partyKinds` entry.
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
+	 */
+	private function organisationKind(): array {
+		return [
+			'key' => 'organisation',
+			'label' => $this->l10n->t('Organisation'),
+			'description' => $this->l10n->t('A company, authority or other body acting on the case.'),
+			'identityShapes' => ['organization'],
+		];
+	}//end organisationKind()
+
+	/**
+	 * The `colleague` party kind.
+	 *
+	 * @return array<string, mixed> The `partyKinds` entry.
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
+	 */
+	private function colleagueKind(): array {
+		return [
+			'key' => 'colleague',
+			'label' => $this->l10n->t('Colleague'),
+			'description' => $this->l10n->t('A colleague of the municipality who takes part in the case, such as an adviser.'),
+			'identityShapes' => ['naturalPerson'],
+		];
+	}//end colleagueKind()
+
+	/**
+	 * The `address` party kind.
+	 *
+	 * @return array<string, mixed> The `partyKinds` entry.
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
+	 */
+	private function addressKind(): array {
+		return [
+			'key' => 'address',
+			'label' => $this->l10n->t('Address'),
+			'description' => $this->l10n->t('A place the case is about, such as the address a permit is asked for.'),
+			'roles' => [self::ROLE_LOCATION],
+		];
+	}//end addressKind()
 
 	/**
 	 * The roles a party may hold on a case, whatever its case type.

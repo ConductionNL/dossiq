@@ -162,28 +162,47 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 		$existing = $this->slugsOf(schemaIds: $schemaIds);
 		$plan = $this->decisions->plan(map: self::SLUG_MAP, existing: $existing);
 
-		foreach ($plan['refused'] as $old => $why) {
+		$this->logRefusals(refused: $plan['refused']);
+
+		$renamed = $this->renameAll(renames: $plan['renames'], schemaIds: $schemaIds);
+
+		$output->info(sprintf('RenameDutchSchemaSlugs: %d slug(s) renamed, %d refused.', $renamed, count($plan['refused'])));
+	}//end run()
+
+	/**
+	 * Log each rename the plan refused.
+	 *
+	 * @param array<string, string> $refused Why, by old slug.
+	 *
+	 * @return void
+	 */
+	private function logRefusals(array $refused): void {
+		foreach ($refused as $old => $why) {
 			$this->logger->warning(
 				'RenameDutchSchemaSlugs: ' . $why . '; renaming neither.',
 				['old' => $old]
 			);
 		}
+	}//end logRefusals()
 
+	/**
+	 * Rename each planned slug and count the renames that took.
+	 *
+	 * @param array<string, string> $renames   New slug by old slug.
+	 * @param array<int, int>       $schemaIds The in-scope schema ids.
+	 *
+	 * @return int How many slugs were renamed.
+	 */
+	private function renameAll(array $renames, array $schemaIds): int {
 		$renamed = 0;
-		foreach ($plan['renames'] as $old => $new) {
+		foreach ($renames as $old => $new) {
 			if ($this->renameSlug(old: $old, new: $new, schemaIds: $schemaIds) === true) {
 				$renamed++;
 			}
 		}
 
-		$output->info(
-			sprintf(
-				'RenameDutchSchemaSlugs: %d slug(s) renamed, %d refused.',
-				$renamed,
-				count($plan['refused'])
-			)
-		);
-	}//end run()
+		return $renamed;
+	}//end renameAll()
 
 	/**
 	 * Resolve the schema ids belonging to this app's registers.

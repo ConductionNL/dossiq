@@ -340,12 +340,7 @@ class DeelzaakService implements DeelzaakServiceInterface {
 	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	public function unlinkSubCases(string $parentCaseUuid): array {
-		$empty = [
-			'unlinked' => 0,
-			'failed' => 0,
-			'total' => 0,
-			'complete' => true,
-		];
+		$empty = ['unlinked' => 0, 'failed' => 0, 'total' => 0, 'complete' => true];
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -358,19 +353,10 @@ class DeelzaakService implements DeelzaakServiceInterface {
 			return $empty;
 		}
 
-		$progress = $this->unlinkAllPages(
-			parentCaseUuid: $parentCaseUuid,
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-		);
+		$progress = $this->unlinkAllPages(parentCaseUuid: $parentCaseUuid, objectService: $objectService, register: $register, schema: $schema);
 
-		return $this->unlinkResult(
-			parentCaseUuid: $parentCaseUuid,
-			unlinked: $progress['unlinked'],
-			failed: $progress['failed'],
-			total: $progress['total'],
-		);
+		return $this->unlinkResult(parentCaseUuid: $parentCaseUuid, unlinked: $progress['unlinked'], failed: $progress['failed'],
+			total: $progress['total']);
 	}//end unlinkSubCases()
 
 	/**

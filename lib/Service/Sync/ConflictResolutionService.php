@@ -109,10 +109,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 		$objectService = $this->settings->getObjectService();
 		$register = $this->settings->getConfigValue(key: 'register');
 		if ($objectService === null || $register === '') {
-			return ConflictResolutionOutcome::refused(
-				status: Http::STATUS_SERVICE_UNAVAILABLE,
-				message: 'OpenRegister is niet beschikbaar.'
-			);
+			return ConflictResolutionOutcome::refused(status: Http::STATUS_SERVICE_UNAVAILABLE, message: 'OpenRegister is niet beschikbaar.');
 		}
 
 		$data = $this->openConflict(objectService: $objectService, register: $register, id: $id);
@@ -120,25 +117,10 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			return $data;
 		}
 
-		$refusal = $this->applyResolution(
-			objectService: $objectService,
-			register: $register,
-			id: $id,
-			resolution: $resolution,
-			data: $data
-		);
-		if ($refusal !== null) {
-			return $refusal;
-		}
+		$refusal = $this->applyResolution(objectService: $objectService, register: $register, id: $id, resolution: $resolution, data: $data);
 
-		return $this->markResolved(
-			objectService: $objectService,
-			register: $register,
-			id: $id,
-			resolution: $resolution,
-			userId: $userId,
-			data: $data
-		);
+		return ($refusal ?? $this->markResolved(objectService: $objectService, register: $register, id: $id, resolution: $resolution,
+			userId: $userId, data: $data));
 	}//end resolve()
 
 	/**

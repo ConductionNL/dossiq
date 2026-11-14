@@ -327,6 +327,33 @@ class FederatedCaseShareService {
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
 	 */
 	public function revokeFederatedShare(string $shareId, string $userId): array {
+		$loaded = $this->servicesAndShareToRevoke(shareId: $shareId);
+		if (isset($loaded['error']) === true) {
+			return $loaded;
+		}
+
+		[$federationService, $objectService, $register, $shareSchema, $shareData] = $loaded;
+
+		$revokeError = $this->revokeFederationToken(federationService: $federationService, shareData: $shareData, shareId: $shareId);
+		if ($revokeError !== null) {
+			return $revokeError;
+		}
+
+		return $this->storeRevokedShare(objectService: $objectService, shareData: $shareData, shareId: $shareId,
+			userId: $userId, register: $register, shareSchema: $shareSchema);
+	}//end revokeFederatedShare()
+
+	/**
+	 * The federation and object services, and the share to revoke with its register and schema.
+	 *
+	 * @param string $shareId The UUID of the caseFederatedShare to revoke
+	 *
+	 * @return array{0: object, 1: object, 2: string, 3: string, 4: array<string, mixed>}|array{error: string} The
+	 *         services, register, schema and share, or the error.
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
+	 */
+	private function servicesAndShareToRevoke(string $shareId): array {
 		$services = $this->federationServices();
 		if ($services === null) {
 			return ['error' => 'Federated case sharing requires the OpenRegister federation leaf'];
@@ -339,26 +366,8 @@ class FederatedCaseShareService {
 			return $loaded;
 		}
 
-		[$register, $shareSchema, $shareData] = $loaded;
-
-		$revokeError = $this->revokeFederationToken(
-			federationService: $federationService,
-			shareData: $shareData,
-			shareId: $shareId,
-		);
-		if ($revokeError !== null) {
-			return $revokeError;
-		}
-
-		return $this->storeRevokedShare(
-			objectService: $objectService,
-			shareData: $shareData,
-			shareId: $shareId,
-			userId: $userId,
-			register: $register,
-			shareSchema: $shareSchema,
-		);
-	}//end revokeFederatedShare()
+		return [$federationService, $objectService, ...$loaded];
+	}//end servicesAndShareToRevoke()
 
 	/**
 	 * Load the federated-share snapshot to revoke, with the register and schema it lives in.
