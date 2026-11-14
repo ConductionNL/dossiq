@@ -154,26 +154,25 @@ class AdviceTimer implements AdviceTimerInterface {
 			return self::OVERDUE;
 		}
 
-		return $this->arm(advice: $advice, adviceId: $adviceId, anchor: $today, slaDays: ($daysLeft + 1));
+		return $this->arm(advice: $advice, adviceId: $adviceId, window: new TimerWindow(anchor: $today, slaDays: ($daysLeft + 1)));
 	}//end sync()
 
 	/**
 	 * Arm the timer.
 	 *
-	 * @param array<string, mixed>   $advice   The request.
-	 * @param string                 $adviceId Its id.
-	 * @param \DateTimeImmutable     $anchor   Midnight today.
-	 * @param int                    $slaDays  Days from the anchor to the breach.
+	 * @param array<string, mixed> $advice   The request.
+	 * @param string               $adviceId Its id.
+	 * @param TimerWindow          $window   Midnight today, and the days from it to the breach.
 	 *
 	 * @return string ARMED, or UNAVAILABLE.
 	 */
-	private function arm(array $advice, string $adviceId, \DateTimeImmutable $anchor, int $slaDays): string {
+	private function arm(array $advice, string $adviceId, TimerWindow $window): string {
 		$engine = $this->engine();
 		if ($engine === null) {
 			return self::UNAVAILABLE;
 		}
 
-		$config = $this->timerConfig(advice: $advice, adviceId: $adviceId, anchor: $anchor, slaDays: $slaDays);
+		$config = $this->timerConfig(advice: $advice, adviceId: $adviceId, window: $window);
 
 		try {
 			$engine->arm(config: $config, actor: null);
@@ -191,14 +190,15 @@ class AdviceTimer implements AdviceTimerInterface {
 	/**
 	 * The engine config of the request's timer.
 	 *
-	 * @param array<string, mixed>   $advice   The request.
-	 * @param string                 $adviceId Its id.
-	 * @param \DateTimeImmutable     $anchor   Midnight today.
-	 * @param int                    $slaDays  Days from the anchor to the breach.
+	 * @param array<string, mixed> $advice   The request.
+	 * @param string               $adviceId Its id.
+	 * @param TimerWindow          $window   Midnight today, and the days from it to the breach.
 	 *
 	 * @return array<string, mixed> The config.
 	 */
-	private function timerConfig(array $advice, string $adviceId, \DateTimeImmutable $anchor, int $slaDays): array {
+	private function timerConfig(array $advice, string $adviceId, TimerWindow $window): array {
+		$anchor = $window->anchor;
+		$slaDays = $window->slaDays;
 		$rules = $this->escalationRules(slaDays: $slaDays);
 
 		$config = [
