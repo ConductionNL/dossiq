@@ -206,6 +206,21 @@ class EmailTemplateController extends Controller {
 			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
+		$data = $this->updateData();
+
+		try {
+			return new JSONResponse($this->templateService->updateTemplate(templateId: $templateId, data: $data));
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_NOT_FOUND);
+		}
+	}//end updateTemplate()
+
+	/**
+	 * The template fields an update request carries.
+	 *
+	 * @return array<string, mixed> The name, subject and body, with the moment and channel the request names.
+	 */
+	private function updateData(): array {
 		$data = [
 			'name' => $this->request->getParam('name'),
 			'subject' => $this->request->getParam('subject'),
@@ -221,12 +236,8 @@ class EmailTemplateController extends Controller {
 			}
 		}
 
-		try {
-			return new JSONResponse($this->templateService->updateTemplate(templateId: $templateId, data: $data));
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_NOT_FOUND);
-		}
-	}//end updateTemplate()
+		return $data;
+	}//end updateData()
 
 	/**
 	 * Render a draft from a template against a case.
