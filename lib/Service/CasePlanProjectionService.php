@@ -658,35 +658,64 @@ class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 	private function convertOnPart(array $onPart, string $where): array {
 		$planItem = trim((string)($onPart['planItem'] ?? ''));
 		if ($planItem !== '') {
-			$standardEvent = (string)($onPart['standardEvent'] ?? '');
-			if (array_key_exists($standardEvent, self::STANDARD_EVENTS) === false) {
-				throw new UnexpectedValueException(
-					sprintf(
-						"%s names standardEvent '%s', which is outside the conversion table (%s).",
-						$where,
-						$standardEvent,
-						implode(', ', array_keys(self::STANDARD_EVENTS))
-					)
-				);
-			}
-
-			return ['event' => self::STANDARD_EVENTS[$standardEvent], 'item' => $planItem];
+			return $this->convertPlanItemOnPart(onPart: $onPart, planItem: $planItem, where: $where);
 		}
 
 		$caseFileItem = trim((string)($onPart['caseFileItem'] ?? ''));
 		if ($caseFileItem !== '') {
-			$caseFileEvent = (string)($onPart['caseFileEvent'] ?? 'set');
-			if (in_array($caseFileEvent, ['set', 'changed'], true) === false) {
-				throw new UnexpectedValueException(
-					sprintf("%s names caseFileEvent '%s', which is outside the conversion table (set, changed).", $where, $caseFileEvent)
-				);
-			}
-
-			return ['event' => self::OBJECT_WRITE_EVENT];
+			return $this->convertCaseFileOnPart(onPart: $onPart, where: $where);
 		}
 
 		throw new UnexpectedValueException(sprintf('%s has an onPart naming neither a planItem nor a caseFileItem.', $where));
 	}//end convertOnPart()
+
+	/**
+	 * Convert a dossiq on-part on a plan item into an OpenRegister on-part.
+	 *
+	 * @param array<string, mixed> $onPart The dossiq on-part.
+	 * @param string $planItem The plan item it listens to.
+	 * @param string $where Which sentry, for the refusal message.
+	 *
+	 * @return array<string, mixed> The OpenRegister on-part.
+	 *
+	 * @throws UnexpectedValueException Naming the event it refuses.
+	 */
+	private function convertPlanItemOnPart(array $onPart, string $planItem, string $where): array {
+		$standardEvent = (string)($onPart['standardEvent'] ?? '');
+		if (array_key_exists($standardEvent, self::STANDARD_EVENTS) === false) {
+			throw new UnexpectedValueException(
+				sprintf(
+					"%s names standardEvent '%s', which is outside the conversion table (%s).",
+					$where,
+					$standardEvent,
+					implode(', ', array_keys(self::STANDARD_EVENTS))
+				)
+			);
+		}
+
+		return ['event' => self::STANDARD_EVENTS[$standardEvent], 'item' => $planItem];
+	}//end convertPlanItemOnPart()
+
+	/**
+	 * Convert a dossiq on-part on a case file item into an OpenRegister on-part.
+	 *
+	 * @param array<string, mixed> $onPart The dossiq on-part.
+	 * @param string $where Which sentry, for the refusal message.
+	 *
+	 * @return array<string, mixed> The OpenRegister on-part.
+	 *
+	 * @throws UnexpectedValueException Naming the event it refuses.
+	 */
+	private function convertCaseFileOnPart(array $onPart, string $where): array {
+		$caseFileEvent = (string)($onPart['caseFileEvent'] ?? 'set');
+		if (in_array($caseFileEvent, ['set', 'changed'], true) === false) {
+			throw new UnexpectedValueException(
+				sprintf("%s names caseFileEvent '%s', which is outside the conversion table (set, changed).", $where, $caseFileEvent)
+			);
+		}
+
+		return ['event' => self::OBJECT_WRITE_EVENT];
+	}//end convertCaseFileOnPart()
 
 	/**
 	 * Build the definition's `settings` block.
@@ -778,36 +807,69 @@ class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 	 * @return array<string, mixed>|null The model, or null when none is published.
 	 */
 	private function findPublishedModel(string $caseTypeId): ?array {
-		if ($caseTypeId === '') {
-			return null;
-		}
-
-		$scope = $this->modelSearchScope();
+		$scope = $this->modelSearchScopeFor(caseTypeId: $caseTypeId);
 		if ($scope === []) {
 			return null;
 		}
 
 		try {
-			$found = $scope['objectService']->searchObjects(
-				[
-					'@self' => [
-						'register' => (int)$scope['register'],
-						'schema' => (int)$scope['schema'],
-					],
-					'caseType' => $caseTypeId,
-					'lifecycleStatus' => 'published',
-				],
-			);
+			$found = $scope['objectService']->searchObjects($this->publishedModelQuery(scope: $scope, caseTypeId: $caseTypeId));
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'CasePlanProjectionService: caseModel lookup failed',
-				['caseType' => $caseTypeId, 'exception' => $e->getMessage()]
-			);
+			$this->logModelLookupFailed(caseTypeId: $caseTypeId, error: $e);
 			return null;
 		}
 
 		return $this->publishedModelOf(found: $found);
 	}//end findPublishedModel()
+
+	/**
+	 * Where a caseType's published caseModel is searched; empty for no caseType or a missing store.
+	 *
+	 * @param string $caseTypeId The caseType uuid.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|array{}
+	 */
+	private function modelSearchScopeFor(string $caseTypeId): array {
+		if ($caseTypeId === '') {
+			return [];
+		}
+
+		return $this->modelSearchScope();
+	}//end modelSearchScopeFor()
+
+	/**
+	 * The search for a caseType's published caseModels.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $scope Where to search.
+	 * @param string $caseTypeId The caseType uuid.
+	 *
+	 * @return array<string, mixed> The query.
+	 */
+	private function publishedModelQuery(array $scope, string $caseTypeId): array {
+		return [
+			'@self' => [
+				'register' => (int)$scope['register'],
+				'schema' => (int)$scope['schema'],
+			],
+			'caseType' => $caseTypeId,
+			'lifecycleStatus' => 'published',
+		];
+	}//end publishedModelQuery()
+
+	/**
+	 * Log a caseModel lookup that failed.
+	 *
+	 * @param string $caseTypeId The caseType uuid.
+	 * @param Throwable $error Why it failed.
+	 *
+	 * @return void
+	 */
+	private function logModelLookupFailed(string $caseTypeId, Throwable $error): void {
+		$this->logger->error(
+			'CasePlanProjectionService: caseModel lookup failed',
+			['caseType' => $caseTypeId, 'exception' => $error->getMessage()]
+		);
+	}//end logModelLookupFailed()
 
 	/**
 	 * Where published caseModels are searched: the store, the register and the model schema; empty when any is missing.

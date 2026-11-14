@@ -120,32 +120,9 @@ class CasePlanGoals implements CasePlanGoalsInterface {
 	 * @spec openspec/changes/case-goals/specs/case-goals/spec.md#requirement-a-case-can-hold-goals-that-say-what-counts-as-met
 	 */
 	public function save(array $goal): array {
-		$plan = trim((string)($goal['plan'] ?? ''));
-		$case = trim((string)($goal['case'] ?? ''));
-		if ($plan === '' && $case === '') {
-			throw new RefusedException(
-				rule: 'goal-needs-an-owner',
-				sentence: 'Say which case or family plan this goal belongs to.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		if (trim((string)($goal['title'] ?? '')) === '') {
-			throw new RefusedException(
-				rule: 'goal-needs-a-title',
-				sentence: 'Write down the goal itself, in the family\'s own words where you can.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		if (trim((string)($goal['metWhen'] ?? '')) === '') {
-			throw new RefusedException(
-				rule: 'goal-needs-what-counts-as-met',
-				sentence: 'Say what would be observably true if this goal were met. '
-					. 'A goal nobody can check is a goal no review can close.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$this->requireOwner(goal: $goal);
+		$this->requireTitle(goal: $goal);
+		$this->requireMetWhen(goal: $goal);
 
 		$goal['state'] = $this->stateOf(goal: $goal);
 		// Not `?? ''` on the way in: a caller that omits the mark entirely and
@@ -155,6 +132,66 @@ class CasePlanGoals implements CasePlanGoalsInterface {
 
 		return $this->store->write(schema: self::SCHEMA, object: $goal);
 	}//end save()
+
+	/**
+	 * Refuse a goal that names neither a case nor a family plan.
+	 *
+	 * @param array<string, mixed> $goal The goal.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the goal has no owner.
+	 */
+	private function requireOwner(array $goal): void {
+		$plan = trim((string)($goal['plan'] ?? ''));
+		$case = trim((string)($goal['case'] ?? ''));
+		if ($plan === '' && $case === '') {
+			throw new RefusedException(
+				rule: 'goal-needs-an-owner',
+				sentence: 'Say which case or family plan this goal belongs to.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end requireOwner()
+
+	/**
+	 * Refuse a goal without a title.
+	 *
+	 * @param array<string, mixed> $goal The goal.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the goal has no title.
+	 */
+	private function requireTitle(array $goal): void {
+		if (trim((string)($goal['title'] ?? '')) === '') {
+			throw new RefusedException(
+				rule: 'goal-needs-a-title',
+				sentence: 'Write down the goal itself, in the family\'s own words where you can.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end requireTitle()
+
+	/**
+	 * Refuse a goal that does not say what counts as met.
+	 *
+	 * @param array<string, mixed> $goal The goal.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the goal has no metWhen.
+	 */
+	private function requireMetWhen(array $goal): void {
+		if (trim((string)($goal['metWhen'] ?? '')) === '') {
+			throw new RefusedException(
+				rule: 'goal-needs-what-counts-as-met',
+				sentence: 'Say what would be observably true if this goal were met. '
+					. 'A goal nobody can check is a goal no review can close.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end requireMetWhen()
 
 	/**
 	 * Close a goal against the thing it said would count as met.

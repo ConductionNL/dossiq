@@ -82,33 +82,59 @@ class DerivedStatusService implements DerivedStatusServiceInterface {
 		}
 
 		$verdicts = [];
-		foreach ($this->caseTypes->statusTypesFor(caseTypeId: $caseTypeId) as $row) {
-			if (is_array($row) === false) {
-				continue;
+		foreach (array_filter($this->caseTypes->statusTypesFor(caseTypeId: $caseTypeId), 'is_array') as $row) {
+			$verdict = $this->verdictOf(row: $row, caseData: $case);
+			if ($verdict !== null) {
+				$verdicts[] = $verdict;
 			}
-
-			$statusId = (string)($row['id'] ?? ($row['uuid'] ?? ''));
-			if ($statusId === '' || $this->declaration->isDerived(statusType: $row) === false) {
-				continue;
-			}
-
-			$verdict = $this->evaluator->evaluate(statusType: $row, case: $case);
-			$verdicts[] = [
-				'statusId' => $statusId,
-				'name' => $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null))),
-				'order' => (int)($row['order'] ?? 0),
-				'satisfied' => $verdict['satisfied'],
-				'unmet' => $verdict['unmet'],
-			];
 		}
 
+		return $this->byOrder(verdicts: $verdicts);
+	}//end verdictsFor()
+
+	/**
+	 * The verdict on one status type, or null when it is no derived status.
+	 *
+	 * @param array<string, mixed> $row      The status type.
+	 * @param array<string, mixed> $caseData The case.
+	 *
+	 * @return array{statusId: string, name: string, order: int, satisfied: bool, unmet: array<int, string>}|null
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function verdictOf(array $row, array $caseData): ?array {
+		$statusId = (string)($row['id'] ?? ($row['uuid'] ?? ''));
+		if ($statusId === '' || $this->declaration->isDerived(statusType: $row) === false) {
+			return null;
+		}
+
+		$verdict = $this->evaluator->evaluate(statusType: $row, case: $caseData);
+		return [
+			'statusId' => $statusId,
+			'name' => $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null))),
+			'order' => (int)($row['order'] ?? 0),
+			'satisfied' => $verdict['satisfied'],
+			'unmet' => $verdict['unmet'],
+		];
+	}//end verdictOf()
+
+	/**
+	 * The verdicts ordered by their status's `order`.
+	 *
+	 * @param array<int, array{statusId: string, name: string, order: int, satisfied: bool, unmet: array<int, string>}> $verdicts The verdicts.
+	 *
+	 * @return array<int, array{statusId: string, name: string, order: int, satisfied: bool, unmet: array<int, string>}>
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function byOrder(array $verdicts): array {
 		usort(
 			$verdicts,
 			static fn (array $left, array $right): int => ($left['order'] <=> $right['order']),
 		);
 
 		return $verdicts;
-	}//end verdictsFor()
+	}//end byOrder()
 
 	/**
 	 * Whether this status is one the case type derives rather than offers.

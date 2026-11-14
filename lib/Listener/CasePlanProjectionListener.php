@@ -79,23 +79,70 @@ class CasePlanProjectionListener implements IEventListener {
 			return;
 		}
 
-		$caseId = (string)($payload['id'] ?? ($payload['uuid'] ?? ''));
-		$caseTypeId = (string)($payload['caseType'] ?? '');
+		[$caseId, $caseTypeId] = $this->caseAndType(payload: $payload);
 		if ($caseId === '' || $caseTypeId === '') {
 			return;
 		}
 
+		$result = $this->project(caseId: $caseId, caseTypeId: $caseTypeId);
+		if ($result === null) {
+			return;
+		}
+
+		$this->reportUnplanned(caseId: $caseId, caseTypeId: $caseTypeId, result: $result);
+	}//end handle()
+
+	/**
+	 * The case id and case type id of a created case.
+	 *
+	 * @param array<string, mixed> $payload The created case.
+	 *
+	 * @return array{0: string, 1: string} The case id and the case type id, '' when absent.
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
+	 */
+	private function caseAndType(array $payload): array {
+		$caseId = (string)($payload['id'] ?? ($payload['uuid'] ?? ''));
+		$caseTypeId = (string)($payload['caseType'] ?? '');
+
+		return [$caseId, $caseTypeId];
+	}//end caseAndType()
+
+	/**
+	 * Project the case type's caseModel onto the new case, or null (logged) when that fails.
+	 *
+	 * @param string $caseId     The new case.
+	 * @param string $caseTypeId Its case type.
+	 *
+	 * @return array<string, mixed>|null The projection result (`projected`, `reason`), or null.
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
+	 */
+	private function project(string $caseId, string $caseTypeId): ?array {
 		try {
-			$result = $this->projection->projectForCase(caseId: $caseId, caseTypeId: $caseTypeId);
+			return $this->projection->projectForCase(caseId: $caseId, caseTypeId: $caseTypeId);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq case plan: projecting the caseModel of a new case failed',
 				['case' => $caseId, 'caseType' => $caseTypeId, 'exception' => $e->getMessage()]
 			);
 
-			return;
+			return null;
 		}
+	}//end project()
 
+	/**
+	 * Warn about a CMMN case that started without a plan.
+	 *
+	 * @param string               $caseId     The new case.
+	 * @param string               $caseTypeId Its case type.
+	 * @param array<string, mixed> $result     The projection result.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
+	 */
+	private function reportUnplanned(string $caseId, string $caseTypeId, array $result): void {
 		if ($result['projected'] === true || $result['reason'] === 'case_not_cmmn_managed') {
 			return;
 		}
@@ -108,5 +155,5 @@ class CasePlanProjectionListener implements IEventListener {
 			'Dossiq case plan: a new case started without an OpenRegister case plan',
 			['case' => $caseId, 'caseType' => $caseTypeId, 'reason' => $result['reason']]
 		);
-	}//end handle()
+	}//end reportUnplanned()
 }//end class

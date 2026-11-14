@@ -173,17 +173,49 @@ class OutstandingDocuments {
 			return [];
 		}
 
-		$allDocs = $this->collectCaseDocumentIds(
+		$allDocs = $this->caseDocumentIds(objectService: $objectService, register: $register, caseId: $caseId);
+		if ($allDocs === []) {
+			return [];
+		}
+
+		$excluded = $this->setAsideIds(objectService: $objectService, register: $register, caseId: $caseId);
+
+		return array_map('strval', array_keys(array_diff_key($allDocs, $excluded)));
+	}//end underReview()
+
+	/**
+	 * Every document on the case, keyed by identifier.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param mixed  $register      The register.
+	 * @param string $caseId        The case UUID.
+	 *
+	 * @return array<string, mixed> The documents, keyed by identifier.
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-answers-every-document-with-its-assessment-req-das-004
+	 */
+	private function caseDocumentIds(object $objectService, mixed $register, string $caseId): array {
+		return $this->collectCaseDocumentIds(
 			objectService: $objectService,
 			register: $register,
 			docSchema: $this->settingsService->getConfigValue('document_schema'),
 			caseId: $caseId,
 		);
-		if ($allDocs === []) {
-			return [];
-		}
+	}//end caseDocumentIds()
 
-		$excluded = $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId)
+	/**
+	 * The documents set aside: excluded, or replaced by a redacted copy.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param mixed  $register      The register.
+	 * @param string $caseId        The case UUID.
+	 *
+	 * @return array<string, mixed> The set-aside documents, keyed by identifier.
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-answers-every-document-with-its-assessment-req-das-004
+	 */
+	private function setAsideIds(object $objectService, mixed $register, string $caseId): array {
+		return $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId)
 			+ $this->refsOf(
 				assessments: $this->assessmentRows(
 					objectService: $objectService,
@@ -193,9 +225,7 @@ class OutstandingDocuments {
 				),
 				field: 'redactedDocumentRef'
 			);
-
-		return array_map('strval', array_keys(array_diff_key($allDocs, $excluded)));
-	}//end underReview()
+	}//end setAsideIds()
 
 	/**
 	 * The documents that still hold up the decision.

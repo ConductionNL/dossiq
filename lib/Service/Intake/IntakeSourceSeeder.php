@@ -141,12 +141,7 @@ class IntakeSourceSeeder implements IntakeSourceSeederInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function seed(): array {
-		$empty = [
-			'available' => false,
-			'created' => 0,
-			'updated' => 0,
-			'refused' => [],
-		];
+		$empty = $this->nothingSeeded();
 
 		$objectService = $this->resolve(service: 'OCA\OpenRegister\Service\ObjectService');
 		$registerMapper = $this->resolve(service: 'OCA\OpenRegister\Db\RegisterMapper');
@@ -157,13 +152,50 @@ class IntakeSourceSeeder implements IntakeSourceSeederInterface {
 		try {
 			$register = $registerMapper->find(self::REGISTER_SLUG, false, false);
 		} catch (Throwable $e) {
-			$this->logger->info(
-				'Dossiq: the OpenRegister intake-sources register is not present, no channel seeded',
-				['exception' => $e->getMessage()]
-			);
+			$this->logRegisterAbsent(error: $e);
 			return $empty;
 		}
 
+		return $this->upsertAllAsSystem(objectService: $objectService, register: $register);
+	}//end seed()
+
+	/**
+	 * What the seed answers when it did nothing.
+	 *
+	 * @return array{available: bool, created: int, updated: int, refused: array<int, string>} The empty answer.
+	 */
+	private function nothingSeeded(): array {
+		return [
+			'available' => false,
+			'created' => 0,
+			'updated' => 0,
+			'refused' => [],
+		];
+	}//end nothingSeeded()
+
+	/**
+	 * Log that the intake-sources register is not present.
+	 *
+	 * @param Throwable $error Why the register could not be found.
+	 *
+	 * @return void
+	 */
+	private function logRegisterAbsent(Throwable $error): void {
+		$this->logger->info(
+			'Dossiq: the OpenRegister intake-sources register is not present, no channel seeded',
+			['exception' => $error->getMessage()]
+		);
+	}//end logRegisterAbsent()
+
+	/**
+	 * Create what is missing and refresh the rest, as the system.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param object $register The intake-sources register.
+	 *
+	 * @return array{available: bool, created: int, updated: int, refused: array<int, string>} What the seed did.
+	 */
+	private function upsertAllAsSystem(object $objectService, object $register): array {
 		// A REPAIR STEP RUNS WITH NO SESSION, SO OPENREGISTER RESOLVES THE ACTOR
 		// AS 'Anonymous' AND REFUSES EVERY WRITE. The refusal is reported as a
 		// warning, which does not fail an upgrade, so the install would print
@@ -178,7 +210,7 @@ class IntakeSourceSeeder implements IntakeSourceSeederInterface {
 				register: (string)$register->getId()
 			)
 		);
-	}//end seed()
+	}//end upsertAllAsSystem()
 
 	/**
 	 * Create what is missing and refresh the rest, one channel at a time.

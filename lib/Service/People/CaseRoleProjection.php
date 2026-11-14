@@ -187,10 +187,7 @@ class CaseRoleProjection implements CaseRoleProjectionInterface {
 	 * @return array<string, mixed> The record, [] when there is none yet.
 	 */
 	private function existingRole(string $caseId, string $personUid, string $roleTypeId): array {
-		$filters = ['case' => $caseId, 'participant' => $personUid, '_limit' => 50];
-		if ($roleTypeId !== '') {
-			$filters['roleType'] = $roleTypeId;
-		}
+		$filters = $this->roleFilters(caseId: $caseId, personUid: $personUid, roleTypeId: $roleTypeId);
 
 		try {
 			[$objectService, $register] = $this->requireRegister();
@@ -204,6 +201,35 @@ class CaseRoleProjection implements CaseRoleProjectionInterface {
 			return [];
 		}
 
+		return $this->firstWithId(rows: $rows);
+	}//end existingRole()
+
+	/**
+	 * The filters that find a person's role on a case, of one role type when named.
+	 *
+	 * @param string $caseId     The case.
+	 * @param string $personUid  The person.
+	 * @param string $roleTypeId The role type, or ''.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function roleFilters(string $caseId, string $personUid, string $roleTypeId): array {
+		$filters = ['case' => $caseId, 'participant' => $personUid, '_limit' => 50];
+		if ($roleTypeId !== '') {
+			$filters['roleType'] = $roleTypeId;
+		}
+
+		return $filters;
+	}//end roleFilters()
+
+	/**
+	 * The first row that carries an id, flattened, or [] when none does.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The role rows.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function firstWithId(array $rows): array {
 		foreach ($rows as $row) {
 			$self = (array)($row['@self'] ?? []);
 			$id = trim((string)($row['id'] ?? ($self['id'] ?? '')));
@@ -215,7 +241,7 @@ class CaseRoleProjection implements CaseRoleProjectionInterface {
 		}
 
 		return [];
-	}//end existingRole()
+	}//end firstWithId()
 
 	/**
 	 * Store a role record, new or existing.

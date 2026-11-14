@@ -402,16 +402,56 @@ class ConsultationService implements ConsultationServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function submitResponse(string $consultationId, array $response): array {
-		$advies = $response['advice'] ?? '';
-		if (in_array($advies, self::VALID_RESPONSES, true) === false) {
-			throw new RuntimeException('Invalid advice type: ' . $advies);
-		}
+		$advies = $this->validAdvice(response: $response);
 
 		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('consultation_schema');
 
+		$updateData = $this->adviceChanges(advies: $advies, response: $response);
+
+		$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$consultationId, changes: $updateData);
+
+		$this->logger->info(
+			'Consultation ' . $consultationId . ' advice submitted: ' . $advies,
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return ['id' => $consultationId, 'advice' => $advies, 'status' => 'advice_uitgebracht'];
+	}//end submitResponse()
+
+	/**
+	 * The advice type of a response.
+	 *
+	 * @param array<string, mixed> $response Response data (advies, toelichting, voorwaarden)
+	 *
+	 * @return mixed The advice type.
+	 *
+	 * @throws \RuntimeException If invalid response type
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
+	 */
+	private function validAdvice(array $response): mixed {
+		$advies = $response['advice'] ?? '';
+		if (in_array($advies, self::VALID_RESPONSES, true) === false) {
+			throw new RuntimeException('Invalid advice type: ' . $advies);
+		}
+
+		return $advies;
+	}//end validAdvice()
+
+	/**
+	 * The fields an advice response writes onto the consultation.
+	 *
+	 * @param mixed $advies The advice type.
+	 * @param array<string, mixed> $response Response data (advies, toelichting, voorwaarden)
+	 *
+	 * @return array<string, mixed> The changes.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
+	 */
+	private function adviceChanges(mixed $advies, array $response): array {
 		$updateData = [
 			'advice' => $advies,
 			'notes' => $response['notes'] ?? '',
@@ -423,19 +463,8 @@ class ConsultationService implements ConsultationServiceInterface {
 			$updateData['terms'] = $response['terms'];
 		}
 
-		$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$consultationId, changes: $updateData);
-
-		$this->logger->info(
-			'Consultation ' . $consultationId . ' advice submitted: ' . $advies,
-			['app' => AppIdentity::APP_ID],
-		);
-
-		return [
-			'id' => $consultationId,
-			'advice' => $advies,
-			'status' => 'advice_uitgebracht',
-		];
-	}//end submitResponse()
+		return $updateData;
+	}//end adviceChanges()
 
 	/**
 	 * Delete a consultation by ID.

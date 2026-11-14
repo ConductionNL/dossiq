@@ -113,23 +113,30 @@ class PaymentScheduleRaiser implements PaymentScheduleRaiserInterface {
 	 * @spec openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten/spec.md#requirement-advances-are-a-payment-schedule-raised-with-finance-when-due-req-sub-case-02
 	 */
 	public function raiseForDecision(object $objectService, array $decision, DateTimeImmutable $today): int {
+		[$schedule, $raised] = $this->raiseInstalments(decision: $decision, today: $today);
+
+		if ($raised > 0) {
+			$this->saveSchedule(objectService: $objectService, decision: $decision, schedule: $schedule);
+		}
+
+		return $raised;
+	}//end raiseForDecision()
+
+	/**
+	 * Raise the due instalments of one decision, marking each raised one on the schedule.
+	 *
+	 * @param array<string, mixed> $decision The decision.
+	 * @param DateTimeImmutable $today The day the run counts as.
+	 *
+	 * @return array{0: array<string, mixed>, 1: int} The schedule and how many instalments were raised.
+	 *
+	 * @spec openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten/spec.md#requirement-advances-are-a-payment-schedule-raised-with-finance-when-due-req-sub-case-02
+	 */
+	private function raiseInstalments(array $decision, DateTimeImmutable $today): array {
 		$schedule = (array)$decision['paymentSchedule'];
 		$raised   = 0;
-		foreach ((array)($schedule['instalments'] ?? []) as $index => $instalment) {
-			if ($this->isDue(instalment: (array)$instalment, today: $today) === false) {
-				continue;
-			}
-
-			try {
-				$payable = $this->raise(decision: $decision, schedule: $schedule, instalment: (array)$instalment, index: (int)$index);
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: the finance app refused an instalment; it stays open for the next run',
-					['decision' => (string)($decision['id'] ?? ''), 'instalment' => $index, 'exception' => $e->getMessage()]
-				);
-				continue;
-			}
-
+		foreach (array_keys((array)($schedule['instalments'] ?? [])) as $index) {
+			$payable = $this->duePayable(decision: $decision, schedule: $schedule, index: $index, today: $today);
 			if ($payable === null) {
 				continue;
 			}
@@ -139,12 +146,52 @@ class PaymentScheduleRaiser implements PaymentScheduleRaiserInterface {
 			++$raised;
 		}
 
-		if ($raised > 0) {
-			$this->saveSchedule(objectService: $objectService, decision: $decision, schedule: $schedule);
+		return [$schedule, $raised];
+	}//end raiseInstalments()
+
+	/**
+	 * Raise one instalment when it is due; null when it is not due, or finance refused or raised nothing.
+	 *
+	 * @param array<string, mixed> $decision The decision.
+	 * @param array<string, mixed> $schedule The schedule so far.
+	 * @param int|string $index The instalment's position.
+	 * @param DateTimeImmutable $today The day the run counts as.
+	 *
+	 * @return array<string, mixed>|null The payable, or null.
+	 *
+	 * @spec openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten/spec.md#requirement-advances-are-a-payment-schedule-raised-with-finance-when-due-req-sub-case-02
+	 */
+	private function duePayable(array $decision, array $schedule, int|string $index, DateTimeImmutable $today): ?array {
+		$instalment = (array)$schedule['instalments'][$index];
+		if ($this->isDue(instalment: $instalment, today: $today) === false) {
+			return null;
 		}
 
-		return $raised;
-	}//end raiseForDecision()
+		$payable = null;
+		try {
+			$payable = $this->raise(decision: $decision, schedule: $schedule, instalment: $instalment, index: (int)$index);
+		} catch (Throwable $e) {
+			$this->logRefused(decision: $decision, index: $index, error: $e);
+		}
+
+		return $payable;
+	}//end duePayable()
+
+	/**
+	 * Log an instalment the finance app refused.
+	 *
+	 * @param array<string, mixed> $decision The decision.
+	 * @param int|string $index The instalment's position.
+	 * @param Throwable $error Why finance refused it.
+	 *
+	 * @return void
+	 */
+	private function logRefused(array $decision, int|string $index, Throwable $error): void {
+		$this->logger->warning(
+			'Dossiq: the finance app refused an instalment; it stays open for the next run',
+			['decision' => (string)($decision['id'] ?? ''), 'instalment' => $index, 'exception' => $error->getMessage()]
+		);
+	}//end logRefused()
 
 	/**
 	 * Save the decision with its updated payment schedule.

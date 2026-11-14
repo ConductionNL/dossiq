@@ -217,25 +217,63 @@ class ComplaintPatterns implements ComplaintPatternsInterface {
 	 * @return list<array{title: string, text: string}>
 	 */
 	private function findings(QuarterPeriod $period, array $byCategory): array {
-		$parts = [];
-		foreach ($byCategory['risePercent'] as $index => $rise) {
-			if ($rise !== null) {
-				$count = $byCategory['counts'][$index];
-				$before = (string)$byCategory['previousCounts'][$index];
-				$parts[] = $this->l10n->n(
-					'%1$s (%2$s complaint, from %3$s to %2$s)',
-					'%1$s (%2$s complaints, from %3$s to %2$s)',
-					$count,
-					[$byCategory['labels'][$index], (string)$count, $before]
-				);
-			}
-		}
+		$parts = $this->risenCategories(byCategory: $byCategory);
 
 		if ($parts === []) {
 			return [];
 		}
 
-		return [[
+		return [$this->risenFinding(period: $period, parts: $parts)];
+	}//end findings()
+
+	/**
+	 * One phrase per category that rose past the flag, naming its count before and now.
+	 *
+	 * @param array{labels: list<string>, counts: list<int>, risePercent: list<int|null>, previousCounts: list<int>} $byCategory The category counts.
+	 *
+	 * @return list<string> The phrases.
+	 */
+	private function risenCategories(array $byCategory): array {
+		$parts = [];
+		foreach ($byCategory['risePercent'] as $index => $rise) {
+			if ($rise !== null) {
+				$parts[] = $this->risePhrase(byCategory: $byCategory, index: $index);
+			}
+		}
+
+		return $parts;
+	}//end risenCategories()
+
+	/**
+	 * One risen category, named with its count before and now.
+	 *
+	 * @param array{labels: list<string>, counts: list<int>, risePercent: list<int|null>, previousCounts: list<int>} $byCategory The category counts.
+	 * @param int $index The category's position.
+	 *
+	 * @return string The phrase.
+	 */
+	private function risePhrase(array $byCategory, int $index): string {
+		$count = $byCategory['counts'][$index];
+		$before = (string)$byCategory['previousCounts'][$index];
+
+		return $this->l10n->n(
+			'%1$s (%2$s complaint, from %3$s to %2$s)',
+			'%1$s (%2$s complaints, from %3$s to %2$s)',
+			$count,
+			[$byCategory['labels'][$index], (string)$count, $before]
+		);
+	}//end risePhrase()
+
+	/**
+	 * The finding naming every category that rose past the flag.
+	 *
+	 * @param QuarterPeriod $period The quarter.
+	 * @param list<string> $parts One phrase per risen category.
+	 *
+	 * @return array{title: string, text: string}
+	 */
+	private function risenFinding(QuarterPeriod $period, array $parts): array {
+		return [
 			'title' => $this->l10n->n(
 				'%n category rose by more than half in the %s',
 				'%n categories rose by more than half in the %s',
@@ -243,6 +281,6 @@ class ComplaintPatterns implements ComplaintPatternsInterface {
 				[mb_strtolower($this->quarterLabel(period: $period))]
 			),
 			'text' => implode('; ', $parts).'.',
-		]];
-	}//end findings()
+		];
+	}//end risenFinding()
 }//end class

@@ -89,12 +89,7 @@ class PlannedActionChain {
 	 *
 	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/task-management/spec.md
 	 */
-	public function next(
-		array $completed,
-		array $types,
-		DateTimeImmutable $completedOn,
-		array $roleHolders = [],
-	): ?array {
+	public function next(array $completed, array $types, DateTimeImmutable $completedOn, array $roleHolders = []): ?array {
 		if ((string)($completed['state'] ?? 'planned') === 'cancelled') {
 			return null;
 		}
@@ -104,23 +99,56 @@ class PlannedActionChain {
 			return null;
 		}
 
-		$type = $types[(string)($completed['actionType'] ?? '')];
+		return $this->successorHead(completed: $completed, types: $types, successorIdentifier: $successorIdentifier, roleHolders: $roleHolders) + [
+			'plannedFor' => $this->plannedFor(completed: $completed, types: $types, completedOn: $completedOn),
+			'state' => 'planned',
+			'plannedFrom' => (string)($completed['id'] ?? ($completed['uuid'] ?? '')),
+			'plannedByRule' => (string)($completed['plannedByRule'] ?? ''),
+		];
+	}//end next()
+
+	/**
+	 * The successor action's case, type, label and owner.
+	 *
+	 * @param array<string, mixed>                $completed           The action being completed.
+	 * @param array<string, array<string, mixed>> $types               The action types, by identifier.
+	 * @param string                              $successorIdentifier The successor's action type.
+	 * @param array<string, string>               $roleHolders         Who holds each role on this case, by role name.
+	 *
+	 * @return array{case: string, actionType: string, label: string, owner: mixed} The leading fields.
+	 *
+	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/task-management/spec.md
+	 */
+	private function successorHead(array $completed, array $types, string $successorIdentifier, array $roleHolders): array {
 		$successor = $types[$successorIdentifier];
-		$offset = max(0, (int)($type['successorOffsetWorkingDays'] ?? 0));
 
 		return [
 			'case' => (string)($completed['case'] ?? ''),
 			'actionType' => $successorIdentifier,
 			'label' => (string)($successor['label'] ?? $successorIdentifier),
 			'owner' => $this->ownerOf(type: $successor, roleHolders: $roleHolders),
-			'plannedFor' => $this->workingDays
-				->addWorkingDays(start: $completedOn, days: $offset)
-				->format('Y-m-d'),
-			'state' => 'planned',
-			'plannedFrom' => (string)($completed['id'] ?? ($completed['uuid'] ?? '')),
-			'plannedByRule' => (string)($completed['plannedByRule'] ?? ''),
 		];
-	}//end next()
+	}//end successorHead()
+
+	/**
+	 * The date the successor is planned for: the completed action's offset in working days after completion.
+	 *
+	 * @param array<string, mixed>                $completed   The action being completed.
+	 * @param array<string, array<string, mixed>> $types       The action types, by identifier.
+	 * @param DateTimeImmutable                   $completedOn The date it was completed.
+	 *
+	 * @return string The date, Y-m-d.
+	 *
+	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/task-management/spec.md
+	 */
+	private function plannedFor(array $completed, array $types, DateTimeImmutable $completedOn): string {
+		$type = $types[(string)($completed['actionType'] ?? '')];
+		$offset = max(0, (int)($type['successorOffsetWorkingDays'] ?? 0));
+
+		return $this->workingDays
+			->addWorkingDays(start: $completedOn, days: $offset)
+			->format('Y-m-d');
+	}//end plannedFor()
 
 	/**
 	 * The type of the action that follows a completed (not cancelled) one, or null when the chain ends.

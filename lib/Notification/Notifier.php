@@ -249,6 +249,23 @@ class Notifier implements INotifier, NotifierInterface {
 			self::SUBJECT_ADVICE_REQUESTED,
 			self::SUBJECT_ADVICE_RECEIVED,
 			self::SUBJECT_ADVICE_REMINDER => $this->adviceText(text: $text),
+			default => $this->deadlineWording(text: $text),
+		};
+	}//end wording()
+
+	/**
+	 * The [subject, message] pair of a deadline subject, or of any later subject.
+	 *
+	 * @param NotificationText $text The notification being worded.
+	 *
+	 * @return array{0:string,1:string} The [subject, message] pair.
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	 */
+	private function deadlineWording(NotificationText $text): array {
+		$l = $text->l;
+
+		return match ($text->subjectKey) {
 			self::SUBJECT_WOO_DEADLINE_WARNING,
 			self::SUBJECT_WOO_DEADLINE_OVERDUE => $this->wooDeadlineText(text: $text),
 			self::SUBJECT_TERM_NEARING,
@@ -256,6 +273,24 @@ class Notifier implements INotifier, NotifierInterface {
 			self::SUBJECT_DSO_DEADLINE_WARNING,
 			self::SUBJECT_DSO_DEADLINE_CRITICAL,
 			self::SUBJECT_DSO_DEADLINE_OVERDUE => $this->permitDeadlineText(subjectKey: $text->subjectKey, l: $l),
+			default => $this->systemWording(text: $text),
+		};
+	}//end deadlineWording()
+
+	/**
+	 * The [subject, message] pair of a system, applicant or quota subject, or of a note mention.
+	 *
+	 * @param NotificationText $text The notification being worded.
+	 *
+	 * @return array{0:string,1:string} The [subject, message] pair.
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	 */
+	private function systemWording(NotificationText $text): array {
+		$subjectRaw = $text->parameters;
+		$l = $text->l;
+
+		return match ($text->subjectKey) {
 			self::SUBJECT_STUF_CIRCUIT_OPEN,
 			self::SUBJECT_STUF_TIMEOUT,
 			self::SUBJECT_STUF_PERMANENT_ERROR => $this->stufText(subjectKey: $text->subjectKey, l: $l),
@@ -265,7 +300,7 @@ class Notifier implements INotifier, NotifierInterface {
 			self::SUBJECT_QUOTA_SOFT_LIMIT => $this->quotaSoftLimitText(subjectRaw: $subjectRaw, l: $l),
 			default => $this->noteMentionText(subjectRaw: $subjectRaw, l: $l),
 		};
-	}//end wording()
+	}//end systemWording()
 
 	/**
 	 * The `note_mention` wording.

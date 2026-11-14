@@ -197,12 +197,20 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	private function duplicateGroups(array $rows): array {
+		return $this->duplicatesOf(groups: $this->groupRows(rows: $rows));
+	}//end duplicateGroups()
+
+	/**
+	 * Group the live case types by slug, version and organisation.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The stored case types.
+	 *
+	 * @return array<string, array<int, array{id: string, created: string}>> Every group, duplicated or not.
+	 */
+	private function groupRows(array $rows): array {
 		$groups = [];
 		foreach ($rows as $row) {
-			$self = ($row['@self'] ?? []);
-			if (is_array($self) === false) {
-				$self = [];
-			}
+			$self = $this->selfOf(row: $row);
 
 			$slug = (string)($self['slug'] ?? '');
 			$uuid = (string)($self['id'] ?? ($row['id'] ?? ''));
@@ -210,17 +218,56 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 				continue;
 			}
 
-			// Per organisation: the read is unscoped, and one organisation's copy
-			// must never supersede another's on a multi-tenant install.
-			$organisation = ($self['organisation'] ?? '');
-			if (is_array($organisation) === true) {
-				$organisation = ($organisation['uuid'] ?? ($organisation['id'] ?? ''));
-			}
-
-			$key = $slug . '#' . (string)($row['version'] ?? '') . '#' . (string)$organisation;
+			$key = $slug . '#' . (string)($row['version'] ?? '') . '#' . (string)$this->organisationOf(self: $self);
 			$groups[$key][] = ['id' => $uuid, 'created' => (string)($self['created'] ?? '')];
 		}
 
+		return $groups;
+	}//end groupRows()
+
+	/**
+	 * The row's `@self` block, or an empty one.
+	 *
+	 * @param array<string, mixed> $row The stored case type.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function selfOf(array $row): array {
+		$self = ($row['@self'] ?? []);
+		if (is_array($self) === false) {
+			$self = [];
+		}
+
+		return $self;
+	}//end selfOf()
+
+	/**
+	 * The organisation a case type belongs to.
+	 *
+	 * Per organisation: the read is unscoped, and one organisation's copy
+	 * must never supersede another's on a multi-tenant install.
+	 *
+	 * @param array<string, mixed> $self The row's `@self` block.
+	 *
+	 * @return mixed The organisation uuid or id.
+	 */
+	private function organisationOf(array $self): mixed {
+		$organisation = ($self['organisation'] ?? '');
+		if (is_array($organisation) === true) {
+			$organisation = ($organisation['uuid'] ?? ($organisation['id'] ?? ''));
+		}
+
+		return $organisation;
+	}//end organisationOf()
+
+	/**
+	 * The groups holding more than one case type, oldest first.
+	 *
+	 * @param array<string, array<int, array{id: string, created: string}>> $groups Every group.
+	 *
+	 * @return array<string, array<int, array{id: string, created: string}>> The duplicated groups.
+	 */
+	private function duplicatesOf(array $groups): array {
 		$duplicates = [];
 		foreach ($groups as $key => $group) {
 			if (count($group) < 2) {
@@ -232,7 +279,7 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 		}
 
 		return $duplicates;
-	}//end duplicateGroups()
+	}//end duplicatesOf()
 
 	/**
 	 * Point one older copy at the current one.

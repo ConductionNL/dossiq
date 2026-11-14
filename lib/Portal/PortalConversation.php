@@ -206,11 +206,18 @@ class PortalConversation {
 			'schema' => 'portaalBericht',
 			'scopeField' => 'senderRef',
 			'minTrust' => 'low',
+		] + $this->askForm() + ['crossRefs' => ['caseId' => $this->caseGuard()]];
+	}//end askAction()
+
+	/**
+	 * The fields, defaults and field configuration of the ask action's form.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function askForm(): array {
+		return [
 			'fields' => ['subject', 'content', 'attachments', 'caseId'],
-			'defaults' => [
-				'direction' => 'citizen_to_handler',
-				'senderType' => 'burger',
-			],
+			'defaults' => ['direction' => 'citizen_to_handler', 'senderType' => 'burger'],
 			'requiredFields' => ['content'],
 			'fieldConfigs' => [
 				'caseId' => ['visible' => false],
@@ -218,11 +225,8 @@ class PortalConversation {
 				'content' => ['label' => 'Wat wilt u weten?', 'size' => 'large'],
 				'attachments' => self::ATTACHMENTS_FIELD,
 			],
-			'crossRefs' => [
-				'caseId' => $this->caseGuard(),
-			],
 		];
-	}//end askAction()
+	}//end askForm()
 
 	/**
 	 * The messages block on the case detail (design D-4): both directions, newest first.

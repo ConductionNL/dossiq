@@ -2831,27 +2831,13 @@ class DrcController extends ZgwController {
 		string $lockId,
 	): void {
 		try {
-			$existing = $objectService->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$existingData = $this->objectToArray(row: $existing);
-
-			unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
+			$existingData = $this->lockDataOf(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
 			$existingData['locked'] = true;
 			$existingData['lockId'] = $lockId;
 
-			$objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $existingData,
-				uuid: $uuid
-			);
+			$this->saveLockData(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, data: $existingData);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'DRC: Failed to store lockId in data blob: ' . $e->getMessage()
-			);
+			$this->zgwService->getLogger()->warning('DRC: Failed to store lockId in data blob: ' . $e->getMessage());
 		}//end try
 	}//end storeLockIdInData()
 
@@ -2870,27 +2856,58 @@ class DrcController extends ZgwController {
 		string $uuid,
 	): void {
 		try {
-			$existing = $objectService->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$existingData = $this->objectToArray(row: $existing);
-
-			unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
+			$existingData = $this->lockDataOf(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
 			$existingData['locked'] = false;
 			$existingData['lockId'] = '';
 
-			$objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $existingData,
-				uuid: $uuid
-			);
+			$this->saveLockData(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, data: $existingData);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'DRC: Failed to clear lockId in data blob: ' . $e->getMessage()
-			);
+			$this->zgwService->getLogger()->warning('DRC: Failed to clear lockId in data blob: ' . $e->getMessage());
 		}//end try
 	}//end clearLockIdInData()
+
+	/**
+	 * The document's stored data, without the keys a save must not carry.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param array  $mappingConfig The mapping configuration
+	 * @param string $uuid          The document UUID
+	 *
+	 * @return array<string, mixed> The data to write back.
+	 *
+	 * @throws \Throwable When the document cannot be found.
+	 */
+	private function lockDataOf(object $objectService, array $mappingConfig, string $uuid): array {
+		$existing = $objectService->find(
+			$uuid,
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema']
+		);
+		$existingData = $this->objectToArray(row: $existing);
+
+		unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
+
+		return $existingData;
+	}//end lockDataOf()
+
+	/**
+	 * Write the document's data back.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService
+	 * @param array                $mappingConfig The mapping configuration
+	 * @param string               $uuid          The document UUID
+	 * @param array<string, mixed> $data          The data to write.
+	 *
+	 * @return void
+	 *
+	 * @throws \Throwable When the save fails.
+	 */
+	private function saveLockData(object $objectService, array $mappingConfig, string $uuid, array $data): void {
+		$objectService->saveObject(
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema'],
+			object: $data,
+			uuid: $uuid
+		);
+	}//end saveLockData()
 }//end class

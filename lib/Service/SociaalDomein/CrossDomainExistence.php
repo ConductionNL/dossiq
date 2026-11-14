@@ -124,6 +124,30 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 
 		$bsn = $this->requirePerson(bsn: $bsn);
 
+		$found = $this->foundElsewhere(bsn: $bsn, ownDomain: $ownDomain);
+
+		// The log is written in the same act as the answer, including when the
+		// answer is that nothing exists: a lookup that found nothing is still a
+		// lookup that happened, and it is exactly the one a person asking what
+		// was looked up about them would otherwise never hear about.
+		$this->log(bsn: $bsn, ground: $ground, requester: $requester, returned: $this->describe(found: $found));
+
+		return $found;
+	}//end lookUp()
+
+	/**
+	 * One entry per other domain holding an open case or record about the person.
+	 *
+	 * @param string $bsn The person looked up.
+	 * @param string $ownDomain The domain the caller works in, which is excluded.
+	 *
+	 * @return array<int, array{exists: bool, domain: string, contact: string}> The entries.
+	 *
+	 * @throws RefusedException When the store cannot be read.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 */
+	private function foundElsewhere(string $bsn, string $ownDomain): array {
 		$found = [];
 		// Procedures that moved onto a case type answer through their cases.
 		$caseContacts = $this->store->openCaseContactsAbout(bsn: $bsn);
@@ -132,9 +156,7 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 				continue;
 			}
 
-			$contact = $this->openRecordContact(domain: $domain, declaration: $declaration, bsn: $bsn);
-
-			$contact = ($contact ?? ($caseContacts[$domain] ?? null));
+			$contact = $this->domainContact(domain: $domain, declaration: $declaration, bsn: $bsn, caseContacts: $caseContacts);
 			if ($contact === null) {
 				continue;
 			}
@@ -142,26 +164,31 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 			// FIELD BY FIELD. Nothing of the row or the case travels: not its
 			// title, not its status, not its dates and not its number. A
 			// property added to either tomorrow appears in nothing here.
-			$found[] = [
-				'exists' => true,
-				'domain' => $domain,
-				'contact' => $contact,
-			];
+			$found[] = ['exists' => true, 'domain' => $domain, 'contact' => $contact];
 		}
 
-		// The log is written in the same act as the answer, including when the
-		// answer is that nothing exists: a lookup that found nothing is still a
-		// lookup that happened, and it is exactly the one a person asking what
-		// was looked up about them would otherwise never hear about.
-		$this->log(
-			bsn: $bsn,
-			ground: $ground,
-			requester: $requester,
-			returned: $this->describe(found: $found)
-		);
-
 		return $found;
-	}//end lookUp()
+	}//end foundElsewhere()
+
+	/**
+	 * Who to contact in a domain: its open record's contact, else its open case's.
+	 *
+	 * @param string $domain The domain.
+	 * @param array<string, mixed> $declaration The domain's declaration.
+	 * @param string $bsn The person looked up.
+	 * @param array<string, string> $caseContacts The open cases' contacts by domain.
+	 *
+	 * @return string|null The contact, or null when the domain holds nothing open.
+	 *
+	 * @throws RefusedException When the store cannot be read.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 */
+	private function domainContact(string $domain, array $declaration, string $bsn, array $caseContacts): ?string {
+		$contact = $this->openRecordContact(domain: $domain, declaration: $declaration, bsn: $bsn);
+
+		return ($contact ?? ($caseContacts[$domain] ?? null));
+	}//end domainContact()
 
 	/**
 	 * The trimmed BSN, refusing an empty one.

@@ -56,6 +56,8 @@ use RuntimeException;
  * BAC service: committee assignment + advice request lifecycle.
  *
  * @spec openspec/specs/bezwaar-advisory-committee/spec.md
+ *
+ * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 
@@ -241,8 +243,28 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	 * @spec exclude one step of assignToCommittee(), which carries the requirement
 	 */
 	private function saveNewRequest(array $store, array $record): array {
+		$saved = $this->createRequest(store: $store, record: $record);
+
+		$this->recordPanel(store: $store, record: $record, saved: $saved);
+
+		return $saved;
+	}//end saveNewRequest()
+
+	/**
+	 * Save a new advice request.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store  The request store.
+	 * @param array<string, mixed>                                            $record The request to save.
+	 *
+	 * @return array<string, mixed> The saved request, or the record when the store answers nothing.
+	 *
+	 * @throws RuntimeException When the save fails.
+	 *
+	 * @spec exclude one step of assignToCommittee(), which carries the requirement
+	 */
+	private function createRequest(array $store, array $record): array {
 		try {
-			$saved = ($this->saveObjectAsArray(
+			return ($this->saveObjectAsArray(
 				objectService: $store['objectService'],
 				register: $store['register'],
 				schema: $store['schema'],
@@ -254,7 +276,20 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 			);
 			throw new RuntimeException('Could not create advice request');
 		}
+	}//end createRequest()
 
+	/**
+	 * Put a new request's panel on its own trail.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store  The request store.
+	 * @param array<string, mixed>                                            $record The request as saved.
+	 * @param array<string, mixed>                                            $saved  The stored request.
+	 *
+	 * @return void
+	 *
+	 * @spec exclude one step of assignToCommittee(), which carries the requirement
+	 */
+	private function recordPanel(array $store, array $record, array $saved): void {
 		// The panel composition is a row on the request's own OpenRegister
 		// trail; a request whose entry cannot be written is deleted again.
 		$this->auditTrail->recordForNewRecord(
@@ -269,9 +304,7 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 				'objectionProceeding' => $record['bezwaar'],
 			],
 		);
-
-		return $saved;
-	}//end saveNewRequest()
+	}//end recordPanel()
 
 	/**
 	 * Refuse a committee that does not exist or no longer accepts referrals.
@@ -590,8 +623,26 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	 * @throws RuntimeException When the signature cannot be recorded; nothing is changed.
 	 */
 	private function applyTransition(array $request, array $update): array {
+		$apply = $this->transitionWrite(request: $request, update: $update);
+
+		if (isset($update['adviceIssuedAt']) === false) {
+			return $apply();
+		}
+
+		return $this->signThenApply(request: $request, update: $update, apply: $apply);
+	}//end applyTransition()
+
+	/**
+	 * The write of a transition's patch, marked as internal.
+	 *
+	 * @param array{objectService: object, register: string, schema: string, id: string, current: array<string, mixed>} $request The stored request.
+	 * @param array<string, mixed>                                                                                       $update  The patch.
+	 *
+	 * @return callable(): array<string, mixed> The write.
+	 */
+	private function transitionWrite(array $request, array $update): callable {
 		// Marked so DeliberationStartGuard lets this save reach an outcome status.
-		$apply = fn (): array => $this->internalWrites->runInternal(
+		return fn (): array => $this->internalWrites->runInternal(
 			objectId: $request['id'],
 			write: fn (): array => ($this->patchObjectAsArray(
 				objectService: $request['objectService'],
@@ -601,11 +652,20 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 				changes: $update
 			) ?? array_merge($request['current'], $update))
 		);
+	}//end transitionWrite()
 
-		if (isset($update['adviceIssuedAt']) === false) {
-			return $apply();
-		}
-
+	/**
+	 * Record the chair's signature, then apply the terminal transition.
+	 *
+	 * @param array{objectService: object, register: string, schema: string, id: string, current: array<string, mixed>} $request The stored request.
+	 * @param array<string, mixed>                                                                                       $update  The patch.
+	 * @param callable(): array<string, mixed>                                                                           $apply   The write.
+	 *
+	 * @return array<string, mixed> The updated advice request record.
+	 *
+	 * @throws RuntimeException When the signature cannot be recorded; nothing is changed.
+	 */
+	private function signThenApply(array $request, array $update, callable $apply): array {
 		return $this->auditTrail->recordThenApply(
 			register: $request['register'],
 			schema: $request['schema'],
@@ -619,7 +679,7 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 			tag: '',
 			apply: $apply,
 		);
-	}//end applyTransition()
+	}//end signThenApply()
 
 	/**
 	 * Listener entry-point: when a bezwaar enters status

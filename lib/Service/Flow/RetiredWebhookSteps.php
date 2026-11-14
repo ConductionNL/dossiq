@@ -291,20 +291,7 @@ class RetiredWebhookSteps {
 	 * @throws UnmappableStep When Integriq is absent or gives no Source.
 	 */
 	private function source(string $base, int $timeout): string {
-		$eventClass = '\\' . self::SOURCE_EVENT;
-		if (class_exists($eventClass) === false) {
-			throw new UnmappableStep(
-				message: 'it calls ' . $base . ', and Integriq, which now makes outbound calls, is not installed to provide a source for it'
-			);
-		}
-
-		$event = new $eventClass(
-			sourceApp: AppIdentity::APP_ID,
-			baseUrl: $base,
-			purpose: 'the webhook steps dossiq handed to Integriq',
-			timeoutSeconds: $timeout,
-			userId: $this->userSession->getUser()?->getUID(),
-		);
+		$event = $this->sourceRequest(base: $base, timeout: $timeout);
 
 		try {
 			$this->dispatcher->dispatchTyped($event);
@@ -312,6 +299,47 @@ class RetiredWebhookSteps {
 			throw new UnmappableStep(message: 'Integriq could not provide a source for ' . $base . ': ' . $e->getMessage());
 		}
 
+		return $this->answeredSourceId(event: $event, base: $base);
+	}//end source()
+
+	/**
+	 * The event asking Integriq for a Source for a base URL.
+	 *
+	 * @param string $base The base URL.
+	 * @param int $timeout The timeout a newly created Source gets.
+	 *
+	 * @return object The request event.
+	 *
+	 * @throws UnmappableStep When Integriq is absent.
+	 */
+	private function sourceRequest(string $base, int $timeout): object {
+		$eventClass = '\\' . self::SOURCE_EVENT;
+		if (class_exists($eventClass) === false) {
+			throw new UnmappableStep(
+				message: 'it calls ' . $base . ', and Integriq, which now makes outbound calls, is not installed to provide a source for it'
+			);
+		}
+
+		return new $eventClass(
+			sourceApp: AppIdentity::APP_ID,
+			baseUrl: $base,
+			purpose: 'the webhook steps dossiq handed to Integriq',
+			timeoutSeconds: $timeout,
+			userId: $this->userSession->getUser()?->getUID(),
+		);
+	}//end sourceRequest()
+
+	/**
+	 * The Source uuid Integriq answered the request with.
+	 *
+	 * @param object $event The dispatched request event.
+	 * @param string $base The base URL.
+	 *
+	 * @return string The Source uuid.
+	 *
+	 * @throws UnmappableStep When Integriq gives no Source.
+	 */
+	private function answeredSourceId(object $event, string $base): string {
 		$sourceId = trim((string)$event->getSourceId());
 		if ($event->isHandled() === false || $sourceId === '') {
 			$reason = trim((string)$event->getRefusal());
@@ -323,7 +351,7 @@ class RetiredWebhookSteps {
 		}
 
 		return $sourceId;
-	}//end source()
+	}//end answeredSourceId()
 
 	/**
 	 * The step's own request headers, refusing a credential header.

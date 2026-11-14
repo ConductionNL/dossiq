@@ -217,34 +217,79 @@ class SubstitutionAuditService implements SubstitutionAuditServiceInterface {
 			return [];
 		}
 
+		$store = $this->substitutionStore();
+		if ($store === null) {
+			return [];
+		}
+
+		$absentee = $this->absenteeOf(store: $store, substitutionId: $substitutionId);
+		if ($absentee === '') {
+			return [];
+		}
+
+		return $this->actionsOn(cases: $this->absenteeCases(store: $store, absentee: $absentee), substitutionId: $substitutionId);
+	}//end getActionsForSubstitution()
+
+	/**
+	 * The object service, register, substitution schema and case schema, or null when any is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string, 3: string}|null The store.
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	private function substitutionStore(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$subSchema = (string)$this->settingsService->getConfigValue('substitution_schema');
 		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
 		$hasBlank = in_array('', [$register, $subSchema, $caseSchema], true);
 		if ($objectService === null || $hasBlank === true) {
-			return [];
+			return null;
 		}
 
+		return [$objectService, $register, $subSchema, $caseSchema];
+	}//end substitutionStore()
+
+	/**
+	 * The absentee of a substitution, or an empty string when it has none or does not resolve.
+	 *
+	 * @param array{0: object, 1: string, 2: string, 3: string} $store          The store.
+	 * @param string                                            $substitutionId The substitution UUID.
+	 *
+	 * @return string The absentee.
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	private function absenteeOf(array $store, string $substitutionId): string {
+		[$objectService, $register, $subSchema] = $store;
 		$sub = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $subSchema, id: $substitutionId);
 		if ($sub === null) {
-			return [];
+			return '';
 		}
 
-		$absentee = (string)($sub['absentee'] ?? '');
-		if ($absentee === '') {
-			return [];
-		}
+		return (string)($sub['absentee'] ?? '');
+	}//end absenteeOf()
 
-		$cases = $this->searchObjectsAsArrays(
+	/**
+	 * The cases assigned to the absentee.
+	 *
+	 * @param array{0: object, 1: string, 2: string, 3: string} $store    The store.
+	 * @param string                                            $absentee The absentee.
+	 *
+	 * @return array<int, array<string, mixed>> The cases.
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	private function absenteeCases(array $store, string $absentee): array {
+		[$objectService, $register, , $caseSchema] = $store;
+
+		return $this->searchObjectsAsArrays(
 			objectService: $objectService,
 			register: $register,
 			schema: $caseSchema,
 			filters: ['assignee' => $absentee]
 		);
-
-		return $this->actionsOn(cases: $cases, substitutionId: $substitutionId);
-	}//end getActionsForSubstitution()
+	}//end absenteeCases()
 
 	/**
 	 * The substitution's actions recorded on the cases, oldest first.

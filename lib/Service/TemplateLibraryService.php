@@ -38,6 +38,8 @@ use RuntimeException;
  * Service for loading and activating zaaktype templates.
  *
  * @spec openspec/specs/template-library/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class TemplateLibraryService implements TemplateLibraryServiceInterface {
 
@@ -86,34 +88,66 @@ class TemplateLibraryService implements TemplateLibraryServiceInterface {
 		$templates = [];
 
 		foreach ($this->templateFiles() as $file) {
-			$content = file_get_contents($file);
-			if ($content === false) {
+			$template = $this->templateMetadata(file: $file);
+			if ($template === null) {
 				continue;
 			}
 
-			$data = json_decode($content, true);
-			if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
-				$this->logger->warning(
-					'Invalid template file: ' . basename($file),
-					['app' => AppIdentity::APP_ID]
-				);
-				continue;
-			}
-
-			$templates[] = [
-				'id' => $data['id'] ?? pathinfo($file, PATHINFO_FILENAME),
-				'title' => $data['title'] ?? '',
-				'description' => $data['description'] ?? '',
-				'category' => $data['category'] ?? 'general',
-				'version' => $data['version'] ?? '1.0.0',
-				'file' => basename($file),
-				'fills' => $this->fillsOf(data: $data),
-				'notes' => $this->notesOf(data: $data),
-			];
+			$templates[] = $template;
 		}//end foreach
 
 		return $templates;
 	}//end listTemplates()
+
+	/**
+	 * One template file's metadata, or null when it cannot be read or is not valid JSON.
+	 *
+	 * @param string $file The template file path.
+	 *
+	 * @return array<string, mixed>|null The template metadata.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function templateMetadata(string $file): ?array {
+		$content = file_get_contents($file);
+		if ($content === false) {
+			return null;
+		}
+
+		$data = json_decode($content, true);
+		if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
+			$this->logger->warning(
+				'Invalid template file: ' . basename($file),
+				['app' => AppIdentity::APP_ID]
+			);
+			return null;
+		}
+
+		return $this->metadataOf(data: $data, file: $file);
+	}//end templateMetadata()
+
+	/**
+	 * The metadata the library lists for one template.
+	 *
+	 * @param array<string, mixed> $data The decoded template.
+	 * @param string               $file The template file path.
+	 *
+	 * @return array<string, mixed> The template metadata.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function metadataOf(array $data, string $file): array {
+		return [
+			'id' => $data['id'] ?? pathinfo($file, PATHINFO_FILENAME),
+			'title' => $data['title'] ?? '',
+			'description' => $data['description'] ?? '',
+			'category' => $data['category'] ?? 'general',
+			'version' => $data['version'] ?? '1.0.0',
+			'file' => basename($file),
+			'fills' => $this->fillsOf(data: $data),
+			'notes' => $this->notesOf(data: $data),
+		];
+	}//end metadataOf()
 
 	/**
 	 * The template JSON files in the templates directory.
@@ -240,17 +274,23 @@ class TemplateLibraryService implements TemplateLibraryServiceInterface {
 			throw new RuntimeException('Dossiq register not configured');
 		}
 
-		// Create the case type.
-		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
-		// No `?? []`: the refusal above already proved this is an array, so
-		// the coalesce was dead and phpstan said so.
-		$caseTypeData = $template['caseType'];
-		$caseType = $objectService->saveObject(
-			object: $caseTypeData,
-			register: $register,
-			schema: $caseTypeSchema,
-		);
-		$caseTypeId = $caseType->getUuid();
+		return $this->activateInto(template: $template, templateId: $templateId, objectService: $objectService, register: $register);
+	}//end activateTemplate()
+
+	/**
+	 * Create the template's case type and its linked entities in the register.
+	 *
+	 * @param array<string, mixed> $template      The template.
+	 * @param string               $templateId    The template identifier.
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param string               $register      The register.
+	 *
+	 * @return array<string, mixed> Result with created object IDs
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function activateInto(array $template, string $templateId, object $objectService, string $register): array {
+		$caseTypeId = $this->createCaseType(template: $template, objectService: $objectService, register: $register);
 
 		$created = $this->createTemplateEntities(
 			activation: new TemplateActivation(objectService: $objectService, register: $register, caseTypeId: $caseTypeId),
@@ -265,7 +305,33 @@ class TemplateLibraryService implements TemplateLibraryServiceInterface {
 		);
 
 		return $result;
-	}//end activateTemplate()
+	}//end activateInto()
+
+	/**
+	 * Create the template's case type and answer its id.
+	 *
+	 * @param array<string, mixed> $template      The template, with a case type.
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param string               $register      The register.
+	 *
+	 * @return string The new case type's id.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function createCaseType(array $template, object $objectService, string $register): string {
+		// Create the case type.
+		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
+		// No `?? []`: the refusal above already proved this is an array, so
+		// the coalesce was dead and phpstan said so.
+		$caseTypeData = $template['caseType'];
+		$caseType = $objectService->saveObject(
+			object: $caseTypeData,
+			register: $register,
+			schema: $caseTypeSchema,
+		);
+
+		return $caseType->getUuid();
+	}//end createCaseType()
 
 	/**
 	 * The template to activate, refused when it is missing or describes no case type.

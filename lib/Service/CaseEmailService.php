@@ -429,15 +429,8 @@ class CaseEmailService implements CaseEmailServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	public function sendFromTemplate(
-		string $caseId,
-		string $templateId,
-		string $to,
-	): array {
-		$template = $this->repository->findTemplate(templateId: $templateId);
-		if ($template === null) {
-			throw new RuntimeException('Email template not found');
-		}
+	public function sendFromTemplate(string $caseId, string $templateId, string $to): array {
+		$template = $this->requireTemplate(templateId: $templateId);
 
 		// Load case data for variable resolution.
 		$caseData = $this->repository->loadCaseVariables(caseId: $caseId);
@@ -457,29 +450,61 @@ class CaseEmailService implements CaseEmailServiceInterface {
 		// `findUnresolvedVariables()` has been sitting beside this method since
 		// both were written, asked only by the preview endpoint. This is the
 		// send path asking it.
-		$unresolved = array_values(
-			array_unique(
-				array_merge(
-					$this->findUnresolvedVariables(template: $subjectPattern, data: $caseData),
-					$this->findUnresolvedVariables(template: $bodyPattern, data: $caseData)
-				)
-			)
-		);
+		$unresolved = $this->findUnresolvedVariables(template: $subjectPattern, data: $caseData);
+		$unresolved = array_values(array_unique(array_merge($unresolved, $this->findUnresolvedVariables(template: $bodyPattern, data: $caseData))));
 
 		if ($unresolved !== []) {
 			// A RuntimeException that is not the transport sentinel becomes a
 			// 400 carrying its message, which is what this is: caller-fixable,
 			// and the fix is to name a placeholder the case can answer.
-			throw new RuntimeException(
-				'Email not sent: the template names '
-				. implode(', ', array_map(static fn (string $n): string => '{{' . $n . '}}', $unresolved))
-				. ', which this case cannot fill.'
-			);
+			throw new RuntimeException('Email not sent: the template names ' . $this->placeholderList(names: $unresolved) . ', which this case cannot fill.');
 		}
 
 		$subject = $this->resolveVariables(template: $subjectPattern, data: $caseData);
 		$body = $this->resolveVariables(template: $bodyPattern, data: $caseData);
 
+		$category = $this->templateCategory(template: $template);
+
+		return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body, category: $category);
+	}//end sendFromTemplate()
+
+	/**
+	 * Load an email template.
+	 *
+	 * @param string $templateId The email template UUID
+	 *
+	 * @return array<string, mixed> The template
+	 *
+	 * @throws \RuntimeException If the template is not found
+	 */
+	private function requireTemplate(string $templateId): array {
+		$template = $this->repository->findTemplate(templateId: $templateId);
+		if ($template === null) {
+			throw new RuntimeException('Email template not found');
+		}
+
+		return $template;
+	}//end requireTemplate()
+
+	/**
+	 * The placeholder names as the template writes them, comma-separated.
+	 *
+	 * @param array<int, string> $names The placeholder names.
+	 *
+	 * @return string The list.
+	 */
+	private function placeholderList(array $names): string {
+		return implode(', ', array_map(static fn (string $n): string => '{{' . $n . '}}', $names));
+	}//end placeholderList()
+
+	/**
+	 * The message category a template declares, defaulting to a case update.
+	 *
+	 * @param array<string, mixed> $template The email template
+	 *
+	 * @return string The message category
+	 */
+	private function templateCategory(array $template): string {
 		// The template says what it is; anything it does not say, or says
 		// wrongly, is a case-update and respects the opt-out. Never exempt
 		// by accident.
@@ -488,8 +513,8 @@ class CaseEmailService implements CaseEmailServiceInterface {
 			$category = CaseMailOptOut::CATEGORY_CASE_UPDATE;
 		}
 
-		return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body, category: $category);
-	}//end sendFromTemplate()
+		return $category;
+	}//end templateCategory()
 
 	/**
 	 * Resolve template variables in a string, HTML-escaping every value.

@@ -104,34 +104,59 @@ class TalkConversationBroker {
 		}
 
 		try {
-			$room = $broker->createConversation(
-				name: $name,
-				moderators: $this->resolveModerators(moderators: $moderators),
-				options: $broker->newConversationOptions(),
-			);
-
-			return [
-				'id' => $room->getId(),
-				'url' => $room->getAbsoluteUrl(),
-			];
+			return $this->openRoom(broker: $broker, name: $name, moderators: $moderators);
 		} catch (Throwable $e) {
 			// A REFUSAL, not a null. Talk being absent and Talk failing to
 			// open a room are different answers, and the caller can only act
 			// on the first. The controller translates this one into its own
 			// status and sentence.
-			$this->logger->warning(
-				'Talk refused a room named "' . $name . '": ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID],
-			);
-
-			throw new RefusedException(
-				rule: 'talk-room-refused',
-				sentence: 'Nextcloud Talk could not open a room for this case.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
+			throw $this->roomRefused(name: $name, e: $e);
 		}//end try
 	}//end createRoom()
+
+	/**
+	 * Log Talk's refusal and build the refusal the caller receives.
+	 *
+	 * @param string    $name Room name, shown in Talk.
+	 * @param Throwable $e    What Talk threw.
+	 *
+	 * @return RefusedException
+	 */
+	private function roomRefused(string $name, Throwable $e): RefusedException {
+		$this->logger->warning(
+			'Talk refused a room named "' . $name . '": ' . $e->getMessage(),
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return new RefusedException(
+			rule: 'talk-room-refused',
+			sentence: 'Nextcloud Talk could not open a room for this case.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $e,
+		);
+	}//end roomRefused()
+
+	/**
+	 * Create the conversation and answer its id and absolute url.
+	 *
+	 * @param IBroker       $broker     Talk's broker.
+	 * @param string        $name       Room name, shown in Talk.
+	 * @param array<string> $moderators User ids that moderate the room.
+	 *
+	 * @return array{id: string, url: string}
+	 */
+	private function openRoom(IBroker $broker, string $name, array $moderators): array {
+		$room = $broker->createConversation(
+			name: $name,
+			moderators: $this->resolveModerators(moderators: $moderators),
+			options: $broker->newConversationOptions(),
+		);
+
+		return [
+			'id' => $room->getId(),
+			'url' => $room->getAbsoluteUrl(),
+		];
+	}//end openRoom()
 
 	/**
 	 * Close one Talk room.

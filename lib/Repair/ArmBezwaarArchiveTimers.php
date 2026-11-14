@@ -94,6 +94,23 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 			return;
 		}
 
+		$counts = $this->syncAll(objectService: $objectService, register: $register, schema: $schema);
+
+		$this->report(output: $output, counts: $counts);
+	}//end run()
+
+	/**
+	 * Sync every active trigger under the system identity.
+	 *
+	 * @param object|null $objectService OpenRegister's object service.
+	 * @param string      $register      The register.
+	 * @param string      $schema        The bezwaarTrigger schema.
+	 *
+	 * @return array<string, int> The armed, due and failed counts.
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function syncAll(?object $objectService, string $register, string $schema): array {
 		$counts = ['armed' => 0, 'due' => 0, 'failed' => 0];
 
 		// No session, so OpenRegister sees Anonymous: the read and the archive
@@ -108,6 +125,20 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 			}
 		);
 
+		return $counts;
+	}//end syncAll()
+
+	/**
+	 * Log and print the migration's counts.
+	 *
+	 * @param IOutput            $output The output.
+	 * @param array<string, int> $counts The counts.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function report(IOutput $output, array $counts): void {
 		$this->logger->info('Dossiq bezwaartermijn timer migration complete', $counts);
 		$output->info(
 			sprintf(
@@ -117,7 +148,7 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 				$counts['failed']
 			)
 		);
-	}//end run()
+	}//end report()
 
 	/**
 	 * Whether OpenRegister and the bezwaarTrigger schema are available.

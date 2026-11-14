@@ -253,20 +253,7 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 				continue;
 			}
 
-			$byType[$type['key']] ??= [
-				'title' => $type['title'],
-				'totaal' => 0,
-				'withinTerm' => 0,
-				'doorlooptijdenDagen' => [],
-				'verlengingen' => 0,
-				'overschrijdingen' => 0,
-				'ingebrekestellingen' => 0,
-				'dwangsomTotalCents' => 0,
-				'met' => 0,
-				'missed' => 0,
-				'running' => 0,
-				'suspended' => 0,
-			];
+			$byType[$type['key']] ??= $this->emptyBucket(title: $type['title']);
 
 			$this->accumulateRow(row: $row, bucket: $byType[$type['key']]);
 			$this->accumulateAccruals(row: $row, bucket: $byType[$type['key']], accruals: $accruals);
@@ -274,6 +261,32 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 
 		return $byType;
 	}//end aggregateByType()
+
+	/**
+	 * A per-case-type tally with nothing counted yet.
+	 *
+	 * @param string $title The case type's title.
+	 *
+	 * @return array<string, mixed> The tally.
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function emptyBucket(string $title): array {
+		return [
+			'title' => $title,
+			'totaal' => 0,
+			'withinTerm' => 0,
+			'doorlooptijdenDagen' => [],
+			'verlengingen' => 0,
+			'overschrijdingen' => 0,
+			'ingebrekestellingen' => 0,
+			'dwangsomTotalCents' => 0,
+			'met' => 0,
+			'missed' => 0,
+			'running' => 0,
+			'suspended' => 0,
+		];
+	}//end emptyBucket()
 
 	/**
 	 * The notices of default and the penalty amount on each term instance,
@@ -791,7 +804,23 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function quarterlyReportAsCsv(array $report): string {
-		$header = [
+		$lines = [implode(',', $this->csvHeader())];
+		foreach ((array)($report['perType'] ?? []) as $type => $row) {
+			$lines[] = $this->csvLine(type: (string)$type, row: $row);
+		}
+
+		return implode("\n", $lines);
+	}//end quarterlyReportAsCsv()
+
+	/**
+	 * The columns of the quarterly CSV.
+	 *
+	 * @return array<int, string> The header.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 */
+	private function csvHeader(): array {
+		return [
 			'caseType',
 			'totaal',
 			'binnenTermijnPct',
@@ -801,23 +830,32 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 			'ingebrekestellingen',
 			'dwangsomTotalCents',
 		];
-		$lines = [implode(',', $header)];
-		foreach ((array)($report['perType'] ?? []) as $type => $row) {
-			$line = [
-				$type,
-				(string)($row['totaal'] ?? 0),
-				(string)($row['binnenTermijnPct'] ?? ''),
-				(string)($row['gemiddeldeDoorlooptijdDagen'] ?? 0),
-				(string)($row['verlengingen'] ?? 0),
-				(string)($row['overschrijdingen'] ?? 0),
-				(string)($row['ingebrekestellingen'] ?? 0),
-				(string)($row['dwangsomTotalCents'] ?? 0),
-			];
-			$lines[] = implode(',', $line);
-		}
+	}//end csvHeader()
 
-		return implode("\n", $lines);
-	}//end quarterlyReportAsCsv()
+	/**
+	 * One case type's line of the quarterly CSV.
+	 *
+	 * @param string $type The case type.
+	 * @param mixed  $row  Its tally.
+	 *
+	 * @return string The line.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 */
+	private function csvLine(string $type, $row): string {
+		$line = [
+			$type,
+			(string)($row['totaal'] ?? 0),
+			(string)($row['binnenTermijnPct'] ?? ''),
+			(string)($row['gemiddeldeDoorlooptijdDagen'] ?? 0),
+			(string)($row['verlengingen'] ?? 0),
+			(string)($row['overschrijdingen'] ?? 0),
+			(string)($row['ingebrekestellingen'] ?? 0),
+			(string)($row['dwangsomTotalCents'] ?? 0),
+		];
+
+		return implode(',', $line);
+	}//end csvLine()
 
 	/**
 	 * Resolve a quarter spec (YYYY-Qn) to its from/until date bounds.

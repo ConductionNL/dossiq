@@ -93,31 +93,57 @@ class DependentTermListener implements IEventListener {
 				return;
 			}
 
-			if (in_array((string)($object['type'] ?? ''), DependentTermOfferInterface::MOVING_EVENTS, true) === false) {
-				return;
-			}
-
-			$days = (int)($object['daysImpact'] ?? 0);
-			if ($days <= 0) {
-				return;
-			}
-
-			$caseId = $this->caseBehind(object: $object);
-			if ($caseId === '') {
-				return;
-			}
-
-			$this->offers->offer(
-				sourceCaseId: $caseId,
-				sourceTitle: $this->titleOf(caseId: $caseId),
-				daysImpact: $days
-			);
+			$this->offerMovedTerm(object: $object);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: a moved term could not be offered to its dependents: ' . $e->getMessage()
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * Offer a term event that moved the term to the dependents of its case.
+	 *
+	 * @param array<string, mixed> $object The term event.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 */
+	private function offerMovedTerm(array $object): void {
+		$days = $this->movedDays(object: $object);
+		if ($days <= 0) {
+			return;
+		}
+
+		$caseId = $this->caseBehind(object: $object);
+		if ($caseId === '') {
+			return;
+		}
+
+		$this->offers->offer(
+			sourceCaseId: $caseId,
+			sourceTitle: $this->titleOf(caseId: $caseId),
+			daysImpact: $days
+		);
+	}//end offerMovedTerm()
+
+	/**
+	 * The days a moving term event moved the term by, 0 for any other event.
+	 *
+	 * @param array<string, mixed> $object The term event.
+	 *
+	 * @return int The days.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 */
+	private function movedDays(array $object): int {
+		if (in_array((string)($object['type'] ?? ''), DependentTermOfferInterface::MOVING_EVENTS, true) === false) {
+			return 0;
+		}
+
+		return (int)($object['daysImpact'] ?? 0);
+	}//end movedDays()
 
 	/**
 	 * The case the event's instance is bound to.

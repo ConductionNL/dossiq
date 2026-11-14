@@ -252,32 +252,56 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		$statuses = null;
 		foreach ($caseType->versions as $template) {
 			$id = (string)($template['id'] ?? '');
-			if ($id === '' || str_contains((string)json_encode($template), BackfilledTemplateLabels::CAST_OF_A_MAP) === false) {
+			if ($this->carriesCastMarker(id: $id, template: $template) === false) {
 				continue;
 			}
 
 			$statuses ??= $this->statusesById(target: $target, caseTypeId: (string)($caseType->row['id'] ?? ''));
 			$changes = $this->labels->healed(template: $template, caseType: $caseType->row, statusesById: $statuses);
-			if ($changes === []) {
-				continue;
-			}
-
-			try {
-				$this->patchObjectAsArray(
-					objectService: $target->objectService,
-					register: $target->register,
-					schema: $target->schemas->template,
-					id: $id,
-					changes: $changes,
-				);
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: workflow backfill could not heal the labels of a basis template',
-					['app' => AppIdentity::APP_ID, 'template' => $id, 'exception' => $e->getMessage()]
-				);
-			}
+			$this->patchHealed(target: $target, id: $id, changes: $changes);
 		}//end foreach
 	}//end healBackfilled()
+
+	/**
+	 * Whether a stored template has an id and carries the backfill's cast-of-a-map marker.
+	 *
+	 * @param string $id The template id.
+	 * @param array<string, mixed> $template The stored template.
+	 *
+	 * @return bool True when the template is to be healed.
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 */
+	private function carriesCastMarker(string $id, array $template): bool {
+		return $id !== '' && str_contains((string)json_encode($template), BackfilledTemplateLabels::CAST_OF_A_MAP) === true;
+	}//end carriesCastMarker()
+
+	/**
+	 * Write a template's healed labels through the partial write; nothing when nothing was healed.
+	 *
+	 * @param BackfillTarget $target The register and schemas.
+	 * @param string $id The template id.
+	 * @param array<string, mixed> $changes The healed fields.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 */
+	private function patchHealed(BackfillTarget $target, string $id, array $changes): void {
+		if ($changes === []) {
+			return;
+		}
+
+		try {
+			$this->patchObjectAsArray(objectService: $target->objectService, register: $target->register,
+				schema: $target->schemas->template, id: $id, changes: $changes);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: workflow backfill could not heal the labels of a basis template',
+				['app' => AppIdentity::APP_ID, 'template' => $id, 'exception' => $e->getMessage()]
+			);
+		}
+	}//end patchHealed()
 
 	/**
 	 * The statuses of a case type, by id; empty when they cannot be read.

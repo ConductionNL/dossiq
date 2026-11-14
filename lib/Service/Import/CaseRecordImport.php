@@ -477,31 +477,70 @@ class CaseRecordImport implements CaseRecordImportInterface {
 			return ['reason' => $e->getMessage()];
 		}
 
+		$caseId = $this->existingOrWritten(run: $run, mapped: $mapped);
+		if ($caseId === '') {
+			return ['reason' => 'The case could not be written.'];
+		}
+
+		return $this->withTerm(run: $run, caseId: $caseId, mapped: $mapped);
+	}//end placeCase()
+
+	/**
+	 * The case the record already has, or the one written for it ('' when the write failed).
+	 *
+	 * @param array<string, mixed> $run    The run: objectService, existing.
+	 * @param array<string, mixed> $mapped The mapped record.
+	 *
+	 * @return string The case id, or ''.
+	 */
+	private function existingOrWritten(array $run, array $mapped): string {
 		$caseId = $run['existing'];
 		if ($caseId === '') {
 			$caseId = $this->steps->store->writeCase(objectService: $run['objectService'], mapped: $mapped);
 		}
 
-		if ($caseId === '') {
-			return ['reason' => 'The case could not be written.'];
-		}
+		return $caseId;
+	}//end existingOrWritten()
 
+	/**
+	 * Carry the record's term onto its case, unless the import carries no term.
+	 *
+	 * @param array<string, mixed> $run    The run: caseType, import.
+	 * @param string               $caseId The case.
+	 * @param array<string, mixed> $mapped The mapped record, with its `term`.
+	 *
+	 * @return array{caseId: string}|array{reason: string} The case, or why its term could not be armed.
+	 */
+	private function withTerm(array $run, string $caseId, array $mapped): array {
 		if (($run['import']['carriesTerm'] ?? true) === false) {
 			return ['caseId' => $caseId];
 		}
 
-		$carried = $this->steps->term->carry(
-			caseId: $caseId,
-			term: $mapped['term'],
-			definitionSlug: (string)($caseType['identifier'] ?? ''),
-			extensionDays: $this->days(period: (string)($caseType['extensionPeriod'] ?? '')),
-		);
+		$carried = $this->carryTerm(caseType: $run['caseType'], caseId: $caseId, mapped: $mapped);
 		if ($mapped['term']['state'] !== TermCarryOver::STATE_CLOSED && in_array($carried['outcome'], self::ARMED, true) === false) {
 			return ['reason' => 'The case ' . $caseId . ' was written, but its term could not be armed (' . $carried['outcome'] . ').'];
 		}
 
 		return ['caseId' => $caseId];
-	}//end placeCase()
+	}//end withTerm()
+
+	/**
+	 * Carry the mapped term onto the case.
+	 *
+	 * @param array<string, mixed> $caseType The case type.
+	 * @param string               $caseId   The case.
+	 * @param array<string, mixed> $mapped   The mapped record, with its `term`.
+	 *
+	 * @return array<string, mixed> The carry result, with its `outcome`.
+	 */
+	private function carryTerm(array $caseType, string $caseId, array $mapped): array {
+		return $this->steps->term->carry(
+			caseId: $caseId,
+			term: $mapped['term'],
+			definitionSlug: (string)($caseType['identifier'] ?? ''),
+			extensionDays: $this->days(period: (string)($caseType['extensionPeriod'] ?? '')),
+		);
+	}//end carryTerm()
 
 	/**
 	 * An ISO 8601 period as days, 0 when absent or unreadable.

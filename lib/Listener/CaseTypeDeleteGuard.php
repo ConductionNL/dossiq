@@ -196,25 +196,38 @@ class CaseTypeDeleteGuard implements IEventListener {
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['caseType' => $caseTypeId, '_limit' => self::PAGE_SIZE],
-			);
-			foreach ($rows as $row) {
-				$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
-				if ($id !== '') {
-					$objectService->deleteObject(uuid: $id, register: $register, schema: $schema);
-				}
-			}
+			$this->deleteStatusTypes(objectService: $objectService, register: $register, schema: $schema, caseTypeId: $caseTypeId);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Dossiq: could not remove the status types of a deleted case type',
-				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
+				'Dossiq: could not remove the status types of a deleted case type', ['caseType' => $caseTypeId, 'error' => $e->getMessage()]
 			);
 		}
 	}//end removeStatusTypes()
+
+	/**
+	 * Delete every status type of the case type.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register.
+	 * @param string $schema        The status type schema.
+	 * @param string $caseTypeId    The deleted case type.
+	 *
+	 * @return void
+	 */
+	private function deleteStatusTypes(object $objectService, string $register, string $schema, string $caseTypeId): void {
+		$rows = $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['caseType' => $caseTypeId, '_limit' => self::PAGE_SIZE],
+		);
+		foreach ($rows as $row) {
+			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
+			if ($id !== '') {
+				$objectService->deleteObject(uuid: $id, register: $register, schema: $schema);
+			}
+		}
+	}//end deleteStatusTypes()
 
 	/**
 	 * Whether a schema reference names the case type schema.

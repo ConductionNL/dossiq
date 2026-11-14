@@ -217,12 +217,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	 *
 	 * @return string One of the self::RESULT_* constants.
 	 */
-	private function linkCase(
-		object $objectService,
-		array $case,
-		string $caseTypeSlug,
-		IOutput $output,
-	): string {
+	private function linkCase(object $objectService, array $case, string $caseTypeSlug, IOutput $output): string {
 		$caseUuid = (string)($case['uuid'] ?? $case['id'] ?? '');
 		$precheck = $this->precheckOf(case: $case);
 		if ($precheck !== null) {
@@ -231,24 +226,33 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 
 		// Open case with no decision yet — link forward to decidesk.
 		try {
-			$newDecisionRef = $this->raiseAndPersistDecision(
-				objectService: $objectService,
-				case: $case,
-				caseTypeSlug: $caseTypeSlug
-			);
+			$newDecisionRef = $this->raiseAndPersistDecision(objectService: $objectService, case: $case, caseTypeSlug: $caseTypeSlug);
 			$output->info('Linked case ' . $caseUuid . ' → decidesk Decision ' . $newDecisionRef);
 		} catch (RuntimeException $e) {
 			// Decidesk leaf unavailable — warn + skip this case; do NOT fail the migration.
-			$output->warning('Could not link case ' . $caseUuid . ': ' . $e->getMessage() . ' — skipping.');
-			$this->logger->warning(
-				'LinkInFlightContractDecisionsRepair: could not link case',
-				['caseUuid' => $caseUuid, 'error' => $e->getMessage()]
-			);
+			$this->reportNotLinked(output: $output, caseUuid: $caseUuid, error: $e);
 			return self::RESULT_ERROR;
 		}//end try
 
 		return self::RESULT_LINKED;
 	}//end linkCase()
+
+	/**
+	 * Report a case that could not be linked.
+	 *
+	 * @param IOutput $output The migration output interface.
+	 * @param string $caseUuid The case uuid.
+	 * @param RuntimeException $error Why it could not be linked.
+	 *
+	 * @return void
+	 */
+	private function reportNotLinked(IOutput $output, string $caseUuid, RuntimeException $error): void {
+		$output->warning('Could not link case ' . $caseUuid . ': ' . $error->getMessage() . ' — skipping.');
+		$this->logger->warning(
+			'LinkInFlightContractDecisionsRepair: could not link case',
+			['caseUuid' => $caseUuid, 'error' => $error->getMessage()]
+		);
+	}//end reportNotLinked()
 
 	/**
 	 * The outcome of a case that needs no link, or null when it must be linked.

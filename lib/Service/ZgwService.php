@@ -1119,31 +1119,48 @@ class ZgwService implements ZgwServiceInterface {
 		$params = $request->getParams();
 		$filters = $this->translateQueryParams(params: $params, mappingConfig: $mappingConfig);
 
+		[$page, $pageSize] = $this->pageWindow(params: $params);
+
+		$searchParams = array_merge($filters, ['_limit' => $pageSize, '_offset' => (($page - 1) * $pageSize)]);
+		$result = $this->searchPage(searchParams: $searchParams, mappingConfig: $mappingConfig);
+
+		$objects = $result['results'] ?? [];
+		$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
+		$mapped = $this->mapListObjects(objects: $objects, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
+
+		return $this->pageResponse(mapped: $mapped, totalCount: $result['total'] ?? count($objects), params: $params, baseUrl: $baseUrl);
+	}//end listMapped()
+
+	/**
+	 * The page number and page size a list request asks for, clamped.
+	 *
+	 * @param array $params The request parameters
+	 *
+	 * @return array{0: int, 1: int} The page (>= 1) and the page size (1..100)
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function pageWindow(array $params): array {
 		$page = max(1, (int)($params['page'] ?? 1));
 		$pageSize = max(1, min(100, (int)($params['pageSize'] ?? 20)));
 
-		$searchParams = array_merge(
-			$filters,
-			[
-				'_limit' => $pageSize,
-				'_offset' => (($page - 1) * $pageSize),
-			]
-		);
+		return [$page, $pageSize];
+	}//end pageWindow()
 
-		$query = $this->objectService->buildSearchQuery(
-			requestParams: $searchParams,
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema']
-		);
-		$result = $this->objectService->searchObjectsPaginated(
-			query: $query
-		);
-
-		$objects = $result['results'] ?? [];
-		$totalCount = $result['total'] ?? count($objects);
-		$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
-
-		$mapped = $this->mapListObjects(objects: $objects, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
+	/**
+	 * Wrap one mapped page in the ZGW pagination envelope.
+	 *
+	 * @param array  $mapped     The mapped objects of the page
+	 * @param int    $totalCount The total number of matching objects
+	 * @param array  $params     The request parameters
+	 * @param string $baseUrl    The resource base URL
+	 *
+	 * @return JSONResponse The paginated list
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function pageResponse(array $mapped, int $totalCount, array $params, string $baseUrl): JSONResponse {
+		[$page, $pageSize] = $this->pageWindow(params: $params);
 
 		$paginatedResult = $this->paginationHelper->wrapResults(
 			mappedObjects: $mapped,
@@ -1155,7 +1172,28 @@ class ZgwService implements ZgwServiceInterface {
 		);
 
 		return new JSONResponse(data: $paginatedResult);
-	}//end listMapped()
+	}//end pageResponse()
+
+	/**
+	 * Search one page of the stored objects of a mapping.
+	 *
+	 * @param array $searchParams  The filters plus `_limit` and `_offset`
+	 * @param array $mappingConfig The mapping configuration
+	 *
+	 * @return array The paginated search result (`results`, `total`)
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function searchPage(array $searchParams, array $mappingConfig): array {
+		$query = $this->objectService->buildSearchQuery(
+			requestParams: $searchParams,
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema']
+		);
+		return $this->objectService->searchObjectsPaginated(
+			query: $query
+		);
+	}//end searchPage()
 
 	/**
 	 * Map each listed object outbound.
@@ -1284,32 +1322,57 @@ class ZgwService implements ZgwServiceInterface {
 				return $this->ruleRefusal(ruleResult: $ruleResult);
 			}
 
-			// Map to English; direct OpenRegister fields (array fields like documentTypes/caseTypes
-			// that Twig cannot handle) bypass the inbound mapping.
-			$englishData = $this->mapInbound(enrichedBody: $ruleResult['enrichedBody'], mappingConfig: $write->mapping)['data'];
-
-			// `_directFields` reach the payload unmapped, so a create drops the keys that name a stored object.
-			$object = $this->objectService->saveObject(
-				register: $write->mapping['sourceRegister'],
-				schema: $write->mapping['sourceSchema'],
-				object: array_diff_key($englishData, CallerIdentity::KEYS)
-			);
-
-			$outbound = $this->outboundFor(write: $write, object: $object);
-			$objectUuid = $outbound['objectData']['id'] ?? ($outbound['objectData']['@self']['id'] ?? '');
-			$this->publishNotification(
-				zgwApi: $route->api,
-				resource: $route->resource,
-				resourceUrl: $outbound['baseUrl'] . '/' . $objectUuid,
-				action: 'create'
-			);
-
-			return new JSONResponse(data: $outbound['mapped'], statusCode: Http::STATUS_CREATED);
+			return $this->storeCreated(write: $write, ruleResult: $ruleResult);
 		} catch (\Throwable $e) {
 			$this->logger->error('ZGW create error: ' . $e->getMessage(), ['exception' => $e]);
 			return new JSONResponse(data: ['detail' => $e->getMessage()], statusCode: Http::STATUS_BAD_REQUEST);
 		}//end try
 	}//end create()
+
+	/**
+	 * Map a validated create inbound and store it.
+	 *
+	 * @param ResourceWrite $write      The write, with its body.
+	 * @param array         $ruleResult The passed rule result (`enrichedBody`)
+	 *
+	 * @return JSONResponse The created object
+	 */
+	private function storeCreated(ResourceWrite $write, array $ruleResult): JSONResponse {
+		// Map to English; direct OpenRegister fields (array fields like documentTypes/caseTypes
+		// that Twig cannot handle) bypass the inbound mapping.
+		$englishData = $this->mapInbound(enrichedBody: $ruleResult['enrichedBody'], mappingConfig: $write->mapping)['data'];
+
+		// `_directFields` reach the payload unmapped, so a create drops the keys that name a stored object.
+		$object = $this->objectService->saveObject(
+			register: $write->mapping['sourceRegister'],
+			schema: $write->mapping['sourceSchema'],
+			object: array_diff_key($englishData, CallerIdentity::KEYS)
+		);
+
+		return $this->createdResponse(write: $write, object: $object);
+	}//end storeCreated()
+
+	/**
+	 * Announce a created object and answer it outbound.
+	 *
+	 * @param ResourceWrite $write  The write.
+	 * @param mixed         $object The stored object
+	 *
+	 * @return JSONResponse The created object, 201
+	 */
+	private function createdResponse(ResourceWrite $write, mixed $object): JSONResponse {
+		$route = $write->route;
+		$outbound = $this->outboundFor(write: $write, object: $object);
+		$objectUuid = $outbound['objectData']['id'] ?? ($outbound['objectData']['@self']['id'] ?? '');
+		$this->publishNotification(
+			zgwApi: $route->api,
+			resource: $route->resource,
+			resourceUrl: $outbound['baseUrl'] . '/' . $objectUuid,
+			action: 'create'
+		);
+
+		return new JSONResponse(data: $outbound['mapped'], statusCode: Http::STATUS_CREATED);
+	}//end createdResponse()
 
 	/**
 	 * Generic show (get single) operation for a ZGW resource.
@@ -1329,44 +1392,85 @@ class ZgwService implements ZgwServiceInterface {
 		string $resource,
 		string $uuid,
 	): JSONResponse {
-		$mappingConfig = $this->mappingOrRefusal(route: new ResourceRoute(request: $request, api: $zgwApi, resource: $resource));
+		return $this->showRoute(route: new ResourceRoute(request: $request, api: $zgwApi, resource: $resource, uuid: $uuid));
+	}//end handleShow()
+
+	/**
+	 * Read and map the stored object a route names, or answer why it cannot be shown.
+	 *
+	 * @param ResourceRoute $route The route, with the object id.
+	 *
+	 * @return JSONResponse The mapped object, or the 503, 404 or store failure answer
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function showRoute(ResourceRoute $route): JSONResponse {
+		$mappingConfig = $this->mappingOrRefusal(route: $route);
 		if ($mappingConfig instanceof JSONResponse) {
 			return $mappingConfig;
 		}
 
+		$object = $this->findShown(route: $route, mappingConfig: $mappingConfig);
+		if ($object instanceof JSONResponse) {
+			return $object;
+		}
+
+		return $this->showMappedOrNotFound(route: $route, mappingConfig: $mappingConfig, object: $object);
+	}//end showRoute()
+
+	/**
+	 * The stored object a show reads, or the answer when it cannot be read or does not exist.
+	 *
+	 * @param ResourceRoute $route         The route, with the object id.
+	 * @param array         $mappingConfig The mapping configuration
+	 *
+	 * @return mixed The stored object, or the store failure or 404 answer
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function findShown(ResourceRoute $route, array $mappingConfig): mixed {
 		try {
 			$object = $this->objectService->find(
 				register: $mappingConfig['sourceRegister'],
 				schema: $mappingConfig['sourceSchema'],
-				id: $uuid
+				id: $route->uuid
 			);
 		} catch (\Throwable $e) {
-			return $this->storeFailureResponse(error: $e, operation: 'ZGW show', object: $resource . ' ' . $uuid);
+			return $this->storeFailureResponse(error: $e, operation: 'ZGW show', object: $route->objectLabel());
 		}
 
 		if ($object === null) {
 			return $this->notFoundResponse();
 		}
 
+		return $object;
+	}//end findShown()
+
+	/**
+	 * Map a stored object outbound, answering 404 when mapping fails.
+	 *
+	 * @param ResourceRoute $route         The route.
+	 * @param array         $mappingConfig The mapping configuration
+	 * @param mixed         $object        The stored object
+	 *
+	 * @return JSONResponse The mapped object, or the 404 answer
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function showMappedOrNotFound(ResourceRoute $route, array $mappingConfig, mixed $object): JSONResponse {
 		try {
 			return $this->showMapped(
-				request: $request,
-				zgwApi: $zgwApi,
-				resource: $resource,
+				request: $route->request,
+				zgwApi: $route->api,
+				resource: $route->resource,
 				mappingConfig: $mappingConfig,
 				object: $object
 			);
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				'ZGW show error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => 'Not found'],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
+			$this->logger->error('ZGW show error: ' . $e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(data: ['detail' => 'Not found'], statusCode: Http::STATUS_NOT_FOUND);
 		}//end try
-	}//end handleShow()
+	}//end showMappedOrNotFound()
 
 	/**
 	 * Map one stored object outbound.
@@ -1499,30 +1603,67 @@ class ZgwService implements ZgwServiceInterface {
 				return $this->ruleRefusal(ruleResult: $ruleResult);
 			}
 
-			$object = $this->objectService->saveObject(
-				register: $write->mapping['sourceRegister'],
-				schema: $write->mapping['sourceSchema'],
-				object: $this->updatedData(write: $write, ruleResult: $ruleResult + ['patch' => $flags->isPatch()]),
-				uuid: $route->uuid
-			);
-
-			$outbound = $this->outboundFor(write: $write, object: $object);
-			$this->publishNotification(
-				zgwApi: $route->api,
-				resource: $route->resource,
-				resourceUrl: $outbound['baseUrl'] . '/' . $route->uuid,
-				action: 'update'
-			);
-
-			return new JSONResponse(data: $outbound['mapped']);
+			return $this->storeUpdated(write: $write, data: $this->updatedData(write: $write, ruleResult: $ruleResult + ['patch' => $flags->isPatch()]));
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				'ZGW update error (' . $route->objectLabel() . '): ' . $e->getMessage(),
-				['exception' => $e, 'trace' => $e->getTraceAsString()]
-			);
-			return new JSONResponse(data: ['detail' => $e->getMessage()], statusCode: Http::STATUS_BAD_REQUEST);
+			return $this->updateFailure(route: $route, error: $e);
 		}//end try
 	}//end update()
+
+	/**
+	 * Log a failed update and answer it as a bad request.
+	 *
+	 * @param ResourceRoute $route The route, with the object id.
+	 * @param \Throwable    $error The failure
+	 *
+	 * @return JSONResponse The 400 answer with the failure message
+	 */
+	private function updateFailure(ResourceRoute $route, \Throwable $error): JSONResponse {
+		$this->logger->error(
+			'ZGW update error (' . $route->objectLabel() . '): ' . $error->getMessage(),
+			['exception' => $error, 'trace' => $error->getTraceAsString()]
+		);
+		return new JSONResponse(data: ['detail' => $error->getMessage()], statusCode: Http::STATUS_BAD_REQUEST);
+	}//end updateFailure()
+
+	/**
+	 * Store the data of a validated update.
+	 *
+	 * @param ResourceWrite $write The write on the stored object.
+	 * @param array         $data  The English data to save
+	 *
+	 * @return JSONResponse The updated object
+	 */
+	private function storeUpdated(ResourceWrite $write, array $data): JSONResponse {
+		$object = $this->objectService->saveObject(
+			register: $write->mapping['sourceRegister'],
+			schema: $write->mapping['sourceSchema'],
+			object: $data,
+			uuid: $write->route->uuid
+		);
+
+		return $this->updatedResponse(write: $write, object: $object);
+	}//end storeUpdated()
+
+	/**
+	 * Announce an updated object and answer it outbound.
+	 *
+	 * @param ResourceWrite $write  The write on the stored object.
+	 * @param mixed         $object The stored object
+	 *
+	 * @return JSONResponse The updated object
+	 */
+	private function updatedResponse(ResourceWrite $write, mixed $object): JSONResponse {
+		$route = $write->route;
+		$outbound = $this->outboundFor(write: $write, object: $object);
+		$this->publishNotification(
+			zgwApi: $route->api,
+			resource: $route->resource,
+			resourceUrl: $outbound['baseUrl'] . '/' . $route->uuid,
+			action: 'update'
+		);
+
+		return new JSONResponse(data: $outbound['mapped']);
+	}//end updatedResponse()
 
 	/**
 	 * The English data an update stores: mapped, merged over the stored object for a patch.

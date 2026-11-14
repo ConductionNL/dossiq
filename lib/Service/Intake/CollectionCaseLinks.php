@@ -282,22 +282,44 @@ class CollectionCaseLinks {
 		}
 
 		$collectionId = (string)$collection['id'];
+		$data = $this->withSource(collection: $collection, sourceOf: array_merge($sourceOf, [$reference]));
+
+		$this->saveSource(objectService: $objectService, data: $data, collectionId: $collectionId, caseId: $caseId);
+	}//end recordSource()
+
+	/**
+	 * The collection as it is written back, carrying the new `sourceOf`.
+	 *
+	 * @param array<string, mixed> $collection The collection as read.
+	 * @param array<int, string>   $sourceOf   The new `sourceOf`.
+	 *
+	 * @return array<string, mixed> The collection to save.
+	 *
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
+	 */
+	private function withSource(array $collection, array $sourceOf): array {
 		$data = $collection;
 		unset($data['@self'], $data['id']);
-		$data['sourceOf'] = array_merge($sourceOf, [$reference]);
+		$data['sourceOf'] = $sourceOf;
 
+		return $data;
+	}//end withSource()
+
+	/**
+	 * Save the collection, logging when it cannot learn about the case.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param array<string, mixed> $data          The collection to save.
+	 * @param string               $collectionId  The collection's id.
+	 * @param string               $caseId        The case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
+	 */
+	private function saveSource(object $objectService, array $data, string $collectionId, string $caseId): void {
 		try {
-			$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): mixed => $objectService->saveObject(
-					object: $data,
-					register: $this->settingsService->getWooPublicationConfigValue('woo_collection_register'),
-					schema: $this->settingsService->getWooPublicationConfigValue('woo_collection_schema'),
-					uuid: $collectionId,
-					_rbac: false,
-					_multitenancy: false,
-				)
-			);
+			$this->saveCollection(objectService: $objectService, data: $data, collectionId: $collectionId);
 		} catch (Throwable $e) {
 			// The case exists and is the resident's; a collection that does not
 			// learn about it loses a link, not the request.
@@ -306,5 +328,30 @@ class CollectionCaseLinks {
 				['collection' => $collectionId, 'case' => $caseId, 'error' => $e->getMessage()]
 			);
 		}
-	}//end recordSource()
+	}//end saveSource()
+
+	/**
+	 * Save the collection under the system identity when one is available.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param array<string, mixed> $data          The collection to save.
+	 * @param string               $collectionId  The collection's id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
+	 */
+	private function saveCollection(object $objectService, array $data, string $collectionId): void {
+		$this->runAsSystemIfAvailable(
+			objectService: $objectService,
+			operation: fn (): mixed => $objectService->saveObject(
+				object: $data,
+				register: $this->settingsService->getWooPublicationConfigValue('woo_collection_register'),
+				schema: $this->settingsService->getWooPublicationConfigValue('woo_collection_schema'),
+				uuid: $collectionId,
+				_rbac: false,
+				_multitenancy: false,
+			)
+		);
+	}//end saveCollection()
 }//end class

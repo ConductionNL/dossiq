@@ -110,16 +110,49 @@ class BackfillWooPublicationState implements IRepairStep {
 			return;
 		}
 
+		$target = $this->backfillTarget();
+		if ($target === null) {
+			$output->info('OpenRegister or the case and decision schemas are unavailable, skipping the Woo publication state backfill.');
+			return;
+		}
+
+		$tally = $this->backfillAsSystem(target: $target);
+
+		$this->reportAndMark(output: $output, tally: $tally);
+	}//end run()
+
+	/**
+	 * The object service, register, decision schema and case schema, or null when one is unavailable.
+	 *
+	 * @return array{0: object, 1: string, 2: string, 3: string}|null The backfill target.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+	 */
+	private function backfillTarget(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$decisionSchema = (string)$this->settingsService->getConfigValue('decision_schema');
 		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
 		if ($objectService === null || $register === '' || $decisionSchema === '' || $caseSchema === '') {
-			$output->info('OpenRegister or the case and decision schemas are unavailable, skipping the Woo publication state backfill.');
-			return;
+			return null;
 		}
 
-		$tally = (array)$this->runAsSystemIfAvailable(
+		return [$objectService, $register, $decisionSchema, $caseSchema];
+	}//end backfillTarget()
+
+	/**
+	 * Run the backfill as the system.
+	 *
+	 * @param array{0: object, 1: string, 2: string, 3: string} $target The object service, register, decision and case schema.
+	 *
+	 * @return array{written: int, unchanged: int, missing: int, failed: int, readable: bool} The tally.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+	 */
+	private function backfillAsSystem(array $target): array {
+		[$objectService, $register, $decisionSchema, $caseSchema] = $target;
+
+		return (array)$this->runAsSystemIfAvailable(
 			objectService: $objectService,
 			operation: fn (): array => $this->backfill(
 				objectService: $objectService,
@@ -128,7 +161,19 @@ class BackfillWooPublicationState implements IRepairStep {
 				caseSchema: $caseSchema
 			)
 		);
+	}//end backfillAsSystem()
 
+	/**
+	 * Report the tally, and mark the backfill done when every decision was read and no write failed.
+	 *
+	 * @param IOutput                                                                         $output Progress reporting.
+	 * @param array{written: int, unchanged: int, missing: int, failed: int, readable: bool} $tally  The tally.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+	 */
+	private function reportAndMark(IOutput $output, array $tally): void {
 		$output->info(
 			'Woo publication state backfill: ' . $tally['written'] . ' cases updated, '
 			. $tally['unchanged'] . ' already right, ' . $tally['missing'] . ' without their case, '
@@ -138,7 +183,7 @@ class BackfillWooPublicationState implements IRepairStep {
 		if ($tally['failed'] === 0 && $tally['readable'] === true) {
 			$this->appConfig->setValueString(AppIdentity::APP_ID, self::CONFIG_KEY, self::VERSION);
 		}
-	}//end run()
+	}//end reportAndMark()
 
 	/**
 	 * The case fields one Woo decision implies, or [] when the decision is no Woo decision.
@@ -183,42 +228,95 @@ class BackfillWooPublicationState implements IRepairStep {
 	 * @return array{written: int, unchanged: int, missing: int, failed: int, readable: bool} The tally.
 	 */
 	private function backfill(object $objectService, string $register, string $decisionSchema, string $caseSchema): array {
+		$read = fn (int $page): ?array => $this->readDecisionPage(
+			objectService: $objectService, register: $register,
+			decisionSchema: $decisionSchema, page: $page
+		);
+		$write = fn (string $caseId, array $state): string => $this->writeOne(
+			objectService: $objectService,
+			register: $register,
+			caseSchema: $caseSchema,
+			caseId: $caseId,
+			state: $state
+		);
+
+		return $this->walkDecisions(read: $read, write: $write);
+	}//end backfill()
+
+	/**
+	 * Page through the decisions until a short page, an unreadable page or the page cap.
+	 *
+	 * @param callable(int): (array|null)                         $read  Reads one page of decisions, null when it cannot.
+	 * @param callable(string, array<string, string>): string $write Writes one case, answering its tally.
+	 *
+	 * @return array{written: int, unchanged: int, missing: int, failed: int, readable: bool} The tally.
+	 */
+	private function walkDecisions(callable $read, callable $write): array {
 		$tally = ['written' => 0, 'unchanged' => 0, 'missing' => 0, 'failed' => 0, 'readable' => true];
 
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
-			try {
-				$rows = $this->searchObjectsAsArraysUnscoped(
-					objectService: $objectService,
-					register: $register,
-					schema: $decisionSchema,
-					filters: ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)]
-				);
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: the Woo publication state backfill could not read the decisions',
-					['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
-				);
+			$rows = $read($page);
+			if ($rows === null) {
 				$tally['readable'] = false;
 				break;
 			}
 
-			foreach ($rows as $decision) {
-				$state = $this->stateFor(decision: $decision);
-				$caseId = (string)($decision['case'] ?? '');
-				if ($state === [] || $caseId === '') {
-					continue;
-				}
-
-				$tally[$this->writeOne(objectService: $objectService, register: $register, caseSchema: $caseSchema, caseId: $caseId, state: $state)]++;
-			}
-
+			$tally = $this->tallyDecisions(tally: $tally, rows: $rows, write: $write);
 			if (count($rows) < self::PAGE) {
 				break;
 			}
-		}//end for
+		}
 
 		return $tally;
-	}//end backfill()
+	}//end walkDecisions()
+
+	/**
+	 * Read one page of decisions, or null when the read fails.
+	 *
+	 * @param object $objectService  OpenRegister's object service.
+	 * @param string $register       The register.
+	 * @param string $decisionSchema The decision schema.
+	 * @param int    $page           The zero-based page.
+	 *
+	 * @return array<int, array<string, mixed>>|null The decisions, or null when unreadable.
+	 */
+	private function readDecisionPage(object $objectService, string $register, string $decisionSchema, int $page): ?array {
+		try {
+			return $this->searchObjectsAsArraysUnscoped(
+				objectService: $objectService,
+				register: $register,
+				schema: $decisionSchema,
+				filters: ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)]
+			);
+		} catch (Throwable $e) {
+			$context = ['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()];
+			$this->logger->warning('Dossiq: the Woo publication state backfill could not read the decisions', $context);
+			return null;
+		}
+	}//end readDecisionPage()
+
+	/**
+	 * Write the case of every Woo decision on one page and count the outcomes.
+	 *
+	 * @param array{written: int, unchanged: int, missing: int, failed: int, readable: bool} $tally The running tally.
+	 * @param array<int, array<string, mixed>>                                                $rows  The decisions.
+	 * @param callable(string, array<string, string>): string                             $write Writes one case, answering its tally.
+	 *
+	 * @return array{written: int, unchanged: int, missing: int, failed: int, readable: bool} The new tally.
+	 */
+	private function tallyDecisions(array $tally, array $rows, callable $write): array {
+		foreach ($rows as $decision) {
+			$state = $this->stateFor(decision: $decision);
+			$caseId = (string)($decision['case'] ?? '');
+			if ($state === [] || $caseId === '') {
+				continue;
+			}
+
+			$tally[$write($caseId, $state)]++;
+		}
+
+		return $tally;
+	}//end tallyDecisions()
 
 	/**
 	 * Write one case when its state differs, and say which tally it belongs to.

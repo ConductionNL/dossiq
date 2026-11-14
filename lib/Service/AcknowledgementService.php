@@ -66,6 +66,7 @@ use Throwable;
  * to lower the count would spread one statutory duty over several files, which
  * is the thing this change exists to stop.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/specs/burger-notifications/spec.md
  */
@@ -425,13 +426,27 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
 	 */
 	private function notSent(string $caseId, NoticeNotSentException $notice): RefusedException {
+		$this->recordNotSent(caseId: $caseId, notice: $notice);
+
+		return $this->notSentRefusal(notice: $notice);
+	}//end notSent()
+
+	/**
+	 * Put an internal line on the case saying the acknowledgement went out through no transport.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param NoticeNotSentException $notice What the sender answered.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
+	 */
+	private function recordNotSent(string $caseId, NoticeNotSentException $notice): void {
 		$delivery = $notice->getDelivery();
 		$code = $notice->getReasonCode();
 
 		$this->timeline->record(
-			caseId: $caseId,
-			kind: TimelineKinds::ACKNOWLEDGEMENT,
-			message: 'Ontvangstbevestiging niet verzonden',
+			caseId: $caseId, kind: TimelineKinds::ACKNOWLEDGEMENT, message: 'Ontvangstbevestiging niet verzonden',
 			fields: [
 				'template' => CaseTypeAcknowledgement::TEMPLATE,
 				'reasonCode' => $code,
@@ -440,8 +455,19 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 			],
 			visibility: CaseTimeline::INTERNAL,
 		);
+	}//end recordNotSent()
 
-		if ($code === 'no-channel') {
+	/**
+	 * The refusal for an acknowledgement no transport took.
+	 *
+	 * @param NoticeNotSentException $notice What the sender answered.
+	 *
+	 * @return RefusedException The refusal, carrying the transport's sentence.
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
+	 */
+	private function notSentRefusal(NoticeNotSentException $notice): RefusedException {
+		if ($notice->getReasonCode() === 'no-channel') {
 			return new RefusedException(
 				rule: 'acknowledgement-no-address',
 				sentence: 'This case carries no address, so receipt could not be confirmed. '
@@ -455,7 +481,7 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 			sentence: $notice->getMessage(),
 			status: RefusedException::STATUS_INDETERMINATE,
 		);
-	}//end notSent()
+	}//end notSentRefusal()
 
 	/**
 	 * Record that an attempt failed, and whether any are left.

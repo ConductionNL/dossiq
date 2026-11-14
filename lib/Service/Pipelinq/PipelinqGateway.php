@@ -177,14 +177,26 @@ class PipelinqGateway implements PipelinqGatewayInterface {
 				$reason = 'pipelinq is not installed on this instance';
 			}
 
-			$this->reportOnce(
-				class: $class,
-				reason: $reason,
-			);
+			$this->reportOnce(class: $class, reason: $reason);
 
 			return null;
 		}
 
+		return $this->usableService(service: $service, class: $class, methods: $methods);
+	}//end service()
+
+	/**
+	 * The resolved service, or null when it is not an object or lacks a method the caller is about to use.
+	 *
+	 * @param mixed $service What the container answered.
+	 * @param string $class One of this class's constants.
+	 * @param array<int, string> $methods The methods the caller is about to use.
+	 *
+	 * @return object|null The service, or null.
+	 *
+	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-one-seam-names-pipelinq-and-an-absent-pipelinq-is-a-different-answer-from-an-empty-one-req-plq-01
+	 */
+	private function usableService(mixed $service, string $class, array $methods): ?object {
 		if (is_object($service) === false) {
 			$this->reportOnce(class: $class, reason: 'the container answered something that is not an object');
 
@@ -196,17 +208,14 @@ class PipelinqGateway implements PipelinqGatewayInterface {
 			// hard dependency of dossiq, which is the coupling this whole seam
 			// exists to avoid (hydra ADR-046).
 			if (is_callable([$service, $method]) === false) {
-				$this->reportOnce(
-					class: $class,
-					reason: "this pipelinq has no {$method}(), so it predates the capability"
-				);
+				$this->reportOnce(class: $class, reason: "this pipelinq has no {$method}(), so it predates the capability");
 
 				return null;
 			}
 		}
 
 		return $service;
-	}//end service()
+	}//end usableService()
 
 	/**
 	 * Call one method on one pipelinq service, or answer the fallback.

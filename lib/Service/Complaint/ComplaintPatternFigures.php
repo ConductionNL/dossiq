@@ -203,6 +203,28 @@ class ComplaintPatternFigures {
 	 *               resolutionByCategory: list<array<string, mixed>>}
 	 */
 	private function handling(array $current, array $dispositions): array {
+		[$total, $perCategory] = $this->tallies(current: $current, dispositions: $dispositions);
+
+		$rows = $this->categoryRows(perCategory: $perCategory);
+
+		return [
+			'handled' => $total['handled'],
+			'withinAwbPercent' => $this->share(part: $total['within'], whole: $total['handled'], scale: 100),
+			'upheldPercent' => $this->share(part: $total['upheld'], whole: $total['handled'], scale: 100),
+			'averageDays' => $this->share(part: $total['days'], whole: $total['handled'], scale: 1),
+			'resolutionByCategory' => $rows,
+		];
+	}//end handling()
+
+	/**
+	 * The quarter's complaints summed overall and per category.
+	 *
+	 * @param list<array<string, mixed>> $current This quarter's complaints.
+	 * @param array<string, array<string, mixed>> $dispositions The final disposition per complaint id.
+	 *
+	 * @return array{0: array<string, int>, 1: array<string, array<string, int>>} The overall sum and the sum per category.
+	 */
+	private function tallies(array $current, array $dispositions): array {
 		$zero = ['count' => 0, 'handled' => 0, 'days' => 0, 'within' => 0, 'upheld' => 0];
 		$total = $zero;
 		$perCategory = [];
@@ -212,6 +234,17 @@ class ComplaintPatternFigures {
 			$total = $this->tally(sum: $total, complaint: $complaint, dispositions: $dispositions);
 		}
 
+		return [$total, $perCategory];
+	}//end tallies()
+
+	/**
+	 * One row per named category with handled complaints, the largest first.
+	 *
+	 * @param array<string, array<string, int>> $perCategory The sum per category.
+	 *
+	 * @return list<array<string, mixed>> The rows.
+	 */
+	private function categoryRows(array $perCategory): array {
 		$rows = [];
 		foreach ($perCategory as $category => $sum) {
 			if ($category !== '' && $sum['handled'] > 0) {
@@ -226,14 +259,8 @@ class ComplaintPatternFigures {
 
 		usort($rows, static fn (array $a, array $b): int => ($b['count'] <=> $a['count']));
 
-		return [
-			'handled' => $total['handled'],
-			'withinAwbPercent' => $this->share(part: $total['within'], whole: $total['handled'], scale: 100),
-			'upheldPercent' => $this->share(part: $total['upheld'], whole: $total['handled'], scale: 100),
-			'averageDays' => $this->share(part: $total['days'], whole: $total['handled'], scale: 1),
-			'resolutionByCategory' => $rows,
-		];
-	}//end handling()
+		return $rows;
+	}//end categoryRows()
 
 	/**
 	 * One complaint added to a running sum.

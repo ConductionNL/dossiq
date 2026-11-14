@@ -331,14 +331,43 @@ class LhsController extends Controller {
 			return $this->unauthenticated();
 		}
 
-		$recommendationId = $this->resolveRecommendationId();
-		$intervention = (string)$this->request->getParam('intervention', '');
-		$justification = (string)$this->request->getParam('justification', '');
+		[$recommendationId, $intervention, $justification] = $this->overrideFields();
 		$hasBlank = in_array('', [$recommendationId, $intervention, $justification], true);
 		if ($hasBlank === true) {
 			return $this->badRequest(error: 'recommendationId, intervention en justification zijn verplicht');
 		}
 
+		return $this->applyOverride(user: $user, recommendationId: $recommendationId, intervention: $intervention, justification: $justification);
+	}//end override()
+
+	/**
+	 * The recommendation id, intervention and justification the override names.
+	 *
+	 * @return array{0: string, 1: string, 2: string} The three fields, '' when absent.
+	 *
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
+	 */
+	private function overrideFields(): array {
+		$recommendationId = $this->resolveRecommendationId();
+		$intervention = (string)$this->request->getParam('intervention', '');
+		$justification = (string)$this->request->getParam('justification', '');
+
+		return [$recommendationId, $intervention, $justification];
+	}//end overrideFields()
+
+	/**
+	 * Override the recommendation, answering a refusal or a failure as such.
+	 *
+	 * @param IUser  $user             The caller.
+	 * @param string $recommendationId The recommendation.
+	 * @param string $intervention     The chosen intervention.
+	 * @param string $justification    Why.
+	 *
+	 * @return JSONResponse The updated lhsRecommendation row, or the refusal.
+	 *
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
+	 */
+	private function applyOverride(IUser $user, string $recommendationId, string $intervention, string $justification): JSONResponse {
 		try {
 			$updated = $this->lhsService->override(
 				recommendationId: $recommendationId,
@@ -349,12 +378,25 @@ class LhsController extends Controller {
 		} catch (RuntimeException $e) {
 			return $this->overrideRefusal(exception: $e);
 		} catch (Throwable $e) {
-			$this->logger->error('Dossiq LHS override failed: ' . $e->getMessage());
-			return $this->serverError(error: 'LHS-override mislukt');
+			return $this->overrideFailure(exception: $e);
 		}//end try
 
 		return new JSONResponse($updated);
-	}//end override()
+	}//end applyOverride()
+
+	/**
+	 * Log an override that failed for another reason than a refusal.
+	 *
+	 * @param Throwable $exception The failure.
+	 *
+	 * @return JSONResponse The 500.
+	 *
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
+	 */
+	private function overrideFailure(Throwable $exception): JSONResponse {
+		$this->logger->error('Dossiq LHS override failed: ' . $exception->getMessage());
+		return $this->serverError(error: 'LHS-override mislukt');
+	}//end overrideFailure()
 
 	/**
 	 * The role the override is weighed under: `manager` only for a caller who

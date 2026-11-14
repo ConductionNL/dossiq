@@ -217,20 +217,62 @@ class WooSearchPlans implements WooSearchPlansInterface {
 			return null;
 		}
 
+		$source = $this->sourceOf(from: $from);
+		if ($source === null) {
+			return null;
+		}
+
+		$configuration = $this->configurationFrom(source: $source, caseId: $caseId, from: $from);
+		$saved = $this->save(configKey: self::CONFIGURATION_SCHEMA, row: $configuration, uuid: '');
+
+		$this->savePlanFrom(caseId: $caseId, configuration: $configuration);
+		$this->access->reconcileAfterCreate(caseId: $caseId, created: 1);
+
+		return $saved;
+	}//end startFrom()
+
+	/**
+	 * The configuration of the earlier case, or the values of the named template.
+	 *
+	 * @param string $from The earlier case uuid, or the uuid of a named template.
+	 *
+	 * @return array<string, mixed>|null Null when `$from` names neither.
+	 */
+	private function sourceOf(string $from): ?array {
 		$source = $this->rowOfCase(configKey: self::CONFIGURATION_SCHEMA, caseId: $from);
 		if ($source === null) {
 			$source = $this->templates->find(uuid: $from, schema: $this->templateSchema())['values'] ?? null;
 		}
 
-		if ($source === null) {
-			return null;
-		}
+		return $source;
+	}//end sourceOf()
 
+	/**
+	 * The copied configuration, without what is not copied, pointing at the new case.
+	 *
+	 * @param array<string, mixed> $source The configuration copied from.
+	 * @param string               $caseId The new case uuid.
+	 * @param string               $from   Where it was copied from.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function configurationFrom(array $source, string $caseId, string $from): array {
 		$configuration = array_diff_key($source, array_flip(self::NOT_COPIED));
 		$configuration['case'] = $caseId;
 		$configuration['copiedFrom'] = $from;
-		$saved = $this->save(configKey: self::CONFIGURATION_SCHEMA, row: $configuration, uuid: '');
 
+		return $configuration;
+	}//end configurationFrom()
+
+	/**
+	 * Save the new case's search plan from its configuration.
+	 *
+	 * @param string               $caseId        The new case uuid.
+	 * @param array<string, mixed> $configuration Its configuration.
+	 *
+	 * @return void
+	 */
+	private function savePlanFrom(string $caseId, array $configuration): void {
 		$this->save(
 			configKey: self::PLAN_SCHEMA,
 			row: [
@@ -241,10 +283,7 @@ class WooSearchPlans implements WooSearchPlansInterface {
 			],
 			uuid: ''
 		);
-		$this->access->reconcileAfterCreate(caseId: $caseId, created: 1);
-
-		return $saved;
-	}//end startFrom()
+	}//end savePlanFrom()
 
 	/**
 	 * The schema id named templates of the request configuration are kept under in OpenRegister.

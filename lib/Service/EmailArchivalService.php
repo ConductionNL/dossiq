@@ -219,28 +219,28 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T09
 	 */
 	public function listFailedArchivals(int $limit = 50): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$target = $this->archivalTarget();
+		if ($target === null) {
 			return [];
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_document_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
+		[$objectService, $register, $schema] = $target;
+		$filters = ['source' => 'email', 'pdfStatus' => 'failed', '_limit' => $limit];
+		$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: [
-				'source' => 'email',
-				'pdfStatus' => 'failed',
-				'_limit' => $limit,
-			],
-		);
+		return $this->retryable(rows: $rows);
+	}//end listFailedArchivals()
 
+	/**
+	 * The failed rows that have retries left.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The failed archival rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T09
+	 */
+	private function retryable(array $rows): array {
 		// Cap further by retry-count so we never thrash on a permanently failed row.
 		return array_values(
 			array_filter(
@@ -248,7 +248,7 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 				static fn (array $row): bool => ((int)($row['pdfAttempts'] ?? 0) < 3)
 			)
 		);
-	}//end listFailedArchivals()
+	}//end retryable()
 
 	/**
 	 * Persist the archival object.
@@ -266,13 +266,38 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_document_schema');
 		if (empty($register) === true || empty($schema) === true) {
-			$this->logger->warning(
-				'case_document_schema unconfigured — skipping archival persistence',
-				['archivalId' => $payload['archivalId'] ?? '']
-			);
+			$this->logSchemaUnconfigured(payload: $payload);
 			return;
 		}
 
+		$this->saveDocument(objectService: $objectService, register: $register, schema: $schema, payload: $payload);
+	}//end persistDocument()
+
+	/**
+	 * Log that the document schema is not configured, so nothing is persisted.
+	 *
+	 * @param array<string, mixed> $payload Document payload.
+	 *
+	 * @return void
+	 */
+	private function logSchemaUnconfigured(array $payload): void {
+		$this->logger->warning(
+			'case_document_schema unconfigured — skipping archival persistence',
+			['archivalId' => $payload['archivalId'] ?? '']
+		);
+	}//end logSchemaUnconfigured()
+
+	/**
+	 * Save the archival object, logging a failure.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register The register.
+	 * @param string $schema The document schema.
+	 * @param array<string, mixed> $payload Document payload.
+	 *
+	 * @return void
+	 */
+	private function saveDocument(object $objectService, string $register, string $schema, array $payload): void {
 		try {
 			$objectService->saveObject(
 				object: $payload,
@@ -285,7 +310,7 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 				['archivalId' => $payload['archivalId'] ?? '', 'error' => $e->getMessage()]
 			);
 		}
-	}//end persistDocument()
+	}//end saveDocument()
 
 	/**
 	 * Load an archival record by archivalId.

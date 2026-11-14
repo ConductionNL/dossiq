@@ -135,26 +135,63 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 
 		$objectService = $this->settingsService->getObjectService();
 		$mapper = $this->getOrganisationMapper();
-		if ($objectService === null || $mapper === null) {
-			$this->logger->warning('Dossiq: partner migration skipped — OpenRegister organisation services unavailable');
+		if ($this->servicesMissing(objectService: $objectService, mapper: $mapper) === true) {
 			return $summary;
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: self::REGISTER_SLUG,
-				schema: self::PARTNER_SCHEMA_SLUG,
-				filters: ['_limit' => 5000],
-			);
+			$rows = $this->partnerRows(objectService: $objectService);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: partner migration found no partnerOrganization rows (schema absent or empty)',
-				['exception' => $e->getMessage()],
-			);
+			$this->logger->warning('Dossiq: partner migration found no partnerOrganization rows (schema absent or empty)', ['exception' => $e->getMessage()]);
 			return $summary;
 		}
 
+		return $this->migrateRows(summary: $summary, mapper: $mapper, rows: $rows);
+	}//end migrate()
+
+	/**
+	 * Whether the object service or the organisation mapper is missing, logged when so.
+	 *
+	 * @param object|null $objectService OpenRegister's object service.
+	 * @param object|null $mapper        OpenRegister's organisation mapper.
+	 *
+	 * @return bool True when the migration cannot run.
+	 */
+	private function servicesMissing(?object $objectService, ?object $mapper): bool {
+		if ($objectService === null || $mapper === null) {
+			$this->logger->warning('Dossiq: partner migration skipped — OpenRegister organisation services unavailable');
+			return true;
+		}
+
+		return false;
+	}//end servicesMissing()
+
+	/**
+	 * Read every partnerOrganization row.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 *
+	 * @return array<int, mixed> The rows.
+	 */
+	private function partnerRows(object $objectService): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: self::REGISTER_SLUG,
+			schema: self::PARTNER_SCHEMA_SLUG,
+			filters: ['_limit' => 5000],
+		);
+	}//end partnerRows()
+
+	/**
+	 * Migrate each partner row and tally the outcomes.
+	 *
+	 * @param array<string, mixed> $summary The empty summary.
+	 * @param object               $mapper  OpenRegister's organisation mapper.
+	 * @param array<int, mixed>    $rows    The partnerOrganization rows.
+	 *
+	 * @return array<string, mixed> The outcome tally.
+	 */
+	private function migrateRows(array $summary, object $mapper, array $rows): array {
 		$summary['total'] = count($rows);
 		foreach ($rows as $row) {
 			$summary = self::tally(summary: $summary, result: $this->migrateOne(mapper: $mapper, row: $this->toRow(value: $row)));
@@ -163,7 +200,7 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 		$this->logComplete(summary: $summary);
 
 		return $summary;
-	}//end migrate()
+	}//end migrateRows()
 
 	/**
 	 * Log the counts of a finished run.
@@ -346,6 +383,33 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 			$organisation->setUuid($partnerUuid);
 		}
 
+		[$resolvedSlug, $name] = $this->slugAndName(row: $row, slug: $slug, partnerUuid: $partnerUuid);
+
+		$organisation->setSlug($resolvedSlug);
+		$organisation->setName($name);
+		$organisation->setType(self::PARTNER_TYPE);
+
+		// An external party, by definition: a ketenpartner is somebody else's
+		// organisation that this instance shares cases WITH.
+		$organisation->setIsLocalTenant(false);
+
+		$this->applyActivity(organisation: $organisation, row: $row);
+
+		$this->copyOptionalFields(row: $row, organisation: $organisation);
+
+		return $organisation;
+	}//end buildOrganisation()
+
+	/**
+	 * The slug and the name the Organisation gets.
+	 *
+	 * @param array<string, mixed> $row         The partner object.
+	 * @param string               $slug        The partner slug.
+	 * @param string               $partnerUuid The partner uuid.
+	 *
+	 * @return array{0: string, 1: string} The resolved slug and the name.
+	 */
+	private function slugAndName(array $row, string $slug, string $partnerUuid): array {
 		// A partner may carry no slug. Organisation wants one, so it is derived
 		// from the uuid rather than the name: derived-from-name collides for
 		// two partners sharing a name, and a collision here is a merge.
@@ -359,14 +423,18 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 			$name = $resolvedSlug;
 		}
 
-		$organisation->setSlug($resolvedSlug);
-		$organisation->setName($name);
-		$organisation->setType(self::PARTNER_TYPE);
+		return [$resolvedSlug, $name];
+	}//end slugAndName()
 
-		// An external party, by definition: a ketenpartner is somebody else's
-		// organisation that this instance shares cases WITH.
-		$organisation->setIsLocalTenant(false);
-
+	/**
+	 * Set the Organisation active or suspended from the partner's isActive.
+	 *
+	 * @param Organisation         $organisation The Organisation being built.
+	 * @param array<string, mixed> $row          The partner object.
+	 *
+	 * @return void
+	 */
+	private function applyActivity(Organisation $organisation, array $row): void {
 		$active = (bool)($row['isActive'] ?? true);
 		$organisation->setActive($active);
 		$status = 'suspended';
@@ -375,11 +443,7 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 		}
 
 		$organisation->setStatus($status);
-
-		$this->copyOptionalFields(row: $row, organisation: $organisation);
-
-		return $organisation;
-	}//end buildOrganisation()
+	}//end applyActivity()
 
 	/**
 	 * Copy the fields a partner may or may not carry.

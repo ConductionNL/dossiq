@@ -101,12 +101,32 @@ class PauseChaseJob extends TimedJob {
 			return;
 		}
 
+		$done = $this->sweep();
+		if ($done === null) {
+			return;
+		}
+
+		if ($done['chased'] === 0 && $done['escalated'] === 0) {
+			return;
+		}
+
+		$this->logDone(done: $done);
+	}//end run()
+
+	/**
+	 * Run the sweep under the service account, or null when it could not run.
+	 *
+	 * @return array{chased: int, escalated: int}|null The chased and escalated counts.
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function sweep(): ?array {
 		try {
-			$done = $this->serviceAccount->runAs(operation: fn (): array => $this->chases->sweep());
+			return $this->serviceAccount->runAs(operation: fn (): array => $this->chases->sweep());
 		} catch (ServiceAccountUnavailableException $e) {
 			// Already logged as an error and told to the admins. Nothing was
 			// sent and nothing was written; tomorrow's run tries again.
-			return;
+			return null;
 		} catch (Throwable $e) {
 			// A failed sweep must not stop the cron runner for the rest of the
 			// app. Nothing was counted, so tomorrow's sweep sends what today's
@@ -115,13 +135,20 @@ class PauseChaseJob extends TimedJob {
 				'Dossiq pause: the reminder sweep failed',
 				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 			);
-			return;
+			return null;
 		}
+	}//end sweep()
 
-		if ($done['chased'] === 0 && $done['escalated'] === 0) {
-			return;
-		}
-
+	/**
+	 * Log what the sweep sent.
+	 *
+	 * @param array{chased: int, escalated: int} $done The chased and escalated counts.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function logDone(array $done): void {
 		$this->logger->info(
 			'Dossiq pause: reminders went out on suspended terms',
 			[
@@ -130,5 +157,5 @@ class PauseChaseJob extends TimedJob {
 				'escalated' => $done['escalated'],
 			]
 		);
-	}//end run()
+	}//end logDone()
 }//end class
