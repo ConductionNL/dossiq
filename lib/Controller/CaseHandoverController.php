@@ -103,6 +103,26 @@ class CaseHandoverController extends Controller {
 			return $this->notYours();
 		}
 
+		$fields = $this->handoverFields();
+		if ($fields instanceof JSONResponse) {
+			return $fields;
+		}
+
+		try {
+			return $this->handToTeam(caseId: $caseId, user: $user, team: $fields[0], reason: $fields[1]);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'hand', e: $e);
+		} catch (Throwable $e) {
+			return $this->broke(op: 'hand', e: $e);
+		}
+	}//end hand()
+
+	/**
+	 * The team and reason a handover names, or the refusal when either is blank.
+	 *
+	 * @return array{0: string, 1: string}|JSONResponse
+	 */
+	private function handoverFields(): array|JSONResponse {
 		$team = trim((string)$this->request->getParam('team', ''));
 		$reason = trim((string)$this->request->getParam('reason', ''));
 		if ($team === '' || $reason === '') {
@@ -112,22 +132,33 @@ class CaseHandoverController extends Controller {
 			);
 		}
 
-		try {
-			return new JSONResponse(
-				$this->transfers->handToTeam(
-					caseId: $caseId,
-					targetTeam: $team,
-					reason: $reason,
-					initiatedBy: $user->getUID(),
-					doorzending: ($this->request->getParam('doorzending', false) === true),
-				)
-			);
-		} catch (RefusedException $e) {
-			return $this->refused(op: 'hand', e: $e);
-		} catch (Throwable $e) {
-			return $this->broke(op: 'hand', e: $e);
-		}
-	}//end hand()
+		return [$team, $reason];
+	}//end handoverFields()
+
+	/**
+	 * Hand a case to another team.
+	 *
+	 * @param string $caseId The case.
+	 * @param IUser $user The user handing it over.
+	 * @param string $team The receiving team.
+	 * @param string $reason Why the case is moving.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @throws RefusedException When the handover is refused.
+	 * @throws Throwable When the handover fails.
+	 */
+	private function handToTeam(string $caseId, IUser $user, string $team, string $reason): JSONResponse {
+		return new JSONResponse(
+			$this->transfers->handToTeam(
+				caseId: $caseId,
+				targetTeam: $team,
+				reason: $reason,
+				initiatedBy: $user->getUID(),
+				doorzending: ($this->request->getParam('doorzending', false) === true),
+			)
+		);
+	}//end handToTeam()
 
 	/**
 	 * Accept a handover on the receiving team's behalf.

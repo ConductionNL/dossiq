@@ -153,28 +153,11 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	public function suspend(string $caseId, string $reason, int $days, string $pauseReason = ''): array {
 		$case = $this->requireCase(caseId: $caseId);
 		$key = trim($pauseReason);
-		$rationale = $reason;
-		if ($key === '') {
-			$this->requireReason(reason: $reason);
-		}
+		$rationale = $this->suspendRationale(caseId: $caseId, reason: $reason, key: $key);
 
-		if ($key !== '') {
-			$rationale = $this->deadlines->pauseService->suspendRationale(caseId: $caseId, reason: $reason, pauseReason: $key);
-		}
+		$this->requireSuspendable(case: $case);
 
-		$caseType = $this->caseTypes->read(caseTypeId: (string)($case['caseType'] ?? ''));
-		if ($caseType['suspensionAllowed'] !== true) {
-			throw new RuntimeException('suspension_not_allowed');
-		}
-
-		if ($this->isSuspended(case: $case) === true) {
-			throw new RuntimeException('already_suspended');
-		}
-
-		$duration = $days;
-		if ($duration <= 0) {
-			$duration = 14;
-		}
+		$duration = $this->pauseDays(days: $days);
 
 		$this->onTermInstance(
 			caseId: $caseId,
@@ -195,6 +178,72 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 
 		return $this->state(caseId: $caseId);
 	}//end suspend()
+
+	/**
+	 * The rationale of a suspension: the handler's words, or the declared pause reason's.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string $reason Why the case is suspended, in the handler's words
+	 * @param string $key    The key of one of the case type's pause reasons, or ''
+	 *
+	 * @return string The rationale
+	 *
+	 * @throws RuntimeException When the reason is empty, or the pause reason is not one the case type declares
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function suspendRationale(string $caseId, string $reason, string $key): string {
+		$rationale = $reason;
+		if ($key === '') {
+			$this->requireReason(reason: $reason);
+		}
+
+		if ($key !== '') {
+			$rationale = $this->deadlines->pauseService->suspendRationale(caseId: $caseId, reason: $reason, pauseReason: $key);
+		}
+
+		return $rationale;
+	}//end suspendRationale()
+
+	/**
+	 * Refuse a suspension the case type forbids, or of a case already suspended.
+	 *
+	 * @param array<string, mixed> $case The case
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the case type forbids suspension or the case is already suspended
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function requireSuspendable(array $case): void {
+		$caseType = $this->caseTypes->read(caseTypeId: (string)($case['caseType'] ?? ''));
+		if ($caseType['suspensionAllowed'] !== true) {
+			throw new RuntimeException('suspension_not_allowed');
+		}
+
+		if ($this->isSuspended(case: $case) === true) {
+			throw new RuntimeException('already_suspended');
+		}
+	}//end requireSuspendable()
+
+	/**
+	 * The pause length in days, 14 when none was given.
+	 *
+	 * @param int $days How long the applicant is given, in days
+	 *
+	 * @return int The pause length
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function pauseDays(int $days): int {
+		$duration = $days;
+		if ($duration <= 0) {
+			$duration = 14;
+		}
+
+		return $duration;
+	}//end pauseDays()
 
 	/**
 	 * Resume a suspended case (hervatting).

@@ -224,17 +224,9 @@ class WorkflowDeployer {
 		string|false $content,
 		string $strategy,
 	): array {
-		if ($content === false) {
-			return [
-				'kind' => 'error',
-				'id' => '',
-				'message' => "Workflow '{$name}' could not be read from the archive.",
-			];
-		}
-
-		$template = json_decode($content, true);
+		$template = $this->decodedTemplate(content: $content);
 		if (is_array($template) === false) {
-			return ['kind' => 'error', 'id' => '', 'message' => "Workflow '{$name}' is not valid JSON."];
+			return $this->unreadableTemplate(name: $name, content: $content);
 		}
 
 		$packageId = $this->existingId(row: $template);
@@ -249,6 +241,74 @@ class WorkflowDeployer {
 			return ['kind' => 'skipped', 'id' => $packageId, 'message' => ''];
 		}
 
+		return $this->storeTemplate(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			name: $name,
+			template: $template,
+			packageId: $packageId,
+			conflict: $conflict,
+		);
+	}//end deployWorkflow()
+
+	/**
+	 * The decoded template, or null when the entry could not be read.
+	 *
+	 * @param string|false $content The raw entry, or false when unreadable.
+	 *
+	 * @return mixed The decoded JSON, or null when the entry could not be read.
+	 */
+	private function decodedTemplate(string|false $content): mixed {
+		if ($content === false) {
+			return null;
+		}
+
+		return json_decode($content, true);
+	}//end decodedTemplate()
+
+	/**
+	 * The error for a template that could not be read or is not valid JSON.
+	 *
+	 * @param string       $name    The archive entry, for the message.
+	 * @param string|false $content The raw entry, or false when unreadable.
+	 *
+	 * @return array{kind: string, id: string, message: string} The error.
+	 */
+	private function unreadableTemplate(string $name, string|false $content): array {
+		if ($content === false) {
+			return [
+				'kind' => 'error',
+				'id' => '',
+				'message' => "Workflow '{$name}' could not be read from the archive.",
+			];
+		}
+
+		return ['kind' => 'error', 'id' => '', 'message' => "Workflow '{$name}' is not valid JSON."];
+	}//end unreadableTemplate()
+
+	/**
+	 * Store one decoded template, and say what became of it.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param string               $register      The register being written into.
+	 * @param string               $schema        The workflow template schema.
+	 * @param string               $name          The archive entry, for the message.
+	 * @param array<string, mixed> $template      The decoded template.
+	 * @param string               $packageId     The id the package gives it, or ''.
+	 * @param bool                 $conflict      Whether this instance already holds it.
+	 *
+	 * @return array{kind: string, id: string, message: string} What became of it.
+	 */
+	private function storeTemplate(
+		object $objectService,
+		string $register,
+		string $schema,
+		string $name,
+		array $template,
+		string $packageId,
+		bool $conflict,
+	): array {
 		try {
 			$templateUuid = null;
 			if ($packageId !== '') {
@@ -275,7 +335,7 @@ class WorkflowDeployer {
 		}
 
 		return ['kind' => 'created', 'id' => $id, 'message' => ''];
-	}//end deployWorkflow()
+	}//end storeTemplate()
 
 	/**
 	 * What the workflow deployment amounts to, said in the caller's vocabulary.

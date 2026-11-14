@@ -138,13 +138,9 @@ class CaseEnricher {
 		$startDate = $this->dates->toCalendarDateOrNull($caseData['startDate'] ?? null);
 		$isOpen = ($endDate === null);
 
-		$caseType = null;
-		$caseTypeTitle = '';
-		$caseTypeKey = (string)($caseData['caseType'] ?? '');
-		if ($caseTypeKey !== '' && isset($caseTypeByKey[$caseTypeKey]) === true) {
-			$caseType = $caseTypeByKey[$caseTypeKey];
-			$caseTypeTitle = $this->text->textOf(value: ($caseType['title'] ?? null));
-		}
+		$typed = $this->caseTypeOf(caseData: $caseData, caseTypeByKey: $caseTypeByKey);
+		$caseType = $typed['caseType'];
+		$caseTypeTitle = $typed['title'];
 
 		$deadline = $this->resolveCaseDeadline(
 			rawDeadline: $caseData['deadline'] ?? null,
@@ -152,11 +148,7 @@ class CaseEnricher {
 			caseType: $caseType,
 		);
 
-		$daysRemaining = null;
-		if ($isOpen === true && $deadline !== null) {
-			$deadlineDate = new DateTimeImmutable($deadline);
-			$daysRemaining = $this->days->signed(from: $today, to: $deadlineDate);
-		}
+		$daysRemaining = $this->daysRemaining(isOpen: $isOpen, deadline: $deadline, today: $today);
 
 		$throughputDays = $this->computeThroughputDays(
 			isOpen: $isOpen,
@@ -173,13 +165,71 @@ class CaseEnricher {
 		$caseData['_caseTypeTitle'] = $caseTypeTitle;
 		// The term the case had, start to deadline: the norm the
 		// processing-time chart draws.
-		$caseData['_normDays'] = null;
-		if ($startDate !== null && $deadline !== null) {
-			$caseData['_normDays'] = $this->days->between(from: new DateTimeImmutable($startDate), to: new DateTimeImmutable($deadline));
-		}
+		$caseData['_normDays'] = $this->normDays(startDate: $startDate, deadline: $deadline);
 
 		return $caseData;
 	}//end enrichCase()
+
+	/**
+	 * The case's case type and its title, when the case names one that is known.
+	 *
+	 * @param array<string, mixed>                $caseData      Raw case.
+	 * @param array<string, array<string, mixed>> $caseTypeByKey Case-types by id and slug.
+	 *
+	 * @return array{caseType: array<string, mixed>|null, title: string} The case type, or null, and its title.
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function caseTypeOf(array $caseData, array $caseTypeByKey): array {
+		$caseType = null;
+		$caseTypeTitle = '';
+		$caseTypeKey = (string)($caseData['caseType'] ?? '');
+		if ($caseTypeKey !== '' && isset($caseTypeByKey[$caseTypeKey]) === true) {
+			$caseType = $caseTypeByKey[$caseTypeKey];
+			$caseTypeTitle = $this->text->textOf(value: ($caseType['title'] ?? null));
+		}
+
+		return ['caseType' => $caseType, 'title' => $caseTypeTitle];
+	}//end caseTypeOf()
+
+	/**
+	 * The days left until the deadline of an open case.
+	 *
+	 * @param bool              $isOpen   Whether the case is open.
+	 * @param string|null       $deadline The `Y-m-d` deadline, or null.
+	 * @param DateTimeImmutable $today    Reference date for the countdown.
+	 *
+	 * @return int|null The signed days, or null for a closed case or one without a deadline.
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function daysRemaining(bool $isOpen, ?string $deadline, DateTimeImmutable $today): ?int {
+		$daysRemaining = null;
+		if ($isOpen === true && $deadline !== null) {
+			$deadlineDate = new DateTimeImmutable($deadline);
+			$daysRemaining = $this->days->signed(from: $today, to: $deadlineDate);
+		}
+
+		return $daysRemaining;
+	}//end daysRemaining()
+
+	/**
+	 * The days from start to deadline.
+	 *
+	 * @param string|null $startDate The `Y-m-d` start date, or null.
+	 * @param string|null $deadline  The `Y-m-d` deadline, or null.
+	 *
+	 * @return int|null The days, or null when either date is missing.
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function normDays(?string $startDate, ?string $deadline): ?int {
+		if ($startDate !== null && $deadline !== null) {
+			return $this->days->between(from: new DateTimeImmutable($startDate), to: new DateTimeImmutable($deadline));
+		}
+
+		return null;
+	}//end normDays()
 
 	/**
 	 * Resolve a case deadline, deriving it from the case-type when the case

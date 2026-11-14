@@ -136,6 +136,28 @@ class AssigneeResolver implements AssigneeResolverInterface {
 			return $resolved;
 		}
 
+		$resolved = $this->fallbackPrincipal(primary: $primary, fallback: $fallback, json: $json, case: $case);
+		if ($resolved !== '') {
+			return $resolved;
+		}
+
+		return $this->caseHandler(case: $case);
+	}//end resolve()
+
+	/**
+	 * The declared fallback, rendered, when it names anybody on this case.
+	 *
+	 * @param string               $primary  The authored assignee, for the log.
+	 * @param string               $fallback The declared second choice, or ''.
+	 * @param array<string, mixed> $json     The rendering context.
+	 * @param array<string, mixed> $case     The case to render against.
+	 *
+	 * @return string The rendered principal, or ''.
+	 *
+	 * @spec openspec/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/task-management/spec.md
+	 */
+	private function fallbackPrincipal(string $primary, string $fallback, array $json, array $case): string {
 		$fallback = trim($fallback);
 		if ($fallback !== '') {
 			$resolved = $this->renderPrincipal(raw: $fallback, json: $json);
@@ -150,6 +172,20 @@ class AssigneeResolver implements AssigneeResolverInterface {
 			}
 		}
 
+		return '';
+	}//end fallbackPrincipal()
+
+	/**
+	 * The case's own handler, when it has one.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return string The handler, or ''.
+	 *
+	 * @spec openspec/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/task-management/spec.md
+	 */
+	private function caseHandler(array $case): string {
 		$handler = $this->referenceId(value: ($case['assignee'] ?? ''));
 		if ($handler !== '') {
 			$this->logger->info(
@@ -162,7 +198,7 @@ class AssigneeResolver implements AssigneeResolverInterface {
 		}
 
 		return '';
-	}//end resolve()
+	}//end caseHandler()
 
 	/**
 	 * The team a piece of work falls to when no person resolves.

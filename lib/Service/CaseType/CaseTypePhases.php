@@ -142,33 +142,24 @@ class CaseTypePhases implements CaseTypePhasesInterface {
 				continue;
 			}
 
-			$phase = trim($this->text->forReader(value: ($statusType['phase'] ?? '')));
-			$order = (int) ($statusType['order'] ?? 0);
-			$key   = 'status:'.$id;
-			$name  = $this->text->forReader(value: ($statusType['name'] ?? ''));
-			if ($phase !== '') {
+			$placed = $this->placementOf(statusType: $statusType, id: $id);
+			$key    = $placed['key'];
+			if ($placed['phase'] !== '') {
 				$phased = true;
-				$key    = 'phase:'.mb_strtolower($phase);
-				$name   = $phase;
 			}
 
 			$ofStatus[$id] = $key;
 			if (isset($phases[$key]) === true) {
-				$phases[$key]['statusIds'][] = $id;
-				if ($order < $phases[$key]['order']) {
-					$phases[$key]['order'] = $order;
-					$phases[$key]['id']    = $id;
-				}
-
+				$phases[$key] = $this->joinedPhase(phase: $phases[$key], id: $id, order: $placed['order']);
 				continue;
 			}
 
 			$phases[$key] = [
 				'id'         => $id,
 				'caseTypeId' => $caseTypeId,
-				'name'       => $name,
-				'order'      => $order,
-				'isFinal'    => (($statusType['isFinal'] ?? false) === true && $phase === ''),
+				'name'       => $placed['name'],
+				'order'      => $placed['order'],
+				'isFinal'    => (($statusType['isFinal'] ?? false) === true && $placed['phase'] === ''),
 				'statusIds'  => [$id],
 				'tasks'      => [],
 			];
@@ -176,6 +167,47 @@ class CaseTypePhases implements CaseTypePhasesInterface {
 
 		return ['phases' => $phases, 'phaseOfStatus' => $ofStatus, 'phased' => $phased];
 	}//end phasesOf()
+
+	/**
+	 * Where a status falls: the phase it names, or a phase of its own named after it.
+	 *
+	 * @param array<string, mixed> $statusType The status type.
+	 * @param string               $id         The status type id.
+	 *
+	 * @return array{phase: string, order: int, key: string, name: string} The named phase ('' when none),
+	 *         the status's order, and the phase key and name it falls under.
+	 */
+	private function placementOf(array $statusType, string $id): array {
+		$phase = trim($this->text->forReader(value: ($statusType['phase'] ?? '')));
+		$order = (int) ($statusType['order'] ?? 0);
+		$key   = 'status:'.$id;
+		$name  = $this->text->forReader(value: ($statusType['name'] ?? ''));
+		if ($phase !== '') {
+			$key  = 'phase:'.mb_strtolower($phase);
+			$name = $phase;
+		}
+
+		return ['phase' => $phase, 'order' => $order, 'key' => $key, 'name' => $name];
+	}//end placementOf()
+
+	/**
+	 * A phase with one more status, named by that status when it comes first.
+	 *
+	 * @param array<string, mixed> $phase The phase.
+	 * @param string               $id    The status type id.
+	 * @param int                  $order The status's order.
+	 *
+	 * @return array<string, mixed> The phase.
+	 */
+	private function joinedPhase(array $phase, string $id, int $order): array {
+		$phase['statusIds'][] = $id;
+		if ($order < $phase['order']) {
+			$phase['order'] = $order;
+			$phase['id']    = $id;
+		}
+
+		return $phase;
+	}//end joinedPhase()
 
 	/**
 	 * The phases without a final status of its own that runs no task, once

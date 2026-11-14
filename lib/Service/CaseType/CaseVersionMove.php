@@ -211,6 +211,34 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 			);
 		}
 
+		$preview = $this->movablePreview(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId);
+
+		$this->applyMove(
+			caseId: $caseId,
+			targetCaseTypeId: $targetCaseTypeId,
+			preview: $preview,
+			reason: $reason,
+			actorUid: $actorUid,
+		);
+
+		$preview['moved'] = true;
+
+		return $preview;
+	}//end move()
+
+	/**
+	 * The move's preview, re-computed, refused when the case has nowhere to land.
+	 *
+	 * @param string $caseId           The case uuid.
+	 * @param string $targetCaseTypeId The version to move onto.
+	 *
+	 * @return array<string, mixed> The preview.
+	 *
+	 * @throws RefusedException When the move is refused.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function movablePreview(string $caseId, string $targetCaseTypeId): array {
 		$preview = $this->preview(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId);
 		if ($preview['canMove'] !== true) {
 			throw new RefusedException(
@@ -222,6 +250,25 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 			);
 		}
 
+		return $preview;
+	}//end movablePreview()
+
+	/**
+	 * Write the case onto the target version, with its status, template and journal entry.
+	 *
+	 * @param string               $caseId           The case uuid.
+	 * @param string               $targetCaseTypeId The version to move onto.
+	 * @param array<string, mixed> $preview          The preview being applied.
+	 * @param string               $reason           Why the case is being moved.
+	 * @param string               $actorUid         Who is moving it.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the write fails.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function applyMove(string $caseId, string $targetCaseTypeId, array $preview, string $reason, string $actorUid): void {
 		$case = $this->readCase(caseId: $caseId);
 		$sourceId = $this->store->referenceId(value: ($case['caseType'] ?? ''));
 
@@ -247,11 +294,7 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 				'actor' => $actorUid,
 			]
 		);
-
-		$preview['moved'] = true;
-
-		return $preview;
-	}//end move()
+	}//end applyMove()
 
 	/**
 	 * Refuse a target that is not another version of the case's own type.
