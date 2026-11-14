@@ -394,53 +394,76 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 */
 	private function getDefaultApplicaties(): array {
 		return [
-			[
-				// FROZEN client ids + secrets below. These are ZGW consumer
-				// credentials registered in the ZGW consumer table and referenced
-				// by name from tests/zgw/seed-consumers.sh and the Postman
-				// environments. A renamed id here makes the seed script look up a
-				// consumer that does not exist — a KeyError that aborts the whole
-				// e2e job before a single test runs. `procest-admin` is also a
-				// Nextcloud GROUP id (see TransitionAuthorizer::ADMIN_GROUP_ID).
-				'name' => 'procest-admin',
-				'description' => 'Dossiq Admin (development)',
-				'authorizationType' => 'jwt-zgw',
-				'userId' => 'admin',
-				'authorizationConfiguration' => [
-					'publicKey' => 'procest-admin-secret-key-for-testing',
-					'algorithm' => 'HS256',
-					'superuser' => true,
-					'scopes' => [],
-				],
-			],
-			[
-				'name' => 'procest-limited',
-				'description' => 'Dossiq Limited (testing)',
-				'authorizationType' => 'jwt-zgw',
-				'userId' => 'admin',
-				'authorizationConfiguration' => [
-					'publicKey' => 'procest-limited-secret-key-for-test',
-					'algorithm' => 'HS256',
-					'superuser' => false,
-					'scopes' => [
-						[
-							'component' => 'ztc',
-							'scopes' => [
-								'zaaktypen.lezen',
-							],
-						],
-						[
-							'component' => 'zrc',
-							'scopes' => [
-								'zaken.lezen',
-							],
-							'maxVertrouwelijkheidaanduiding' => 'openbaar',
-						],
-					],
-				],
-			],
+			$this->adminApplicatie(),
+			$this->limitedApplicatie(),
 		];
 	}//end getDefaultApplicaties()
+
+	/**
+	 * The superuser test applicatie.
+	 *
+	 * @return array<string, mixed> The applicatie data
+	 */
+	private function adminApplicatie(): array {
+		return [
+			// FROZEN client ids + secrets below. These are ZGW consumer
+			// credentials registered in the ZGW consumer table and referenced
+			// by name from tests/zgw/seed-consumers.sh and the Postman
+			// environments. A renamed id here makes the seed script look up a
+			// consumer that does not exist — a KeyError that aborts the whole
+			// e2e job before a single test runs. `procest-admin` is also a
+			// Nextcloud GROUP id (see TransitionAuthorizer::ADMIN_GROUP_ID).
+			'name' => 'procest-admin',
+			'description' => 'Dossiq Admin (development)',
+			'authorizationType' => 'jwt-zgw',
+			'userId' => 'admin',
+			'authorizationConfiguration' => [
+				'publicKey' => 'procest-admin-secret-key-for-testing',
+				'algorithm' => 'HS256',
+				'superuser' => true,
+				'scopes' => [],
+			],
+		];
+	}//end adminApplicatie()
+
+	/**
+	 * The read-only test applicatie with limited scopes.
+	 *
+	 * @return array<string, mixed> The applicatie data
+	 */
+	private function limitedApplicatie(): array {
+		return [
+			'name' => 'procest-limited',
+			'description' => 'Dossiq Limited (testing)',
+			'authorizationType' => 'jwt-zgw',
+			'userId' => 'admin',
+			'authorizationConfiguration' => [
+				'publicKey' => 'procest-limited-secret-key-for-test',
+				'algorithm' => 'HS256',
+				'superuser' => false,
+				'scopes' => $this->limitedScopes(),
+			],
+		];
+	}//end limitedApplicatie()
+
+	/**
+	 * The scopes the limited test applicatie holds.
+	 *
+	 * @return array<int, array<string, mixed>> The scopes
+	 */
+	private function limitedScopes(): array {
+		return [
+			[
+				'component' => 'ztc',
+				'scopes' => ['zaaktypen.lezen'],
+			],
+			[
+				'component' => 'zrc',
+				'scopes' => ['zaken.lezen'],
+				'maxVertrouwelijkheidaanduiding' => 'openbaar',
+			],
+		];
+	}//end limitedScopes()
 
 	/**
 	 * Create default notification channels (kanalen).
@@ -627,37 +650,11 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 */
 	private function getDefaultKanalen(): array {
 		return [
-			[
-				'name' => 'zaken',
-				'filters' => [
-					'bronorganisatie',
-					'caseType',
-					'vertrouwelijkheidaanduiding',
-				],
-			],
-			[
-				'name' => 'documenten',
-				'filters' => [
-					'bronorganisatie',
-					'informatieobjecttype',
-					'vertrouwelijkheidaanduiding',
-				],
-			],
-			[
-				'name' => 'besluiten',
-				'filters' => [
-					'verantwoordelijkeOrganisatie',
-					'besluittype',
-				],
-			],
-			[
-				'name' => 'catalogi',
-				'filters' => [],
-			],
-			[
-				'name' => 'autorisaties',
-				'filters' => [],
-			],
+			['name' => 'zaken', 'filters' => ['bronorganisatie', 'caseType', 'vertrouwelijkheidaanduiding']],
+			['name' => 'documenten', 'filters' => ['bronorganisatie', 'informatieobjecttype', 'vertrouwelijkheidaanduiding']],
+			['name' => 'besluiten', 'filters' => ['verantwoordelijkeOrganisatie', 'besluittype']],
+			['name' => 'catalogi', 'filters' => []],
+			['name' => 'autorisaties', 'filters' => []],
 		];
 	}//end getDefaultKanalen()
 
