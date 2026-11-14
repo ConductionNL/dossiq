@@ -179,15 +179,7 @@ class InternalHandover {
 			'status' => 'pending',
 			'initiatedBy' => $initiatedBy,
 			'emptiedSeats' => $reconciled['emptied'],
-			'custodyAuditTrail' => [
-				[
-					'event' => 'initiated',
-					'actor' => $initiatedBy,
-					'actorType' => 'local',
-					'cloudId' => '',
-					'timestamp' => $now,
-				],
-			],
+			'custodyAuditTrail' => $this->initiatedTrail(initiatedBy: $initiatedBy, timestamp: $now),
 		];
 
 		// RECORDED FIRST, THEN APPLIED. A seat emptied before the handover is
@@ -201,14 +193,7 @@ class InternalHandover {
 		// ONE write, carrying the team and the seats together. Two writes would
 		// leave a window in which the case has moved and still names a handler
 		// who cannot open it.
-		$changes = array_merge(
-			$reconciled['changes'],
-			[
-				'assignedGroup' => $team,
-				'handoverPending' => true,
-				'handoverTo' => $team,
-			],
-		);
+		$changes = $this->withHandoverTo(changes: $reconciled['changes'], team: $team);
 		$this->writeCase(case: $case, changes: $changes);
 
 		$saved['announcement'] = $this->doorzending->announce(case: $case, transfer: $saved);
@@ -226,6 +211,49 @@ class InternalHandover {
 
 		return $saved;
 	}//end initiate()
+
+	/**
+	 * The custody trail a new handover starts with.
+	 *
+	 * @param string $initiatedBy Who handed the case on.
+	 * @param string $timestamp   When, as an ISO 8601 string.
+	 *
+	 * @return array<int, array<string, string>> The trail with its one `initiated` entry.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 */
+	private function initiatedTrail(string $initiatedBy, string $timestamp): array {
+		return [
+			[
+				'event' => 'initiated',
+				'actor' => $initiatedBy,
+				'actorType' => 'local',
+				'cloudId' => '',
+				'timestamp' => $timestamp,
+			],
+		];
+	}//end initiatedTrail()
+
+	/**
+	 * The reconciled seat changes plus the team the case moves to.
+	 *
+	 * @param array<string, mixed> $changes The seat changes from the reconciliation.
+	 * @param string               $team    The receiving team.
+	 *
+	 * @return array<string, mixed> The one write to make on the case.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 */
+	private function withHandoverTo(array $changes, string $team): array {
+		return array_merge(
+			$changes,
+			[
+				'assignedGroup' => $team,
+				'handoverPending' => true,
+				'handoverTo' => $team,
+			],
+		);
+	}//end withHandoverTo()
 
 	/**
 	 * Accept a handover on the receiving team's behalf.

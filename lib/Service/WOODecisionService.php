@@ -140,22 +140,11 @@ class WOODecisionService {
 		// Guard: every required page of every in-scope document has been seen (REQ-WRT-005).
 		$this->pagesSeen?->assertAllSeen(caseId: $caseId);
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$decisionSchema = $this->settingsService->getConfigValue('decision_schema');
-
-		if (empty($register) === true || empty($decisionSchema) === true) {
-			throw new RuntimeException('Decision schema not configured');
-		}
+		$objectService = $this->requireObjectService();
+		[$register, $decisionSchema] = $this->requireDecisionSchema();
 
 		// The case's title and its assessments, tallied by classification.
 		$record = $this->composer->compose(objectService: $objectService, register: $register, caseId: $caseId);
-		$summary = $record['summary'];
-		$weigeringsgronden = $record['weigeringsgronden'];
 
 		$userId = $this->resolveDecidedBy();
 
@@ -167,20 +156,7 @@ class WOODecisionService {
 			actorId: $userId,
 		);
 
-		$besluitData = array_merge(
-			[
-				'case' => $caseId,
-				'decisionType' => self::DECISION_TYPE_ID,
-				'decisionDate' => date('Y-m-d'),
-				'description' => self::publicationSummary(caseTitle: $record['caseTitle']),
-				'wooSummary' => $summary,
-				'weigeringsgronden' => $weigeringsgronden,
-				'groundsListVersion' => WooRefusalGrounds::LIST_VERSION,
-				'assessmentCount' => $record['assessmentCount'],
-				'decidedBy' => $userId,
-			],
-			array_diff_key($decisionData, ['id' => true, 'uuid' => true, '@self' => true]),
-		);
+		$besluitData = $this->besluitData(caseId: $caseId, record: $record, userId: $userId, decisionData: $decisionData);
 
 		$decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);
 
@@ -196,6 +172,97 @@ class WOODecisionService {
 			['app' => AppIdentity::APP_ID, 'decisionRef' => $decisionRef],
 		);
 
+		return $this->assembledResult(
+			caseId: $caseId,
+			decisionRef: $decisionRef,
+			decision: $decision,
+			record: $record,
+			letter: $letter,
+		);
+	}//end assembleDecision()
+
+	/**
+	 * The OpenRegister object service, required to assemble a decision.
+	 *
+	 * @return object The object service
+	 *
+	 * @throws \RuntimeException If OpenRegister unavailable
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
+	 */
+	private function requireObjectService(): object {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		return $objectService;
+	}//end requireObjectService()
+
+	/**
+	 * The configured register and decision schema.
+	 *
+	 * @return array{0: string, 1: string} The register and the decision schema
+	 *
+	 * @throws \RuntimeException If either is not configured
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
+	 */
+	private function requireDecisionSchema(): array {
+		$register = $this->settingsService->getConfigValue('register');
+		$decisionSchema = $this->settingsService->getConfigValue('decision_schema');
+
+		if (empty($register) === true || empty($decisionSchema) === true) {
+			throw new RuntimeException('Decision schema not configured');
+		}
+
+		return [$register, $decisionSchema];
+	}//end requireDecisionSchema()
+
+	/**
+	 * The besluit object to save, with the caller's override data merged over it.
+	 *
+	 * @param string               $caseId       The case UUID
+	 * @param array<string, mixed> $record       The composed decision record
+	 * @param string               $userId       The deciding user
+	 * @param array<string, mixed> $decisionData Optional override data
+	 *
+	 * @return array<string, mixed> The besluit data
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
+	 */
+	private function besluitData(string $caseId, array $record, string $userId, array $decisionData): array {
+		return array_merge(
+			[
+				'case' => $caseId,
+				'decisionType' => self::DECISION_TYPE_ID,
+				'decisionDate' => date('Y-m-d'),
+				'description' => self::publicationSummary(caseTitle: $record['caseTitle']),
+				'wooSummary' => $record['summary'],
+				'weigeringsgronden' => $record['weigeringsgronden'],
+				'groundsListVersion' => WooRefusalGrounds::LIST_VERSION,
+				'assessmentCount' => $record['assessmentCount'],
+				'decidedBy' => $userId,
+			],
+			array_diff_key($decisionData, ['id' => true, 'uuid' => true, '@self' => true]),
+		);
+	}//end besluitData()
+
+	/**
+	 * The assembled decision as answered to the caller, with the drafts it asked for.
+	 *
+	 * @param string               $caseId      The case UUID
+	 * @param string               $decisionRef The decision raised in decidiq
+	 * @param object               $decision    The saved decision object
+	 * @param array<string, mixed> $record      The composed decision record
+	 * @param string               $letter      The letter the caller chose; empty drafts one
+	 *
+	 * @return array<string, mixed> Created decision with ID and assessment summary
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-the-draft-is-asked-of-filinq-and-filed-on-the-case-req-cdd-003
+	 */
+	private function assembledResult(string $caseId, string $decisionRef, object $decision, array $record, string $letter): array {
 		$draft = null;
 		if ($letter === '') {
 			$draft = $this->drafts?->draft(caseId: $caseId, purpose: self::DRAFT_PURPOSE);
@@ -205,13 +272,13 @@ class WOODecisionService {
 			'decisionId' => $decision->getUuid(),
 			'decisionRef' => $decisionRef,
 			'caseId' => $caseId,
-			'summary' => $summary,
-			'weigeringsgronden' => $weigeringsgronden,
+			'summary' => $record['summary'],
+			'weigeringsgronden' => $record['weigeringsgronden'],
 			'assessmentCount' => $record['assessmentCount'],
 			'draft' => $draft,
 			'inventoryDraft' => $this->drafts?->draft(caseId: $caseId, purpose: self::INVENTORY_PURPOSE),
 		];
-	}//end assembleDecision()
+	}//end assembledResult()
 
 	/**
 	 * The line a resident reads under the title of the published decision.

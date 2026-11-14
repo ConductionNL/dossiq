@@ -99,11 +99,49 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 			return [];
 		}
 
+		$objectService = $this->requireObjectService();
+
+		[$casesByType, $urlByType] = $this->collectAll(objectService: $objectService, register: $register, schema: $schema);
+
+		$caseTypeOf = $this->caseTypesOf(objectService: $objectService, register: $register, caseIds: $this->caseIdsIn(casesByType: $casesByType));
+
+		$rows = $this->rowsFor(casesByType: $casesByType, urlByType: $urlByType, caseTypeOf: $caseTypeOf);
+
+		usort($rows, static fn (array $left, array $right): int => self::compareRows(left: $left, right: $right));
+
+		return $rows;
+	}//end list()
+
+	/**
+	 * OpenRegister's ObjectService.
+	 *
+	 * @return object The ObjectService.
+	 *
+	 * @throws RuntimeException When OpenRegister is not available.
+	 *
+	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+	 */
+	private function requireObjectService(): object {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
+		return $objectService;
+	}//end requireObjectService()
+
+	/**
+	 * Page through the case-object links, collecting the cases and an object url per type.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $register      The register.
+	 * @param string $schema        The case-object schema.
+	 *
+	 * @return array{0: array<string, array<string, true>>, 1: array<string, string>} The cases and the urls, by type.
+	 *
+	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+	 */
+	private function collectAll(object $objectService, string $register, string $schema): array {
 		$casesByType = [];
 		$urlByType   = [];
 		for ($page = 1; $page <= self::MAX_PAGES; $page++) {
@@ -120,8 +158,21 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 			}
 		}
 
-		$caseTypeOf = $this->caseTypesOf(objectService: $objectService, register: $register, caseIds: $this->caseIdsIn(casesByType: $casesByType));
+		return [$casesByType, $urlByType];
+	}//end collectAll()
 
+	/**
+	 * One catalogue row per object type, with its case type count.
+	 *
+	 * @param array<string, array<string, true>> $casesByType The cases, by type.
+	 * @param array<string, string>              $urlByType   An object url, by type.
+	 * @param array<string, string>|null         $caseTypeOf  The case type of each case, null when unknown.
+	 *
+	 * @return array<int, array<string, mixed>> The unsorted rows.
+	 *
+	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+	 */
+	private function rowsFor(array $casesByType, array $urlByType, ?array $caseTypeOf): array {
 		$rows = [];
 		foreach ($casesByType as $type => $cases) {
 			$row = $this->rowFor(type: (string)$type, cases: count($cases), objectUrl: ($urlByType[$type] ?? ''));
@@ -129,10 +180,8 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 			$rows[] = $row;
 		}
 
-		usort($rows, static fn (array $left, array $right): int => self::compareRows(left: $left, right: $right));
-
 		return $rows;
-	}//end list()
+	}//end rowsFor()
 
 	/**
 	 * Add one page of case-object links to the cases seen per object type.

@@ -86,35 +86,9 @@ class BrcDocumentLinkHandler {
 		}
 
 		try {
-			$params = $request->getParams();
-			$filters = $this->zgwService->translateQueryParams(
-				params: $params,
-				mappingConfig: $mappingConfig
-			);
-
-			$searchParams = array_merge($filters, ['_limit' => 100]);
-
-			$query = $objectService->buildSearchQuery(
-				requestParams: $searchParams,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$result = $objectService->searchObjectsPaginated(query: $query);
-
-			$objects = $result['results'] ?? [];
+			$objects = $this->searchLinks(objectService: $objectService, request: $request, mappingConfig: $mappingConfig);
 			$baseUrl = $this->zgwService->buildBaseUrl($request, self::ZGW_API, $resource);
-			$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-			$mapped = [];
-			foreach ($objects as $object) {
-				$objectData = $this->objectToArray(row: $object);
-
-				$mapped[] = $this->zgwService->applyOutboundMapping(
-					objectData: $objectData,
-					mapping: $outboundMapping,
-					mappingConfig: $mappingConfig,
-					baseUrl: $baseUrl
-				);
-			}
+			$mapped = $this->mapOutbound(objects: $objects, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
 
 			return new JSONResponse(data: $mapped);
 		} catch (\Throwable $e) {
@@ -128,6 +102,64 @@ class BrcDocumentLinkHandler {
 			);
 		}//end try
 	}//end indexBesluitInformatieObjecten()
+
+	/**
+	 * Search the stored links the request's query parameters select, at most 100.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param IRequest             $request       The incoming request.
+	 * @param array<string, mixed> $mappingConfig The resource's mapping configuration.
+	 *
+	 * @return array<int, mixed> The stored objects.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function searchLinks(object $objectService, IRequest $request, array $mappingConfig): array {
+		$params = $request->getParams();
+		$filters = $this->zgwService->translateQueryParams(
+			params: $params,
+			mappingConfig: $mappingConfig
+		);
+
+		$searchParams = array_merge($filters, ['_limit' => 100]);
+
+		$query = $objectService->buildSearchQuery(
+			requestParams: $searchParams,
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema']
+		);
+		$result = $objectService->searchObjectsPaginated(query: $query);
+
+		return $result['results'] ?? [];
+	}//end searchLinks()
+
+	/**
+	 * Map stored objects to their ZGW representation.
+	 *
+	 * @param array<int, mixed>    $objects       The stored objects.
+	 * @param array<string, mixed> $mappingConfig The resource's mapping configuration.
+	 * @param string               $baseUrl       The resource's base URL.
+	 *
+	 * @return array<int, mixed> The mapped objects.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function mapOutbound(array $objects, array $mappingConfig, string $baseUrl): array {
+		$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
+		$mapped = [];
+		foreach ($objects as $object) {
+			$objectData = $this->objectToArray(row: $object);
+
+			$mapped[] = $this->zgwService->applyOutboundMapping(
+				objectData: $objectData,
+				mapping: $outboundMapping,
+				mappingConfig: $mappingConfig,
+				baseUrl: $baseUrl
+			);
+		}
+
+		return $mapped;
+	}//end mapOutbound()
 
 	/**
 	 * Create a BesluitInformatieObject with cross-register OIO sync (brc-005a).

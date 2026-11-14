@@ -271,39 +271,13 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 		array $results,
 		string $caseId,
 	): string {
-		$onCase = $caseId;
-		$reason = 'Linked to the case its subject names.';
-		if ($onCase === '') {
-			$filed = $this->filing->unmatched->caseFor(message: $message->toArray());
-			if ($filed !== null && $filed !== '') {
-				$onCase = $filed;
-				$reason = 'Filed as a new case of the fallback case type.';
-			}
-		}
+		[$onCase, $reason] = $this->caseAndReason(message: $message, caseId: $caseId);
 
 		if ($onCase === '') {
-			// 🔴 THE ONE BRANCH THAT USED TO BE A SILENT `continue`. A message
-			// matching no case and no case type lands in the intake inbox with
-			// its verdict on it, and somebody has to empty that inbox. A
-			// message that vanished is not a problem anyone can see.
-			$this->log->record(
-				message: $message,
-				verdict: $verdict,
-				results: $results,
-				outcome: IntakeLog::OUTCOME_INBOX,
-				reason: 'No case and no case type claimed this message, so it is waiting in the intake inbox.'
-			);
-			return IntakeLog::OUTCOME_INBOX;
+			return $this->parkInInbox(message: $message, verdict: $verdict, results: $results);
 		}
 
-		try {
-			$this->filing->archival->archiveLinkedEmail(caseId: $onCase, metadata: $message->toArray());
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: filing an accepted message on its case failed',
-				['case' => $onCase, 'error' => $e->getMessage()]
-			);
-		}
+		$this->archiveOnCase(message: $message, onCase: $onCase);
 
 		$this->log->record(
 			message: $message,
@@ -316,6 +290,77 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 
 		return IntakeLog::OUTCOME_CASE;
 	}//end fileOnCase()
+
+	/**
+	 * The case to file on and the reason, falling back to the fallback case type.
+	 *
+	 * @param InboundMessage $message The message.
+	 * @param string         $caseId  The case the subject named, or ''.
+	 *
+	 * @return array{0: string, 1: string} The case id ('' for none) and the reason.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function caseAndReason(InboundMessage $message, string $caseId): array {
+		$onCase = $caseId;
+		$reason = 'Linked to the case its subject names.';
+		if ($onCase === '') {
+			$filed = $this->filing->unmatched->caseFor(message: $message->toArray());
+			if ($filed !== null && $filed !== '') {
+				$onCase = $filed;
+				$reason = 'Filed as a new case of the fallback case type.';
+			}
+		}
+
+		return [$onCase, $reason];
+	}//end caseAndReason()
+
+	/**
+	 * Record a message no case claimed as waiting in the intake inbox.
+	 *
+	 * @param InboundMessage        $message The message.
+	 * @param FilterVerdict         $verdict The pipeline's verdict.
+	 * @param array<string, string> $results The four authentication results.
+	 *
+	 * @return string The inbox outcome.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function parkInInbox(InboundMessage $message, FilterVerdict $verdict, array $results): string {
+		// 🔴 THE ONE BRANCH THAT USED TO BE A SILENT `continue`. A message
+		// matching no case and no case type lands in the intake inbox with
+		// its verdict on it, and somebody has to empty that inbox. A
+		// message that vanished is not a problem anyone can see.
+		$this->log->record(
+			message: $message,
+			verdict: $verdict,
+			results: $results,
+			outcome: IntakeLog::OUTCOME_INBOX,
+			reason: 'No case and no case type claimed this message, so it is waiting in the intake inbox.'
+		);
+		return IntakeLog::OUTCOME_INBOX;
+	}//end parkInInbox()
+
+	/**
+	 * Archive the message on its case, logging a failure instead of throwing.
+	 *
+	 * @param InboundMessage $message The message.
+	 * @param string         $onCase  The case to file on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function archiveOnCase(InboundMessage $message, string $onCase): void {
+		try {
+			$this->filing->archival->archiveLinkedEmail(caseId: $onCase, metadata: $message->toArray());
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: filing an accepted message on its case failed',
+				['case' => $onCase, 'error' => $e->getMessage()]
+			);
+		}
+	}//end archiveOnCase()
 
 	/**
 	 * The case the subject names, when the threading result allows it.

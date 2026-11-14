@@ -466,17 +466,8 @@ class CaseTimeline implements CaseTimelineInterface {
 
 			$seen[$relatedId] = true;
 
-			try {
-				$object = $objectService->find($relatedId, register: $register, schema: $schema);
-			} catch (Throwable $e) {
-				$object = null;
-			}
-
+			$object = $this->readRelated(objectService: $objectService, register: $register, schema: $schema, relatedId: $relatedId);
 			if ($object === null) {
-				$this->logger->warning(
-					'Dossiq timeline: related case {case} could not be read, so the entry was not written on it',
-					['app' => AppIdentity::APP_ID, 'case' => $relatedId],
-				);
 				continue;
 			}
 
@@ -485,6 +476,33 @@ class CaseTimeline implements CaseTimelineInterface {
 
 		return $resolved;
 	}//end relatedObjects()
+
+	/**
+	 * Read one further case, or log and answer null when it cannot be read.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param mixed  $register      The register as configured.
+	 * @param mixed  $schema        The case schema as configured.
+	 * @param string $relatedId     The further case.
+	 *
+	 * @return mixed The case object, or null.
+	 */
+	private function readRelated(object $objectService, $register, $schema, string $relatedId): mixed {
+		try {
+			$object = $objectService->find($relatedId, register: $register, schema: $schema);
+		} catch (Throwable $e) {
+			$object = null;
+		}
+
+		if ($object === null) {
+			$this->logger->warning(
+				'Dossiq timeline: related case {case} could not be read, so the entry was not written on it',
+				['app' => AppIdentity::APP_ID, 'case' => $relatedId],
+			);
+		}
+
+		return $object;
+	}//end readRelated()
 
 	/**
 	 * OpenRegister's timeline writer.

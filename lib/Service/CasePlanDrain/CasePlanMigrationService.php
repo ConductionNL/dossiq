@@ -273,11 +273,37 @@ class CasePlanMigrationService implements CasePlanMigrationServiceInterface {
 			return $this->report(caseId: $caseId, outcome: self::UNMAPPABLE, reason: 'refused: ' . $e->getMessage());
 		}
 
+		return $this->verifyAndClear(caseId: $caseId, blob: $blob, ensured: $ensured);
+	}//end commit()
+
+	/**
+	 * Verify the ensured rows against the blob, then clear the blob.
+	 *
+	 * @param string               $caseId  The case uuid.
+	 * @param array<string, mixed> $blob    The decoded blob.
+	 * @param mixed                $ensured What ensureItems answered.
+	 *
+	 * @return array<string, mixed> The case's report.
+	 */
+	private function verifyAndClear(string $caseId, array $blob, mixed $ensured): array {
 		$mismatches = $this->blob->mismatches(states: $blob['planItemStates'], rows: ($ensured['items'] ?? []));
 		if ($mismatches !== []) {
 			return $this->report(caseId: $caseId, outcome: self::UNMAPPABLE, reason: 'state_mismatch: ' . implode('; ', $mismatches));
 		}
 
+		return $this->clearBlob(caseId: $caseId, blob: $blob, ensured: $ensured);
+	}//end verifyAndClear()
+
+	/**
+	 * Write the case file and clear the blob, reporting the counts.
+	 *
+	 * @param string               $caseId  The case uuid.
+	 * @param array<string, mixed> $blob    The decoded blob.
+	 * @param mixed                $ensured What ensureItems answered.
+	 *
+	 * @return array<string, mixed> The case's report.
+	 */
+	private function clearBlob(string $caseId, array $blob, mixed $ensured): array {
 		$created = count($ensured['created'] ?? []);
 		$existing = count($ensured['existing'] ?? []);
 		try {
@@ -294,7 +320,7 @@ class CasePlanMigrationService implements CasePlanMigrationServiceInterface {
 		}
 
 		return $this->report(caseId: $caseId, outcome: self::MIGRATED, reason: 'verified', created: $created, existing: $existing);
-	}//end commit()
+	}//end clearBlob()
 
 	/**
 	 * Refuse a case-file slot the case does not declare.

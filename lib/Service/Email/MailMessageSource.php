@@ -44,6 +44,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Email;
 
 use OCA\Dossiq\Kernel\Contracts\MailMessageSourceInterface;
+use OCP\DB\IResult;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 use Psr\Log\LoggerInterface;
@@ -367,28 +368,10 @@ class MailMessageSource implements MailMessageSourceInterface {
 		}
 
 		try {
-			$qb = $this->db->getQueryBuilder();
-			$qb->select('m.id', 'm.uid', 'm.message_id', 'm.subject', 'm.sent_at', 'mb.name')
-				->from('mail_messages', 'm')
-				->join('m', 'mail_mailboxes', 'mb', $qb->expr()->eq('mb.id', 'm.mailbox_id'))
-				->where($qb->expr()->eq('mb.account_id', $qb->createNamedParameter($accountId, IQueryBuilder::PARAM_INT)))
-				->andWhere($qb->expr()->eq('mb.name', $qb->createNamedParameter($mailbox)))
-				->andWhere($qb->expr()->gt('m.id', $qb->createNamedParameter($sinceId, IQueryBuilder::PARAM_INT)))
-				->orderBy('m.id', 'ASC')
-				->setMaxResults($limit);
+			$qb = $this->intakeFolderQuery(accountId: $accountId, mailbox: $mailbox, sinceId: $sinceId, limit: $limit);
 
 			$result = $qb->executeQuery();
-			$messages = [];
-			while (($row = $result->fetch()) !== false) {
-				$messages[] = [
-					'id' => (int) ($row['id'] ?? 0),
-					'uid' => (int) ($row['uid'] ?? 0),
-					'mailbox' => (string) ($row['name'] ?? $mailbox),
-					'messageId' => (string) ($row['message_id'] ?? ''),
-					'subject' => (string) ($row['subject'] ?? ''),
-					'sentAt' => (string) ($row['sent_at'] ?? ''),
-				];
-			}
+			$messages = $this->messagesOf(result: $result, mailbox: $mailbox);
 
 			$result->closeCursor();
 		} catch (Throwable $e) {
@@ -398,4 +381,57 @@ class MailMessageSource implements MailMessageSourceInterface {
 
 		return $messages;
 	}//end listMailboxMessagesSince()
+
+	/**
+	 * The query for the messages after an id in one folder of one account, oldest first.
+	 *
+	 * @param int    $accountId The Mail account id.
+	 * @param string $mailbox   The folder name.
+	 * @param int    $sinceId   The last processed message id.
+	 * @param int    $limit     The most messages to return.
+	 *
+	 * @return IQueryBuilder The query.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function intakeFolderQuery(int $accountId, string $mailbox, int $sinceId, int $limit): IQueryBuilder {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('m.id', 'm.uid', 'm.message_id', 'm.subject', 'm.sent_at', 'mb.name')
+			->from('mail_messages', 'm')
+			->join('m', 'mail_mailboxes', 'mb', $qb->expr()->eq('mb.id', 'm.mailbox_id'))
+			->where($qb->expr()->eq('mb.account_id', $qb->createNamedParameter($accountId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('mb.name', $qb->createNamedParameter($mailbox)))
+			->andWhere($qb->expr()->gt('m.id', $qb->createNamedParameter($sinceId, IQueryBuilder::PARAM_INT)))
+			->orderBy('m.id', 'ASC')
+			->setMaxResults($limit);
+
+		return $qb;
+	}//end intakeFolderQuery()
+
+	/**
+	 * The fetched rows as intake messages.
+	 *
+	 * @param IResult $result  The executed query.
+	 * @param string  $mailbox The folder name, for a row without one.
+	 *
+	 * @return array<int, array{id: int, uid: int, mailbox: string, messageId: string, subject: string, sentAt: string}>
+	 *         The messages.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function messagesOf(IResult $result, string $mailbox): array {
+		$messages = [];
+		while (($row = $result->fetch()) !== false) {
+			$messages[] = [
+				'id' => (int) ($row['id'] ?? 0),
+				'uid' => (int) ($row['uid'] ?? 0),
+				'mailbox' => (string) ($row['name'] ?? $mailbox),
+				'messageId' => (string) ($row['message_id'] ?? ''),
+				'subject' => (string) ($row['subject'] ?? ''),
+				'sentAt' => (string) ($row['sent_at'] ?? ''),
+			];
+		}
+
+		return $messages;
+	}//end messagesOf()
 }//end class

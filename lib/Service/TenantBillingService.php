@@ -385,27 +385,58 @@ class TenantBillingService implements TenantBillingServiceInterface {
 			}
 
 			$event['invoiceRef'] = $invoiceRef;
-			try {
-				$uuid = (string)($event['uuid'] ?? $event['id'] ?? '');
-				$uuidArg = null;
-				if ($uuid !== '') {
-					$uuidArg = $uuid;
-				}
-
-				$objectService->saveObject(
-					object: $event,
-					register: AppIdentity::REGISTER_SLUG,
-					schema: 'tenantBillingEvent',
-					uuid: $uuidArg,
-				);
-				$updated++;
-			} catch (Throwable $e) {
-				$this->logger->error('Dossiq: markExported write failed', ['exception' => $e->getMessage()]);
-			}
-		}//end foreach
+			$updated += $this->writeExported(objectService: $objectService, event: $event);
+		}
 
 		return $updated;
 	}//end markExported()
+
+	/**
+	 * Write one exported event back, counting it when the write succeeds.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param array<string, mixed> $event         The event row, invoice ref set.
+	 *
+	 * @return int 1 when the event was written, 0 when the write failed.
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-daily-billing-export-to-shillinq-req-007-b
+	 */
+	private function writeExported(object $objectService, array $event): int {
+		try {
+			$uuidArg = $this->uuidArgOf(event: $event);
+
+			$objectService->saveObject(
+				object: $event,
+				register: AppIdentity::REGISTER_SLUG,
+				schema: 'tenantBillingEvent',
+				uuid: $uuidArg,
+			);
+			return 1;
+		} catch (Throwable $e) {
+			$this->logger->error('Dossiq: markExported write failed', ['exception' => $e->getMessage()]);
+		}
+
+		return 0;
+	}//end writeExported()
+
+	/**
+	 * The uuid an event row is saved under, or null for a row that has none.
+	 *
+	 * @param array<string, mixed> $event The event row.
+	 *
+	 * @return string|null The uuid, or null.
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-daily-billing-export-to-shillinq-req-007-b
+	 */
+	private function uuidArgOf(array $event): ?string {
+		$uuid = (string)($event['uuid'] ?? $event['id'] ?? '');
+		$uuidArg = null;
+		if ($uuid !== '') {
+			$uuidArg = $uuid;
+		}
+
+		return $uuidArg;
+	}//end uuidArgOf()
 
 	/**
 	 * Fetch all events for a given month for a tenant.

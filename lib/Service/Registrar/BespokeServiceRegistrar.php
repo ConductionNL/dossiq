@@ -63,6 +63,24 @@ class BespokeServiceRegistrar {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
+		$this->registerDashboardController(context: $context);
+		$this->registerSettingsController(context: $context);
+		$this->registerSettingsService(context: $context);
+		$this->registerInitializeSettings(context: $context);
+		$this->registerAdminSettings(context: $context);
+		$this->registerSettingsSection(context: $context);
+	}//end register()
+
+	/**
+	 * Register the explicit factory for the real DashboardController.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerDashboardController(IRegistrationContext $context): void {
 		$context->registerService(
 			DashboardController::class,
 			static function (ContainerInterface $c): DashboardController {
@@ -74,6 +92,18 @@ class BespokeServiceRegistrar {
 				);
 			}
 		);
+	}//end registerDashboardController()
+
+	/**
+	 * Register the explicit factory for the real SettingsController.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerSettingsController(IRegistrationContext $context): void {
 		$context->registerService(
 			SettingsController::class,
 			static function (ContainerInterface $c): SettingsController {
@@ -88,6 +118,18 @@ class BespokeServiceRegistrar {
 				);
 			}
 		);
+	}//end registerSettingsController()
+
+	/**
+	 * Register the explicit factory for the real SettingsService.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerSettingsService(IRegistrationContext $context): void {
 		$context->registerService(
 			SettingsService::class,
 			static function (ContainerInterface $c): SettingsService {
@@ -99,6 +141,18 @@ class BespokeServiceRegistrar {
 				);
 			}
 		);
+	}//end registerSettingsService()
+
+	/**
+	 * Register the explicit factory for the real InitializeSettings.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerInitializeSettings(IRegistrationContext $context): void {
 		$context->registerService(
 			InitializeSettings::class,
 			static function (ContainerInterface $c): InitializeSettings {
@@ -110,6 +164,18 @@ class BespokeServiceRegistrar {
 				);
 			}
 		);
+	}//end registerInitializeSettings()
+
+	/**
+	 * Register the explicit factory for the real AdminSettings.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerAdminSettings(IRegistrationContext $context): void {
 		$context->registerService(
 			AdminSettings::class,
 			static function (ContainerInterface $c): AdminSettings {
@@ -122,6 +188,18 @@ class BespokeServiceRegistrar {
 				);
 			}
 		);
+	}//end registerAdminSettings()
+
+	/**
+	 * Register the explicit factory for the real SettingsSection.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerSettingsSection(IRegistrationContext $context): void {
 		$context->registerService(
 			SettingsSection::class,
 			static function (ContainerInterface $c): SettingsSection {
@@ -131,5 +209,5 @@ class BespokeServiceRegistrar {
 				);
 			}
 		);
-	}//end register()
+	}//end registerSettingsSection()
 }//end class

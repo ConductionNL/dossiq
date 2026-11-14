@@ -426,27 +426,56 @@ class ZgwService implements ZgwServiceInterface {
 
 			if (isset($queryMapping[$key]) === true) {
 				$mapped = $queryMapping[$key];
-				$field = $mapped['field'] ?? $key;
-				$operator = $mapped['operator'] ?? null;
-
-				if (($mapped['extractUuid'] ?? false) === true
-					&& is_string($value) === true
-				) {
-					$parts = explode('/', rtrim($value, '/'));
-					$value = end($parts);
-				}
-
-				$filterKey = $field;
-				if ($operator !== null) {
-					$filterKey = $field . '.' . $operator;
-				}
-
-				$filters[$filterKey] = $value;
+				$filterKey = $this->filterKeyOf(mapped: $mapped, key: $key);
+				$filters[$filterKey] = $this->filterValueOf(mapped: $mapped, value: $value);
 			}
 		}//end foreach
 
 		return $filters;
 	}//end translateQueryParams()
+
+	/**
+	 * The OpenRegister filter key a mapped ZGW query parameter translates to.
+	 *
+	 * @param array      $mapped The parameter's query mapping
+	 * @param int|string $key    The ZGW query parameter
+	 *
+	 * @return mixed The field, suffixed with `.operator` when the mapping declares one
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function filterKeyOf(array $mapped, int|string $key): mixed {
+		$field = $mapped['field'] ?? $key;
+		$operator = $mapped['operator'] ?? null;
+
+		$filterKey = $field;
+		if ($operator !== null) {
+			$filterKey = $field . '.' . $operator;
+		}
+
+		return $filterKey;
+	}//end filterKeyOf()
+
+	/**
+	 * The filter value of a mapped ZGW query parameter, reduced to its last path segment when the mapping extracts a UUID.
+	 *
+	 * @param array $mapped The parameter's query mapping
+	 * @param mixed $value  The query parameter value
+	 *
+	 * @return mixed The filter value
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function filterValueOf(array $mapped, mixed $value): mixed {
+		if (($mapped['extractUuid'] ?? false) === true
+			&& is_string($value) === true
+		) {
+			$parts = explode('/', rtrim($value, '/'));
+			$value = end($parts);
+		}
+
+		return $value;
+	}//end filterValueOf()
 
 	/**
 	 * Create a Mapping object for outbound (English to Dutch) transformation.

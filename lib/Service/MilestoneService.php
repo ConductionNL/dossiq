@@ -139,37 +139,19 @@ class MilestoneService implements MilestoneServiceInterface {
 			];
 		}
 
-		$records = $this->repository->findRecords(caseId: $caseId);
-		$recordMap = [];
-		foreach ($records as $record) {
-			$recordMap[$record['milestoneDefinition'] ?? ''] = $record;
-		}
+		$recordMap = $this->recordMapFor(caseId: $caseId);
 
 		$milestones = [];
 		$reached = 0;
 		foreach ($definitions as $def) {
 			$defId = $def['id'] ?? $def['uuid'] ?? '';
-			$record = $recordMap[$defId] ?? null;
-			$isReached = $record !== null;
-
-			$reachedAt = null;
-			$reachedBy = null;
-			if ($isReached === true) {
+			$milestone = $this->milestoneRow(def: $def, record: ($recordMap[$defId] ?? null));
+			if ($milestone['reached'] === true) {
 				$reached++;
-				$reachedAt = $record['reachedAt'] ?? null;
-				$reachedBy = $record['reachedBy'] ?? null;
 			}
 
-			$milestones[] = [
-				'identifier' => $def['identifier'] ?? '',
-				'label' => $def['label'] ?? $def['name'] ?? '',
-				'order' => $def['order'] ?? 0,
-				'description' => $def['description'] ?? '',
-				'reached' => $isReached,
-				'reachedAt' => $reachedAt,
-				'reachedBy' => $reachedBy,
-			];
-		}//end foreach
+			$milestones[] = $milestone;
+		}
 
 		// $definitions is guaranteed non-empty here (early return above when count === 0).
 		$total = count($definitions);
@@ -182,6 +164,56 @@ class MilestoneService implements MilestoneServiceInterface {
 			'percentage' => $percentage,
 		];
 	}//end getCaseProgress()
+
+	/**
+	 * The milestone records of a case, by the definition they reach.
+	 *
+	 * @param string $caseId The case UUID
+	 *
+	 * @return array<string, array<string, mixed>> The records by milestone definition id
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function recordMapFor(string $caseId): array {
+		$records = $this->repository->findRecords(caseId: $caseId);
+		$recordMap = [];
+		foreach ($records as $record) {
+			$recordMap[$record['milestoneDefinition'] ?? ''] = $record;
+		}
+
+		return $recordMap;
+	}//end recordMapFor()
+
+	/**
+	 * One milestone's progress row.
+	 *
+	 * @param array<string, mixed>      $def    The milestone definition
+	 * @param array<string, mixed>|null $record The record that reached it, or null
+	 *
+	 * @return array<string, mixed> The milestone with whether, when and by whom it was reached
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function milestoneRow(array $def, ?array $record): array {
+		$isReached = $record !== null;
+
+		$reachedAt = null;
+		$reachedBy = null;
+		if ($isReached === true) {
+			$reachedAt = $record['reachedAt'] ?? null;
+			$reachedBy = $record['reachedBy'] ?? null;
+		}
+
+		return [
+			'identifier' => $def['identifier'] ?? '',
+			'label' => $def['label'] ?? $def['name'] ?? '',
+			'order' => $def['order'] ?? 0,
+			'description' => $def['description'] ?? '',
+			'reached' => $isReached,
+			'reachedAt' => $reachedAt,
+			'reachedBy' => $reachedBy,
+		];
+	}//end milestoneRow()
 
 	/**
 	 * Mark a milestone as reached for a case.

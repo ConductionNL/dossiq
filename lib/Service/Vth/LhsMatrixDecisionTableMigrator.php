@@ -54,6 +54,8 @@ use Throwable;
  * longer has a settings page, so an overwrite would replace an administrator's
  * work with a source they cannot even read.
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ *
  * @spec openspec/specs/lhs-decision-table/spec.md
  */
 class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorInterface {
@@ -203,19 +205,12 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 		$id = (string)($matrix['id'] ?? ($matrix['@self']['id'] ?? ''));
 		$marker = (self::MARKER_PREFIX . $id);
 
-		if ($id === '' || $tableSchema === '') {
-			return ['outcome' => 'failed', 'marker' => $marker, 'detail' => 'no matrix id, or no decision-table schema configured'];
+		$projected = $this->projectedTable(matrix: $matrix, id: $id, marker: $marker, tableSchema: $tableSchema);
+		if ($projected['refusal'] !== null) {
+			return $projected['refusal'];
 		}
 
-		$table = $this->tableFor(matrix: $matrix, marker: $marker);
-		if ($table === null) {
-			// A matrix whose cells name values absent from its own axes cannot
-			// be projected honestly: the rule would be unreachable in the table
-			// exactly as the cell is unreachable in the matrix, and projecting
-			// it would carry the defect across while looking like a migration
-			// that worked. dossiq#1596 is that defect.
-			return ['outcome' => 'skipped', 'marker' => $marker, 'detail' => 'a cell names a value that is not on its axis'];
-		}
+		$table = $projected['table'];
 
 		$existing = $this->existingTable(
 			objectService: $objectService,
@@ -246,6 +241,43 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 		);
 
 	}//end migrateOne()
+
+	/**
+	 * The matrix projected as a decision table, or the refusal row when it cannot be.
+	 *
+	 * @param array<string, mixed> $matrix      The stored matrix.
+	 * @param string               $id          The matrix id.
+	 * @param string               $marker      The migration marker.
+	 * @param string               $tableSchema The decision-table schema.
+	 *
+	 * @return array{refusal: array{outcome: string, marker: string, detail: string}|null, table: array<string, mixed>}
+	 *         The refusal, else the table.
+	 *
+	 * @spec openspec/specs/lhs-decision-table/spec.md
+	 */
+	private function projectedTable(array $matrix, string $id, string $marker, string $tableSchema): array {
+		if ($id === '' || $tableSchema === '') {
+			return [
+				'refusal' => ['outcome' => 'failed', 'marker' => $marker, 'detail' => 'no matrix id, or no decision-table schema configured'],
+				'table' => [],
+			];
+		}
+
+		$table = $this->tableFor(matrix: $matrix, marker: $marker);
+		if ($table === null) {
+			// A matrix whose cells name values absent from its own axes cannot
+			// be projected honestly: the rule would be unreachable in the table
+			// exactly as the cell is unreachable in the matrix, and projecting
+			// it would carry the defect across while looking like a migration
+			// that worked. dossiq#1596 is that defect.
+			return [
+				'refusal' => ['outcome' => 'skipped', 'marker' => $marker, 'detail' => 'a cell names a value that is not on its axis'],
+				'table' => [],
+			];
+		}
+
+		return ['refusal' => null, 'table' => $table];
+	}//end projectedTable()
 
 	/**
 	 * Decide between creating and updating the projected table.

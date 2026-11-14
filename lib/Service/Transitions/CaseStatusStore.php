@@ -156,16 +156,7 @@ class CaseStatusStore {
 		bool $noWorkflowTemplate,
 		string $actor = '',
 	): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('storage_unavailable');
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$recordSchema = $this->settingsService->getConfigValue(key: 'status_record_schema');
-		if ($register === '' || $recordSchema === '') {
-			throw new RuntimeException('status_record_schema_not_configured');
-		}
+		[$objectService, $register, $recordSchema] = $this->statusRecordStore();
 
 		$payload = [
 			'case' => $caseId,
@@ -197,6 +188,30 @@ class CaseStatusStore {
 
 		return $record;
 	}//end writeStatusRecord()
+
+	/**
+	 * The object service, register and statusRecord schema.
+	 *
+	 * @return array{0: object, 1: string, 2: string} The store.
+	 *
+	 * @throws RuntimeException When OpenRegister or the statusRecord schema is unavailable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function statusRecordStore(): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('storage_unavailable');
+		}
+
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$recordSchema = $this->settingsService->getConfigValue(key: 'status_record_schema');
+		if ($register === '' || $recordSchema === '') {
+			throw new RuntimeException('status_record_schema_not_configured');
+		}
+
+		return [$objectService, $register, $recordSchema];
+	}//end statusRecordStore()
 
 	/**
 	 * Add the actor, prior status and comment to a statusRecord payload when given.

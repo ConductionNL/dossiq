@@ -98,9 +98,37 @@ class ContactMomentService implements ContactMomentServiceInterface {
 
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'contactmoment_schema');
 
+		$record = $this->recordFrom(data: $data);
+		$record = $this->withOptionalFields(record: $record, data: $data);
+
+		try {
+			$created = $objectService->saveObject(object: $record, register: $register, schema: $schema);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: failed to create contactmoment: ' . $e->getMessage(),
+				['app' => AppIdentity::APP_ID],
+			);
+			throw new RuntimeException('Could not create contactmoment');
+		}
+
+		$record = $this->normalize(result: $created);
+
+		return $record;
+	}//end createContactMoment()
+
+	/**
+	 * The contactmoment record built from the defaulted fields.
+	 *
+	 * @param array<string, mixed> $data The contactmoment fields, defaults applied.
+	 *
+	 * @return array<string, mixed> The record to save.
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md
+	 */
+	private function recordFrom(array $data): array {
 		$now = $this->dates->nowAsMoment();
 
-		$record = [
+		return [
 			'notificationChannel' => (string)$data['notificationChannel'],
 			'direction' => (string)($data['direction'] ?? 'inbound'),
 			'startTime' => (string)($data['startTime'] ?? $now),
@@ -125,7 +153,19 @@ class ContactMomentService implements ContactMomentServiceInterface {
 			'transcript' => (string)($data['transcript'] ?? ''),
 			'transferTo' => (string)($data['transferTo'] ?? ''),
 		];
+	}//end recordFrom()
 
+	/**
+	 * The record without an empty case, and with its duration when start and end give one.
+	 *
+	 * @param array<string, mixed> $record The record to save.
+	 * @param array<string, mixed> $data   The contactmoment fields.
+	 *
+	 * @return array<string, mixed> The record to save.
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md
+	 */
+	private function withOptionalFields(array $record, array $data): array {
 		if ($record['case'] === '') {
 			unset($record['case']);
 		}
@@ -135,20 +175,8 @@ class ContactMomentService implements ContactMomentServiceInterface {
 			$record['durationSeconds'] = $duration;
 		}
 
-		try {
-			$created = $objectService->saveObject(object: $record, register: $register, schema: $schema);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: failed to create contactmoment: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID],
-			);
-			throw new RuntimeException('Could not create contactmoment');
-		}
-
-		$record = $this->normalize(result: $created);
-
 		return $record;
-	}//end createContactMoment()
+	}//end withOptionalFields()
 
 	/**
 	 * The fields a contact logged from a case leaves out, with their defaults.

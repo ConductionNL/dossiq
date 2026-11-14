@@ -121,7 +121,18 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 			return;
 		}
 
-		$targets = [
+		foreach ($this->summaryTargets() as $name => $target) {
+			$this->rewriteTarget(objectService: $objectService, name: $name, target: $target, output: $output);
+		}
+	}//end run()
+
+	/**
+	 * The publications and decisions to rewrite, with their fields.
+	 *
+	 * @return array<string, array<string, mixed>> The targets by name.
+	 */
+	private function summaryTargets(): array {
+		return [
 			'publications' => [
 				'register' => $this->settingsService->getWooPublicationConfigValue('woo_publication_register'),
 				'schema'   => $this->settingsService->getWooPublicationConfigValue('woo_publication_schema'),
@@ -133,33 +144,43 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 				'fields'   => ['description'],
 			],
 		];
+	}//end summaryTargets()
 
-		foreach ($targets as $name => $target) {
-			if ($target['register'] === '' || $target['schema'] === '') {
-				$output->info('Woo summary rewrite: ' . $name . ' not configured, skipped.');
-				continue;
-			}
+	/**
+	 * Rewrite the summaries of one target and report the tally.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $name          The target's name.
+	 * @param array<string, mixed> $target        The register, schema and fields.
+	 * @param IOutput              $output        Progress reporting.
+	 *
+	 * @return void
+	 */
+	private function rewriteTarget(object $objectService, string $name, array $target, IOutput $output): void {
+		if ($target['register'] === '' || $target['schema'] === '') {
+			$output->info('Woo summary rewrite: ' . $name . ' not configured, skipped.');
+			return;
+		}
 
-			try {
-				$tally = (array)$this->runAsSystemIfAvailable(
-					objectService: $objectService,
-					operation: fn (): array => $this->rewriteAll(objectService: $objectService, target: $target)
-				);
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: the Woo summary rewrite could not read the ' . $name,
-					['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
-				);
-				$output->info('Woo summary rewrite: ' . $name . ' could not be read, skipped.');
-				continue;
-			}
-
-			$output->info(
-				'Woo summary rewrite, ' . $name . ': ' . (int)($tally['rewritten'] ?? 0) . ' rewritten, '
-				. (int)($tally['failed'] ?? 0) . ' failed.'
+		try {
+			$tally = (array)$this->runAsSystemIfAvailable(
+				objectService: $objectService,
+				operation: fn (): array => $this->rewriteAll(objectService: $objectService, target: $target)
 			);
-		}//end foreach
-	}//end run()
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the Woo summary rewrite could not read the ' . $name,
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
+			);
+			$output->info('Woo summary rewrite: ' . $name . ' could not be read, skipped.');
+			return;
+		}
+
+		$output->info(
+			'Woo summary rewrite, ' . $name . ': ' . (int)($tally['rewritten'] ?? 0) . ' rewritten, '
+			. (int)($tally['failed'] ?? 0) . ' failed.'
+		);
+	}//end rewriteTarget()
 
 	/**
 	 * The new values for one row, or [] when it carries no old summary.

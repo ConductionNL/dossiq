@@ -89,18 +89,8 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 	 * @spec openspec/changes/migrate-committees-to-decidiq/specs/migrate-committees-to-decidiq/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->delegation->isAvailable() === false) {
-			// The decision app is an OPTIONAL runtime dependency. An install
-			// without it keeps its local committees and keeps working; this is
-			// the one case where skipping is correct rather than a silent
-			// no-op, so it is reported as a skip and not as a success.
-			$output->info('Dossiq: the decision app is not installed; committees stay local.');
-			return;
-		}
-
-		$objectService = $this->settings->getObjectService();
+		$objectService = $this->availableObjectService(output: $output);
 		if ($objectService === null) {
-			$output->warning('Dossiq: OpenRegister is not available; committees were not migrated.');
 			return;
 		}
 
@@ -111,6 +101,63 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 			return;
 		}
 
+		$counts = $this->migrateAll(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			output: $output,
+		);
+
+		$output->info(
+			sprintf(
+				'Dossiq committees: %d migrated, %d already mapped, %d failed.',
+				$counts['migrated'],
+				$counts['skipped'],
+				$counts['failed']
+			)
+		);
+
+	}//end run()
+
+	/**
+	 * OpenRegister's object service when the decision app and OpenRegister are both present.
+	 *
+	 * @param IOutput $output The migration output.
+	 *
+	 * @return object|null The object service, or null when the migration is skipped.
+	 */
+	private function availableObjectService(IOutput $output): ?object {
+		if ($this->delegation->isAvailable() === false) {
+			// The decision app is an OPTIONAL runtime dependency. An install
+			// without it keeps its local committees and keeps working; this is
+			// the one case where skipping is correct rather than a silent
+			// no-op, so it is reported as a skip and not as a success.
+			$output->info('Dossiq: the decision app is not installed; committees stay local.');
+			return null;
+		}
+
+		$objectService = $this->settings->getObjectService();
+		if ($objectService === null) {
+			$output->warning('Dossiq: OpenRegister is not available; committees were not migrated.');
+			return null;
+		}
+
+		return $objectService;
+	}//end availableObjectService()
+
+	/**
+	 * Migrate every local committee under the system identity.
+	 *
+	 * @param object  $objectService OpenRegister's object service.
+	 * @param string  $register      The register slug.
+	 * @param string  $schema        The committee schema slug.
+	 * @param IOutput $output        The migration output.
+	 *
+	 * @return array<string, int> The migrated, skipped and failed counts.
+	 *
+	 * @throws RuntimeException When OpenRegister exposes no runAsSystem().
+	 */
+	private function migrateAll(object $objectService, string $register, string $schema, IOutput $output): array {
 		// 🔴 A repair step runs during `occ upgrade`, where there is NO session.
 		// Without a system identity OpenRegister resolves the actor as Anonymous
 		// and refuses every write — and $output->warning() does not fail an
@@ -148,16 +195,8 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 			}
 		);
 
-		$output->info(
-			sprintf(
-				'Dossiq committees: %d migrated, %d already mapped, %d failed.',
-				$counts['migrated'],
-				$counts['skipped'],
-				$counts['failed']
-			)
-		);
-
-	}//end run()
+		return $counts;
+	}//end migrateAll()
 
 	/**
 	 * Read the local committees.

@@ -90,6 +90,29 @@ class CaseTypePhases implements CaseTypePhasesInterface {
 		}
 
 		$grouped  = $this->phasesOf(caseTypeId: $caseTypeId);
+		[$phases, $unplaced, $count] = $this->placedTasks(caseTypeId: $caseTypeId, grouped: $grouped);
+
+		return [
+			'caseTypeId'      => $caseTypeId,
+			'phases'          => $this->ordered(phases: $this->withoutBareFinals(phases: $phases, phased: $grouped['phased'])),
+			'unplaced'        => $unplaced,
+			'alwaysAvailable' => $this->alwaysAvailable(caseType: $caseType),
+			'taskCount'       => $count,
+		];
+	}//end phasesFor()
+
+	/**
+	 * The phases with each running task placed in its status's phase, the tasks no phase took, and the count.
+	 *
+	 * @param string               $caseTypeId The case type id.
+	 * @param array<string, mixed> $grouped    The empty phases and the phase key per status, from {@see phasesOf()}.
+	 *
+	 * @return array{0: array<string, array<string, mixed>>, 1: array<int, array<string, mixed>>, 2: int}
+	 *         The phases, the unplaced tasks and the task count.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function placedTasks(string $caseTypeId, array $grouped): array {
 		$phases   = $grouped['phases'];
 		$roles    = $this->roleNames(caseTypeId: $caseTypeId);
 		$unplaced = [];
@@ -111,14 +134,8 @@ class CaseTypePhases implements CaseTypePhasesInterface {
 			$unplaced[] = $task;
 		}
 
-		return [
-			'caseTypeId'      => $caseTypeId,
-			'phases'          => $this->ordered(phases: $this->withoutBareFinals(phases: $phases, phased: $grouped['phased'])),
-			'unplaced'        => $unplaced,
-			'alwaysAvailable' => $this->alwaysAvailable(caseType: $caseType),
-			'taskCount'       => $count,
-		];
-	}//end phasesFor()
+		return [$phases, $unplaced, $count];
+	}//end placedTasks()
 
 	/**
 	 * The case type's phases, empty, and which phase each status falls under.
@@ -154,19 +171,33 @@ class CaseTypePhases implements CaseTypePhasesInterface {
 				continue;
 			}
 
-			$phases[$key] = [
-				'id'         => $id,
-				'caseTypeId' => $caseTypeId,
-				'name'       => $placed['name'],
-				'order'      => $placed['order'],
-				'isFinal'    => (($statusType['isFinal'] ?? false) === true && $placed['phase'] === ''),
-				'statusIds'  => [$id],
-				'tasks'      => [],
-			];
+			$phases[$key] = $this->newPhase(caseTypeId: $caseTypeId, statusType: $statusType, id: $id, placed: $placed);
 		}//end foreach
 
 		return ['phases' => $phases, 'phaseOfStatus' => $ofStatus, 'phased' => $phased];
 	}//end phasesOf()
+
+	/**
+	 * A phase opened by its first status, without tasks yet.
+	 *
+	 * @param string               $caseTypeId The case type id.
+	 * @param array<string, mixed> $statusType The status type.
+	 * @param string               $id         The status type id.
+	 * @param array<string, mixed> $placed     Where the status falls, from {@see placementOf()}.
+	 *
+	 * @return array<string, mixed> The phase.
+	 */
+	private function newPhase(string $caseTypeId, array $statusType, string $id, array $placed): array {
+		return [
+			'id'         => $id,
+			'caseTypeId' => $caseTypeId,
+			'name'       => $placed['name'],
+			'order'      => $placed['order'],
+			'isFinal'    => (($statusType['isFinal'] ?? false) === true && $placed['phase'] === ''),
+			'statusIds'  => [$id],
+			'tasks'      => [],
+		];
+	}//end newPhase()
 
 	/**
 	 * Where a status falls: the phase it names, or a phase of its own named after it.

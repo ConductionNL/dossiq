@@ -321,12 +321,20 @@ class PartyKindConsumer implements PartyKindConsumerInterface {
 			return null;
 		}
 
-		foreach ($rows as $row) {
-			$data = $row;
-			if ($row instanceof \JsonSerializable) {
-				$data = $row->jsonSerialize();
-			}
+		return $this->uuidForTarget(rows: $rows, target: $target);
+	}//end existingAcceptanceId()
 
+	/**
+	 * The uuid of the first acceptance row for a target, or null when none carries one.
+	 *
+	 * @param iterable<mixed> $rows   The acceptance rows found.
+	 * @param string          $target The `<app>:<schema>:<type>` literal.
+	 *
+	 * @return string|null The uuid, or null.
+	 */
+	private function uuidForTarget(iterable $rows, string $target): ?string {
+		foreach ($rows as $row) {
+			$data = $this->rowData(row: $row);
 			if (is_array($data) === false) {
 				continue;
 			}
@@ -342,7 +350,23 @@ class PartyKindConsumer implements PartyKindConsumerInterface {
 		}
 
 		return null;
-	}//end existingAcceptanceId()
+	}//end uuidForTarget()
+
+	/**
+	 * A row as plain data, serialised when it is an entity.
+	 *
+	 * @param mixed $row The row.
+	 *
+	 * @return mixed The row's data.
+	 */
+	private function rowData(mixed $row): mixed {
+		$data = $row;
+		if ($row instanceof \JsonSerializable) {
+			$data = $row->jsonSerialize();
+		}
+
+		return $data;
+	}//end rowData()
 
 	/**
 	 * OpenRegister's object service, or null when it is unavailable.

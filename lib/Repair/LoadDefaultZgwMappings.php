@@ -41,6 +41,8 @@ use Psr\Log\LoggerInterface;
  * Repair step that loads default ZGW API mapping configurations.
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class LoadDefaultZgwMappings implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -451,9 +453,32 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		$channelMapping = $this->zgwMappingService->getMapping(
 			resourceKey: 'kanaal'
 		);
+		if ($this->kanaalMappingReady(output: $output, channelMapping: $channelMapping) === false) {
+			return;
+		}
+
+		$objectService = $this->kanaalObjectService(output: $output);
+		if ($objectService === null) {
+			return;
+		}
+
+		$result = $this->createMissingKanalen(objectService: $objectService, channelMapping: $channelMapping);
+
+		$this->reportKanalen(output: $output, created: $result['created'], refused: $result['refused']);
+	}//end createDefaultKanalen()
+
+	/**
+	 * Whether the kanaal mapping is configured with a register and schema.
+	 *
+	 * @param IOutput                   $output         The output interface for progress reporting
+	 * @param array<string, mixed>|null $channelMapping The kanaal mapping, or null when absent
+	 *
+	 * @return bool True when the default channels can be written
+	 */
+	private function kanaalMappingReady(IOutput $output, ?array $channelMapping): bool {
 		if ($channelMapping === null) {
 			$output->info('Kanaal mapping not configured. Skipping default channels.');
-			return;
+			return false;
 		}
 
 		// On a fresh install the schema settings can still be empty when this
@@ -463,19 +488,40 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			|| (string)($channelMapping['sourceSchema'] ?? '') === ''
 		) {
 			$output->info('Kanaal mapping has no register/schema configured yet. Skipping default channels.');
-			return;
+			return false;
 		}
 
+		return true;
+	}//end kanaalMappingReady()
+
+	/**
+	 * Resolve OpenRegister's ObjectService for the default channels.
+	 *
+	 * @param IOutput $output The output interface for progress reporting
+	 *
+	 * @return object|null The object service, or null when it is unavailable
+	 */
+	private function kanaalObjectService(IOutput $output): ?object {
 		try {
 			$container = \OC::$server;
-			$objectService = $container->get(
+			return $container->get(
 				'OCA\OpenRegister\Service\ObjectService'
 			);
 		} catch (\Throwable $e) {
 			$output->info('OpenRegister ObjectService not available. Skipping default channels.');
-			return;
+			return null;
 		}
+	}//end kanaalObjectService()
 
+	/**
+	 * Create every missing default channel under the system identity.
+	 *
+	 * @param object               $objectService  OpenRegister's ObjectService
+	 * @param array<string, mixed> $channelMapping The kanaal mapping
+	 *
+	 * @return array{created: int, refused: list<string>} The count created and the names refused
+	 */
+	private function createMissingKanalen(object $objectService, array $channelMapping): array {
 		$defaults = $this->getDefaultKanalen();
 		$created = 0;
 		$refused = [];
@@ -495,35 +541,70 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			objectService: $objectService,
 			work: function () use ($objectService, $channelMapping, $defaults, &$created, &$refused): void {
 				foreach ($defaults as $channel) {
-					try {
-						// Check if kanaal already exists.
-						$query = $objectService->buildSearchQuery(
-							requestParams: ['name' => $channel['name']],
-							register: $channelMapping['sourceRegister'],
-							schema: $channelMapping['sourceSchema']
-						);
-						$existing = $objectService->searchObjectsPaginated(query: $query);
-						if (($existing['total'] ?? 0) > 0) {
-							continue;
-						}
-
-						$objectService->saveObject(
-							register: $channelMapping['sourceRegister'],
-							schema: $channelMapping['sourceSchema'],
-							object: $channel
-						);
+					$outcome = $this->createKanaal(
+						objectService: $objectService,
+						channelMapping: $channelMapping,
+						channel: $channel
+					);
+					if ($outcome === 'created') {
 						$created++;
-					} catch (\Throwable $e) {
+					} else if ($outcome === 'refused') {
 						$refused[] = (string)$channel['name'];
-						$this->logger->error(
-							'Dossiq: default notification channel refused',
-							['channel' => $channel['name'], 'exception' => $e->getMessage()]
-						);
-					}//end try
-				}//end foreach
+					}
+				}
 			}
 		);
 
+		return ['created' => $created, 'refused' => $refused];
+	}//end createMissingKanalen()
+
+	/**
+	 * Create one default channel unless it already exists.
+	 *
+	 * @param object               $objectService  OpenRegister's ObjectService
+	 * @param array<string, mixed> $channelMapping The kanaal mapping
+	 * @param array<string, mixed> $channel        The default channel data
+	 *
+	 * @return string 'created', 'exists' or 'refused'
+	 */
+	private function createKanaal(object $objectService, array $channelMapping, array $channel): string {
+		try {
+			// Check if kanaal already exists.
+			$query = $objectService->buildSearchQuery(
+				requestParams: ['name' => $channel['name']],
+				register: $channelMapping['sourceRegister'],
+				schema: $channelMapping['sourceSchema']
+			);
+			$existing = $objectService->searchObjectsPaginated(query: $query);
+			if (($existing['total'] ?? 0) > 0) {
+				return 'exists';
+			}
+
+			$objectService->saveObject(
+				register: $channelMapping['sourceRegister'],
+				schema: $channelMapping['sourceSchema'],
+				object: $channel
+			);
+			return 'created';
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Dossiq: default notification channel refused',
+				['channel' => $channel['name'], 'exception' => $e->getMessage()]
+			);
+			return 'refused';
+		}//end try
+	}//end createKanaal()
+
+	/**
+	 * Report how many default channels were created and which were refused.
+	 *
+	 * @param IOutput      $output  The output interface for progress reporting
+	 * @param int          $created Number of channels created
+	 * @param list<string> $refused Names of refused channels
+	 *
+	 * @return void
+	 */
+	private function reportKanalen(IOutput $output, int $created, array $refused): void {
 		if ($refused !== []) {
 			$output->warning(
 				sprintf(
@@ -537,7 +618,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		}
 
 		$output->info("Created {$created} default notification channels.");
-	}//end createDefaultKanalen()
+	}//end reportKanalen()
 
 	/**
 	 * Get default notification channel configurations.

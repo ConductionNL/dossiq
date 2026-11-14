@@ -538,14 +538,12 @@ class WooPublicationService implements WooPublicationServiceInterface {
 			return $availability;
 		}
 
-		if ($decisionId === '') {
-			$resolved = $this->caseLedger->resolveWooDecision(caseId: $caseId);
-			if ($resolved['decisionId'] === '') {
-				return $resolved['refusal'];
-			}
-
-			$decisionId = $resolved['decisionId'];
+		$resolved = $this->decisionToWithdraw(decisionId: $decisionId, caseId: $caseId);
+		if ($resolved['decisionId'] === '') {
+			return $resolved['refusal'];
 		}
+
+		$decisionId = $resolved['decisionId'];
 
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
@@ -571,15 +569,48 @@ class WooPublicationService implements WooPublicationServiceInterface {
 
 		$objectService->saveObject(object: $decision, register: $register, schema: $decisionSchema, uuid: $decisionId);
 
+		return $this->clearWithheld(publicationId: $publicationId, caseId: (string)($decision['case'] ?? $caseId));
+	}//end withdraw()
+
+	/**
+	 * The decision to withdraw: the one given, or the case's Woo decision.
+	 *
+	 * @param string $decisionId The decision UUID, or '' to use the case's Woo decision.
+	 * @param string $caseId     The case UUID; needed when no decision id is given.
+	 *
+	 * @return array<string, mixed> `{decisionId: string, refusal?: array}`; an empty id carries the refusal.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 */
+	private function decisionToWithdraw(string $decisionId, string $caseId): array {
+		if ($decisionId === '') {
+			return $this->caseLedger->resolveWooDecision(caseId: $caseId);
+		}
+
+		return ['decisionId' => $decisionId];
+	}//end decisionToWithdraw()
+
+	/**
+	 * Clear the withheld list of a withdrawn publication and record it on the case.
+	 *
+	 * @param string $publicationId The withdrawn publication.
+	 * @param string $caseId        The case the decision belongs to.
+	 *
+	 * @return array<string, mixed> `{available: true, withheldRecord: mixed}`.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	private function clearWithheld(string $publicationId, string $caseId): array {
 		// A withdrawn publication withholds nothing any more: its list is cleared.
 		$withheld = $this->caseLedger->recordWithheld(publicationId: $publicationId, assessments: []);
 		$this->caseLedger->writeCaseState(
-			caseId: (string)($decision['case'] ?? $caseId),
+			caseId: $caseId,
 			changes: ['wooPublicationStatus' => self::STATUS_WITHDRAWN, 'wooWithheldNote' => $withheld['note']],
 		);
 
 		return ['available' => true, 'withheldRecord' => $withheld['record']];
-	}//end withdraw()
+	}//end clearWithheld()
 
 	/**
 	 * Build a stable reference URL for a publication.

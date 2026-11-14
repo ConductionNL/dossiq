@@ -39,6 +39,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
+use OCP\Files\Node;
 use OCP\Files\NotFoundException;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -122,10 +123,8 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	 */
 	private function runInner(object $objectService, IOutput $output): void {
 
-		$register = $this->settingsService->getConfigValue('register');
-		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
-		if ($register === '' || $infoSchema === '') {
-			$output->info('Dossiq backfill: dossier schemas not configured; skipping.');
+		$target = $this->configuredTarget(output: $output);
+		if ($target === null) {
 			return;
 		}
 
@@ -135,6 +134,40 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			return;
 		}
 
+		[$created, $skipped] = $this->backfillEveryFolder(objectService: $objectService, target: $target, folder: $folder);
+
+		$output->info('Dossiq backfill: created ' . $created . ' informatieobject(en), skipped ' . $skipped . ' existing.');
+	}//end runInner()
+
+	/**
+	 * The register and informatieobject schema, when both are configured.
+	 *
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return array{0: string, 1: string}|null The register and schema, or null when not configured.
+	 */
+	private function configuredTarget(IOutput $output): ?array {
+		$register = $this->settingsService->getConfigValue('register');
+		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
+		if ($register === '' || $infoSchema === '') {
+			$output->info('Dossiq backfill: dossier schemas not configured; skipping.');
+			return null;
+		}
+
+		return [$register, $infoSchema];
+	}//end configuredTarget()
+
+	/**
+	 * Back-fill every case folder under the storage folder.
+	 *
+	 * @param object                      $objectService The OpenRegister object service.
+	 * @param array{0: string, 1: string} $target        The register and informatieobject schema.
+	 * @param Folder                      $folder        The storage folder.
+	 *
+	 * @return array{0: int, 1: int} The number created and the number skipped.
+	 */
+	private function backfillEveryFolder(object $objectService, array $target, Folder $folder): array {
+		[$register, $infoSchema] = $target;
 		$existing = $this->existingFilenames(objectService: $objectService, register: $register, schema: $infoSchema);
 
 		$created = 0;
@@ -156,8 +189,8 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			$existing = $result['existing'];
 		}//end foreach
 
-		$output->info('Dossiq backfill: created ' . $created . ' informatieobject(en), skipped ' . $skipped . ' existing.');
-	}//end runInner()
+		return [$created, $skipped];
+	}//end backfillEveryFolder()
 
 	/**
 	 * Back-fill every not-yet-registered file inside one case folder.
@@ -178,14 +211,12 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 		$skipped = 0;
 
 		foreach ($node->getDirectoryListing() as $fileNode) {
-			if ($fileNode instanceof File === false) {
+			$file = $this->backfillableFile(node: $fileNode);
+			if ($file === null) {
 				continue;
 			}
 
-			$fileName = $fileNode->getName();
-			if (str_starts_with($fileName, '_part_') === true) {
-				continue;
-			}
+			$fileName = $file->getName();
 
 			if (in_array($fileName, $existing, true) === true) {
 				$skipped++;
@@ -198,7 +229,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 					register: $register,
 					schema: $schema,
 					folderUuid: $node->getName(),
-					file: $fileNode,
+					file: $file,
 				);
 				$existing[] = $fileName;
 				$created++;
@@ -212,6 +243,25 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 
 		return ['created' => $created, 'skipped' => $skipped, 'existing' => $existing];
 	}//end backfillFolderNode()
+
+	/**
+	 * The node as a file to back-fill, or null for a folder or an upload fragment.
+	 *
+	 * @param Node $node A node in a case folder.
+	 *
+	 * @return File|null The file, or null when it is not back-filled.
+	 */
+	private function backfillableFile(Node $node): ?File {
+		if ($node instanceof File === false) {
+			return null;
+		}
+
+		if (str_starts_with($node->getName(), '_part_') === true) {
+			return null;
+		}
+
+		return $node;
+	}//end backfillableFile()
 
 	/**
 	 * Create an informatieobject (+ join when possible) for one existing file.

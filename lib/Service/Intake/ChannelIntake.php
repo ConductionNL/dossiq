@@ -293,11 +293,7 @@ class ChannelIntake implements ChannelIntakeInterface {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $caseSchema === '') {
-			$this->logger->warning(
-				'ChannelIntake: the register is not configured, so a routed message opened no case',
-				['caseType' => $caseTypeId]
-			);
+		if ($this->registerMissing(objectService: $objectService, register: $register, caseSchema: $caseSchema, caseTypeId: $caseTypeId) === true) {
 			return '';
 		}
 
@@ -320,6 +316,44 @@ class ChannelIntake implements ChannelIntakeInterface {
 			return '';
 		}
 
+		return $this->writtenCaseId(created: $created, caseTypeId: $caseTypeId);
+	}//end write()
+
+	/**
+	 * Whether the register is unconfigured, logging a warning when it is.
+	 *
+	 * @param object|null $objectService OpenRegister's ObjectService, or null.
+	 * @param string      $register      The configured register.
+	 * @param string      $caseSchema    The configured case schema.
+	 * @param string      $caseTypeId    The case type, for the log line.
+	 *
+	 * @return bool True when no case can be written.
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function registerMissing(?object $objectService, string $register, string $caseSchema, string $caseTypeId): bool {
+		if ($objectService === null || $register === '' || $caseSchema === '') {
+			$this->logger->warning(
+				'ChannelIntake: the register is not configured, so a routed message opened no case',
+				['caseType' => $caseTypeId]
+			);
+			return true;
+		}
+
+		return false;
+	}//end registerMissing()
+
+	/**
+	 * The id the written case answered, or '' (logged) when it answered none.
+	 *
+	 * @param mixed  $created    What the save returned.
+	 * @param string $caseTypeId The case type, for the log line.
+	 *
+	 * @return string The new case's id, or ''.
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function writtenCaseId(mixed $created, string $caseTypeId): string {
 		$row = $this->objectAsArray(value: $created);
 		$caseId = (string)($row['@self']['id'] ?? ($row['id'] ?? ''));
 		if ($caseId === '') {
@@ -331,7 +365,7 @@ class ChannelIntake implements ChannelIntakeInterface {
 		}
 
 		return $caseId;
-	}//end write()
+	}//end writtenCaseId()
 
 	/**
 	 * The case a routed message opens, before it is written.

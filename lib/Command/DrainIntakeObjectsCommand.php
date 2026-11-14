@@ -164,7 +164,14 @@ class DrainIntakeObjectsCommand extends Command {
 		$submitter = $this->formSubmit();
 		$admin = $this->admin(output: $output);
 
-		if ($objectService === null || $submitter === null || $admin === null || $register === '' || $caseSchema === '') {
+		$ready = $this->prerequisitesMet(
+			objectService: $objectService,
+			submitter: $submitter,
+			admin: $admin,
+			register: $register,
+			caseSchema: $caseSchema
+		);
+		if ($ready === false) {
 			$output->writeln('<error>OpenRegister with its form submit (openregister#4563) and the dossiq register are needed to drain.</error>');
 			return Command::FAILURE;
 		}
@@ -183,27 +190,82 @@ class DrainIntakeObjectsCommand extends Command {
 		$report = $this->drain->drain(
 			sources: $sources,
 			plan: self::PLAN,
-			existing: fn (array $source): string => $this->caseHolding(
-				objectService: $objectService,
-				register: $register,
-				caseSchema: $caseSchema,
-				source: $source
-			),
-			submit: fn (array $case): array => $this->submit(
-				submitter: $submitter,
-				register: $register,
-				caseSchema: $caseSchema,
-				case: $case,
-				admin: $admin
-			),
-			markSource: function (array $source, string $caseId) use ($objectService, $register, $sourceSchema): void {
-				$this->markSource(objectService: $objectService, register: $register, schema: $sourceSchema, source: $source, caseId: $caseId);
-			},
+			existing: $this->existingCaseOf(objectService: $objectService, register: $register, caseSchema: $caseSchema),
+			submit: $this->submitterOf(submitter: $submitter, register: $register, caseSchema: $caseSchema, admin: $admin),
+			markSource: $this->sourceMarker(objectService: $objectService, register: $register, sourceSchema: $sourceSchema),
 			apply: $apply
 		);
 
 		return $this->print(report: $report, apply: $apply, output: $output);
 	}//end execute()
+
+	/**
+	 * Whether OpenRegister, its form submit, an admin and the dossiq register are all in hand.
+	 *
+	 * @param object|null $objectService OpenRegister's object service.
+	 * @param object|null $submitter     The FormSubmitService.
+	 * @param IUser|null  $admin         The admin the cases are opened as.
+	 * @param string      $register      The dossiq register.
+	 * @param string      $caseSchema    The case schema.
+	 *
+	 * @return bool
+	 */
+	private function prerequisitesMet(?object $objectService, ?object $submitter, ?IUser $admin, string $register, string $caseSchema): bool {
+		return !($objectService === null || $submitter === null || $admin === null || $register === '' || $caseSchema === '');
+	}//end prerequisitesMet()
+
+	/**
+	 * The callback that names the case already holding a source.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The dossiq register.
+	 * @param string $caseSchema    The case schema.
+	 *
+	 * @return callable(array): string
+	 */
+	private function existingCaseOf(object $objectService, string $register, string $caseSchema): callable {
+		return fn (array $source): string => $this->caseHolding(
+			objectService: $objectService,
+			register: $register,
+			caseSchema: $caseSchema,
+			source: $source
+		);
+	}//end existingCaseOf()
+
+	/**
+	 * The callback that submits one case.
+	 *
+	 * @param object $submitter  The FormSubmitService.
+	 * @param string $register   The dossiq register.
+	 * @param string $caseSchema The case schema.
+	 * @param IUser  $admin      The admin the case is opened as.
+	 *
+	 * @return callable(array): array
+	 */
+	private function submitterOf(object $submitter, string $register, string $caseSchema, IUser $admin): callable {
+		return fn (array $case): array => $this->submit(
+			submitter: $submitter,
+			register: $register,
+			caseSchema: $caseSchema,
+			case: $case,
+			admin: $admin
+		);
+	}//end submitterOf()
+
+	/**
+	 * The callback that marks a source with the case it became.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The dossiq register.
+	 * @param string $sourceSchema  The source schema.
+	 *
+	 * @return callable(array, string): void
+	 */
+	private function sourceMarker(object $objectService, string $register, string $sourceSchema): callable {
+		return function (array $source, string $caseId) use ($objectService, $register, $sourceSchema): void {
+			$this->markSource(objectService: $objectService, register: $register, schema: $sourceSchema, source: $source, caseId: $caseId);
+		};
+	}//end sourceMarker()
 
 	/**
 	 * Print the report.
@@ -215,19 +277,7 @@ class DrainIntakeObjectsCommand extends Command {
 	 * @return int 0 when nothing is pending.
 	 */
 	private function print(array $report, bool $apply, OutputInterface $output): int {
-		foreach ($report['delivered'] as $row) {
-			$outcome = ' (dry run)';
-			if ($row['case'] !== '') {
-				$outcome = ' -> case ' . $row['case'];
-			}
-
-			$output->writeln('  delivered ' . $row['source'] . $outcome);
-		}
-
-		foreach ($report['refused'] as $row) {
-			$codes = array_map(static fn (array $finding): string => ($finding['property'] ?? '') . ':' . ($finding['code'] ?? ''), $row['findings']);
-			$output->writeln('  <error>refused</error> ' . $row['source'] . ' ' . implode(', ', $codes));
-		}
+		$this->printRows(report: $report, output: $output);
 
 		$pending = count($report['refused']);
 		$hint = '';
@@ -253,6 +303,30 @@ class DrainIntakeObjectsCommand extends Command {
 
 		return Command::FAILURE;
 	}//end print()
+
+	/**
+	 * Print one line per delivered and per refused source.
+	 *
+	 * @param array<string, array<int, mixed>> $report The report.
+	 * @param OutputInterface                  $output The output.
+	 *
+	 * @return void
+	 */
+	private function printRows(array $report, OutputInterface $output): void {
+		foreach ($report['delivered'] as $row) {
+			$outcome = ' (dry run)';
+			if ($row['case'] !== '') {
+				$outcome = ' -> case ' . $row['case'];
+			}
+
+			$output->writeln('  delivered ' . $row['source'] . $outcome);
+		}
+
+		foreach ($report['refused'] as $row) {
+			$codes = array_map(static fn (array $finding): string => ($finding['property'] ?? '') . ':' . ($finding['code'] ?? ''), $row['findings']);
+			$output->writeln('  <error>refused</error> ' . $row['source'] . ' ' . implode(', ', $codes));
+		}
+	}//end printRows()
 
 	/**
 	 * Submit one case through OpenRegister's form submit.

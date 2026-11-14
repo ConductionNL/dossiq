@@ -501,19 +501,7 @@ class OpenCatalogiApiClient {
 	private function fetchCatalogi(): array {
 		$url = rtrim($this->urlGenerator->getBaseUrl(), '/') . self::CATALOGI_PATH;
 
-		$options = [
-			'timeout' => self::TIMEOUT_SECONDS,
-			'headers' => [
-				'OCS-APIREQUEST' => 'true',
-				'Accept' => 'application/json',
-			],
-		];
-
-		$serviceUid = $this->appConfig->getValueString(AppIdentity::APP_ID, 'opencatalogi_service_uid', '');
-		$serviceAppPass = $this->appConfig->getValueString(AppIdentity::APP_ID, 'opencatalogi_service_app_password', '');
-		if ($serviceUid !== '' && $serviceAppPass !== '') {
-			$options['auth'] = [$serviceUid, $serviceAppPass];
-		}
+		$options = $this->catalogiRequestOptions();
 
 		try {
 			$client = $this->clientService->newClient();
@@ -535,4 +523,27 @@ class OpenCatalogiApiClient {
 			throw new RuntimeException(self::DOMAIN_ERROR, 0, $e);
 		}//end try
 	}//end fetchCatalogi()
+
+	/**
+	 * The request options for the catalog listing, with the service account when one is configured.
+	 *
+	 * @return array<string, mixed> The HTTP client options.
+	 */
+	private function catalogiRequestOptions(): array {
+		$options = [
+			'timeout' => self::TIMEOUT_SECONDS,
+			'headers' => [
+				'OCS-APIREQUEST' => 'true',
+				'Accept' => 'application/json',
+			],
+		];
+
+		$serviceUid = $this->appConfig->getValueString(AppIdentity::APP_ID, 'opencatalogi_service_uid', '');
+		$serviceAppPass = $this->appConfig->getValueString(AppIdentity::APP_ID, 'opencatalogi_service_app_password', '');
+		if ($serviceUid !== '' && $serviceAppPass !== '') {
+			$options['auth'] = [$serviceUid, $serviceAppPass];
+		}
+
+		return $options;
+	}//end catalogiRequestOptions()
 }//end class
