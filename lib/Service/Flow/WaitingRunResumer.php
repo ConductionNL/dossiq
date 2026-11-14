@@ -94,6 +94,20 @@ class WaitingRunResumer {
 			return;
 		}
 
+		$this->signalAwaiting(suspended: $suspended, caseId: $caseId, decisionRef: $decisionRef, status: $status);
+	}//end resumeWaitingRun()
+
+	/**
+	 * Signal the first suspended run waiting on this decision with its outcome.
+	 *
+	 * @param iterable<object> $suspended   The runs suspended on the case.
+	 * @param string           $caseId      The case the decision belongs to.
+	 * @param string           $decisionRef The concluded decision's id.
+	 * @param string           $status      The terminal status decidiq reported.
+	 *
+	 * @return void
+	 */
+	private function signalAwaiting(iterable $suspended, string $caseId, string $decisionRef, string $status): void {
 		$run = $this->firstAwaiting(suspended: $suspended, decisionRef: $decisionRef);
 		if ($run === null) {
 			return;
@@ -110,7 +124,7 @@ class WaitingRunResumer {
 				'caseId' => $caseId,
 			]
 		);
-	}//end resumeWaitingRun()
+	}//end signalAwaiting()
 
 	/**
 	 * The first suspended run waiting on this decision, or null.

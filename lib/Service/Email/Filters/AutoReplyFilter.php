@@ -92,6 +92,20 @@ class AutoReplyFilter implements InboundMailFilter {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function decide(InboundMessage $message): FilterVerdict {
+		return $this->autoSubmittedVerdict(message: $message)
+			?? $this->precedenceVerdict(message: $message)
+			?? $this->autoHeaderVerdict(message: $message)
+			?? FilterVerdict::pass(filterName: self::NAME);
+	}//end decide()
+
+	/**
+	 * Reject a message that declares it was submitted automatically.
+	 *
+	 * @param InboundMessage $message The message.
+	 *
+	 * @return FilterVerdict|null The rejection, or null when it does not declare so.
+	 */
+	private function autoSubmittedVerdict(InboundMessage $message): FilterVerdict|null {
 		$autoSubmitted = strtolower(trim($message->header(name: 'auto-submitted')));
 		if ($autoSubmitted !== '' && str_starts_with($autoSubmitted, 'no') === false) {
 			return FilterVerdict::reject(
@@ -100,6 +114,17 @@ class AutoReplyFilter implements InboundMailFilter {
 			);
 		}
 
+		return null;
+	}//end autoSubmittedVerdict()
+
+	/**
+	 * Reject a message that declares a bulk precedence.
+	 *
+	 * @param InboundMessage $message The message.
+	 *
+	 * @return FilterVerdict|null The rejection, or null when it does not declare so.
+	 */
+	private function precedenceVerdict(InboundMessage $message): FilterVerdict|null {
 		$precedence = strtolower(trim($message->header(name: 'precedence')));
 		if (in_array($precedence, self::BULK_PRECEDENCE, true) === true) {
 			return FilterVerdict::reject(
@@ -108,6 +133,17 @@ class AutoReplyFilter implements InboundMailFilter {
 			);
 		}
 
+		return null;
+	}//end precedenceVerdict()
+
+	/**
+	 * Reject a message that carries a header only automatic mail sets.
+	 *
+	 * @param InboundMessage $message The message.
+	 *
+	 * @return FilterVerdict|null The rejection, or null when it carries none.
+	 */
+	private function autoHeaderVerdict(InboundMessage $message): FilterVerdict|null {
 		foreach (['x-autoreply', 'x-autorespond', 'x-auto-response-suppress'] as $header) {
 			if ($message->hasHeader(name: $header) === true) {
 				return FilterVerdict::reject(
@@ -117,6 +153,6 @@ class AutoReplyFilter implements InboundMailFilter {
 			}
 		}
 
-		return FilterVerdict::pass(filterName: self::NAME);
-	}//end decide()
+		return null;
+	}//end autoHeaderVerdict()
 }//end class
