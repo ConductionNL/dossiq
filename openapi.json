@@ -636,6 +636,10 @@
             "description": "Controller for managing Dossiq application settings."
         },
         {
+            "name": "settlement",
+            "description": "The settlements of a case, for a reader of that case."
+        },
+        {
             "name": "setup",
             "description": "First-time setup status + actions for the abstract setup wizard."
         },
@@ -9747,6 +9751,51 @@
                 "description": "The instalments and totals of the case's payment schedules. A case the user may not read answers 403 before anything is read. Needs a signed-in Nextcloud user.",
                 "tags": [
                     "payment-schedule"
+                ],
+                "parameters": [
+                    {
+                        "name": "caseId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The case UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    }
+                }
+            }
+        },
+        "/cases/{caseId}/settlements": {
+            "get": {
+                "operationId": "settlement-for-case",
+                "summary": "The settlements of the case",
+                "description": "The settlements of the case, reached through its applications and their executions. A case the user may not read answers 403 before anything is read. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "settlement"
                 ],
                 "parameters": [
                     {

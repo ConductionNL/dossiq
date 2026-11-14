@@ -36,7 +36,8 @@
     "overviewCards": [
       "case-overview-sections",
       "case-grant-decisions-card",
-      "case-payment-schedule"
+      "case-payment-schedule",
+      "case-settlement"
     ],
     "sideCards": [
       "side-payment-amounts",

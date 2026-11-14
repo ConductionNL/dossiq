@@ -569,6 +569,8 @@ describe('the tabs', () => {
 		added.push('case-summary')
 		added.push('case-grant-decisions-card')
 		added.push('case-payment-schedule')
+		// overview-cards-per-case-type: the settlement of a grant case, a card of the Overview tab.
+		added.push('case-settlement')
 		added.push('case-overview-sections')
 		// notice-of-default-from-the-case: the case's notices of default, a card of the Fees tab.
 		added.push('case-notices-of-default')
