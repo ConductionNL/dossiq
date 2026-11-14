@@ -122,7 +122,7 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 		}
 
 		foreach ($this->summaryTargets() as $name => $target) {
-			$this->rewriteTarget(objectService: $objectService, name: $name, target: $target, output: $output);
+			$this->rewriteTarget(summaryTarget: new SummaryTarget(objectService: $objectService, target: $target), name: $name, output: $output);
 		}
 	}//end run()
 
@@ -149,14 +149,14 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 	/**
 	 * Rewrite the summaries of one target and report the tally.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $name          The target's name.
-	 * @param array<string, mixed> $target        The register, schema and fields.
-	 * @param IOutput              $output        Progress reporting.
+	 * @param SummaryTarget $summaryTarget OpenRegister's object service with the register, schema and fields.
+	 * @param string        $name          The target's name.
+	 * @param IOutput       $output        Progress reporting.
 	 *
 	 * @return void
 	 */
-	private function rewriteTarget(object $objectService, string $name, array $target, IOutput $output): void {
+	private function rewriteTarget(SummaryTarget $summaryTarget, string $name, IOutput $output): void {
+		$target = $summaryTarget->target;
 		if ($target['register'] === '' || $target['schema'] === '') {
 			$output->info('Woo summary rewrite: ' . $name . ' not configured, skipped.');
 			return;
@@ -164,8 +164,8 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 
 		try {
 			$tally = (array)$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): array => $this->rewriteAll(objectService: $objectService, target: $target)
+				objectService: $summaryTarget->objectService,
+				operation: fn (): array => $this->rewriteAll(summaryTarget: $summaryTarget)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
@@ -220,12 +220,13 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 	/**
 	 * Walk every row of one schema and rewrite the ones that match.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param array{register: string, schema: string, fields: array<int, string>} $target What to walk.
+	 * @param SummaryTarget $summaryTarget OpenRegister's ObjectService with what to walk.
 	 *
 	 * @return array{rewritten: int, failed: int} The tally.
 	 */
-	private function rewriteAll(object $objectService, array $target): array {
+	private function rewriteAll(SummaryTarget $summaryTarget): array {
+		$objectService = $summaryTarget->objectService;
+		$target = $summaryTarget->target;
 		$tally = ['rewritten' => 0, 'failed' => 0];
 
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
@@ -237,7 +238,7 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 			);
 
 			foreach ($rows as $row) {
-				$outcome = $this->rewriteRow(objectService: $objectService, target: $target, row: $row);
+				$outcome = $this->rewriteRow(summaryTarget: $summaryTarget, row: $row);
 				if ($outcome !== null) {
 					$tally[$outcome] = ($tally[$outcome] + 1);
 				}
@@ -254,13 +255,13 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 	/**
 	 * Rewrite one row when it matches.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param array{register: string, schema: string, fields: array<int, string>} $target Where it lives.
+	 * @param SummaryTarget $summaryTarget OpenRegister's ObjectService with where the row lives.
 	 * @param array<string, mixed> $row The stored row.
 	 *
 	 * @return string|null `rewritten`, `failed`, or null when there was nothing to do.
 	 */
-	private function rewriteRow(object $objectService, array $target, array $row): ?string {
+	private function rewriteRow(SummaryTarget $summaryTarget, array $row): ?string {
+		$target = $summaryTarget->target;
 		$changes = $this->changesFor(row: $row, fields: $target['fields']);
 		$uuid = (string)($row['id'] ?? ($row['uuid'] ?? (($row['@self'] ?? [])['id'] ?? '')));
 		if ($changes === [] || $uuid === '') {
@@ -269,7 +270,7 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 
 		try {
 			$this->patchObjectAsArray(
-				objectService: $objectService,
+				objectService: $summaryTarget->objectService,
 				register: $target['register'],
 				schema: $target['schema'],
 				id: $uuid,
