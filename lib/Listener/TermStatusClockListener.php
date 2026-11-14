@@ -76,31 +76,54 @@ class TermStatusClockListener implements IEventListener {
 	 */
 	public function handle(Event $event): void {
 		try {
-			$case = EventObjectPayload::firstOf(event: $event, methods: ['getNewObject', 'getObject']);
-			if ($case === null || $this->isCaseSchema(object: $case) === false) {
-				return;
-			}
-
-			$caseId = (string)($case['id'] ?? '');
-			if ($caseId === '') {
-				$caseId = (string)($case['@self']['id'] ?? '');
-			}
-
-			if ($caseId === '') {
-				return;
-			}
-
-			$this->clock->reconcile(
-				caseId: $caseId,
-				statusId: $this->referenced(value: ($case['status'] ?? null)),
-				caseType: $this->referenced(value: ($case['caseType'] ?? null))
-			);
+			$this->reconcileFrom(event: $event);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: a term clock could not be reconciled with the case status: ' . $e->getMessage()
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * Reconcile the clock of the case an event carries.
+	 *
+	 * @param Event $event The dispatched OpenRegister event.
+	 *
+	 * @return void
+	 */
+	private function reconcileFrom(Event $event): void {
+		$caseData = EventObjectPayload::firstOf(event: $event, methods: ['getNewObject', 'getObject']);
+		if ($caseData === null || $this->isCaseSchema(object: $caseData) === false) {
+			return;
+		}
+
+		$caseId = $this->caseIdOf(caseData: $caseData);
+		if ($caseId === '') {
+			return;
+		}
+
+		$this->clock->reconcile(
+			caseId: $caseId,
+			statusId: $this->referenced(value: ($caseData['status'] ?? null)),
+			caseType: $this->referenced(value: ($caseData['caseType'] ?? null))
+		);
+	}//end reconcileFrom()
+
+	/**
+	 * The case's id, from the payload or its `@self` block.
+	 *
+	 * @param array<string, mixed> $caseData The case payload.
+	 *
+	 * @return string The id, empty when there is none.
+	 */
+	private function caseIdOf(array $caseData): string {
+		$caseId = (string)($caseData['id'] ?? '');
+		if ($caseId === '') {
+			$caseId = (string)($caseData['@self']['id'] ?? '');
+		}
+
+		return $caseId;
+	}//end caseIdOf()
 
 	/**
 	 * The uuid behind a reference, bare or extended.
