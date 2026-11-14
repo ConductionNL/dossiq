@@ -75,6 +75,20 @@ class OutstandingDocuments {
 			return ['count' => 0, 'documents' => []];
 		}
 
+		return $this->forCaseIn(objectService: $objectService, caseId: $caseId);
+	}//end forCase()
+
+	/**
+	 * The unassessed documents of a case, read through the object service.
+	 *
+	 * @param object $objectService The OpenRegister object service
+	 * @param string $caseId        The case UUID
+	 *
+	 * @return array<string, mixed> Array with 'count' and 'documents' list of unassessed doc IDs
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
+	 */
+	private function forCaseIn(object $objectService, string $caseId): array {
 		$register = $this->settingsService->getConfigValue('register');
 		$docSchema = $this->settingsService->getConfigValue('document_schema');
 		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
@@ -84,30 +98,52 @@ class OutstandingDocuments {
 		}
 
 		// Collect all documents for this case.
-		$allDocs = $this->collectCaseDocumentIds(
-			objectService: $objectService,
-			register: $register,
-			docSchema: $docSchema,
-			caseId: $caseId,
-		);
+		$allDocs = $this->collectCaseDocumentIds(objectService: $objectService, register: $register, docSchema: $docSchema, caseId: $caseId);
 
 		if (empty($allDocs) === true) {
 			return ['count' => 0, 'documents' => []];
 		}
 
-		$assessments = $this->assessmentRows(
-			objectService: $objectService,
-			register: $register,
-			assessmentSchema: $assessmentSchema,
-			caseId: $caseId,
-		);
-		$assessedDocIds = $this->refsOf(assessments: $assessments, field: 'documentRef');
+		$assessments = $this->assessmentRows(objectService: $objectService, register: $register, assessmentSchema: $assessmentSchema, caseId: $caseId);
+		$excludedDocIds = $this->excludedDocIds(objectService: $objectService, register: $register, caseId: $caseId, assessments: $assessments);
 
+		return $this->outstandingResult(caseId: $caseId, allDocs: $allDocs, assessments: $assessments, excludedDocIds: $excludedDocIds);
+	}//end forCaseIn()
+
+	/**
+	 * The documents that are not waiting for assessment.
+	 *
+	 * @param object                           $objectService The OpenRegister object service
+	 * @param mixed                            $register      Configured register identifier
+	 * @param string                           $caseId        The case UUID
+	 * @param array<int, array<string, mixed>> $assessments   The case's assessments
+	 *
+	 * @return array<string, mixed> The excluded document ids, as keys
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
+	 */
+	private function excludedDocIds(object $objectService, mixed $register, string $caseId, array $assessments): array {
 		// A document set aside before review is not waiting for assessment
 		// (woo-request-corpus-collection, REQ-WRC-003), and the redacted copy
 		// of a partly public document is part of that document's assessment.
-		$excludedDocIds = $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId)
+		return $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId)
 			+ $this->refsOf(assessments: $assessments, field: 'redactedDocumentRef');
+	}//end excludedDocIds()
+
+	/**
+	 * The outstanding documents: neither assessed nor excluded.
+	 *
+	 * @param string                           $caseId         The case UUID
+	 * @param array<string, mixed>             $allDocs        The case's documents
+	 * @param array<int, array<string, mixed>> $assessments    The case's assessments
+	 * @param array<string, mixed>             $excludedDocIds The excluded document ids
+	 *
+	 * @return array<string, mixed> Array with 'count' and 'documents' list of unassessed doc IDs
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
+	 */
+	private function outstandingResult(string $caseId, array $allDocs, array $assessments, array $excludedDocIds): array {
+		$assessedDocIds = $this->refsOf(assessments: $assessments, field: 'documentRef');
 
 		$outstanding = $this->outstandingOf(caseId: $caseId, allDocs: array_diff_key($allDocs, $excludedDocIds), assessedDocIds: $assessedDocIds);
 
@@ -115,7 +151,7 @@ class OutstandingDocuments {
 			'count' => count($outstanding),
 			'documents' => $outstanding,
 		];
-	}//end forCase()
+	}//end outstandingResult()
 
 	/**
 	 * Every document of a case that is under review: on the case and not set aside.

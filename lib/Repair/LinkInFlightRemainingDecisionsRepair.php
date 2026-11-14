@@ -199,42 +199,75 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	private function buildSurfaceRaisers(): array {
 		return [
 			'bezwaar_decision_schema' => function (array $obj): string {
-				return $this->objectionDelegation->raiseBezwaarDecision(
-					objectionId: (string)($obj['objectionProceeding'] ?? ($obj['uuid'] ?? ($obj['id'] ?? ''))),
-					payload: [
-						'subjectSchema' => 'bezwaarDecision',
-						'subjectId' => (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
-						'subjectLabel' => (string)($obj['title'] ?? ''),
-						'dispositionType' => (string)($obj['dispositionType'] ?? ''),
-						'reasoning' => (string)($obj['reasoning'] ?? ''),
-						'legalBasis' => (string)($obj['legalBasis'] ?? ''),
-					],
-				);
+				return $this->raiseBezwaarDecision(obj: $obj);
 			},
 			'advies_aanvraag_schema' => function (array $obj): string {
-				return $this->adviceDelegation->raiseAdviceDecision(
-					subjectSchema: 'adviesAanvraag',
-					subjectId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
-					payload: [
-						'externalReference' => (string)($obj['caseRef'] ?? ($obj['case'] ?? '')),
-						'subjectLabel' => (string)($obj['question'] ?? 'Adviesaanvraag'),
-						'question' => (string)($obj['question'] ?? ''),
-					],
-				);
+				return $this->raiseAdviesAanvraagDecision(obj: $obj);
 			},
 			'consultation_schema' => function (array $obj): string {
-				return $this->adviceDelegation->raiseAdviceDecision(
-					subjectSchema: 'consultation',
-					subjectId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
-					payload: [
-						'externalReference' => (string)($obj['parentCase'] ?? ''),
-						'subjectLabel' => (string)($obj['consultationNumber'] ?? 'Consultatie'),
-						'question' => (string)($obj['questionFormulation'] ?? ''),
-					],
-				);
+				return $this->raiseConsultationDecision(obj: $obj);
 			},
 		];
 	}//end buildSurfaceRaisers()
+
+	/**
+	 * Raise the decidesk Decision for an in-flight bezwaar decision.
+	 *
+	 * @param array<string, mixed> $obj The object row.
+	 *
+	 * @return string The reference of the raised Decision.
+	 */
+	private function raiseBezwaarDecision(array $obj): string {
+		return $this->objectionDelegation->raiseBezwaarDecision(
+			objectionId: (string)($obj['objectionProceeding'] ?? ($obj['uuid'] ?? ($obj['id'] ?? ''))),
+			payload: [
+				'subjectSchema' => 'bezwaarDecision',
+				'subjectId' => (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
+				'subjectLabel' => (string)($obj['title'] ?? ''),
+				'dispositionType' => (string)($obj['dispositionType'] ?? ''),
+				'reasoning' => (string)($obj['reasoning'] ?? ''),
+				'legalBasis' => (string)($obj['legalBasis'] ?? ''),
+			],
+		);
+	}//end raiseBezwaarDecision()
+
+	/**
+	 * Raise the decidesk Decision for an in-flight adviesaanvraag.
+	 *
+	 * @param array<string, mixed> $obj The object row.
+	 *
+	 * @return string The reference of the raised Decision.
+	 */
+	private function raiseAdviesAanvraagDecision(array $obj): string {
+		return $this->adviceDelegation->raiseAdviceDecision(
+			subjectSchema: 'adviesAanvraag',
+			subjectId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
+			payload: [
+				'externalReference' => (string)($obj['caseRef'] ?? ($obj['case'] ?? '')),
+				'subjectLabel' => (string)($obj['question'] ?? 'Adviesaanvraag'),
+				'question' => (string)($obj['question'] ?? ''),
+			],
+		);
+	}//end raiseAdviesAanvraagDecision()
+
+	/**
+	 * Raise the decidesk Decision for an in-flight consultation.
+	 *
+	 * @param array<string, mixed> $obj The object row.
+	 *
+	 * @return string The reference of the raised Decision.
+	 */
+	private function raiseConsultationDecision(array $obj): string {
+		return $this->adviceDelegation->raiseAdviceDecision(
+			subjectSchema: 'consultation',
+			subjectId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
+			payload: [
+				'externalReference' => (string)($obj['parentCase'] ?? ''),
+				'subjectLabel' => (string)($obj['consultationNumber'] ?? 'Consultatie'),
+				'question' => (string)($obj['questionFormulation'] ?? ''),
+			],
+		);
+	}//end raiseConsultationDecision()
 
 	/**
 	 * Link every in-flight object of one surface to a decidesk Decision.

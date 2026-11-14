@@ -199,6 +199,24 @@ class CaseClassification implements CaseClassificationInterface {
 		$scheme = $declaration['scheme'];
 		$value = trim((string)($case[self::FIELD_CLASSIFICATION] ?? ''));
 
+		$this->refuseUnresolvedScheme(gates: $gates, scheme: $scheme);
+		$this->refuseUnclassified(gates: $gates, value: $value);
+		$this->refuseValueOutsideScheme(scheme: $scheme, value: $value);
+	}//end assertCreatable()
+
+	/**
+	 * Refuse a gating case type whose scheme this instance does not know.
+	 *
+	 * @param bool   $gates  Whether the classification is an access rule.
+	 * @param string $scheme The declared scheme.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the classification refuses.
+	 *
+	 * @spec openspec/specs/semantic-case-intake/spec.md
+	 */
+	private function refuseUnresolvedScheme(bool $gates, string $scheme): void {
 		if ($gates === true && $this->schemes->resolves(scheme: $scheme) === false) {
 			throw new RefusedException(
 				rule: self::RULE_SCHEME_UNRESOLVED,
@@ -207,7 +225,21 @@ class CaseClassification implements CaseClassificationInterface {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end refuseUnresolvedScheme()
 
+	/**
+	 * Refuse a case without a classification when the classification gates access.
+	 *
+	 * @param bool   $gates Whether the classification is an access rule.
+	 * @param string $value The classification given.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the classification refuses.
+	 *
+	 * @spec openspec/specs/semantic-case-intake/spec.md
+	 */
+	private function refuseUnclassified(bool $gates, string $value): void {
 		if ($gates === true && $value === '') {
 			throw new RefusedException(
 				rule: self::RULE_UNCLASSIFIED,
@@ -216,7 +248,21 @@ class CaseClassification implements CaseClassificationInterface {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end refuseUnclassified()
 
+	/**
+	 * Refuse a classification the scheme does not carry.
+	 *
+	 * @param string $scheme The declared scheme.
+	 * @param string $value  The classification given.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the classification refuses.
+	 *
+	 * @spec openspec/specs/semantic-case-intake/spec.md
+	 */
+	private function refuseValueOutsideScheme(string $scheme, string $value): void {
 		if ($value !== '' && $this->schemes->allows(scheme: $scheme, value: $value) === false) {
 			throw new RefusedException(
 				rule: self::RULE_VALUE_OUTSIDE_SCHEME,
@@ -225,7 +271,7 @@ class CaseClassification implements CaseClassificationInterface {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
-	}//end assertCreatable()
+	}//end refuseValueOutsideScheme()
 
 	/**
 	 * One declared facet list, cleaned of anything that is not a facet.

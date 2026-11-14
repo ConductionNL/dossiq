@@ -61,6 +61,7 @@ namespace OCA\Dossiq\Repair;
 
 use OCP\IGroup;
 use OCP\IGroupManager;
+use OCP\IUser;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -254,37 +255,111 @@ class ProvisionAssignedGroups implements IRepairStep {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function seedWithAdministrators(IGroup $group, string $groupId, IOutput $output): void {
+		$added = $this->addAdministrators(group: $group, groupId: $groupId, administrators: $this->administrators());
+
+		if ($added === []) {
+			$this->reportEmptyGroup(groupId: $groupId, output: $output);
+			return;
+		}
+
+		$this->reportSeededGroup(groupId: $groupId, added: $added, output: $output);
+	}//end seedWithAdministrators()
+
+	/**
+	 * The members of the admin group, or none when it does not exist.
+	 *
+	 * @return IUser[] The administrators.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function administrators(): array {
 		$administrators = [];
 		$adminGroup = $this->groupManager->get('admin');
 		if ($adminGroup !== null) {
 			$administrators = $adminGroup->getUsers();
 		}
 
+		return $administrators;
+	}//end administrators()
+
+	/**
+	 * Add each administrator to the group.
+	 *
+	 * @param IGroup $group The group that was just created.
+	 * @param string $groupId The group id, for messages.
+	 * @param IUser[] $administrators The administrators.
+	 *
+	 * @return string[] The uids that were added.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function addAdministrators(IGroup $group, string $groupId, array $administrators): array {
 		$added = [];
 		foreach ($administrators as $administrator) {
-			try {
-				$group->addUser($administrator);
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: could not seed an administrator into the assigned group',
-					['group' => $groupId, 'user' => $administrator->getUID(), 'exception' => $e->getMessage()]
-				);
-				continue;
+			if ($this->addAdministrator(group: $group, groupId: $groupId, administrator: $administrator) === true) {
+				$added[] = $administrator->getUID();
 			}
-
-			$added[] = $administrator->getUID();
 		}
 
-		if ($added === []) {
-			$output->warning(
-				'Dossiq: group "' . $groupId . '" was created but has no members, so the shipped flow\'s '
-				. 'task assigned to it cannot be completed by anyone. Add a member with: '
-				. 'occ group:adduser ' . $groupId . ' <user>'
+		return $added;
+	}//end addAdministrators()
+
+	/**
+	 * Add one administrator to the group, warning when the backend refuses.
+	 *
+	 * @param IGroup $group The group that was just created.
+	 * @param string $groupId The group id, for messages.
+	 * @param IUser $administrator The administrator.
+	 *
+	 * @return boolean Whether the administrator was added.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function addAdministrator(IGroup $group, string $groupId, IUser $administrator): bool {
+		try {
+			$group->addUser($administrator);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not seed an administrator into the assigned group',
+				['group' => $groupId, 'user' => $administrator->getUID(), 'exception' => $e->getMessage()]
 			);
-			$this->logger->warning('Dossiq: assigned group created empty', ['group' => $groupId]);
-			return;
+			return false;
 		}
 
+		return true;
+	}//end addAdministrator()
+
+	/**
+	 * Warn that the group was created without members.
+	 *
+	 * @param string $groupId The group id.
+	 * @param IOutput $output Output sink.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function reportEmptyGroup(string $groupId, IOutput $output): void {
+		$output->warning(
+			'Dossiq: group "' . $groupId . '" was created but has no members, so the shipped flow\'s '
+			. 'task assigned to it cannot be completed by anyone. Add a member with: '
+			. 'occ group:adduser ' . $groupId . ' <user>'
+		);
+		$this->logger->warning('Dossiq: assigned group created empty', ['group' => $groupId]);
+	}//end reportEmptyGroup()
+
+	/**
+	 * Report the administrators the group was seeded with.
+	 *
+	 * @param string $groupId The group id.
+	 * @param string[] $added The uids that were added.
+	 * @param IOutput $output Output sink.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function reportSeededGroup(string $groupId, array $added, IOutput $output): void {
 		$output->info(
 			'Dossiq: seeded group "' . $groupId . '" with ' . count($added) . ' administrator(s): '
 			. implode(', ', $added) . '. Replace them with the real members in Users & groups.'
@@ -293,5 +368,5 @@ class ProvisionAssignedGroups implements IRepairStep {
 			'Dossiq: seeded assigned group with administrators',
 			['group' => $groupId, 'users' => $added]
 		);
-	}//end seedWithAdministrators()
+	}//end reportSeededGroup()
 }//end class

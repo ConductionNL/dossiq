@@ -68,30 +68,9 @@ class TriageConditions {
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
 	 */
 	public function normalise(array $raw): array {
-		if (array_diff(array_keys($raw), self::FIELDS) !== []) {
-			throw new RefusedException(
-				rule: 'triage-rule-condition-unknown',
-				sentence: 'A rule can ask for custodian, source system, file type, a date range, sender domain, or text in the document.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$this->refuseUnknownFields(raw: $raw);
 
-		$conditions = [];
-		foreach (self::FIELDS as $field) {
-			$value = $raw[$field] ?? '';
-			if (is_scalar($value) === false || trim((string)$value) === '') {
-				continue;
-			}
-
-			$conditions[$field] = trim((string)$value);
-			if (in_array($field, self::DATE_FIELDS, true) === true && self::isDate(value: $conditions[$field]) === false) {
-				throw new RefusedException(
-					rule: 'triage-rule-date-invalid',
-					sentence: 'Give the dates of a rule as a day, month and year.',
-					status: RefusedException::STATUS_UNPROCESSABLE,
-				);
-			}
-		}
+		$conditions = $this->filledConditions(raw: $raw);
 
 		if ($conditions === []) {
 			throw new RefusedException(
@@ -103,6 +82,75 @@ class TriageConditions {
 
 		return $conditions;
 	}//end normalise()
+
+	/**
+	 * Refuse conditions that name a field a rule cannot ask for.
+	 *
+	 * @param array<string, mixed> $raw The conditions as given.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When a field is unknown.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+	 */
+	private function refuseUnknownFields(array $raw): void {
+		if (array_diff(array_keys($raw), self::FIELDS) !== []) {
+			throw new RefusedException(
+				rule: 'triage-rule-condition-unknown',
+				sentence: 'A rule can ask for custodian, source system, file type, a date range, sender domain, or text in the document.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end refuseUnknownFields()
+
+	/**
+	 * The known fields that carry a value, trimmed.
+	 *
+	 * @param array<string, mixed> $raw The conditions as given.
+	 *
+	 * @return array<string, string> The conditions.
+	 *
+	 * @throws RefusedException When a date is no date.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+	 */
+	private function filledConditions(array $raw): array {
+		$conditions = [];
+		foreach (self::FIELDS as $field) {
+			$value = $raw[$field] ?? '';
+			if (is_scalar($value) === false || trim((string)$value) === '') {
+				continue;
+			}
+
+			$conditions[$field] = trim((string)$value);
+			$this->refuseInvalidDate(field: $field, value: $conditions[$field]);
+		}
+
+		return $conditions;
+	}//end filledConditions()
+
+	/**
+	 * Refuse a date field whose value is no date.
+	 *
+	 * @param string $field The condition field.
+	 * @param string $value The trimmed value.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When a date is no date.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+	 */
+	private function refuseInvalidDate(string $field, string $value): void {
+		if (in_array($field, self::DATE_FIELDS, true) === true && self::isDate(value: $value) === false) {
+			throw new RefusedException(
+				rule: 'triage-rule-date-invalid',
+				sentence: 'Give the dates of a rule as a day, month and year.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end refuseInvalidDate()
 
 	/**
 	 * The rules that run, in order: active, with a known effect and conditions; by `order`, then name.
