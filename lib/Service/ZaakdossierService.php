@@ -164,25 +164,11 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 		$direction = $this->normaliser->direction(value: ($metadata['direction'] ?? null));
 		$correspondents = $this->correspondentsOf(caseId: $caseId, metadata: $metadata, direction: $direction);
 
-		$informatieobject = $this->uploadedRecord(
-			fileName: $fileName,
-			content: $content,
-			metadata: $metadata,
-			type: $type,
-			classification: $classification,
-			direction: $direction,
-			correspondents: $correspondents,
-		);
+		$informatieobject = $this->uploadedRecord(fileName: $fileName, content: $content, metadata: $metadata, type: $type,
+			classification: $classification, direction: $direction, correspondents: $correspondents);
 
-		$infoId = $this->storeUploadedRecord(
-			objectService: $objectService,
-			register: $register,
-			infoSchema: $infoSchema,
-			caseId: $caseId,
-			fileName: $fileName,
-			content: $content,
-			informatieobject: $informatieobject,
-		);
+		$infoId = $this->storeUploadedRecord(objectService: $objectService, register: $register, infoSchema: $infoSchema, caseId: $caseId,
+			fileName: $fileName, content: $content, informatieobject: $informatieobject);
 
 		$this->linkAndRecordDispatches(caseId: $caseId, infoId: $infoId, correspondents: $correspondents);
 
