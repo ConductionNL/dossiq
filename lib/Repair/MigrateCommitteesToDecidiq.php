@@ -102,10 +102,12 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 		}
 
 		$counts = $this->migrateAll(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			output: $output,
+			run: new CommitteeMigrationRun(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				output: $output,
+			),
 		);
 
 		$output->info(
@@ -148,16 +150,13 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 	/**
 	 * Migrate every local committee under the system identity.
 	 *
-	 * @param object  $objectService OpenRegister's object service.
-	 * @param string  $register      The register slug.
-	 * @param string  $schema        The committee schema slug.
-	 * @param IOutput $output        The migration output.
+	 * @param CommitteeMigrationRun $run Where the committees live and where the migration reports.
 	 *
 	 * @return array<string, int> The migrated, skipped and failed counts.
 	 *
 	 * @throws RuntimeException When OpenRegister exposes no runAsSystem().
 	 */
-	private function migrateAll(object $objectService, string $register, string $schema, IOutput $output): array {
+	private function migrateAll(CommitteeMigrationRun $run): array {
 		// 🔴 A repair step runs during `occ upgrade`, where there is NO session.
 		// Without a system identity OpenRegister resolves the actor as Anonymous
 		// and refuses every write — and $output->warning() does not fail an
@@ -165,16 +164,16 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 		// success. The shared trait falls back to running the operation bare
 		// when runAsSystem() is absent; here that fallback is the exact silent
 		// no-op the spec forbids, so this step FAILS instead.
-		$this->requireRunAsSystem(objectService: $objectService);
+		$this->requireRunAsSystem(objectService: $run->objectService);
 
 		$counts = ['migrated' => 0, 'skipped' => 0, 'failed' => 0];
 
-		$objectService->runAsSystem(
-			function () use ($objectService, $register, $schema, $output, &$counts): void {
-				$committees = $this->readCommittees(objectService: $objectService, register: $register, schema: $schema, output: $output);
+		$run->objectService->runAsSystem(
+			function () use ($run, &$counts): void {
+				$committees = $this->readCommittees(run: $run);
 
 				foreach ($committees as $committee) {
-					$this->migrateOne(objectService: $objectService, register: $register, schema: $schema, committee: $committee, output: $output, counts: $counts);
+					$this->migrateOne(run: $run, committee: $committee, counts: $counts);
 				}
 			}
 		);
@@ -202,28 +201,20 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 	/**
 	 * Read the local committees.
 	 *
-	 * @param object  $objectService OpenRegister's object service.
-	 * @param string  $register      The register slug.
-	 * @param string  $schema        The committee schema slug.
-	 * @param IOutput $output        The migration output.
+	 * @param CommitteeMigrationRun $run Where the committees live and where the migration reports.
 	 *
 	 * @return array<int, array<string, mixed>> The committee rows.
 	 */
-	private function readCommittees(
-		object $objectService,
-		string $register,
-		string $schema,
-		IOutput $output,
-	): array {
+	private function readCommittees(CommitteeMigrationRun $run): array {
 		try {
 			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->schema,
 				filters: ['_limit' => self::BATCH_LIMIT],
 			);
 		} catch (Throwable $e) {
-			$output->warning('Dossiq: could not list committees: ' . $e->getMessage());
+			$run->output->warning('Dossiq: could not list committees: ' . $e->getMessage());
 			$this->logger->warning(
 				'MigrateCommitteesToDecidiq: list failed',
 				['error' => $e->getMessage()]
@@ -237,23 +228,13 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 	/**
 	 * Migrate one committee, or account for why it was not migrated.
 	 *
-	 * @param object                        $objectService OpenRegister's object service.
-	 * @param string                        $register      The register slug.
-	 * @param string                        $schema        The committee schema slug.
-	 * @param array<string, mixed>          $committee     The committee row.
-	 * @param IOutput                       $output        The migration output.
-	 * @param array<string, int>            $counts        Running tallies, by reference.
+	 * @param CommitteeMigrationRun $run       Where the committees live and where the migration reports.
+	 * @param array<string, mixed>  $committee The committee row.
+	 * @param array<string, int>    $counts    Running tallies, by reference.
 	 *
 	 * @return void
 	 */
-	private function migrateOne(
-		object $objectService,
-		string $register,
-		string $schema,
-		array $committee,
-		IOutput $output,
-		array &$counts,
-	): void {
+	private function migrateOne(CommitteeMigrationRun $run, array $committee, array &$counts): void {
 		$id = (string)($committee['id'] ?? ($committee['@self']['id'] ?? ''));
 		if ($id === '') {
 			$counts['failed']++;
@@ -272,7 +253,7 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 			// It is counted and named, so the summary line reports a partial
 			// run as partial rather than as a clean one.
 			$counts['failed']++;
-			$output->warning('Dossiq: could not migrate committee ' . $id . ': ' . $e->getMessage());
+			$run->output->warning('Dossiq: could not migrate committee ' . $id . ': ' . $e->getMessage());
 			$this->logger->warning(
 				'MigrateCommitteesToDecidiq: committee failed',
 				['committee' => $id, 'error' => $e->getMessage()]
@@ -282,10 +263,10 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 		}
 
 		try {
-			$objectService->saveObject(
+			$run->objectService->saveObject(
 				object: array_merge($committee, ['governanceBodyId' => $bodyId]),
-				register: $register,
-				schema: $schema,
+				register: $run->register,
+				schema: $run->schema,
 				uuid: $id,
 			);
 		} catch (Throwable $e) {
@@ -294,7 +275,7 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 			// resolves on (sourceApp, externalReference) and will match the
 			// body it already has rather than minting a second.
 			$counts['failed']++;
-			$output->warning('Dossiq: raised a body for committee ' . $id . ' but could not record it: ' . $e->getMessage());
+			$run->output->warning('Dossiq: raised a body for committee ' . $id . ' but could not record it: ' . $e->getMessage());
 
 			return;
 		}
