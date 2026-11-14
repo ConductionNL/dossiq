@@ -19,7 +19,8 @@
 - [ ] 1.17 Row `10.1` (REQ-CRS-35): A dashboard can show a KPI as a gauge. In dossiq; today: no gauge widget type in src/manifest.json or src/dashboardWidgets.js; arranging the dashboard is REQ-DASH-030.
 - [ ] 1.18 Row `10.4` (REQ-CRS-36): Process analytics shows dwell time as a heatmap. In dossiq; today: no heatmap in src/manifest.json#ProcessMiningDashboard or lib/Service/ProcessMiningService.php.
 - [ ] 1.19 Row `10.7` (REQ-CRS-37): The exports area shows how often each export was downloaded. Provider openregister; today: the exports area (openregister lib/Db/ExportRun.php).
-- [ ] 1.20 Row `11.23` (REQ-CRS-39): You group templates in folders. In dossiq; today: no folder sidebar on the Templates page (src/manifest.d/64-catalogue.json WorkflowDefinitions); folders exist for case types and attributes only.
+- [x] 1.20 Row `11.23` (REQ-CRS-39): You group templates in folders. In dossiq; today: no folder sidebar on the Templates page (src/manifest.d/64-catalogue.json WorkflowDefinitions); folders exist for case types and attributes only.
+  - Built: `workflowTemplate.category` (facetable, lib/Settings/register.d/99-template-category.json) and a folder sidebar on the Templates page with All templates on top; tests/vitest/templateFolders.spec.js.
 - [ ] 1.21 Row `12.8` (REQ-CRS-40): A resident from another EU country logs in with eIDAS. Provider integriq; today: the identity broker adapters (integriq portal-idp-broker-config).
 - [ ] 1.22 Row `12.16` (REQ-CRS-41): The map can show layers from an ArcGIS service. In dossiq; today: no ArcGIS source anywhere in lib/ or src/.
 - [ ] 1.23 Row `13.10` (REQ-CRS-44): An approved destruction list destroys its cases. Provider openregister; today: retention destruction runs (openregister retention-management); lib/Listener/BezwaarLegalHoldListener.php only places holds.
