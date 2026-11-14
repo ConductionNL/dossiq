@@ -346,18 +346,71 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 
 		$request = $this->loadAdviceRequest(requestId: $requestId);
 		$from = (string)($request['current']['status'] ?? 'assigned');
+		$this->assertMayMove(request: $request, from: $from, newStatus: $newStatus);
+
+		$update = $this->transitionUpdate(request: $request, from: $from, newStatus: $newStatus, payload: $payload);
+
+		return $this->applyOrFail(request: $request, update: $update, requestId: $requestId);
+	}//end transitionAdviceStatus()
+
+	/**
+	 * Refuse a move the lifecycle forbids, or a signing move by a caller who does not chair.
+	 *
+	 * @param array<string, mixed> $request   The advice request.
+	 * @param string               $from      Its current status.
+	 * @param string               $newStatus Target status.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the transition is forbidden
+	 *
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-dossiq
+	 */
+	private function assertMayMove(array $request, string $from, string $newStatus): void {
 		$this->assertTransitionAllowed(from: $from, newStatus: $newStatus);
 		if (in_array($newStatus, self::SIGNED_STATUSES, true) === true) {
 			$this->assertCallerChairs(request: $request);
 		}
+	}//end assertMayMove()
 
+	/**
+	 * The update a transition writes, after the independence check.
+	 *
+	 * @param array<string, mixed> $request   The advice request.
+	 * @param string               $from      Its current status.
+	 * @param string               $newStatus Target status.
+	 * @param array<string, mixed> $payload   Optional patch.
+	 *
+	 * @return array<string, mixed> The update.
+	 *
+	 * @throws GuardFailedException When the independence check fails
+	 *
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-dossiq
+	 */
+	private function transitionUpdate(array $request, string $from, string $newStatus, array $payload): array {
 		$update = $payload;
 		$update['status'] = $newStatus;
-		$update = $this->buildTransitionUpdate(
+
+		return $this->buildTransitionUpdate(
 			update: $update,
 			adviceDecisionRef: $this->guardTransition(request: $request, move: ['from' => $from] + $update),
 		);
+	}//end transitionUpdate()
 
+	/**
+	 * Apply the transition, logging a failure and refusing with a plain message.
+	 *
+	 * @param array<string, mixed> $request   The advice request.
+	 * @param array<string, mixed> $update    The update.
+	 * @param string               $requestId Advice request UUID, for the log.
+	 *
+	 * @return array<string, mixed> The updated advice request record
+	 *
+	 * @throws RuntimeException When the write fails
+	 *
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-dossiq
+	 */
+	private function applyOrFail(array $request, array $update, string $requestId): array {
 		try {
 			return $this->applyTransition(request: $request, update: $update);
 		} catch (\Throwable $e) {
@@ -367,7 +420,7 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 			);
 			throw new RuntimeException('Could not transition advice request');
 		}//end try
-	}//end transitionAdviceStatus()
+	}//end applyOrFail()
 
 	/**
 	 * The stored advice request, null when it does not exist.
