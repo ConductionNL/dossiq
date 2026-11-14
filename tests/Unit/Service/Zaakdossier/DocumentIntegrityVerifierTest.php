@@ -180,4 +180,154 @@ class DocumentIntegrityVerifierTest extends TestCase {
 		$verifier->verifyNext(batch: 3);
 		self::assertSame(expected: 0, actual: $this->cursor);
 	}//end testWalksTheDocumentsInBatchesAndStartsOver()
+
+	/**
+	 * A verifier over a stub object service, where each file id hashes to the given value ('' = too large to hash)
+	 * and a file id not listed is gone.
+	 *
+	 * @param object                $objects    The object service, null for none.
+	 * @param array<int, string>    $hashes     File id => current hash.
+	 * @param array<string, string> $config     The configuration.
+	 *
+	 * @return DocumentIntegrityVerifier
+	 */
+	private function verifierOver(?object $objects, array $hashes, array $config = ['register' => 'dossiq', 'dossier_informatieobject_schema' => 'informatieobject']): DocumentIntegrityVerifier {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(value: $objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			callback: static fn (string $key, string $default = ''): string => $config[$key] ?? $default
+		);
+
+		$root = $this->createMock(originalClassName: IRootFolder::class);
+		$root->method('getFirstNodeById')->willReturnCallback(
+			callback: function (int $fileId) use ($hashes): ?File {
+				if (array_key_exists($fileId, $hashes) === false) {
+					return null;
+				}
+
+				$file = $this->createMock(originalClassName: File::class);
+				$file->method('getId')->willReturn(value: $fileId);
+				return $file;
+			}
+		);
+
+		$defaults = $this->createMock(originalClassName: DocumentDefaults::class);
+		$defaults->method('integrityOf')->willReturnCallback(
+			callback: static fn (File $node): array => ['algorithm' => 'sha256', 'value' => $hashes[$node->getId()], 'date' => 'now']
+		);
+
+		$config = $this->createMock(originalClassName: IAppConfig::class);
+		$config->method('getValueInt')->willReturn(value: 0);
+
+		return new DocumentIntegrityVerifier(settingsService: $settings, rootFolder: $root, defaults: $defaults, appConfig: $config);
+	}//end verifierOver()
+
+	/**
+	 * A stub object service answering the given rows and recording, or refusing, each patch.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The rows a search answers.
+	 *
+	 * @return object
+	 */
+	private function objects(array $rows): object {
+		return new class($rows) {
+			/** @var array<string, array<string, mixed>> id => changes */
+			public array $patched = [];
+
+			/** @var bool Whether a patch fails. */
+			public bool $failPatch = false;
+
+			/**
+			 * @param array<int, array<string, mixed>> $rows The rows.
+			 */
+			public function __construct(private array $rows) {
+			}
+
+			/**
+			 * @param string $register The register.
+			 * @param string $schema   The schema.
+			 * @param array  $filters  The filters.
+			 * @param mixed  ...$scope The scope.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters, mixed ...$scope): array {
+				return $this->rows;
+			}
+
+			/**
+			 * @param string $objectId The id.
+			 * @param array  $data     The changes.
+			 * @param mixed  $register The register.
+			 * @param mixed  $schema   The schema.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function patchObject(string $objectId, array $data, mixed $register = null, mixed $schema = null): array {
+				if ($this->failPatch === true) {
+					throw new \RuntimeException('locked');
+				}
+
+				$this->patched[$objectId] = $data;
+				return ['id' => $objectId] + $data;
+			}
+		};
+	}//end objects()
+
+	/**
+	 * Without OpenRegister, a register or a document schema nothing is checked.
+	 *
+	 * @return void
+	 */
+	public function testNothingIsCheckedWithoutAStore(): void {
+		self::assertSame(expected: 0, actual: $this->verifierOver(objects: null, hashes: [])->verifyNext());
+
+		$objects = $this->objects(rows: [['id' => 'd1', 'fileId' => 11]]);
+		self::assertSame(expected: 0, actual: $this->verifierOver(objects: $objects, hashes: [11 => 'aaa'], config: ['register' => 'dossiq'])->verifyNext());
+		self::assertSame(expected: 0, actual: $this->verifierOver(objects: $objects, hashes: [11 => 'aaa'], config: ['dossier_informatieobject_schema' => 'informatieobject'])->verifyNext());
+		self::assertSame(expected: [], actual: $objects->patched);
+	}//end testNothingIsCheckedWithoutAStore()
+
+	/**
+	 * A row without an id, or whose file cannot be hashed, is not counted and not written.
+	 *
+	 * @return void
+	 */
+	public function testARowWithoutAnIdOrAHashableFileIsSkipped(): void {
+		$objects = $this->objects(rows: [
+			['fileId' => 11, 'integrity' => ['value' => 'aaa']],
+			['id' => 'big', 'fileId' => 12],
+		]);
+
+		self::assertSame(expected: 0, actual: $this->verifierOver(objects: $objects, hashes: [11 => 'aaa', 12 => ''])->verifyNext());
+		self::assertSame(expected: [], actual: $objects->patched);
+	}//end testARowWithoutAnIdOrAHashableFileIsSkipped()
+
+	/**
+	 * A stored hash whose file has grown too large to hash is recorded as unchecked; the hash compares case-insensitively.
+	 *
+	 * @return void
+	 */
+	public function testAFileTooLargeToHashIsUnchecked(): void {
+		$objects = $this->objects(rows: [
+			['id' => 'big', 'fileId' => 12, 'integrity' => ['algorithm' => 'sha256', 'value' => 'bbb']],
+			['id' => 'upper', 'fileId' => 11, 'integrity' => ['algorithm' => 'sha256', 'value' => 'AAA']],
+		]);
+
+		self::assertSame(expected: 2, actual: $this->verifierOver(objects: $objects, hashes: [11 => 'aaa', 12 => ''])->verifyNext());
+		self::assertSame(expected: 'unchecked', actual: $objects->patched['big']['integrity']['status']);
+		self::assertSame(expected: 'unchanged', actual: $objects->patched['upper']['integrity']['status']);
+	}//end testAFileTooLargeToHashIsUnchecked()
+
+	/**
+	 * A check that cannot be written is not counted, and the run goes on.
+	 *
+	 * @return void
+	 */
+	public function testACheckThatCannotBeWrittenIsNotCounted(): void {
+		$objects = $this->objects(rows: [['id' => 'd1', 'fileId' => 11, 'integrity' => ['value' => 'aaa']]]);
+		$objects->failPatch = true;
+
+		self::assertSame(expected: 0, actual: $this->verifierOver(objects: $objects, hashes: [11 => 'aaa'])->verifyNext());
+	}//end testACheckThatCannotBeWrittenIsNotCounted()
 }//end class

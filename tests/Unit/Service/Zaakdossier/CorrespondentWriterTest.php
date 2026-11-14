@@ -407,4 +407,86 @@ class CorrespondentWriterTest extends TestCase {
 			actual: $writer->addressedParties(caseId: 'case-1', roles: ['belanghebbende']),
 		);
 	}//end testTheFirstRoleThatAnswersWinsAndTheRolesAreNotMerged()
+
+	/**
+	 * A writer whose parties reader must never be asked, over the given settings.
+	 *
+	 * @param SettingsService&MockObject $settings The settings.
+	 *
+	 * @return CorrespondentWriter
+	 */
+	private function writerWithoutPartyReads(SettingsService&MockObject $settings): CorrespondentWriter {
+		$people = $this->createMock(originalClassName: PersonLinkReader::class);
+		$people->expects($this->never())->method('peopleOn');
+
+		return new CorrespondentWriter(
+			rules: new DocumentCorrespondents(),
+			people: $people,
+			settingsService: $settings,
+			store: new DocumentRecordStore(settingsService: $settings),
+			labels: new DocumentListingLabels(settingsService: $settings),
+		);
+	}//end writerWithoutPartyReads()
+
+	/**
+	 * Settings over the stub object service, or over none.
+	 *
+	 * @param bool $withObjects Whether OpenRegister is there.
+	 *
+	 * @return SettingsService&MockObject
+	 */
+	private function settings(bool $withObjects): SettingsService&MockObject {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($withObjects === true ? $this->objects : null);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (self::CONFIG[$key] ?? $default)
+		);
+
+		return $settings;
+	}//end settings()
+
+	/**
+	 * A document filed on no case resolves against no parties: a party id the case would hold is dropped
+	 * and nothing is recorded.
+	 *
+	 * @return void
+	 */
+	public function testAnEditOfADocumentOnNoCaseResolvesAgainstNoParties(): void {
+		$this->objects->answers[] = ['informatieobject' => 'doc-loose', 'case' => '  '];
+		$writer = $this->writerWithoutPartyReads(settings: $this->settings(withObjects: true));
+
+		$patch = $writer->applyEdit('doc-loose', [], ['sender' => 'party-jan', 'recipients' => ['party-council']], 'inkomend');
+
+		$this->assertSame(['sender' => '', 'recipients' => []], $patch);
+		$this->assertSame([], $this->objects->saves);
+	}//end testAnEditOfADocumentOnNoCaseResolvesAgainstNoParties()
+
+	/**
+	 * When the document's joins cannot be read the edit still answers, against no case.
+	 *
+	 * @return void
+	 */
+	public function testAnEditWhoseJoinsCannotBeReadResolvesAgainstNoCase(): void {
+		$writer = $this->writerWithoutPartyReads(settings: $this->settings(withObjects: false));
+
+		$this->assertSame(
+			['sender' => '', 'recipients' => []],
+			$writer->applyEdit('doc-1', [], ['recipients' => ['party-council']], 'uitgaand')
+		);
+	}//end testAnEditWhoseJoinsCannotBeReadResolvesAgainstNoCase()
+
+	/**
+	 * A listing skips entries that are not document rows.
+	 *
+	 * @return void
+	 */
+	public function testAListingSkipsEntriesThatAreNotRows(): void {
+		$listed = $this->writer->describeAll(
+			caseId: 'case-1',
+			documents: ['not a row', ['id' => 'doc-b', 'sender' => 'party-jan'], 42],
+		);
+
+		$this->assertSame(['doc-b'], array_column($listed, 'id'));
+		$this->assertSame('Jan Jansen', $listed[0]['senderName']);
+	}//end testAListingSkipsEntriesThatAreNotRows()
 }//end class
