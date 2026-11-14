@@ -346,15 +346,38 @@ class OpenCatalogiApiClient {
 			return null;
 		}
 
+		$catalogs = $this->catalogList(result: $result);
+		if (is_array($catalogs) === false) {
+			return null;
+		}
+
+		return $this->firstWooCatalog(catalogs: $catalogs);
+	}//end resolveCatalog()
+
+	/**
+	 * The catalog list in a discovery answer: its `results`, its `data`, or the answer itself.
+	 *
+	 * @param mixed $result The discovery answer.
+	 *
+	 * @return mixed
+	 */
+	private function catalogList(mixed $result): mixed {
 		$catalogs = ($result['results'] ?? $result['data'] ?? null);
 		if ($catalogs === null) {
 			$catalogs = $result;
 		}
 
-		if (is_array($catalogs) === false) {
-			return null;
-		}
+		return $catalogs;
+	}//end catalogList()
 
+	/**
+	 * The first catalog flagged `hasWooSitemap: true`.
+	 *
+	 * @param array<mixed> $catalogs The catalogs.
+	 *
+	 * @return array<string, mixed>|null The catalog, or null when none is flagged.
+	 */
+	private function firstWooCatalog(array $catalogs): array|null {
 		foreach ($catalogs as $catalog) {
 			if (is_array($catalog) === true && ($catalog['hasWooSitemap'] ?? false) === true) {
 				return $catalog;
@@ -362,7 +385,7 @@ class OpenCatalogiApiClient {
 		}
 
 		return null;
-	}//end resolveCatalog()
+	}//end firstWooCatalog()
 
 	/**
 	 * Resolve OpenRegister's ObjectService, or fail with the domain error.
