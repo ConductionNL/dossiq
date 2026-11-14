@@ -109,9 +109,7 @@ class BackfillAdviceRequestObjection implements IRepairStep {
 		$objectService->runAsSystem(
 			function () use ($objectService, $register, $schema, $output): void {
 				$this->backfill(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
+					store: new AdviceRequestStore(objectService: $objectService, register: $register, schema: $schema),
 					output: $output,
 				);
 			}
@@ -121,15 +119,13 @@ class BackfillAdviceRequestObjection implements IRepairStep {
 	/**
 	 * Walk every advice request and repair the ones missing `bezwaar`.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register The register id.
-	 * @param string $schema The schema id.
-	 * @param IOutput $output Progress reporting.
+	 * @param AdviceRequestStore $store  The object service, register and schema.
+	 * @param IOutput            $output Progress reporting.
 	 *
 	 * @return void
 	 */
-	private function backfill(object $objectService, string $register, string $schema, IOutput $output): void {
-		$rows = $objectService->findAll(['filters' => ['register' => $register, 'schema' => $schema]]);
+	private function backfill(AdviceRequestStore $store, IOutput $output): void {
+		$rows = $store->objectService->findAll(['filters' => ['register' => $store->register, 'schema' => $store->schema]]);
 		if (is_array($rows) === false) {
 			$output->info('Advice-request backfill: nothing to read.');
 			return;
@@ -142,12 +138,7 @@ class BackfillAdviceRequestObjection implements IRepairStep {
 				$row = $row->jsonSerialize();
 			}
 
-			$outcome = $this->repairRow(
-				row: (array)$row,
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-			);
+			$outcome = $this->repairRow(row: (array)$row, store: $store);
 			$tally[$outcome] = ($tally[$outcome] + 1);
 		}
 
@@ -160,14 +151,12 @@ class BackfillAdviceRequestObjection implements IRepairStep {
 	/**
 	 * Repair one row, returning which tally it belongs to.
 	 *
-	 * @param array<string, mixed> $row The stored advice request.
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register The register id.
-	 * @param string $schema The schema id.
+	 * @param array<string, mixed> $row   The stored advice request.
+	 * @param AdviceRequestStore   $store The object service, register and schema.
 	 *
 	 * @return string One of repaired|skipped|failed.
 	 */
-	private function repairRow(array $row, object $objectService, string $register, string $schema): string {
+	private function repairRow(array $row, AdviceRequestStore $store): string {
 		if ((string)($row['bezwaar'] ?? '') !== '') {
 			return 'skipped';
 		}
@@ -183,9 +172,9 @@ class BackfillAdviceRequestObjection implements IRepairStep {
 
 		try {
 			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $store->objectService,
+				register: $store->register,
+				schema: $store->schema,
 				id: $uuid,
 				changes: ['bezwaar' => $legacy],
 			);
