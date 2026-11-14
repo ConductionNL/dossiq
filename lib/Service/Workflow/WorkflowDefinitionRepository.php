@@ -47,6 +47,8 @@ use Psr\Log\LoggerInterface;
  * OpenRegister persistence for workflowTemplate objects and their references.
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class WorkflowDefinitionRepository {
 
@@ -246,27 +248,49 @@ class WorkflowDefinitionRepository {
 		}
 
 		try {
-			$results = $this->searchObjectsAsArrays(
-				objectService: $context['objectService'],
-				register: $context['register'],
-				schema: $context['schema'],
-				filters: ['caseType' => $caseTypeId, '_limit' => 500],
-			);
+			$results = $this->searchDefinitions(context: $context, caseTypeId: $caseTypeId);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Dossiq: failed to list workflow definitions for caseType',
-				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
+				'Dossiq: failed to list workflow definitions for caseType', ['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}
 
-		$rows = [];
-		foreach ($results as $row) {
-			$normalized = $this->normalize(row: $row);
-			if ($normalized !== null) {
-				$rows[] = $normalized;
-			}
-		}
+		return $this->newestFirst(results: $results);
+	}//end listVersionsForCaseType()
+
+	/**
+	 * Search the definitions of a caseType.
+	 *
+	 * @param array<string, mixed> $context    The object service, register and schema.
+	 * @param string               $caseTypeId The caseType UUID.
+	 *
+	 * @return array<int, array<string, mixed>> The raw rows.
+	 *
+	 * @throws \Throwable When the search fails.
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 */
+	private function searchDefinitions(array $context, string $caseTypeId): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $context['objectService'],
+			register: $context['register'],
+			schema: $context['schema'],
+			filters: ['caseType' => $caseTypeId, '_limit' => 500],
+		);
+	}//end searchDefinitions()
+
+	/**
+	 * Normalise the rows and sort them by version, newest first.
+	 *
+	 * @param array<int, array<string, mixed>> $results The raw rows.
+	 *
+	 * @return array<int, array<string, mixed>> The versions, newest first.
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 */
+	private function newestFirst(array $results): array {
+		$rows = $this->normalizedRows(results: $results);
 
 		usort(
 			$rows,
@@ -276,7 +300,28 @@ class WorkflowDefinitionRepository {
 		);
 
 		return $rows;
-	}//end listVersionsForCaseType()
+	}//end newestFirst()
+
+	/**
+	 * Normalise the rows, dropping those that are not a definition.
+	 *
+	 * @param array<int, array<string, mixed>> $results The raw rows.
+	 *
+	 * @return array<int, array<string, mixed>> The normalised rows.
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 */
+	private function normalizedRows(array $results): array {
+		$rows = [];
+		foreach ($results as $row) {
+			$normalized = $this->normalize(row: $row);
+			if ($normalized !== null) {
+				$rows[] = $normalized;
+			}
+		}
+
+		return $rows;
+	}//end normalizedRows()
 
 	/**
 	 * Resolve the next monotonically increasing version number for a given
