@@ -116,12 +116,35 @@ class StatusDwellTimer {
 			return null;
 		}
 
+		$config = $this->dwellTimerConfig(
+			caseId: $caseId,
+			statusTypeId: $statusTypeId,
+			maximumDwell: $maximumDwell,
+			statusName: $statusName
+		);
+
+		return $this->armOnEngine(engine: $engine, config: $config, caseId: $caseId);
+	}//end arm()
+
+	/**
+	 * The timer configuration of a status's maximum dwell.
+	 *
+	 * @param string $caseId       The case.
+	 * @param string $statusTypeId The status entered.
+	 * @param int    $maximumDwell The maximum, in working days.
+	 * @param string $statusName   The status's name, for the timer's title.
+	 *
+	 * @return array<string, mixed> The engine configuration.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function dwellTimerConfig(string $caseId, string $statusTypeId, int $maximumDwell, string $statusName): array {
 		$named = $statusName;
 		if ($named === '') {
 			$named = $statusTypeId;
 		}
 
-		$config = [
+		return [
 			'subjectType' => 'object',
 			'subjectUuid' => $caseId,
 			'appId' => 'dossiq',
@@ -153,7 +176,20 @@ class StatusDwellTimer {
 				'maximumDwell' => $maximumDwell,
 			],
 		];
+	}//end dwellTimerConfig()
 
+	/**
+	 * Arm the configured timer on the engine.
+	 *
+	 * @param object               $engine The FlowTimerService.
+	 * @param array<string, mixed> $config The engine configuration.
+	 * @param string               $caseId The case.
+	 *
+	 * @return string|null The armed timer uuid, or null when the engine refused.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function armOnEngine(object $engine, array $config, string $caseId): ?string {
 		// The catch LOGS and falls through; the degraded answer is the last
 		// statement of the method rather than a `return null` hidden in an
 		// exception handler. `ServiceCatchReturnsNullTest` is the guard, and
@@ -172,7 +208,7 @@ class StatusDwellTimer {
 		}
 
 		return (string)$timer->getUuid();
-	}//end arm()
+	}//end armOnEngine()
 
 	/**
 	 * Cancel the dwell timer a case is carrying.

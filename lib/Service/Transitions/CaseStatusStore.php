@@ -176,6 +176,41 @@ class CaseStatusStore {
 			'noWorkflowTemplate' => $noWorkflowTemplate,
 		];
 
+		$payload = $this->withOptionalStatusFields(
+			payload: $payload,
+			fromStatus: $fromStatus,
+			comment: $comment,
+			actor: $actor,
+		);
+
+		$record = $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
+
+		$this->moveEntry?->record(
+			caseId: $caseId,
+			toStatus: $toStatus,
+			fromStatus: $fromStatus,
+			label: $label,
+			comment: $comment,
+			record: $record,
+			actor: $actor,
+		);
+
+		return $record;
+	}//end writeStatusRecord()
+
+	/**
+	 * Add the actor, prior status and comment to a statusRecord payload when given.
+	 *
+	 * @param array<string, mixed> $payload The statusRecord payload.
+	 * @param string $fromStatus Prior statusType UUID.
+	 * @param string|null $comment Free-form comment.
+	 * @param string $actor Who made the move, or the empty string when the caller names nobody.
+	 *
+	 * @return array<string, mixed> The payload with the optional fields.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function withOptionalStatusFields(array $payload, string $fromStatus, ?string $comment, string $actor): array {
 		// WHO made this move. The four-eyes rule reads this chain to find who
 		// performed a named earlier act, and before this property the only
 		// answer was the row's OpenRegister owner, which is a fact about who
@@ -194,20 +229,8 @@ class CaseStatusStore {
 			$payload['description'] = $comment;
 		}
 
-		$record = $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
-
-		$this->moveEntry?->record(
-			caseId: $caseId,
-			toStatus: $toStatus,
-			fromStatus: $fromStatus,
-			label: $label,
-			comment: $comment,
-			record: $record,
-			actor: $actor,
-		);
-
-		return $record;
-	}//end writeStatusRecord()
+		return $payload;
+	}//end withOptionalStatusFields()
 
 	/**
 	 * Where the move's timeline entry is built.
